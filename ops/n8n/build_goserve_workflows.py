@@ -11,8 +11,9 @@ What it creates:
 How to run:
   python3 ops/n8n/build_goserve_workflows.py
 
-It reads the n8n API key and the owner Telegram chat id from
-~/Desktop/Secrets/04_integrations.env. It talks to https://n8n.LinkRight.in.
+It reads the n8n API key, the GoServe bot token, and the owner chat id from
+~/Desktop/Secrets/04_integrations.env (keys N8N_API_KEY, GOSERVE_BOT_TOKEN,
+GOSERVE_TELEGRAM_CHAT_ID). It talks to https://n8n.LinkRight.in.
 
 Note: the public n8n API marks workflow "tags" as read-only, so the tag is
 created here but the two workflows must be dragged into the tag in the n8n UI
@@ -29,9 +30,9 @@ BASE = "https://n8n.LinkRight.in/api/v1"
 
 env = open(os.path.join(SEC, "04_integrations.env")).read()
 KEY = re.search(r"^N8N_API_KEY=(\S+)", env, re.M).group(1)
-CHAT = re.search(r"^RAJU_TELEGRAM_CHAT_ID=(\S+)", env, re.M).group(1)
+CHAT = re.search(r"^GOSERVE_TELEGRAM_CHAT_ID=(\S+)", env, re.M).group(1)
 
-TELEGRAM_CRED = {"id": "T8XHKGUOBWGEgp01", "name": "Raju"}
+TELEGRAM_CRED = {"id": "bBVpWzhaY0MCpoQ5", "name": "GoServeBot"}
 MONGO_CRED = {"id": "ZId1p3cgYHjx3EM3", "name": "MongoDB account"}
 
 

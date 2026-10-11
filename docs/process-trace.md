@@ -38,4 +38,6 @@ Rule: read this first in every session, append before saying done.
 | 30 | 2026-10-11 | agent | Fixed both workflows: map fields from json.body, read the Normalise node in the alert, stamp receivedAt in IST | n8n workflows | none |
 | 31 | 2026-10-11 | agent | Verified end to end: both forms reply 200 and the Telegram alert shows every field | n8n executions | none |
 | 32 | 2026-10-11 | agent | Documented the form contract and the fix; opened fix/6 PR to dev | docs/integrations/n8n-goserve-forms.md, PR | none |
+| 33 | 2026-10-11 | owner | Provided a dedicated Telegram bot (@GoServeBot) for GoServe alerts | chat | volunteered |
+| 34 | 2026-10-11 | agent | Created the GoServeBot n8n credential, pointed both workflows at it, verified a live alert | issue #8, n8n workflows, executions | none |
 | $LAST_STEP$ | | agent | ... | ... | ... |
