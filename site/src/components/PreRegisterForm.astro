@@ -1,0 +1,127 @@
+---
+// Posts to the n8n webhook "GoServe — Pre-Registration Capture".
+// The endpoint is provided at build time; a fallback keeps the build safe.
+const endpoint =
+  import.meta.env.PUBLIC_PREREGISTER_WEBHOOK ??
+  "https://n8n.LinkRight.in/webhook/goserve-preregister";
+---
+<form
+  class="form"
+  id="preregister-form"
+  data-endpoint={endpoint}
+  novalidate
+>
+  <div class="field">
+    <label for="pr-name">Your name</label>
+    <input id="pr-name" name="name" type="text" autocomplete="name" required />
+    <p class="error" data-error-for="name" hidden></p>
+  </div>
+
+  <div class="field">
+    <label for="pr-email">Email</label>
+    <input id="pr-email" name="email" type="email" autocomplete="email" required />
+    <p class="error" data-error-for="email" hidden></p>
+  </div>
+
+  <div class="field">
+    <label for="pr-phone">Phone <span class="hint">(optional)</span></label>
+    <input id="pr-phone" name="phone" type="tel" autocomplete="tel" />
+    <p class="error" data-error-for="phone" hidden></p>
+  </div>
+
+  <div class="field">
+    <label for="pr-city">City</label>
+    <input id="pr-city" name="city" type="text" autocomplete="address-level2" required />
+    <p class="error" data-error-for="city" hidden></p>
+  </div>
+
+  <div class="field">
+    <label for="pr-role">How do you want to be involved?</label>
+    <select id="pr-role" name="role" required>
+      <option value="">Choose one…</option>
+      <option value="customer">I want to order food</option>
+      <option value="rider">I want to ride</option>
+      <option value="kitchen partner">I run a kitchen</option>
+      <option value="investor">I want to invest</option>
+    </select>
+    <p class="error" data-error-for="role" hidden></p>
+  </div>
+
+  <button class="btn btn--primary" type="submit">Pre-register my interest</button>
+  <p class="form-status" id="preregister-status" role="status" hidden></p>
+</form>
+
+<script>
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const PHONE_RE = /^\+?[0-9\s-]{7,15}$/;
+  const ROLES = ["customer", "rider", "kitchen partner", "investor"];
+
+  function form() {
+    return document.getElementById("preregister-form") as HTMLFormElement | null;
+  }
+
+  function showError(name: string, message: string) {
+    const p = document.querySelector(`[data-error-for="${name}"]`) as HTMLElement | null;
+    const field = document.getElementById(`pr-${name}`)?.closest(".field") as HTMLElement | null;
+    if (p) {
+      p.textContent = message;
+      p.hidden = !message;
+    }
+    if (field) field.dataset.invalid = message ? "true" : "false";
+  }
+
+  function validate(data: Record<string, string>) {
+    const errors: Record<string, string> = {};
+    if (!data.name || data.name.trim().length < 2) errors.name = "Please enter your name.";
+    if (!EMAIL_RE.test((data.email || "").trim())) errors.email = "Please enter a valid email address.";
+    if (!data.city || data.city.trim().length < 2) errors.city = "Please enter your city.";
+    if (!ROLES.includes(data.role)) errors.role = "Please choose how you want to be involved.";
+    if (data.phone && data.phone.trim() !== "" && !PHONE_RE.test(data.phone.trim()))
+      errors.phone = "Please enter a valid phone number, or leave it empty.";
+    return errors;
+  }
+
+  const el = form();
+  if (el) {
+    el.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fd = new FormData(el);
+      const data = Object.fromEntries(
+        ["name", "email", "phone", "city", "role"].map((k) => [k, String(fd.get(k) || "")]),
+      ) as Record<string, string>;
+
+      for (const key of ["name", "email", "phone", "city", "role"]) showError(key, "");
+      const errors = validate(data);
+      if (Object.keys(errors).length > 0) {
+        for (const [k, v] of Object.entries(errors)) showError(k, v);
+        const first = Object.keys(errors)[0];
+        (document.getElementById(`pr-${first}`) as HTMLElement | null)?.focus();
+        return;
+      }
+
+      const status = document.getElementById("preregister-status") as HTMLElement;
+      const btn = el.querySelector("button[type=submit]") as HTMLButtonElement;
+      btn.disabled = true;
+      status.hidden = false;
+      status.className = "form-status";
+      status.textContent = "Sending…";
+
+      try {
+        const res = await fetch(el.dataset.endpoint as string, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...data, source: "goserve-site", submittedAt: new Date().toISOString() }),
+        });
+        if (!res.ok) throw new Error(String(res.status));
+        status.className = "form-status form-status--ok";
+        status.textContent = "Thank you. You are on the list. We will be in touch soon.";
+        el.reset();
+      } catch {
+        status.className = "form-status form-status--err";
+        status.textContent = "Something went wrong. Please email hello@letsdwelo.in and we will add you.";
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  }
+</script>

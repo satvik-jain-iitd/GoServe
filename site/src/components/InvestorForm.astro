@@ -1,0 +1,101 @@
+---
+// Posts to the n8n webhook "GoServe — Investor Contact".
+const endpoint =
+  import.meta.env.PUBLIC_INVESTOR_WEBHOOK ??
+  "https://n8n.LinkRight.in/webhook/goserve-investor";
+---
+<form class="form" id="investor-form" data-endpoint={endpoint} novalidate>
+  <div class="field">
+    <label for="inv-name">Your name</label>
+    <input id="inv-name" name="name" type="text" autocomplete="name" required />
+    <p class="error" data-error-for="name" hidden></p>
+  </div>
+
+  <div class="field">
+    <label for="inv-firm">Firm</label>
+    <input id="inv-firm" name="firm" type="text" autocomplete="organization" required />
+    <p class="error" data-error-for="firm" hidden></p>
+  </div>
+
+  <div class="field">
+    <label for="inv-email">Email</label>
+    <input id="inv-email" name="email" type="email" autocomplete="email" required />
+    <p class="error" data-error-for="email" hidden></p>
+  </div>
+
+  <div class="field">
+    <label for="inv-message">Message</label>
+    <textarea id="inv-message" name="message" rows="5" required></textarea>
+    <p class="error" data-error-for="message" hidden></p>
+  </div>
+
+  <button class="btn btn--primary" type="submit">Send message</button>
+  <p class="form-status" id="investor-status" role="status" hidden></p>
+</form>
+
+<script>
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  function showError(name: string, message: string) {
+    const p = document.querySelector(`[data-error-for="${name}"]`) as HTMLElement | null;
+    const field = document.getElementById(`inv-${name}`)?.closest(".field") as HTMLElement | null;
+    if (p) {
+      p.textContent = message;
+      p.hidden = !message;
+    }
+    if (field) field.dataset.invalid = message ? "true" : "false";
+  }
+
+  function validate(data: Record<string, string>) {
+    const errors: Record<string, string> = {};
+    if (!data.name || data.name.trim().length < 2) errors.name = "Please enter your name.";
+    if (!data.firm || data.firm.trim().length < 2) errors.firm = "Please enter your firm.";
+    if (!EMAIL_RE.test((data.email || "").trim())) errors.email = "Please enter a valid email address.";
+    if (!data.message || data.message.trim().length < 10) errors.message = "Please add a short message (at least 10 characters).";
+    return errors;
+  }
+
+  const el = document.getElementById("investor-form") as HTMLFormElement | null;
+  if (el) {
+    el.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fd = new FormData(el);
+      const data = Object.fromEntries(
+        ["name", "firm", "email", "message"].map((k) => [k, String(fd.get(k) || "")]),
+      ) as Record<string, string>;
+
+      for (const key of ["name", "firm", "email", "message"]) showError(key, "");
+      const errors = validate(data);
+      if (Object.keys(errors).length > 0) {
+        for (const [k, v] of Object.entries(errors)) showError(k, v);
+        const first = Object.keys(errors)[0];
+        (document.getElementById(`inv-${first}`) as HTMLElement | null)?.focus();
+        return;
+      }
+
+      const status = document.getElementById("investor-status") as HTMLElement;
+      const btn = el.querySelector("button[type=submit]") as HTMLButtonElement;
+      btn.disabled = true;
+      status.hidden = false;
+      status.className = "form-status";
+      status.textContent = "Sending…";
+
+      try {
+        const res = await fetch(el.dataset.endpoint as string, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...data, source: "goserve-site", submittedAt: new Date().toISOString() }),
+        });
+        if (!res.ok) throw new Error(String(res.status));
+        status.className = "form-status form-status--ok";
+        status.textContent = "Thank you. We received your message and will reply shortly.";
+        el.reset();
+      } catch {
+        status.className = "form-status form-status--err";
+        status.textContent = "Something went wrong. Please email hello@letsdwelo.in directly.";
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  }
+</script>

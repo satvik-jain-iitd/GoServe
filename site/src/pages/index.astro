@@ -1,0 +1,280 @@
+---
+import Base from "../layouts/Base.astro";
+---
+<Base title="Fresh food, under 15 minutes">
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">Hyperlocal food OS · First kitchen in Kota</span>
+        <h1 class="display">
+          Fresh food.<br />
+          Your door.<br />
+          <span class="hero-accent">Under 15 minutes.</span>
+        </h1>
+        <p class="lead">
+          GoServe is not another delivery app. It is a food operating system:
+          a hyperlocal kitchen network, a live rider mesh, and a decision engine
+          that thinks ahead, so the food is cooked and on the move before you
+          even finish deciding.
+        </p>
+        <div class="hero-cta">
+          <a class="btn btn--primary" href="/pre-register">Pre-register your interest</a>
+          <a class="btn btn--ghost" href="/how-it-works">See how it works</a>
+        </div>
+      </div>
+      <div class="hero-mark" aria-hidden="true">
+        <div class="hero-ring">
+          <div class="hero-badge">
+            <span class="hero-num">15</span>
+            <span class="hero-unit">min</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="stats">
+    <div class="container stats-grid">
+      <div class="stat"><span class="stat-num">15 min</span><span class="stat-label">Target door-to-door</span></div>
+      <div class="stat"><span class="stat-num">1 city</span><span class="stat-label">Focused beachhead: Kota</span></div>
+      <div class="stat"><span class="stat-num">10</span><span class="stat-label">Decision models (Jev) at launch</span></div>
+      <div class="stat"><span class="stat-num">PWA</span><span class="stat-label">One app, every device</span></div>
+    </div>
+  </section>
+
+  <!-- MISSION -->
+  <section class="section section--sage">
+    <div class="container container-narrow reveal">
+      <span class="eyebrow">The mission</span>
+      <h2 class="h1" style="margin-bottom: var(--gs-space-5)">
+        Fast food should not taste like fast food.
+      </h2>
+      <p class="lead">
+        Most delivery promises speed and delivers cold food. GoServe promises
+        freshness and speed together. A tight hyperlocal radius makes a 15-minute
+        promise honest: short trips, hot food, riders who are part of the
+        neighbourhood, not strangers passing through.
+      </p>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="section">
+    <div class="container">
+      <span class="eyebrow reveal">How it works</span>
+      <h2 class="h1 reveal" style="margin-bottom: var(--gs-space-8)">Three moves. One promise.</h2>
+      <div class="steps">
+        <article class="step card reveal">
+          <span class="step-num">01</span>
+          <h3 class="h3">Order in seconds</h3>
+          <p>A menu built for speed. No clutter, no ten-tap checkouts. What you came for, one screen away.</p>
+        </article>
+        <article class="step card reveal">
+          <span class="step-num">02</span>
+          <h3 class="h3">The OS decides</h3>
+          <p>Jev picks the right kitchen, the best rider, and the quickest route, in the same second you tap pay.</p>
+        </article>
+        <article class="step card reveal">
+          <span class="step-num">03</span>
+          <h3 class="h3">Cooked hot, sent live</h3>
+          <p>Cooking starts when the rider is close. You watch it move on a live map. It arrives hot.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- JEV -->
+  <section class="section section--surface">
+    <div class="container jev">
+      <div class="reveal">
+        <span class="eyebrow">The difference</span>
+        <h2 class="h1" style="margin-bottom: var(--gs-space-5)">Jev, the decision engine.</h2>
+        <p class="lead">
+          Every order asks ten questions at once: which rider, which ETA, which
+          kitchen cooks next, which order is about to be late. Humans guess.
+          Jev calculates. It is the quiet engine that turns a promise into a
+          habit.
+        </p>
+        <a class="btn btn--secondary" href="/technology">Meet the technology</a>
+      </div>
+      <ul class="jev-list reveal">
+        <li><strong>Assign rider</strong><span>Who is free, close, and fast?</span></li>
+        <li><strong>Estimate time</strong><span>An honest ETA, not a hopeful one.</span></li>
+        <li><strong>Next cook</strong><span>What should the kitchen start right now?</span></li>
+        <li><strong>Late risk</strong><span>Which order needs a nudge before it slips?</span></li>
+        <li><strong>Zone check</strong><span>Is this order inside the 15-minute promise?</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section cta">
+    <div class="container container-narrow reveal" style="text-align:center">
+      <h2 class="display" style="color:#fff">Be early to the future of food.</h2>
+      <p class="lead" style="color:var(--gs-sage); margin-inline:auto">
+        Customers, riders, kitchen partners, and investors: all welcome.
+        Tell us who you are and we will keep you close.
+      </p>
+      <a class="btn btn--secondary" href="/pre-register">Pre-register your interest</a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* HERO */
+  .hero {
+    padding-block: var(--gs-space-10);
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: var(--gs-space-8);
+    align-items: center;
+  }
+  .hero-accent {
+    color: var(--gs-deep-green);
+  }
+  .hero-cta {
+    display: flex;
+    gap: var(--gs-space-4);
+    margin-top: var(--gs-space-6);
+    flex-wrap: wrap;
+  }
+  .hero-mark {
+    display: grid;
+    place-items: center;
+  }
+  .hero-ring {
+    width: min(30rem, 80vw);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--gs-sage);
+    display: grid;
+    place-items: center;
+    box-shadow: var(--gs-shadow-l);
+  }
+  .hero-badge {
+    width: 78%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--gs-lime);
+    display: grid;
+    place-items: center;
+    place-content: center;
+    text-align: center;
+    border: 3px solid var(--gs-deep-green);
+  }
+  .hero-num {
+    display: block;
+    font-size: clamp(4rem, 12vw, 8rem);
+    font-weight: 900;
+    line-height: 0.9;
+    color: var(--gs-ink-green);
+    letter-spacing: -0.04em;
+  }
+  .hero-unit {
+    display: block;
+    font-size: var(--gs-text-lg);
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gs-deep-green);
+  }
+
+  /* STATS */
+  .stats {
+    border-block: 1px solid var(--gs-sage);
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--gs-space-5);
+    padding-block: var(--gs-space-6);
+  }
+  .stat-num {
+    display: block;
+    font-size: var(--gs-text-xl);
+    font-weight: 800;
+    color: var(--gs-deep-green);
+    letter-spacing: -0.02em;
+  }
+  .stat-label {
+    font-size: var(--gs-text-sm);
+    color: var(--gs-text-muted);
+  }
+
+  /* STEPS */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--gs-space-5);
+  }
+  .step-num {
+    display: inline-block;
+    font-size: var(--gs-text-sm);
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    color: var(--gs-deep-green);
+    margin-bottom: var(--gs-space-3);
+  }
+  .h3 {
+    font-size: var(--gs-text-lg);
+    margin-bottom: var(--gs-space-3);
+  }
+
+  /* JEV */
+  .jev {
+    display: grid;
+    grid-template-columns: 1fr 0.9fr;
+    gap: var(--gs-space-8);
+    align-items: center;
+  }
+  .jev-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--gs-space-3);
+  }
+  .jev-list li {
+    background: var(--gs-cream);
+    border: 1px solid var(--gs-sage);
+    border-radius: var(--gs-radius-m);
+    padding: var(--gs-space-4) var(--gs-space-5);
+    display: grid;
+    gap: 2px;
+  }
+  .jev-list strong {
+    color: var(--gs-ink-green);
+  }
+  .jev-list span {
+    font-size: var(--gs-text-sm);
+    color: var(--gs-deep-green);
+  }
+
+  /* CTA */
+  .cta {
+    background: var(--gs-ink-green);
+  }
+  .cta .lead {
+    max-width: 46ch;
+  }
+
+  @media (max-width: 860px) {
+    .hero-grid,
+    .jev {
+      grid-template-columns: 1fr;
+    }
+    .hero-mark {
+      order: -1;
+    }
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .steps {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

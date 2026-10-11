@@ -1,0 +1,137 @@
+---
+import Base from "../layouts/Base.astro";
+
+type State = "wip" | "soon" | "planned";
+const phases: { id: string; title: string; date: string; state: State; label: string; items: string[] }[] = [
+  {
+    id: "MVP 0",
+    title: "Clickable demo",
+    date: "14 Oct 2026",
+    state: "wip",
+    label: "Work in progress",
+    items: ["Full click flow", "Menu, cart, bill", "Place order (automation backend)", "Kitchen and rider screens"],
+  },
+  {
+    id: "MVP 1",
+    title: "Golden path",
+    date: "21 Oct 2026",
+    state: "soon",
+    label: "Coming soon",
+    items: ["Login with OTP", "Real orders in database", "Jev D1–D5 decisions live", "Rider flow and live tracking"],
+  },
+  {
+    id: "MVP 2",
+    title: "Pilot ready",
+    date: "18 Nov 2026",
+    state: "soon",
+    label: "Coming soon",
+    items: ["Payments", "Offers and discounts", "Ops dashboard", "Refund and abuse models"],
+  },
+  {
+    id: "MVP 3",
+    title: "Intelligence layer",
+    date: "2 Dec 2026",
+    state: "planned",
+    label: "Planned",
+    items: ["Reorder nudges", "Support triage", "Copilot routing", "Demand forecasting"],
+  },
+  {
+    id: "MVP 4",
+    title: "Scale hardened",
+    date: "16 Dec 2026",
+    state: "planned",
+    label: "Planned",
+    items: ["Multi-kitchen", "Zone expansion", "Performance hardening", "Operations at scale"],
+  },
+];
+
+const badgeClass: Record<State, string> = {
+  wip: "badge--wip",
+  soon: "badge--soon",
+  planned: "badge--wip",
+};
+---
+<Base title="Roadmap" description="The GoServe roadmap, from the first clickable demo to a scale-hardened food OS. Honest labels at every step.">
+  <section class="section">
+    <div class="container container-narrow">
+      <span class="eyebrow">Roadmap</span>
+      <h1 class="h1">Honest about where we are.</h1>
+      <p class="lead">
+        We move fast and we say so. Each step below is labelled exactly as it
+        stands right now: work in progress, coming soon, or planned. No
+        pretending.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top: 0">
+    <div class="container">
+      <ol class="road">
+        {
+          phases.map((p) => (
+            <li class="road-item card reveal">
+              <div class="road-top">
+                <span class="road-id">{p.id}</span>
+                <span class={`badge ${badgeClass[p.state]}`}>{p.label}</span>
+              </div>
+              <h2 class="h3">{p.title}</h2>
+              <p class="road-date">{p.date}</p>
+              <ul class="road-list">
+                {p.items.map((i) => <li>{i}</li>)}
+              </ul>
+            </li>
+          ))
+        }
+      </ol>
+      <p class="muted" style="margin-top: var(--gs-space-6)">
+        Timelines depend on outside gates: payment approvals, messaging
+        registration, and partner onboarding. We keep the plan visible so you can
+        hold us to it.
+      </p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .road {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: var(--gs-space-5);
+  }
+  .road-item {
+    display: grid;
+    gap: var(--gs-space-2);
+  }
+  .road-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--gs-space-3);
+  }
+  .road-id {
+    font-weight: 900;
+    color: var(--gs-deep-green);
+    letter-spacing: 0.06em;
+    font-size: var(--gs-text-sm);
+  }
+  .h3 {
+    font-size: var(--gs-text-xl);
+    margin-top: var(--gs-space-2);
+  }
+  .road-date {
+    color: var(--gs-text-muted);
+    font-size: var(--gs-text-sm);
+    margin: 0;
+  }
+  .road-list {
+    margin: var(--gs-space-3) 0 0;
+    padding-left: 1.1rem;
+    color: var(--gs-deep-green);
+  }
+  .road-list li {
+    margin-bottom: var(--gs-space-2);
+  }
+</style>
