@@ -28,5 +28,8 @@ Rule: read this first in every session, append before saying done.
 | 20 | 2026-10-11 | agent | Verified both webhooks end to end: 200, MongoDB insert, Telegram alert | n8n executions | none |
 | 21 | 2026-10-11 | owner | Asked to make the repo public so the CI/CD checks can be used | chat | volunteered |
 | 22 | 2026-10-11 | agent | Made the repo public, added CI and deploy workflows, added hosting and stack ADRs | .github/workflows, docs/decisions | none |
-| 23 | 2026-10-11 | agent | Opened the PR feat → dev for the site | PR | none |
+| 23 | 2026-10-11 | agent | Opened PR #1 feat → dev for the site | PR #1 | none |
+| 24 | 2026-10-11 | agent | CI went green on PR #1 (1m1s); merged feat → dev (squash) | PR #1, dev | none |
+| 25 | 2026-10-11 | agent | Opened PR #2 dev → main for the owner to merge | PR #2 | asked |
+| 26 | 2026-10-11 | agent | Set branch protection on main and dev, requiring the CI check | GitHub branches | none |
 | $LAST_STEP$ | | agent | ... | ... | ... |
