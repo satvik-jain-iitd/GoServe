@@ -32,4 +32,10 @@ Rule: read this first in every session, append before saying done.
 | 24 | 2026-10-11 | agent | CI went green on PR #1 (1m1s); merged feat → dev (squash) | PR #1, dev | none |
 | 25 | 2026-10-11 | agent | Opened PR #2 dev → main for the owner to merge | PR #2 | asked |
 | 26 | 2026-10-11 | agent | Set branch protection on main and dev, requiring the CI check | GitHub branches | none |
+| 27 | 2026-10-11 | owner | Reported the Telegram alert arrives blank for a site form fill | chat | volunteered |
+| 28 | 2026-10-11 | agent | Reproduced from execution data: webhook body is under json.body, so fields read blank | n8n executions | none |
+| 29 | 2026-10-11 | agent | Created epic #4, story #5, and bug #6, and wrote the issue protocol | GitHub issues, docs/ISSUE_PROTOCOL.md | none |
+| 30 | 2026-10-11 | agent | Fixed both workflows: map fields from json.body, read the Normalise node in the alert, stamp receivedAt in IST | n8n workflows | none |
+| 31 | 2026-10-11 | agent | Verified end to end: both forms reply 200 and the Telegram alert shows every field | n8n executions | none |
+| 32 | 2026-10-11 | agent | Documented the form contract and the fix; opened fix/6 PR to dev | docs/integrations/n8n-goserve-forms.md, PR | none |
 | $LAST_STEP$ | | agent | ... | ... | ... |

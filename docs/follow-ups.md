@@ -21,3 +21,4 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F15 | Choose the final GoServe domain and move the site off letsdwelo.in. | Owner | Open |
 | F16 | Create MongoDB indexes on goserve.preregistrations and goserve.investor_contacts (email, receivedAt). | Agent | Open |
 | F17 | Decide whether the doorway site keeps its own repo or joins the PWA repo. | Owner + agent | Open |
+| F18 | Link the site stories to the PWA stories once the PWA repo exists. | Agent | Open |
