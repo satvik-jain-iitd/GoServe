@@ -31,3 +31,6 @@ npm-debug.log*
 
 # wrangler
 .wrangler/
+
+# client source documents (kept outside the repo)
+knowledge/client_docs/

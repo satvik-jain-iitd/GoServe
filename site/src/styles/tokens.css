@@ -1,0 +1,91 @@
+/* GoServe design tokens — extracted from the investor deck.
+   Every colour here comes from the deck. Nothing is invented.
+   See docs/design-tokens.md for the source and the M3 mapping. */
+
+:root {
+  /* ---- brand core (the eight that matter) ---- */
+  --gs-cream: #e4e6d9;
+  --gs-deep-green: #45654e;
+  --gs-ink-green: #263528;
+  --gs-sage: #bfcfb4;
+  --gs-off-white: #f7f3ef;
+  --gs-lime: #c8d888;
+  --gs-lime-soft: #cfd998;
+  --gs-warm-yellow: #ffde59;
+
+  /* ---- supporting ---- */
+  --gs-olive: #7f9743;
+  --gs-olive-soft: #889848;
+  --gs-gray: #706f70;
+  --gs-earth-deep: #654e3a;
+  --gs-earth-mid: #966e3a;
+  --gs-earth-light: #c17d46;
+
+  /* Accessible secondary-text tone. A desaturated shade of the deck's deep
+     green, dark enough to pass WCAG AA on both cream and sage. The deck's
+     own mid gray (#706F70) is used for non-text chrome only. */
+  --gs-text-muted: #46524a;
+
+  /* ---- material 3 roles (light) ---- */
+  --md-primary: var(--gs-deep-green);
+  --md-on-primary: #ffffff;
+  --md-primary-container: var(--gs-sage);
+  --md-on-primary-container: var(--gs-ink-green);
+  --md-secondary: var(--gs-olive);
+  --md-secondary-container: var(--gs-lime);
+  --md-tertiary: var(--gs-warm-yellow);
+  --md-tertiary-container: var(--gs-lime-soft);
+  --md-background: var(--gs-cream);
+  --md-on-background: var(--gs-ink-green);
+  --md-surface: var(--gs-off-white);
+  --md-on-surface: var(--gs-ink-green);
+  --md-surface-variant: var(--gs-sage);
+  --md-outline: var(--gs-deep-green);
+  --md-error: #b3261e;
+  --md-on-error: #ffffff;
+
+  /* ---- typography ---- */
+  --gs-font: "Roboto", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --gs-font-display: "Roboto", system-ui, -apple-system, sans-serif;
+
+  --gs-text-xs: 0.8125rem;
+  --gs-text-sm: 0.9375rem;
+  --gs-text-base: 1.0625rem;
+  --gs-text-lg: 1.25rem;
+  --gs-text-xl: 1.625rem;
+  --gs-text-2xl: 2.25rem;
+  --gs-text-3xl: clamp(2.5rem, 6vw, 4.25rem);
+  --gs-text-4xl: clamp(3rem, 9vw, 6.5rem);
+
+  --gs-leading-tight: 1.05;
+  --gs-leading-snug: 1.25;
+  --gs-leading-base: 1.65;
+
+  /* ---- spacing scale ---- */
+  --gs-space-1: 0.25rem;
+  --gs-space-2: 0.5rem;
+  --gs-space-3: 0.75rem;
+  --gs-space-4: 1rem;
+  --gs-space-5: 1.5rem;
+  --gs-space-6: 2rem;
+  --gs-space-7: 3rem;
+  --gs-space-8: 4rem;
+  --gs-space-9: 6rem;
+  --gs-space-10: 8rem;
+
+  /* ---- shape ---- */
+  --gs-radius-s: 6px;
+  --gs-radius-m: 12px;
+  --gs-radius-l: 20px;
+  --gs-radius-pill: 999px;
+
+  /* ---- effects ---- */
+  --gs-shadow-s: 0 1px 2px rgba(38, 53, 40, 0.08);
+  --gs-shadow-m: 0 8px 24px rgba(38, 53, 40, 0.1);
+  --gs-shadow-l: 0 24px 60px rgba(38, 53, 40, 0.16);
+  --gs-ring: 0 0 0 3px rgba(69, 101, 78, 0.45);
+
+  /* ---- layout ---- */
+  --gs-container: 72rem;
+  --gs-container-narrow: 46rem;
+}

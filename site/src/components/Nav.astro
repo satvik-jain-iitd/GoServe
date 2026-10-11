@@ -1,0 +1,32 @@
+---
+const links = [
+  { href: "/", label: "Home" },
+  { href: "/palette", label: "Palette" },
+  { href: "/how-it-works", label: "How it works" },
+  { href: "/technology", label: "Technology" },
+  { href: "/roadmap", label: "Roadmap" },
+  { href: "/investors", label: "Investors" },
+];
+
+const path = Astro.url.pathname;
+const isActive = (href: string) =>
+  href === "/" ? path === "/" : path.startsWith(href);
+---
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="/" aria-label="GoServe home">
+      <span class="dot" aria-hidden="true"></span>
+      GoServe
+    </a>
+    <nav class="nav" aria-label="Primary">
+      {
+        links.map((l) => (
+          <a href={l.href} aria-current={isActive(l.href) ? "page" : undefined}>
+            {l.label}
+          </a>
+        ))
+      }
+      <a class="btn btn--primary" href="/pre-register">Pre-register</a>
+    </nav>
+  </div>
+</header>

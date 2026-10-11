@@ -1,0 +1,57 @@
+---
+import Base from "../layouts/Base.astro";
+import InvestorForm from "../components/InvestorForm.astro";
+---
+<Base title="For investors" description="Why GoServe: a hyperlocal food OS with a 15-minute promise, a decision engine, and a focused first market. Reach out to the founders.">
+  <section class="section">
+    <div class="container container-narrow">
+      <span class="eyebrow">For investors</span>
+      <h1 class="h1">Fast food, done fresh. Owned by a system.</h1>
+      <p class="lead">
+        GoServe is a hyperlocal food OS. We start in one city, win it completely,
+        and scale a proven machine. The difference is not a courier fleet. It is
+        the decision engine under it.
+      </p>
+    </div>
+  </section>
+
+  <section class="section section--sage" style="padding-block: var(--gs-space-8)">
+    <div class="container">
+      <h2 class="h2" style="margin-bottom: var(--gs-space-6)">Why this can win.</h2>
+      <div class="thesis">
+        <article class="card"><h3 class="h3">A promise people feel</h3><p>Under 15 minutes, still hot. Few players can honestly say both.</p></article>
+        <article class="card"><h3 class="h3">A machine, not a hustle</h3><p>Jev turns operations into software. Margins improve as it learns.</p></article>
+        <article class="card"><h3 class="h3">A focused start</h3><p>One city, one kitchen network, one clean loop. Win it, then repeat it.</p></article>
+        <article class="card"><h3 class="h3">Built lean</h3><p>One codebase, free-tier infrastructure, a small team. Capital does not buy our speed; the system does.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container container-narrow">
+      <h2 class="h2" style="margin-bottom: var(--gs-space-2)">Talk to us.</h2>
+      <p class="muted" style="margin-bottom: var(--gs-space-6)">
+        Tell us who you are and how you would like to help. We reply to every
+        serious message.
+      </p>
+      <div class="card">
+        <InvestorForm />
+      </div>
+      <p class="muted" style="margin-top: var(--gs-space-4)">
+        Prefer email? Write to <a href="mailto:hello@letsdwelo.in">hello@letsdwelo.in</a>.
+      </p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .thesis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--gs-space-5);
+  }
+  .h3 {
+    font-size: var(--gs-text-lg);
+    margin-bottom: var(--gs-space-3);
+  }
+</style>
