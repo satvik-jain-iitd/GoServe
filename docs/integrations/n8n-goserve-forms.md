@@ -52,8 +52,16 @@ Each workflow has five nodes, laid left to right.
 | 1 | Webhook | Public POST endpoint. Bytes land under `json.body`. |
 | 2 | Normalise (Set) | Lifts each field from `json.body` to the top level and stamps `receivedAt` in IST. `includeOtherFields` is off, so only clean fields move on. |
 | 3 | Save (MongoDB) | Inserts one document into database `goserve`. |
-| 4 | Alert (Telegram) | Sends the owner a message with every field. |
+| 4 | Alert (Telegram) | Sends the owner a message through @GoServeBot with every field. |
 | 5 | Reply (Respond to Webhook) | Returns HTTP 200 `{ "ok": true }`. |
+
+Telegram details:
+
+- Bot: @GoServeBot.
+- n8n credential: GoServeBot (type telegramApi), id `bBVpWzhaY0MCpoQ5`.
+- Chat the alert goes to: `6802843941` (the owner).
+- Secrets live in `~/Desktop/Secrets/04_integrations.env` as `GOSERVE_BOT_TOKEN`
+  and `GOSERVE_TELEGRAM_CHAT_ID`.
 
 Storage:
 
@@ -89,8 +97,8 @@ python3 ops/n8n/build_goserve_workflows.py
 ```
 
 It creates the tag and both workflows, updates them if they already exist, and
-activates them. It reads the API key and the owner chat id from
-`~/Desktop/Secrets/04_integrations.env`.
+activates them. It reads the n8n API key, the GoServe bot token, and the owner
+chat id from `~/Desktop/Secrets/04_integrations.env`.
 
 ## How to verify a change
 
