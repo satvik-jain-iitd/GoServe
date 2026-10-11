@@ -1,10 +1,10 @@
 # GoServe — Project Rules
 
-Read first: `docs/PLAN.md` (the process) and `docs/process-trace.md`.
+Read first: `docs/PLAN.md` (the process), `docs/process-trace.md`, and `docs/LEARNINGS.md`.
 
 Standing rules, every session:
 
-1. First action: read `docs/process-trace.md`. Last action before "done": append this session's steps to it (one row each: date, step, actor, what, artifact, owner contact asked / volunteered / reviewed).
+1. First action: read `docs/process-trace.md` and `docs/LEARNINGS.md`. Last action before "done": append this session's steps to the trace (one row each: date, step, actor, what, artifact, owner contact asked / volunteered / reviewed), and add one row to `docs/LEARNINGS.md` for every learning or mistake.
 2. Every owner message that changes direction gets bullets in `docs/discussions/<START_DATE>.md`.
 3. Every idea the owner states is logged at once to `docs/ideas.md`, with status (open / taken / dropped).
 4. Work only from GitHub issues. An **Epic is a feature** (issue labelled `epic`). A **user story is a sub-issue** (issue labelled `story`) attached to its correct Epic. Branch `feat/<issue>-<slug>` from `dev`. PR feat → dev (self-review checklist, CI green, Claude merges). PR dev → main at each demo increment; **the owner merges main**. Never push directly to `main`.
