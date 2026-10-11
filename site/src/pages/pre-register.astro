@@ -1,0 +1,76 @@
+---
+import Base from "../layouts/Base.astro";
+import PreRegisterForm from "../components/PreRegisterForm.astro";
+
+const benefits = [
+  { t: "First invite", d: "You hear first when orders open in your area." },
+  { t: "Founder pricing", d: "Early members get the best offers, locked in." },
+  { t: "Shape the product", d: "Your feedback reaches the people building it." },
+];
+---
+<Base title="Pre-register" description="Pre-register your interest in GoServe. Customers, riders, kitchen partners, and investors all welcome.">
+  <section class="section">
+    <div class="container split">
+      <div>
+        <span class="eyebrow">Pre-register</span>
+        <h1 class="h1">Get in before the first order.</h1>
+        <p class="lead">
+          We are opening in Kota first. Pre-register and you will be first to
+          know, first to order, and first to shape it. It takes twenty seconds.
+        </p>
+        <ul class="benefits">
+          {
+            benefits.map((b) => (
+              <li>
+                <strong>{b.t}</strong>
+                <span>{b.d}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div class="card">
+        <h2 class="h3">Join the list</h2>
+        <PreRegisterForm />
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--gs-space-8);
+    align-items: start;
+  }
+  .h3 {
+    font-size: var(--gs-text-xl);
+    margin-bottom: var(--gs-space-5);
+  }
+  .benefits {
+    list-style: none;
+    margin: var(--gs-space-6) 0 0;
+    padding: 0;
+    display: grid;
+    gap: var(--gs-space-4);
+  }
+  .benefits li {
+    display: grid;
+    gap: 2px;
+    border-left: 4px solid var(--gs-lime);
+    padding-left: var(--gs-space-4);
+  }
+  .benefits strong {
+    color: var(--gs-ink-green);
+  }
+  .benefits span {
+    color: var(--gs-deep-green);
+    font-size: var(--gs-text-sm);
+  }
+  @media (max-width: 860px) {
+    .split {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

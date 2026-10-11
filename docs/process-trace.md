@@ -13,8 +13,20 @@ Rule: read this first in every session, append before saying done.
 | 5 | 2026-10-11 | agent | Wrote the Jev integration plan and the D1-D5 contract | docs/JEV_INTEGRATION_PLAN.md, docs/JEV_D1_D5_CONTRACT.md | none |
 | 6 | 2026-10-11 | agent | Wrote the MVP 0 build spec | docs/MVP0_SPEC.md | none |
 | 7 | 2026-10-11 | owner | Directed the repo setup: private repo, Documents home, submodule knowledge, PDFs outside | chat | volunteered |
-| 8 | 2026-10-11 | agent | Created the private repo GoServe, set up local repo, added the knowledge submodule pinned to dev | repo, .gitmodules, knowledge/SOURCE.md | none |
-| 9 | 2026-10-11 | agent | Wrote the process docs and configs, migrated the planning docs into docs/ | CLAUDE.md, docs/PLAN.md, configs | none |
-| 10 | 2026-10-11 | agent | Created the issue tree (epics and stories) with labels | GitHub issues | none |
-| 11 | 2026-10-11 | agent | Opened the bootstrap PR feat → dev | PR | none |
+| 8 | 2026-10-11 | agent | Created the repo GoServe (private at first, made public later this session), set up the local repo, added the knowledge submodule pinned to dev | repo, .gitmodules, knowledge/SOURCE.md | none |
+| 9 | 2026-10-11 | agent | Wrote the process docs and configs and the first commit bootstrap | CLAUDE.md, docs/PLAN.md, configs, commit d3a7f78 | none |
+| 10 | 2026-10-11 | agent | Created beads epics for the plan (yt-is8.*). GitHub issue tree not yet created. | bd | none |
+| 11 | 2026-10-11 | agent | Bootstrapped main and dev. The bootstrap went straight to main; no PR was opened. | branches main, dev | none |
+| 12 | 2026-10-11 | agent | Wrote the investor doorway site plan | docs/INVESTOR_SITE_PLAN.md | none |
+| 13 | 2026-10-11 | owner | Chose the host, the temporary domain, and to keep the repo private | chat | volunteered |
+| 14 | 2026-10-11 | agent | Verified the Cloudflare token, created Pages project goserve, checked DNS for letsdwelo.in | Cloudflare | none |
+| 15 | 2026-10-11 | agent | Verified the n8n API and the tag-as-folder convention | n8n | none |
+| 16 | 2026-10-11 | agent | Scaffolded the Astro site with all pages, forms, and design tokens | site/ | none |
+| 17 | 2026-10-11 | agent | Wrote unit and e2e tests and fixed color-contrast to green: 47 unit, 25 e2e | site/tests/ | none |
+| 18 | 2026-10-11 | agent | Deployed the site to Cloudflare Pages and attached letsdwelo.in and www | letsdwelo.in | none |
+| 19 | 2026-10-11 | agent | Created the n8n tag 🍔 GoServe and two active workflows with node notes | n8n | none |
+| 20 | 2026-10-11 | agent | Verified both webhooks end to end: 200, MongoDB insert, Telegram alert | n8n executions | none |
+| 21 | 2026-10-11 | owner | Asked to make the repo public so the CI/CD checks can be used | chat | volunteered |
+| 22 | 2026-10-11 | agent | Made the repo public, added CI and deploy workflows, added hosting and stack ADRs | .github/workflows, docs/decisions | none |
+| 23 | 2026-10-11 | agent | Opened the PR feat → dev for the site | PR | none |
 | $LAST_STEP$ | | agent | ... | ... | ... |
