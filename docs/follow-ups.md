@@ -32,6 +32,6 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F26 | Measure Laya speed on the Oracle ARM CPU before any claim. | Agent | Open |
 | F27 | Check the DPDP Rules dates and what the pilot must do. | Agent | Open |
 | F28 | Decide the PWA stack (ADR-006) at the start of the MVP 0 build. | Owner + agent | Open |
-| F29 | Change the website from Kota to Delhi (own fix PR). | Agent | Open |
+| F29 | Change the website from Kota to Delhi (own fix PR). | Agent | Done (#18) |
 | F30 | Load test n8n on the Oracle box with real payloads. | Agent | Open |
 | F31 | Discuss ADR-004 MVP 1 to MVP 4 with the founder. | Owner | Open |

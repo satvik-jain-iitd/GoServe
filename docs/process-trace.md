@@ -58,4 +58,7 @@ Rule: read this first in every session, append before saying done.
 | 50 | 2026-10-13 | owner | Said Jev answers are his output and may train Laya | chat | volunteered |
 | 51 | 2026-10-13 | owner | Said the first city is Delhi, not Kota | chat | volunteered |
 | 52 | 2026-10-13 | agent | Fixed docs to Delhi; aligned PRD, MVP0 spec, solution doc with ADR-004; removed overclaims | docs | none |
+| 53 | 2026-10-13 | agent | Merged PR #17 to dev after CI green | PR #17 | none |
+| 54 | 2026-10-13 | owner | Asked to update the site to Delhi and keep all design files and tokens in the repo | chat | volunteered |
+| 55 | 2026-10-13 | agent | Story #18: tests red first, then the site says Delhi; added design/tokens.json and design/README.md with a matching test | site, design/ | none |
 | $LAST_STEP$ | | agent | ... | ... | ... |
