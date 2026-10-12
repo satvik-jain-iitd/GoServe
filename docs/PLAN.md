@@ -21,13 +21,14 @@ This process is adapted from our rulebook, the cloned `shipquick_latest` reposit
 | Branch | Role | Who merges |
 |---|---|---|
 | `main` | Release-ready. Protected. | Only the owner. |
-| `dev` | Integration. All work lands here first. | Claude, after CI is green. |
-| `feat/<issue-number>-<slug>` | One branch per story, cut from `dev`. | Claude, back into `dev`. |
+| `dev` | Integration. All work lands here first. | The owner (`satvik-jain-iitd`), after review and green CI. |
+| `feat/<issue-number>-<slug>` | One branch per story, cut from `dev`. Pushed by the development account (`klickbae8yt-star`). | The owner, back into `dev`. |
 
 Rules:
 
 - One feature branch per story. The name must say what the feature does.
-- PR feat → dev: opened by Claude, self-reviewed with a checklist comment, merged by Claude after CI is green.
+- **Two accounts:** Claude works as the development account (`klickbae8yt-star`): it commits, pushes and opens every PR. `satvik-jain-iitd` reviews and merges every PR. Claude never merges.
+- PR feat → dev: opened by the development account, self-reviewed with a checklist comment, CI green, then reviewed and merged by the owner.
 - PR dev → main: opened by Claude at each increment, with the demo notes. **The owner merges.**
 - I never push directly to `main`.
 - PR template: issue link, what changed, scenarios covered, test output pasted, demo, decisions made (ADR link), ideas noted.

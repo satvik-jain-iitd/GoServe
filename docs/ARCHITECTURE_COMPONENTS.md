@@ -27,6 +27,7 @@ From now on:
 - 11 Oct 2026 — first flat list (tables A to H).
 - 13 Oct 2026 — expanded to MVP0–MVP4; procurement tables; Supabase chosen (ADR-004).
 - 13 Oct 2026 — updated from the owner Q&A: app URL, Jev key and cap, owned accounts, test devices, founder status.
+- 13 Oct 2026 — accounts: GoServe services on klickbae8yt@gmail.com; development via the `klickbae8yt-star` GitHub account, review and merge by satvik-jain-iitd.
 - 13 Oct 2026 — MVP 0 phase gate: Mumbai region, React + Vite + Capacitor, no custom backend, UptimeRobot, app/ folder (see `docs/architecture/phase-gate.md`).
 
 ---
@@ -185,9 +186,10 @@ Phases (see `docs/architecture/evolution.md`): **MVP0** investor demo (≤10 use
 | Consent notice (DPDP) *(new, MVP1)* | Tells users what we keep and why | Owner | — | NOT USED — demo data | USE | USE — + delete on request | USE | USE | UNKNOWN (DPDP Rules dates to verify) |
 | Play Store developer account *(new, MVP2)* | Publish the rider app wrapper | Founder | — | NOT USED | NOT USED | PROCURE if TWA needed | USE | USE | UNKNOWN (fee not checked today) |
 | Hugging Face account (private repo) *(new, MVP2)* | Store our Laya model | Owner | — | NOT USED | NOT USED | FREE-ACCOUNT | USE | USE | INFERRED |
-| Vercel account *(new row, owned)* | Hosting, like Cloudflare Pages | Owner | — | NOT USED — Hobby plan is non-commercial only; GoServe stays on Cloudflare Pages (owner choice, 13 Oct) | NOT USED | NOT USED | NOT USED | revisit only if we move to Next.js and pay for Pro | VERIFIED (Vercel fair-use page, 13 Oct) |
+| GitHub development account `klickbae8yt-star` *(new, MVP0)* | Every commit, push and PR; `satvik-jain-iitd` reviews and merges | Owner | — | ⏳ owner invites it to the repo and saves `GH_DEV_TOKEN` | USE | USE | USE | USE | VERIFIED (owner, 13 Oct) |
+| Vercel account *(new row, owned)* | Hosting, like Cloudflare Pages | Owner (new account on klickbae8yt@gmail.com) | — | NOT USED — Hobby plan is non-commercial only; GoServe stays on Cloudflare Pages (owner choice, 13 Oct) | NOT USED | NOT USED | NOT USED | revisit only if we move to Next.js and pay for Pro | VERIFIED (Vercel fair-use page, 13 Oct) |
 | Google Cloud account *(new row, owned)* | Google login (OAuth), Firebase push | Owner | — | NOT USED | USE — OAuth client + Firebase | USE | USE | USE | VERIFIED (owner answer) |
-| Supabase account access token *(new, MVP0)* | Lets Claude list projects and check the paused one (read-only) | Owner | — | ⏳ owner creates `SUPABASE_ACCESS_TOKEN` in Secrets | USE | USE | USE | USE | VERIFIED (owner answer) |
+| Supabase account access token *(new, MVP0)* | Lets Claude create and manage the GoServe project | Owner (new Supabase account on klickbae8yt@gmail.com) | — | ⏳ owner creates `SUPABASE_ACCESS_TOKEN` in Secrets | USE | USE | USE | USE | VERIFIED (owner answer) |
 
 ## I. Operations tools (added 13 Oct 2026, starts MVP1)
 

@@ -73,4 +73,6 @@ Rule: read this first in every session, append before saying done.
 | 65 | 2026-10-13 | agent | Wrote the phase gate and made it CLAUDE.md rule 16 and part of the increment Definition of Ready | docs/architecture/phase-gate.md, CLAUDE.md, PLAN.md | none |
 | 66 | 2026-10-13 | agent | Saved Part A (business systems) in full; corrected the short file (Odoo API only on Custom; ERPNext lean) | docs/research/ | none |
 | 67 | 2026-10-13 | agent | Installed Cloudflare's official Claude Code plugin (skills + MCP) at the owner's request | ~/.claude plugins | asked |
+| 68 | 2026-10-13 | owner | New Supabase/Vercel/UptimeRobot accounts on klickbae8yt@gmail.com; development through the klickbae8yt GitHub account; review and merge by satvik-jain-iitd | chat | volunteered |
+| 69 | 2026-10-13 | agent | Wrote the build-vs-review account rule into CLAUDE.md rule 4, PLAN.md and global CLAUDE.md §18 | CLAUDE.md, docs/PLAN.md | none |
 | $LAST_STEP$ | | agent | ... | ... | ... |
