@@ -35,3 +35,12 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F29 | Change the website from Kota to Delhi (own fix PR). | Agent | Done (#18) |
 | F30 | Load test n8n on the Oracle box with real payloads. | Agent | Open |
 | F31 | Discuss ADR-004 MVP 1 to MVP 4 with the founder. | Owner | Open |
+| F32 | Rotate the GoServe OpenRouter key (it was pasted in chat). | Owner | Open |
+| F33 | Create the Supabase account access token (`SUPABASE_ACCESS_TOKEN`) so Claude can check the paused project and create "goserve". | Owner | Open |
+| F34 | After the check, decide whether to delete the paused Supabase project (explicit "haan" with its name). | Owner | Open |
+| F35 | Paste the updated rulebook text (A1 rule 3, B11 95.17 and 95.23) into the claude.ai skill `n8n-house-rules`. | Owner | Open |
+| F36 | Other projects still mention a fixed workflow count in their own docs (referral_automation HANDOVER, Miraya plan, email-triage). Update when those projects are next touched. | Agent | Open |
+| F37 | Read Meta's INR WhatsApp rate card before budgeting MVP 2 messages. | Agent | Open |
+| F38 | Ask Razorpay and Cashfree for a lower UPI rate before MVP 2. | Founder | Open |
+| F39 | Test OSRM and Laya RAM and speed on the Oracle ARM box. | Agent | Open |
+| F40 | Ask the founder for a vector (SVG) logo, if one exists. | Founder | Open |

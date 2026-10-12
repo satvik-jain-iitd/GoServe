@@ -19,6 +19,9 @@ short. Say what happened and what to do next time.
 | 2026-10-13 | Diagrams | The first diagrams passed the crossing count but arrows still ran across box titles and along box edges. | Measure every tidiness rule, not only crossings. Put box titles in header boxes. Look at every picture after the gate passes. |
 | 2026-10-13 | Diagrams | An index-based arrow style (`linkStyle`) pointed at the wrong arrow after the order was shuffled. | Do not style arrows by index. Use the arrow type (dotted `-.->`) instead. |
 | 2026-10-13 | Facts | The docs said the pilot starts in Kota. The founder lives in Kota, but the pilot starts in Delhi. | Ask where the business starts, not where the founder lives. |
+| 2026-10-13 | Docs | I expanded the components file but left its "Prompt for Claude" in place, so it looked unfinished. | When a doc's instruction block is done, replace it with a "done + how to keep current" note in the same change. |
+| 2026-10-13 | n8n rules | I read "fix the workflow count up front" as a hard cap. The owner meant: no throwaway or duplicate workflows. | The rulebook now says "a registry, not a cap". New use case = new workflow, registered. |
+| 2026-10-13 | Hosting | I assumed `goserve.pages.dev` was free for the app. It already serves the investor site (same project as letsdwelo.in). | Every Pages project has its own .pages.dev name. Check the address with curl before planning it. |
 
 ## Tooling learnings
 

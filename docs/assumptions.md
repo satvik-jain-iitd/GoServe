@@ -33,3 +33,9 @@ Every assumption we are working from, stated plainly. If an assumption turns out
 | A23 | Jev's answers are the owner's output and may train Laya. | Owner (13 Oct). | Confirmed |
 | A24 | MVP 0 back end: n8n is the logic, Supabase holds data and live updates (supersedes A10 and A16 for the product app). | Owner (13 Oct), ADR-004. | Confirmed |
 | A25 | The enterprise architecture folder has no concrete privacy rules, so we use out-of-the-box controls. | Read in full, 13 Oct. | Confirmed |
+| A26 | The app lives at `goserve-app.pages.dev`; `goserve.pages.dev` and `letsdwelo.in` are the investor site. | Owner Q&A, 13 Oct. Checked (HTTP 200 on goserve.pages.dev). | Confirmed |
+| A27 | Jev spend for GoServe is capped at $2 by a GoServe-only OpenRouter key. | Owner, 13 Oct. Key limit read: 2. | Verified |
+| A28 | The owner already has: a Razorpay account (KYC not done), a company with GST, a Google Cloud account, a Vercel account (not used). | Owner Q&A, 13 Oct. | Confirmed |
+| A29 | The founder has not started FSSAI, the Delhi kitchen, DLT or WhatsApp Business. | Owner Q&A, 13 Oct. | Confirmed |
+| A30 | Testing before the founder demo: Android emulation on the laptop + the owner's iPhone; the founder's Android for the final check. | Owner Q&A, 13 Oct. | Confirmed |
+| A31 | Volume guesses for costs: 4 map calls and 3 WhatsApp messages per order, ₹300 average order. | Research, 13 Oct. To test. | Open |

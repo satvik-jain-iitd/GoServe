@@ -11,3 +11,4 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - ID007 (2026-10-13, taken): Spread the load across free tiers: n8n brain, Supabase hot data, Mongo archive, Cloudflare app. Second Brain ID070.
 - ID008 (2026-10-13, taken): Demo autopilot on the founder's phone, so the pitch cannot fail. Second Brain ID071.
 - ID009 (2026-10-13, dropped for orders): n8n Data tables as the MVP 0 database. Dropped because they have no transactions and are shared with other projects (ADR-004).
+- ID010 (2026-10-13, open): Use free-tier ops software (Odoo, Attio, agentic CRMs) to run operations instead of building ops tools. Research: docs/research/options-operations-tools-2026-10.md. Second Brain ID072.
