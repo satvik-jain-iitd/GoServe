@@ -4,6 +4,8 @@
 **Date extracted:** 11 Oct 2026.
 **Method:** we rendered all 20 pages, then read every colour twice: once from the PDF vector layer (fills, strokes, text) and once from the rendered pixels. A colour only enters this palette if it appears in the deck, not if it is a guess.
 
+**Machine-readable source of truth:** `design/tokens.json` (see `design/README.md`). This page explains where each value came from.
+
 The goal is simple: the product should look like it was made from the deck. Same cream, same deep green, same lime. If a colour is not here, we do not use it.
 
 ---

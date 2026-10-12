@@ -10,7 +10,7 @@ describe("validatePreRegister", () => {
     name: "Satvik Jain",
     email: "satvik@example.com",
     phone: "+91 98765 43210",
-    city: "Kota",
+    city: "Delhi",
     role: "customer",
   };
 

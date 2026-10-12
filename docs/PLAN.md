@@ -79,6 +79,8 @@ Rules:
 | `docs/follow-ups.md` | Every follow-up, so nothing is lost. |
 | `docs/tests/test-cases.md` | Every test with its story and scenario id. |
 | `docs/research/` | Findings with tiers and confidence. |
+| `design/` | The design language: `tokens.json` (source of truth) and how to reuse it. |
+| `docs/architecture/` | Phase pictures, MVP 0 build design, diagram sources and gate report. |
 
 ---
 
