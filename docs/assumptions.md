@@ -39,3 +39,6 @@ Every assumption we are working from, stated plainly. If an assumption turns out
 | A29 | The founder has not started FSSAI, the Delhi kitchen, DLT or WhatsApp Business. | Owner Q&A, 13 Oct. | Confirmed |
 | A30 | Testing before the founder demo: Android emulation on the laptop + the owner's iPhone; the founder's Android for the final check. | Owner Q&A, 13 Oct. | Confirmed |
 | A31 | Volume guesses for costs: 4 map calls and 3 WhatsApp messages per order, ₹300 average order. | Research, 13 Oct. To test. | Open |
+| A32 | Frontend is React + Vite + TypeScript + Capacitor; no custom backend server in MVP 0–2. | Owner, 13 Oct (ADR-006, ADR-007). | Confirmed |
+| A33 | Supabase project region is Mumbai (ap-south-1). | Owner, 13 Oct. | Confirmed |
+| A34 | We build dispatch, the rider app, the kitchen screen and referral/loyalty; we buy payouts, KYC checks and call masking. | Research (operations-tech-deep), 13 Oct. To confirm with the owner. | Open |

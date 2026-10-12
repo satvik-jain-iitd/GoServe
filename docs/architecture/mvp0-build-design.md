@@ -92,14 +92,16 @@ Five workflows plus one scheduled job. Propose, test and promote workflows come 
 | Dependency | Status | Owner action |
 |---|---|---|
 | Cloudflare account and Pages | ✅ Ready. App project `goserve-app` → `goserve-app.pages.dev`, free, no card | None |
-| Supabase project "goserve" | ⏳ Waiting | Create a Supabase account access token and save it as `SUPABASE_ACCESS_TOKEN` in `~/Desktop/Secrets/`. Then Claude checks the paused project and creates "goserve" |
+| Supabase project "goserve" (Mumbai) | ⏳ Waiting | Create a Supabase account access token and save it as `SUPABASE_ACCESS_TOKEN` in `~/Desktop/Secrets/`. Then Claude checks the paused project and creates "goserve" |
 | Paused Supabase project | ⏳ Waiting | After the check, say "haan, delete <name>" only if it holds nothing important |
 | n8n on Oracle | ✅ Ready. API key in the vault. Workflows are registered, not capped (rulebook A1 rule 3) | Say yes before any workflow is activated |
 | Jev (OpenRouter) | ✅ Ready. GoServe-only key, hard cap $2 (checked) | Rotate the key later (it was pasted in chat) |
 | Telegram alerts | ✅ Ready (@GoServeBot) | None |
 | Menu | ✅ Claude makes a Delhi sample menu (8–10 dishes, free photos) | None |
 | Logo and icon | ✅ In `design/brand/` | Send a vector logo if one exists |
-| PWA stack | ⏳ ADR-006 proposes Vite + Preact + TypeScript | Confirm at build start |
+| PWA stack | ✅ React + Vite + TypeScript + Capacitor (ADR-006); code in `app/`; no custom backend (ADR-007) | None |
+| Cloudflare Pages project `goserve-app` | ✅ Claude creates it with wrangler (zero cost) | None |
+| Uptime monitor | ⏳ Waiting | Sign up at UptimeRobot (free) and save `UPTIMEROBOT_API_KEY` in Secrets |
 | Test devices | ✅ Android emulation on the laptop + owner's iPhone + founder's Android for the final check | Share the link with the founder before the demo |
 | Founder business steps | Not needed for MVP 0 | Start the checklist in `docs/founder-checklist.md` |
 

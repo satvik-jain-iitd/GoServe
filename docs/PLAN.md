@@ -79,6 +79,7 @@ Rules:
 | `docs/follow-ups.md` | Every follow-up, so nothing is lost. |
 | `docs/tests/test-cases.md` | Every test with its story and scenario id. |
 | `docs/research/` | Findings with tiers and confidence. |
+| `docs/architecture/phase-gate.md` | The infrastructure Q&A and setup step before every MVP phase, with its log. |
 | `design/` | The design language: `tokens.json` (source of truth) and how to reuse it. |
 | `docs/architecture/` | Phase pictures, MVP 0 build design, diagram sources and gate report. |
 
@@ -105,6 +106,12 @@ If any item is missing, the story goes back to the Backlog and the issue is fixe
 4. Ponytail review: nothing speculative added.
 5. The issue is closed by the PR.
 6. A journal entry is written.
+
+---
+
+## 7b. Definition of Ready (increment / MVP phase)
+
+1. The phase gate in `docs/architecture/phase-gate.md` has passed for this phase, and its log row is written.
 
 ---
 

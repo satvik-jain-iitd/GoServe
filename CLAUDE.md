@@ -19,3 +19,4 @@ Standing rules, every session:
 13. Pre-commit runs on every commit: no secrets, no files over 500KB, no merge markers, markdown code blocks closed, commit message checked.
 14. Rollback: if a change breaks something, roll back or fix only the feature branch that caused it. Never touch unrelated branches.
 15. No secrets in code. Secrets live in `~/Desktop/Secrets/` and in GitHub Actions secrets. Never commit a `.env`, key, or token.
+16. Phase gate: before starting any MVP phase, run `docs/architecture/phase-gate.md` — an AskUserQuestion Q&A with the owner on every infrastructure item for that phase, research where he has nothing, set up with his yes, record in `docs/ARCHITECTURE_COMPONENTS.md`. Nothing in the phase is built until the gate passes.

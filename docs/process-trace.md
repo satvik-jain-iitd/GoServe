@@ -67,4 +67,10 @@ Rule: read this first in every session, append before saying done.
 | 59 | 2026-10-13 | agent | Saved the key to the vault (cap checked: $2); rewrote the rulebook count rule as a registry rule; synced copies and global files | ~/.claude, Secrets | none |
 | 60 | 2026-10-13 | agent | Refreshed ARCHITECTURE_COMPONENTS.md; cut the logo and app icon from the deck; wrote options research, founder checklist, MVP 0 readiness | docs, design/brand | none |
 | 61 | 2026-10-13 | owner | Asked for research on free operations tools (Odoo, Attio, CRMs) per phase | chat | volunteered |
+| 62 | 2026-10-13 | owner | Said the ops research was surface level; asked for full research, an MVP 0 setup Q&A, and a gate before every MVP | chat | volunteered |
+| 63 | 2026-10-13 | agent | Ran two deep research passes (business systems; food-delivery operations); saved Part B in full | docs/research/operations-tech-deep-2026-10.md | none |
+| 64 | 2026-10-13 | agent | MVP 0 setup Q&A: Mumbai, app/ folder, wrangler, UptimeRobot, Jev live, n8n registry, no custom backend, React + Vite + Capacitor | phase-gate.md, ADR-006, ADR-007 | asked |
+| 65 | 2026-10-13 | agent | Wrote the phase gate and made it CLAUDE.md rule 16 and part of the increment Definition of Ready | docs/architecture/phase-gate.md, CLAUDE.md, PLAN.md | none |
+| 66 | 2026-10-13 | agent | Saved Part A (business systems) in full; corrected the short file (Odoo API only on Custom; ERPNext lean) | docs/research/ | none |
+| 67 | 2026-10-13 | agent | Installed Cloudflare's official Claude Code plugin (skills + MCP) at the owner's request | ~/.claude plugins | asked |
 | $LAST_STEP$ | | agent | ... | ... | ... |
