@@ -4,8 +4,8 @@ Every assumption we are working from, stated plainly. If an assumption turns out
 
 | # | Assumption | Where it comes from | Status |
 |---|---|---|---|
-| A1 | Operations start in Kota. | Owner. | Confirmed |
-| A2 | The first kitchen location in Kota is not yet fixed. | Owner has not given it. | Open |
+| A1 | Operations start in Delhi. The founder is based in Kota, but the pilot starts in Delhi (owner, 13 Oct 2026; replaces the earlier "Kota"). | Owner. | Confirmed |
+| A2 | The first kitchen location in Delhi is not yet fixed. | Owner has not given it. | Open |
 | A3 | Month-1 order volume is unknown. We design for Year-1 headroom of up to ~5,000 orders per kitchen per day. | Owner + benchmarks. | Open |
 | A4 | We build a PWA first, not a native app. | Owner. | Confirmed |
 | A5 | The front-end uses Material Design 3. | Owner + rulebook. | Confirmed |
@@ -25,3 +25,11 @@ Every assumption we are working from, stated plainly. If an assumption turns out
 | A14 | `letsdwelo.in` and `www.letsdwelo.in` are a temporary home for the site; the final domain is not chosen. | Owner, ADR-003. | Confirmed |
 | A15 | The GoServe repo is public for now, so the free CI checks and branch protection can be used. | Owner. | Confirmed |
 | A16 | Site form submissions are stored in the MongoDB database `goserve`, then alerted by Telegram. | This plan. | Verified |
+| A18 | 1 lakh users means about 5,300 orders a day: about 40% order in a month, about 4 orders each. Peak hour is about 15% of the day. | Our estimate (`docs/architecture/evolution.md`). To test with the order simulator. | Open |
+| A19 | Each order makes about 10 events and about 3 screens watch it; about 6.5 KB per order with its events. | Our estimate. | Open |
+| A20 | The Oracle server is ARM (Ampere), 4 vCPU, 24 GB RAM, 200 GB disk, no GPU, and sometimes goes down. | Owner (13 Oct). ARM not yet confirmed. | Open |
+| A21 | The founder demos alone on an Android phone. | Owner (13 Oct). | Confirmed |
+| A22 | GoServe accounts (Supabase, Cloudflare) stay in the owner's personal accounts for now. | Owner (13 Oct). | Confirmed |
+| A23 | Jev's answers are the owner's output and may train Laya. | Owner (13 Oct). | Confirmed |
+| A24 | MVP 0 back end: n8n is the logic, Supabase holds data and live updates (supersedes A10 and A16 for the product app). | Owner (13 Oct), ADR-004. | Confirmed |
+| A25 | The enterprise architecture folder has no concrete privacy rules, so we use out-of-the-box controls. | Read in full, 13 Oct. | Confirmed |

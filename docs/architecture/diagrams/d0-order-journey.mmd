@@ -1,0 +1,76 @@
+---
+title: "GoServe — one order, four screens. People tap → the order book records → every screen updates live"
+---
+flowchart TB
+  %% D0. Phase-free. Act (top) -> record (middle) -> show (bottom). Every arrow points down.
+  subgraph act[" "]
+    actHead["① WHO TAPS"]
+    custTap["<b>Customer app</b><br/>places order · gives OTP · rates"]
+    kitTap["<b>Kitchen screen</b><br/>accept · start · ready"]
+    helper["<b>Decision helper</b><br/>picks the rider"]
+    riderTap["<b>Rider app</b><br/>pick up · on the way · delivered"]
+  end
+  subgraph book[" "]
+    bookHead["② ORDER BOOK<br/>one place for the truth"]
+    stPlaced["placed"]
+    stAccepted["accepted"]
+    stCooking["cooking"]
+    stReady["ready"]
+    stAssigned["rider assigned"]
+    stPicked["picked up"]
+    stArriving["arriving"]
+    stDelivered["delivered"]
+    stRated["rated"]
+  end
+  subgraph show[" "]
+    showHead["③ WHO SEES IT LIVE"]
+    custSee["<b>Customer</b><br/>live tracker"]
+    kitSee["<b>Kitchen</b><br/>order queue + alert"]
+    riderSee["<b>Rider</b><br/>new job card"]
+    opsSee["<b>Ops dashboard</b><br/>every order, timeline, alerts"]
+  end
+
+  actHead ~~~ custTap & kitTap & helper & riderTap
+  bookHead ~~~ stPlaced
+  showHead ~~~ custSee & kitSee & riderSee & opsSee
+  custTap -->|"1 · order.placed"| stPlaced
+  kitTap -->|"2–4 · accepted, cooking, ready"| stAccepted
+  helper -->|"5 · order.rider_assigned"| stAssigned
+  riderTap -->|"6–8 · picked up, arriving, delivered"| stPicked
+
+  stPlaced -->|"kitchen accepts"| stAccepted
+  stAccepted -->|"kitchen starts"| stCooking
+  stCooking -->|"food packed"| stReady
+  stReady -->|"helper picks rider"| stAssigned
+  stAssigned -->|"rider collects"| stPicked
+  stPicked -->|"near the door"| stArriving
+  stArriving -->|"OTP matches"| stDelivered
+  stDelivered -->|"customer rates"| stRated
+
+  book -->|"live status"| custSee
+  book -->|"new order alert"| kitSee
+  book -->|"new job"| riderSee
+  book -->|"every event"| opsSee
+
+  classDef head fill:#F7F3EF,stroke:#F7F3EF,color:#263528,font-weight:bold
+  classDef lane fill:#F7F3EF,stroke:#BFCFB4,stroke-width:2px,color:#263528
+  class actHead,bookHead,showHead head
+  class act,book,show lane
+  classDef tap fill:#FFFFFF,stroke:#45654E,stroke-width:2px,color:#263528
+  classDef decide fill:#FFDE59,stroke:#263528,stroke-width:2px,color:#263528
+  classDef see fill:#FFFFFF,stroke:#7F9743,stroke-width:2px,color:#263528
+  classDef sPlaced fill:#F7F3EF,stroke:#706F70,stroke-width:3px,color:#263528
+  classDef sAccepted fill:#F7F3EF,stroke:#7F9743,stroke-width:3px,color:#263528
+  classDef sCooking fill:#FFDE59,stroke:#263528,stroke-width:1px,color:#263528
+  classDef sReady fill:#C8D888,stroke:#263528,stroke-width:1px,color:#263528
+  classDef sOut fill:#F7F3EF,stroke:#966E3A,stroke-width:3px,color:#263528
+  classDef sDone fill:#45654E,stroke:#263528,stroke-width:1px,color:#FFFFFF
+  class custTap,kitTap,riderTap tap
+  class helper decide
+  class custSee,kitSee,riderSee,opsSee see
+  class stPlaced sPlaced
+  class stAccepted sAccepted
+  class stCooking sCooking
+  class stReady sReady
+  class stAssigned,stPicked,stArriving sOut
+  class stDelivered,stRated sDone
