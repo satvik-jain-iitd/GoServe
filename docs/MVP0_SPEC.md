@@ -4,6 +4,8 @@
 **Due:** 18 Oct 2026 (7 days)
 **Plain English.** This is the plan for the first thing we show. It is a plan, not code.
 
+> **Update 13 Oct 2026 (ADR-004).** The back end is n8n (the logic) plus Supabase (orders, events, logs and live updates). The phone has a demo autopilot and a split view, and each demo session has its own space. Every table carries `kitchen_id` and `session_id`. Jev is shown on the ops screen as an "AI suggestion"; the rule still decides. Full build design: `docs/architecture/mvp0-build-design.md`.
+
 ---
 
 ## 1. What MVP 0 is
@@ -47,11 +49,11 @@ We are honest about this. Real backend, real order, real state. Faked only where
 | Cart and bill | Real | Real math, real state. |
 | Login | Faked | One-tap demo login. Real OTP comes in MVP 1. |
 | Payment | Faked | Pay-later button. Real payment needs KYC. |
-| Order saved | Real | Written to Postgres. |
+| Order saved | Real | Written to Supabase Postgres. |
 | Kitchen screen | Real | Reads the same database. |
-| Live updates | Real | Real-time channel, not polling. |
+| Live updates | Real | Supabase Realtime, not polling. |
 | Rider step | Faked | A button that plays the rider, or skipped. |
-| Jev decisions | Not in MVP 0 | Placeholder text only. Jev starts in MVP 1. |
+| Jev decisions | Shown | Shown on the ops screen as an AI suggestion. The rule decides. Every decision is logged. |
 | Notifications (SMS / WhatsApp) | Faked | On-screen only. Real senders need approvals. |
 
 The rule: everything inside our four walls is real. Only the outside gates are faked, and each one is clearly labelled as demo.
@@ -94,7 +96,7 @@ One order, full loop, both ends watching it move.
 
 ## 6. The backend for MVP 0
 
-We use n8n as the backend for MVP 0. It is already running on the Oracle server. It lets us wire webhooks to the database without writing a server, which is exactly what a 7-day demo needs.
+We use n8n as the backend logic for MVP 0. It is already running on the Oracle server. Orders, events and logs live in Supabase, so the data and the live updates do not depend on the Oracle server. A Cloudflare Pages Function is the front door for `/api/*`.
 
 ### 6.1 The shape matters more than the tool
 
@@ -128,7 +130,7 @@ These match the solutioning document exactly. Do not invent new names in MVP 0.
 
 ### 6.5 Live updates
 
-The simplest reliable choice for the demo is Server-Sent Events, one open connection per screen. When an order changes, the backend pushes the new status. The screen updates with no refresh. If SSE is awkward in n8n, fall back to a 2-second poll, but keep the same endpoint name so the swap is clean.
+Supabase Realtime pushes every change to the screens. No polling, so n8n runs only when someone taps. The `/api/events/stream` path is kept as a name for later; in MVP 0 the screens subscribe to Supabase directly.
 
 ### 6.6 Data stored (minimum)
 
@@ -150,7 +152,7 @@ One `order_events` table: order id, event name, timestamp. This is the history, 
 
 ## 7. The frontend for MVP 0
 
-One PWA. Next.js with Material Design 3, matching the solutioning document. Rules:
+One PWA with Material Design 3. The framework is proposed in ADR-006 (Vite + Preact + TypeScript). Rules:
 
 1. One codebase. Screens differ by role, not by app.
 2. The browser only shows screens and calls the API. No logic in the browser.
@@ -169,10 +171,10 @@ AI-speed build. Each day ends with something visible.
 | 1 | 12 Oct | Freeze the shape | API paths and event names locked. Menu data ready. |
 | 2 | 13 Oct | PWA shell | Home and dish screens open on a phone, look like an app. |
 | 3 | 14 Oct | Cart and bill | Add to cart, see the bill, reach Place Order. |
-| 4 | 15 Oct | Backend up | n8n writes a real order to Postgres. |
+| 4 | 15 Oct | Backend up | n8n writes a real order to Supabase. |
 | 5 | 16 Oct | Kitchen screen | Order appears live. Accept, Start, Ready work. |
 | 6 | 17 Oct | Live status | Customer screen updates live as kitchen taps. |
-| 7 | 18 Oct | Polish and demo | Full loop smooth on phone plus laptop. Demo recorded. |
+| 7 | 18 Oct | Polish and demo | Full loop smooth on one Android phone (split view + autopilot). Demo recorded. |
 
 The bottlenecks are not coding. They are waiting on outside approvals, which do not block MVP 0 at all, because MVP 0 uses no paid or gated services.
 
@@ -184,7 +186,7 @@ Before we call MVP 0 done:
 
 1. One link opens and looks like an app on a phone.
 2. Full path works: menu, cart, bill, place order.
-3. The order is really saved in Postgres (checked by reading the row).
+3. The order is really saved in Supabase (checked by reading the row).
 4. Kitchen screen shows the order live, no refresh.
 5. Accept, Start, Ready each move the order and update history.
 6. Customer screen shows the same moves live.

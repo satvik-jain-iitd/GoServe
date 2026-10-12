@@ -1,0 +1,35 @@
+{
+  "_about": "GoServe diagram theme. Colours come only from docs/design-tokens.md. Read by ~/.claude/skills/diagram-standards/render.mjs.",
+  "canvas": "#E4E6D9",
+  "allowed": ["#E4E6D9", "#45654E", "#263528", "#BFCFB4", "#F7F3EF", "#C8D888", "#CFD998", "#FFDE59",
+              "#7F9743", "#889848", "#706F70", "#654E3A", "#966E3A", "#C17D46", "#B3261E", "#FFFFFF"],
+  "gate": { "maxCrossings": 2, "minFont": 14, "maxPngKB": 500 },
+  "mermaid": {
+    "fontFamily": "Roboto, Arial, sans-serif",
+    "flowchart": { "curve": "linear", "nodeSpacing": 50, "rankSpacing": 80, "padding": 18, "htmlLabels": true, "wrappingWidth": 220 },
+    "elk": { "mergeEdges": false, "nodePlacementStrategy": "NETWORK_SIMPLEX" },
+    "themeVariables": {
+      "fontFamily": "Roboto, Arial, sans-serif",
+      "fontSize": "16px",
+      "background": "#E4E6D9",
+      "primaryColor": "#FFFFFF",
+      "primaryBorderColor": "#45654E",
+      "primaryTextColor": "#263528",
+      "secondaryColor": "#F7F3EF",
+      "secondaryBorderColor": "#BFCFB4",
+      "secondaryTextColor": "#263528",
+      "tertiaryColor": "#F7F3EF",
+      "tertiaryBorderColor": "#BFCFB4",
+      "tertiaryTextColor": "#263528",
+      "mainBkg": "#FFFFFF",
+      "nodeBorder": "#45654E",
+      "nodeTextColor": "#263528",
+      "textColor": "#263528",
+      "titleColor": "#263528",
+      "lineColor": "#45654E",
+      "clusterBkg": "#F7F3EF",
+      "clusterBorder": "#BFCFB4",
+      "edgeLabelBackground": "#C8D888"
+    }
+  }
+}

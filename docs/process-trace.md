@@ -44,4 +44,18 @@ Rule: read this first in every session, append before saying done.
 | 36 | 2026-10-11 | agent | Added docs/LEARNINGS.md and today's journal, registered the file in PLAN.md and CLAUDE.md | issue #10, docs | none |
 | 37 | 2026-10-11 | owner | Asked for a per-phase architecture components document with a Claude expand prompt | chat | volunteered |
 | 38 | 2026-10-11 | agent | Added docs/ARCHITECTURE_COMPONENTS.md (tables A to H) with the expand prompt | issue #13, docs | none |
+| 39 | 2026-10-13 | owner | Asked for the architecture step by step, then one diagram of the four screens, then a founder-readable back end | chat | volunteered |
+| 40 | 2026-10-13 | owner | Gave the infra list, free-tier rule, 1 lakh users target; asked for 5 phase diagrams, brand colours, minimum crossings | chat | volunteered |
+| 41 | 2026-10-13 | agent | Read vendor pages for Supabase, n8n, Vercel, Render, Railway, Laya; recorded tiers and confidence | docs/research/*-2026-10.md | none |
+| 42 | 2026-10-13 | agent | Ran an independent co-founder review of the plan; merged gaps and fixes | plan file | reviewed |
+| 43 | 2026-10-13 | owner | Chose n8n + Supabase + demo autopilot, docs first, Android, personal accounts | chat | asked |
+| 44 | 2026-10-13 | agent | Logged 5 ideas to the Second Brain and docs/IDEAS.md | Ideas ID067–ID071, IDEAS.md | none |
+| 45 | 2026-10-13 | agent | Created epic #15 and story #16, branch feat/16-architecture-evolution | GitHub | none |
+| 46 | 2026-10-13 | agent | Built the diagram gate (render, crossing count, tidiness checks); ran it red on a naive draft | ~/.claude/skills/diagram-standards/render.mjs | none |
+| 47 | 2026-10-13 | agent | Drew 7 diagrams; all pass the gate; phase pictures share one skeleton | docs/architecture/diagrams/ | none |
+| 48 | 2026-10-13 | agent | Wrote evolution page, MVP 0 build design, Laya plan, ADR-004/005/006 | docs/architecture/, docs/LAYA_PLAN.md, docs/decisions/ | none |
+| 49 | 2026-10-13 | agent | Expanded ARCHITECTURE_COMPONENTS.md to MVP0–MVP4 with procurement tables; closed the open decision | docs/ARCHITECTURE_COMPONENTS.md | none |
+| 50 | 2026-10-13 | owner | Said Jev answers are his output and may train Laya | chat | volunteered |
+| 51 | 2026-10-13 | owner | Said the first city is Delhi, not Kota | chat | volunteered |
+| 52 | 2026-10-13 | agent | Fixed docs to Delhi; aligned PRD, MVP0 spec, solution doc with ADR-004; removed overclaims | docs | none |
 | $LAST_STEP$ | | agent | ... | ... | ... |

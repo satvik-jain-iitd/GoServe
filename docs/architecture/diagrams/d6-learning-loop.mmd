@@ -1,0 +1,42 @@
+---
+title: "How GoServe gets better by itself — every run teaches the next run. A person says yes before any change goes live."
+---
+flowchart LR
+  %% D6. Top strip: the learning loop for every workflow. Bottom strip: how our own model (Laya) replaces Jev.
+  subgraph loop[" "]
+    loopHead["<b>A · LEARNING LOOP — every workflow</b>"]
+    cap["<b>1 · Capture</b><br/>log each run: settings version,<br/>input, answer, time, cost"]
+    mea["<b>2 · Measure</b><br/>daily scorecard, paired numbers<br/>(on time % + promised time)"]
+    pro["<b>3 · Propose</b><br/>owner idea, or a big AI model<br/>reads the numbers weekly"]
+    tst["<b>4 · Test</b><br/>replay past orders with<br/>the new settings first"]
+    pmt["<b>5 · Promote</b><br/>owner says yes · small trial ·<br/>one-step undo"]
+  end
+  subgraph fly[" "]
+    flyHead["<b>B · LAYA REPLACES JEV — our own decision model</b>"]
+    lg["<b>Log every decision</b><br/>(rows from step 1) options, rule pick, Jev pick,<br/>chosen pick + its chance"]
+    lb["<b>Add the answer later</b><br/>late or on time, ops change,<br/>owner thumbs up or down"]
+    tr["<b>Train Laya</b><br/>free notebook (Kaggle / Colab),<br/>real data for the final test"]
+    sh["<b>Quiet test</b><br/>Laya answers next to Jev<br/>for 2 weeks, not used yet"]
+    lv["<b>Go live</b><br/>Laya → Jev → rule backup ·<br/>Jev cost goes to $0"]
+  end
+  loopHead ~~~ cap
+  flyHead ~~~ lg
+  cap -->|"runs pile up"| mea
+  mea -->|"a number slips"| pro
+  pro -->|"new settings"| tst
+  tst -->|"passes the bar"| pmt
+  lg -->|"after delivery"| lb
+  lb -->|"enough rows"| tr
+  tr -->|"new model"| sh
+  sh -->|"beats Jev and the rule"| lv
+
+  classDef head fill:#F7F3EF,stroke:#F7F3EF,color:#263528
+  classDef lane fill:#F7F3EF,stroke:#7F9743,stroke-width:3px,color:#263528
+  classDef step fill:#FFFFFF,stroke:#45654E,stroke-width:2px,color:#263528
+  classDef gate fill:#FFDE59,stroke:#263528,stroke-width:2px,color:#263528
+  classDef win fill:#45654E,stroke:#263528,stroke-width:2px,color:#FFFFFF
+  class loopHead,flyHead head
+  class loop,fly lane
+  class cap,mea,pro,lg,lb,tr,sh step
+  class tst gate
+  class pmt,lv win

@@ -1,0 +1,628 @@
+{
+  "d0-order-journey": {
+    "dir": "TB",
+    "crossings": 0,
+    "through": 0,
+    "backward": 0,
+    "unlabelled": 0,
+    "overlaps": 0,
+    "textOut": 0,
+    "childCut": 0,
+    "labelOnBox": 0,
+    "badColours": 0,
+    "minFont": 16,
+    "bends": 32,
+    "length": 6893,
+    "issues": [],
+    "clusters": [
+      {
+        "id": "show",
+        "text": "",
+        "x": 172,
+        "y": 2068,
+        "w": 979,
+        "h": 264
+      },
+      {
+        "id": "book",
+        "text": "",
+        "x": 182,
+        "y": 518,
+        "w": 452,
+        "h": 1416
+      },
+      {
+        "id": "act",
+        "text": "",
+        "x": 32,
+        "y": 86,
+        "w": 1179,
+        "h": 264
+      }
+    ],
+    "size": {
+      "w": 1243,
+      "h": 2368
+    },
+    "pngScale": 2,
+    "seed": 0,
+    "pngKB": 242,
+    "pass": true
+  },
+  "d6-learning-loop": {
+    "dir": "LR",
+    "crossings": 0,
+    "through": 0,
+    "backward": 0,
+    "unlabelled": 0,
+    "overlaps": 0,
+    "textOut": 0,
+    "childCut": 0,
+    "labelOnBox": 0,
+    "badColours": 0,
+    "minFont": 16,
+    "bends": 0,
+    "length": 1184,
+    "issues": [],
+    "clusters": [
+      {
+        "id": "fly",
+        "text": "",
+        "x": 32,
+        "y": 86,
+        "w": 2345,
+        "h": 180
+      },
+      {
+        "id": "loop",
+        "text": "",
+        "x": 57,
+        "y": 306,
+        "w": 2295,
+        "h": 180
+      }
+    ],
+    "size": {
+      "w": 2409,
+      "h": 522
+    },
+    "pngScale": 2,
+    "seed": 0,
+    "pngKB": 248,
+    "pass": true
+  },
+  "d1-mvp0": {
+    "dir": "TB",
+    "crossings": 1,
+    "through": 0,
+    "backward": 0,
+    "unlabelled": 0,
+    "overlaps": 0,
+    "textOut": 0,
+    "childCut": 0,
+    "labelOnBox": 0,
+    "badColours": 0,
+    "minFont": 16,
+    "bends": 84,
+    "length": 12404,
+    "issues": [
+      "crossing: L_n8score_n4ai_0 x L_n5live_n7live_0"
+    ],
+    "clusters": [
+      {
+        "id": "S2",
+        "text": "",
+        "x": 731,
+        "y": 494,
+        "w": 589,
+        "h": 252,
+        "row": 1
+      },
+      {
+        "id": "S3",
+        "text": "",
+        "x": 542,
+        "y": 870,
+        "w": 453,
+        "h": 468,
+        "row": 2
+      },
+      {
+        "id": "S5",
+        "text": "",
+        "x": 685,
+        "y": 2054,
+        "w": 415,
+        "h": 444,
+        "row": 4
+      },
+      {
+        "id": "S8",
+        "text": "",
+        "x": 838,
+        "y": 3022,
+        "w": 417,
+        "h": 648,
+        "row": 6
+      },
+      {
+        "id": "S7",
+        "text": "",
+        "x": 32,
+        "y": 2646,
+        "w": 611,
+        "h": 252,
+        "row": 5
+      },
+      {
+        "id": "S1",
+        "text": "",
+        "x": 372,
+        "y": 86,
+        "w": 1244,
+        "h": 264,
+        "row": 0
+      },
+      {
+        "id": "S4",
+        "text": "",
+        "x": 555,
+        "y": 1462,
+        "w": 438,
+        "h": 468,
+        "row": 3
+      },
+      {
+        "id": "S6",
+        "text": "",
+        "x": 685,
+        "y": 2646,
+        "w": 287,
+        "h": 252,
+        "row": 5
+      }
+    ],
+    "size": {
+      "w": 1648,
+      "h": 3706
+    },
+    "pngScale": 2,
+    "seed": 3,
+    "pngKB": 431,
+    "pass": true
+  },
+  "d2-mvp1": {
+    "dir": "TB",
+    "crossings": 1,
+    "through": 0,
+    "backward": 0,
+    "unlabelled": 0,
+    "overlaps": 0,
+    "textOut": 0,
+    "childCut": 0,
+    "labelOnBox": 0,
+    "badColours": 0,
+    "minFont": 16,
+    "bends": 84,
+    "length": 12182,
+    "issues": [
+      "crossing: L_n8score_n4ai_0 x L_n5live_n7live_0"
+    ],
+    "clusters": [
+      {
+        "id": "S2",
+        "text": "",
+        "x": 716,
+        "y": 494,
+        "w": 477,
+        "h": 252,
+        "row": 1
+      },
+      {
+        "id": "S3",
+        "text": "",
+        "x": 568,
+        "y": 870,
+        "w": 370,
+        "h": 444,
+        "row": 2
+      },
+      {
+        "id": "S5",
+        "text": "",
+        "x": 630,
+        "y": 2006,
+        "w": 422,
+        "h": 504,
+        "row": 4
+      },
+      {
+        "id": "S8",
+        "text": "",
+        "x": 776,
+        "y": 3034,
+        "w": 410,
+        "h": 648,
+        "row": 6
+      },
+      {
+        "id": "S7",
+        "text": "",
+        "x": 32,
+        "y": 2658,
+        "w": 556,
+        "h": 252,
+        "row": 5
+      },
+      {
+        "id": "S1",
+        "text": "",
+        "x": 412,
+        "y": 86,
+        "w": 1067,
+        "h": 264,
+        "row": 0
+      },
+      {
+        "id": "S4",
+        "text": "",
+        "x": 555,
+        "y": 1438,
+        "w": 291,
+        "h": 444,
+        "row": 3
+      },
+      {
+        "id": "S6",
+        "text": "",
+        "x": 630,
+        "y": 2658,
+        "w": 312,
+        "h": 252,
+        "row": 5
+      }
+    ],
+    "size": {
+      "w": 1511,
+      "h": 3718
+    },
+    "pngScale": 2,
+    "seed": 3,
+    "pngKB": 388,
+    "pass": true
+  },
+  "d3-mvp2": {
+    "dir": "TB",
+    "crossings": 1,
+    "through": 0,
+    "backward": 0,
+    "unlabelled": 0,
+    "overlaps": 0,
+    "textOut": 0,
+    "childCut": 0,
+    "labelOnBox": 0,
+    "badColours": 0,
+    "minFont": 16,
+    "bends": 82,
+    "length": 12197,
+    "issues": [
+      "crossing: L_n8score_n4ai_0 x L_n5live_n7live_0"
+    ],
+    "clusters": [
+      {
+        "id": "S2",
+        "text": "",
+        "x": 691,
+        "y": 494,
+        "w": 477,
+        "h": 252,
+        "row": 1
+      },
+      {
+        "id": "S3",
+        "text": "",
+        "x": 512,
+        "y": 870,
+        "w": 410,
+        "h": 444,
+        "row": 2
+      },
+      {
+        "id": "S5",
+        "text": "",
+        "x": 626,
+        "y": 2006,
+        "w": 397,
+        "h": 444,
+        "row": 4
+      },
+      {
+        "id": "S8",
+        "text": "",
+        "x": 839,
+        "y": 2974,
+        "w": 400,
+        "h": 648,
+        "row": 6
+      },
+      {
+        "id": "S7",
+        "text": "",
+        "x": 32,
+        "y": 2598,
+        "w": 552,
+        "h": 252,
+        "row": 5
+      },
+      {
+        "id": "S1",
+        "text": "",
+        "x": 396,
+        "y": 86,
+        "w": 1022,
+        "h": 264,
+        "row": 0
+      },
+      {
+        "id": "S4",
+        "text": "",
+        "x": 496,
+        "y": 1438,
+        "w": 420,
+        "h": 444,
+        "row": 3
+      },
+      {
+        "id": "S6",
+        "text": "",
+        "x": 723,
+        "y": 2598,
+        "w": 296,
+        "h": 252,
+        "row": 5
+      }
+    ],
+    "size": {
+      "w": 1450,
+      "h": 3658
+    },
+    "pngScale": 2,
+    "seed": 3,
+    "pngKB": 393,
+    "pass": true
+  },
+  "d4-mvp3": {
+    "dir": "TB",
+    "crossings": 1,
+    "through": 0,
+    "backward": 0,
+    "unlabelled": 0,
+    "overlaps": 0,
+    "textOut": 0,
+    "childCut": 0,
+    "labelOnBox": 0,
+    "badColours": 0,
+    "minFont": 16,
+    "bends": 82,
+    "length": 11675,
+    "issues": [
+      "crossing: L_n8score_n4ai_0 x L_n5live_n7live_0"
+    ],
+    "clusters": [
+      {
+        "id": "S2",
+        "text": "",
+        "x": 606,
+        "y": 494,
+        "w": 532,
+        "h": 252,
+        "row": 1
+      },
+      {
+        "id": "S3",
+        "text": "",
+        "x": 514,
+        "y": 870,
+        "w": 335,
+        "h": 444,
+        "row": 2
+      },
+      {
+        "id": "S5",
+        "text": "",
+        "x": 579,
+        "y": 2006,
+        "w": 402,
+        "h": 444,
+        "row": 4
+      },
+      {
+        "id": "S8",
+        "text": "",
+        "x": 756,
+        "y": 2974,
+        "w": 386,
+        "h": 648,
+        "row": 6
+      },
+      {
+        "id": "S7",
+        "text": "",
+        "x": 32,
+        "y": 2598,
+        "w": 505,
+        "h": 252,
+        "row": 5
+      },
+      {
+        "id": "S1",
+        "text": "",
+        "x": 376,
+        "y": 86,
+        "w": 845,
+        "h": 264,
+        "row": 0
+      },
+      {
+        "id": "S4",
+        "text": "",
+        "x": 441,
+        "y": 1438,
+        "w": 357,
+        "h": 444,
+        "row": 3
+      },
+      {
+        "id": "S6",
+        "text": "",
+        "x": 642,
+        "y": 2598,
+        "w": 312,
+        "h": 252,
+        "row": 5
+      }
+    ],
+    "size": {
+      "w": 1253,
+      "h": 3658
+    },
+    "pngScale": 2,
+    "seed": 3,
+    "pngKB": 358,
+    "pass": true
+  },
+  "d5-mvp4": {
+    "dir": "TB",
+    "crossings": 1,
+    "through": 0,
+    "backward": 0,
+    "unlabelled": 0,
+    "overlaps": 0,
+    "textOut": 0,
+    "childCut": 0,
+    "labelOnBox": 0,
+    "badColours": 0,
+    "minFont": 16,
+    "bends": 80,
+    "length": 12009,
+    "issues": [
+      "crossing: L_n8score_n4ai_0 x L_n5live_n7live_0"
+    ],
+    "clusters": [
+      {
+        "id": "S2",
+        "text": "",
+        "x": 665,
+        "y": 494,
+        "w": 436,
+        "h": 252,
+        "row": 1
+      },
+      {
+        "id": "S3",
+        "text": "",
+        "x": 476,
+        "y": 870,
+        "w": 434,
+        "h": 468,
+        "row": 2
+      },
+      {
+        "id": "S5",
+        "text": "",
+        "x": 579,
+        "y": 2030,
+        "w": 390,
+        "h": 480,
+        "row": 4
+      },
+      {
+        "id": "S8",
+        "text": "",
+        "x": 753,
+        "y": 3034,
+        "w": 369,
+        "h": 648,
+        "row": 6
+      },
+      {
+        "id": "S7",
+        "text": "",
+        "x": 32,
+        "y": 2658,
+        "w": 505,
+        "h": 252,
+        "row": 5
+      },
+      {
+        "id": "S1",
+        "text": "",
+        "x": 374,
+        "y": 86,
+        "w": 1105,
+        "h": 264,
+        "row": 0
+      },
+      {
+        "id": "S4",
+        "text": "",
+        "x": 480,
+        "y": 1462,
+        "w": 278,
+        "h": 444,
+        "row": 3
+      },
+      {
+        "id": "S6",
+        "text": "",
+        "x": 618,
+        "y": 2658,
+        "w": 302,
+        "h": 252,
+        "row": 5
+      }
+    ],
+    "size": {
+      "w": 1511,
+      "h": 3718
+    },
+    "pngScale": 2,
+    "seed": 3,
+    "pngKB": 361,
+    "pass": true
+  },
+  "_compare": [
+    "d2-mvp1: S2 dx=-15 dy=0",
+    "d2-mvp1: S3 dx=26 dy=0",
+    "d2-mvp1: S5 dx=-55 dy=-48",
+    "d2-mvp1: S8 dx=-62 dy=12",
+    "d2-mvp1: S7 dx=0 dy=12",
+    "d2-mvp1: S1 dx=40 dy=0",
+    "d2-mvp1: S4 dx=0 dy=-24",
+    "d2-mvp1: S6 dx=-55 dy=12",
+    "d3-mvp2: S2 dx=-40 dy=0",
+    "d3-mvp2: S3 dx=-30 dy=0",
+    "d3-mvp2: S5 dx=-59 dy=-48",
+    "d3-mvp2: S8 dx=1 dy=-48",
+    "d3-mvp2: S7 dx=0 dy=-48",
+    "d3-mvp2: S1 dx=24 dy=0",
+    "d3-mvp2: S4 dx=-59 dy=-24",
+    "d3-mvp2: S6 dx=38 dy=-48",
+    "d4-mvp3: S2 dx=-125 dy=0",
+    "d4-mvp3: S3 dx=-28 dy=0",
+    "d4-mvp3: S5 dx=-106 dy=-48",
+    "d4-mvp3: S8 dx=-82 dy=-48",
+    "d4-mvp3: S7 dx=0 dy=-48",
+    "d4-mvp3: S1 dx=4 dy=0",
+    "d4-mvp3: S4 dx=-114 dy=-24",
+    "d4-mvp3: S6 dx=-43 dy=-48",
+    "d5-mvp4: S2 dx=-66 dy=0",
+    "d5-mvp4: S3 dx=-66 dy=0",
+    "d5-mvp4: S5 dx=-106 dy=-24",
+    "d5-mvp4: S8 dx=-85 dy=12",
+    "d5-mvp4: S7 dx=0 dy=12",
+    "d5-mvp4: S1 dx=2 dy=0",
+    "d5-mvp4: S4 dx=-75 dy=0",
+    "d5-mvp4: S6 dx=-67 dy=12"
+  ]
+}

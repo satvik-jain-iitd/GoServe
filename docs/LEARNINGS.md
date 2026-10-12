@@ -15,6 +15,10 @@ short. Say what happened and what to do next time.
 | 2026-10-11 | git / GitHub CLI | A PR body passed with `--body` on the command line was mangled, because `$(...)` and `$('...')` inside double quotes ran as shell commands. | Write the PR body to a file and use `gh pr create --body-file <file>`. |
 | 2026-10-11 | git | A 37 MB deck and a 258 KB SOW were pushed into git history. | Keep client docs in `knowledge/client_docs/` (gitignored). Never commit large binaries. |
 | 2026-10-11 | GitHub | A fix merged to `dev` said "Closes #6", but the issue stayed open. | Closing keywords only fire on the default branch (`main`). A merge to `dev` needs a manual close. |
+| 2026-10-13 | Planning | The first plan was docs only, while the demo was 5 days away, and the demo depended on a server that sometimes goes down. | Run an independent review before a big plan. Keep any single server out of the demo path. Give the demo a local backup. |
+| 2026-10-13 | Diagrams | The first diagrams passed the crossing count but arrows still ran across box titles and along box edges. | Measure every tidiness rule, not only crossings. Put box titles in header boxes. Look at every picture after the gate passes. |
+| 2026-10-13 | Diagrams | An index-based arrow style (`linkStyle`) pointed at the wrong arrow after the order was shuffled. | Do not style arrows by index. Use the arrow type (dotted `-.->`) instead. |
+| 2026-10-13 | Facts | The docs said the pilot starts in Kota. The founder lives in Kota, but the pilot starts in Delhi. | Ask where the business starts, not where the founder lives. |
 
 ## Tooling learnings
 
@@ -27,6 +31,9 @@ short. Say what happened and what to do next time.
 | 2026-10-11 | Astro | Pages build with a trailing-slash redirect (HTTP 308) by default. |
 | 2026-10-11 | Playwright / axe | The accessibility scan flags colour contrast on elements hidden by a reveal animation. Force them visible (`opacity: 1`, `transition: none`) before the scan. |
 | 2026-10-11 | Tooling | The agent cannot view images. For PDFs use `pdftoppm` and `pdfplumber`, not `pymupdf`. |
+| 2026-10-13 | Supabase | Free plan: 2 projects per owner across orgs, 200 live connections, 2M live messages a month, 500 MB, paused after 1 week idle, no backups. |
+| 2026-10-13 | Vercel | Hobby is non-commercial only. A startup demo counts as commercial. |
+| 2026-10-13 | Mermaid | With the ELK layout, box titles get crossed by arrows. Use a header box inside each group, linked with `~~~`. Edges are named `L_<from>_<to>_<n>`, so node ids must not contain `_`. |
 
 ## Process learnings
 

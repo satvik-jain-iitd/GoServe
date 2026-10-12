@@ -1,7 +1,7 @@
 # Go Serve — PRD (First MVP)
 
 **Date:** 11 Oct 2026
-**City we start in:** Kota
+**City we start in:** Delhi (the founder is based in Kota; the pilot starts in Delhi)
 **Written for:** the founder. Plain English. No jargon.
 
 ---
@@ -198,7 +198,7 @@ Two small rules we follow from day one:
 
 Jev is a special AI model made by TypeSafe AI. It does **not** chat. It does **not** write text.
 
-You send it the state of the world (for example: 4 orders waiting, 3 riders free, this rider is 1.2 km away). It sends back a **decision** with a **confidence score**. It answers in about 0.1 seconds. It cannot hallucinate, because it only picks from choices we allow.
+You send it the state of the world (for example: 4 orders waiting, 3 riders free, this rider is 1.2 km away). It sends back a **decision** with a **confidence score**. Others have measured about 0.25 seconds per answer. It only picks from choices we allow, so it never writes made-up text. It can still pick the wrong choice, so a simple backup rule always stands behind it.
 
 Where we use Jev from day one:
 - Which rider to assign to which order.
@@ -208,7 +208,7 @@ Where we use Jev from day one:
 - Which offer or coupon fits this customer (later).
 
 Why this matters:
-- Normal AI chat is too slow and too random for these jobs. Jev is fast and safe.
+- Normal AI chat is too slow and too random for these jobs. Jev is fast and limited to our choices.
 - It is cheap. Input is about $0.042 per million words. Output is free.
 - It gives a confidence number with every answer. If confidence is low, we fall back to simple rules.
 
@@ -240,7 +240,7 @@ We store all events. So we can always answer: "Where did the time go?" This matt
 Swish, a 10-minute food startup, ran its first year in one area of Bengaluru. It grew from a few thousand orders a day to about 20,000.
 
 Our target for the first year:
-- Start with 1 kitchen in Kota.
+- Start with 1 kitchen in Delhi.
 - Grow to a few hundred orders a day per kitchen.
 - The software must handle **up to 5,000 orders a day per kitchen** without breaking.
 - The same code must scale to many kitchens later by adding config, not by rewriting.
@@ -252,13 +252,13 @@ We test this with a load test before we call a version "done".
 ## 12. Assumptions and open questions
 
 Assumptions we made:
-- First kitchen is in Kota. One delivery zone first.
+- First kitchen is in Delhi. One delivery zone first.
 - Menu starts small: 10 to 20 items.
 - Phone OTP may need a small paid SMS tool later. For the demo we use email or a dev code.
 - Urdu/English/Hindi labels can be added later; MVP in English.
 
 Open questions for the founder:
-- What is the exact first kitchen location in Kota?
+- What is the exact first kitchen location in Delhi?
 - How many orders per day do we expect in month 1?
 - Do we need real payments in the week-1 demo, or is a "pay later" button fine?
 - Do we want a subscription (daily meal plan) in V1, or only single orders?
@@ -279,7 +279,9 @@ See `IDEAS.md` for how we plan to measure AI build time honestly.
 
 Five steps. Each step is a working product you can see and click.
 
-### MVP 0 — Clickable Demo (by 14 Oct 2026)
+### MVP 0 — Clickable Demo (by 18 Oct 2026)
+
+> Update 13 Oct 2026: the phases, the tools and the user numbers are now in `docs/architecture/evolution.md` (ADR-004). That page wins where this roadmap differs.
 - One PWA link that looks like a mobile app.
 - Here we show: the full click path and one real order.
 - Backend really runs: order is saved, kitchen sees it, status updates live.
@@ -291,7 +293,7 @@ Five steps. Each step is a working product you can see and click.
 - Jev handles dispatch and ETA.
 
 ### MVP 2 — Pilot Ready (by 18 Nov 2026)
-- Here we show: a real pilot can run in Kota with real money.
+- Here we show: a real pilot can run in Delhi with real money.
 - Online payments, refunds, and notifications (SMS/WhatsApp) work.
 - Menu admin, light inventory, and low-stock alerts work.
 - Head office dashboard shows live health and alerts.

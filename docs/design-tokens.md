@@ -193,3 +193,24 @@ Two preview files sit next to this document in `docs/assets/`:
 - `palette.png` — a flat image of the palette, for quick reference.
 
 If either preview and the product ever disagree, this document wins.
+
+---
+
+## 9. Diagrams
+
+Architecture pictures use only these colours. The theme file is `docs/architecture/diagrams/theme.json`. A gate script fails any picture that paints another colour.
+
+| Meaning | Colour |
+|---|---|
+| Canvas | Cream `#E4E6D9` |
+| Slot and lane frames | Off White `#F7F3EF`, Sage `#BFCFB4` border |
+| Text and arrows | Ink Green `#263528`, Deep Green `#45654E` |
+| Box that is the same as before | White `#FFFFFF`, Deep Green border |
+| Box that is new in this phase | Lime Soft `#CFD998`, thick Ink Green border |
+| Box for later | Off White, dashed Muted Gray `#706F70` border |
+| Arrow labels | Lime `#C8D888` |
+| Decisions | Warm Yellow `#FFDE59` |
+| Archive slot | Earth Mid `#966E3A` border |
+| Learning loop slot | Olive `#7F9743` border |
+| Order status steps | The status colours in section 6 |
+

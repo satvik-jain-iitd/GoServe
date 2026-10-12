@@ -3,6 +3,8 @@
 **Date:** 11 Oct 2026
 **Plain English.** This is the whole-system plan from start to end. It is a plan, not code.
 
+> **Update 13 Oct 2026 (ADR-004).** The phases and the tools are now in `docs/architecture/evolution.md`. Changes from this page: Supabase replaces self-hosted Postgres, our own API and our own live channel; the PWA framework is proposed in ADR-006; Laya replaces Jev over time (ADR-005). The rules in sections 1, 5, 7 and 9 still hold.
+
 ---
 
 ## 1. Why this document exists
