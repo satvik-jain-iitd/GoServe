@@ -1,14 +1,16 @@
 // Story #18, scenario S2: design/tokens.json is the one source of truth for colours.
 // palette.ts, tokens.css and the diagram theme must match it.
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { CORE, SUPPORTING, STATUS } from "../../src/data/palette";
 
 const root = resolve(__dirname, "../../..");
 const tokens = JSON.parse(readFileSync(resolve(root, "design/tokens.json"), "utf8"));
 const css = readFileSync(resolve(root, "site/src/styles/tokens.css"), "utf8").toUpperCase();
-const theme = JSON.parse(readFileSync(resolve(root, "docs/architecture/diagrams/theme.json"), "utf8"));
+// The diagram theme lives with the docs on `dev`; `main` carries code only, so it may be absent there.
+const themePath = resolve(root, "docs/architecture/diagrams/theme.json");
+const theme = existsSync(themePath) ? JSON.parse(readFileSync(themePath, "utf8")) : { allowed: [] };
 const up = (h: string) => h.toUpperCase();
 const all = new Set<string>(
   [...Object.values(tokens.color.core), ...Object.values(tokens.color.supporting), ...Object.values(tokens.color.status),
