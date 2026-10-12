@@ -83,7 +83,7 @@ test.describe("pre-registration form", () => {
     // Fill correctly.
     await page.fill("#pr-name", "Satvik Jain");
     await page.fill("#pr-email", "satvik@example.com");
-    await page.fill("#pr-city", "Kota");
+    await page.fill("#pr-city", "Delhi");
     await page.selectOption("#pr-role", "investor");
     await page.getByRole("button", { name: /pre-register my interest/i }).click();
 
@@ -123,6 +123,25 @@ test.describe("accessibility", () => {
         (v) => v.impact === "serious" || v.impact === "critical",
       );
       expect(bad.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
+    });
+  }
+});
+
+// Story #18, scenario S1: the pilot starts in Delhi (the founder is based in Kota).
+test.describe("first city", () => {
+  test("home and pre-register name Delhi as the first city", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("main")).toContainText("Delhi");
+    await expect(page.locator("footer")).toContainText("Delhi");
+    await page.goto("/pre-register");
+    await expect(page.locator("main")).toContainText("Delhi");
+  });
+
+  for (const path of PAGES) {
+    test(`${path} never says Kota`, async ({ page }) => {
+      await page.goto(path);
+      const html = await page.content();
+      expect(html).not.toMatch(/Kota/);
     });
   }
 });
