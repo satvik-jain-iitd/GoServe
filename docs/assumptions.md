@@ -45,3 +45,4 @@ Every assumption we are working from, stated plainly. If an assumption turns out
 | A35 | GoServe accounts move to the owner's development identity `klickbae8yt@gmail.com`: new Supabase, Vercel and UptimeRobot accounts; GitHub dev account `klickbae8yt-star`. Supersedes A22 for new services. | Owner, 13 Oct. | Confirmed |
 | A36 | Claude commits, pushes and opens PRs only as the development account; `satvik-jain-iitd` reviews and merges every PR. | Owner, 13 Oct. | Confirmed |
 | A37 | `main` holds only run-critical code (site, design tokens and brand files, ops scripts, CI/deploy, README). All documentation lives on `dev`. | Owner, 13 Oct. | Confirmed |
+| A38 | `letsdwelo.in` (investor site, Pages project `goserve`, folder `site/`) is frozen: no edits, deploys or domain changes unless the owner asks. | Owner, 13 Oct. | Confirmed |
