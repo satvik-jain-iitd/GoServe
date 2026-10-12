@@ -81,4 +81,5 @@ Rule: read this first in every session, append before saying done.
 | 73 | 2026-10-13 | agent | Removed docs, plans, rules and the rulebook submodule from main (PR #27); wrote the code-only promotion rule (CLAUDE.md rule 17, PLAN.md); corrected the goserve.pages.dev mistake | main, CLAUDE.md, docs | none |
 | 74 | 2026-10-13 | owner | Said letsdwelo.in (investor site) must not be touched | chat | volunteered |
 | 75 | 2026-10-13 | agent | Wrote the freeze as CLAUDE.md rule 18 (covers site/ and its Pages project) | CLAUDE.md, docs | none |
+| 76 | 2026-10-13 | agent | Created Pages project goserve-app (classic Pages via --force; wrangler now delegates to Workers) → goserve-app.pages.dev; installed Cloudflare cf CLI at owner's request | Cloudflare | asked |
 | $LAST_STEP$ | | agent | ... | ... | ... |

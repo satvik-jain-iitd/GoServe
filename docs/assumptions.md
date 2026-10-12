@@ -46,4 +46,4 @@ Every assumption we are working from, stated plainly. If an assumption turns out
 | A36 | Claude commits, pushes and opens PRs only as the development account; `satvik-jain-iitd` reviews and merges every PR. | Owner, 13 Oct. | Confirmed |
 | A37 | `main` holds only run-critical code (site, design tokens and brand files, ops scripts, CI/deploy, README). All documentation lives on `dev`. | Owner, 13 Oct. | Confirmed |
 | A38 | `letsdwelo.in` (investor site, Pages project `goserve`, folder `site/`) is frozen: no edits, deploys or domain changes unless the owner asks. | Owner, 13 Oct. | Confirmed |
-| A39 | The app's address is Cloudflare's free `*.pages.dev` name for project `goserve-app` (exact name from the first deploy). letsdwelo.in stays the investor site only. | Owner, 13 Oct. | Confirmed |
+| A39 | The app's address is **`goserve-app.pages.dev`** (project created 13 Oct, no suffix). letsdwelo.in stays the investor site only. | Owner, 13 Oct. | Confirmed |

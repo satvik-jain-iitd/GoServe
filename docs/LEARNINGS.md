@@ -37,6 +37,7 @@ short. Say what happened and what to do next time.
 | 2026-10-11 | Tooling | The agent cannot view images. For PDFs use `pdftoppm` and `pdfplumber`, not `pymupdf`. |
 | 2026-10-13 | Supabase | Free plan: 2 projects per owner across orgs, 200 live connections, 2M live messages a month, 500 MB, paused after 1 week idle, no backups. |
 | 2026-10-13 | Vercel | Hobby is non-commercial only. A startup demo counts as commercial. |
+| 2026-10-13 | Cloudflare | `wrangler pages project create` now delegates to Workers and fails on an empty folder. `--force` creates a classic Pages project (only needed once). Read the real address from the create output. |
 | 2026-10-13 | Mermaid | With the ELK layout, box titles get crossed by arrows. Use a header box inside each group, linked with `~~~`. Edges are named `L_<from>_<to>_<n>`, so node ids must not contain `_`. |
 
 ## Process learnings

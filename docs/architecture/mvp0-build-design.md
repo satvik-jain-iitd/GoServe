@@ -100,7 +100,7 @@ Five workflows plus one scheduled job. Propose, test and promote workflows come 
 | Menu | ✅ Claude makes a Delhi sample menu (8–10 dishes, free photos) | None |
 | Logo and icon | ✅ In `design/brand/` | Send a vector logo if one exists |
 | PWA stack | ✅ React + Vite + TypeScript + Capacitor (ADR-006); code in `app/`; no custom backend (ADR-007) | None |
-| Cloudflare Pages project `goserve-app` | ✅ Claude creates it with wrangler (zero cost) | None |
+| Cloudflare Pages project `goserve-app` | ✅ Created 13 Oct (classic Pages, account klickbae8yt@gmail.com) → **`goserve-app.pages.dev`** (live after the first deploy) | None |
 | Uptime monitor | ⏳ Waiting | Sign up at UptimeRobot (free) and save `UPTIMEROBOT_API_KEY` in Secrets |
 | Test devices | ✅ Android emulation on the laptop + owner's iPhone + founder's Android for the final check | Share the link with the founder before the demo |
 | Founder business steps | Not needed for MVP 0 | Start the checklist in `docs/founder-checklist.md` |
