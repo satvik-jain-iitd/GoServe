@@ -42,4 +42,6 @@ Rule: read this first in every session, append before saying done.
 | 34 | 2026-10-11 | agent | Created the GoServeBot n8n credential, pointed both workflows at it, verified a live alert | issue #8, n8n workflows, executions | none |
 | 35 | 2026-10-11 | owner | Asked for learnings and mistakes to be documented, and for a clear place to keep them | chat | volunteered |
 | 36 | 2026-10-11 | agent | Added docs/LEARNINGS.md and today's journal, registered the file in PLAN.md and CLAUDE.md | issue #10, docs | none |
+| 37 | 2026-10-11 | owner | Asked for a per-phase architecture components document with a Claude expand prompt | chat | volunteered |
+| 38 | 2026-10-11 | agent | Added docs/ARCHITECTURE_COMPONENTS.md (tables A to H) with the expand prompt | issue #13, docs | none |
 | $LAST_STEP$ | | agent | ... | ... | ... |

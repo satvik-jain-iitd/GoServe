@@ -69,6 +69,7 @@ Rules:
 | `docs/PLAN.md` | This process. |
 | `docs/process-trace.md` | One row per step. Read first every session, append before done. |
 | `docs/LEARNINGS.md` | Every learning and mistake, one per row. Read it with the process trace. |
+| `docs/ARCHITECTURE_COMPONENTS.md` | Every system part, one flat list now, to expand per phase later. |
 | `docs/discussions/YYYY-MM-DD.md` | Bullet points per conversation. The "why". |
 | `docs/decisions/ADR-NNN.md` | Every architecture or scope decision. |
 | `docs/demos/D<n>.md` | What each increment shows and how to run it. |
