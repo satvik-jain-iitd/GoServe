@@ -33,7 +33,7 @@ Every assumption we are working from, stated plainly. If an assumption turns out
 | A23 | Jev's answers are the owner's output and may train Laya. | Owner (13 Oct). | Confirmed |
 | A24 | MVP 0 back end: n8n is the logic, Supabase holds data and live updates (supersedes A10 and A16 for the product app). | Owner (13 Oct), ADR-004. | Confirmed |
 | A25 | The enterprise architecture folder has no concrete privacy rules, so we use out-of-the-box controls. | Read in full, 13 Oct. | Confirmed |
-| A26 | The app lives at `goserve-app.pages.dev`; `goserve.pages.dev` and `letsdwelo.in` are the investor site. | Owner Q&A, 13 Oct. Checked (HTTP 200 on goserve.pages.dev). | Confirmed |
+| A26 | **Wrong (13 Oct, deploy log):** `goserve.pages.dev` is not ours; our site project is `goserve-arw.pages.dev` + `letsdwelo.in`. The app project will be `goserve-app` (real address from its first deploy; may get a suffix). Old text: The app lives at `goserve-app.pages.dev`; `goserve.pages.dev` and `letsdwelo.in` are the investor site. | Owner Q&A, 13 Oct. Checked (HTTP 200 on goserve.pages.dev). | Confirmed |
 | A27 | Jev spend for GoServe is capped at $2 by a GoServe-only OpenRouter key. | Owner, 13 Oct. Key limit read: 2. | Verified |
 | A28 | The owner already has: a Razorpay account (KYC not done), a company with GST, a Google Cloud account, a Vercel account (not used). | Owner Q&A, 13 Oct. | Confirmed |
 | A29 | The founder has not started FSSAI, the Delhi kitchen, DLT or WhatsApp Business. | Owner Q&A, 13 Oct. | Confirmed |
@@ -44,3 +44,4 @@ Every assumption we are working from, stated plainly. If an assumption turns out
 | A34 | We build dispatch, the rider app, the kitchen screen and referral/loyalty; we buy payouts, KYC checks and call masking. | Research (operations-tech-deep), 13 Oct. To confirm with the owner. | Open |
 | A35 | GoServe accounts move to the owner's development identity `klickbae8yt@gmail.com`: new Supabase, Vercel and UptimeRobot accounts; GitHub dev account `klickbae8yt-star`. Supersedes A22 for new services. | Owner, 13 Oct. | Confirmed |
 | A36 | Claude commits, pushes and opens PRs only as the development account; `satvik-jain-iitd` reviews and merges every PR. | Owner, 13 Oct. | Confirmed |
+| A37 | `main` holds only run-critical code (site, design tokens and brand files, ops scripts, CI/deploy, README). All documentation lives on `dev`. | Owner, 13 Oct. | Confirmed |
