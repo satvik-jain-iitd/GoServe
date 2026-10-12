@@ -82,4 +82,6 @@ Rule: read this first in every session, append before saying done.
 | 74 | 2026-10-13 | owner | Said letsdwelo.in (investor site) must not be touched | chat | volunteered |
 | 75 | 2026-10-13 | agent | Wrote the freeze as CLAUDE.md rule 18 (covers site/ and its Pages project) | CLAUDE.md, docs | none |
 | 76 | 2026-10-13 | agent | Created Pages project goserve-app (classic Pages via --force; wrangler now delegates to Workers) → goserve-app.pages.dev; installed Cloudflare cf CLI at owner's request | Cloudflare | asked |
+| 77 | 2026-10-13 | owner | Chose dev site on Vercel + Supabase, production on Cloudflare goserve-app.pages.dev from main | chat | volunteered |
+| 78 | 2026-10-13 | agent | Wrote ADR-008 with the Vercel terms risk and the one-handler rule | docs/decisions/ADR-008 | none |
 | $LAST_STEP$ | | agent | ... | ... | ... |
