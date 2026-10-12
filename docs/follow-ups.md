@@ -27,7 +27,7 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F21 | Turn on n8n execution pruning (needs an owner yes; restarts n8n). | Owner | Open |
 | F22 | Start FSSAI licence and Razorpay KYC. | Founder | Open |
 | F23 | Start SMS DLT registration and WhatsApp Business approval. | Founder | Open |
-| F24 | Buy the GoServe domain for the app. **Do not move or change letsdwelo.in** (owner, 13 Oct 2026). | Founder | Open |
+| F24 | Buy a GoServe domain. Later (owner's call) move the investor site there and give `letsdwelo.in` back to the Dropshipping project (Dwelo). Until then, do not change letsdwelo.in. | Founder | Open |
 | F25 | Move GoServe services to GoServe-owned accounts later. | Owner | Open |
 | F26 | Measure Laya speed on the Oracle ARM CPU before any claim. | Agent | Open |
 | F27 | Check the DPDP Rules dates and what the pilot must do. | Agent | Open |
