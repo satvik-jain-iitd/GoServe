@@ -80,12 +80,12 @@ Phases (see `docs/architecture/evolution.md`): **MVP0** investor demo (≤10 use
 
 | Component | What it does | Runs on | First status | MVP0 | MVP1 | MVP2 | MVP3 | MVP4 | Evidence |
 |---|---|---|---|---|---|---|---|---|---|
-| Static host | Doorway site | Cloudflare Pages | OWNED (live) | USE — site stays on project `goserve` (letsdwelo.in and goserve.pages.dev); the app gets its own free project `goserve-app` (goserve-app.pages.dev) | USE | USE | USE | USE | VERIFIED (site live) |
+| Static host | Doorway site | Cloudflare Pages | OWNED (live) | USE — site stays on project `goserve` (letsdwelo.in; project address goserve-arw.pages.dev); the app gets its own free project `goserve-app` (goserve-app.pages.dev) | USE | USE | USE | USE | VERIFIED (site live) |
 | CDN + TLS | Free HTTPS, fast | Cloudflare | OWNED | USE | USE | USE | USE | USE | VERIFIED |
 | Reverse proxy | Route API + live | nginx (Oracle) | OWNED | NOT USED for the app — front door is a Pages Function | NOT USED | NOT USED | NOT USED | revisit | INFERRED (ADR-004) |
 | Tunnel | Public entry to Oracle | Cloudflare Tunnel | OWNED | USE — reaches n8n | USE | USE — side jobs only | USE | USE | VERIFIED (n8n.LinkRight.in live) |
 | DNS + WAF | Domain, protection | Cloudflare | OWNED | USE | USE | USE | USE — + rate limit, bot check | USE | VERIFIED |
-| Temporary domain | letsdwelo.in | Cloudflare | OWNED | NOT USED for the app — `goserve-app.pages.dev` instead (letsdwelo is another brand; `goserve.pages.dev` is the site) | site only | retire | retire | retire | INFERRED |
+| Temporary domain | letsdwelo.in | Cloudflare | OWNED | NOT USED for the app — `goserve-app.pages.dev` instead (letsdwelo is another brand; `goserve.pages.dev` belongs to someone else) | site only | retire | retire | retire | INFERRED |
 | Real brand domain + email | GoServe domain, hello@ | Registrar | PROCURE | NOT USED — pages.dev is fine for the demo | PROCURE | USE | USE | USE | UNKNOWN (price not checked) |
 | API/PWA subdomains | app and api hostnames | DNS | DECIDE | NOT USED | USE — `app.` on the real domain | USE | USE | USE | INFERRED |
 | Pages Function front door *(new, MVP0)* | `/api/*`: checks a token, limits spam, forwards to the brain | Cloudflare | — | USE — on `goserve-app`; free 100,000 requests a day | USE | USE | USE | USE | INFERRED |

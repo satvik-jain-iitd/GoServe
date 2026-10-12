@@ -22,6 +22,7 @@ short. Say what happened and what to do next time.
 | 2026-10-13 | Docs | I expanded the components file but left its "Prompt for Claude" in place, so it looked unfinished. | When a doc's instruction block is done, replace it with a "done + how to keep current" note in the same change. |
 | 2026-10-13 | n8n rules | I read "fix the workflow count up front" as a hard cap. The owner meant: no throwaway or duplicate workflows. | The rulebook now says "a registry, not a cap". New use case = new workflow, registered. |
 | 2026-10-13 | Hosting | I assumed `goserve.pages.dev` was free for the app. It already serves the investor site (same project as letsdwelo.in). | Every Pages project has its own .pages.dev name. Check the address with curl before planning it. |
+| 2026-10-13 | Hosting | I then told the owner `goserve.pages.dev` was our site because it returned a page titled GoServe. The deploy log showed our project is `goserve-arw.pages.dev`; the other site is someone else's. | Never infer ownership from a page title. Read the address from our own deploy log or the Cloudflare API. |
 
 ## Tooling learnings
 

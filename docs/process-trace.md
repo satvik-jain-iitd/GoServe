@@ -77,4 +77,6 @@ Rule: read this first in every session, append before saying done.
 | 69 | 2026-10-13 | agent | Wrote the build-vs-review account rule into CLAUDE.md rule 4, PLAN.md and global CLAUDE.md §18 | CLAUDE.md, docs/PLAN.md | none |
 | 70 | 2026-10-13 | owner | Asked for a one-time cleanup: open PRs merged, issues closed, runnable code to main, docs on dev, a clear README | chat | volunteered |
 | 71 | 2026-10-13 | agent | One-time cleanup: merged #24, closed #12, deleted stale branches, added README, promoted code-only to main, closed all issues (owner authorised Claude to merge this once) | GitHub | asked |
+| 72 | 2026-10-13 | owner | Asked that only run-critical code lives on main | chat | volunteered |
+| 73 | 2026-10-13 | agent | Removed docs, plans, rules and the rulebook submodule from main (PR #27); wrote the code-only promotion rule (CLAUDE.md rule 17, PLAN.md); corrected the goserve.pages.dev mistake | main, CLAUDE.md, docs | none |
 | $LAST_STEP$ | | agent | ... | ... | ... |

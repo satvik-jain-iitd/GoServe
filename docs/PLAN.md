@@ -20,7 +20,7 @@ This process is adapted from our rulebook, the cloned `shipquick_latest` reposit
 
 | Branch | Role | Who merges |
 |---|---|---|
-| `main` | Release-ready. Protected. | Only the owner. |
+| `main` | Release-ready, **run-critical code only** (no docs). Protected. | Only the owner. |
 | `dev` | Integration. All work lands here first. | The owner (`satvik-jain-iitd`), after review and green CI. |
 | `feat/<issue-number>-<slug>` | One branch per story, cut from `dev`. Pushed by the development account (`klickbae8yt-star`). | The owner, back into `dev`. |
 
@@ -29,7 +29,13 @@ Rules:
 - One feature branch per story. The name must say what the feature does.
 - **Two accounts:** Claude works as the development account (`klickbae8yt-star`): it commits, pushes and opens every PR. `satvik-jain-iitd` reviews and merges every PR. Claude never merges.
 - PR feat → dev: opened by the development account, self-reviewed with a checklist comment, CI green, then reviewed and merged by the owner.
-- PR dev → main: opened by Claude at each increment, with the demo notes. **The owner merges.**
+- PR → main at each increment: **code only** (owner, 13 Oct 2026). The development account cuts `release/<name>` from `main`, takes only the run-critical paths from `dev`, and opens the PR with the demo notes. **The owner merges.** Never merge `dev` into `main` directly (that would bring the docs).
+
+  ```bash
+  git checkout -b release/<name> origin/main
+  git checkout origin/dev -- site design/tokens.json design/brand ops .github .gitignore README.md
+  git commit -m "chore: promote <what> to main"
+  ```
 - I never push directly to `main`.
 - PR template: issue link, what changed, scenarios covered, test output pasted, demo, decisions made (ADR link), ideas noted.
 

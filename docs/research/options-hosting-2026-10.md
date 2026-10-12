@@ -24,10 +24,11 @@ change, so you can see it before it goes live.
 ## Recommendation
 
 - **MVP 0 to MVP 3: Cloudflare Pages.** App at `goserve-app.pages.dev` (its own free project, so
-  the investor site at `goserve.pages.dev` / `letsdwelo.in` is never touched by an app deploy).
+  the investor site (`letsdwelo.in`, project address `goserve-arw.pages.dev`) is never touched by an app deploy).
 - **Vercel:** keep for personal projects, or if we ever move to Next.js and pay for Pro.
 
 ## Address facts (checked 13 Oct 2026)
 
-- `goserve.pages.dev` already serves our investor site (HTTP 200). `letsdwelo.in` points to the same project.
+- **Correction (deploy log, 13 Oct 2026):** our Pages project `goserve` lives at **`goserve-arw.pages.dev`** — Cloudflare added a suffix because the name `goserve` was taken. `goserve.pages.dev` is **not ours**. `letsdwelo.in` points to our project.
+- New Pages projects may also get a suffix; read the real address from the first deploy log.
 - `goserve-app.pages.dev` had no site on it, so the name is free to take.
