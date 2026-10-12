@@ -3,6 +3,10 @@
 **Date read:** 13 Oct 2026. Tiers: **A** = vendor page, the law or source code; **C** = blog, review site or forum without proof.
 Conf = 0 to 1. A vendor page proves "they say so". UNKNOWN = not found.
 
+**Full research (not condensed):** `docs/research/operations-tech-deep-2026-10.md`.
+
+> **Correction (13 Oct, deep pass):** Odoo's external API works only on the Custom plan, so the n8n Odoo node cannot reach a free or Standard database. If you take Odoo One App Free, choose *Manufacturing* (it brings Inventory free). The deep pass leans to **ERPNext** for MVP 2 stock, purchase and recipes. Attio stays out of operations.
+
 Technology is not only the order app. It is also the tools that run the business: leads, support, stock, money, people.
 We build the order system. We use ready tools for the rest.
 

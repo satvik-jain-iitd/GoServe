@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed. Decided at the start of the MVP 0 build.
+Accepted (owner, 13 Oct 2026): **React + Vite + TypeScript + Capacitor**. The first proposal (Preact) is kept below as history.
 
 ## Date
 
@@ -28,3 +28,12 @@ Vite + Preact + TypeScript + `vite-plugin-pwa`, on Cloudflare Pages, with a Page
 
 - The site (Astro) and the app stay separate builds in one repo, or the app gets its own folder.
 - CI gets lint, type check, unit and end-to-end jobs for the app, like the site.
+
+## Decision (13 Oct 2026)
+
+The owner asked for a frontend that stays the same when we move from the PWA to Android and iOS apps.
+
+- **React + Vite + TypeScript**, with `vite-plugin-pwa` for the installable PWA, hosted on Cloudflare Pages (`goserve-app`).
+- **Capacitor** wraps the same code as Android and iOS apps when we need the stores or native features (for example, background GPS for riders in MVP 2).
+- React instead of Preact: the most used framework, and no compatibility layer with Capacitor plugins.
+- Sources and the comparison: `docs/research/options-frontend-backend-2026-10.md`.

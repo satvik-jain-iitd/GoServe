@@ -16,3 +16,6 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Components file has no "Prompt for Claude" and keeps every first row (138 → 145 table lines) | #20 | S1 | Automatic (grep) | `docs/ARCHITECTURE_COMPONENTS.md` | Pass |
 | Every non-owned part has researched options with tier, confidence and a recommendation | #20 | S2 | Manual review | `docs/research/options-*-2026-10.md` | Pass |
 | MVP 0 readiness table marks each dependency | #20 | S3 | Manual review | `docs/architecture/mvp0-build-design.md` | Pass |
+| Full ops research saved with tiers and sources (both parts) | #22 | S1 | Manual review | `docs/research/operations-tech-deep-2026-10.md` | Pass |
+| ADR-006, ADR-007 and the components file match the MVP 0 Q&A | #22 | S2 | Manual review | those files | Pass |
+| CLAUDE.md and PLAN.md point to the phase gate | #22 | S3 | Automatic (grep "phase-gate") | `CLAUDE.md`, `docs/PLAN.md` | Pass |

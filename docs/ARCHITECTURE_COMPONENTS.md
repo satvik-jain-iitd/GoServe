@@ -27,6 +27,7 @@ From now on:
 - 11 Oct 2026 — first flat list (tables A to H).
 - 13 Oct 2026 — expanded to MVP0–MVP4; procurement tables; Supabase chosen (ADR-004).
 - 13 Oct 2026 — updated from the owner Q&A: app URL, Jev key and cap, owned accounts, test devices, founder status.
+- 13 Oct 2026 — MVP 0 phase gate: Mumbai region, React + Vite + Capacitor, no custom backend, UptimeRobot, app/ folder (see `docs/architecture/phase-gate.md`).
 
 ---
 
@@ -59,7 +60,7 @@ Phases (see `docs/architecture/evolution.md`): **MVP0** investor demo (≤10 use
 
 | Component | What it does | Runs on | First status | MVP0 | MVP1 | MVP2 | MVP3 | MVP4 | Evidence |
 |---|---|---|---|---|---|---|---|---|---|
-| PWA app (Next.js + TypeScript) | One codebase, role screens | Browser | DECIDE (stack ADR pending) | USE — stack per ADR-006 (Vite + Preact proposed, not Next.js) | USE | USE | USE | USE — wrapped as native apps | INFERRED (ADR-006 proposed) |
+| PWA app (Next.js + TypeScript) | One codebase, role screens | Browser | DECIDE (stack ADR pending) | USE — React + Vite + TypeScript + Capacitor (ADR-006 accepted 13 Oct); code in `app/` | USE | USE | USE | USE — wrapped as native apps | INFERRED (ADR-006 proposed) |
 | M3 design system + tokens | Look and feel | Browser | OWNED (tokens ready) | USE | USE | USE | USE | USE | VERIFIED (site/src/styles/tokens.css) |
 | Web app manifest + service worker | Home-screen install | Browser | DECIDE | USE — install on Android, offline menu | USE | USE | USE | USE | INFERRED |
 | Live client (SSE/WebSocket) | Status without refresh | Browser | DECIDE | USE — Supabase Realtime client | USE | USE — + rider location | USE — Pro limits | USE | VERIFIED (Supabase realtime limits page, 13 Oct) |
@@ -93,7 +94,7 @@ Phases (see `docs/architecture/evolution.md`): **MVP0** investor demo (≤10 use
 
 | Component | What it does | Runs on | First status | MVP0 | MVP1 | MVP2 | MVP3 | MVP4 | Evidence |
 |---|---|---|---|---|---|---|---|---|---|
-| API service (Hono, TS) | All logic, REST | Oracle (pm2) | DECIDE (stack ADR) | NOT USED — n8n is the brain | NOT USED | NOT USED — Supabase functions take the hot path | NOT USED | revisit as an order service | INFERRED (ADR-004) |
+| API service (Hono, TS) | All logic, REST | Oracle (pm2) | DECIDE (stack ADR) | NOT USED — n8n is the brain (ADR-007: no custom server in MVP 0–2) | NOT USED | NOT USED — Supabase functions take the hot path | NOT USED | revisit as an order service | INFERRED (ADR-004) |
 | Order domain module | Event-driven core | Oracle | DECIDE | USE — n8n SUB 11 and 12 | USE | USE — Supabase functions | USE | USE — order service | INFERRED |
 | Event bus + job queue | Order events, retries | Oracle / Redis | DECIDE | NOT USED — Supabase events table + Realtime | NOT USED | NOT USED | NOT USED | USE — real queue | INFERRED |
 | Background workers | Dispatch, notify, timers | Oracle | DECIDE | USE — n8n | USE | USE — n8n side jobs | USE | USE — workers | INFERRED |
@@ -159,7 +160,7 @@ Phases (see `docs/architecture/evolution.md`): **MVP0** investor demo (≤10 use
 | CI/CD | Test + Pages deploy | GitHub Actions | OWNED | USE — + app jobs | USE | USE | USE | USE | VERIFIED |
 | Secrets store | Keys, tokens | GitHub + local folder | OWNED | USE | USE | USE | USE | USE | VERIFIED |
 | Monitoring / error alerts | Catch failures | Sentry free OR n8n | PROCURE/decide | USE — n8n error workflow to Telegram | USE — + Sentry free | USE | USE | USE | INFERRED |
-| Uptime checks | Ping site/API | Cloudflare / UptimeRobot | FREE-ACCOUNT | USE — health page | FREE-ACCOUNT | USE | USE | USE | INFERRED |
+| Uptime checks | Ping site/API | Cloudflare / UptimeRobot | FREE-ACCOUNT | USE — UptimeRobot free (owner signs up, saves `UPTIMEROBOT_API_KEY`; Claude adds monitors + Telegram alert) | FREE-ACCOUNT | USE | USE | USE | INFERRED |
 | Load testing | Year-1 scale test | k6 / Artillery | FREE (local) | NOT USED | USE — simulator | USE | USE — 2× peak | USE | INFERRED |
 | Branch protection | Guard main/dev | GitHub | OWNED | USE | USE | USE | USE | USE | VERIFIED |
 | Diagram gate *(new, MVP0)* | Checks architecture pictures (crossings, colours, overlaps) | Laptop | — | USE | USE | USE | USE | USE | VERIFIED (`docs/architecture/diagrams/gate-report.json`) |
@@ -171,7 +172,7 @@ Phases (see `docs/architecture/evolution.md`): **MVP0** investor demo (≤10 use
 | Server | Runs API/DB/workers | Oracle (4 vCPU) | OWNED | USE — n8n | USE — + archive | USE — side jobs, Laya | USE | USE | VERIFIED |
 | Cloudflare account + token | Host, DNS, tunnel | Owner | OWNED | USE | USE | USE | USE | USE | VERIFIED |
 | Firebase project (FCM) | App push | Owner | FREE-ACCOUNT | NOT USED | FREE-ACCOUNT | USE | USE | USE | INFERRED |
-| Supabase project | DB + Auth + Realtime (if chosen) | Owner | FREE-ACCOUNT | FREE-ACCOUNT — new project "goserve"; owner says one old project is paused and `sync.linkright.in` is live; check with the access token, then create | USE | USE | PAID — Pro | USE | VERIFIED (limit rule, 13 Oct) |
+| Supabase project | DB + Auth + Realtime (if chosen) | Owner | FREE-ACCOUNT | FREE-ACCOUNT — new project "goserve" in **Mumbai (ap-south-1)**; owner says one old project is paused and `sync.linkright.in` is live; check with the access token, then create | USE | USE | PAID — Pro | USE | VERIFIED (limit rule, 13 Oct) |
 | Upstash Redis | Cache/queue | Owner | FREE-ACCOUNT | NOT USED | NOT USED | NOT USED | NOT USED | revisit | INFERRED |
 | Payment gateway + KYC | Real money | Bank/gateway | **APPROVAL** | NOT USED | APPROVAL — Razorpay account OWNED (owner, 13 Oct); KYC not started | USE | USE | USE | INFERRED (lead time weeks) |
 | SMS sender / DLT (India) | OTP + updates | Telecom | **APPROVAL** | NOT USED | APPROVAL — start | USE | USE | USE | INFERRED |

@@ -44,3 +44,9 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F38 | Ask Razorpay and Cashfree for a lower UPI rate before MVP 2. | Founder | Open |
 | F39 | Test OSRM and Laya RAM and speed on the Oracle ARM box. | Agent | Open |
 | F40 | Ask the founder for a vector (SVG) logo, if one exists. | Founder | Open |
+| F41 | Run `npx wrangler login` once (the saved Cloudflare login expired) so Claude can create the `goserve-app` Pages project. | Owner | Open |
+| F42 | Sign up for UptimeRobot (free) and save `UPTIMEROBOT_API_KEY` in Secrets; Claude then adds monitors with Telegram alerts. | Owner | Open |
+| F43 | Get DPIIT startup recognition (free); it unlocks Zoho credits and other startup programs. | Founder | Open |
+| F44 | One legal opinion: SS Code aggregator status (gig-worker contribution) and FSSAI e-commerce FBO central licence. | Founder | Open |
+| F45 | Get 2–3 call-masking quotes (Exotel, Knowlarity, Pidge) before MVP 2. | Founder | Open |
+| F46 | MVP 1 test: 2–3 own riders + a 3PL for one month; compare cost per drop. | Owner + founder | Open |
