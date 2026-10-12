@@ -50,3 +50,8 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F44 | One legal opinion: SS Code aggregator status (gig-worker contribution) and FSSAI e-commerce FBO central licence. | Founder | Open |
 | F45 | Get 2–3 call-masking quotes (Exotel, Knowlarity, Pidge) before MVP 2. | Founder | Open |
 | F46 | MVP 1 test: 2–3 own riders + a 3PL for one month; compare cost per drop. | Owner + founder | Open |
+| F47 | Tell Claude the exact GitHub username of the development account. | Owner | Open |
+| F48 | As `satvik-jain-iitd`: invite the development account to this repo with Write access; accept the invite from the dev account. | Owner | Open |
+| F49 | As the development account: create a fine-grained token for this repo (Contents, Pull requests, Issues, Workflows: read and write) and save it as `GH_DEV_TOKEN` in Secrets; Claude then logs `gh` in with it. | Owner | Open |
+| F50 | Turn on "require 1 approving review" for `dev` and `main` once the dev account works (so only the owner can merge). | Owner + agent | Open |
+| F51 | Vercel account on klickbae8yt: decide its job (the app is planned on Cloudflare Pages; Vercel Hobby is non-commercial only). | Owner | Open |

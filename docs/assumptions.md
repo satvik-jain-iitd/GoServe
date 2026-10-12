@@ -42,3 +42,5 @@ Every assumption we are working from, stated plainly. If an assumption turns out
 | A32 | Frontend is React + Vite + TypeScript + Capacitor; no custom backend server in MVP 0–2. | Owner, 13 Oct (ADR-006, ADR-007). | Confirmed |
 | A33 | Supabase project region is Mumbai (ap-south-1). | Owner, 13 Oct. | Confirmed |
 | A34 | We build dispatch, the rider app, the kitchen screen and referral/loyalty; we buy payouts, KYC checks and call masking. | Research (operations-tech-deep), 13 Oct. To confirm with the owner. | Open |
+| A35 | GoServe accounts move to the owner's development identity `klickbae8yt@gmail.com`: new Supabase, Vercel and UptimeRobot accounts; GitHub dev account `klickbae8yt-star`. Supersedes A22 for new services. | Owner, 13 Oct. | Confirmed |
+| A36 | Claude commits, pushes and opens PRs only as the development account; `satvik-jain-iitd` reviews and merges every PR. | Owner, 13 Oct. | Confirmed |
