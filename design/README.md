@@ -16,6 +16,19 @@ These copies must match it. A unit test checks the colours (`site/tests/unit/tok
 | `site/src/data/palette.ts` | The palette for the `/palette` page and contrast tests |
 | `docs/architecture/diagrams/theme.json` | Colours allowed in architecture diagrams |
 
+## Brand files (`design/brand/`)
+
+Cut from the investor deck cover (page 1, rendered at 300 dpi) on 13 Oct 2026.
+
+| File | Use |
+|---|---|
+| `goserve-logo.png` | Full logo ("Go" + pin + "Serve"), clear background. Headers, documents |
+| `goserve-logo-on-sage.png` | Full logo on the deck's sage background. Slides |
+| `goserve-mark.png` | The pin mark only, clear background. Small places |
+| `goserve-icon-512.png` | App icon: pin on cream, 512×512. PWA install icon, favicon source |
+
+These are raster cuts. If a vector (SVG) file of the logo exists, ask the founder for it and add it here.
+
 ## The rules and the story behind them
 
 - `docs/design-tokens.md` — where each colour came from (the investor deck), how it was

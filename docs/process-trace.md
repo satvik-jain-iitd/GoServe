@@ -61,4 +61,10 @@ Rule: read this first in every session, append before saying done.
 | 53 | 2026-10-13 | agent | Merged PR #17 to dev after CI green | PR #17 | none |
 | 54 | 2026-10-13 | owner | Asked to update the site to Delhi and keep all design files and tokens in the repo | chat | volunteered |
 | 55 | 2026-10-13 | agent | Story #18: tests red first, then the site says Delhi; added design/tokens.json and design/README.md with a matching test | site, design/ | none |
+| 56 | 2026-10-13 | owner | Said the components prompt was stale; asked for a Q&A on MVP 0 dependencies and researched options for all gaps | chat | volunteered |
+| 57 | 2026-10-13 | agent | Ran 4 Q&A rounds; checked Cloudflare, OpenRouter, Supabase docs; found goserve.pages.dev is the investor site | plan file | asked |
+| 58 | 2026-10-13 | owner | Gave a GoServe OpenRouter key with a $2 cap; chose goserve-app.pages.dev and Cloudflare; corrected the n8n workflow-count rule | chat | asked |
+| 59 | 2026-10-13 | agent | Saved the key to the vault (cap checked: $2); rewrote the rulebook count rule as a registry rule; synced copies and global files | ~/.claude, Secrets | none |
+| 60 | 2026-10-13 | agent | Refreshed ARCHITECTURE_COMPONENTS.md; cut the logo and app icon from the deck; wrote options research, founder checklist, MVP 0 readiness | docs, design/brand | none |
+| 61 | 2026-10-13 | owner | Asked for research on free operations tools (Odoo, Attio, CRMs) per phase | chat | volunteered |
 | $LAST_STEP$ | | agent | ... | ... | ... |

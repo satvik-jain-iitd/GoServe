@@ -10,23 +10,23 @@ Source of this list: `docs/SOLUTION_ARCHITECTURE.md`, `docs/MVP0_SPEC.md`,
 
 ---
 
-## Prompt for Claude (read this first)
+## How to keep this file current
 
-Claude: read this document at the start of any architecture or procurement
-session. This is only the first, basic version. Right now the tables below list
-each component once, for the whole system. Your job in later stages is to expand
-every table (A to H) into one column per phase — MVP0, MVP1, MVP2, MVP3, MVP4 —
-so each row shows whether that component is needed in that phase, deferred, or
-not used at all. Keep the same rows, the same A to H grouping, and the same
-plain English. For each phase, add a short status and one line on what changes
-in that phase (for example: "MVP0 faked, MVP1 real"). Never delete a row; if a
-component appears later, append it and mark the phase it starts in. When you
-expand it, keep secrets and tokens out of the file, and keep every claim marked
-VERIFIED, INFERRED, or UNKNOWN.
+The per-phase expansion asked for in the first version is **done** (13 Oct 2026):
+tables A to H have MVP0–MVP4 columns, new rows carry their start phase, the open
+decision is closed, and procurement tables are below. The first "Prompt for Claude"
+was removed because its job is finished.
 
-**Expansion log:** 13 Oct 2026 — tables A to H expanded to MVP0–MVP4 columns;
-new rows appended with their start phase; open decision closed (ADR-004);
-procurement tables added. The first flat status is kept in the "First status" column.
+From now on:
+- When a phase starts, or a tool or an account changes, update that row and its evidence tag.
+- Never delete a row. A dropped part stays, marked NOT USED with the reason.
+- Keep secrets out of this file. Mark every claim VERIFIED, INFERRED or UNKNOWN.
+- Options for parts we do not own yet live in `docs/research/options-*-2026-10.md`.
+
+**Change log**
+- 11 Oct 2026 — first flat list (tables A to H).
+- 13 Oct 2026 — expanded to MVP0–MVP4; procurement tables; Supabase chosen (ADR-004).
+- 13 Oct 2026 — updated from the owner Q&A: app URL, Jev key and cap, owned accounts, test devices, founder status.
 
 ---
 
@@ -70,20 +70,23 @@ Phases (see `docs/architecture/evolution.md`): **MVP0** investor demo (≤10 use
 | Demo autopilot *(new, starts MVP0)* | Plays the full order story on the phone, even offline | Browser | — | USE | USE — demo mode only | USE — demo mode only | USE — demo mode only | USE | INFERRED |
 | Split view + session space *(new, MVP0)* | Customer and kitchen on one phone; each demo session sees only its own orders | Browser + database | — | USE | NOT USED — real roles | NOT USED | NOT USED | NOT USED | INFERRED |
 | Rider app wrapper (Play Store, TWA) *(new, MVP2)* | Keeps rider tracking alive on Android | Android | — | NOT USED | NOT USED | USE if riders lock screens | USE | USE — native app | INFERRED |
+| Sample menu and photos *(new, MVP0)* | Delhi demo menu, 8–10 dishes | Supabase + free photos | — | USE — made by Claude (owner, 13 Oct) | NOT USED — real menu | NOT USED | NOT USED | NOT USED | VERIFIED (owner answer); photo licence in `docs/research/options-mvp0-mvp1-2026-10.md` |
+| Logo *(new, MVP0)* | GoServe mark in the app | `design/` | — | USE — taken from the investor deck | USE | USE | USE | USE | VERIFIED (owner answer) |
+| Test devices *(new, MVP0)* | Where we test before the founder demos | Laptop + phones | — | USE — Android emulation (Playwright) + owner's iPhone (Safari, Add to Home Screen) + final check on the founder's Android | USE | USE | USE | USE | VERIFIED (owner answer: only an iPhone at hand) |
 
 ## B. Edge / Delivery
 
 | Component | What it does | Runs on | First status | MVP0 | MVP1 | MVP2 | MVP3 | MVP4 | Evidence |
 |---|---|---|---|---|---|---|---|---|---|
-| Static host | Doorway site | Cloudflare Pages | OWNED (live) | USE — also hosts the app | USE | USE | USE | USE | VERIFIED (site live) |
+| Static host | Doorway site | Cloudflare Pages | OWNED (live) | USE — site stays on project `goserve` (letsdwelo.in and goserve.pages.dev); the app gets its own free project `goserve-app` (goserve-app.pages.dev) | USE | USE | USE | USE | VERIFIED (site live) |
 | CDN + TLS | Free HTTPS, fast | Cloudflare | OWNED | USE | USE | USE | USE | USE | VERIFIED |
 | Reverse proxy | Route API + live | nginx (Oracle) | OWNED | NOT USED for the app — front door is a Pages Function | NOT USED | NOT USED | NOT USED | revisit | INFERRED (ADR-004) |
 | Tunnel | Public entry to Oracle | Cloudflare Tunnel | OWNED | USE — reaches n8n | USE | USE — side jobs only | USE | USE | VERIFIED (n8n.LinkRight.in live) |
 | DNS + WAF | Domain, protection | Cloudflare | OWNED | USE | USE | USE | USE — + rate limit, bot check | USE | VERIFIED |
-| Temporary domain | letsdwelo.in | Cloudflare | OWNED | NOT USED for the app — `goserve.pages.dev` instead (letsdwelo is another brand) | site only | retire | retire | retire | INFERRED |
+| Temporary domain | letsdwelo.in | Cloudflare | OWNED | NOT USED for the app — `goserve-app.pages.dev` instead (letsdwelo is another brand; `goserve.pages.dev` is the site) | site only | retire | retire | retire | INFERRED |
 | Real brand domain + email | GoServe domain, hello@ | Registrar | PROCURE | NOT USED — pages.dev is fine for the demo | PROCURE | USE | USE | USE | UNKNOWN (price not checked) |
 | API/PWA subdomains | app and api hostnames | DNS | DECIDE | NOT USED | USE — `app.` on the real domain | USE | USE | USE | INFERRED |
-| Pages Function front door *(new, MVP0)* | `/api/*`: checks a token, limits spam, forwards to the brain | Cloudflare | — | USE | USE | USE | USE | USE | INFERRED |
+| Pages Function front door *(new, MVP0)* | `/api/*`: checks a token, limits spam, forwards to the brain | Cloudflare | — | USE — on `goserve-app`; free 100,000 requests a day | USE | USE | USE | USE | INFERRED |
 | Health check page *(new, MVP0)* | One page that checks Supabase, n8n and Jev before a demo | Cloudflare | — | USE | USE | USE | USE | USE | INFERRED |
 
 ## C. Backend / Application
@@ -136,7 +139,7 @@ Phases (see `docs/architecture/evolution.md`): **MVP0** investor demo (≤10 use
 | n8n | MVP0 backend + lead forms | Oracle | OWNED (live) | USE — the brain | USE | USE — side jobs only | USE | revisit | VERIFIED (live) |
 | n8n webhooks | Form/order endpoints | Oracle | OWNED (live) | USE — behind the front door | USE | USE | USE | USE | VERIFIED |
 | Telegram bot @GoServeBot | Instant alerts | Telegram | OWNED (live) | USE — alerts + scorecard | USE — + thumbs for labels | USE | USE | USE | VERIFIED (live alert, 11 Oct) |
-| OpenRouter account + key | Jev + free models | SaaS | OWNED | USE | USE | USE | USE — backup only | NOT USED if Laya wins | VERIFIED |
+| OpenRouter account + key | Jev + free models | SaaS | OWNED | USE — GoServe-only key `GOSERVE_OPENROUTER_KEY`, hard cap $2 (checked: limit 2, used 0, 13 Oct) | USE | USE | USE — backup only | NOT USED if Laya wins | VERIFIED |
 | Free LLM pool (improver) *(new, MVP1)* | Weekly proposal from the scorecard numbers | SaaS (free) | — | NOT USED | USE — owner says yes | USE | USE — inside hard limits | USE | INFERRED |
 
 ## F. AI / Models
@@ -168,19 +171,38 @@ Phases (see `docs/architecture/evolution.md`): **MVP0** investor demo (≤10 use
 | Server | Runs API/DB/workers | Oracle (4 vCPU) | OWNED | USE — n8n | USE — + archive | USE — side jobs, Laya | USE | USE | VERIFIED |
 | Cloudflare account + token | Host, DNS, tunnel | Owner | OWNED | USE | USE | USE | USE | USE | VERIFIED |
 | Firebase project (FCM) | App push | Owner | FREE-ACCOUNT | NOT USED | FREE-ACCOUNT | USE | USE | USE | INFERRED |
-| Supabase project | DB + Auth + Realtime (if chosen) | Owner | FREE-ACCOUNT | FREE-ACCOUNT — new project "goserve"; check the 2-project limit first | USE | USE | PAID — Pro | USE | VERIFIED (limit rule, 13 Oct) |
+| Supabase project | DB + Auth + Realtime (if chosen) | Owner | FREE-ACCOUNT | FREE-ACCOUNT — new project "goserve"; owner says one old project is paused and `sync.linkright.in` is live; check with the access token, then create | USE | USE | PAID — Pro | USE | VERIFIED (limit rule, 13 Oct) |
 | Upstash Redis | Cache/queue | Owner | FREE-ACCOUNT | NOT USED | NOT USED | NOT USED | NOT USED | revisit | INFERRED |
-| Payment gateway + KYC | Real money | Bank/gateway | **APPROVAL** | NOT USED | APPROVAL — founder starts KYC | USE | USE | USE | INFERRED (lead time weeks) |
+| Payment gateway + KYC | Real money | Bank/gateway | **APPROVAL** | NOT USED | APPROVAL — Razorpay account OWNED (owner, 13 Oct); KYC not started | USE | USE | USE | INFERRED (lead time weeks) |
 | SMS sender / DLT (India) | OTP + updates | Telecom | **APPROVAL** | NOT USED | APPROVAL — start | USE | USE | USE | INFERRED |
 | WhatsApp Business Cloud API | Order updates | Meta | **APPROVAL** | NOT USED | APPROVAL — start | USE | USE | USE | INFERRED |
 | Real domain + business email | Brand + hello@ | Registrar | PROCURE | NOT USED | PROCURE | USE | USE | USE | UNKNOWN (price) |
 | Maps API (optional) | Geocoding | Google/Mapbox | PROCURE/decide | NOT USED | NOT USED | DECIDE — vs OSRM | USE if chosen | USE | UNKNOWN |
-| GST / business entity | Payment + WhatsApp onboarding | Legal | Business | NOT USED | needed for KYC | USE | USE | USE | INFERRED |
-| FSSAI licence *(new, MVP1)* | Food business licence, needed for payments | Founder | — | NOT USED | APPROVAL — start | USE | USE | USE | INFERRED |
+| GST / business entity | Payment + WhatsApp onboarding | Legal | Business | NOT USED | OWNED — company and GST exist (owner, 13 Oct); used for KYC | USE | USE | USE | INFERRED |
+| FSSAI licence *(new, MVP1)* | Food business licence, needed for payments | Founder | — | NOT USED | APPROVAL — not started (owner, 13 Oct); see `docs/founder-checklist.md` | USE | USE | USE | INFERRED |
 | Privacy, terms and refund pages *(new, MVP1)* | Needed for payment KYC and user trust | Owner | — | NOT USED | USE | USE | USE | USE | INFERRED |
 | Consent notice (DPDP) *(new, MVP1)* | Tells users what we keep and why | Owner | — | NOT USED — demo data | USE | USE — + delete on request | USE | USE | UNKNOWN (DPDP Rules dates to verify) |
 | Play Store developer account *(new, MVP2)* | Publish the rider app wrapper | Founder | — | NOT USED | NOT USED | PROCURE if TWA needed | USE | USE | UNKNOWN (fee not checked today) |
 | Hugging Face account (private repo) *(new, MVP2)* | Store our Laya model | Owner | — | NOT USED | NOT USED | FREE-ACCOUNT | USE | USE | INFERRED |
+| Vercel account *(new row, owned)* | Hosting, like Cloudflare Pages | Owner | — | NOT USED — Hobby plan is non-commercial only; GoServe stays on Cloudflare Pages (owner choice, 13 Oct) | NOT USED | NOT USED | NOT USED | revisit only if we move to Next.js and pay for Pro | VERIFIED (Vercel fair-use page, 13 Oct) |
+| Google Cloud account *(new row, owned)* | Google login (OAuth), Firebase push | Owner | — | NOT USED | USE — OAuth client + Firebase | USE | USE | USE | VERIFIED (owner answer) |
+| Supabase account access token *(new, MVP0)* | Lets Claude list projects and check the paused one (read-only) | Owner | — | ⏳ owner creates `SUPABASE_ACCESS_TOKEN` in Secrets | USE | USE | USE | USE | VERIFIED (owner answer) |
+
+## I. Operations tools (added 13 Oct 2026, starts MVP1)
+
+Tools that run the business, not the product. Options and sources: `docs/research/options-operations-tools-2026-10.md`.
+
+| Component | What it does | Runs on | First status | MVP0 | MVP1 | MVP2 | MVP3 | MVP4 | Evidence |
+|---|---|---|---|---|---|---|---|---|---|
+| Relationship CRM *(new, MVP1)* | Investors, kitchen partners, B2B leads | Attio | — | NOT USED | FREE-ACCOUNT — Attio Free (3 seats) | USE — Free, or Plus if more than 3 people | PAID — Attio Plus | USE | VERIFIED (attio.com/pricing, 13 Oct) |
+| Support desk *(new, MVP1)* | Every complaint gets a number and an owner | WhatsApp + sheet, then Zoho Desk or Chatwoot | — | NOT USED | USE — WhatsApp Business app + a sheet | FREE-ACCOUNT — Zoho Desk Free or Chatwoot | PAID — Zoho Desk Standard | USE | VERIFIED (zoho.com/desk/pricing, 13 Oct) |
+| Kitchen stock and purchase *(new, MVP1)* | Stock per kitchen, reorder, cost per plate | Sheet, then Odoo | — | NOT USED | USE — sheet or NocoDB | FREE-ACCOUNT — Odoo One App Free (Inventory) | PAID — Odoo Standard | USE | VERIFIED (odoo.com/pricing-plan, 13 Oct) |
+| Accounts and GST *(new, MVP1)* | Invoices and GST reports | Zoho Books | — | NOT USED | FREE-ACCOUNT — Zoho Books Free (up to ₹25 lakh a year) + a CA | PAID — Standard ₹749/mo | PAID — Professional ₹1,499/mo | USE | VERIFIED (zoho.com/in/books/pricing, 13 Oct) |
+| Payroll and attendance *(new, MVP1)* | Staff and rider pay | Zoho Payroll, then greytHR | — | NOT USED | FREE-ACCOUNT — Zoho Payroll Free (up to 10 people) | PAID — Zoho Payroll or greytHR | PAID — greytHR Growth | USE | VERIFIED (vendor pages, 13 Oct; Zoho Payroll conf 0.7) |
+| Dashboards (BI) *(new, MVP1)* | Numbers for the founder and ops | Metabase on Oracle | — | NOT USED | USE — self-host | USE | USE, or Metabase Cloud | USE | VERIFIED (metabase.com, 13 Oct) |
+| Team email and docs *(new, MVP1)* | hello@ and team mail on our domain | Google Workspace or Zoho Mail Free | — | NOT USED | PAID — Workspace Starter ₹270 per user (or Zoho Mail Free) | PAID | PAID | USE | VERIFIED (Workspace India pricing, 13 Oct) |
+
+Rough monthly cost of these tools (excludes GST and WhatsApp messages; conf 0.6): MVP1 ≈ ₹540, MVP2 ≈ ₹4,600, MVP3 ≈ ₹30,000–40,000.
 
 ---
 
@@ -210,8 +232,9 @@ Who acts: **owner** (builder) or **founder** (business). Dates assume MVP 0 on 1
 | Item | Type | Why we need it | Lead time | Cost | Who acts | Start by | Evidence |
 |---|---|---|---|---|---|---|---|
 | Supabase project "goserve" | FREE-ACCOUNT | Orders, events, logs, live updates | Minutes | $0 | Owner | 14 Oct | VERIFIED (free plan, 13 Oct) |
-| Cloudflare Pages project for the app | FREE-ACCOUNT (owned account) | Host the PWA and the front door | Minutes | $0 | Owner | 14 Oct | VERIFIED (site already on Pages) |
-| OpenRouter credit for Jev | OWNED | AI suggestion on the ops screen | None | A few cents | Owner | — | VERIFIED (key owned) |
+| Cloudflare Pages project `goserve-app` | FREE-ACCOUNT (owned account) | Host the PWA and the front door at goserve-app.pages.dev | Minutes | $0 (no card on the free plan) | Owner | 14 Oct | VERIFIED (Cloudflare Pages and Workers docs, 13 Oct) |
+| GoServe OpenRouter key | OWNED | AI suggestion on the ops screen | Done | Hard cap $2 | Owner | Done 13 Oct | VERIFIED (key limit read: 2) |
+| Supabase account access token | Owner action | Check projects; create "goserve" | Minutes | $0 | Owner | 14 Oct | VERIFIED (owner will create it) |
 | GitHub Actions keep-alive | OWNED | Stop the free project from pausing | Minutes | $0 | Owner | 18 Oct | INFERRED |
 
 ### MVP 1 — pilot
@@ -222,8 +245,8 @@ Who acts: **owner** (builder) or **founder** (business). Dates assume MVP 0 on 1
 | Google OAuth client | FREE-ACCOUNT | Google login | 1 day | $0 | Owner | MVP 1 start | INFERRED |
 | Email sender for OTP (custom SMTP) | FREE-ACCOUNT | Supabase's default mail is rate-limited | 1 day | $0 at pilot size | Owner | MVP 1 start | UNKNOWN (provider limits not checked) |
 | Firebase project (web push) | FREE-ACCOUNT | Push to installed apps | Minutes | $0 | Owner | MVP 1 start | INFERRED |
-| FSSAI licence | APPROVAL | Needed for payments and a food business | Weeks | UNKNOWN | Founder | **Now** | INFERRED |
-| Razorpay KYC | APPROVAL | Real payments in MVP 2 | Weeks | Per-transaction fee | Founder | **Now** | INFERRED |
+| FSSAI licence | APPROVAL | Needed for payments and a food business | Weeks | see `docs/founder-checklist.md` | Founder | **Now** (not started) | INFERRED |
+| Razorpay KYC | APPROVAL | Real payments in MVP 2 (account already OWNED) | Weeks | Per-transaction fee | Founder | **Now** (not started) | VERIFIED (owner: account exists) |
 | SMS DLT registration | APPROVAL | Phone OTP and SMS updates | Weeks | Per-SMS | Founder | 1 Nov | INFERRED |
 | WhatsApp Business (Meta) | APPROVAL | Order updates on WhatsApp | Weeks | Per-message | Founder | 1 Nov | INFERRED |
 | Privacy, terms, refund pages | Write | Needed for KYC | Days | $0 | Owner | 25 Oct | INFERRED |
