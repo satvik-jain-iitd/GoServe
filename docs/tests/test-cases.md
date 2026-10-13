@@ -43,16 +43,26 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | The anon key cannot insert an order | #44 | S1 | Integration (goserve-dev) | `app/tests/integration/supabase.test.ts` | Pass (local only; CI skips, no keys) |
 | A subscribed client gets a new order within 2 seconds of the insert | #44 | S2 | Integration (goserve-dev) | `app/tests/integration/supabase.test.ts` | Pass (local only; CI skips, no keys) |
 | Menu has 8 to 10 dishes, each with a photo link and credit | #44 | S3 | Integration (goserve-dev) | `app/tests/integration/supabase.test.ts` | Pass (local only; CI skips, no keys) |
-| Right token passes; wrong, missing or unset token fails; unknown action is bad | #45 | S1 | Unit (Code node) | `ops/n8n/order/test.js` | Pass |
-| Place order: good input becomes a database call; bad input gets 400; answers map to 201, 200, 400 | #45 | S1 | Unit (Code node) | `ops/n8n/order/test.js` | Pass |
+| Right token passes; wrong, missing or unset token fails; unknown action is bad | #45 | S1 | Unit (Code node) | `ops/n8n/order/order.test.js` | Pass |
+| Place order: good input becomes a database call; bad input gets 400; answers map to 201, 200, 400 | #45 | S1 | Unit (Code node) | `ops/n8n/order/order.test.js` | Pass |
 | Place order writes the order and one `order.placed` event; a retry returns the same order; price comes from the menu | #45 | S1 | Integration (goserve-dev) | `scripts/test_order_rpc.py` | Pass (local only; CI skips, no token) |
 | Bad dish, quantity or address is refused by the database | #45 | S1 | Integration (goserve-dev) | `scripts/test_order_rpc.py` | Pass (local only; CI skips, no token) |
 | Accepted, preparing, ready each write an event; an illegal step errors and writes nothing; another session cannot change the order | #45 | S2 | Integration (goserve-dev) | `scripts/test_order_rpc.py` | Pass (local only; CI skips, no token) |
-| Illegal step maps to 409 and unknown order to 404; database text is never returned | #45 | S2 | Unit (Code node) | `ops/n8n/order/test.js` | Pass |
-| Kill switch on: SUB 11 and SUB 12 refuse with 503 and a clear message | #45 | S3 | Unit (Code node) | `ops/n8n/order/test.js` | Pass |
-| MAIN calls the SUBs by id with the fields their triggers declare; order is Config, token, kill switch, route; refusals never reach the database | #45 | S1 S2 S3 | Unit (wiring) | `ops/n8n/order/test.js` | Pass |
-| Canvas layout of all three workflows: no overlap, 200 px gaps, text band, flow left to right, no link through a box or a node | #45 | S1 S2 S3 | Unit (layout) | `ops/n8n/order/test.js` | Pass |
+| Illegal step maps to 409 and unknown order to 404; database text is never returned | #45 | S2 | Unit (Code node) | `ops/n8n/order/order.test.js` | Pass |
+| Kill switch on: SUB 11 and SUB 12 refuse with 503 and a clear message | #45 | S3 | Unit (Code node) | `ops/n8n/order/order.test.js` | Pass |
+| MAIN calls the SUBs by id with the fields their triggers declare; order is Config, token, kill switch, route; refusals never reach the database | #45 | S1 S2 S3 | Unit (wiring) | `ops/n8n/order/order.test.js` | Pass |
+| Canvas layout of all three workflows: no overlap, 200 px gaps, text band, flow left to right, no link through a box or a node | #45 | S1 S2 S3 | Unit (layout) | `ops/n8n/order/order.test.js` | Pass |
 | The webhook returns 401, 201, 200, 409, 503 for real calls on n8n | #45 | S1 S2 S3 | Live (after deploy and the owner's yes) | `gs-order` webhook | Pending deploy |
-| The alert message escapes HTML and names the workflow, node, error and execution; every order workflow reports to ERR 00 | #45 | S1 S2 S3 | Unit | `ops/n8n/order/test.js` | Pass |
-| Deploy script touches only the four GS workflows, never activates or deletes | #45 | S1 | Unit | `ops/n8n/order/test.js` | Pass |
+| The alert message escapes HTML and names the workflow, node, error and execution; every order workflow reports to ERR 00 | #45 | S1 S2 S3 | Unit | `ops/n8n/order/order.test.js` | Pass |
+| Deploy script touches only the four GS workflows, never activates or deletes | #45 | S1 | Unit | `ops/n8n/order/order.test.js` | Pass |
 | Even if the order functions are granted to `authenticated` by mistake, row level security blocks the write | #45 | S1 | Integration (goserve-dev) | `scripts/test_order_rpc.py` | Pass (local only; CI skips, no token) |
+| A session can place 20 orders; a retry of an existing key still works at the cap; the 21st is refused; other sessions are not affected | #46 | S1 | Integration (goserve-dev) | `scripts/test_order_rpc.py` | Pass (local only; CI skips, no token) |
+| Cap maps to 429 with a short message | #46 | S1 | Unit (Code node) | `ops/n8n/order/order.test.js` | Pass |
+| Rule picks the free rider with fewest trips, then shortest distance, else none | #46 | S1 | Unit (Code node) | `ops/n8n/order/decide.test.js` | Pass |
+| Jev request: pinned model, temperature 0, 32 tokens, allowed choices, no names or addresses | #46 | S1 | Unit (Code node) | `ops/n8n/order/decide.test.js` | Pass |
+| One row records the rule pick, the Jev pick with confidence and the pick used; the rule decides even when Jev disagrees | #46 | S1 | Unit (Code node) | `ops/n8n/order/decide.test.js` | Pass |
+| Jev error, bad reply, low confidence, over cost cap or off: the rule decision goes through and the row says why | #46 | S2 | Unit (Code node) | `ops/n8n/order/decide.test.js` | Pass |
+| A decision is returned only if its row was stored; a database failure gives 502 without raw text | #46 | S1 | Unit (Code node) | `ops/n8n/order/decide.test.js` | Pass |
+| SUB 14 builds the run row (time, settings version, cost, error) and refuses bad input; MAIN 01 logs every routed run after answering | #46 | S3 | Unit (Code node and wiring) | `ops/n8n/order/decide.test.js` | Pass |
+| Decision and run rows in the shape the workflows write are accepted by the database | #46 | S1 S3 | Integration (goserve-dev) | `scripts/test_order_rpc.py` | Pass (local only; CI skips, no token) |
+| Real Jev answer for a ready order and three riders, with a confidence, in one `decision_log` row; Jev down leaves the rule pick | #46 | S1 S2 | Live (after the OpenRouter credential, deploy and the owner's yes) | `gs-order` webhook | Pending deploy |

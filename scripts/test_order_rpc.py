@@ -59,8 +59,29 @@ class OrderRpc(unittest.TestCase):
 
     def test_even_if_granted_by_mistake_row_level_security_still_blocks_the_write(self):
         r = run("grant execute on function place_order(text,text,jsonb,text) to authenticated", "set local role authenticated",
-                "select set_config('request.jwt.claims', '{\"sub\":\"s1\",\"role\":\"authenticated\"}', true)", PLACE)
+                "select set_config('request.jwt.claims', '{\"sub\":\"00000000-0000-0000-0000-0000000000e1\",\"role\":\"authenticated\"}', true)", PLACE)
         self.assertIn("row-level security", str(r))
+
+    def test_a_session_can_place_at_most_20_orders_but_a_retry_still_works(self):
+        fill = ("do $$ begin for i in 1..20 loop perform place_order('s1', 'k' || i, jsonb_build_array(jsonb_build_object("
+                f"'menu_item_id', {DISH}, 'qty', 1)), 'x'); end loop; end $$")
+        again = f"select place_order('s1', 'k20', jsonb_build_array(jsonb_build_object('menu_item_id', {DISH}, 'qty', 1)), 'x')"
+        over = f"select place_order('s1', 'k21', jsonb_build_array(jsonb_build_object('menu_item_id', {DISH}, 'qty', 1)), 'x')"
+        r = run(fill, again, "select (select count(*) from orders where session_id='s1') as n")
+        self.assertEqual(r[-1], {"n": 20}, r)   # the retry of k20 is not a 21st order
+        self.assertIn("session_order_cap", str(run(fill, over)))
+        r = run(fill, "select place_order('s2', 'k1', jsonb_build_array(jsonb_build_object('menu_item_id', "
+                      f"{DISH}, 'qty', 1)), 'x')")
+        self.assertIsInstance(r, list, r)   # another session is not affected
+
+    def test_decision_and_run_rows_in_the_shape_the_workflows_write_are_accepted(self):
+        k = "(select id from kitchens limit 1)"
+        r = run(PLACE,
+                f"insert into decision_log (kitchen_id, session_id, order_id, decision) select {k}, 's1', {ID}, "
+                "'{\"use_case\":\"D1\",\"rule_pick\":\"r2\",\"jev\":null}'::jsonb",
+                f"insert into run_log (kitchen_id, session_id, workflow, params_version, duration_ms, cost, error) values ({k}, 's1', 'GS MAIN 01 Order API: place', 1, 120, 0.00002, null)",
+                "select (select count(*) from decision_log where session_id='s1') as d, (select count(*) from run_log where session_id='s1') as r")
+        self.assertEqual(r[-1], {"d": 1, "r": 1}, r)
 
     def test_the_phone_keys_cannot_call_them(self):
         r = sql("select has_function_privilege('anon', 'place_order(text,text,jsonb,text)', 'execute') a, "

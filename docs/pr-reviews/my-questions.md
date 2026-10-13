@@ -56,3 +56,11 @@ Apne sawaal yahan. Status: **open** (jawab nahi mila) / **answered** / **dropped
 | Q23 | Bina sign-in ke anon key se `orders` select 0 rows deta hai, error nahi. App "sign-in nahi hua" aur "koi order nahi" mein kaise farak karegi? | PR #65 / app/supabase/migrations/0002_rls_realtime_menu.sql | haan | Haan. #48 mein app pehle sign-in karegi aur session milne ke baad hi orders padhegi. Isliye "sign-in nahi hua" kabhi "koi order nahi" nahi dikhega. | answered |
 | Q24 | Har test run 5 anonymous users banata hai aur delete nahi karta (dev par 21). `afterAll` mein delete karenge, ya Supabase ka cleanup? Kaunsa, kab? | PR #65 / app/tests/integration/supabase.test.ts | haan | 4bf41e1 mein test apne anonymous users `afterAll` mein delete karta hai. Dev par 21 purane purge hue, live count 0. | answered |
 | Q25 | Do device par demo (customer ka phone, kitchen ka laptop) mein kitchen ko 0 orders dikhenge. Yeh #56 checklist mein hai, ya session code share karne ka raasta chahiye? | PR #65 / docs/decisions/ADR-010-session-id-is-the-anonymous-user-id.md | haan | Do device = do sessions, yeh real limit hai. Demo ek device + split view par hai; limit #56 checklist mein hai (F64 d). URL mein session code baad ka option hai. | answered |
+
+## PR #66 ke baad
+
+| # | Sawaal | Kahan poocha (PR#/file) | Jawab mila? | Jawab | Status |
+|---|---|---|---|---|---|
+| Q26 | Activation se pehle error alert workflow chahiye (rulebook 84 / 95.14). #46 ke saath banayein, ya is PR ke follow-up mein? Recommendation kya hai? | PR #66 / ops/n8n/order/build.js | haan | `GS ERR 00 Alert` (Telegram owner ko) ddb12f1 mein bana. Teeno order workflows ise `errorWorkflow` set karte hain; abhi deploy nahi hua, `deploy.js` pehle daalega. | answered |
+| Q27 | n8n tests code ke saath likhe gaye, red nahi dekhe. 3 mutations kahin likhe jaayein, aur SUB 13/14 par red-first wapas? | PR #66 / ops/n8n/order/test.js | haan | ddb12f1 mein 3 mutations `test.js` ke header mein likhe. SUB 13 aur 14 red-first se shuru honge. | answered |
+| Q28 | `from test_schema import` sirf discover mein chalta hai. Run line ko `sys.path` se theek karein, ya Run line ko discover wali karein? | PR #66 / scripts/test_order_rpc.py | haan | ddb12f1 mein import se pehle `sys.path.insert` laga; Run line ab chalti hai (7 tests OK). | answered |

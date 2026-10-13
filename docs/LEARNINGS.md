@@ -75,3 +75,7 @@ short. Say what happened and what to do next time.
 - The layout library reads a third edge field as an "ai link". Passing the output index there hid a branch and put a link through a node. Pass only [from, to].
 - Supabase RPC with the service role needs both headers, `apikey` and `Authorization: Bearer`. With `apikey` alone the call runs as anon and fails with "permission denied".
 - n8n webhook header auth answers 403, not 401. To return 401 the token is checked in a Code node.
+- Read the CI status before the PR body. PR #66 said "tests pass" and they did, but the Guard job was red on a 77-character commit subject; the PR was not mergeable. The first line of a review is the check list.
+- A migration list in a follow-up (F63) must grow with every new migration. 0003 was applied to dev and missing from the prod list; prod would have had tables without the functions.
+- Replacing a function in a new migration can break an old test that relied on the order of its steps (the row level security lock test hit a uuid cast). Re-run all earlier tests after every migration, and give test claims real uuids.
+- A test glob must match every test file: `node --test <dir>` does not work on this Node, so name files `*.test.js` and pass a glob.

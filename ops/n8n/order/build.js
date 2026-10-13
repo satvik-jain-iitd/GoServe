@@ -9,6 +9,7 @@ const { layout } = require('../lib/layout');
 const code = (f) => fs.readFileSync(path.join(__dirname, 'code', f), 'utf8').trim();
 const STATUS_ROLES = ['customer', 'kitchen', 'rider', 'ops'];
 const PLACEHOLDER = 'REPLACE_AT_DEPLOY';
+const KITCHEN = '11111111-1111-1111-1111-111111111111';   // the seeded Delhi kitchen (migration 0002)
 
 const node = (id, name, type, typeVersion, parameters, extra) => Object.assign({ id, name, type, typeVersion, parameters }, extra);
 const codeNode = (id, name, jsCode) => node(id, name, 'n8n-nodes-base.code', 2, { mode: 'runOnceForAllItems', language: 'javaScript', jsCode });
@@ -63,11 +64,12 @@ function finish(name, nodes, edges, sections, setts) {
   return { name, nodes: laid.nodes, connections: connect(edges), settings: setts, sections, edges };
 }
 
-function build({ ids, token, supabaseUrl, credential, chatId }) {
+function build({ ids, token, supabaseUrl, credential, openrouterCredential, chatId }) {
   const settings = ids.alert ? Object.assign({}, baseSettings, { errorWorkflow: ids.alert }) : baseSettings;
   const cred = credential || { id: 'REPLACE_CREDENTIAL_ID', name: 'GoServe Supabase dev' };
   const url = supabaseUrl || 'https://REPLACE_PROJECT.supabase.co';
   const main = ids.main01;
+  const jevCred = openrouterCredential || { id: 'REPLACE_OPENROUTER_CRED_ID', name: 'GoServe OpenRouter' };
 
   const sub11 = sub({ name: 'GS SUB 11 Place order', n: 11, callerIds: main, credential: cred, settings,
     fields: [['session_id', 'string'], ['client_order_key', 'string'], ['items', 'array'], ['address', 'string'], ['kill_switch', 'boolean'], ['supabase_url', 'string']],
@@ -78,6 +80,66 @@ function build({ ids, token, supabaseUrl, credential, chatId }) {
     guardFile: 'guard_status.js', rpc: { fn: 'change_status', label: 'Change status' },
     what: 'It moves the order one step and writes the event.' });
 
+  const rpcPost = (id, name, fn, extra) => node(id, name, 'n8n-nodes-base.httpRequest', 4.2, {
+    method: 'POST', url: `={{ $json.supabase_url }}/rest/v1/${fn}`, authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
+    sendHeaders: true, headerParameters: { parameters: [{ name: 'Prefer', value: 'return=minimal' }] },
+    sendBody: true, specifyBody: 'json', jsonBody: '={{ $json.log_row }}',
+    options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 } }, { credentials: { httpCustomAuth: cred } });
+  const inputs = (fields) => ({ inputSource: 'workflowInputs', workflowInputs: { values: fields.map(([name, type]) => ({ name, type })) } });
+  const refuseSection = { name: 'REFUSE', what: 'Hand the refusal back unchanged.', needs: 'The refusal from CHECK.', nodes: ['Return refusal'], color: 1 };
+  const subSettings = Object.assign({}, settings, { callerPolicy: 'workflowsFromAList', callerIds: main });
+
+  // ---- SUB 13 Decide: rule first, Jev second (advice only), one decision_log row ----
+  const f13 = [['session_id', 'string'], ['kitchen_id', 'string'], ['order_id', 'string'], ['riders', 'array'], ['params_version', 'number'], ['jev_enabled', 'boolean'],
+    ['jev_model', 'string'], ['jev_cost_cap', 'number'], ['kill_switch', 'boolean'], ['supabase_url', 'string']];
+  const n13 = [
+    node('gs-sub13-01', 'Start', 'n8n-nodes-base.executeWorkflowTrigger', 1.1, inputs(f13)),
+    codeNode('gs-sub13-02', 'Guard', code('decide_guard.js')),
+    ifNode('gs-sub13-03', 'Allowed?', '={{ $json.ok }}', 'true'),
+    ifNode('gs-sub13-04', 'Ask Jev?', '={{ $json.use_jev }}', 'true'),
+    // Jev is advice. If it fails, the rule decision still goes through, so this one node continues on error. It is not a write path.
+    node('gs-sub13-05', 'Ask Jev', 'n8n-nodes-base.httpRequest', 4.2, { method: 'POST', url: 'https://openrouter.ai/api/v1/chat/completions',
+      authentication: 'genericCredentialType', genericAuthType: 'httpHeaderAuth', sendBody: true, specifyBody: 'json', jsonBody: '={{ $json.jev_body }}',
+      options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 900 } },
+      { credentials: { httpHeaderAuth: jevCred }, onError: 'continueRegularOutput', retryOnFail: true, maxTries: 2, waitBetweenTries: 200 }),
+    codeNode('gs-sub13-06', 'Decide', code('decide_result.js')),
+    rpcPost('gs-sub13-07', 'Write decision', 'decision_log'),
+    codeNode('gs-sub13-08', 'Decision stored', code('decide_done.js')),
+    node('gs-sub13-09', 'Return refusal', 'n8n-nodes-base.noOp', 1, {}),
+  ];
+  const e13 = [['Start', 'Guard'], ['Guard', 'Allowed?'], ['Allowed?', 'Ask Jev?', 0], ['Allowed?', 'Return refusal', 1], ['Ask Jev?', 'Ask Jev', 0], ['Ask Jev?', 'Decide', 1],
+    ['Ask Jev', 'Decide'], ['Decide', 'Write decision'], ['Write decision', 'Decision stored']];
+  const s13 = [
+    { name: 'RECEIVE', what: 'The MAIN workflow calls this with a ready order and the riders.', needs: 'Input: ' + f13.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
+    { name: 'CHECK', what: 'Refuse if the kill switch is on or input is bad. Work out the rule pick and build the Jev question (no names or addresses).', needs: 'Input fields. No credential.', nodes: ['Guard', 'Allowed?'], color: 5 },
+    { name: 'JEV', what: 'Ask Jev for a suggestion within 900 ms. If Jev is off or fails, go on without it.', needs: 'Credential "GoServe OpenRouter". Config: jev_enabled, jev_model.', nodes: ['Ask Jev?', 'Ask Jev'], color: 3 },
+    { name: 'DECIDE', what: 'The rule decides. Jev is kept in the record with its confidence, or the reason it was not used.', needs: 'Guard and Jev results. Config: jev_cost_cap.', nodes: ['Decide'], color: 5 },
+    { name: 'WRITE', what: 'Write one decision_log row with the rule pick, the Jev pick and the pick used.', needs: 'Credential "GoServe Supabase dev". Table: decision_log.', nodes: ['Write decision'], color: 6 },
+    { name: 'ANSWER', what: 'Return the decision if the row was stored, else a short error.', needs: 'The database answer.', nodes: ['Decision stored'], color: 5 },
+    refuseSection,
+  ];
+  const sub13 = finish('GS SUB 13 Decide', n13, e13, s13, subSettings);
+
+  // ---- SUB 14 Write logs: one run_log row ----
+  const f14 = [['session_id', 'string'], ['kitchen_id', 'string'], ['workflow', 'string'], ['params_version', 'number'], ['duration_ms', 'number'], ['cost', 'number'], ['error', 'string'], ['supabase_url', 'string']];
+  const n14 = [
+    node('gs-sub14-01', 'Start', 'n8n-nodes-base.executeWorkflowTrigger', 1.1, inputs(f14)),
+    codeNode('gs-sub14-02', 'Guard', code('guard_log.js')),
+    ifNode('gs-sub14-03', 'Allowed?', '={{ $json.ok }}', 'true'),
+    rpcPost('gs-sub14-04', 'Write run log', 'run_log'),
+    codeNode('gs-sub14-05', 'Log written', code('log_done.js')),
+    node('gs-sub14-06', 'Return refusal', 'n8n-nodes-base.noOp', 1, {}),
+  ];
+  const e14 = [['Start', 'Guard'], ['Guard', 'Allowed?'], ['Allowed?', 'Write run log', 0], ['Allowed?', 'Return refusal', 1], ['Write run log', 'Log written']];
+  const s14 = [
+    { name: 'RECEIVE', what: 'The MAIN workflow calls this after it has answered, with one run.', needs: 'Input: ' + f14.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
+    { name: 'CHECK', what: 'Check the fields and build the run_log row. The kill switch does not block a log write.', needs: 'Input fields. No credential.', nodes: ['Guard', 'Allowed?'], color: 5 },
+    { name: 'WRITE', what: 'Write one run_log row: workflow, time taken, settings version, cost, error.', needs: 'Credential "GoServe Supabase dev". Table: run_log.', nodes: ['Write run log'], color: 6 },
+    { name: 'ANSWER', what: 'Say if the row was stored.', needs: 'The database answer.', nodes: ['Log written'], color: 5 },
+    refuseSection,
+  ];
+  const sub14 = finish('GS SUB 14 Write logs', n14, e14, s14, subSettings);
+
   const callSub = (id, name, subId, mapping) => node(id, name, 'n8n-nodes-base.executeWorkflow', 1.2, {
     source: 'database', workflowId: { __rl: true, value: subId, mode: 'id' },
     workflowInputs: { mappingMode: 'defineBelow', value: Object.fromEntries(mapping.map(([k, v]) => [k, v])), matchingColumns: [],
@@ -85,18 +147,23 @@ function build({ ids, token, supabaseUrl, credential, chatId }) {
     mode: 'once', options: { waitForSubWorkflow: true } });
   const body = (f) => `={{ $json.body.${f} }}`;
   const respond = (id, name, code_, text) => node(id, name, 'n8n-nodes-base.respondToWebhook', 1.1, { respondWith: 'json', responseBody: text, options: { responseCode: code_ } });
-  const answer = '={{ JSON.stringify({ ok: $json.ok, error: $json.error, message: $json.message, created: $json.created, order: $json.order }) }}';
+  const answer = '={{ JSON.stringify({ ok: $json.ok, error: $json.error, message: $json.message, created: $json.created, order: $json.order, decision: $json.decision }) }}';
 
   const nodes = [
     node('gs-main01-01', 'Order webhook', 'n8n-nodes-base.webhook', 2, { httpMethod: 'POST', path: 'gs-order', responseMode: 'responseNode', options: { allowedOrigins: '*' } }, { webhookId: '6f1d7a52-2c43-4d0b-9b6e-5a1f0c9e7d11' }),
     node('gs-main01-02', 'Config', 'n8n-nodes-base.set', 3.4, { mode: 'manual', includeOtherFields: true, assignments: { assignments: [
       { id: 'cfg-1', name: 'kill_switch', type: 'boolean', value: false },
       { id: 'cfg-2', name: 'demo_token', type: 'string', value: token || PLACEHOLDER },
-      { id: 'cfg-3', name: 'supabase_url', type: 'string', value: url }] }, options: {} }),
+      { id: 'cfg-3', name: 'supabase_url', type: 'string', value: url },
+      { id: 'cfg-4', name: 'params_version', type: 'number', value: 1 },
+      { id: 'cfg-5', name: 'kitchen_id', type: 'string', value: KITCHEN },
+      { id: 'cfg-6', name: 'jev_enabled', type: 'boolean', value: true },
+      { id: 'cfg-7', name: 'jev_model', type: 'string', value: 'typesafe/jev-1.13' },
+      { id: 'cfg-8', name: 'jev_cost_cap', type: 'number', value: 0.001 }] }, options: {} }),
     codeNode('gs-main01-03', 'Check token', code('check_token.js')),
     ifNode('gs-main01-04', 'Token ok?', '={{ $json.token_ok }}', 'true'),
     ifNode('gs-main01-05', 'Kill switch?', '={{ $json.kill_switch }}', 'true'),
-    node('gs-main01-06', 'Route', 'n8n-nodes-base.switch', 3.2, { rules: { values: ['place', 'status'].map((k) => ({
+    node('gs-main01-06', 'Route', 'n8n-nodes-base.switch', 3.2, { rules: { values: ['place', 'status', 'decide'].map((k) => ({
       conditions: { options: { caseSensitive: true, leftValue: '', typeValidation: 'strict', version: 2 },
         conditions: [{ id: 'route-' + k, leftValue: '={{ $json.action }}', rightValue: k, operator: { type: 'string', operation: 'equals' } }], combinator: 'and' },
       renameOutput: true, outputKey: k })) }, options: { fallbackOutput: 'extra', renameFallbackOutput: 'bad' } }),
@@ -106,15 +173,26 @@ function build({ ids, token, supabaseUrl, credential, chatId }) {
     callSub('gs-main01-08', 'Call SUB 12 Change status', ids.sub12, [
       ['session_id', body('session_id'), 'string'], ['order_id', body('order_id'), 'string'], ['to_status', body('to_status'), 'string'],
       ['actor', body('actor'), 'string'], ['kill_switch', '={{ $json.kill_switch }}', 'boolean'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
+    callSub('gs-main01-13', 'Call SUB 13 Decide', ids.sub13, [
+      ['session_id', body('session_id'), 'string'], ['kitchen_id', '={{ $json.kitchen_id }}', 'string'], ['order_id', body('order_id'), 'string'],
+      ['riders', body('riders'), 'array'], ['params_version', '={{ $json.params_version }}', 'number'], ['jev_enabled', '={{ $json.jev_enabled }}', 'boolean'],
+      ['jev_model', '={{ $json.jev_model }}', 'string'], ['jev_cost_cap', '={{ $json.jev_cost_cap }}', 'number'],
+      ['kill_switch', '={{ $json.kill_switch }}', 'boolean'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
     respond('gs-main01-09', 'Respond result', '={{ $json.status_code }}', answer),
+    codeNode('gs-main01-14', 'Log run', code('log_run.js')),
+    callSub('gs-main01-15', 'Call SUB 14 Write logs', ids.sub14, [
+      ['session_id', '={{ $json.session_id }}', 'string'], ['kitchen_id', '={{ $json.kitchen_id }}', 'string'], ['workflow', '={{ $json.workflow }}', 'string'],
+      ['params_version', '={{ $json.params_version }}', 'number'], ['duration_ms', '={{ $json.duration_ms }}', 'number'], ['cost', '={{ $json.cost }}', 'number'],
+      ['error', '={{ $json.error }}', 'string'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
     respond('gs-main01-10', 'Respond 401', 401, '{"ok":false,"error":"unauthorized","message":"Missing or wrong demo token."}'),
     respond('gs-main01-11', 'Respond 503', 503, '{"ok":false,"error":"kill_switch","message":"Orders are paused. Please try again soon."}'),
     respond('gs-main01-12', 'Respond 400', 400, '{"ok":false,"error":"bad_action","message":"Unknown action."}'),
   ];
   const edges = [['Order webhook', 'Config'], ['Config', 'Check token'], ['Check token', 'Token ok?'],
     ['Token ok?', 'Kill switch?', 0], ['Token ok?', 'Respond 401', 1], ['Kill switch?', 'Respond 503', 0], ['Kill switch?', 'Route', 1],
-    ['Route', 'Call SUB 11 Place order', 0], ['Route', 'Call SUB 12 Change status', 1], ['Route', 'Respond 400', 2],
-    ['Call SUB 11 Place order', 'Respond result'], ['Call SUB 12 Change status', 'Respond result']];
+    ['Route', 'Call SUB 11 Place order', 0], ['Route', 'Call SUB 12 Change status', 1], ['Route', 'Call SUB 13 Decide', 2], ['Route', 'Respond 400', 3],
+    ['Call SUB 11 Place order', 'Respond result'], ['Call SUB 12 Change status', 'Respond result'], ['Call SUB 13 Decide', 'Respond result'],
+    ['Respond result', 'Log run'], ['Log run', 'Call SUB 14 Write logs']];
   const sections = [
     { name: 'RECEIVE', what: 'The phone posts here. Body field "action" is place or status. The header x-gs-token carries the demo token.', needs: 'Path gs-order. Body: action and the fields of the SUB.', nodes: ['Order webhook'], color: 4 },
     { name: 'CONFIG', what: 'All tunables live here: the kill switch, the demo token and the database address.', needs: 'Config keys: kill_switch, demo_token, supabase_url.', nodes: ['Config'], color: 5 },
@@ -122,7 +200,9 @@ function build({ ids, token, supabaseUrl, credential, chatId }) {
     { name: 'ROUTE', what: 'Pick the SUB workflow by the action field. Unknown action gets 400.', needs: 'Body field: action.', nodes: ['Route'], color: 5 },
     { name: 'PLACE ORDER', what: 'Call SUB 11. It writes the order and its first event.', needs: 'SUB 11 id. Body: session_id, client_order_key, items, address.', nodes: ['Call SUB 11 Place order'], color: 6 },
     { name: 'CHANGE STATUS', what: 'Call SUB 12. It moves the order one step and writes the event.', needs: 'SUB 12 id. Body: session_id, order_id, to_status, actor.', nodes: ['Call SUB 12 Change status'], color: 6 },
-    { name: 'ANSWER', what: 'Send the SUB result back to the phone with its status code.', needs: 'The SUB output: status_code, ok, order.', nodes: ['Respond result'], color: 4 },
+    { name: 'DECIDE', what: 'Call SUB 13. The rule picks a rider; Jev only advises. One decision row is written.', needs: 'SUB 13 id. Body: session_id, order_id, riders. Config: jev keys, kitchen_id, params_version.', nodes: ['Call SUB 13 Decide'], color: 6 },
+    { name: 'ANSWER', what: 'Send the SUB result back to the phone with its status code.', needs: 'The SUB output: status_code, ok, order, decision.', nodes: ['Respond result'], color: 4 },
+    { name: 'LOG', what: 'After the answer is out, write one run row: time taken, settings version, cost, error.', needs: 'SUB 14 id. Config: params_version, kitchen_id.', nodes: ['Log run', 'Call SUB 14 Write logs'], color: 6 },
     { name: 'REFUSE', what: 'Answer the calls that must not go on: 401, 503 and 400.', needs: 'Nothing.', nodes: ['Respond 401', 'Respond 503', 'Respond 400'], color: 1 },
   ];
   const main01 = finish('GS MAIN 01 Order API', nodes, edges, sections, settings);
@@ -144,7 +224,7 @@ function build({ ids, token, supabaseUrl, credential, chatId }) {
     { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send alert'], color: 6 },
   ];
   const alert = finish('GS ERR 00 Alert', aNodes, aEdges, aSections, baseSettings);
-  return { sub11, sub12, main01, alert, STATUS_ROLES };
+  return { sub11, sub12, sub13, sub14, main01, alert, STATUS_ROLES };
 }
 
 module.exports = { build, PLACEHOLDER };

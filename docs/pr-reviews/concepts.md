@@ -209,3 +209,55 @@ Har naya technical word yahan. Simple Hindi mein. Ek line ka "yeh kya hai", ek l
 - **Kya hai:** Ek chhota record: faisla, rejected options, aur nateeje.
 - **Analogy:** Dhaba ka faisla register.
 - **File:** `docs/decisions/ADR-010-session-id-is-the-anonymous-user-id.md`.
+
+## PR #66 se
+
+### RPC (remote procedure call) through PostgREST
+- **Kya hai:** `POST /rest/v1/rpc/<function>` se database ka function chalta hai. n8n seedha SQL nahi likhta, function ko bulata hai.
+- **Analogy:** Counter boy manager se ek sawaal poochta hai, aur manager hi register likhta hai.
+- **File:** `ops/n8n/order/build.js` line 41 (HTTP Request node).
+
+### Transactional function
+- **Kya hai:** Ek function ke andar sab likhna ek saath chalta hai. Koi ek step fail ho to sab undo ho jaata hai.
+- **Analogy:** Register aur carbon copy ek hi haath se, ek hi baar mein.
+- **File:** `app/supabase/migrations/0003_order_functions.sql` lines 5–59.
+
+### MAIN / SUB workflows (B11)
+- **Kya hai:** MAIN workflow trigger aur routing sambhalta hai. Har SUB ek hi kaam karta hai aur MAIN use id se bulata hai.
+- **Analogy:** Counter boy aur do helpers. Counter boy sawaal sunta hai, helper kaam karta hai.
+- **File:** `ops/n8n/order/build.js` (MAIN nodes lines 89–112, `callSub` lines 80–84).
+
+### Execute Workflow Trigger with defined inputs
+- **Kya hai:** SUB apne fields pehle se declare karta hai. n8n check karta hai ki sahi fields aayi hain ya nahi.
+- **Analogy:** Helper ka printed slip format: khaane ke blank khaane bharne hi hain.
+- **File:** `ops/n8n/order/build.js` line 36.
+
+### callerPolicy
+- **Kya hai:** Sirf listed workflows hi is SUB ko bula sakte hain. Baaki sab ke calls n8n rok deta hai.
+- **Analogy:** Sirf counter boy helpers ko bula sakta hai. Customer seedha helper ko nahi bula sakta.
+- **File:** `ops/n8n/order/build.js` line 59 (`workflowsFromAList`, `callerIds`).
+
+### Kill switch checked twice (rulebook 95.15)
+- **Kya hai:** "Orders band hain" ka check MAIN mein bhi hai aur har write SUB mein bhi. Ek jagah bypass ho to doosri jagah rok leta hai.
+- **Analogy:** "Orders paused" board counter par bhi, aur kitchen ke darwaze par bhi.
+- **File:** `ops/n8n/order/build.js` line 97 (MAIN), `ops/n8n/order/code/guard_place.js` and `guard_status.js` (SUB).
+
+### neverError + fullResponse
+- **Kya hai:** HTTP node error phenkne ki jagah status code aur body deta hai. Isse SUB khud decide karta hai ki jawab kaisa jaaye.
+- **Analogy:** Helper jawab padh kar apna reply card likhta hai, bina chillaye.
+- **File:** `ops/n8n/order/build.js` line 43; mapping in `ops/n8n/order/code/shape.js`.
+
+### Mutation check
+- **Kya hai:** Code ko jaan-boojh kar todna (jaise 409 ko 200 karna) aur dekhna ki test laal hota hai. Ye proof hai ki test asli cheez pakadta hai.
+- **Analogy:** Alarm test karne ke liye darwaza khol kar dekhna ki bell bajti hai.
+- **File:** `docs/LEARNINGS.md` line 74; PR #66 body.
+
+### Sticky-note layout as code (B12)
+- **Kya hai:** Workflow ke boxes aur positions code se bante hain, haath se nahi. Tests geometry check karte hain (overlap, gap, left-to-right).
+- **Analogy:** Kitchen ki deewar par chart, chhapa hua. Koi haath se nahi khinchta.
+- **File:** `ops/n8n/lib/layout.js` and `ops/n8n/lib/layout_checks.js`.
+
+### Commit subject limit (72)
+- **Kya hai:** Commit ki pehli line 72 characters se lambi ho to Guard CI use fail karta hai. Merge se pehle CI green chahiye.
+- **Analogy:** Register ki column ki chaudai. Lamba header column se bahar jaata hai.
+- **File:** `.github/workflows/ci.yml` (Guard job); commit `53dbce7` (77 chars).
