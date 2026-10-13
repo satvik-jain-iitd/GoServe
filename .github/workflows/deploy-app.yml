@@ -12,7 +12,7 @@ on:
 # Own file and own Pages project (goserve-app). deploy.yml and the investor site (letsdwelo.in) are not touched.
 concurrency:
   group: deploy-app
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   pages:

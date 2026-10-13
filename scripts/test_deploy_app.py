@@ -17,7 +17,7 @@ class DeployApp(unittest.TestCase):
         self.assertIn("app/**", m.group(1))
         self.assertIn("design/tokens.json", m.group(1))
         self.assertIn("--project-name=goserve-app", self.text)
-        self.assertNotIn("--project-name=goserve ", self.text)
+        self.assertNotRegex(self.text, r"--project-name=goserve(?!-app)")
         for s in ("CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"):
             self.assertIn(f"secrets.{s}", self.text)
 
@@ -26,6 +26,14 @@ class DeployApp(unittest.TestCase):
         self.assertIn("--project-name=goserve --branch=main", site)
         self.assertNotIn("app/", site)
         self.assertNotIn("site/", re.search(r"paths:\n((?:\s+- .*\n)+)", self.text).group(1))
+
+    def test_release_list_carries_the_app_and_its_guard(self):
+        root = os.path.join(WF, "..", "..")
+        plan = open(os.path.join(root, "docs", "PLAN.md")).read()
+        line = next(l for l in plan.splitlines() if "git checkout origin/dev --" in l)
+        for path in ("site", "app", "scripts"):
+            self.assertRegex(line, rf"\b{path}\b")
+        self.assertIn("`app/`, `scripts/`", open(os.path.join(root, "CLAUDE.md")).read())
 
 
 if __name__ == "__main__":
