@@ -92,8 +92,8 @@ Five workflows plus one scheduled job. Propose, test and promote workflows come 
 | Dependency | Status | Owner action |
 |---|---|---|
 | Cloudflare account and Pages | ✅ Ready. App project `goserve-app` → `goserve-app.pages.dev`, free, no card | None |
-| Supabase project "goserve" (Mumbai) | ⏳ Waiting | Create a Supabase account access token and save it as `SUPABASE_ACCESS_TOKEN` in `~/Desktop/Secrets/`. Then Claude checks the paused project and creates "goserve" |
-| Paused Supabase project | ⏳ Waiting | After the check, say "haan, delete <name>" only if it holds nothing important |
+| Supabase projects (Mumbai) | ✅ Production `GoServe` (ref vpuumnslnionplrxmqlf) + dev `goserve-dev` (ref tmxyizmkpwwfyazvrfhw); URLs and keys in `02_databases.env` | None |
+| Paused Supabase project (old account) | Not relevant — GoServe moved to a new Supabase account on klickbae8yt@gmail.com | None |
 | n8n on Oracle | ✅ Ready. API key in the vault. Workflows are registered, not capped (rulebook A1 rule 3) | Say yes before any workflow is activated |
 | Jev (OpenRouter) | ✅ Ready. GoServe-only key, hard cap $2 (checked) | Rotate the key later (it was pasted in chat) |
 | Telegram alerts | ✅ Ready (@GoServeBot) | None |
@@ -101,7 +101,8 @@ Five workflows plus one scheduled job. Propose, test and promote workflows come 
 | Logo and icon | ✅ In `design/brand/` | Send a vector logo if one exists |
 | PWA stack | ✅ React + Vite + TypeScript + Capacitor (ADR-006); code in `app/`; no custom backend (ADR-007) | None |
 | Cloudflare Pages project `goserve-app` | ✅ Created 13 Oct (classic Pages, account klickbae8yt@gmail.com) → **`goserve-app.pages.dev`** (live after the first deploy) | None |
-| Uptime monitor | ⏳ Waiting | Sign up at UptimeRobot (free) and save `UPTIMEROBOT_API_KEY` in Secrets |
+| Uptime monitor | ✅ UptimeRobot free; n8n health monitor Up; app monitors added after the first deploy | None |
+| Vercel dev project | ✅ `goserve-app-dev` with `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` (dev) | Git link: deploy from GitHub Actions with `VERCEL_TOKEN`, or install the Vercel GitHub app on the repo |
 | Test devices | ✅ Android emulation on the laptop + owner's iPhone + founder's Android for the final check | Share the link with the founder before the demo |
 | Founder business steps | Not needed for MVP 0 | Start the checklist in `docs/founder-checklist.md` |
 

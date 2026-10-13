@@ -85,4 +85,6 @@ Rule: read this first in every session, append before saying done.
 | 77 | 2026-10-13 | owner | Chose dev site on Vercel + Supabase, production on Cloudflare goserve-app.pages.dev from main | chat | volunteered |
 | 78 | 2026-10-13 | agent | Wrote ADR-008 with the Vercel terms risk and the one-handler rule | docs/decisions/ADR-008 | none |
 | 79 | 2026-10-13 | owner | Confirmed both hosts after the comparison: familiar with Vercel (speed), learning Cloudflare (production) | chat | asked |
+| 80 | 2026-10-13 | owner | Shared Supabase, Vercel and UptimeRobot keys (klickbae8yt); had created Supabase project GoServe in Mumbai | chat | volunteered |
+| 81 | 2026-10-13 | agent | Saved keys to the vault; verified all three; created Supabase goserve-dev (Mumbai) and saved URLs/keys; created Vercel goserve-app-dev with dev env vars; MVP 0 phase gate passed | Supabase, Vercel, vault, phase-gate.md | asked |
 | $LAST_STEP$ | | agent | ... | ... | ... |
