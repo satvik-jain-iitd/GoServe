@@ -33,3 +33,6 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Push to dev with `app/**` deploys to Vercel with the three repo secrets | #41 | S1 | Unit (workflow check) | `scripts/test_deploy_dev.py` | Partly: workflow check passes; URL row below is pending |
 | Deploy paths contain `app/**` and never `site/` | #41 | S2 | Unit (workflow check) | `scripts/test_deploy_dev.py` | Pass |
 | Dev URL returns 200 and the app is installable | #41 | S1 | Manual after first deploy | `goserve-app-dev` URL | Pending first deploy |
+| App on main publishes to Pages project `goserve-app` with Cloudflare secrets, paths `app/**` and `design/tokens.json` | #42 | S1 | Unit (workflow check) | `scripts/test_deploy_app.py` | Pass |
+| `deploy.yml` (project `goserve`) is unchanged and app deploy never watches `site/` | #42 | S2 | Unit (workflow check) | `scripts/test_deploy_app.py` | Pass |
+| `goserve-app.pages.dev` returns 200 (today 522) | #42 | S1 | Manual after the first release PR to main | `goserve-app.pages.dev` | Pending first release |

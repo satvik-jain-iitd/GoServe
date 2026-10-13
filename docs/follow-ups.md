@@ -65,3 +65,4 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F60 | WebKit/iOS: Playwright cannot test Add to Home Screen. The owner's iPhone check is the manual row for it. Add a WebKit project only if a Safari-only bug shows up. | Owner | Open |
 
 | F57 | After PR for #40 merges: add the new CI checks `App (typecheck, unit, e2e, build)` and `Guard (secrets, size, markers, commit messages, PR size)` as required checks in the `protect dev and main` ruleset. | Owner | Open |
+| F61 | Prod deploy needs the Pages project `goserve-app` to exist. No Cloudflare token is in the local vault, so I could not check. If the first run says "project not found", the owner creates it once (Pages, Create, Direct Upload, name `goserve-app`). The app only reaches `main` through a release PR (rule 17). | Owner | Open |
