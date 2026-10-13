@@ -104,4 +104,6 @@ Rule: read this first in every session, append before saying done.
 | 96 | 2026-10-13 | agent | Remote tidy with owner yes: deleted 3 merged branches (#30–#32) and 7 unused default labels (kept bug, documentation, enhancement, epic, story) | GitHub | asked |
 | 97 | 2026-10-13 | owner | Merged PR #57; set branch protection on dev and main; said start | chat | asked |
 | 98 | 2026-10-13 | agent | Story #39: wrote failing tests first, then scaffolded app/ (React, Vite, TS, PWA, tokens); verify and e2e green | app/ | none |
+| 99 | 2026-10-13 | owner | Said to start the next story on a separate branch and PR | chat | volunteered |
+| 100 | 2026-10-13 | agent | Story #40: guard script tests first (red), then scripts/guard.py, pre-commit config, COMMIT_GUIDELINES.md, CI jobs app and guard | scripts/, .github/, .pre-commit-config.yaml | none |
 | $LAST_STEP$ | | agent | ... | ... | ... |

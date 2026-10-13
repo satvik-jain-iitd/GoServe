@@ -27,3 +27,6 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Manifest colours come from tokens.json; index.html theme-color matches; Apple touch icon linked | #39 | S1 | Unit | `app/tests/unit/manifest.test.ts` | Pass |
 | App shell loads offline after the first visit | #39 | S1 | End-to-end | `app/tests/e2e/app.spec.ts` | Pass |
 
+| Guard: clean file passes; secret, file over 500KB, merge marker, unclosed code block are blocked | #40 | S2 | Unit | `scripts/test_guard.py` | Pass |
+| Guard: Conventional Commit subjects accepted, bad ones rejected; PR over 50 files rejected | #40 | S2 | Unit | `scripts/test_guard.py` | Pass |
+| Every PR runs lint, type check, unit, e2e and build for app/ | #40 | S1 | CI | `.github/workflows/ci.yml` job `app` | Pending first PR run |

@@ -39,3 +39,61 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  app:
+    name: App (typecheck, unit, e2e, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests (build included)
+        run: npm run test:e2e
+
+  guard:
+    name: Guard (secrets, size, markers, commit messages, PR size)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard unit tests
+        run: python3 -m unittest discover -s scripts -p "test_*.py"
+
+      - name: Changed files
+        if: github.event_name == 'pull_request'
+        run: |
+          base=origin/${{ github.base_ref }}
+          git diff --name-only --diff-filter=d "$base"...HEAD | grep -vE '^knowledge/|package-lock\.json$' | xargs -r python3 scripts/guard.py files
+          python3 scripts/guard.py count "$(git diff --name-only "$base"...HEAD | wc -l)"
+
+      - name: Commit messages
+        if: github.event_name == 'pull_request'
+        run: |
+          rc=0
+          while IFS= read -r subject; do
+            python3 scripts/guard.py msg "$subject" || rc=1
+          done < <(git log --no-merges --format=%s origin/${{ github.base_ref }}..HEAD)
+          exit $rc
+
