@@ -65,3 +65,5 @@ short. Say what happened and what to do next time.
 - A guard that scans for secrets flags its own tests. Build test fixtures from string parts at runtime so the repo stays clean.
 - `gh auth refresh` has no account flag. Switch account first (`cd ~ && command gh auth switch`), refresh, and switch back.
 - Documentation is never on the critical path. Post the questions and the coder handoff as soon as the analysis is done; write the notebook afterwards in the background. PR #62 made the coder wait for the writer; the owner stopped it.
+- A deploy workflow is only as real as the branch it runs on. PR #63 copied a working workflow, but `main` has no `app/` and the release checklist (PLAN.md section 2, rule 17) never ships it. Before trusting a trigger, check that its inputs can exist on that branch.
+- When the coder's checkout is on another branch, the reviewer hands over a notebook bundle in the scratchpad instead of writing into the working tree; the coder copies it onto the right branch. Avoids rebase conflicts on shared docs.

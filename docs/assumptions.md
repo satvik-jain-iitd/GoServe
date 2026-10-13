@@ -48,3 +48,4 @@ Every assumption we are working from, stated plainly. If an assumption turns out
 | A38 | `letsdwelo.in` belongs to the Dropshipping project (Dwelo). It is a temporary home for the GoServe investor site only; no changes unless the owner asks; it moves to a GoServe domain later. | Owner, 13 Oct. | Confirmed |
 | A39 | The app's address is **`goserve-app.pages.dev`** (project created 13 Oct, no suffix). letsdwelo.in stays the investor site only. | Owner, 13 Oct. | Confirmed |
 | A40 | Dev site on Vercel (from `dev`) with Supabase `goserve-dev`; production on Cloudflare `goserve-app.pages.dev` (from `main`) with Supabase `goserve`. | Owner, 13 Oct (ADR-008). | Confirmed |
+| A41 | MVP 0 order steps are `placed, accepted, preparing, ready, out_for_delivery, delivered`, one step forward at a time. No cancel yet. Rider assigned and arriving are events in `order_events`, not statuses. | Agent, story #43, 14 Oct. | Open: owner to confirm |
