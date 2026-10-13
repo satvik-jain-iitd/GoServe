@@ -23,3 +23,12 @@ Apne sawaal yahan. Status: **open** (jawab nahi mila) / **answered** / **dropped
 | Q10 | Secret regex saare secrets pakadta hai? | PR #59 / guard.py | haan | Nahi — ~80% by design. JWT pattern Supabase cover karta hai; Stripe `sk_live_` add hua. Naya format = ek regex + ek test. | answered |
 | Q11 | Guard direct push par chalta hai? | PR #59 / ci.yml | haan | Nahi — files/msg steps sirf `pull_request` par. Intended: ruleset push block karta hai, isliye har change PR se aata hai. | answered |
 | Q12 | Guard khud ko kaun check karta hai? | PR #59 / guard.py | haan | `test_guard_passes_on_itself` add hua — har `scripts/*.py` par guard chalata hai. (Par test delete hone par koi flag nahi — aadha band hua.) | answered |
+
+## PR #62 ke baad
+
+| # | Sawaal | Kahan poocha (PR#/file) | Jawab mila? | Jawab | Status |
+|---|---|---|---|---|---|
+| Q13 | Dono tests YAML ka text padhte hain. Agar `.vercel/output` ka shape galat ho to kaunsa test laal hoga? Smoke check (URL 200) CI mein kab aayega? | PR #62 / scripts/test_deploy_dev.py | nahi |  | open |
+| Q14 | `vercel@latest` ki jagah major version pin karna behtar hai? | PR #62 / .github/workflows/deploy-dev.yml | nahi |  | open |
+| Q15 | `paths` mein `design/tokens.json` kyun nahi, jabki app build use import karta hai? | PR #62 / .github/workflows/deploy-dev.yml | nahi |  | open |
+| Q16 | Secrets job-level `env` mein hain; sirf Deploy step par rakhna safer nahi? | PR #62 / .github/workflows/deploy-dev.yml | nahi |  | open |

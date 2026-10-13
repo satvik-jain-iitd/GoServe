@@ -2,7 +2,7 @@
 
 System ka ek-page picture. Har chapter ke baad update karta hoon.
 
-_Last updated: PR #59 (merged `fa9a345b`)_
+_Last updated: PR #62 (open, `f3b70b4d`)_
 
 ## GoServe — ab tak ki tasveer
 
@@ -14,6 +14,7 @@ _Last updated: PR #59 (merged `fa9a345b`)_
      |--- docs/          → plan, decisions, follow-ups, test-cases, pr-reviews
      |--- scripts/       → guard.py  (repo rules ka checklist)         ← PR #59
      |--- .github/       → ci.yml  (site + app + guard jobs)           ← PR #59
+     |                    deploy-dev.yml (push to dev → Vercel dev)   ← PR #62
      |--- app/           → PRODUCT APP  (PR #58 se shuru)
                           |
                           ├─ index.html      (main door)
@@ -32,7 +33,8 @@ _Last updated: PR #59 (merged `fa9a345b`)_
 1. Dev commit → pre-commit hook (guard files + message).
 2. Push → PR → CI chalta hai (site, app, guard jobs).
 3. Sab green → merge → dev.
-4. App chalane par: index.html → main.tsx → App → service worker (offline).
+4. Merge to dev (`app/` badla ho) → deploy to Vercel dev (`deploy-dev.yml`, PR #62).
+5. App chalane par: index.html → main.tsx → App → service worker (offline).
 
 ## Yeh PR ke baad kya samajh aaya
 - **Do layer ka check:** pre-commit (ghar par) + CI (factory gate). Defense in depth.
@@ -40,6 +42,10 @@ _Last updated: PR #59 (merged `fa9a345b`)_
 - Guard **secrets ko dhoondhta hai** par sirf kuch known patterns. Review ke baad Stripe `sk_live_` add hua; Supabase keys JWT pattern se cover. Naya format aa to ek regex + ek test.
 - Guard khud par pass karta hai (`test_guard_passes_on_itself`), aur ab ek test doc/regex drift bhi pakadta hai — par agar koi test *delete* kar de to koi flag nahi karta.
 - `guard` job ke file/message checks sirf **PR** par chalte hain, direct push par nahi.
+- **Deploy ek alag rule board hai** (PR #62): `deploy-dev.yml` CI se alag file hai. CI check karta hai, yeh deliver karta hai.
+- **Tiffin ka rule:** sirf `app/` ke order par deploy chalta hai (`paths:`), counter (`site/`) par nahi. (Par `design/tokens.json` abhi list mein nahi — sawaal khula.)
+- **Ek hi delivery boy:** `concurrency` naye run se purana cancel karta hai, isliye do deploy ek saath nahi chalte.
+- **Green test sirf board check karta hai:** test file ko text ki tarah padhta hai. Asli proof pehle merge ke baad ka run hai.
 
 ## Abhi bhi andhera (jawab nahi mila)
 - Router / screens ka shape (aage ke chapters).
@@ -48,4 +54,4 @@ _Last updated: PR #59 (merged `fa9a345b`)_
 
 ## Abhi kya NAHI hai
 - Koi login, koi order, koi payment, koi kitchen/rider screen.
-- Koi deploy job (CI sirf check karta hai) — #41 dev deploy se shuru hoga.
+- Dev deploy job ab hai (PR #62, open). Prod deploy (Cloudflare Pages) abhi nahi — story #42.

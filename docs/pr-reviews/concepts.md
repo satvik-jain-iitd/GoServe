@@ -66,3 +66,35 @@ Har naya technical word yahan. Simple Hindi mein. Ek line ka "yeh kya hai", ek l
 - **Kya hai:** Ek PR mein max 50 files.
 - **Analogy:** Ek baar mein ek truck se zyada maal nahi.
 - **File:** `guard.py` ka `check_count`.
+
+## PR #62 se
+
+### Path filter (`paths:`)
+- **Kya hai:** Workflow sirf tab chalta hai jab push mein listed folder ya file badli ho.
+- **Analogy:** Rule board par likha hai "sirf kitchen ke order, counter (site/) ke nahi".
+- **File:** `.github/workflows/deploy-dev.yml` lines 6–8.
+
+### Concurrency group + cancel-in-progress
+- **Kya hai:** Ek group mein ek samay par ek hi run. Naya run chalu ho to purana cancel ho sakta hai.
+- **Analogy:** Ek hi delivery boy; naya order purane ko replace karta hai.
+- **File:** `.github/workflows/deploy-dev.yml` lines 12–14.
+
+### workflow_dispatch
+- **Kya hai:** GitHub Actions tab mein manual "Run workflow" button.
+- **Analogy:** Manager haath se dispatch bulaye.
+- **File:** `.github/workflows/deploy-dev.yml` line 9.
+
+### Prebuilt output (`.vercel/output`, Build Output API)
+- **Kya hai:** Ek fixed folder shape (`static/` + `config.json`) jise Vercel bina dobara build kiye serve karta hai.
+- **Analogy:** Vercel ka standard dabba. Packing hamari, delivery unki.
+- **File:** `.github/workflows/deploy-dev.yml` lines 40–47.
+
+### Repo secrets as env
+- **Kya hai:** `secrets.X` ko job ya step ke `env` mein daalna, taaki CLI padh sake. Values log mein nahi dikhti.
+- **Analogy:** Delivery boy ka ID card jeb mein, parchi par nahi likha.
+- **File:** `.github/workflows/deploy-dev.yml` lines 20–23.
+
+### Testing config as text
+- **Kya hai:** Test YAML ko ek string ki tarah padhta hai aur phrases regex se check karta hai. Yeh board ka sahi hona check karta hai, delivery ka nahi.
+- **Analogy:** Inspector board padhta hai, khana nahi chakhta.
+- **File:** `scripts/test_deploy_dev.py`.

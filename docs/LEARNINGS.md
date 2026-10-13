@@ -61,3 +61,7 @@ short. Say what happened and what to do next time.
 - Output tokens cost more than input. Keep reading and judging on the strong model; hand long prose to a small model that works only from a brief, then check its output against the brief.
 - A quality pass on generated prose needs a mechanical scan too: one stray Devanagari character slipped past a careful read; `grep -P '[\x{0900}-\x{097F}]'` catches it in one line.
 - The two-account rule covers the PR itself, not only the commits. PR #60 had dev-account commits but was opened by the review account. Open every PR from the dev account; the review account only reviews, approves and merges.
+- CI only runs on PRs whose base is `main` or `dev`. A stacked PR on another feature branch shows no checks; retarget it to `dev` (close and reopen) to start CI.
+- A guard that scans for secrets flags its own tests. Build test fixtures from string parts at runtime so the repo stays clean.
+- `gh auth refresh` has no account flag. Switch account first (`cd ~ && command gh auth switch`), refresh, and switch back.
+- Documentation is never on the critical path. Post the questions and the coder handoff as soon as the analysis is done; write the notebook afterwards in the background. PR #62 made the coder wait for the writer; the owner stopped it.
