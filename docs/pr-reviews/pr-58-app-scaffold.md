@@ -410,6 +410,16 @@ Story #39 ke scenarios S1 (build + install) aur S2 (colours from tokens).
 
 ---
 
+## Handoff
+
+State: 12 answered · 3 fixed (95316a8) · 0 open · actor: owner
+
+_(Retro note: handoff rule PR #59 ke review mein bana. PR #58 usse pehle merge ho
+chuka tha, isliye yahan koi handoff post nahi hua. Agla item us waqt story #40
+tha — CI guard — jo PR #59 bana.)_
+
+---
+
 ## What happened after review
 
 - **Review comments post hue:** 13 Oct 2026, ~17:01–17:11 (by satvik-jain-iitd) — 12 files par 33 questions.
@@ -417,4 +427,4 @@ Story #39 ke scenarios S1 (build + install) aur S2 (colours from tokens).
 - **Follow-up commit (review ke baad):** `95316a8` — "manifest colours from tokens, touch icon, offline test, stricter token test". Files: `pwa-manifest.ts`, `index.html`, `app.spec.ts`, `manifest.test.ts`, `tokens.test.ts`, `vite.config.ts`, `tsconfig.json`, + follow-ups/test-cases.
 - **Result:** 3 questions ne seedha code badla (manifest colours, apple-touch-icon, offline test, stricter token test). Baaki 3 future items ban gaye: **F58, F59, F60**.
 - **Merge:** `bcd14d4` (13 Oct 2026, 17:16).
-- **Is chapter ka big lesson:** ek accha review sawaal → turant code change **ya** ek registered follow-up. Kuch nahi girtा. Yeh "AI-code review" ka asli tarika hai.
+- **Is chapter ka big lesson:** ek accha review sawaal → turant code change **ya** ek registered follow-up. Kuch nahi girta. Yeh "AI-code review" ka asli tarika hai.

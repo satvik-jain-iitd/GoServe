@@ -4,16 +4,16 @@ Apne sawaal yahan. Status: **open** (jawab nahi mila) / **answered** / **dropped
 
 ## PR #58 ke baad
 
-| # | Sawaal | Status | Jawab / kahan |
-|---|---|---|---|
-| 1 | `main.tsx` aur `App.tsx` mein farak kya hai? | answered | `main.tsx` = switchboard (app start). `App.tsx` = welcome board (andar ka UI). |
-| 2 | Service worker kaam kya karta hai? | answered | Background helper — files cache + offline chalata hai. |
-| 3 | Design token "single source of truth" kaise enforced? | answered | `design/tokens.json` se colours aate hain + drift-guard test pakadta hai. |
-| 4 | Ek PWA char roles — bundle bada nahi hoga? | open | F59/aage ke chapters — code-splitting ka plan. |
-| 5 | `autoUpdate` ke beech order reload ho jaye to? | open | Follow-up F59 (due before story #48). |
-| 6 | Supabase/auth kahan baithega? | open | ADR-009 chahiye. |
-| 7 | iOS install test kaise hoga jab Playwright na kar sake? | answered | Manual test row F60 (owner iPhone par). |
-| 8 | Kyun kuch jaan-boojh kar nahi banaya (router, screens)? | answered | Ponytail rule — sirf zaroori code; screens apni stories mein. |
+| # | Sawaal | Kahan poocha (PR#/file) | Jawab mila? | Jawab | Status |
+|---|---|---|---|---|---|
+| Q1 | `main.tsx` aur `App.tsx` mein farak kya hai? | PR #58 / main.tsx, App.tsx | haan | `main.tsx` = switchboard (app start). `App.tsx` = welcome board (andar ka UI). | answered |
+| Q2 | Service worker kaam kya karta hai? | PR #58 / vite.config.ts | haan | Background helper — files cache + offline chalata hai. | answered |
+| Q3 | Design token "single source of truth" kaise enforced? | PR #58 / tokens.test.ts | haan | `design/tokens.json` se colours aate hain + drift-guard test pakadta hai. | answered |
+| Q4 | Ek PWA char roles — bundle bada nahi hoga? | PR #58 / App.tsx | nahi | F59/aage ke chapters — code-splitting ka plan. | open |
+| Q5 | `autoUpdate` ke beech order reload ho jaye to? | PR #58 / vite.config.ts | nahi | Follow-up F59 (due before story #48). | open |
+| Q6 | Supabase/auth kahan baithega? | PR #58 / (ADR-009) | nahi | ADR-009 chahiye. | open |
+| Q7 | iOS install test kaise hoga jab Playwright na kar sake? | PR #58 / playwright.config.ts | haan | Manual test row F60 (owner iPhone par). | answered |
+| Q8 | Kyun kuch jaan-boojh kar nahi banaya (router, screens)? | PR #58 / (scope) | haan | Ponytail rule — sirf zaroori code; screens apni stories mein. | answered |
 
 ## PR #59 ke baad
 

@@ -42,7 +42,6 @@ _Last updated: PR #59 (merged `fa9a345b`)_
 - `guard` job ke file/message checks sirf **PR** par chalte hain, direct push par nahi.
 
 ## Abhi bhi andhera (jawab nahi mila)
-- PR #59 **merged** (`fa9a345b`) — loop pura. Ab agla: #41 dev deploy.
 - Router / screens ka shape (aage ke chapters).
 - Supabase aur auth kahan baithenge (ADR-009).
 - Role-wise code-splitting ka plan.

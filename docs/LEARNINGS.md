@@ -58,3 +58,5 @@ short. Say what happened and what to do next time.
 - Secrets live in `~/Desktop/Secrets/` only. Never in the repo.
 - A status check must also compare docs with each other. Two docs for one build drifted apart (spec vs build design). The build design now owns the build; the spec points to it.
 - A story needs its issue before any code. Check the issue list at the start of a phase, not at the first commit.
+- Output tokens cost more than input. Keep reading and judging on the strong model; hand long prose to a small model that works only from a brief, then check its output against the brief.
+- A quality pass on generated prose needs a mechanical scan too: one stray Devanagari character slipped past a careful read; `grep -P '[\x{0900}-\x{097F}]'` catches it in one line.
