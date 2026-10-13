@@ -56,5 +56,5 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F50 | Turn on "require 1 approving review" for `dev` and `main` once the dev account works (so only the owner can merge). | Owner + agent | Open |
 | F51 | Vercel account on klickbae8yt: decided — dev site host (ADR-008). Owner saves `VERCEL_TOKEN` in Secrets. | Owner | Open |
 | F52 | Rotate the Supabase, Vercel and UptimeRobot keys (pasted in chat on 13 Oct). | Owner | Open |
-| F53 | Link Vercel `goserve-app-dev` to the repo: deploy from GitHub Actions with `VERCEL_TOKEN` (repo secret), or install the Vercel GitHub app on `satvik-jain-iitd/GoServe`. Decide in the build task. | Owner + agent | Open |
+| F53 | Vercel `goserve-app-dev` deploys from GitHub Actions (no Vercel GitHub app link; it confused the owner and needs the app on the repo owner's account). Repo secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` set 13 Oct. The workflow (deploy on push to `dev`) is added in the build task with `app/`. | Agent | Open |
 | F54 | Add UptimeRobot monitors for the app (prod + dev) after the first deploy; Telegram alerts via the UptimeRobot UI. | Agent | Open |
