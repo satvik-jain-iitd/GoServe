@@ -15,8 +15,12 @@ class DeployDev(unittest.TestCase):
         self.assertRegex(self.text, r"vercel(@\S+)? deploy --prebuilt --prod")
 
     def test_s2_site_changes_never_trigger_it(self):
-        paths = re.search(r"paths:\n((?:\s+- .*\n)+)", self.text).group(1)
+        m = re.search(r"paths:\n((?:\s+- .*\n)+)", self.text)
+        self.assertIsNotNone(m, "deploy must have a paths filter")
+        paths = m.group(1)
         self.assertIn("app/**", paths)
+        self.assertIn("design/tokens.json", paths)  # the app build imports it
+        self.assertRegex(self.text, r"vercel@\d+ deploy")  # major version pinned
         self.assertNotIn("site/", paths)
 
 

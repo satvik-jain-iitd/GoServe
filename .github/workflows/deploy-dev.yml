@@ -5,6 +5,7 @@ on:
     branches: [dev]
     paths:
       - "app/**"
+      - "design/tokens.json"
       - ".github/workflows/deploy-dev.yml"
   workflow_dispatch:
 
@@ -17,10 +18,6 @@ jobs:
   vercel:
     name: Build and publish to goserve-app-dev
     runs-on: ubuntu-latest
-    env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -43,5 +40,10 @@ jobs:
           cp -r app/dist .vercel/output/static
           echo '{"version":3}' > .vercel/output/config.json
 
+      # Secrets live only on this step, so npm install scripts never see them.
       - name: Deploy
-        run: npx --yes vercel@latest deploy --prebuilt --prod
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: npx --yes vercel@64 deploy --prebuilt --prod

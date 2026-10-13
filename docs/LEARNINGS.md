@@ -64,3 +64,4 @@ short. Say what happened and what to do next time.
 - CI only runs on PRs whose base is `main` or `dev`. A stacked PR on another feature branch shows no checks; retarget it to `dev` (close and reopen) to start CI.
 - A guard that scans for secrets flags its own tests. Build test fixtures from string parts at runtime so the repo stays clean.
 - `gh auth refresh` has no account flag. Switch account first (`cd ~ && command gh auth switch`), refresh, and switch back.
+- Documentation is never on the critical path. Post the questions and the coder handoff as soon as the analysis is done; write the notebook afterwards in the background. PR #62 made the coder wait for the writer; the owner stopped it.

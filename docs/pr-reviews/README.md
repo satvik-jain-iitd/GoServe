@@ -17,6 +17,7 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana â
 |---|---|---|---|---|
 | 1 | [#58](pr-58-app-scaffold.md) | feat(app): scaffold React, Vite, TypeScript PWA with design tokens | MERGED | #39 (epic #33) |
 | 2 | [#59](pr-59-app-ci.md) | ci: add app and guard CI jobs, pre-commit hooks and commit guidelines | MERGED | #40 (epic #33) |
+| 3 | [#62](pr-62-dev-deploy.md) | ci: deploy app/ to Vercel dev on push to dev | OPEN (16 questions posted) | #41 (epic #33) |
 
 ## Journals
 - [concepts.md](concepts.md) â€” naye technical words, plain Hindi mein.
@@ -28,6 +29,7 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana â
 |---|---|
 | app (PWA skeleton) | #58 |
 | CI + guard (checks) | #59 |
+| Deploy (dev â†’ Vercel) | #62 |
 
 ## Notes
 - Chapters Romanized Hindi mein hain. Code, file paths, commands English mein.
