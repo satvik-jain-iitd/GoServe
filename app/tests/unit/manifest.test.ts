@@ -28,4 +28,15 @@ describe("web app manifest", () => {
     expect(colours.has(manifest.theme_color.toUpperCase())).toBe(true);
     expect(colours.has(manifest.background_color.toUpperCase())).toBe(true);
   });
+
+  it("takes its colours from tokens.json (deep green, cream)", () => {
+    expect(manifest.theme_color.toUpperCase()).toBe(tokens.color.core.deepGreen.toUpperCase());
+    expect(manifest.background_color.toUpperCase()).toBe(tokens.color.core.cream.toUpperCase());
+  });
+
+  it("index.html theme-color matches the manifest and links an Apple touch icon (iPhone install)", () => {
+    const html = readFileSync(resolve(__dirname, "../../index.html"), "utf8");
+    expect(html).toContain(`<meta name="theme-color" content="${manifest.theme_color}"`);
+    expect(html).toMatch(/<link rel="apple-touch-icon" href="\/icons\/icon-192\.png"/);
+  });
 });

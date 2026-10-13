@@ -23,3 +23,7 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Manifest has 192 and 512 icons on disk, token colours only | #39 | S1 | Unit | `app/tests/unit/manifest.test.ts` | Pass |
 | App opens, links the manifest, registers a service worker | #39 | S1 | End-to-end | `app/tests/e2e/app.spec.ts` | Pass |
 | App tokens.css has every core, supporting and status colour from tokens.json | #39 | S2 | Unit | `app/tests/unit/tokens.test.ts` | Pass |
+| tokens.css has no colour outside tokens.json | #39 | S2 | Unit | `app/tests/unit/tokens.test.ts` | Pass |
+| Manifest colours come from tokens.json; index.html theme-color matches; Apple touch icon linked | #39 | S1 | Unit | `app/tests/unit/manifest.test.ts` | Pass |
+| App shell loads offline after the first visit | #39 | S1 | End-to-end | `app/tests/e2e/app.spec.ts` | Pass |
+

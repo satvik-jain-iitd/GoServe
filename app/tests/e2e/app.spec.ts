@@ -23,3 +23,11 @@ test("a service worker registers", async ({ page }) => {
   });
   expect(registered).toBe(true);
 });
+
+test("the app shell loads offline after the first visit", async ({ page, context }) => {
+  await page.goto("/");
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await context.setOffline(true);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "GoServe" })).toBeVisible();
+});

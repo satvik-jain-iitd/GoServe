@@ -60,3 +60,7 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F54 | Add UptimeRobot monitors for the app (prod + dev) after the first deploy; Telegram alerts via the UptimeRobot UI. | Agent | Open |
 | F55 | Epics #33–#38 and stories #39–#56 need the owner to look at them (Definition of Ready item 6). | Owner | Open |
 | F56 | Webhook demo token sits in the app (ADR-009). Rotate it at every release; keep the webhook throttled. | Agent | Open |
+| F58 | Maskable icon: the brand icon has no safe-zone padding. Make a padded maskable version and add `"purpose": "maskable"` (Android adaptive icons) before the founder's Android check. | Agent | Open |
+| F59 | PWA update flow: `autoUpdate` reloads silently. Before checkout and order tracking exist (stories #48 to #50), switch to a "new version, tap to refresh" prompt. | Agent | Open |
+| F60 | WebKit/iOS: Playwright cannot test Add to Home Screen. The owner's iPhone check is the manual row for it. Add a WebKit project only if a Safari-only bug shows up. | Owner | Open |
+
