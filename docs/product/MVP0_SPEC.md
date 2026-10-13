@@ -96,7 +96,7 @@ One order, full loop, both ends watching it move.
 
 ## 6. The backend for MVP 0
 
-We use n8n as the backend logic for MVP 0. It is already running on the Oracle server. Orders, events and logs live in Supabase, so the data and the live updates do not depend on the Oracle server. A Cloudflare Pages Function is the front door for `/api/*`.
+We use n8n as the backend logic for MVP 0. It is already running on the Oracle server. Orders, events and logs live in Supabase, so the data and the live updates do not depend on the Oracle server. There is no front-door function (ADR-009): the phone reads Supabase directly and writes through the n8n webhook.
 
 ### 6.1 The shape matters more than the tool
 
@@ -113,7 +113,7 @@ This is the one rule that keeps MVP 0 from becoming throwaway.
 | GET | `/api/order/:id` | Return one order and its status. |
 | GET | `/api/orders` | Return today's orders (kitchen and ops). |
 | POST | `/api/order/:id/status` | Move an order to the next status. |
-| GET | `/api/events/stream` | Live updates (server-sent events). |
+| GET | `/api/events/stream` | Live updates. Name kept for later; MVP 0 uses Supabase Realtime (6.5). |
 
 ### 6.3 Event names (frozen now)
 
@@ -121,7 +121,7 @@ This is the one rule that keeps MVP 0 from becoming throwaway.
 
 These match the solutioning document exactly. Do not invent new names in MVP 0.
 
-### 6.4 n8n workflows (four)
+### 6.4 n8n workflows (first sketch; the final list is in `docs/architecture/mvp0-build-design.md` section 6: five workflows plus one scheduled job)
 
 1. **menu** — Webhook `GET /api/menu` reads a menu table (or a fixed JSON) and returns the list.
 2. **place-order** — Webhook `POST /api/order`. Validates items, writes a row to the orders table with status `placed`, writes the status history, fires the live event. Returns the order id.
@@ -132,7 +132,7 @@ These match the solutioning document exactly. Do not invent new names in MVP 0.
 
 Supabase Realtime pushes every change to the screens. No polling, so n8n runs only when someone taps. The `/api/events/stream` path is kept as a name for later; in MVP 0 the screens subscribe to Supabase directly.
 
-### 6.6 Data stored (minimum)
+### 6.6 Data stored (minimum; the full 7-table design with `kitchen_id` and `session_id` is in `docs/architecture/mvp0-build-design.md` section 5)
 
 One `orders` table:
 
@@ -152,7 +152,7 @@ One `order_events` table: order id, event name, timestamp. This is the history, 
 
 ## 7. The frontend for MVP 0
 
-One PWA with Material Design 3. The framework is proposed in ADR-006 (Vite + Preact + TypeScript). Rules:
+One PWA with Material Design 3. The framework is React + Vite + TypeScript (ADR-006, accepted). Rules:
 
 1. One codebase. Screens differ by role, not by app.
 2. The browser only shows screens and calls the API. No logic in the browser.

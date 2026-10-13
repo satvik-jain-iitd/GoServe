@@ -14,10 +14,10 @@ Jev (TypeSafe, through OpenRouter) is our AI decision helper. It is cheap but pa
 
 ## Decision
 
-1. Log every decision from MVP 0 in one shape (`docs/LAYA_PLAN.md` section 4).
+1. Log every decision from MVP 0 in one shape (`docs/ai/LAYA_PLAN.md` section 4).
 2. Add real results as labels from MVP 1.
 3. Train Laya v1 in MVP 2 and run it quietly next to Jev.
-4. Put Laya live per decision only when it passes the gate in `docs/LAYA_PLAN.md` section 8. Backup order: Laya → Jev → rule.
+4. Put Laya live per decision only when it passes the gate in `docs/ai/LAYA_PLAN.md` section 8. Backup order: Laya → Jev → rule.
 5. Keep code for exact jobs: zone check (D5) and delivery minutes (D2).
 6. Jev's answers are our output (owner decision, 13 Oct 2026). We use high-confidence Jev answers as teacher labels, next to real results.
 

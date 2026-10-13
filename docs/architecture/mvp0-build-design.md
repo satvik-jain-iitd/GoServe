@@ -34,8 +34,8 @@ Solo demo: tap **Autopilot**. The kitchen and rider steps move by themselves.
 
 | Part | Runs on | Note |
 |---|---|---|
-| PWA screens | Phone (Cloudflare Pages) | Stack in ADR-006 (proposed) |
-| Front door `/api/*` | Cloudflare Pages Function | Checks a demo role token. Limits spam. Forwards to n8n |
+| PWA screens | Phone (Vercel for dev, Cloudflare Pages for production) | Stack in ADR-006 (accepted) |
+| Front door | None (ADR-009) | The phone reads Supabase directly and writes through an n8n webhook that checks a demo token |
 | Order logic | n8n on Oracle | MAIN and SUB workflows, rulebook B11 and B12 |
 | Orders, events, logs | Supabase Postgres | New GoServe project. Never touch `sync.linkright.in` |
 | Live updates | Supabase Realtime | No polling |
@@ -51,7 +51,7 @@ Every table has `kitchen_id` and `session_id`.
 | `menu_items` | Dishes, prices, available flag |
 | `orders` | One row per order. A unique order key comes from the phone, so a retry never makes two orders |
 | `order_events` | One row per step, with time and who did it. Never edited |
-| `decision_log` | Every decision, in the shape in `docs/LAYA_PLAN.md` section 4 |
+| `decision_log` | Every decision, in the shape in `docs/ai/LAYA_PLAN.md` section 4 |
 | `run_log` | Every workflow run: settings version, time taken, cost, errors |
 | `params` | Tunable settings with a version number |
 
@@ -61,7 +61,7 @@ The database itself rejects an illegal step (for example, "delivered" before "re
 
 | Workflow | Job |
 |---|---|
-| `GS MAIN 01 Order API` | One trigger family: the front door's calls. Config, kill switch, then calls the SUBs |
+| `GS MAIN 01 Order API` | One trigger family: the phone's webhook calls. Config, kill switch, then calls the SUBs |
 | `GS SUB 11 Place order` | Check items, write the order and its first event |
 | `GS SUB 12 Change status` | Check the step is legal, write the event |
 | `GS SUB 13 Decide` | Rule first, Jev second, write the decision row. Later, Laya joins here |
@@ -104,5 +104,5 @@ Five workflows plus one scheduled job. Propose, test and promote workflows come 
 | Uptime monitor | ✅ UptimeRobot free; n8n health monitor Up; app monitors added after the first deploy | None |
 | Vercel dev project | ✅ `goserve-app-dev` with `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` (dev) | Git link: deploy from GitHub Actions with `VERCEL_TOKEN`, or install the Vercel GitHub app on the repo |
 | Test devices | ✅ Android emulation on the laptop + owner's iPhone + founder's Android for the final check | Share the link with the founder before the demo |
-| Founder business steps | Not needed for MVP 0 | Start the checklist in `docs/founder-checklist.md` |
+| Founder business steps | Not needed for MVP 0 | Start the checklist in `docs/product/founder-checklist.md` |
 

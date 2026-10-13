@@ -13,7 +13,7 @@ Plus one viewable file: `diagrams.html` (opens in any browser, no install).
 
 ## New inputs from Satvik (11 Oct 2026)
 
-- The AI-build-time idea now lives in his Obsidian vault as **ID049** (`~/Desktop/SecondBrain/Ideas`) and in `docs/IDEAS.md`. It is a side project (`ai-project-health-tracker`). We do NOT build it with GoServe now. Later we may apply it to GoServe's roadmap.
+- The AI-build-time idea now lives in his Obsidian vault as **ID049** (`~/Desktop/SecondBrain/Ideas`) and in `docs/ideas.md`. It is a side project (`ai-project-health-tracker`). We do NOT build it with GoServe now. Later we may apply it to GoServe's roadmap.
 - He wants the whole build to assume **AI writes the code**, so the project health tracker's calibration loop decides our MVPs (log: complexity guess, reasoning tokens, edit loops, pass/fail, then a fitted range with a confidence gate).
 - We have a real **Oracle server** (SSH verified this session, key `oracle_rotate`). He wants it used.
 - He runs **n8n** (pm2 + Cloudflare tunnel) and wants it considered as the fast no-code backend for the clickable demo.
@@ -48,10 +48,10 @@ Implications:
 
 ## Deliverables
 
-- `docs/JEV_INTEGRATION_PLAN.md`
-- `docs/SOLUTION_ARCHITECTURE.md`
-- `docs/diagrams.html`
-- (already done) `docs/roadmap.png`, `docs/IDEAS.md`, Obsidian idea ID049
+- `docs/ai/JEV_INTEGRATION_PLAN.md`
+- `docs/architecture/SOLUTION_ARCHITECTURE.md`
+- `docs/architecture/diagrams.html`
+- (already done) `docs/architecture/roadmap.png`, `docs/ideas.md`, Obsidian idea ID049
 
 ## Definition of done
 

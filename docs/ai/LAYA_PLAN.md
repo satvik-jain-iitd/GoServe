@@ -2,7 +2,7 @@
 
 **Date:** 13 Oct 2026
 **Status:** Plan. Decision record: `docs/decisions/ADR-005-laya-replaces-jev.md` (proposed).
-**Related:** `docs/JEV_D1_D5_CONTRACT.md`, `docs/JEV_INTEGRATION_PLAN.md`, `docs/research/laya-2026-10.md`.
+**Related:** `docs/ai/JEV_D1_D5_CONTRACT.md`, `docs/ai/JEV_INTEGRATION_PLAN.md`, `docs/research/laya-2026-10.md`.
 
 ---
 
