@@ -8,7 +8,7 @@ Rule: read this first in every session, append before saying done.
 |---|---|---|---|---|---|
 | 1 | 2026-10-11 | owner | Sent the brief: build Go Serve, a hyperlocal food OS, from the deck and SOW | chat | volunteered |
 | 2 | 2026-10-11 | agent | Read the deck, the SOW, and produced the PRD | docs/product/PRD.md | none |
-| 3 | 2026-10-11 | agent | Wrote the Swish deep research | docs/research/SWISH_DEEP_RESEARCH.md | none |
+| 3 | 2026-10-11 | agent | Wrote the Swish deep research | docs/research/swish-deep-research-2026-10.md | none |
 | 4 | 2026-10-11 | agent | Wrote the solution architecture and diagrams | docs/architecture/SOLUTION_ARCHITECTURE.md, docs/architecture/diagrams.html | none |
 | 5 | 2026-10-11 | agent | Wrote the Jev integration plan and the D1-D5 contract | docs/ai/JEV_INTEGRATION_PLAN.md, docs/ai/JEV_D1_D5_CONTRACT.md | none |
 | 6 | 2026-10-11 | agent | Wrote the MVP 0 build spec | docs/product/MVP0_SPEC.md | none |
@@ -99,4 +99,6 @@ Rule: read this first in every session, append before saying done.
 | 91 | 2026-10-13 | owner | Chose: no front-door function (phone → Supabase + n8n webhook); branch protection now; owner alone reviews and merges all PRs (docs-only exception ended) | chat | asked |
 | 92 | 2026-10-13 | agent | Fixed doc drift (spec, build design, components, ADR-008); wrote ADR-009 | docs/ | none |
 | 93 | 2026-10-13 | agent | Created milestone, 6 epics (#33–#38) and 18 stories (#39–#56) with Gherkin and DoR, attached as sub-issues | GitHub | none |
+| 94 | 2026-10-13 | owner | Asked to organise every folder and file, local and remote | chat | volunteered |
+| 95 | 2026-10-13 | agent | Organised docs into product/, ai/, architecture/, archive/; renamed IDEAS.md and the Swish research to the naming rule; added docs/README.md map; removed .DS_Store files | docs/ | none |
 | $LAST_STEP$ | | agent | ... | ... | ... |
