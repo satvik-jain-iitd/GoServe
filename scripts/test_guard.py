@@ -20,7 +20,7 @@ class Guard(unittest.TestCase):
     def test_secret_is_blocked(self):
         p = write(self.d, "a.ts", 'const k = "sk-or-v1-' + "a" * 40 + '";\n')
         self.assertTrue(any("secret" in e for e in guard.check_files([p])))
-        p = write(self.d, "b.txt", "-----BEGIN PRIVATE KEY-----\n")
+        p = write(self.d, "b.txt", "-----BEGIN " + "PRIVATE KEY-----\n")
         self.assertTrue(any("secret" in e for e in guard.check_files([p])))
 
     def test_big_file_is_blocked(self):
