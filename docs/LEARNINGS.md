@@ -67,5 +67,7 @@ short. Say what happened and what to do next time.
 - Documentation is never on the critical path. Post the questions and the coder handoff as soon as the analysis is done; write the notebook afterwards in the background. PR #62 made the coder wait for the writer; the owner stopped it.
 - A deploy workflow is only as real as the branch it runs on. PR #63 copied a working workflow, but `main` has no `app/` and the release checklist (PLAN.md section 2, rule 17) never ships it. Before trusting a trigger, check that its inputs can exist on that branch.
 - When the coder's checkout is on another branch, the reviewer hands over a notebook bundle in the scratchpad instead of writing into the working tree; the coder copies it onto the right branch. Avoids rebase conflicts on shared docs.
-- Realtime checks row rules with the login token only, not custom headers. A header-based session rule would pass normal reads and silently send no live events. Test the live event, not just the read.
+- Found by test, 14 Oct 2026 (docs link still to add): Realtime checks row rules with the login token only, not custom headers. A header-based session rule would pass normal reads and silently send no live events. Test the live event, not just the read.
 - `SUBSCRIBED` does not mean the server is listening yet. An insert right after it can be missed; wait about a second in tests.
+- A green CI can prove nothing: PR #64's schema test is skipped in CI (no token). Say "local only" in the test list, and let the reviewer re-run it with the vault token before approving.
+- Check the live system, not only the diff: one query showed RLS off and no FK indexes on goserve-dev. The diff cannot show what the database is.

@@ -11,12 +11,14 @@ const KITCHEN = "11111111-1111-1111-1111-111111111111";
 describe.skipIf(!url || !anon || !service)("goserve-dev security and live data", () => {
   const admin = createClient(url!, service!, { auth: { persistSession: false } });
   const keys: string[] = [];
+  const users: string[] = [];
 
   // Each browser gets its own anonymous user; its id is the session id (ADR-010).
   async function newSession(): Promise<{ client: SupabaseClient; id: string }> {
     const client = createClient(url!, anon!, { auth: { persistSession: false } });
     const { data, error } = await client.auth.signInAnonymously();
     expect(error).toBeNull();
+    users.push(data.user!.id);
     return { client, id: data.user!.id };
   }
 
@@ -30,6 +32,7 @@ describe.skipIf(!url || !anon || !service)("goserve-dev security and live data",
 
   afterAll(async () => {
     if (keys.length) await admin.from("orders").delete().in("client_order_key", keys);
+    for (const id of users) await admin.auth.admin.deleteUser(id);
   });
 
   it("S1 sessions are isolated", async () => {
@@ -42,7 +45,17 @@ describe.skipIf(!url || !anon || !service)("goserve-dev security and live data",
     expect(data).toEqual([{ session_id: a.id }]);
   });
 
-  it("S1 the anon key cannot write", async () => {
+  it("S1 the bare anon key (no sign-in) cannot write or read orders", async () => {
+    const bare = createClient(url!, anon!, { auth: { persistSession: false } });
+    const w = await bare.from("orders").insert({
+      kitchen_id: KITCHEN, session_id: "x", client_order_key: "bare", items: [], total_paise: 1, address: "x",
+    });
+    expect(w.error).not.toBeNull();
+    const r = await bare.from("orders").select("id");
+    expect(r.data).toEqual([]);
+  });
+
+  it("S1 a signed-in session cannot write either", async () => {
     const a = await newSession();
     const { error } = await a.client.from("orders").insert({
       kitchen_id: KITCHEN, session_id: a.id, client_order_key: `w-${a.id}`, items: [], total_paise: 1, address: "x",

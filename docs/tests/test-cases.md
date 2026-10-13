@@ -41,5 +41,5 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | The same client order key sent twice leaves one order row | #43 | S3 | Integration (goserve-dev) | `scripts/test_schema.py` | Pass (local only; CI skips, no token) |
 | Two anonymous sessions: A sees only A's orders | #44 | S1 | Integration (goserve-dev) | `app/tests/integration/supabase.test.ts` | Pass (local only; CI skips, no keys) |
 | The anon key cannot insert an order | #44 | S1 | Integration (goserve-dev) | `app/tests/integration/supabase.test.ts` | Pass (local only; CI skips, no keys) |
-| A subscribed client gets a new order within 2 seconds | #44 | S2 | Integration (goserve-dev) | `app/tests/integration/supabase.test.ts` | Pass (local only; CI skips, no keys) |
+| A subscribed client gets a new order within 2 seconds of the insert | #44 | S2 | Integration (goserve-dev) | `app/tests/integration/supabase.test.ts` | Pass (local only; CI skips, no keys) |
 | Menu has 8 to 10 dishes, each with a photo link and credit | #44 | S3 | Integration (goserve-dev) | `app/tests/integration/supabase.test.ts` | Pass (local only; CI skips, no keys) |

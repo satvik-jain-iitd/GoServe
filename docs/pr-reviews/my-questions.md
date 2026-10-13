@@ -40,3 +40,11 @@ Apne sawaal yahan. Status: **open** (jawab nahi mila) / **answered** / **dropped
 | Q17 | Release list (PLAN.md §2, CLAUDE.md rule 17) mein `app` aur `scripts` kyun nahi? Pehli release par deploy fail nahi hoga? | PR #63 / .github/workflows/deploy-app.yml | haan | Haan. `app` aur `scripts` dono release line mein hain (PLAN.md section 2, CLAUDE.md rule 17), 4b77e65 mein. Naya test inhe guard karta hai. | answered |
 | Q18 | Pages project `goserve-app` exist nahi karta to CI fail karega ya auto-create karega? F61 kab karna hai? | PR #63 / .github/workflows/deploy-app.yml | haan | Non-interactive wrangler project nahi banata, fail karta hai. Owner F61 ke tahat project pehle banayega, isliye pehla run fail nahi hoga. | answered |
 | Q19 | S1 negative check ka trailing space `goserve` ko kuch cases mein miss karta hai? Regex behtar hai? | PR #63 / scripts/test_deploy_app.py | haan | Achha pakda. 4b77e65 mein test `--project-name=goserve(?!-app)` check karta hai; line ke end wala case bhi nahi chhootega. | answered |
+
+## PR #64 ke baad
+
+| # | Sawaal | Kahan poocha (PR#/file) | Jawab mila? | Jawab | Status |
+|---|---|---|---|---|---|
+| Q20 | Status list do jagah kyun hai (CHECK aur trigger ka `steps` array)? Dono drift kar sakte hain. Unknown status par trigger chup kyun? | PR #64 / app/supabase/migrations/0001_schema.sql | nahi | - | open |
+| Q21 | CI mein schema test skip hota hai. Green CI schema ke baare mein kya kehta hai? Dev ke liye limited token kab, ya test-cases mein "local only" label? | PR #64 / scripts/test_schema.py | nahi | - | open |
+| Q22 | Un-filtered `update orders` (bina `where`) sirf rollback ke bharose hai. Agar transaction na maane to dev ki orders badal jayengi. `where id` ek line hai, kab add karoge? | PR #64 / scripts/test_schema.py | nahi | - | open |
