@@ -91,4 +91,6 @@ Rule: read this first in every session, append before saying done.
 | 83 | 2026-10-13 | owner | Chose path 1: dev deploys to Vercel from GitHub Actions, no Vercel GitHub app link | chat | asked |
 | 84 | 2026-10-13 | owner | Temporary exception: until real app code is pushed, Claude may merge docs-only PRs itself; once code work starts, the owner reviews and merges again | chat | volunteered |
 | 85 | 2026-10-13 | agent | Merged PR #29 under the exception; repo clean (0 open PRs, 0 open issues, only main and dev) | GitHub | none |
+| 86 | 2026-10-13 | owner | Asked why gh switched back to satvik-jain-iitd; he reviews in the browser himself | chat | volunteered |
+| 87 | 2026-10-13 | agent | Pinned this repo to klickbae8yt-star (remote URL + repo-local credential helper + GH_TOKEN per command); global gh stays satvik-jain-iitd; rule updated | CLAUDE.md, ~/.claude/CLAUDE.md | none |
 | $LAST_STEP$ | | agent | ... | ... | ... |
