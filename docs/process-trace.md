@@ -102,4 +102,6 @@ Rule: read this first in every session, append before saying done.
 | 94 | 2026-10-13 | owner | Asked to organise every folder and file, local and remote | chat | volunteered |
 | 95 | 2026-10-13 | agent | Organised docs into product/, ai/, architecture/, archive/; renamed IDEAS.md and the Swish research to the naming rule; added docs/README.md map; removed .DS_Store files | docs/ | none |
 | 96 | 2026-10-13 | agent | Remote tidy with owner yes: deleted 3 merged branches (#30–#32) and 7 unused default labels (kept bug, documentation, enhancement, epic, story) | GitHub | asked |
+| 97 | 2026-10-13 | owner | Merged PR #57; set branch protection on dev and main; said start | chat | asked |
+| 98 | 2026-10-13 | agent | Story #39: wrote failing tests first, then scaffolded app/ (React, Vite, TS, PWA, tokens); verify and e2e green | app/ | none |
 | $LAST_STEP$ | | agent | ... | ... | ... |
