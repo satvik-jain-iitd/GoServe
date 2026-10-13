@@ -79,4 +79,14 @@ Rule: read this first in every session, append before saying done.
 | 71 | 2026-10-13 | agent | One-time cleanup: merged #24, closed #12, deleted stale branches, added README, promoted code-only to main, closed all issues (owner authorised Claude to merge this once) | GitHub | asked |
 | 72 | 2026-10-13 | owner | Asked that only run-critical code lives on main | chat | volunteered |
 | 73 | 2026-10-13 | agent | Removed docs, plans, rules and the rulebook submodule from main (PR #27); wrote the code-only promotion rule (CLAUDE.md rule 17, PLAN.md); corrected the goserve.pages.dev mistake | main, CLAUDE.md, docs | none |
+| 74 | 2026-10-13 | owner | Said letsdwelo.in (investor site) must not be touched | chat | volunteered |
+| 75 | 2026-10-13 | agent | Wrote the freeze as CLAUDE.md rule 18 (covers site/ and its Pages project) | CLAUDE.md, docs | none |
+| 76 | 2026-10-13 | agent | Created Pages project goserve-app (classic Pages via --force; wrangler now delegates to Workers) → goserve-app.pages.dev; installed Cloudflare cf CLI at owner's request | Cloudflare | asked |
+| 77 | 2026-10-13 | owner | Chose dev site on Vercel + Supabase, production on Cloudflare goserve-app.pages.dev from main | chat | volunteered |
+| 78 | 2026-10-13 | agent | Wrote ADR-008 with the Vercel terms risk and the one-handler rule | docs/decisions/ADR-008 | none |
+| 79 | 2026-10-13 | owner | Confirmed both hosts after the comparison: familiar with Vercel (speed), learning Cloudflare (production) | chat | asked |
+| 80 | 2026-10-13 | owner | Shared Supabase, Vercel and UptimeRobot keys (klickbae8yt); had created Supabase project GoServe in Mumbai | chat | volunteered |
+| 81 | 2026-10-13 | agent | Saved keys to the vault; verified all three; created Supabase goserve-dev (Mumbai) and saved URLs/keys; created Vercel goserve-app-dev with dev env vars; MVP 0 phase gate passed | Supabase, Vercel, vault, phase-gate.md | asked |
+| 82 | 2026-10-13 | agent | Vercel Git link needs the Vercel app on the repo owner's account; owner found it confusing. Switched to deploying dev from GitHub Actions; set repo secrets VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID | GitHub secrets | asked |
+| 83 | 2026-10-13 | owner | Chose path 1: dev deploys to Vercel from GitHub Actions, no Vercel GitHub app link | chat | asked |
 | $LAST_STEP$ | | agent | ... | ... | ... |

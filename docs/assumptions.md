@@ -45,3 +45,6 @@ Every assumption we are working from, stated plainly. If an assumption turns out
 | A35 | GoServe accounts move to the owner's development identity `klickbae8yt@gmail.com`: new Supabase, Vercel and UptimeRobot accounts; GitHub dev account `klickbae8yt-star`. Supersedes A22 for new services. | Owner, 13 Oct. | Confirmed |
 | A36 | Claude commits, pushes and opens PRs only as the development account; `satvik-jain-iitd` reviews and merges every PR. | Owner, 13 Oct. | Confirmed |
 | A37 | `main` holds only run-critical code (site, design tokens and brand files, ops scripts, CI/deploy, README). All documentation lives on `dev`. | Owner, 13 Oct. | Confirmed |
+| A38 | `letsdwelo.in` belongs to the Dropshipping project (Dwelo). It is a temporary home for the GoServe investor site only; no changes unless the owner asks; it moves to a GoServe domain later. | Owner, 13 Oct. | Confirmed |
+| A39 | The app's address is **`goserve-app.pages.dev`** (project created 13 Oct, no suffix). letsdwelo.in stays the investor site only. | Owner, 13 Oct. | Confirmed |
+| A40 | Dev site on Vercel (from `dev`) with Supabase `goserve-dev`; production on Cloudflare `goserve-app.pages.dev` (from `main`) with Supabase `goserve`. | Owner, 13 Oct (ADR-008). | Confirmed |

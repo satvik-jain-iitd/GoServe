@@ -27,7 +27,7 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F21 | Turn on n8n execution pruning (needs an owner yes; restarts n8n). | Owner | Open |
 | F22 | Start FSSAI licence and Razorpay KYC. | Founder | Open |
 | F23 | Start SMS DLT registration and WhatsApp Business approval. | Founder | Open |
-| F24 | Buy the GoServe domain; move the site and the app off letsdwelo.in. | Founder | Open |
+| F24 | Buy a GoServe domain. Later (owner's call) move the investor site there and give `letsdwelo.in` back to the Dropshipping project (Dwelo). Until then, do not change letsdwelo.in. | Founder | Open |
 | F25 | Move GoServe services to GoServe-owned accounts later. | Owner | Open |
 | F26 | Measure Laya speed on the Oracle ARM CPU before any claim. | Agent | Open |
 | F27 | Check the DPDP Rules dates and what the pilot must do. | Agent | Open |
@@ -54,4 +54,7 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F48 | As `satvik-jain-iitd`: invite the development account to this repo with Write access; accept the invite from the dev account. | Owner | Open |
 | F49 | As the development account: create a fine-grained token for this repo (Contents, Pull requests, Issues, Workflows: read and write) and save it as `GH_DEV_TOKEN` in Secrets; Claude then logs `gh` in with it. | Owner | Open |
 | F50 | Turn on "require 1 approving review" for `dev` and `main` once the dev account works (so only the owner can merge). | Owner + agent | Open |
-| F51 | Vercel account on klickbae8yt: decide its job (the app is planned on Cloudflare Pages; Vercel Hobby is non-commercial only). | Owner | Open |
+| F51 | Vercel account on klickbae8yt: decided — dev site host (ADR-008). Owner saves `VERCEL_TOKEN` in Secrets. | Owner | Open |
+| F52 | Rotate the Supabase, Vercel and UptimeRobot keys (pasted in chat on 13 Oct). | Owner | Open |
+| F53 | Vercel `goserve-app-dev` deploys from GitHub Actions (no Vercel GitHub app link; it confused the owner and needs the app on the repo owner's account). Repo secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` set 13 Oct. The workflow (deploy on push to `dev`) is added in the build task with `app/`. | Agent | Open |
+| F54 | Add UptimeRobot monitors for the app (prod + dev) after the first deploy; Telegram alerts via the UptimeRobot UI. | Agent | Open |
