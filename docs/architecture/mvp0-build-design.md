@@ -34,8 +34,8 @@ Solo demo: tap **Autopilot**. The kitchen and rider steps move by themselves.
 
 | Part | Runs on | Note |
 |---|---|---|
-| PWA screens | Phone (Cloudflare Pages) | Stack in ADR-006 (proposed) |
-| Front door `/api/*` | Cloudflare Pages Function | Checks a demo role token. Limits spam. Forwards to n8n |
+| PWA screens | Phone (Vercel for dev, Cloudflare Pages for production) | Stack in ADR-006 (accepted) |
+| Front door | None (ADR-009) | The phone reads Supabase directly and writes through an n8n webhook that checks a demo token |
 | Order logic | n8n on Oracle | MAIN and SUB workflows, rulebook B11 and B12 |
 | Orders, events, logs | Supabase Postgres | New GoServe project. Never touch `sync.linkright.in` |
 | Live updates | Supabase Realtime | No polling |
@@ -61,7 +61,7 @@ The database itself rejects an illegal step (for example, "delivered" before "re
 
 | Workflow | Job |
 |---|---|
-| `GS MAIN 01 Order API` | One trigger family: the front door's calls. Config, kill switch, then calls the SUBs |
+| `GS MAIN 01 Order API` | One trigger family: the phone's webhook calls. Config, kill switch, then calls the SUBs |
 | `GS SUB 11 Place order` | Check items, write the order and its first event |
 | `GS SUB 12 Change status` | Check the step is legal, write the event |
 | `GS SUB 13 Decide` | Rule first, Jev second, write the decision row. Later, Laya joins here |

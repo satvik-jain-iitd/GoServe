@@ -30,6 +30,7 @@ From now on:
 - 13 Oct 2026 — MVP 0 phase gate passed: Supabase prod + dev, Cloudflare goserve-app, Vercel goserve-app-dev, UptimeRobot.
 - 13 Oct 2026 — ADR-008: dev site on Vercel + Supabase `goserve-dev`; production on Cloudflare `goserve-app.pages.dev` + Supabase `goserve`.
 - 13 Oct 2026 — accounts: GoServe services on klickbae8yt@gmail.com; development via the `klickbae8yt-star` GitHub account, review and merge by satvik-jain-iitd.
+- 13 Oct 2026 — ADR-009: no front-door function; the phone calls Supabase and the n8n webhook directly.
 - 13 Oct 2026 — MVP 0 phase gate: Mumbai region, React + Vite + Capacitor, no custom backend, UptimeRobot, app/ folder (see `docs/architecture/phase-gate.md`).
 
 ---
@@ -84,13 +85,13 @@ Phases (see `docs/architecture/evolution.md`): **MVP0** investor demo (≤10 use
 |---|---|---|---|---|---|---|---|---|---|
 | Static host | Doorway site | Cloudflare Pages | OWNED (live) | USE — site stays on project `goserve` (letsdwelo.in; project address goserve-arw.pages.dev); the app gets its own free project `goserve-app` (goserve-app.pages.dev) | USE | USE | USE | USE | VERIFIED (site live) |
 | CDN + TLS | Free HTTPS, fast | Cloudflare | OWNED | USE | USE | USE | USE | USE | VERIFIED |
-| Reverse proxy | Route API + live | nginx (Oracle) | OWNED | NOT USED for the app — front door is a Pages Function | NOT USED | NOT USED | NOT USED | revisit | INFERRED (ADR-004) |
+| Reverse proxy | Route API + live | nginx (Oracle) | OWNED | NOT USED for the app — no front door (ADR-009) | NOT USED | NOT USED | NOT USED | revisit | INFERRED (ADR-004) |
 | Tunnel | Public entry to Oracle | Cloudflare Tunnel | OWNED | USE — reaches n8n | USE | USE — side jobs only | USE | USE | VERIFIED (n8n.LinkRight.in live) |
 | DNS + WAF | Domain, protection | Cloudflare | OWNED | USE | USE | USE | USE — + rate limit, bot check | USE | VERIFIED |
 | Temporary domain | letsdwelo.in | Cloudflare | OWNED | NOT USED for the app — `goserve-app.pages.dev` instead (letsdwelo is another brand; `goserve.pages.dev` belongs to someone else) | site only | retire | retire | retire | INFERRED |
 | Real brand domain + email | GoServe domain, hello@ | Registrar | PROCURE | NOT USED — pages.dev is fine for the demo | PROCURE | USE | USE | USE | UNKNOWN (price not checked) |
 | API/PWA subdomains | app and api hostnames | DNS | DECIDE | NOT USED | USE — `app.` on the real domain | USE | USE | USE | INFERRED |
-| Pages Function front door *(new, MVP0)* | `/api/*`: checks a token, limits spam, forwards to the brain | Cloudflare | — | USE — on `goserve-app`; free 100,000 requests a day | USE | USE | USE | USE | INFERRED |
+| Pages Function front door *(new, MVP0)* | `/api/*`: checks a token, limits spam, forwards to the brain | Cloudflare | — | NOT USED — dropped by ADR-009: the phone reads Supabase and writes to the n8n webhook | REVISIT (add when a secret must be hidden) | REVISIT | REVISIT | REVISIT | INFERRED (ADR-009) |
 | Health check page *(new, MVP0)* | One page that checks Supabase, n8n and Jev before a demo | Cloudflare | — | USE | USE | USE | USE | USE | INFERRED |
 
 ## C. Backend / Application
@@ -111,7 +112,7 @@ Phases (see `docs/architecture/evolution.md`): **MVP0** investor demo (≤10 use
 | Ops/reporting service | Dashboards, alerts | Oracle | LATER (MVP2) | USE — ops screen + metrics panel | USE | USE | USE — reports from Mongo | USE — warehouse | INFERRED |
 | Payment service | Idempotent charge, refund | Oracle | LATER (MVP2) | NOT USED | NOT USED | USE — Razorpay webhook on Supabase, unique key | USE | USE | INFERRED |
 | Scheduler/cron | Backups, reports | Oracle | FREE (cron) | USE — n8n schedule | USE — + nightly archive | USE | USE | USE | INFERRED |
-| Rate limiting / abuse guard | Protect API | Oracle/Redis | DECIDE | USE — in the Pages Function | USE | USE | USE — Cloudflare rules | USE | INFERRED |
+| Rate limiting / abuse guard | Protect API | Oracle/Redis | DECIDE | USE — demo token check and throttle in the n8n webhook, RLS in Supabase (ADR-009) | USE | USE | USE — Cloudflare rules | USE | INFERRED |
 | n8n workflow set *(new, MVP0)* | `GS MAIN 01`, `GS SUB 11–14`, `GS MAIN 90` | Oracle | — | USE | USE — + archive, proposal | USE — side jobs only | USE | revisit | INFERRED |
 | PII scrub *(new, MVP0)* | Removes names, phones, addresses before logs or models | n8n / Supabase | — | USE | USE | USE | USE | USE | INFERRED |
 | Order simulator *(new, MVP1)* | Makes realistic orders, riders and delays; also the load test | Laptop / Oracle | — | NOT USED | USE | USE | USE — 2× peak test | USE | INFERRED |
@@ -141,7 +142,7 @@ Phases (see `docs/architecture/evolution.md`): **MVP0** investor demo (≤10 use
 | Component | What it does | Runs on | First status | MVP0 | MVP1 | MVP2 | MVP3 | MVP4 | Evidence |
 |---|---|---|---|---|---|---|---|---|---|
 | n8n | MVP0 backend + lead forms | Oracle | OWNED (live) | USE — the brain | USE | USE — side jobs only | USE | revisit | VERIFIED (live) |
-| n8n webhooks | Form/order endpoints | Oracle | OWNED (live) | USE — behind the front door | USE | USE | USE | USE | VERIFIED |
+| n8n webhooks | Form/order endpoints | Oracle | OWNED (live) | USE — called by the phone with a demo token (ADR-009) | USE | USE | USE | USE | VERIFIED |
 | Telegram bot @GoServeBot | Instant alerts | Telegram | OWNED (live) | USE — alerts + scorecard | USE — + thumbs for labels | USE | USE | USE | VERIFIED (live alert, 11 Oct) |
 | OpenRouter account + key | Jev + free models | SaaS | OWNED | USE — GoServe-only key `GOSERVE_OPENROUTER_KEY`, hard cap $2 (checked: limit 2, used 0, 13 Oct) | USE | USE | USE — backup only | NOT USED if Laya wins | VERIFIED |
 | Free LLM pool (improver) *(new, MVP1)* | Weekly proposal from the scorecard numbers | SaaS (free) | — | NOT USED | USE — owner says yes | USE | USE — inside hard limits | USE | INFERRED |
@@ -224,7 +225,7 @@ This one choice decides which free accounts to sign up for.
 
 **Resolved, 13 Oct 2026 (ADR-004):** Supabase. n8n on Oracle is the brain for MVP 0
 and 1. The Oracle server is kept out of the order hot path from MVP 2, because it
-sometimes goes down. The product PWA stack is proposed in ADR-006.
+sometimes goes down. The product PWA stack is accepted in ADR-006.
 
 ---
 
@@ -237,7 +238,7 @@ Who acts: **owner** (builder) or **founder** (business). Dates assume MVP 0 on 1
 | Item | Type | Why we need it | Lead time | Cost | Who acts | Start by | Evidence |
 |---|---|---|---|---|---|---|---|
 | Supabase project "goserve" | FREE-ACCOUNT | Orders, events, logs, live updates | Minutes | $0 | Owner | 14 Oct | VERIFIED (free plan, 13 Oct) |
-| Cloudflare Pages project `goserve-app` | FREE-ACCOUNT (owned account) | Host the PWA and the front door at goserve-app.pages.dev | Minutes | $0 (no card on the free plan) | Owner | 14 Oct | VERIFIED (Cloudflare Pages and Workers docs, 13 Oct) |
+| Cloudflare Pages project `goserve-app` | FREE-ACCOUNT (owned account) | Host the PWA at goserve-app.pages.dev | Minutes | $0 (no card on the free plan) | Owner | 14 Oct | VERIFIED (Cloudflare Pages and Workers docs, 13 Oct) |
 | GoServe OpenRouter key | OWNED | AI suggestion on the ops screen | Done | Hard cap $2 | Owner | Done 13 Oct | VERIFIED (key limit read: 2) |
 | Supabase account access token | Owner action | Check projects; create "goserve" | Minutes | $0 | Owner | 14 Oct | VERIFIED (owner will create it) |
 | GitHub Actions keep-alive | OWNED | Stop the free project from pausing | Minutes | $0 | Owner | 18 Oct | INFERRED |

@@ -95,4 +95,8 @@ Rule: read this first in every session, append before saying done.
 | 87 | 2026-10-13 | agent | Pinned this repo to klickbae8yt-star (remote URL + repo-local credential helper + GH_TOKEN per command); global gh stays satvik-jain-iitd; rule updated | CLAUDE.md, ~/.claude/CLAUDE.md | none |
 | 88 | 2026-10-13 | owner | In the GoServe folder klickbae8yt-star must be the active account; other projects keep satvik-jain-iitd | chat | volunteered |
 | 89 | 2026-10-13 | agent | Added a gh() wrapper in ~/.zshrc (GoServe path → klickbae8yt-star), tested both folders; saved to rules and claude-mem | ~/.zshrc, CLAUDE.md, memory | none |
+| 90 | 2026-10-13 | owner | Asked to fill and fix every gap before the MVP 0 build | chat | volunteered |
+| 91 | 2026-10-13 | owner | Chose: no front-door function (phone → Supabase + n8n webhook); branch protection now; owner alone reviews and merges all PRs (docs-only exception ended) | chat | asked |
+| 92 | 2026-10-13 | agent | Fixed doc drift (spec, build design, components, ADR-008); wrote ADR-009 | docs/ | none |
+| 93 | 2026-10-13 | agent | Created milestone, 6 epics (#33–#38) and 18 stories (#39–#56) with Gherkin and DoR, attached as sub-issues | GitHub | none |
 | $LAST_STEP$ | | agent | ... | ... | ... |

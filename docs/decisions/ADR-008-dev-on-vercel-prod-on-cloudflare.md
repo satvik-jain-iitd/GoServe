@@ -24,8 +24,7 @@ Production is the app at `goserve-app.pages.dev`, built from `main`. All account
 | Database | Supabase project **`goserve-dev`** (Vercel integration fills the keys) | Supabase project **`goserve`** (Mumbai) |
 | Keys | Vercel environment variables | Cloudflare Pages environment variables + GitHub Actions secrets |
 
-- The app's front door (`/api/*`) is written once as a standard `fetch(Request) → Response` handler; a thin adapter
-  wraps it for Vercel Functions and for Cloudflare Pages Functions, so dev behaves like production.
+- ~~Front door as one handler with two adapters~~ — replaced by ADR-009 (no front-door function). Dev and production run the same static app.
 - The new Supabase account's 2 free projects are used as one dev and one production project.
 
 ## Risks and how we handle them

@@ -48,3 +48,5 @@ short. Say what happened and what to do next time.
 - Always verify a fix with a fresh end-to-end run. Never close an issue on hope.
 - One branch per story. Keep PRs small.
 - Secrets live in `~/Desktop/Secrets/` only. Never in the repo.
+- A status check must also compare docs with each other. Two docs for one build drifted apart (spec vs build design). The build design now owns the build; the spec points to it.
+- A story needs its issue before any code. Check the issue list at the start of a phase, not at the first commit.
