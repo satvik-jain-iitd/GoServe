@@ -1,0 +1,14 @@
+// SUB 11 and SUB 12, node "Shape result": turns the database answer into the SUB's output (the contract in docs/integrations/n8n-order-workflows.md).
+// Database messages are mapped to short codes. Raw database text never goes back to the phone.
+const res = $input.first().json;
+const body = res.body && typeof res.body === 'object' ? res.body : {};
+const out = (status_code, extra) => [{ json: Object.assign({ ok: status_code < 300, status_code }, extra) }];
+if (res.statusCode === 200 && body.order && typeof body.order === 'object') {
+  return out(body.created === true ? 201 : 200, { order: body.order, created: body.created === true });
+}
+const msg = String(body.message || '');
+if (msg === 'order_not_found') return out(404, { error: 'order_not_found', message: 'No such order in this session.' });
+if (msg.startsWith('illegal status step')) return out(409, { error: 'illegal_step', message: 'That step is not allowed now.' });
+if (msg.startsWith('invalid_status')) return out(400, { error: 'invalid_status', message: 'Unknown status.' });
+if (/^invalid_(item|address|request)/.test(msg)) return out(400, { error: msg.split(':')[0], message: 'The order is not valid.' });
+return out(502, { error: 'database_error', message: 'Something went wrong. Please try again.' });

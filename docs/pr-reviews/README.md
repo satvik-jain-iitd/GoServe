@@ -19,7 +19,8 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana â
 | 2 | [#59](pr-59-app-ci.md) | ci: add app and guard CI jobs, pre-commit hooks and commit guidelines | MERGED | #40 (epic #33) |
 | 3 | [#62](pr-62-dev-deploy.md) | ci: deploy app/ to Vercel dev on push to dev | MERGED (16 answered, 5 fixed) | #41 (epic #33) |
 | 4 | [#63](pr-63-prod-deploy.md) | ci: publish app/ to Cloudflare Pages goserve-app on main | APPROVED (15 answered, 5 fixed), merge pending | #42 (epic #33) |
-| 5 | [#64](pr-64-schema.md) | feat(db): 7 tables, legal-status rule and one-order-per-key | APPROVED (18 questions posted), merge pending | #43 (epic #34) |
+| 5 | [#64](pr-64-schema.md) | feat(db): 7 tables, legal-status rule and one-order-per-key | MERGED (7563b8b; 18 questions posted) | #43 (epic #34) |
+| 6 | [#65](pr-65-rls-realtime-menu.md) | feat(db): row level security, Realtime and the Delhi sample menu | MERGED (e7f1f2b; 17 answered, 4 fixed) | #44 (epic #34) |
 
 ## Journals
 - [concepts.md](concepts.md) â€” naye technical words, plain Hindi mein.
@@ -34,6 +35,7 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana â
 | Deploy (dev â†’ Vercel) | #62 |
 | Deploy (prod â†’ Cloudflare Pages) | #63 |
 | Data (Supabase schema) | #64 |
+| Security + live data (RLS, Realtime, seed) | #65 |
 
 ## Notes
 - Chapters Romanized Hindi mein hain. Code, file paths, commands English mein.

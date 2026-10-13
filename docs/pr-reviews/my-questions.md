@@ -48,3 +48,11 @@ Apne sawaal yahan. Status: **open** (jawab nahi mila) / **answered** / **dropped
 | Q20 | Status list do jagah kyun hai (CHECK aur trigger ka `steps` array)? Dono drift kar sakte hain. Unknown status par trigger chup kyun? | PR #64 / app/supabase/migrations/0001_schema.sql | nahi | - | open |
 | Q21 | CI mein schema test skip hota hai. Green CI schema ke baare mein kya kehta hai? Dev ke liye limited token kab, ya test-cases mein "local only" label? | PR #64 / scripts/test_schema.py | nahi | - | open |
 | Q22 | Un-filtered `update orders` (bina `where`) sirf rollback ke bharose hai. Agar transaction na maane to dev ki orders badal jayengi. `where id` ek line hai, kab add karoge? | PR #64 / scripts/test_schema.py | nahi | - | open |
+
+## PR #65 ke baad
+
+| # | Sawaal | Kahan poocha (PR#/file) | Jawab mila? | Jawab | Status |
+|---|---|---|---|---|---|
+| Q23 | Bina sign-in ke anon key se `orders` select 0 rows deta hai, error nahi. App "sign-in nahi hua" aur "koi order nahi" mein kaise farak karegi? | PR #65 / app/supabase/migrations/0002_rls_realtime_menu.sql | haan | Haan. #48 mein app pehle sign-in karegi aur session milne ke baad hi orders padhegi. Isliye "sign-in nahi hua" kabhi "koi order nahi" nahi dikhega. | answered |
+| Q24 | Har test run 5 anonymous users banata hai aur delete nahi karta (dev par 21). `afterAll` mein delete karenge, ya Supabase ka cleanup? Kaunsa, kab? | PR #65 / app/tests/integration/supabase.test.ts | haan | 4bf41e1 mein test apne anonymous users `afterAll` mein delete karta hai. Dev par 21 purane purge hue, live count 0. | answered |
+| Q25 | Do device par demo (customer ka phone, kitchen ka laptop) mein kitchen ko 0 orders dikhenge. Yeh #56 checklist mein hai, ya session code share karne ka raasta chahiye? | PR #65 / docs/decisions/ADR-010-session-id-is-the-anonymous-user-id.md | haan | Do device = do sessions, yeh real limit hai. Demo ek device + split view par hai; limit #56 checklist mein hai (F64 d). URL mein session code baad ka option hai. | answered |

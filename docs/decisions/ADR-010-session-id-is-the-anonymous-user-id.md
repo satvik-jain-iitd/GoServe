@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed (agent, 14 Oct 2026). The owner confirms by merging.
+Accepted (owner, 14 Oct 2026, by merging PR #65).
 
 ## Date
 
