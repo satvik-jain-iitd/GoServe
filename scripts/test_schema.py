@@ -35,11 +35,11 @@ class Schema(unittest.TestCase):
     def test_s2_illegal_step_is_rejected_by_the_database(self):
         r = sql(f"begin; {SEED} {ORDER}; update orders set status='ready' where id='00000000-0000-0000-0000-0000000000a1'; rollback;")
         self.assertIn("error", r)  # placed -> ready skips steps
-        r = sql(f"begin; {SEED} {ORDER}; update orders set status='accepted'; update orders set status='preparing'; "
-                f"update orders set status='ready'; update orders set status='placed'; rollback;")
+        r = sql(f"begin; {SEED} {ORDER}; update orders set status='accepted' where id='00000000-0000-0000-0000-0000000000a1'; update orders set status='preparing' where id='00000000-0000-0000-0000-0000000000a1'; "
+                f"update orders set status='ready' where id='00000000-0000-0000-0000-0000000000a1'; update orders set status='placed' where id='00000000-0000-0000-0000-0000000000a1'; rollback;")
         self.assertIn("error", r)  # ready -> placed goes back
-        r = sql(f"begin; {SEED} {ORDER}; update orders set status='accepted'; update orders set status='preparing'; "
-                f"update orders set status='ready'; update orders set status='out_for_delivery'; update orders set status='delivered'; rollback;")
+        r = sql(f"begin; {SEED} {ORDER}; update orders set status='accepted' where id='00000000-0000-0000-0000-0000000000a1'; update orders set status='preparing' where id='00000000-0000-0000-0000-0000000000a1'; "
+                f"update orders set status='ready' where id='00000000-0000-0000-0000-0000000000a1'; update orders set status='out_for_delivery' where id='00000000-0000-0000-0000-0000000000a1'; update orders set status='delivered' where id='00000000-0000-0000-0000-0000000000a1'; rollback;")
         self.assertNotIn("error", r)  # the legal path works
 
     def test_s3_retry_makes_one_order(self):
