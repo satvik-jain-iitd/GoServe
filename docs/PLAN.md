@@ -33,7 +33,7 @@ Rules:
 
   ```bash
   git checkout -b release/<name> origin/main
-  git checkout origin/dev -- site design/tokens.json design/brand ops .github .gitignore README.md
+  git checkout origin/dev -- site app scripts design/tokens.json design/brand ops .github .gitignore README.md
   git commit -m "chore: promote <what> to main"
   ```
 - I never push directly to `main`.

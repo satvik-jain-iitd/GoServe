@@ -1,0 +1,44 @@
+name: Deploy app to Cloudflare Pages (prod)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "design/tokens.json"
+      - ".github/workflows/deploy-app.yml"
+  workflow_dispatch:
+
+# Own file and own Pages project (goserve-app). deploy.yml and the investor site (letsdwelo.in) are not touched.
+concurrency:
+  group: deploy-app
+  cancel-in-progress: false
+
+jobs:
+  pages:
+    name: Build and publish to goserve-app
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: app
+          command: pages deploy dist --project-name=goserve-app --branch=main
