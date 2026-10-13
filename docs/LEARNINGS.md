@@ -60,3 +60,4 @@ short. Say what happened and what to do next time.
 - A story needs its issue before any code. Check the issue list at the start of a phase, not at the first commit.
 - Output tokens cost more than input. Keep reading and judging on the strong model; hand long prose to a small model that works only from a brief, then check its output against the brief.
 - A quality pass on generated prose needs a mechanical scan too: one stray Devanagari character slipped past a careful read; `grep -P '[\x{0900}-\x{097F}]'` catches it in one line.
+- The two-account rule covers the PR itself, not only the commits. PR #60 had dev-account commits but was opened by the review account. Open every PR from the dev account; the review account only reviews, approves and merges.
