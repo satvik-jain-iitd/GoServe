@@ -36,3 +36,6 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | App on main publishes to Pages project `goserve-app` with Cloudflare secrets, paths `app/**` and `design/tokens.json` | #42 | S1 | Unit (workflow check) | `scripts/test_deploy_app.py` | Pass |
 | `deploy.yml` (project `goserve`) is unchanged and app deploy never watches `site/` | #42 | S2 | Unit (workflow check) | `scripts/test_deploy_app.py` | Pass |
 | `goserve-app.pages.dev` returns 200 (today 522) | #42 | S1 | Manual after the first release PR to main | `goserve-app.pages.dev` | Pending first release |
+| The 7 tables exist and each has `kitchen_id` and `session_id` (kitchens has `session_id`) | #43 | S1 | Integration (goserve-dev) | `scripts/test_schema.py` | Pass |
+| Order status can only move one step forward; skip and back are rejected, the legal path works | #43 | S2 | Integration (goserve-dev) | `scripts/test_schema.py` | Pass |
+| The same client order key sent twice leaves one order row | #43 | S3 | Integration (goserve-dev) | `scripts/test_schema.py` | Pass |
