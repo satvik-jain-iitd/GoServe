@@ -51,7 +51,7 @@ Every table has `kitchen_id` and `session_id`.
 | `menu_items` | Dishes, prices, available flag |
 | `orders` | One row per order. A unique order key comes from the phone, so a retry never makes two orders |
 | `order_events` | One row per step, with time and who did it. Never edited |
-| `decision_log` | Every decision, in the shape in `docs/LAYA_PLAN.md` section 4 |
+| `decision_log` | Every decision, in the shape in `docs/ai/LAYA_PLAN.md` section 4 |
 | `run_log` | Every workflow run: settings version, time taken, cost, errors |
 | `params` | Tunable settings with a version number |
 
@@ -104,5 +104,5 @@ Five workflows plus one scheduled job. Propose, test and promote workflows come 
 | Uptime monitor | ✅ UptimeRobot free; n8n health monitor Up; app monitors added after the first deploy | None |
 | Vercel dev project | ✅ `goserve-app-dev` with `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` (dev) | Git link: deploy from GitHub Actions with `VERCEL_TOKEN`, or install the Vercel GitHub app on the repo |
 | Test devices | ✅ Android emulation on the laptop + owner's iPhone + founder's Android for the final check | Share the link with the founder before the demo |
-| Founder business steps | Not needed for MVP 0 | Start the checklist in `docs/founder-checklist.md` |
+| Founder business steps | Not needed for MVP 0 | Start the checklist in `docs/product/founder-checklist.md` |
 

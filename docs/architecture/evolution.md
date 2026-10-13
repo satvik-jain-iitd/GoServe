@@ -134,7 +134,7 @@ Not built now. Native apps from the same code, databases close to each city, a r
 ![Learning loop](diagrams/img/d6-learning-loop.png)
 
 - **A. Learning loop.** Every workflow logs what it did. A daily scorecard measures it. Someone proposes a change. We test it on past orders. A person says yes. Then it goes live, with a one-step undo.
-- **B. Laya replaces Jev.** We log every decision. We add the real result later (late or on time). We train our own model, Laya. It runs quietly next to Jev. It goes live only where it beats Jev and the rule. Full plan: `docs/LAYA_PLAN.md`.
+- **B. Laya replaces Jev.** We log every decision. We add the real result later (late or on time). We train our own model, Laya. It runs quietly next to Jev. It goes live only where it beats Jev and the rule. Full plan: `docs/ai/LAYA_PLAN.md`.
 
 ---
 

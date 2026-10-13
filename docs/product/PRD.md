@@ -267,7 +267,7 @@ Open questions for the founder:
 
 ## 13. Roadmap
 
-![Go Serve MVP Roadmap](roadmap.png)
+![Go Serve MVP Roadmap](../architecture/roadmap.png)
 
 **Why these dates are shorter than the first version:** AI writes the code, not a human. So coding is now the small part. The real drivers are human review, setup, and outside approvals (payment KYC, SMS, WhatsApp). The chart shows both: the dark part is AI build time, the light part is the rest of the calendar.
 

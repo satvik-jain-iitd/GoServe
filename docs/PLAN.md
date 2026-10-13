@@ -89,6 +89,10 @@ Rules:
 | `docs/architecture/phase-gate.md` | The infrastructure Q&A and setup step before every MVP phase, with its log. |
 | `design/` | The design language: `tokens.json` (source of truth) and how to reuse it. |
 | `docs/architecture/` | Phase pictures, MVP 0 build design, diagram sources and gate report. |
+| `docs/product/` | PRD, MVP 0 spec, investor site plan, founder checklist. |
+| `docs/ai/` | Jev and Laya plans and the Jev contract. |
+| `docs/archive/` | Finished history (bootstrap plan, self-prompt). Not maintained. |
+| `docs/README.md` | One-page map of all docs. |
 
 ---
 

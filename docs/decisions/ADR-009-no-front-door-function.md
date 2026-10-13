@@ -17,7 +17,7 @@ Dev runs on Vercel and production runs on Cloudflare Pages (ADR-008). A front-do
 1. The phone reads from Supabase directly with the anon key. Row level security limits every read and write to the caller's `session_id`.
 2. The phone writes (place order, change status) through an n8n webhook. The webhook checks a demo token and throttles calls. The server re-checks every price, status step and rule.
 3. Live updates come from Supabase Realtime. No polling and no stream endpoint.
-4. The frozen API paths and event names in `docs/MVP0_SPEC.md` stay as the contract. They are the n8n webhook paths.
+4. The frozen API paths and event names in `docs/product/MVP0_SPEC.md` stay as the contract. They are the n8n webhook paths.
 
 ## Consequences
 

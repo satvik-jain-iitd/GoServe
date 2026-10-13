@@ -4,8 +4,8 @@
 **Plain English.** This file lists every part the system needs, phase by phase,
 and what we must buy, sign up for, or get approved.
 
-Source of this list: `docs/SOLUTION_ARCHITECTURE.md`, `docs/MVP0_SPEC.md`,
-`docs/PRD.md`, `docs/JEV_INTEGRATION_PLAN.md`, ADR-001 to ADR-006, and
+Source of this list: `docs/architecture/SOLUTION_ARCHITECTURE.md`, `docs/product/MVP0_SPEC.md`,
+`docs/product/PRD.md`, `docs/ai/JEV_INTEGRATION_PLAN.md`, ADR-001 to ADR-006, and
 `docs/architecture/evolution.md` (the phase pictures).
 
 ---
@@ -184,7 +184,7 @@ Phases (see `docs/architecture/evolution.md`): **MVP0** investor demo (≤10 use
 | Real domain + business email | Brand + hello@ | Registrar | PROCURE | NOT USED | PROCURE | USE | USE | USE | UNKNOWN (price) |
 | Maps API (optional) | Geocoding | Google/Mapbox | PROCURE/decide | NOT USED | NOT USED | DECIDE — vs OSRM | USE if chosen | USE | UNKNOWN |
 | GST / business entity | Payment + WhatsApp onboarding | Legal | Business | NOT USED | OWNED — company and GST exist (owner, 13 Oct); used for KYC | USE | USE | USE | INFERRED |
-| FSSAI licence *(new, MVP1)* | Food business licence, needed for payments | Founder | — | NOT USED | APPROVAL — not started (owner, 13 Oct); see `docs/founder-checklist.md` | USE | USE | USE | INFERRED |
+| FSSAI licence *(new, MVP1)* | Food business licence, needed for payments | Founder | — | NOT USED | APPROVAL — not started (owner, 13 Oct); see `docs/product/founder-checklist.md` | USE | USE | USE | INFERRED |
 | Privacy, terms and refund pages *(new, MVP1)* | Needed for payment KYC and user trust | Owner | — | NOT USED | USE | USE | USE | USE | INFERRED |
 | Consent notice (DPDP) *(new, MVP1)* | Tells users what we keep and why | Owner | — | NOT USED — demo data | USE | USE — + delete on request | USE | USE | UNKNOWN (DPDP Rules dates to verify) |
 | Play Store developer account *(new, MVP2)* | Publish the rider app wrapper | Founder | — | NOT USED | NOT USED | PROCURE if TWA needed | USE | USE | UNKNOWN (fee not checked today) |
@@ -216,9 +216,9 @@ Rough monthly cost of these tools (excludes GST and WhatsApp messages; conf 0.6)
 
 Two docs disagree, and there is no stack ADR yet:
 
-- `docs/PRD.md` section 7: **Supabase** for Postgres + Auth + Realtime (fastest
+- `docs/product/PRD.md` section 7: **Supabase** for Postgres + Auth + Realtime (fastest
   start, free 500 MB).
-- `docs/SOLUTION_ARCHITECTURE.md`: **self-hosted Postgres on Oracle** plus own
+- `docs/architecture/SOLUTION_ARCHITECTURE.md`: **self-hosted Postgres on Oracle** plus own
   auth and WebSocket (fewer vendors, nothing to procure).
 
 This one choice decides which free accounts to sign up for.
@@ -251,7 +251,7 @@ Who acts: **owner** (builder) or **founder** (business). Dates assume MVP 0 on 1
 | Google OAuth client | FREE-ACCOUNT | Google login | 1 day | $0 | Owner | MVP 1 start | INFERRED |
 | Email sender for OTP (custom SMTP) | FREE-ACCOUNT | Supabase's default mail is rate-limited | 1 day | $0 at pilot size | Owner | MVP 1 start | UNKNOWN (provider limits not checked) |
 | Firebase project (web push) | FREE-ACCOUNT | Push to installed apps | Minutes | $0 | Owner | MVP 1 start | INFERRED |
-| FSSAI licence | APPROVAL | Needed for payments and a food business | Weeks | see `docs/founder-checklist.md` | Founder | **Now** (not started) | INFERRED |
+| FSSAI licence | APPROVAL | Needed for payments and a food business | Weeks | see `docs/product/founder-checklist.md` | Founder | **Now** (not started) | INFERRED |
 | Razorpay KYC | APPROVAL | Real payments in MVP 2 (account already OWNED) | Weeks | Per-transaction fee | Founder | **Now** (not started) | VERIFIED (owner: account exists) |
 | SMS DLT registration | APPROVAL | Phone OTP and SMS updates | Weeks | Per-SMS | Founder | 1 Nov | INFERRED |
 | WhatsApp Business (Meta) | APPROVAL | Order updates on WhatsApp | Weeks | Per-message | Founder | 1 Nov | INFERRED |
@@ -292,7 +292,7 @@ Who acts: **owner** (builder) or **founder** (business). Dates assume MVP 0 on 1
 | MVP 3 | ~$25 + messages | Supabase Pro | Live screens near 150 at once, or messages near 1.5M a month, or 500 MB database |
 | MVP 4 | more | per city | — |
 
-Jev at 1 lakh users would be about $10–20 a month (INFERRED from $0.042 per million input tokens, VERIFIED on the OpenRouter listing in `docs/JEV_INTEGRATION_PLAN.md`). Laya removes it.
+Jev at 1 lakh users would be about $10–20 a month (INFERRED from $0.042 per million input tokens, VERIFIED on the OpenRouter listing in `docs/ai/JEV_INTEGRATION_PLAN.md`). Laya removes it.
 
 ---
 
