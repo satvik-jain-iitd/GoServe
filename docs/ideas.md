@@ -13,3 +13,4 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - ID009 (2026-10-13, dropped for orders): n8n Data tables as the MVP 0 database. Dropped because they have no transactions and are shared with other projects (ADR-004).
 - ID010 (2026-10-13, open): Use free-tier ops software (Odoo, Attio, agentic CRMs) to run operations instead of building ops tools. Research: docs/research/options-operations-tools-2026-10.md. Second Brain ID072.
 - ID011 (2026-10-13, taken): Phase gate before every MVP phase (infra Q&A, research, setup, record). Rule: docs/architecture/phase-gate.md, CLAUDE.md rule 16. Second Brain ID073.
+- ID012 (2026-10-14, taken): PR review skill: Fable analyses, a Haiku subagent writes the prose. Strong brain, cheap pen. Done in tpm-pr-review (references/analysis-brief.md). Second Brain ID084.
