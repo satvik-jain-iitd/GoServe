@@ -98,3 +98,30 @@ Har naya technical word yahan. Simple Hindi mein. Ek line ka "yeh kya hai", ek l
 - **Kya hai:** Test YAML ko ek string ki tarah padhta hai aur phrases regex se check karta hai. Yeh board ka sahi hona check karta hai, delivery ka nahi.
 - **Analogy:** Inspector board padhta hai, khana nahi chakhta.
 - **File:** `scripts/test_deploy_dev.py`.
+
+## PR #63 se
+
+### Cloudflare Pages Direct Upload (`pages deploy`)
+- **Kya hai:** CI app ko build karta hai, phir ek folder upload karta hai. Pages use seedha serve karta hai. Cloudflare ki taraf koi Git link nahi hai.
+- **Analogy:** Hum khud pack karke delivery boy ko dete hain. Woh sirf pahunchata hai.
+- **File:** `.github/workflows/deploy-app.yml` lines 38–44.
+
+### `--branch=main` = production deployment
+- **Kya hai:** Pages mein production branch ke deploy live maane jaate hain. Doosri branch ke naam preview ban jaate hain.
+- **Analogy:** Label par "real customer" likha hai, "sample" nahi.
+- **File:** `.github/workflows/deploy-app.yml` line 44.
+
+### Release branch as a packing list
+- **Kya hai:** `main` par sirf listed paths dev se aate hain (`docs/PLAN.md` §2). Jo list mein nahi, woh kabhi `main` tak nahi pahunchta.
+- **Analogy:** Van ki packing list. Jo list mein nahi, woh van mein nahi.
+- **File:** `docs/PLAN.md` §2 (is PR ke diff mein nahi, par is PR ka must-fix hai).
+
+### Mirror workflow
+- **Kya hai:** Ek kaam karne wala workflow copy karke sirf address aur folder badalna. Sasta aur safe, par do boards alag ho sakte hain.
+- **Analogy:** Do shops ka ek hi rule board. Ek badla, doosra purana reh gaya.
+- **File:** `.github/workflows/deploy-app.yml` vs `.github/workflows/deploy.yml`.
+
+### Negative test (neighbour guard)
+- **Kya hai:** Ek test jo woh file padhta hai jo is PR ne nahi badli, taaki proof ho ki woh same hai.
+- **Analogy:** Inspector showroom ka board bhi check karta hai.
+- **File:** `scripts/test_deploy_app.py` lines 23–27.

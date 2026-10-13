@@ -2,7 +2,7 @@
 
 System ka ek-page picture. Har chapter ke baad update karta hoon.
 
-_Last updated: PR #62 (open, `f3b70b4d`)_
+_Last updated: PR #63 (approved, `4b77e65`); PR #62 merged_
 
 ## GoServe — ab tak ki tasveer
 
@@ -15,6 +15,7 @@ _Last updated: PR #62 (open, `f3b70b4d`)_
      |--- scripts/       → guard.py  (repo rules ka checklist)         ← PR #59
      |--- .github/       → ci.yml  (site + app + guard jobs)           ← PR #59
      |                    deploy-dev.yml (push to dev → Vercel dev)   ← PR #62
+     |                    deploy-app.yml (push to main → Cloudflare Pages goserve-app, prod) ← PR #63
      |--- app/           → PRODUCT APP  (PR #58 se shuru)
                           |
                           ├─ index.html      (main door)
@@ -34,7 +35,8 @@ _Last updated: PR #62 (open, `f3b70b4d`)_
 2. Push → PR → CI chalta hai (site, app, guard jobs).
 3. Sab green → merge → dev.
 4. Merge to dev (`app/` badla ho) → deploy to Vercel dev (`deploy-dev.yml`, PR #62).
-5. App chalane par: index.html → main.tsx → App → service worker (offline).
+5. Release PR → `main` → deploy to Cloudflare Pages prod (`deploy-app.yml`, PR #63). Tiffin: van khana main tak laati hai, ab real customer ka address.
+6. App chalane par: index.html → main.tsx → App → service worker (offline).
 
 ## Yeh PR ke baad kya samajh aaya
 - **Do layer ka check:** pre-commit (ghar par) + CI (factory gate). Defense in depth.
@@ -43,9 +45,14 @@ _Last updated: PR #62 (open, `f3b70b4d`)_
 - Guard khud par pass karta hai (`test_guard_passes_on_itself`), aur ab ek test doc/regex drift bhi pakadta hai — par agar koi test *delete* kar de to koi flag nahi karta.
 - `guard` job ke file/message checks sirf **PR** par chalte hain, direct push par nahi.
 - **Deploy ek alag rule board hai** (PR #62): `deploy-dev.yml` CI se alag file hai. CI check karta hai, yeh deliver karta hai.
-- **Tiffin ka rule:** sirf `app/` ke order par deploy chalta hai (`paths:`), counter (`site/`) par nahi. (Par `design/tokens.json` abhi list mein nahi — sawaal khula.)
+- **Tiffin ka rule:** sirf `app/` ke order par deploy chalta hai (`paths:`), counter (`site/`) par nahi. `design/tokens.json` bhi ab list mein hai (0630677), kyunki app build usse rang leta hai.
+- **Secrets ka ID card:** teeno secrets ab sirf Deploy step par hain (0630677). `npm ci` jaise steps inhe nahi dekhte.
+- **Packing ka pin:** Vercel CLI `vercel@64` par pinned hai (0630677). Naya major ab accident nahi, ek faisla hai.
 - **Ek hi delivery boy:** `concurrency` naye run se purana cancel karta hai, isliye do deploy ek saath nahi chalte.
 - **Green test sirf board check karta hai:** test file ko text ki tarah padhta hai. Asli proof pehle merge ke baad ka run hai.
+- **Do address, do rule board** (PR #63): dev (Vercel, PR #62) aur prod (Cloudflare, PR #63). Dono ek hi kitchen (`app/`) se khana lete hain.
+- **Release ki packing list ek doc hai, code nahi:** `docs/PLAN.md` §2 aur `CLAUDE.md` rule 17 mein `app` aur `scripts` nahi the. Review ke sawaal se mila; 4b77e65 mein list fix hui aur ab ek test (`test_release_list_carries_the_app_and_its_guard`) use pakadta hai.
+- **Investor site ka board chhoota nahi:** `deploy.yml` (letsdwelo.in) PR #63 mein nahi badla. S2 test yeh text se dekhta hai.
 
 ## Abhi bhi andhera (jawab nahi mila)
 - Router / screens ka shape (aage ke chapters).
@@ -54,4 +61,4 @@ _Last updated: PR #62 (open, `f3b70b4d`)_
 
 ## Abhi kya NAHI hai
 - Koi login, koi order, koi payment, koi kitchen/rider screen.
-- Dev deploy job ab hai (PR #62, open). Prod deploy (Cloudflare Pages) abhi nahi — story #42.
+- Dev deploy job hai (PR #62, merged). Prod deploy workflow hai (PR #63, open), par `main` par `app/` abhi nahi hai. Release list fix ho gayi (4b77e65); pehli release PR ke baad app prod par aayega. `goserve-app.pages.dev` abhi 522 hai.

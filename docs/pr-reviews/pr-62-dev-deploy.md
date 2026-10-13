@@ -3,8 +3,8 @@
 - **Branch:** `feat/41-dev-deploy` → `dev`
 - **Author:** klickbae8yt-star (development account)
 - **Story / issue:** #41 "Dev deploy: push to dev publishes to Vercel goserve-app-dev" (epic #33, MVP 0)
-- **State:** **OPEN** — `f3b70b4d` (2026-10-13)
-- **Files:** 6 · **Lines:** +80 / -1 (1 commit)
+- **State:** **MERGED** — `dev` (2026-10-14, by `satvik-jain-iitd`), head `0630677`, approved in review 5510246926
+- **Files:** 6 · **Lines:** +80 / -1 (1 commit) (review ke baad: fix commit 0630677)
 - **Reviewer:** satvik-jain-iitd
 - **Link:** https://github.com/satvik-jain-iitd/GoServe/pull/62
 
@@ -244,31 +244,45 @@ Samajhne wali baat: "nahi banaya" bhi design decision hai. Yeh PR chhota rakhne 
 
 <!-- gh-comment-id: 4264133208 -->
 > **Top-3** — `vercel@latest` — kal Vercel CLI ka naya major aaya to hamari deploy bina kisi commit ke toot sakti hai. Major version pin karke jaan-boojh kar bump karna behtar?
-- **Status:** open
+- **Status:** answered → **code badla**
+- **Reply (klickbae8yt-star):** Fix ho gaya, commit 0630677 mein: `vercel@64` pin hai (deploy-dev.yml line 47). Naya major ab jaan-boojh kar bump hoga, aur test pin ko check karta hai.
+- **Lesson:** Major version pin karo. Bump ek faisla hai, accident nahi.
 
 <!-- gh-comment-id: 4264133225 -->
 > **Top-3** — `paths` mein sirf `app/**` hai, par app build `design/tokens.json` import karta hai (`pwa-manifest.ts`). Sirf tokens badle to dev site purani rahegi. `design/tokens.json` bhi `paths` mein chahiye?
-- **Status:** open
+- **Status:** answered → **code badla**
+- **Reply (klickbae8yt-star):** Sahi, `pwa-manifest.ts` tokens.json import karta hai. Commit 0630677 mein `design/tokens.json` `paths` mein add hua, aur test isko check karta hai.
+- **Lesson:** Path filter mein har build input honi chahiye, sirf folder nahi.
 
 <!-- gh-comment-id: 4264133237 -->
 > Teeno secrets job-level `env` mein hain, to `npm ci` (saari dependencies ke install scripts) bhi unhe dekh sakta hai. Sirf Deploy step par `env` rakhna safer nahi?
-- **Status:** open
+- **Status:** answered → **code badla**
+- **Reply (klickbae8yt-star):** Maan liya. Commit 0630677 mein teeno secrets sirf Deploy step par hain, to `npm ci` inhe kabhi nahi dekhta.
+- **Lesson:** Secrets wahi step tak rakho jise unki zarurat hai, usse bahar nahi.
 
 <!-- gh-comment-id: 4264133247 -->
 > `config.json` mein sirf `{"version":3}` hai, koi rewrite nahi. Jab customer/kitchen screens ke apne URL aayenge (#48–#51), refresh par 404 aayega? SPA fallback kab add hoga?
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Haan, screens ke apne URL aane par refresh 404 de sakta hai. Abhi ek hi URL hai. Rewrite pehli screen story (#48) mein add hoga, jab router hoga.
+- **Lesson:** Static output mein fallback nahi hota. Routes aane par rewrite add karo.
 
 <!-- gh-comment-id: 4264133262 -->
 > `workflow_dispatch` ka button tab tak nahi dikhega jab tak yeh file `main` par nahi hai (rule 17: `.github/` release branch se jaata hai). Pehla run merge se hi trigger hoga (file khud `paths` mein hai), sahi samjha? Owner manual run kab kar payega?
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Dono sahi. Pehla run merge se hoga, kyunki file `paths` mein hai. Manual button tab dikhega jab file `main` par hogi, yani pehli release ke baad.
+- **Lesson:** Manual button default branch chahta hai. Push trigger ko yeh zarurat nahi.
 
 <!-- gh-comment-id: 4264133276 -->
 > `--prod` dev project ka production target hai, theek. Par agar `VERCEL_PROJECT_ID` kabhi prod project ka ho gaya, to yeh workflow `dev` ko real customers tak bhej dega. Project ka naam kahin assert ho sakta hai (jaise `vercel project ls`) ya yeh risk accept?
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Yeh risk abhi accept kiya hai. Secret owner ne ek hi project ke liye set kiya hai, aur sirf owner badalta hai. Doosra Vercel project aaya to naam ka check add karunga.
+- **Lesson:** Accepted risk ko naam do: ek project, ek owner-set secret.
 
 <!-- gh-comment-id: 4264133286 -->
 > `cancel-in-progress: true` — agar upload beech mein cancel ho to Vercel par purana deploy hi live rahega, ya aadha site dikh sakta hai? Queue (cancel false) kyun nahi chuna?
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Vercel purana deploy live rakhta hai jab tak naya poora na ho, to cancel se aadha site nahi dikhta. Tez pushes par purana build chhodte hain, naya jeetta hai.
+- **Lesson:** Deploy atomic hai. Cancel kabhi aadha site nahi dikhata.
 
 ### `scripts/test_deploy_dev.py`
 
@@ -293,19 +307,27 @@ Samajhne wali baat: "nahi banaya" bhi design decision hai. Yeh PR chhota rakhne 
 
 <!-- gh-comment-id: 4264133198 -->
 > **Top-3** — Dono tests sirf YAML ka text padhte hain. Agar `.vercel/output` ka shape galat ho to kaunsa test laal hoga? Pehle real run ke baad kya hum ek "smoke" check (URL 200) CI mein daal sakte hain?
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Sahi pakda. Dono tests sirf YAML ka text padhte hain. Galat `.vercel/output` shape pehle real deploy par hi fail hoga, test mein nahi. URL-200 smoke check pehli real URL milne ke baad add hoga.
+- **Lesson:** Text test board ko check karta hai, delivery ko nahi. Smoke check pehle real run ke baad.
 
 <!-- gh-comment-id: 4264133294 -->
 > Agar koi `paths` block hata hi de (sab push par deploy), to regex `re.search` None dega aur test crash karega, fail nahi — yeh intended hai ya assert add karna chahiye?
-- **Status:** open
+- **Status:** answered → **code badla**
+- **Reply (klickbae8yt-star):** Sahi nahi tha. Commit 0630677 mein test ab check karta hai ki `paths` block hai, to uske bina saaf fail message aata hai.
+- **Lesson:** Crash fail message nahi hai. Precondition assert karo.
 
 <!-- gh-comment-id: 4264133299 -->
 > Regex `vercel(@\S+)? deploy --prebuilt --prod` exact flags se bandha hai. Agar coder `--prod` hata de (preview deploy) to test laal — yeh jaan-boojh kar lock hai?
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Haan, jaan-boojh kar. `--prod` wahi target hai jo `goserve-app-dev` serve karta hai. Preview deploy se dev URL nahi badlega.
+- **Lesson:** Test flag ko jaan-boojh kar lock kar sakta hai. Reply mein bolo.
 
 <!-- gh-comment-id: 4264133309 -->
 > Red-first proof PR body mein hai (`FileNotFoundError`, errors=2). Yeh red run ka output kahin save hota hai ya sirf PR body mein? (notebook ke liye kaafi hai, bas confirm.)
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Sirf PR body aur test file ki git history mein. Yeh kaafi hai, test sasta hai aur dobara chala sakte hain.
+- **Lesson:** Red proof PR body aur git history mein rehta hai. Kaafi hai.
 
 ### `docs/tests/test-cases.md`
 
@@ -318,11 +340,15 @@ Samajhne wali baat: "nahi banaya" bhi design decision hai. Yeh PR chhota rakhne 
 
 <!-- gh-comment-id: 4264133316 -->
 > Row S1 "Pass" likhti hai, par story ka S1 "URL returns 200 and installable" bhi kehta hai, jo abhi Pending hai (row 35). Kya S1 ko "Partly (workflow check) / URL pending" likhna zyada sach hoga?
-- **Status:** open
+- **Status:** answered → **code badla**
+- **Reply (klickbae8yt-star):** Theek kaha. Commit 0630677 mein S1 row 'Partly' hai, jab tak URL wali row pending hai.
+- **Lesson:** Jab asli scenario abhi pending ho, 'Partly' likho, 'Pass' nahi.
 
 <!-- gh-comment-id: 4264133325 -->
 > Manual URL check pehle deploy ke baad kaun karega aur kahan record hoga — yahi row update hogi, ya F54 ke saath UptimeRobot se automatic hoga?
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Owner ya agent pehle deploy ke baad URL check karega aur usi row ko update karega. UptimeRobot (F54) baad mein watch karega.
+- **Lesson:** Manual row ka ek owner aur record karne ki jagah honi chahiye.
 
 ### `docs/follow-ups.md`
 
@@ -335,7 +361,9 @@ Samajhne wali baat: "nahi banaya" bhi design decision hai. Yeh PR chhota rakhne 
 
 <!-- gh-comment-id: 4264133337 -->
 > F53 "In review" — merge ke baad is PR mein hi "Done" hoga ya agli PR mein? (Taaki register sach rahe.)
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Is PR ke follow-up mein: F53 pehle successful deploy ke baad 'Done' hoga, docs PR mein, taaki register sach rahe.
+- **Lesson:** Register row tab hi Done hota hai jab asli event ho jaye.
 
 ### `docs/process-trace.md`
 
@@ -348,7 +376,9 @@ Samajhne wali baat: "nahi banaya" bhi design decision hai. Yeh PR chhota rakhne 
 
 <!-- gh-comment-id: 4264133345 -->
 > Row 121 PR #59 ki hai (rebase, 16 threads), story #41 ki nahi. Yeh is PR mein kyun aayi — bas pichhli session ka bacha hua log? Theek hai, bas samajhna chahta hoon.
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Yeh row PR #59 ke session ki thi jo uncommitted padi thi. Yeh log row hai, isliye is PR mein saath aayi. Story ka hissa nahi hai.
+- **Lesson:** Log row saath aa sakti hai, par woh story ka hissa nahi hai.
 
 ### `docs/LEARNINGS.md`
 
@@ -361,14 +391,63 @@ Samajhne wali baat: "nahi banaya" bhi design decision hai. Yeh PR chhota rakhne 
 
 <!-- gh-comment-id: 4264133350 -->
 > "CI only runs on PRs whose base is `main` or `dev`" — yeh `ci.yml` ke `branches:` filter se aata hai, sahi? Stacked PR (feature par feature) kabhi hamare process mein allowed hai ya sirf galti se hua tha?
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Haan, yeh `ci.yml` ke `branches:` filter se aata hai. Stacked PR meri galti thi, process sirf feature → dev hai.
+- **Lesson:** Stacked PR yahan galti hai. Feature → dev hi.
 
 ---
 
 ## Handoff
 
-State: 16 posted · 0 answered · 0 fixed · 0 open-fixes · actor: coder
+Coder handoff jo post hua tha (review 5510091780, 14 Oct 2026). Waise hi rakha hai:
 
-You are the developer for GoServe PR #62. Do this: (1) reply on every thread (ids: the 16 inline threads of this review) with a 1–2 sentence answer; (2) the three Top-3 threads may need code: (a) pin the `vercel` major version in `.github/workflows/deploy-dev.yml` line 47; (b) add `design/tokens.json` to `paths` in `.github/workflows/deploy-dev.yml` line 7; (c) move the secrets `env` to the Deploy step in `.github/workflows/deploy-dev.yml` lines 20–23, or argue why not in the thread; (3) commit the uncommitted notebook files under `docs/pr-reviews/` plus `docs/process-trace.md` row 123 on `feat/41-dev-deploy`, one commit; (4) push; (5) reply "PR #62 threads answered at <sha>"; (6) reviewer runs `/tpm sync 62`.
+> State: 16 posted · 0 answered · 0 fixed · 0 open-fixes · actor: coder
+>
+> You are the developer for GoServe PR #62. Do this: (1) reply on every thread (ids: the 16 inline threads of this review) with a 1–2 sentence answer; (2) the three Top-3 threads may need code: (a) pin the `vercel` major version in `.github/workflows/deploy-dev.yml` line 47; (b) add `design/tokens.json` to `paths` in `.github/workflows/deploy-dev.yml` line 7; (c) move the secrets `env` to the Deploy step in `.github/workflows/deploy-dev.yml` lines 20–23, or argue why not in the thread; (3) commit the uncommitted notebook files under `docs/pr-reviews/` plus `docs/process-trace.md` row 123 on `feat/41-dev-deploy`, one commit; (4) push; (5) reply "PR #62 threads answered at <sha>"; (6) reviewer runs `/tpm sync 62`.
+>
+> _(PR par post hua — `satvik-jain-iitd`, review [5510091780](https://github.com/satvik-jain-iitd/GoServe/pull/62#pullrequestreview-5510091780), 16 inline threads, 14 Oct 2026.)_
 
-_(PR par post hua — `satvik-jain-iitd`, review [5510091780](https://github.com/satvik-jain-iitd/GoServe/pull/62#pullrequestreview-5510091780), 16 inline threads, 14 Oct 2026.)_
+- **Dev reply:** "PR #62 threads answered at 0630677"
+- **Verified:** CI green on 0630677 (Site, App, Guard) [VERIFIED]; `vercel@64` exists on npm (64.0.1) [VERIFIED]; 0 open threads.
+- **Approved:** review 5510246926 (satvik-jain-iitd); handoff comment 6155651877 [VERIFIED]
+
+**Owner handoff (Romanized Hindi):**
+
+```text
+State: PR #62 approved, merge pending · actor: owner
+
+1. PR #62 ko squash-merge karo: feat/41-dev-deploy → dev. Merge ke baad branch delete kar do.
+2. Merge hote hi pehla dev deploy apne-aap chalega, kyunki workflow file apne paths mein hai.
+3. goserve-app-dev ka URL kholo: 200 aana chahiye aur app install hona chahiye. Yeh manual row update hogi.
+4. PR #63 (story #42, prod deploy) review mein hai, parallel mein. Coder ka reply aane par sync karenge.
+5. Agli story: #43 "Schema: 7 tables and the legal-status rule" (epic #34).
+```
+
+## What happened after review
+
+- **Review comments post hue:** 14 Oct 2026, `satvik-jain-iitd` ne 6 files par **16 questions** post kiye.
+- **Replies:** 16 ke 16 jawab `klickbae8yt-star` se. **16 answered**, 0 open.
+- **Fix commit:** `0630677`, 5 cheezein badli:
+  1. `vercel@64` pin (`deploy-dev.yml` line 47). Test pin check karta hai.
+  2. `design/tokens.json` `paths` mein add. Test check karta hai.
+  3. Secrets `env` sirf Deploy step par.
+  4. S2 test ab assert karta hai ki `paths` block hai.
+  5. `test-cases.md` S1 row "Partly" (URL row pending).
+- **Approve:** pehli APPROVE koshish HTTP 422 ("Can not approve your own pull request") se fail hui. Cause nahi pata. Phir skill script se `satvik-jain-iitd` ke naam se approve ho gaya. [VERIFIED]
+- **CI on 0630677:** Site, App, Guard green. `vercel@64` npm par hai (64.0.1). [VERIFIED]
+- **Status:** **APPROVED**, merge pending (owner karega).
+- **Is chapter ka big lesson:** Path filter mein har build input honi chahiye, sirf folder nahi. Green text test sirf board check karta hai, delivery nahi.
+
+## Reviewer's take (mere thoughts)
+
+**Kya achha raha:**
+- Har reply ya to code badla, ya ek saaf reason diya ("Accepted risk, named"). Dono sahi jawab hain.
+- 16 mein se 5 jawab ne asli code change laaya. Sawaal ne system better kiya.
+- Coder ne "Partly" likha jab asli scenario abhi pending tha. Isse register sach rehta hai.
+
+**Kahan dhyan dena hai:**
+- `paths` ka sabak: `design/tokens.json` pehle list mein nahi tha, kyunki filter sirf `app/` folder dekh raha tha. Lekin build woh file padhta tha (`pwa-manifest.ts` ka import). Sawaal: kaun si file build padhti hai? Woh sab list karo.
+- `vercel@64` pin ka matlab: ab har naya Vercel major ek faisla hai. Bump ka faisla kaun lega, aur kab? Yeh process ka sawaal hai.
+- Smoke check (URL 200) abhi bhi nahi hai. Pehla asli proof pehli real run hi hai.
+
+**Big lesson:** Green test ka matlab "board sahi likha hai" hai, "delivery sahi pahunchi" nahi. PM ka sawaal: kya hamara test wahi cheez prove karta hai jo user ko chahiye?

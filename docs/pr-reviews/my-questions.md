@@ -28,7 +28,15 @@ Apne sawaal yahan. Status: **open** (jawab nahi mila) / **answered** / **dropped
 
 | # | Sawaal | Kahan poocha (PR#/file) | Jawab mila? | Jawab | Status |
 |---|---|---|---|---|---|
-| Q13 | Dono tests YAML ka text padhte hain. Agar `.vercel/output` ka shape galat ho to kaunsa test laal hoga? Smoke check (URL 200) CI mein kab aayega? | PR #62 / scripts/test_deploy_dev.py | nahi |  | open |
-| Q14 | `vercel@latest` ki jagah major version pin karna behtar hai? | PR #62 / .github/workflows/deploy-dev.yml | nahi |  | open |
-| Q15 | `paths` mein `design/tokens.json` kyun nahi, jabki app build use import karta hai? | PR #62 / .github/workflows/deploy-dev.yml | nahi |  | open |
-| Q16 | Secrets job-level `env` mein hain; sirf Deploy step par rakhna safer nahi? | PR #62 / .github/workflows/deploy-dev.yml | nahi |  | open |
+| Q13 | Dono tests YAML ka text padhte hain. Agar `.vercel/output` ka shape galat ho to kaunsa test laal hoga? Smoke check (URL 200) CI mein kab aayega? | PR #62 / scripts/test_deploy_dev.py | haan | Galat shape pehle real deploy par fail hoga, test mein nahi. URL-200 smoke check pehli real URL ke baad add hoga. | answered |
+| Q14 | `vercel@latest` ki jagah major version pin karna behtar hai? | PR #62 / .github/workflows/deploy-dev.yml | haan | `vercel@64` pin ho gaya (0630677, line 47). Naya major ab jaan-boojh kar bump hoga; test pin check karta hai. | answered |
+| Q15 | `paths` mein `design/tokens.json` kyun nahi, jabki app build use import karta hai? | PR #62 / .github/workflows/deploy-dev.yml | haan | Sahi tha. `pwa-manifest.ts` tokens.json import karta hai. 0630677 mein `design/tokens.json` paths mein add hua, test check karta hai. | answered |
+| Q16 | Secrets job-level `env` mein hain; sirf Deploy step par rakhna safer nahi? | PR #62 / .github/workflows/deploy-dev.yml | haan | Haan. 0630677 mein teeno secrets sirf Deploy step par hain; `npm ci` inhe nahi dekhta. | answered |
+
+## PR #63 ke baad
+
+| # | Sawaal | Kahan poocha (PR#/file) | Jawab mila? | Jawab | Status |
+|---|---|---|---|---|---|
+| Q17 | Release list (PLAN.md §2, CLAUDE.md rule 17) mein `app` aur `scripts` kyun nahi? Pehli release par deploy fail nahi hoga? | PR #63 / .github/workflows/deploy-app.yml | haan | Haan. `app` aur `scripts` dono release line mein hain (PLAN.md section 2, CLAUDE.md rule 17), 4b77e65 mein. Naya test inhe guard karta hai. | answered |
+| Q18 | Pages project `goserve-app` exist nahi karta to CI fail karega ya auto-create karega? F61 kab karna hai? | PR #63 / .github/workflows/deploy-app.yml | haan | Non-interactive wrangler project nahi banata, fail karta hai. Owner F61 ke tahat project pehle banayega, isliye pehla run fail nahi hoga. | answered |
+| Q19 | S1 negative check ka trailing space `goserve` ko kuch cases mein miss karta hai? Regex behtar hai? | PR #63 / scripts/test_deploy_app.py | haan | Achha pakda. 4b77e65 mein test `--project-name=goserve(?!-app)` check karta hai; line ke end wala case bhi nahi chhootega. | answered |
