@@ -125,3 +125,45 @@ Har naya technical word yahan. Simple Hindi mein. Ek line ka "yeh kya hai", ek l
 - **Kya hai:** Ek test jo woh file padhta hai jo is PR ne nahi badli, taaki proof ho ki woh same hai.
 - **Analogy:** Inspector showroom ka board bhi check karta hai.
 - **File:** `scripts/test_deploy_app.py` lines 23–27.
+
+## PR #64 se
+
+### Migration
+- **Kya hai:** Ek SQL file jo database ki shape badalti hai. Numbered hai, taaki ek ke baad ek chale.
+- **Analogy:** Register ke naye page ka print.
+- **File:** `app/supabase/migrations/0001_schema.sql`
+
+### Trigger
+- **Kya hai:** Woh code jo database khud chalata hai, jab koi row badalti hai. App ko yaad nahi rakhna padta.
+- **Analogy:** Head waiter jo har entry se pehle check karta hai.
+- **File:** `0001_schema.sql` lines 74–96 (`orders_status_rule`, `order_events_no_change`).
+
+### CHECK constraint
+- **Kya hai:** Column mein allowed values ki list. Bahar ki value aaye to database insert hi nahi karta.
+- **Analogy:** Rate card par sirf allowed status likhe hain.
+- **File:** `0001_schema.sql` lines 24–25.
+
+### Unique key as idempotency
+- **Kya hai:** Ek key (session + client order key) par unique rule. Same key dobara aaye to nayi row nahi banti. Retry safe ho jaata hai.
+- **Analogy:** Token number. Same token = same order.
+- **File:** `0001_schema.sql` line 31.
+
+### Append-only table
+- **Kya hai:** Table mein row add ho sakti hai, par edit ya delete nahi. Database trigger yeh rokta hai.
+- **Analogy:** Carbon copy. Likha gaya, to likha gaya.
+- **File:** `0001_schema.sql` lines 89–96 (`order_events_frozen`).
+
+### Row Level Security (RLS), off today
+- **Kya hai:** Database rule jo tay karta hai kaunsi row kaunsi key dekh ya badal sakti hai. Abhi off hai. Off ho to anon key se sab dikhta hai.
+- **Analogy:** Register bina taale ke. Koi bhi pages khol le.
+- **File:** Is PR mein nahi. Story #44 mein aayega.
+
+### Integration test with rollback
+- **Kya hai:** Test jo asli database se baat karta hai, phir apne sab writes undo kar deta hai. Database par koi nishaan nahi bachta.
+- **Analogy:** Auditor ki pencil entry. Check ke baad rubber se mita di.
+- **File:** `scripts/test_schema.py`.
+
+### Management API token
+- **Kya hai:** Ek token jo Supabase account par kuch bhi kar sakta hai (project banana, mitana). Yahan sirf SQL chalane ke liye use hota hai.
+- **Analogy:** Master chaabi. Ek hi chaabi sab kholti hai, isliye sambhal ke rakho.
+- **File:** `scripts/apply_migration.py` line 10.
