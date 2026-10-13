@@ -11,6 +11,8 @@ Accepted (owner, 13 Oct 2026).
 ## Context
 
 The owner wants Vercel's one-click Supabase integration for day-to-day development, and Cloudflare for production.
+The owner already knows Vercel well (faster, better dev work) and is learning Cloudflare through production. He chose both
+for speed and quality, after weighing the costs of two hosts (13 Oct 2026).
 Production is the app at `goserve-app.pages.dev`, built from `main`. All accounts live on klickbae8yt@gmail.com.
 
 ## Decision
