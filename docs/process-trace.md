@@ -93,4 +93,6 @@ Rule: read this first in every session, append before saying done.
 | 85 | 2026-10-13 | agent | Merged PR #29 under the exception; repo clean (0 open PRs, 0 open issues, only main and dev) | GitHub | none |
 | 86 | 2026-10-13 | owner | Asked why gh switched back to satvik-jain-iitd; he reviews in the browser himself | chat | volunteered |
 | 87 | 2026-10-13 | agent | Pinned this repo to klickbae8yt-star (remote URL + repo-local credential helper + GH_TOKEN per command); global gh stays satvik-jain-iitd; rule updated | CLAUDE.md, ~/.claude/CLAUDE.md | none |
+| 88 | 2026-10-13 | owner | In the GoServe folder klickbae8yt-star must be the active account; other projects keep satvik-jain-iitd | chat | volunteered |
+| 89 | 2026-10-13 | agent | Added a gh() wrapper in ~/.zshrc (GoServe path → klickbae8yt-star), tested both folders; saved to rules and claude-mem | ~/.zshrc, CLAUDE.md, memory | none |
 | $LAST_STEP$ | | agent | ... | ... | ... |
