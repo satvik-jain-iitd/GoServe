@@ -34,3 +34,4 @@ npm-debug.log*
 
 # client source documents (kept outside the repo)
 knowledge/client_docs/
+__pycache__/

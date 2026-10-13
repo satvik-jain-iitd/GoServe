@@ -64,3 +64,4 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F59 | PWA update flow: `autoUpdate` reloads silently. Before checkout and order tracking exist (stories #48 to #50), switch to a "new version, tap to refresh" prompt. | Agent | Open |
 | F60 | WebKit/iOS: Playwright cannot test Add to Home Screen. The owner's iPhone check is the manual row for it. Add a WebKit project only if a Safari-only bug shows up. | Owner | Open |
 
+| F57 | After PR for #40 merges: add the new CI checks `App (typecheck, unit, e2e, build)` and `Guard (secrets, size, markers, commit messages, PR size)` as required checks in the `protect dev and main` ruleset. | Owner | Open |
