@@ -88,4 +88,5 @@ Rule: read this first in every session, append before saying done.
 | 80 | 2026-10-13 | owner | Shared Supabase, Vercel and UptimeRobot keys (klickbae8yt); had created Supabase project GoServe in Mumbai | chat | volunteered |
 | 81 | 2026-10-13 | agent | Saved keys to the vault; verified all three; created Supabase goserve-dev (Mumbai) and saved URLs/keys; created Vercel goserve-app-dev with dev env vars; MVP 0 phase gate passed | Supabase, Vercel, vault, phase-gate.md | asked |
 | 82 | 2026-10-13 | agent | Vercel Git link needs the Vercel app on the repo owner's account; owner found it confusing. Switched to deploying dev from GitHub Actions; set repo secrets VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID | GitHub secrets | asked |
+| 83 | 2026-10-13 | owner | Chose path 1: dev deploys to Vercel from GitHub Actions, no Vercel GitHub app link | chat | asked |
 | $LAST_STEP$ | | agent | ... | ... | ... |

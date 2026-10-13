@@ -38,6 +38,14 @@ Production is the app at `goserve-app.pages.dev`, built from `main`. All account
 - **Two hosts can drift:** keep one handler, one set of tests, and the same environment variable names on both.
 - **Free Supabase projects pause after 1 week idle:** the keep-alive job pings both projects.
 
+## How dev reaches Vercel (owner, 13 Oct 2026)
+
+- **No Vercel GitHub app link.** The Vercel GitHub app on `satvik-jain-iitd` is already tied to another Vercel account
+  (LinkRight), and the Hobby plan can block deploys when the commit author is not the Vercel account owner (seen as
+  "Blocked" on a LinkRight preview; conf 0.6 that it would hit our two-account flow).
+- **GitHub Actions deploys dev to Vercel** with the Vercel CLI and the repo secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`,
+  `VERCEL_PROJECT_ID`. PR previews are an extra workflow step. Linking the app later stays possible.
+
 ## Consequences
 
 - Owner gets Vercel previews and the Supabase integration for development.
