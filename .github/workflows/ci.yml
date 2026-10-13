@@ -81,6 +81,9 @@ jobs:
       - name: Guard unit tests
         run: python3 -m unittest discover -s scripts -p "test_*.py"
 
+      - name: n8n order workflow tests
+        run: node --test ops/n8n/order/test.js
+
       - name: Changed files
         if: github.event_name == 'pull_request'
         run: |

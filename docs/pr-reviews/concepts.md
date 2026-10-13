@@ -167,3 +167,45 @@ Har naya technical word yahan. Simple Hindi mein. Ek line ka "yeh kya hai", ek l
 - **Kya hai:** Ek token jo Supabase account par kuch bhi kar sakta hai (project banana, mitana). Yahan sirf SQL chalane ke liye use hota hai.
 - **Analogy:** Master chaabi. Ek hi chaabi sab kholti hai, isliye sambhal ke rakho.
 - **File:** `scripts/apply_migration.py` line 10.
+
+## PR #65 se
+
+### Row Level Security (RLS)
+- **Kya hai:** Database ka taala. Har row par check hota hai: kaun si row kaun dekh ya badal sakta hai. Policies batati hain kaun si chaabi kaun si row kholti hai.
+- **Analogy:** Dhaba ke register par taala har page par. Chaabi = policy.
+- **File:** `app/supabase/migrations/0002_rls_realtime_menu.sql` lines 6–18.
+
+### Policy roles (anon vs authenticated)
+- **Kya hai:** `anon` = public key wala koi bhi, bina login. `authenticated` = koi bhi logged-in user, anonymous sign-in wale bhi.
+- **Analogy:** Raahgir vs token-wala customer. Raahgir sirf rate card padh sakta hai; token-wala apni parchi.
+- **File:** `0002_rls_realtime_menu.sql` lines 15–18.
+
+### Anonymous sign-in
+- **Kya hai:** Bina naam ka login. Supabase ek user id deta hai, aur wahi session id ban jaata hai (ADR-010).
+- **Analogy:** Counter par token number.
+- **File:** `app/tests/integration/supabase.test.ts` lines 16–21.
+
+### Deny by default
+- **Kya hai:** RLS on hai aur koi policy nahi, to koi nahi padh sakta (service role ke alawa).
+- **Analogy:** Page taale mein, aur chaabi kati hi nahi.
+- **File:** `0002_rls_realtime_menu.sql` line 19.
+
+### Service role
+- **Kya hai:** Server wali chaabi jo RLS ko bypass karti hai. Browser mein kabhi nahi, CI mein kabhi nahi.
+- **Analogy:** Manager ka pen.
+- **File:** `app/tests/integration/supabase.test.ts` line 8.
+
+### Realtime publication
+- **Kya hai:** Woh tables jinke changes Postgres broadcast karta hai. Supabase unhe subscribed clients tak pahunchata hai, RLS ke saath.
+- **Analogy:** Ghanti jo sirf tumhari parchi par bajti hai.
+- **File:** `0002_rls_realtime_menu.sql` line 21.
+
+### Hot-linking with credit
+- **Kya hai:** Photo kisi aur ke server se load hoti hai. CC licence mein credit dikhana zaroori hai.
+- **Analogy:** Udhaar ki tasveer, naam ke saath.
+- **File:** `0002_rls_realtime_menu.sql` lines 25–35.
+
+### ADR (Architecture Decision Record)
+- **Kya hai:** Ek chhota record: faisla, rejected options, aur nateeje.
+- **Analogy:** Dhaba ka faisla register.
+- **File:** `docs/decisions/ADR-010-session-id-is-the-anonymous-user-id.md`.

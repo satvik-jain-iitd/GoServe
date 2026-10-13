@@ -71,3 +71,7 @@ short. Say what happened and what to do next time.
 - `SUBSCRIBED` does not mean the server is listening yet. An insert right after it can be missed; wait about a second in tests.
 - A green CI can prove nothing: PR #64's schema test is skipped in CI (no token). Say "local only" in the test list, and let the reviewer re-run it with the vault token before approving.
 - Check the live system, not only the diff: one query showed RLS off and no FK indexes on goserve-dev. The diff cannot show what the database is.
+- I wrote the workflow tests after the code, so they never showed red. A mutation check (break the code on purpose, see the test fail) is the fallback; do the test first next time.
+- The layout library reads a third edge field as an "ai link". Passing the output index there hid a branch and put a link through a node. Pass only [from, to].
+- Supabase RPC with the service role needs both headers, `apikey` and `Authorization: Bearer`. With `apikey` alone the call runs as anon and fails with "permission denied".
+- n8n webhook header auth answers 403, not 401. To return 401 the token is checked in a Code node.
