@@ -12,7 +12,7 @@ SECRET = re.compile(
     r"-----BEGIN [A-Z ]*PRIVATE KEY-----"
     r"|sk-or-v1-[A-Za-z0-9]{20,}|sk-ant-[A-Za-z0-9_-]{20,}"
     r"|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}"
-    r"|AKIA[0-9A-Z]{16}"
+    r"|AKIA[0-9A-Z]{16}|sk_live_[A-Za-z0-9]{20,}"
     r"|eyJ[A-Za-z0-9_-]{20,}\.eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}"  # JWT, e.g. Supabase keys
 )
 MARKER = re.compile(r"^(<<<<<<< |>>>>>>> )", re.M)

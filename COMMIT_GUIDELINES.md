@@ -12,3 +12,4 @@ type(scope): what changed
 - Add a body only when the "why" is not obvious.
 - Reference the issue in the PR body ("Closes #NN"), not in the subject.
 - Checked by `scripts/guard.py` in the `commit-msg` hook and in CI.
+- First time on a new machine: `pip install pre-commit && pre-commit install --hook-type pre-commit --hook-type commit-msg`.

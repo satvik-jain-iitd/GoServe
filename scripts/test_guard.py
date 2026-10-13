@@ -1,5 +1,5 @@
 # Story #40, scenario S2: bad commits are blocked. Run: python3 -m unittest scripts/test_guard.py
-import os, tempfile, unittest
+import os, re, tempfile, unittest
 import guard
 
 
@@ -22,6 +22,12 @@ class Guard(unittest.TestCase):
         self.assertTrue(any("secret" in e for e in guard.check_files([p])))
         p = write(self.d, "b.txt", "-----BEGIN " + "PRIVATE KEY-----\n")
         self.assertTrue(any("secret" in e for e in guard.check_files([p])))
+        # one sample per remaining pattern; built from parts so this file stays clean
+        for sample in ["sk-" + "ant-" + "a" * 30, "ghp" + "_" + "a" * 36, "github" + "_pat_" + "a" * 40,
+                       "AK" + "IA" + "A" * 16, "sk" + "_live_" + "a" * 24,
+                       "ey" + "J" + "a" * 20 + ".ey" + "J" + "a" * 20 + "." + "a" * 12]:
+            p = write(self.d, "c.txt", sample + "\n")
+            self.assertTrue(any("secret" in e for e in guard.check_files([p])), sample[:8])
 
     def test_big_file_is_blocked(self):
         p = write(self.d, "big.bin", "", size=600 * 1024)
@@ -40,6 +46,19 @@ class Guard(unittest.TestCase):
             self.assertIsNone(guard.check_message(ok), ok)
         for bad in ["updated stuff", "Feat: caps", "feat:no space", "feat: " + "x" * 80, ""]:
             self.assertIsNotNone(guard.check_message(bad), bad)
+
+    def test_guard_passes_on_itself(self):
+        here = os.path.dirname(os.path.abspath(__file__))
+        files = [os.path.join(here, f) for f in os.listdir(here) if f.endswith(".py")]
+        self.assertEqual(guard.check_files(files), [])
+
+    def test_commit_guidelines_match_regex(self):
+        doc = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "COMMIT_GUIDELINES.md")).read()
+        types = re.search(r"- Types: (.*)\.", doc).group(1).replace("`", "").split(", ")
+        for t in types:
+            self.assertIsNone(guard.check_message(t + ": x"), t)
+        self.assertIsNotNone(guard.check_message("nope: x"))
+        self.assertEqual(set(types), set(guard.MESSAGE.pattern.split("(")[1].split(")")[0].split("|")))
 
     def test_pr_size(self):
         self.assertIsNone(guard.check_count(50))
