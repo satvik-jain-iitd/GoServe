@@ -106,4 +106,18 @@ Rule: read this first in every session, append before saying done.
 | 98 | 2026-10-13 | agent | Story #39: wrote failing tests first, then scaffolded app/ (React, Vite, TS, PWA, tokens); verify and e2e green | app/ | none |
 | 99 | 2026-10-13 | owner | Said to start the next story on a separate branch and PR | chat | volunteered |
 | 100 | 2026-10-13 | agent | Story #40: guard script tests first (red), then scripts/guard.py, pre-commit config, COMMIT_GUIDELINES.md, CI jobs app and guard | scripts/, .github/, .pre-commit-config.yaml | none |
-| $LAST_STEP$ | | agent | ... | ... | ... |
+| 101 | 2026-10-14 | owner | Asked for a reusable teaching-first PR review skill for a non-coding PM, and to start documenting GoServe PRs from #58 | chat | volunteered |
+| 102 | 2026-10-14 | agent | Built the tpm-pr-review skill (3 modes, question bank, 16-section overall + 11-section file templates, 5 north-star teaching rules, gh fetch/post scripts); symlinked into ~/.claude skills | ~/.config/opencode/skills/tpm-pr-review/ | none |
+| 103 | 2026-10-14 | agent | Created the PR review notebook and documented PR #58 end to end: overall review, per-file breakdown, and the 33 posted comments with replies and their outcomes | docs/pr-reviews/ | none |
+| 104 | 2026-10-14 | agent | Ran the tpm-pr-review skill on PR #59 (open): fetched the PR, wrote the chapter, and posted 16 inline teaching questions on 6 files as satvik-jain-iitd; updated the index and journals | docs/pr-reviews/pr-59-app-ci.md, PR #59 | none |
+| 105 | 2026-10-14 | agent | Mode C sync on PR #59: all 16 replies (klickbae8yt-star) captured; 5 answers changed code (new commit 6c068b67); chapter, questions journal and mental model updated | docs/pr-reviews/, PR #59 | none |
+| 106 | 2026-10-14 | owner | Asked that every skill run end with a short English developer handoff the owner pastes to the coder; chat short, notebook full, handoff also on the PR | chat | volunteered |
+| 107 | 2026-10-14 | agent | Added the Developer handoff to tpm-pr-review: 6th rule, chat/notebook output contract, new references/developer-handoff.md, scripts/post_handoff.sh, and template, config and README updates | ~/.config/opencode/skills/tpm-pr-review/ | asked |
+| 108 | 2026-10-14 | owner | Ran /tpm sync 59 — first use of the new Developer handoff | chat | volunteered |
+| 109 | 2026-10-14 | agent | Mode C sync on PR #59: confirmed 16 answered / 5 fixed / 0 open; added the Developer handoff to the chapter and posted it to the PR as satvik-jain-iitd (issue comment 6154260533); refreshed the mental model | docs/pr-reviews/, PR #59 | none |
+| 110 | 2026-10-14 | owner | Said approve PR #59 (as satvik-jain-iitd); owner will merge | chat | asked |
+| 111 | 2026-10-14 | agent | Posted APPROVE on PR #59 as satvik-jain-iitd (review 5509512400); PR now APPROVED + CLEAN + MERGEABLE, ready for the owner to merge | PR #59 | asked |
+| 112 | 2026-10-14 | owner | Asked the skill to close the loop: after a sync, pick one of three outcomes (follow-up / open-fix / aligned), auto-approve when aligned, and hand off to the next actor so development continues | chat | volunteered |
+| 113 | 2026-10-14 | agent | Reworked tpm-pr-review Mode C into sync + close-out: three outcomes, next-actor handoff (coder English / owner Romanized Hindi), AUTO_APPROVE, renamed developer-handoff.md to handoff.md, added --approve to post_handoff.sh, updated SKILL/templates/README | ~/.config/opencode/skills/tpm-pr-review/ | asked |
+| 114 | 2026-10-14 | owner | Merged PR #59 (feat/40-app-ci -> dev) in the browser; merge commit fa9a345b | PR #59 | volunteered |
+| 115 | 2026-10-14 | agent | Closed out the PR #59 notebook: marked MERGED with merge SHA fa9a345b, added the owner handoff (outcome 3), refreshed the index and mental model; named the next story (#41 dev deploy) | docs/pr-reviews/ | asked |
