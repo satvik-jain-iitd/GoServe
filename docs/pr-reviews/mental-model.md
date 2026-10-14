@@ -2,7 +2,7 @@
 
 System ka ek-page picture. Har chapter ke baad update karta hoon.
 
-_Last updated: PR #73 (approved, `3a3d416`, CI green); PRs #62–#72 merged_
+_Last updated: PR #75 merged (`35f78cd`); PRs #62–#75 merged_
 
 ## GoServe — ab tak ki tasveer
 
@@ -39,9 +39,12 @@ _Last updated: PR #73 (approved, `3a3d416`, CI green); PRs #62–#72 merged_
                           ├─ src/lib/useLiveOrders.ts  (board boy: ek hook, teen kamre)  ← PR #71
                           ├─ src/lib/session.ts  (key card desk: kaunsa room, kaun sa link)  ← PR #72
                           ├─ src/lib/ops.ts, src/lib/useOps.ts  (phrase book + desk clerk: decision row → ek line, numbers)  ← PR #73
+                          ├─ src/lib/health.ts  (teen checks: kitchen door, front desk line, concierge sawaal)  ← PR #74
+                          ├─ src/lib/autopilot.ts  (drill card: agla desk, sample guest, metronome)  ← PR #75
                           ├─ src/screens/RiderScreen.tsx  (delivery desk: slips, teen stamp)  ← PR #71
                           ├─ src/screens/DemoBar.tsx  (front desk buttons: link copy, reset ka yes/no)  ← PR #72
                           ├─ src/screens/OpsScreen.tsx  (duty manager desk: AI salah vs rule, teen numbers)  ← PR #73
+                          ├─ src/screens/HealthScreen.tsx  (/health: subah ka walk-through, teen batti)  ← PR #74
                           ├─ supabase/migrations/0005_rider_event.sql  (margin note counter: rider_event)  ← PR #71
                           ├─ supabase/migrations/0006_demo_sessions.sql  (guest list, doorman, invite, housekeeping)  ← PR #72
                           ├─ supabase/migrations/0007_ops_read.sql  (doorman: apni room ka advice + run ledger)  ← PR #73
@@ -49,6 +52,9 @@ _Last updated: PR #73 (approved, `3a3d416`, CI green); PRs #62–#72 merged_
                           ├─ tests/e2e/rider.spec.ts  (rider: teen tap, tracker: paanch UPDATE)  ← PR #71
                           ├─ tests/e2e/split.spec.ts  (rehearsal: split, join, reset)  ← PR #72
                           ├─ tests/e2e/ops.spec.ts  (rehearsal: fake concierge, fake ledgers)  ← PR #73
+                          ├─ tests/e2e/health.spec.ts  (rehearsal: all green, ek fail, galat token, Run again)  ← PR #74
+                          ├─ tests/e2e/autopilot.spec.ts, tests/unit/autopilot.test.ts  (rehearsal: offline story, online chhe calls, fallback)  ← PR #75
+                          ├─ ops/n8n/order: SUB 16 Health, code/health_prepare.js, code/health_result.js, health.test.js (concierge test, kuch likhta nahi)  ← PR #74
                           ├─ ops/n8n/order: SUB 15 Add event, code/guard_event.js, event.test.js (margin note ki khidki)  ← PR #71
                           ├─ src/pwa-manifest.ts  (identity card, colours ← tokens.json)
                           ├─ src/styles/tokens.css + app.css (paint)
@@ -115,6 +121,8 @@ _Status: 6 workflows n8n par deployed, sab inactive (ids registry mein; VERIFIED
 6c. Rider tab → Pick up / Arriving (event, SUB 15 → `rider_event`) / Delivered → customer tracker lights six steps (PR #71; live after deploy + activation).
 6d. Device B `/?join=<A>` kholta hai → `join_session(A)` guest list par naam likhta hai → B ab session A padhta hai. Reset (kisi bhi device se) → `reset_session(A)` → events, decisions, orders delete → sab khule screens DELETE sunte hain, sirf apni slips girate hain (PR #72; live two-device check after activation).
 6e. Ops tab → Ready order bina decision row → ek `decide` call (teen demo riders) → SUB 13 → `decision_log` row → screen ek line ("AI suggests R2 (81%). The rule agrees.") + numbers (order to screen, decision ms, runs today) (PR #73; live after activation).
+6f. Founder `/health` kholta hai → `main.tsx` HealthScreen chunta hai → Supabase ek menu row + ek `health` call → MAIN 01 → SUB 16 → Jev → teen batti OK/FAIL with ms (PR #74; SUB 16 deploy + activation pending).
+6g. Autopilot tap → online: session ka newest open order har 2 s kitchen phir rider ke asli calls se aage, Delivered par ruk; offline (airplane mode): sample order local copy par "Offline demo" banner ke neeche; network fail par fallback (PR #75).
 7. App chalane par: index.html → main.tsx → App → service worker (offline).
 
 ## Yeh PR ke baad kya samajh aaya
@@ -178,6 +186,14 @@ _Status: 6 workflows n8n par deployed, sab inactive (ids registry mein; VERIFIED
 - **Ek baar poocho:** refused decide call loop nahi karta, par slip "Asking…" par atka rehta hai (PR #73, F75).
 - **Numbers per demo hain:** "Runs today" sirf is session ka, system ka nahi (PR #73, ADR-012).
 - **Taale baad mein khulte hain:** decision_log aur run_log ab apni session ke liye padhne layak (PR #73, 0007).
+- **Health check ek asli sawaal hai:** ping nahi; n8n ki batti tabhi green jab token, kill switch aur workflow teeno paas (PR #74).
+- **Jev ka fail hona ek result hai:** SUB 16 ka Jev node error par bhi aage badhta hai, red batti + reason (PR #74).
+- **Jo raasta map par nahi, woh bhi lobby tak:** `/health` ke liye Vercel routes fallback; Cloudflare default (PR #74, F76 c).
+- **Health runs `unknown` session mein:** run_log row cost ke saath, "Runs today (this demo)" mein nahi (PR #74).
+- **Ek button, do mode:** asli calls (online) ya local copy (offline); demo ke waqt live list band (PR #75).
+- **Ref = clipboard:** lamba timer har render par taaza state padhta hai, restart nahi (PR #75).
+- **Loop kab ruke:** Delivered ya koi open order na bache; server refusal par abhi nahi rukta (PR #75, pending fix).
+- **Pace build par fix:** stage 2 s, test 300 ms; chhe step = 12 s (PR #75, F77 c).
 
 ## Abhi bhi andhera (jawab nahi mila)
 - Kaun `order_events` likhega: app, n8n, ya trigger? (Abhi koi nahi.)
@@ -202,5 +218,5 @@ _Status: 6 workflows n8n par deployed, sab inactive (ids registry mein; VERIFIED
 - Phone ke liye write rules nahi (phone kabhi nahi likhta, ADR-009/010). Real logins: MVP 1. Self-hosted photos: #54. Indexes PK/unique ke alawa: screen stories ke saath.
 - Activation nahi (owner ka "activate" chahiye, pehle canvas look). Live rows (5 calls + Jev + Jev-down) pending. MAIN 90 scorecard = #47. Riders table nahi (A42). Laya = MVP 1.
 - Customer screen ab hai (menu, cart, bill, place order; PR #69, open, 5f2fa97). Asli order ki row activation ke baad aayegi.
-- Kitchen (#49), rider + tracker (#50), split/join/reset (#52) merged. Ops screen ab hai (#51, PR #73, approved, `3a3d416`). Activation abhi nahi (owner ka "activate" chahiye): live two-device check aur live Jev row pending; dev URL par decide call tab tak fail. Ek-decision-per-order DB rule nahi (F75 c), riders table nahi (pilot), Leave button nahi (F74 a), QR nahi (F74 d), prod migrations 0006/0007 nahi (F63). Health check page abhi nahi (#54), autopilot nahi (#53). Real payment nahi (MVP 2). Koi login nahi.
+- Kitchen (#49), rider + tracker (#50), split/join/reset (#52), ops (#51), health page (#54) merged. Autopilot ab hai (#53, PR #75, merged `35f78cd`); do ek-line fix pending (loop server refusal par ruke; `useOps` demo mein band). SUB 16 + MAIN 01 update deploy nahi (owner ka "push kar do"); activation nahi (owner ka "activate"): live rows aur #56 pending. Android airplane check #56. Scorecard #47, UptimeRobot #55 nahi. Ek-decision-per-order rule nahi (F75 j), riders table nahi, Leave/QR nahi (F74), prod migrations 0006/0007 nahi (F63). Real payment nahi (MVP 2). Koi login nahi.
 - Dev deploy job hai (PR #62, merged). Prod deploy workflow hai (PR #63, open), par `main` par `app/` abhi nahi hai. Release list fix ho gayi (4b77e65); pehli release PR ke baad app prod par aayega. `goserve-app.pages.dev` abhi 522 hai.

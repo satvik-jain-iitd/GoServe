@@ -28,7 +28,9 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana â
 | 11 | [#70](pr-70-kitchen-screen.md) | feat(app): kitchen screen with live orders and next-step buttons | MERGED (20 answered) | #49 (epic #36) |
 | 12 | [#71](pr-71-rider-tracker.md) | feat(app): rider steps and live customer tracker | MERGED (20 answered) | #50 (epic #36) |
 | 13 | [#72](pr-72-split-view.md) | feat(app): split view, shared session by link and reset | MERGED (20 answered) | #52 (epic #37) |
-| 14 | [#73](pr-73-ops-screen.md) | feat(app): ops screen with AI suggestion and metrics | APPROVED (20 posted, 0 must-fix) | #51 (epic #36) |
+| 14 | [#73](pr-73-ops-screen.md) | feat(app): ops screen with AI suggestion and metrics | MERGED (20 answered) | #51 (epic #36) |
+| 15 | [#74](pr-74-health-check.md) | feat(app): health check page for Supabase, n8n and Jev | MERGED (20 answered) | #54 (epic #37) |
+| 16 | [#75](pr-75-autopilot.md) | feat(app): autopilot with an offline demo story | MERGED (20 posted, replies pending, 2 should-fix) | #53 (epic #37) |
 
 ## Journals
 - [concepts.md](concepts.md) â€” naye technical words, plain Hindi mein.
@@ -51,6 +53,8 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana â
 | Rider steps + customer tracker (events vs status, SUB 15) | #71 |
 | Split view, join by link, reset (RLS via function, delete events) | #72 |
 | Ops screen: AI advice vs rule, plain metrics, per-session read rules | #73 |
+| Health page: a real call per light, failure as a result, SPA fallback | #74 |
+| Autopilot: two modes behind one button, ref as clipboard, offline fallback | #75 |
 
 ## Notes
 - Chapters Romanized Hindi mein hain. Code, file paths, commands English mein.
