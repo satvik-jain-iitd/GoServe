@@ -56,7 +56,7 @@ Health check (story #54):
 { "action": "health" }
 ```
 
-The answer is `{ ok: true, jev: { ok, status, ms } }`. `status` is `ok`, `jev_off`, `jev_error` or `jev_bad_reply`. A Jev failure is still a 200 answer: the health page shows it as FAIL. It writes no order data. It costs about $0.00002 for the one Jev call, and MAIN 01 logs it in `run_log` like any other call.
+The answer is `{ ok: true, jev: { ok, status, ms } }`. `status` is `ok`, `jev_off`, `jev_error` or `jev_bad_reply`. A Jev failure is still a 200 answer: the health page shows it as FAIL. It writes no order data. It costs about $0.00002 for the one Jev call, and MAIN 01 logs it in `run_log` like any other call. That row has `session_id` = `unknown` (the health call carries no session), so it is not in any session's "runs today", and the scorecard tells it apart by the workflow name `GS MAIN 01 Order API: health`.
 
 Rider arriving (story #50):
 

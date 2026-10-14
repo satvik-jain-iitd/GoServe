@@ -16,6 +16,7 @@ import { RiderScreen } from "./screens/RiderScreen";
 import { useOps } from "./lib/useOps";
 import { OpsScreen } from "./screens/OpsScreen";
 import { DemoBar } from "./screens/DemoBar";
+import { AUTOPILOT_MS, demoDecisions, demoOrder, nextAutoAction } from "./lib/autopilot";
 
 type Step = "menu" | "cart" | "bill" | "placed";
 type Role = "customer" | "kitchen" | "rider" | "split" | "ops";
@@ -37,7 +38,11 @@ export function App() {
   // The live list runs for the kitchen, the rider, and the customer while the tracker is on screen.
   // A device that opened a ?join= link joins that session first; the live list waits for it (story #52).
   const [ready, setReady] = useState(() => !joinCode(window.location.search));
-  const live = useLiveOrders(ready && (role === "kitchen" || role === "rider" || role === "split" || role === "ops" || (role === "customer" && step === "placed")));
+  // Autopilot (story #53): 'demo' is the offline story played from local data; 'auto' is the autopilot moving a real order.
+  const [auto, setAuto] = useState(false);
+  const [demo, setDemo] = useState(false);
+  const [autoNote, setAutoNote] = useState<string | null>(null);
+  const live = useLiveOrders(ready && !demo && (auto || role === "kitchen" || role === "rider" || role === "split" || role === "ops" || (role === "customer" && step === "placed")));
   const { orders, setOrders } = live;
   const ops = useOps(ready && role === "ops", orders, api);
   const keyRef = useRef<{ fingerprint: string; key: string } | null>(null);
@@ -75,7 +80,13 @@ export function App() {
   }, []);
 
   // One tap for the kitchen and the rider: a status step or an event, sent as that role. The answer's updated_at decides which copy is newer.
-  async function act(order: Order, action: { kind: "status"; to: string } | RiderAction, actor: "kitchen" | "rider") {
+  // Returns null when it worked, or the error code. The offline demo changes the local copy only and sends nothing.
+  async function act(order: Order, action: { kind: "status"; to: string } | RiderAction, actor: "kitchen" | "rider"): Promise<string | null> {
+    if (demo) {
+      setOrders((cur) => mergeOrder(cur, { ...order, status: action.kind === "status" ? action.to : order.status, updated_at: new Date().toISOString() }));
+      if (action.kind === "event") setArrived((cur) => new Set(cur).add(order.id));
+      return null;
+    }
     setBusyId(order.id);
     live.setError(null);
     try {
@@ -83,13 +94,79 @@ export function App() {
       const { order: saved } = action.kind === "status" ? await changeStatus({ ...deps, to: action.to }, api()) : await addEvent({ ...deps, event: action.event }, api());
       setOrders((cur) => mergeOrder(cur, { ...order, status: saved.status, updated_at: saved.updated_at }));
       if (action.kind === "event") setArrived((cur) => new Set(cur).add(order.id));
+      return null;
     } catch (e) {
       // "Already done" for Arriving means an earlier tap went through (the page may have been reloaded): that is success, not an error.
-      if (e instanceof PlaceError && e.code === "already_done" && action.kind === "event") setArrived((cur) => new Set(cur).add(order.id));
-      else live.setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+      if (e instanceof PlaceError && e.code === "already_done" && action.kind === "event") {
+        setArrived((cur) => new Set(cur).add(order.id));
+        return null;
+      }
+      live.setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+      return e instanceof PlaceError ? e.code : "unknown";
     } finally {
       setBusyId(null);
     }
+  }
+
+  // The autopilot looks at the newest open order, does its next step, and waits. It stops after Delivered or when tapped again.
+  // If the server cannot be reached it falls back to the offline story.
+  const latest = useRef({ orders, arrived, loading: live.loading, failed: live.error, act });
+  latest.current = { orders, arrived, loading: live.loading, failed: live.error, act };
+  useEffect(() => {
+    if (!auto) return;
+    let alive = true;
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = async () => {
+      const { orders: list, arrived: seen, loading, failed, act: doAct } = latest.current;
+      if (loading) return void (timer = setTimeout(tick, AUTOPILOT_MS));
+      const order = list.find((o) => o.status !== "delivered");
+      const step = order && nextAutoAction(order.status, seen.has(order.id));
+      if (!order && failed) {   // no order and the list could not be read: the network is down
+        startOffline();
+        return void (timer = setTimeout(tick, AUTOPILOT_MS));
+      }
+      if (!order || !step) {
+        setAuto(false);
+        setAutoNote(order ? null : "Place an order first.");
+        return;
+      }
+      const code = await doAct(order, step.kind === "status" ? { kind: "status", to: step.to } : { kind: "event", event: step.event, label: "" }, step.actor);
+      if (!alive) return;
+      if (code === "network") startOffline();   // the loop goes on, now with the local copy
+      timer = setTimeout(tick, AUTOPILOT_MS);
+    };
+    timer = setTimeout(tick, AUTOPILOT_MS);
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [auto]);
+
+  function startOffline() {
+    const o = demoOrder();
+    live.setError(null);
+    setDemo(true);
+    setOrders([o]);
+    setArrived(new Set());
+    setPlaced({ id: o.id, status: o.status, total_paise: o.total_paise, updated_at: o.updated_at });
+    setStep("placed");
+    setRole("customer");
+    setAutoNote(null);
+    setAuto(true);
+  }
+  function toggleAuto() {
+    setAutoNote(null);
+    if (auto || demo) {   // tapped again: stop, and leave the demo
+      setAuto(false);
+      if (demo) {
+        setDemo(false);
+        setOrders([]);
+        setPlaced(null);
+        setStep("menu");
+        setArrived(new Set());
+      }
+    } else if (!navigator.onLine) startOffline();
+    else setAuto(true);
   }
 
   async function reset() {
@@ -165,13 +242,15 @@ export function App() {
           </button>
         ))}
       </nav>
-      <DemoBar onReset={reset} getLink={shareLink} />
+      {demo && <p role="status" className="notice"><strong>Offline demo</strong></p>}
+      <DemoBar onReset={reset} getLink={shareLink} autoOn={auto || demo} autoNote={autoNote} onAuto={toggleAuto} />
       {role === "kitchen" && kitchenView}
       {role === "rider" && (
         <RiderScreen orders={riderOrders(orders)} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
           onAct={(o, a) => act(o, a, "rider")} />
       )}
-      {role === "ops" && <OpsScreen orders={orders} decisions={ops.decisions} lags={live.lags} stats={ops.stats} error={ops.error ?? live.error} failed={ops.failed} />}
+      {role === "ops" && <OpsScreen orders={orders} decisions={demo ? (orders.some((o) => ["ready", "out_for_delivery", "delivered"].includes(o.status)) ? demoDecisions() : []) : ops.decisions} lags={demo ? [800] : live.lags}
+        stats={demo ? { runsToday: 6, lastDecideMs: 310 } : ops.stats} error={demo ? null : ops.error ?? live.error} failed={ops.failed} sample={demo} />}
       {role === "customer" && customerView}
       {role === "split" && (
         <div className="panes">

@@ -111,3 +111,5 @@ short. Say what happened and what to do next time.
 - Two lists of the same names (the Jev status in `decide_result.js` and the reasons in `ops.ts`) drift apart. Keep both in the test files so a new status fails a test, and a reason text of "no reason given" is the safe fallback.
 - A static host does not open `/health` on a fresh visit unless unknown paths fall back to `index.html`. The service worker only helps after the first load. Test the fallback in the deploy config, not only in the app.
 - A fake that ignores a query's `limit` hides the bug the limit causes. Make the test double cut rows the way the real server does, then the test fails when the code relies on an unbounded list.
+- A made-up sample id must still be valid hex. `d3m0d3m0-...` looked clever, the screen showed it as the order number and the test pattern for order numbers did not match it. Sample data goes through the same shape checks as real data.
+- When a loop reschedules itself, a state switch inside it (online to offline) must not end the loop. The fallback ran, the banner showed, and the story stood still on Placed until the loop was told to go on.
