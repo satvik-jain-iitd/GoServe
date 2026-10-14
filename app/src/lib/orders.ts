@@ -6,7 +6,7 @@ export class PlaceError extends Error {
   }
 }
 export type PlaceInput = { sessionId: string; key: string; items: { menu_item_id: string; qty: number }[]; address: string };
-export type PlacedOrder = { id: string; status: string; total_paise: number; updated_at?: string };
+export type PlacedOrder = { id: string; status: string; total_paise: number; updated_at: string };
 export type OrderDeps = { url: string; token: string; fetchFn: typeof fetch };
 
 type ApiAnswer = { ok?: boolean; created?: boolean; order?: PlacedOrder; error?: string; message?: string };

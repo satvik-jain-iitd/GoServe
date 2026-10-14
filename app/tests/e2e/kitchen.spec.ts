@@ -25,7 +25,7 @@ async function setup(context: BrowserContext, page: Page, initial: object[] = []
         user: { id: SESSION, aud: "authenticated", role: "authenticated", is_anonymous: true, app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() } });
     }
     if (req.url().includes("/rest/v1/orders")) return json(route, 200, state.orders);
-    if (req.url().includes("/rest/v1/menu_items")) return json(route, 200, []);
+    if (req.url().includes("/rest/v1/menu_items")) return json(route, 200, [{ id: "d1", name: "Butter Chicken", price_paise: 32000, image_url: null, image_credit: null }]);
     return json(route, 404, {});
   });
   await context.route("https://orders.test/**", async (route) => {
@@ -128,10 +128,12 @@ test("an order the rider has taken leaves the kitchen list", async ({ page, cont
   await expect(page.getByText("Order 0f0f0f0f")).toHaveCount(0, { timeout: 5000 });
 });
 
-test("the customer menu is still one tap away and keeps the cart", async ({ page, context }) => {
+test("the customer menu is one tap away and keeps the cart while you look at the kitchen", async ({ page, context }) => {
   await setup(context, page);
   await page.goto("/");
+  await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: "Kitchen" }).click();
+  await expect(page.getByRole("heading", { name: "Kitchen" })).toBeVisible();
   await page.getByRole("button", { name: "Customer" }).click();
-  await expect(page.getByRole("heading", { name: "GoServe" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "View cart (1)" })).toBeVisible();
 });

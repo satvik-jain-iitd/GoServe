@@ -9,6 +9,7 @@ export async function fetchOrders(client: SupabaseClient): Promise<Order[]> {
   return (data ?? []) as Order[];
 }
 
+// supabase-js reports SUBSCRIBED again after every reconnect, so the caller's reload runs on each rejoin too.
 // Returns a function that stops listening. onReady fires once the server confirms the subscription; the caller reads the list again
 // then, so an order that arrived in the first moments is not missed.
 export function watchOrders(client: SupabaseClient, sessionId: string, onOrder: (order: Order) => void, onReady?: () => void): () => void {

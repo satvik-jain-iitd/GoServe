@@ -31,7 +31,6 @@ export function App() {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [kitchenError, setKitchenError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const sessionRef = useRef<string | null>(null);
   // One key per cart: a retry of the same cart reuses it, so the server never makes two orders. A changed cart gets a new key.
   const keyRef = useRef<{ fingerprint: string; key: string } | null>(null);
 
@@ -49,7 +48,6 @@ export function App() {
     (async () => {
       try {
         const sessionId = await ensureSession();
-        sessionRef.current = sessionId;
         const client = getClient();
         const reload = async () => { const rows = await fetchOrders(client); if (alive) setOrders((cur) => rows.reduce(mergeOrder, cur)); };
         stop = watchOrders(client, sessionId, (o) => alive && setOrders((cur) => mergeOrder(cur, o)), () => void reload().catch(() => {}));
@@ -69,7 +67,7 @@ export function App() {
     try {
       const { order: saved } = await changeStatus({ sessionId: order.session_id, orderId: order.id, to, actor: "kitchen" }, api());
       // The server's own updated_at decides which copy is newer, not this phone's clock.
-      setOrders((cur) => mergeOrder(cur, { ...order, status: saved.status, updated_at: saved.updated_at ?? order.updated_at }));
+      setOrders((cur) => mergeOrder(cur, { ...order, status: saved.status, updated_at: saved.updated_at }));
     } catch (e) {
       setKitchenError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
     } finally {

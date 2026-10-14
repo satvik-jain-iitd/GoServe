@@ -21,8 +21,9 @@ const WITH_RIDER = ["out_for_delivery", "delivered"];
 export const kitchenOrders = (orders: Order[]): Order[] => orders.filter((o) => !WITH_RIDER.includes(o.status));
 
 // A live event and the answer to a tap can arrive in either order: the copy with the later updated_at wins.
+// Moments are compared, not text: the same instant can be written with Z or +00:00.
 export const mergeOrder = (orders: Order[], incoming: Order): Order[] => {
   const old = orders.find((o) => o.id === incoming.id);
-  if (old && old.updated_at > incoming.updated_at) return orders;
+  if (old && Date.parse(old.updated_at) > Date.parse(incoming.updated_at)) return orders;
   return [...orders.filter((o) => o.id !== incoming.id), incoming].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
 };

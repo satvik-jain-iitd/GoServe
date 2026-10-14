@@ -32,6 +32,13 @@ describe("mergeOrder", () => {
     const list = mergeOrder([fresh], o("a", "accepted", "2026-10-14T10:00:00Z", "2026-10-14T10:01:00Z"));
     expect(list[0].status).toBe("preparing");
   });
+  it("compares moments, not text: the same instant written two ways is not newer", () => {
+    const fresh = o("a", "preparing", "2020-01-01T10:00:00Z", "2020-01-01T10:03:00Z");
+    const sameInstant = o("a", "accepted", "2020-01-01T10:00:00Z", "2020-01-01T10:03:00+00:00");
+    expect(mergeOrder([fresh], sameInstant)[0].status).toBe("accepted");   // equal instants: the incoming copy wins
+    const older = o("a", "placed", "2020-01-01T10:00:00Z", "2020-01-01T10:02:59.999+00:00");
+    expect(mergeOrder([fresh], older)[0].status).toBe("preparing");
+  });
   it("does not change the list it is given", () => {
     const base = [o("a", "placed", "2026-10-14T10:00:00Z")];
     mergeOrder(base, o("b", "placed", "2026-10-14T10:05:00Z"));
