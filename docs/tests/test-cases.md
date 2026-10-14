@@ -89,3 +89,6 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Rider taps send pick up, arriving and delivered as the rider; a live order appears on the rider list; a refused tap shows the reason | #50 | S1 | End-to-end | `app/tests/e2e/rider.spec.ts` | Pass |
 | The customer sees every step live without a refresh and it ends at Delivered | #50 | S2 | End-to-end (live socket answered by the test) | `app/tests/e2e/rider.spec.ts` | Pass |
 | A real order walks placed, accepted, cooking, ready, on the way, delivered with six events plus arriving, and the customer tracker follows it live | #50 | S1 S2 | Live (after deploy of SUB 15, MAIN 01 update and the owner's activate) | `goserve-app-dev.vercel.app` | Pending activation |
+| Arriving that was already sent (the rider page was reloaded) is shown as done, with no error | #50 | S1 | End-to-end | `app/tests/e2e/rider.spec.ts` | Pass |
+| An unknown event answers 'Unknown event.'; the MAIN 01 receive note names all four actions | #50 | S1 | Unit | `ops/n8n/order/event.test.js` | Pass |
+| After Arriving the order can still be delivered, with events in order | #50 | S1 | Integration (goserve-dev) | `scripts/test_order_rpc.py` | Pass (local only; CI skips, no token) |

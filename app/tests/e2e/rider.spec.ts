@@ -42,6 +42,15 @@ test("S1 a refused rider tap shows the reason", async ({ page, context }) => {
   await expect(page.getByRole("alert")).toHaveText("That step is not allowed now.");
 });
 
+test("S1 Arriving was already sent (the page was reloaded): it is treated as done, not as an error", async ({ page, context }) => {
+  const net = await setup(context, page, [order("out_for_delivery")]);
+  net.state.reply = { status: 409, body: { ok: false, error: "already_done", message: "Already done." } };
+  await openRider(page);
+  await page.getByRole("button", { name: "Arriving 0f0f0f0f" }).click();
+  await expect(page.getByRole("button", { name: "Arriving 0f0f0f0f" })).toBeDisabled();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+});
+
 test("S2 the customer sees every step live, without a refresh, and it ends at Delivered", async ({ page, context }) => {
   const net = await setup(context, page);
   await page.goto("/");

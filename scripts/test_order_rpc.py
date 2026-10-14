@@ -86,9 +86,12 @@ class OrderRpc(unittest.TestCase):
     def test_rider_arriving_is_an_event_without_a_status_change(self):
         to_road = [f"select change_status({ID}, 's1', '{t}', 'kitchen')" for t in ("accepted", "preparing", "ready")] + \
                   [f"select change_status({ID}, 's1', 'out_for_delivery', 'rider')"]
-        r = run(PLACE, *to_road, f"select rider_event({ID}, 's1', 'order.arriving', 'rider')",
-                "select array_agg(event order by id) as events, (select status from orders where session_id='s1') as status from order_events where session_id='s1'")
+        look = "select array_agg(event order by id) as events, (select status from orders where session_id='s1') as status from order_events where session_id='s1'"
+        arriving = f"select rider_event({ID}, 's1', 'order.arriving', 'rider')"
+        r = run(PLACE, *to_road, arriving, look)   # the API returns the last statement's rows only, so each check is its own run
         self.assertEqual(r[-1], {"events": ["order.placed", "order.accepted", "order.preparing", "order.ready", "order.picked_up", "order.arriving"], "status": "out_for_delivery"}, r)
+        r = run(PLACE, *to_road, arriving, f"select change_status({ID}, 's1', 'delivered', 'rider')", look)   # the whole path to Delivered works after Arriving
+        self.assertEqual(r[-1], {"events": ["order.placed", "order.accepted", "order.preparing", "order.ready", "order.picked_up", "order.arriving", "order.delivered"], "status": "delivered"}, r)
 
     def test_rider_event_is_refused_in_the_wrong_state_and_when_repeated(self):
         self.assertIn("illegal_event", str(run(PLACE, f"select rider_event({ID}, 's1', 'order.arriving', 'rider')")))   # still placed

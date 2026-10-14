@@ -49,7 +49,9 @@ export function App() {
       setOrders((cur) => mergeOrder(cur, { ...order, status: saved.status, updated_at: saved.updated_at }));
       if (action.kind === "event") setArrived((cur) => new Set(cur).add(order.id));
     } catch (e) {
-      live.setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+      // "Already done" for Arriving means an earlier tap went through (the page may have been reloaded): that is success, not an error.
+      if (e instanceof PlaceError && e.code === "already_done" && action.kind === "event") setArrived((cur) => new Set(cur).add(order.id));
+      else live.setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
     } finally {
       setBusyId(null);
     }

@@ -30,7 +30,8 @@ test('S1 answers: a wrong state or a repeat gives 409, an unknown event 400, nev
   const err = (message) => run('shape.js', { statusCode: 400, body: { code: 'P0001', message } });
   assert.deepEqual([err('illegal_event: order.arriving while placed').status_code, err('illegal_event: x').error], [409, 'illegal_step']);
   assert.deepEqual([err('event_exists').status_code, err('event_exists').error, err('event_exists').message], [409, 'already_done', 'Already done.']);
-  assert.deepEqual([err('invalid_event: order.delivered').status_code, err('invalid_event: x').error], [400, 'invalid_event']);
+  assert.deepEqual([err('invalid_event: order.delivered').status_code, err('invalid_event: x').error, err('invalid_event: x').message], [400, 'invalid_event', 'Unknown event.']);
+  assert.equal(err('invalid_status: flying').message, 'Unknown status.');
 });
 
 test('check token: event is a known action', () => {
@@ -60,6 +61,11 @@ test('wiring: SUB 15 checks, writes once through the database function, and is l
   assert.equal(wf.sub15.settings.callerPolicy, 'workflowsFromAList');
   assert.equal(wf.sub15.settings.callerIds, 'MAIN1');
   assert.equal(wf.sub15.settings.errorWorkflow, 'ALERT1');
+});
+
+test('the receive box of MAIN 01 names all four actions', () => {
+  const note = wf.main01.nodes.find((n) => n.parameters && n.parameters.content && n.parameters.content.startsWith('## RECEIVE')).parameters.content;
+  for (const a of ['place', 'status', 'decide', 'event']) assert.match(note, new RegExp(a));
 });
 
 test('canvas layout of SUB 15 and MAIN 01 with the event route', () => {
