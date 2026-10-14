@@ -44,7 +44,7 @@ export function App() {
   const [autoNote, setAutoNote] = useState<string | null>(null);
   const live = useLiveOrders(ready && !demo && (auto || role === "kitchen" || role === "rider" || role === "split" || role === "ops" || (role === "customer" && step === "placed")));
   const { orders, setOrders } = live;
-  const ops = useOps(ready && role === "ops", orders, api);
+  const ops = useOps(ready && !demo && role === "ops", orders, api);   // the offline story never asks the server
   const keyRef = useRef<{ fingerprint: string; key: string } | null>(null);
   // The tracker goes back to the menu when the order it showed has left the list (the other device reset the demo).
   const trackedSeen = useRef(false);
@@ -133,6 +133,7 @@ export function App() {
       const code = await doAct(order, step.kind === "status" ? { kind: "status", to: step.to } : { kind: "event", event: step.event, label: "" }, step.actor);
       if (!alive) return;
       if (code === "network") startOffline();   // the loop goes on, now with the local copy
+      else if (code) return void setAuto(false);   // any other refusal (kill switch, inactive webhook): stop and leave the reason on screen
       timer = setTimeout(tick, AUTOPILOT_MS);
     };
     timer = setTimeout(tick, AUTOPILOT_MS);
