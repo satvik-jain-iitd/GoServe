@@ -28,10 +28,15 @@ const decisions = [
 ];
 const ok = (b) => ({ statusCode: 200, body: b });
 
-test('S1 window: the day starts at midnight in India (UTC+05:30)', () => {
-  assert.equal(run('score_window.js', { now: '2026-10-14T15:30:00Z' }).since, '2026-10-13T18:30:00.000Z');
-  assert.equal(run('score_window.js', { now: '2026-10-14T19:00:00Z' }).since, '2026-10-14T18:30:00.000Z');   // 00:30 on 15 Oct in India
-  assert.equal(run('score_window.js', { now: '2026-10-14T15:30:00Z' }).date, '2026-10-14');
+test('S1 window: the last 24 hours, so an evening after 21:00 is in the next card', () => {
+  const w = run('score_window.js', { now: '2026-10-14T15:30:00Z' });   // 21:00 in India
+  assert.equal(w.since, '2026-10-13T15:30:00.000Z');
+  assert.equal(w.until_label, '2026-10-14 21:00');
+  // a row at 23:00 India time on 14 Oct (17:30Z) is after this card and inside the next card's window (21:00 on 15 Oct)
+  const next = run('score_window.js', { now: '2026-10-15T15:30:00Z' });
+  assert.ok(Date.parse('2026-10-14T17:30:00Z') >= Date.parse(next.since));
+  assert.ok(Date.parse('2026-10-14T17:30:00Z') > Date.parse('2026-10-14T15:30:00Z'));
+  assert.equal(run('score_window.js', { now: '2026-10-14T19:00:00Z' }).until_label, '2026-10-15 00:30');
 });
 
 test('S1 numbers: runs and errors, time, decisions with Jev use and agreement, cost; health checks counted apart', () => {
@@ -55,10 +60,10 @@ test('S1 numbers: a database failure is a 502 with a short message, never raw te
 
 test('S1 message: one text with runs and errors, time, decisions, cost, health checks', () => {
   const summary = run('score_summary.js', {}, { 'Read runs': ok(runs), 'Read decisions': ok(decisions) });
-  const m = run('score_message.js', summary, { Config: { chat_id: '42' }, 'Prepare window': { date: '2026-10-14' } });
+  const m = run('score_message.js', summary, { Config: { chat_id: '42' }, 'Prepare window': { until_label: '2026-10-14 21:00' } });
   assert.equal(m.chat_id, '42');
   assert.equal(m.text, [
-    'GoServe scorecard, 2026-10-14',
+    'GoServe scorecard, last 24 hours (to 2026-10-14 21:00 India time)',
     'Runs: 4, errors: 1 (25%)',
     'Time per run: 425 ms on average, 900 ms at most',
     'Decisions: 3. Jev advice used: 2, agreed with the rule: 1',
@@ -68,13 +73,13 @@ test('S1 message: one text with runs and errors, time, decisions, cost, health c
 });
 
 test('S1 message: an empty day says so, a failed read says so, a cut page says so', () => {
-  const named = { Config: { chat_id: '42' }, 'Prepare window': { date: '2026-10-14' } };
+  const named = { Config: { chat_id: '42' }, 'Prepare window': { until_label: '2026-10-14 21:00' } };
   const empty = run('score_summary.js', {}, { 'Read runs': ok([]), 'Read decisions': ok([]) });
-  assert.match(run('score_message.js', empty, named).text, /No runs today\./);
+  assert.match(run('score_message.js', empty, named).text, /No runs in the last 24 hours\./);
   const failed = run('score_message.js', { ok: false, status_code: 502, error: 'database_error', message: 'Something went wrong.' }, named).text;
-  assert.match(failed, /could not read today's numbers/);
+  assert.match(failed, /could not read the numbers/);
   const cut = run('score_summary.js', {}, { 'Read runs': ok(Array.from({ length: 1000 }, () => ({ workflow: 'w', duration_ms: 1, cost: 0, error: '' }))), 'Read decisions': ok([]) });
-  assert.match(run('score_message.js', cut, named).text, /first 1000 runs only/);
+  assert.match(run('score_message.js', cut, named).text, /latest 1000 runs only/);
 });
 
 test('wiring: MAIN 90 is a schedule at 21:00 India time; Config, kill switch, window, SUB 91, message, Telegram', () => {
