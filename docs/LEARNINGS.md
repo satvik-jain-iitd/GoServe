@@ -101,3 +101,4 @@ short. Say what happened and what to do next time.
 - Realtime matches the server's list of listeners to the client's list by position. A test double for the socket must echo the client's join list back, or a second listener (delete events) breaks the channel.
 - Delete events cannot be filtered by column and carry only the primary key. A screen must drop only the ids it holds, and the docs must say which ids leak.
 - A session shared by link makes the link the key. Say so in the decision record, and keep the id random (uuid), not a short code.
+- Supabase Realtime sends delete events to every subscriber, without a column filter and without the RLS check, and carries only the primary key. Source: https://supabase.com/docs/guides/realtime/postgres-changes (confirmed on goserve-dev by the integration test).

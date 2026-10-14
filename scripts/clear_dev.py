@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Clear the test data on goserve-dev (F71): orders, their events, decisions, run logs and session links.
 Dry run by default: it only prints the counts. --apply deletes. It refuses any project other than goserve-dev.
+`--ref` only exists to catch a mistake: production is never allowed.
 Events are frozen except while the transaction sets goserve.reset (migration 0006), the same door reset_session uses.
 Needs SUPABASE_ACCESS_TOKEN (vault 02_databases.env). Usage: clear_dev.py [--apply] [--ref <ref>]"""
 import json, os, sys, urllib.request

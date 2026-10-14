@@ -38,6 +38,17 @@ export function App() {
   const live = useLiveOrders(ready && (role === "kitchen" || role === "rider" || role === "split" || (role === "customer" && step === "placed")));
   const { orders, setOrders } = live;
   const keyRef = useRef<{ fingerprint: string; key: string } | null>(null);
+  // The tracker goes back to the menu when the order it showed has left the list (the other device reset the demo).
+  const trackedSeen = useRef(false);
+  useEffect(() => {
+    if (!placed) return void (trackedSeen.current = false);
+    if (orders.some((o) => o.id === placed.id)) trackedSeen.current = true;
+    else if (trackedSeen.current) {
+      trackedSeen.current = false;
+      setPlaced(null);
+      setStep("menu");
+    }
+  }, [orders, placed]);
 
   useEffect(() => {
     const code = joinCode(window.location.search);
