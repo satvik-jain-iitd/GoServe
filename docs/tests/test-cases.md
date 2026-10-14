@@ -129,4 +129,9 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | After the owner's yes: prod has 10 dishes, 8 tables, 6 security rules and anonymous sign-in on | #78 | S1 | Live (after the owner's yes for `--apply`) | `python3 scripts/release_db.py --apply` | Pending |
 | After the release PR: `goserve-app.pages.dev` answers 200 with the menu and `/health` | #78 | S2 | Live (after the Pages project, the prod secrets and the release merge) | `goserve-app.pages.dev` | Pending |
 | A prod order reaches the prod kitchen screen | #78 | S3 | Live (after the prod workflow copy and "activate") | `goserve-app.pages.dev` | Pending |
+| An address picks the role (with or without a trailing slash); the root, the health page and look-alikes pick none; each role manifest has its own name, id and scope and starts inside it | #83 | S2 | Unit | `app/tests/unit/roles.test.ts` | Pass |
+| The kitchen, rider, ops and customer apps each open on their own screen with their own title, no role tabs and no demo tools; the console at `/` keeps five tabs and the tools; each app page points to its own manifest | #83 | S2 | End-to-end | `app/tests/e2e/apps.spec.ts` | Pass |
+| One device: the customer app, the kitchen app and the rider app share one session (one sign-in, same orders, no link); a kitchen tap reaches the customer's order | #83 | S1 | End-to-end (one browser profile, several pages) | `app/tests/e2e/apps.spec.ts` | Pass |
+| Another device opens `/kitchen/?join=<id>`, joins that session and stays on the kitchen address | #83 | S3 | End-to-end | `app/tests/e2e/apps.spec.ts` | Pass |
+| The three apps installed side by side on the founder's Android phone show one order; each is offered its own install | #83 | S1 S2 | Live (owner phone, with #56) | installed apps | Pending |
 

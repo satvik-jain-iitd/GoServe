@@ -23,7 +23,8 @@ type Role = "customer" | "kitchen" | "rider" | "split" | "ops";
 
 const api = orderDeps;
 
-export function App() {
+// `lock` makes this one of the role apps (story #83): that role only, no role tabs, no demo tools. Without it, this is the demo console.
+export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [menu, setMenu] = useState<{ dishes: Dish[]; fromCache: boolean } | null>(null);
   const [menuError, setMenuError] = useState<string | null>(null);
   const [step, setStep] = useState<Step>("menu");
@@ -32,7 +33,7 @@ export function App() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [placed, setPlaced] = useState<PlacedOrder | null>(null);
-  const [role, setRole] = useState<Role>("customer");
+  const [role, setRole] = useState<Role>(lock ?? "customer");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [arrived, setArrived] = useState<Set<string>>(new Set());
   // The live list runs for the kitchen, the rider, and the customer while the tracker is on screen.
@@ -239,16 +240,16 @@ export function App() {
 
   return (
     <main className={role === "split" ? "shell split" : "shell"}>
-      <h1>GoServe</h1>
-      <nav className="roles" aria-label="Screen">
+      <h1>{lock && lock !== "customer" ? `GoServe ${lock[0].toUpperCase()}${lock.slice(1)}` : "GoServe"}</h1>
+      {!lock && <nav className="roles" aria-label="Screen">
         {(["customer", "kitchen", "rider", "split", "ops"] as const).map((r) => (
           <button key={r} type="button" className={role === r ? "btn" : "btn ghost"} aria-pressed={role === r} onClick={() => setRole(r)}>
             {r === "customer" ? "Customer" : r === "kitchen" ? "Kitchen" : r === "rider" ? "Rider" : r === "split" ? "Split" : "Ops"}
           </button>
         ))}
-      </nav>
+      </nav>}
       {demo && <p role="status" className="notice"><strong>Offline demo</strong></p>}
-      <DemoBar onReset={reset} getLink={shareLink} autoOn={auto || demo} autoNote={autoNote} onAuto={toggleAuto} />
+      {!lock && <DemoBar onReset={reset} getLink={shareLink} autoOn={auto || demo} autoNote={autoNote} onAuto={toggleAuto} />}
       {role === "kitchen" && kitchenView}
       {role === "rider" && (
         <RiderScreen orders={riderOrders(orders)} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}

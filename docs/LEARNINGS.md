@@ -130,3 +130,5 @@ short. Say what happened and what to do next time.
 - A deploy that passes CI can still ship a broken app. The prod workflow built the app with no `VITE_*` keys, so the first prod page would have said "missing Supabase keys". When a second environment is added, read its build step line by line for every setting the first one needed.
 - Dry run first, on the real target, read only: it showed in one call that prod is empty and anonymous sign-in is off. That is the proof the script's plan matches the real state.
 - A live-versus-build check must build with the same deploy-time values as the deploy (token, address, credential ids), or every Code and URL parameter shows as different. Done in memory only, never printed.
+- Playwright's \`getByRole("heading", { name: "Kitchen" })\` matches by substring, so a new h1 "GoServe Kitchen" made the old test ambiguous. Use \`exact: true\` for headings whose name is part of another.
+- Several installed web apps on one origin share storage on Android Chrome but not on an iPhone. Write that down in the decision record before promising "one device works".
