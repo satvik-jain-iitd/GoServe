@@ -22,6 +22,12 @@ class Fake:
             return [{"table_name": t} for t in self.existing]
         return []
 
+    name = "GoServe"
+
+    def project_name(self, ref):
+        self.calls.append(("project_name", ref))
+        return self.name
+
     def get_auth(self, ref):
         self.calls.append(("get_auth", ref))
         return self.auth
@@ -34,13 +40,26 @@ class Fake:
 class ReleaseDb(unittest.TestCase):
     def setUp(self):
         self.api = Fake()
-        release_db.sql, release_db.get_auth, release_db.set_auth = self.api.sql, self.api.get_auth, self.api.set_auth
+        release_db.sql, release_db.get_auth, release_db.set_auth, release_db.project_name = self.api.sql, self.api.get_auth, self.api.set_auth, self.api.project_name
 
     def test_ref_comes_from_the_prod_url_and_dev_is_refused(self):
         self.assertEqual(release_db.ref_from_url(URL), PROD)
         with self.assertRaises(SystemExit) as e:
             release_db.main([], {"SUPABASE_GOSERVE_PROD_URL": "https://tmxyizmkpwwfyazvrfhw.supabase.co"})
         self.assertIn("goserve-dev", str(e.exception))
+
+    def test_the_project_name_is_read_and_must_say_goserve(self):
+        release_db.main([], {"SUPABASE_GOSERVE_PROD_URL": URL})
+        self.assertIn(("project_name", PROD), self.api.calls)
+        self.api.name = "Some other project"
+        for argv in ([], ["--apply"]):
+            with self.assertRaises(SystemExit) as e:
+                release_db.main(argv, {"SUPABASE_GOSERVE_PROD_URL": URL})
+            self.assertIn("name", str(e.exception))
+        self.assertFalse([c for c in self.api.calls if c[0] == "set_auth" or (c[0] == "sql" and "create table" in c[2].lower())])
+        self.api.name = "goserve-dev"   # a dev-looking name is refused as well
+        with self.assertRaises(SystemExit):
+            release_db.main(["--apply"], {"SUPABASE_GOSERVE_PROD_URL": URL})
 
     def test_migrations_are_listed_in_order(self):
         names = [os.path.basename(p) for p in release_db.migration_files()]
@@ -51,7 +70,7 @@ class ReleaseDb(unittest.TestCase):
     def test_dry_run_only_reads(self):
         release_db.main([], {"SUPABASE_GOSERVE_PROD_URL": URL})
         for c in self.api.calls:
-            self.assertIn(c[0], ("sql", "get_auth"))
+            self.assertIn(c[0], ("sql", "get_auth", "project_name"))
             if c[0] == "sql":
                 self.assertTrue(c[2].strip().lower().startswith("select"), c[2])
         self.assertFalse([c for c in self.api.calls if c[0] == "set_auth"])

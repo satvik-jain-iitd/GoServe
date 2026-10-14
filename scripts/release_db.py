@@ -21,6 +21,10 @@ def sql(ref, query):
     return _call("POST", ref, "/database/query", {"query": query})
 
 
+def project_name(ref):
+    return _call("GET", ref, "")["name"]
+
+
 def get_auth(ref):
     return _call("GET", ref, "/config/auth")
 
@@ -41,9 +45,12 @@ def main(argv, env=os.environ):
     ref = ref_from_url(env["SUPABASE_GOSERVE_PROD_URL"])
     if ref == DEV_REF:
         sys.exit("Refused: this is goserve-dev. This script is for the production project only.")
+    name = project_name(ref)   # the owner's yes goes to a NAME, not only a ref
+    if "goserve" not in name.lower() or "dev" in name.lower():
+        sys.exit(f"Refused: the project name is {name!r}; the prod project is called GoServe. Check SUPABASE_GOSERVE_PROD_URL.")
     files = migration_files()
     have = {r["table_name"] for r in sql(ref, "select table_name from information_schema.tables where table_schema = 'public'")}
-    print(f"Prod project {ref}: {len(have)} tables now. Plan: " + ", ".join(os.path.basename(f) for f in files) + ", then anonymous sign-in on.")
+    print(f"Prod project {name!r} ({ref}): {len(have)} tables now. Plan: " + ", ".join(os.path.basename(f) for f in files) + ", then anonymous sign-in on.")
     print("Anonymous sign-in is", "ON" if get_auth(ref).get("external_anonymous_users_enabled") else "OFF")
     if "--apply" not in argv:
         print("Dry run. Nothing written. Add --apply (after the owner's yes) to run the plan.")

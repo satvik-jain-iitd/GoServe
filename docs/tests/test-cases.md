@@ -129,4 +129,5 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | After the owner's yes: prod has 10 dishes, 8 tables, 6 security rules and anonymous sign-in on | #78 | S1 | Live (after the owner's yes for `--apply`) | `python3 scripts/release_db.py --apply` | Pending |
 | After the release PR: `goserve-app.pages.dev` answers 200 with the menu and `/health` | #78 | S2 | Live (after the Pages project, the prod secrets and the release merge) | `goserve-app.pages.dev` | Pending |
 | A prod order reaches the prod kitchen screen | #78 | S3 | Live (after the prod workflow copy and "activate") | `goserve-app.pages.dev` | Pending |
+| `release_db.py` reads the project name and refuses a name that does not say GoServe, or says dev, in a dry run and in an apply, before it writes anything; the real prod project answers "GoServe" | #78 | S1 | Unit and manual read-only (15 Oct 2026) | `scripts/test_release_db.py` | Pass |
 
