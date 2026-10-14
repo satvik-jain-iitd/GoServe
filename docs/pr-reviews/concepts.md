@@ -433,3 +433,67 @@ Har naya technical word yahan. Simple Hindi mein. Ek line ka "yeh kya hai", ek l
 - **Kya hai:** Commit subject ki lambai CI check karta hai. Code kitna bhi sahi ho, 72 se lamba naam fail hota hai.
 - **Analogy:** Gate clerk badge ki length naapta hai.
 - **File:** `scripts/guard.py` (line 48).
+
+
+### Link as the key
+- **Kya hai:** Session ka random uuid hi lock hai. Jiske paas link hai, woh us session ko padh aur reset kar sakta hai.
+- **Analogy:** Hotel ki chaabi ki ek copy dost ko dena.
+- **File:** ADR-011, `app/src/lib/session.ts`; PR #72.
+
+### Security definer function in a read rule
+- **Kya hai:** Ek function jo owner ke rights se chalta hai, taaki read rule woh table padh sake jo phone khud nahi padh sakta.
+- **Analogy:** Doorman guest list dekhta hai, jo aap khud nahi dekh sakte.
+- **File:** `app/supabase/migrations/0006_demo_sessions.sql` (line 13); PR #72.
+
+### A door in a frozen table
+- **Kya hai:** Order events freeze hain. DELETE ka trigger tabhi jaane deta hai jab ek transaction-local flag on ho, aur woh flag sirf reset ke andar on hota hai.
+- **Analogy:** Housekeeping ki master key, jo sirf tab chalti hai jab housekeeping kamre mein ho.
+- **File:** `app/supabase/migrations/0006_demo_sessions.sql` (line 44); PR #72.
+
+### Unfilterable deletes
+- **Kya hai:** Realtime DELETE ko column se filter nahi kar sakta. Sirf id jaati hai, aur har screen sunta hai.
+- **Analogy:** Lobby mein shor: "room 12 saaf hua". Aapko tabhi fark padta hai jab aapke paas room 12 ki slip ho.
+- **File:** `app/src/lib/live.ts` (line 22); PR #72.
+
+### Gate before the live list
+- **Kya hai:** `ready` flag live list ko tab tak rokta hai jab tak join khatam na ho. Isse galat room se subscribe nahi hota.
+- **Analogy:** Board tab tak nahi lagta jab tak receptionist guest ka naam guest list se na mila le.
+- **File:** `app/src/App.tsx` (line 37); PR #72.
+
+### Dry run by default
+- **Kya hai:** Cleanup script pehle sirf ginti karta hai. `--apply` ke bina kuch nahi hatata, aur dev ke alawa kisi project ko nahi chhuta.
+- **Analogy:** Housekeeping pehle room ka list banati hai, phir master key kholti hai.
+- **File:** `scripts/clear_dev.py`; PR #72.
+
+
+## concepts.md delta (source PR #73)
+
+### Advice vs decision in one row
+- **Kya hai:** `rule_pick` chunav karta hai. `jev` sirf salah hai, jisme `agrees` aur `confidence` hote hain. Screen dono ko saaf likhti hai.
+- **Analogy:** House rule porter chunta hai; concierge sirf salah deta hai.
+- **File:** `app/src/lib/ops.ts` (line 30); PR #73.
+
+### Ask once, even on failure
+- **Kya hai:** `asked` set ek ref mein rehta hai. Refused call ke baad bhi order ko dobara nahi poochha jaata, to loop nahi banta.
+- **Analogy:** Concierge ko ek baar ghanti bajao; line busy ho to dobara mat bajao.
+- **File:** `app/src/lib/useOps.ts` (line 13); PR #73.
+
+### Count without rows
+- **Kya hai:** `count: "exact"` ke saath `limit 50` lagane par total header se aata hai, rows sirf 50 aati hain.
+- **Analogy:** Ledger ka page count, pages nahi.
+- **File:** `app/src/lib/ops.ts` (line 60); PR #73.
+
+### Two clocks
+- **Kya hai:** "Order to this screen" device ki clock se server ka `created_at` ghataata hai. Negative number 0 ban jaata hai (F75 b).
+- **Analogy:** Slip par likha time vs desk ki wall clock.
+- **File:** `app/src/lib/useLiveOrders.ts` (line 33); PR #73.
+
+### Read rule added later
+- **Kya hai:** Table pehle lock hota hai (koi policy nahi). Har story ek darwaza kholti hai. 0007 ne `decision_log` aur `run_log` ke liye do darwaze kholey.
+- **Analogy:** Ledger back office se lobby mein aata hai, ek guest per room.
+- **File:** `app/supabase/migrations/0007_ops_read.sql` (line 5); PR #73.
+
+### Seen-then-gone
+- **Kya hai:** Ref yaad rakhta hai ki tracked order list mein tha. Isse khali pehla load reset nahi samjha jaata.
+- **Analogy:** Receipt desk: slip gayab hua to menu par wapas.
+- **File:** `app/src/App.tsx` (line 45); PR #73.
