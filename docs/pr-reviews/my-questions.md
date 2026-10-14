@@ -69,5 +69,5 @@ Apne sawaal yahan. Status: **open** (jawab nahi mila) / **answered** / **dropped
 
 | # | Sawaal | Kahan poocha (PR#/file) | Jawab mila? | Jawab | Status |
 |---|---|---|---|---|---|
-| Q29 | Riders list phone se aata hai, to rule phone ke state par chalta hai. A42 mein trust-boundary line add karein? Pilot se pehle riders table ya server state chahiye? | PR #67 / ops/n8n/order/code/decide_guard.js line 15 (Top-3) | nahi | abhi nahi (open) | open |
-| Q30 | Jev busy rider ko 0.9 se chune to `jev_status: 'ok'`, `agrees: false` likha jaata hai. Training labels ke liye alag `guard_failed` status rakhein? | PR #67 / ops/n8n/order/code/decide_result.js line 19 (Top-3) | nahi | abhi nahi (open) | open |
+| Q29 | Riders list phone se aata hai, to rule phone ke state par chalta hai. A42 mein trust-boundary line add karein? Pilot se pehle riders table ya server state chahiye? | PR #67 / ops/n8n/order/code/decide_guard.js line 15 (Top-3) | haan | A42 mein trust-boundary line jodi (d1b2f62): `free` flag aur distance phone ki baat hain, demo ke liye theek. Server state F68(e), pilot se pehle. | answered |
+| Q30 | Jev busy rider ko 0.9 se chune to `jev_status: 'ok'`, `agrees: false` likha jaata hai. Training labels ke liye alag `guard_failed` status rakhein? | PR #67 / ops/n8n/order/code/decide_result.js line 19 (Top-3) | haan | Haan, alag `guard_failed` status F68(a) mein logged hai. Abhi woh `ok` + `agrees: false` hi likhta hai. | answered |

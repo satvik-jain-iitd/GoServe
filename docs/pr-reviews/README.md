@@ -22,7 +22,7 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana â
 | 5 | [#64](pr-64-schema.md) | feat(db): 7 tables, legal-status rule and one-order-per-key | MERGED (7563b8b; 18 questions posted) | #43 (epic #34) |
 | 6 | [#65](pr-65-rls-realtime-menu.md) | feat(db): row level security, Realtime and the Delhi sample menu | MERGED (e7f1f2b; 17 answered, 4 fixed) | #44 (epic #34) |
 | 7 | [#66](pr-66-order-workflows.md) | feat(n8n): order database functions and order workflows (built, not deployed) | MERGED (0f9603a; 20 answered, 7 fixed) | #45 (epic #35) |
-| 8 | [#67](pr-67-decide-logs.md) | feat(n8n): decide and log workflows, order cap per session | APPROVED (18 questions posted), merge pending | #46 (epic #35) |
+| 8 | [#67](pr-67-decide-logs.md) | feat(n8n): decide and log workflows, order cap per session | APPROVED (d1b2f62; 18 answered, 5 fixed), merge pending | #46 (epic #35) |
 
 ## Journals
 - [concepts.md](concepts.md) â€” naye technical words, plain Hindi mein.
