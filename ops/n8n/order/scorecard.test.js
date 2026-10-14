@@ -62,7 +62,7 @@ test('S1 message: one text with runs and errors, time, decisions, cost, health c
     'Runs: 4, errors: 1 (25%)',
     'Time per run: 425 ms on average, 900 ms at most',
     'Decisions: 3. Jev advice used: 2, agreed with the rule: 1',
-    'Cost: $0.00010 (about $0.00003 per decision)',
+    'Cost of all calls: $0.00010 (about $0.00003 per decision)',
     'Health checks: 1',
   ].join('\n'));
 });
@@ -105,7 +105,7 @@ test('wiring: SUB 91 only reads (GET), is called only by MAIN 90, and has the de
   const reads = wf.sub91.nodes.filter((n) => n.type === 'n8n-nodes-base.httpRequest');
   assert.deepEqual(reads.map((n) => n.name), ['Read runs', 'Read decisions']);
   for (const n of reads) assert.ok(!n.parameters.method || n.parameters.method === 'GET', n.name);
-  assert.match(byName(wf.sub91, 'Read runs').parameters.url, /\/rest\/v1\/run_log\?.*created_at=gte\.\{\{ \$\('Start'\)\.first\(\)\.json\.since \}\}.*limit=1000/);
+  assert.match(byName(wf.sub91, 'Read runs').parameters.url, /\/rest\/v1\/run_log\?.*created_at=gte\.\{\{ \$\('Start'\)\.first\(\)\.json\.since \}\}&order=created_at\.desc&limit=1000/);
   assert.match(byName(wf.sub91, 'Read decisions').parameters.url, /\/rest\/v1\/decision_log\?/);
   assert.equal(wf.sub91.settings.callerPolicy, 'workflowsFromAList');
   assert.equal(wf.sub91.settings.callerIds, 'MAIN90');

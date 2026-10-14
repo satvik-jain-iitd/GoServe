@@ -81,7 +81,7 @@ export function App() {
 
   // One tap for the kitchen and the rider: a status step or an event, sent as that role. The answer's updated_at decides which copy is newer.
   // Returns null when it worked, or the error code. The offline demo changes the local copy only and sends nothing.
-  async function act(order: Order, action: { kind: "status"; to: string } | RiderAction, actor: "kitchen" | "rider"): Promise<string | null> {
+  async function act(order: Order, action: { kind: "status"; to: string } | RiderAction, actor: "kitchen" | "rider"): Promise<{ code: string; message: string } | null> {
     if (demo) {
       setOrders((cur) => mergeOrder(cur, { ...order, status: action.kind === "status" ? action.to : order.status, updated_at: new Date().toISOString() }));
       if (action.kind === "event") setArrived((cur) => new Set(cur).add(order.id));
@@ -101,8 +101,9 @@ export function App() {
         setArrived((cur) => new Set(cur).add(order.id));
         return null;
       }
-      live.setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
-      return e instanceof PlaceError ? e.code : "unknown";
+      const message = e instanceof Error ? e.message : "Something went wrong. Please try again.";
+      live.setError(message);
+      return { code: e instanceof PlaceError ? e.code : "unknown", message };
     } finally {
       setBusyId(null);
     }
@@ -130,10 +131,13 @@ export function App() {
         setAutoNote(order ? null : "Place an order first.");
         return;
       }
-      const code = await doAct(order, step.kind === "status" ? { kind: "status", to: step.to } : { kind: "event", event: step.event, label: "" }, step.actor);
+      const failure = await doAct(order, step.kind === "status" ? { kind: "status", to: step.to } : { kind: "event", event: step.event, label: "" }, step.actor);
       if (!alive) return;
-      if (code === "network") startOffline();   // the loop goes on, now with the local copy
-      else if (code) return void setAuto(false);   // any other refusal (kill switch, inactive webhook): stop and leave the reason on screen
+      if (failure?.code === "network") startOffline();   // the loop goes on, now with the local copy
+      else if (failure) {   // any other refusal (kill switch, inactive webhook): stop, and keep the reason where the founder looks
+        setAutoNote(failure.message);
+        return void setAuto(false);
+      }
       timer = setTimeout(tick, AUTOPILOT_MS);
     };
     timer = setTimeout(tick, AUTOPILOT_MS);

@@ -122,3 +122,4 @@ short. Say what happened and what to do next time.
 - A loop that handles one error (network) must say what it does with every other error. Stopping on a refusal is the safe default; retrying one forever is not.
 - An average that includes health checks and a total cost that leaves them out tell two stories. Decide first what a "run" is, count the rest apart, and say so in the message.
 - A `$json` inside a second read node is the first read's answer, not the workflow input. Name the input node (`$('Start')`) in every read of a SUB.
+- The Autopilot reason for a refused step must be shown where the founder is looking, not only on the kitchen, rider and ops screens. The customer tab showed nothing; the assert that the text is visible caught it.

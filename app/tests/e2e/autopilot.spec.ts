@@ -110,6 +110,7 @@ test("S2 online, a refused step (kill switch) stops Autopilot after one call and
   await page.waitForTimeout(1200);   // four more steps would have gone by
   expect(net.calls.status).toHaveLength(1);
   await expect(page.getByRole("button", { name: "Autopilot" })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByText("Orders are paused. Please try again soon.")).toBeVisible();   // the reason stays on screen
 });
 
 test("S1 the offline story never asks the server for a decision, even if the phone could reach it", async ({ page, context }) => {
