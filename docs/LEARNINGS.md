@@ -130,3 +130,4 @@ short. Say what happened and what to do next time.
 - A deploy that passes CI can still ship a broken app. The prod workflow built the app with no `VITE_*` keys, so the first prod page would have said "missing Supabase keys". When a second environment is added, read its build step line by line for every setting the first one needed.
 - Dry run first, on the real target, read only: it showed in one call that prod is empty and anonymous sign-in is off. That is the proof the script's plan matches the real state.
 - A live-versus-build check must build with the same deploy-time values as the deploy (token, address, credential ids), or every Code and URL parameter shows as different. Done in memory only, never printed.
+- Look before asking the owner to click. The Pages project had existed since 12 Oct; the 522 only meant 'nothing deployed'. A read-only `cf pages list` settled it in one call after a one-time login.
