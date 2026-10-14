@@ -108,3 +108,4 @@ short. Say what happened and what to do next time.
 - The reviews API wants the full 40-character commit id; a short SHA fails with "Variable $commitOID ... invalid value".
 - A screen that asks a server once and never retries must also show the failed state on the item itself; an alert at the top plus "Asking…" on the slip reads as "still working". Check the refused path in every one-shot call.
 - `count: "exact"` with a `limit` gives the right total but the rows are only the first page; a "latest row of kind X" lookup needs its own filtered query, not a scan of the page.
+- Two lists of the same names (the Jev status in `decide_result.js` and the reasons in `ops.ts`) drift apart. Keep both in the test files so a new status fails a test, and a reason text of "no reason given" is the safe fallback.

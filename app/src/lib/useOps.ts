@@ -10,6 +10,7 @@ export function useOps(active: boolean, orders: Order[], deps: () => OrderDeps) 
   const [decisions, setDecisions] = useState<DecisionRow[]>([]);
   const [stats, setStats] = useState({ runsToday: 0, lastDecideMs: null as number | null });
   const [error, setError] = useState<string | null>(null);
+  const [failed, setFailed] = useState<Record<string, string>>({});   // why an order got no decision, for its slip
   const asked = useRef(new Set<string>());   // one decision call per order, even if it fails: the screen shows why and does not loop
   const key = orders.map((o) => o.id + o.status).join();
 
@@ -28,7 +29,11 @@ export function useOps(active: boolean, orders: Order[], deps: () => OrderDeps) 
             await askDecision({ sessionId, orderId: o.id, riders: DEMO_RIDERS }, deps());
             rows = await fetchDecisions(client, sessionId);
           } catch (e) {
-            if (alive) setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+            const why = e instanceof Error ? e.message : "Something went wrong. Please try again.";
+            if (alive) {
+              setError(why);
+              setFailed((cur) => ({ ...cur, [o.id]: why }));
+            }
           }
         }
         if (!alive) return;
@@ -43,5 +48,5 @@ export function useOps(active: boolean, orders: Order[], deps: () => OrderDeps) 
     };
   }, [active, key]);
 
-  return { decisions, stats, error };
+  return { decisions, stats, error, failed };
 }

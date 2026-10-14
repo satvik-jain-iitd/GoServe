@@ -105,6 +105,6 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | `askDecision` posts the decide action with riders, returns the decision, shows a refusal as a plain message and distrusts an answer with no decision | #51 | S1 | Unit | `app/tests/unit/orders.test.ts` | Pass |
 | A ready order gets one decision call and shows the line; an order that already has a decision is not asked again; an order that is not ready is not listed; a refused call shows the reason once and does not loop | #51 | S1 | End-to-end | `app/tests/e2e/ops.spec.ts` | Pass |
 | The metrics panel shows order-to-screen time, decision time and runs today, and says so when there is nothing yet | #51 | S2 | End-to-end | `app/tests/e2e/ops.spec.ts` | Pass |
-| A ready order on the dev URL shows "AI suggests rider R2 (nn%). The rule agrees." from a real Jev call, and the panel shows real numbers | #51 | S1 S2 | Live (after the owner says activate) | `goserve-app-dev.vercel.app` | Pending activation |
+| A ready order on the dev URL shows "AI suggests rider R2 (nn%)." with "The rule agrees." or "The rule picked R2." (the real model may pick R1) from a real Jev call, and the panel shows real numbers; the browser can read the `content-range` header of the run count | #51 | S1 S2 | Live (after the owner says activate) | `goserve-app-dev.vercel.app` | Pending activation |
 | After the other device resets, the customer tracker goes back to the menu | #52 | S3 | End-to-end | `app/tests/e2e/split.spec.ts` | Pass |
 

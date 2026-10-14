@@ -95,6 +95,7 @@ export function App() {
   async function reset() {
     await resetSession(getClient(), await currentSession());
     setOrders([]);
+    live.setLags([]);
     setPlaced(null);
     setStep("menu");
     setCart({});
@@ -170,7 +171,7 @@ export function App() {
         <RiderScreen orders={riderOrders(orders)} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
           onAct={(o, a) => act(o, a, "rider")} />
       )}
-      {role === "ops" && <OpsScreen orders={orders} decisions={ops.decisions} lags={live.lags} stats={ops.stats} error={ops.error ?? live.error} />}
+      {role === "ops" && <OpsScreen orders={orders} decisions={ops.decisions} lags={live.lags} stats={ops.stats} error={ops.error ?? live.error} failed={ops.failed} />}
       {role === "customer" && customerView}
       {role === "split" && (
         <div className="panes">
