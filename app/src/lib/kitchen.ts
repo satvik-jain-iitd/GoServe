@@ -14,7 +14,8 @@ const STEPS: Record<string, { to: string; label: string }> = {
 };
 export const nextStep = (status: string) => STEPS[status] ?? null;
 
-const LABELS: Record<string, string> = { placed: "New", accepted: "Accepted", preparing: "Cooking", ready: "Ready" };
+// One label map for the kitchen, the rider and the customer tracker.
+const LABELS: Record<string, string> = { placed: "Placed", accepted: "Accepted", preparing: "Cooking", ready: "Ready", out_for_delivery: "On the way", delivered: "Delivered" };
 export const statusLabel = (status: string): string => LABELS[status] ?? status;
 
 const WITH_RIDER = ["out_for_delivery", "delivered"];
@@ -26,4 +27,19 @@ export const mergeOrder = (orders: Order[], incoming: Order): Order[] => {
   const old = orders.find((o) => o.id === incoming.id);
   if (old && Date.parse(old.updated_at) > Date.parse(incoming.updated_at)) return orders;
   return [...orders.filter((o) => o.id !== incoming.id), incoming].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+};
+
+// ---- Story #50: the rider's buttons and the customer's progress list ----
+export type RiderAction = { kind: "status"; to: string; label: string } | { kind: "event"; event: "order.arriving"; label: string };
+export const riderActions = (status: string): RiderAction[] => {
+  if (status === "ready") return [{ kind: "status", to: "out_for_delivery", label: "Pick up" }];
+  if (status === "out_for_delivery") return [{ kind: "event", event: "order.arriving", label: "Arriving" }, { kind: "status", to: "delivered", label: "Delivered" }];
+  return [];
+};
+export const riderOrders = (orders: Order[]): Order[] => orders.filter((o) => o.status === "ready" || o.status === "out_for_delivery");
+
+const FLOW = ["placed", "accepted", "preparing", "ready", "out_for_delivery", "delivered"];
+export const trackerSteps = (status: string): { status: string; label: string; state: "done" | "current" | "todo" }[] => {
+  const at = FLOW.indexOf(status);
+  return FLOW.map((s, i) => ({ status: s, label: statusLabel(s), state: at < 0 || i > at ? "todo" : i === at ? "current" : "done" }));
 };

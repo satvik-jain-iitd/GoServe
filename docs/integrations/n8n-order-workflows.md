@@ -9,6 +9,7 @@ Build code: `ops/n8n/order/build.js`. Tests: `node --test "ops/n8n/order/*.test.
 |---|---|---|---|---|
 | GS ERR 00 Alert | ERR | Sends a Telegram message to the owner when an order workflow fails. | n8n (error workflow of the three below) | Deployed 14 Oct 2026, inactive (id `H9dl1O5HenAQ3sRm`) |
 | GS SUB 13 Decide | SUB | Picks a rider by the rule, asks Jev for a suggestion, writes one `decision_log` row. | MAIN 01 | Deployed 14 Oct 2026, inactive (id `4Qb0pB031ky91IKK`) |
+| GS SUB 15 Add event | SUB | Writes the rider's `order.arriving` event through `rider_event`; the status stays. | MAIN 01 | Built, not deployed (story #50) |
 | GS SUB 14 Write logs | SUB | Writes one `run_log` row. | MAIN 01 | Deployed 14 Oct 2026, inactive (id `RqjujaDaJSz0rSz7`) |
 | GS MAIN 01 Order API | MAIN | The phone's webhook. Checks the token and the kill switch, then calls a SUB. | The phone (`POST /webhook/gs-order`) | Deployed 14 Oct 2026, inactive (id `B0MaX7Sa6PaTVf81`) |
 | GS SUB 11 Place order | SUB | Checks the input, calls the database function `place_order`. | MAIN 01 | Deployed 14 Oct 2026, inactive (id `l5yCWExn5hQMqzNN`) |
@@ -48,6 +49,14 @@ Decide which rider (story #46):
 
 The answer carries `decision`: the rule pick, Jev's pick with confidence (or why Jev was not used: `jev_off`, `jev_error`, `jev_bad_reply`, `jev_low_confidence`, `cost_cap`), and the pick used. **In MVP 0 the rule always decides; Jev only advises.** The rule: the free rider with the fewest trips, then the shortest distance, else `none` (contract D1). Jev gets ids, free flag, distance and trips only, never names or addresses. Jev limits: pinned `typesafe/jev-1.13`, temperature 0, 32 tokens, 900 ms, accepted at confidence 0.70 or more, ignored over the per-call cost cap (Config `jev_cost_cap`).
 
+Rider arriving (story #50):
+
+```json
+{ "action": "event", "session_id": "<anonymous user id>", "order_id": "<uuid>", "event": "order.arriving", "actor": "rider" }
+```
+
+It writes one event and leaves the status as `out_for_delivery`. Allowed only in that status, and once per order: a repeat gets 409 `already_done`. Any other event name is refused with 400. The rider's other steps are normal status changes: `out_for_delivery` (event `order.picked_up`) and `delivered`.
+
 Steps (assumption A41): `placed, accepted, preparing, ready, out_for_delivery, delivered`, one step forward at a time.
 Actors: `customer, kitchen, rider, ops`.
 
@@ -78,6 +87,7 @@ SUB 12 input: `session_id` string, `order_id` string, `to_status` string, `actor
 Output of both: `{ ok, status_code, error?, message?, created?, order? }`.
 
 SUB 13 input: `session_id`, `kitchen_id`, `order_id`, `riders` (1 to 10, unique ids), `params_version`, `jev_enabled`, `jev_model`, `jev_cost_cap`, `kill_switch`, `supabase_url`. Output: `{ ok, status_code, decision?, cost?, error?, message? }`. It writes only one `decision_log` row.
+SUB 15 input: `session_id`, `order_id`, `event`, `actor`, `kill_switch`, `supabase_url`. Output: `{ ok, status_code, order?, error?, message? }`. It writes only one `order_events` row, through `rider_event`.
 SUB 14 input: `session_id`, `kitchen_id`, `workflow`, `params_version`, `duration_ms`, `cost`, `error`, `supabase_url`. Output: `{ ok, status_code }`. It writes only one `run_log` row.
 The Jev call is the one node that continues on error: Jev is advice, so a Jev failure never stops the rule decision. Every write node fails closed.
 A SUB writes only through the database function. If the kill switch is on or the input is bad, it returns the refusal and calls nothing.

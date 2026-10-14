@@ -52,3 +52,9 @@ textarea { font: inherit; padding: var(--gs-space-3); border: 1px solid var(--md
 .badge.accepted { background: var(--gs-status-accepted); }
 .badge.preparing { background: var(--gs-status-cooking); }
 .badge.ready { background: var(--gs-status-ready); }
+
+/* Customer tracker (story #50). */
+.tracker { list-style: none; display: grid; gap: var(--gs-space-2); margin: var(--gs-space-4) 0; padding: 0; }
+.step { padding: var(--gs-space-2) var(--gs-space-3); border-radius: var(--gs-radius-m); border: 1px solid var(--md-outline); color: var(--gs-text-muted); }
+.step.done { color: var(--md-on-surface); background: var(--md-surface-variant); }
+.step.current { background: var(--md-primary); color: var(--md-on-primary); font-weight: 600; }

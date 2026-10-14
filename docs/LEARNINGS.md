@@ -89,3 +89,7 @@ short. Say what happened and what to do next time.
 - A test helper that pushes live events must keep them until the app has connected, and wait a moment after the join answer. A push into nothing made one test fail one run in three.
 - Integration tests that place real orders leave rows that cannot be deleted by design, and anonymous sign-ins are limited to 30 an hour. Plan the cleanup and the run count before writing such a test.
 - The permission guard refused a script that turned off a protection trigger to delete rows. Ask the owner first for anything that switches off a safety rule, even on dev.
+- A handoff state line like "A44 yes" reads as "already agreed" to a reader without context. Write "haan ya na on A44" when the decision is still open. The writer flagged this on PR #70.
+- Count the handoff words before posting, not after: the PR #70 review body went out at 150 words against the 120 cap.
+- A long run of API calls in one script can fail halfway on a network error. Post replies in a loop with a retry, and read the output to retry only the failed ones.
+- Compare moments with `Date.parse`, not text: the same instant can be written with Z or +00:00, and a string compare calls them different.

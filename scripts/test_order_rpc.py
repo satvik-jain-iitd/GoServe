@@ -83,12 +83,27 @@ class OrderRpc(unittest.TestCase):
                 "select (select count(*) from decision_log where session_id='s1') as d, (select count(*) from run_log where session_id='s1') as r")
         self.assertEqual(r[-1], {"d": 1, "r": 1}, r)
 
+    def test_rider_arriving_is_an_event_without_a_status_change(self):
+        to_road = [f"select change_status({ID}, 's1', '{t}', 'kitchen')" for t in ("accepted", "preparing", "ready")] + \
+                  [f"select change_status({ID}, 's1', 'out_for_delivery', 'rider')"]
+        r = run(PLACE, *to_road, f"select rider_event({ID}, 's1', 'order.arriving', 'rider')",
+                "select array_agg(event order by id) as events, (select status from orders where session_id='s1') as status from order_events where session_id='s1'")
+        self.assertEqual(r[-1], {"events": ["order.placed", "order.accepted", "order.preparing", "order.ready", "order.picked_up", "order.arriving"], "status": "out_for_delivery"}, r)
+
+    def test_rider_event_is_refused_in_the_wrong_state_and_when_repeated(self):
+        self.assertIn("illegal_event", str(run(PLACE, f"select rider_event({ID}, 's1', 'order.arriving', 'rider')")))   # still placed
+        road = [f"select change_status({ID}, 's1', '{t}', 'kitchen')" for t in ("accepted", "preparing", "ready", "out_for_delivery")]
+        self.assertIn("event_exists", str(run(PLACE, *road, f"select rider_event({ID}, 's1', 'order.arriving', 'rider')", f"select rider_event({ID}, 's1', 'order.arriving', 'rider')")))
+        self.assertIn("invalid_event", str(run(PLACE, *road, f"select rider_event({ID}, 's1', 'order.delivered', 'rider')")))   # status changes go through change_status
+        self.assertIn("order_not_found", str(run(PLACE, f"select rider_event({ID}, 's2', 'order.arriving', 'rider')")))
+
     def test_the_phone_keys_cannot_call_them(self):
         r = sql("select has_function_privilege('anon', 'place_order(text,text,jsonb,text)', 'execute') a, "
                 "has_function_privilege('authenticated', 'change_status(uuid,text,text,text)', 'execute') b, "
-                "has_function_privilege('service_role', 'place_order(text,text,jsonb,text)', 'execute') c")
+                "has_function_privilege('service_role', 'place_order(text,text,jsonb,text)', 'execute') c, "
+                "has_function_privilege('anon', 'rider_event(uuid,text,text,text)', 'execute') d")
         self.assertIsInstance(r, list, r)
-        self.assertEqual(r[0], {"a": False, "b": False, "c": True}, r)
+        self.assertEqual(r[0], {"a": False, "b": False, "c": True, "d": False}, r)
 
 
 if __name__ == "__main__":

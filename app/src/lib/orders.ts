@@ -40,3 +40,9 @@ export async function changeStatus(input: StatusInput, deps: OrderDeps): Promise
   const a = await callApi({ action: "status", session_id: input.sessionId, order_id: input.orderId, to_status: input.to, actor: input.actor }, deps);
   return { order: a.order };
 }
+
+export type EventInput = { sessionId: string; orderId: string; event: "order.arriving"; actor: "customer" | "kitchen" | "rider" | "ops" };
+export async function addEvent(input: EventInput, deps: OrderDeps): Promise<{ order: PlacedOrder }> {
+  const a = await callApi({ action: "event", session_id: input.sessionId, order_id: input.orderId, event: input.event, actor: input.actor }, deps);
+  return { order: a.order };
+}

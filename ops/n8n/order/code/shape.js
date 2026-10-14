@@ -9,7 +9,8 @@ if (res.statusCode === 200 && body.order && typeof body.order === 'object') {
 const msg = String(body.message || '');
 if (msg === 'session_order_cap') return out(429, { error: 'session_order_cap', message: 'Too many orders in this demo session.' });
 if (msg === 'order_not_found') return out(404, { error: 'order_not_found', message: 'No such order in this session.' });
-if (msg.startsWith('illegal status step')) return out(409, { error: 'illegal_step', message: 'That step is not allowed now.' });
-if (msg.startsWith('invalid_status')) return out(400, { error: 'invalid_status', message: 'Unknown status.' });
+if (msg === 'event_exists') return out(409, { error: 'already_done', message: 'Already done.' });
+if (msg.startsWith('illegal status step') || msg.startsWith('illegal_event')) return out(409, { error: 'illegal_step', message: 'That step is not allowed now.' });
+if (msg.startsWith('invalid_status') || msg.startsWith('invalid_event')) return out(400, { error: msg.split(':')[0], message: 'Unknown status.' });
 if (/^invalid_(item|address|request)/.test(msg)) return out(400, { error: msg.split(':')[0], message: 'The order is not valid.' });
 return out(502, { error: 'database_error', message: 'Something went wrong. Please try again.' });

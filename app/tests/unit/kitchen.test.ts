@@ -55,6 +55,43 @@ describe("kitchenOrders and labels", () => {
     expect(shortId("0f0f0f0f-1111-4222-8333-444444444444")).toBe("0f0f0f0f");
   });
   it("uses kitchen words for statuses", () => {
-    expect([statusLabel("placed"), statusLabel("accepted"), statusLabel("preparing"), statusLabel("ready")]).toEqual(["New", "Accepted", "Cooking", "Ready"]);
+    expect([statusLabel("placed"), statusLabel("accepted"), statusLabel("preparing"), statusLabel("ready")]).toEqual(["Placed", "Accepted", "Cooking", "Ready"]);
+  });
+});
+
+// ---- Story #50: rider steps and the customer tracker ----
+import { riderActions, riderOrders, trackerSteps } from "../../src/lib/kitchen";
+
+describe("rider steps", () => {
+  it("S1 a ready order can be picked up; an order on the road can be marked arriving or delivered", () => {
+    expect(riderActions("ready")).toEqual([{ kind: "status", to: "out_for_delivery", label: "Pick up" }]);
+    expect(riderActions("out_for_delivery")).toEqual([
+      { kind: "event", event: "order.arriving", label: "Arriving" },
+      { kind: "status", to: "delivered", label: "Delivered" },
+    ]);
+  });
+  it("the rider has no button before Ready or after Delivered", () => {
+    for (const s of ["placed", "accepted", "preparing", "delivered", "nonsense"]) expect(riderActions(s)).toEqual([]);
+  });
+  it("the rider list holds orders that are ready or on the road", () => {
+    const list = ["placed", "accepted", "preparing", "ready", "out_for_delivery", "delivered"].map((s, i) => o("o" + i, s, "2020-01-01T10:0" + i + ":00Z"));
+    expect(riderOrders(list).map((x) => x.status).sort()).toEqual(["out_for_delivery", "ready"]);
+  });
+});
+
+describe("customer tracker", () => {
+  it("S2 shows all six steps in order, with what is done, current and still to come", () => {
+    const steps = trackerSteps("preparing");
+    expect(steps.map((s) => s.label)).toEqual(["Placed", "Accepted", "Cooking", "Ready", "On the way", "Delivered"]);
+    expect(steps.map((s) => s.state)).toEqual(["done", "done", "current", "todo", "todo", "todo"]);
+  });
+  it("S2 ends at Delivered: every step done, the last one current", () => {
+    expect(trackerSteps("delivered").map((s) => s.state)).toEqual(["done", "done", "done", "done", "done", "current"]);
+  });
+  it("an unknown status shows nothing done", () => {
+    expect(trackerSteps("nonsense").every((s) => s.state === "todo")).toBe(true);
+  });
+  it("one label map for the kitchen and the customer", () => {
+    expect([statusLabel("placed"), statusLabel("out_for_delivery"), statusLabel("delivered")]).toEqual(["Placed", "On the way", "Delivered"]);
   });
 });

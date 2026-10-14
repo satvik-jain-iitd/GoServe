@@ -85,3 +85,11 @@ Apne sawaal yahan. Status: **open** (jawab nahi mila) / **answered** / **dropped
 | Q32 | Ek order bana, par jawab phone tak nahi aaya. Cart badal kar retry kare to naya key, doosra order. Pilot ke liye "reply lost" plan kya hoga: pehle apni session ke `orders` padhna, phir naya key? | PR #69 / app/src/App.tsx line 39 (Top-3) | nahi | _(PR #69 sync ke baad bharega)_ | open |
 | Q33 | Ek phone ek session hamesha hai. 20 orders ke baad 429 jab tak site data clear na ho. Reset ka raasta (story #52) se pehle kya hai? | PR #69 / app/src/lib/supabase.ts line 28 (Top-3) | nahi | _(PR #69 sync ke baad bharega)_ | open |
 | Q34 | `VITE_DEMO_TOKEN` build mein jaata hai, dev JS mein koi bhi padh sakta hai. A43 ya kisi assumption row mein yeh baat likhi hai? | PR #69 / .github/workflows/deploy-dev.yml line 36 (Top-3) | nahi | _(PR #69 sync ke baad bharega)_ | open |
+
+## PR #70 ke baad
+
+| # | Sawaal | Kahan poocha (PR#/file) | Jawab mila? | Jawab | Status |
+|---|---|---|---|---|---|
+| Q35 | Kitchen tap demo token ke saath `actor: "kitchen"` bhejta hai. Server sirf order, session aur step dekhta hai. Matlab token wala koi bhi kitchen ban kar status badal sakta hai. A44 mein yeh line jodo, aur kitchen login MVP 1 mein? | PR #70 / app/src/App.tsx line 70 (Top-3) | nahi | _(PR #70 sync ke baad bharega)_ | open |
+| Q36 | Har integration run goserve-dev par 2+ orders aur events chhod deta hai. Cleanup ke liye protection trigger off karna padega (F71). Alternative: test rows ko tag rakho aur story #52 mein dry-run wala `clear_dev.py`. Kaunsa? | PR #70 / app/tests/integration/kitchen.test.ts line 37 (Top-3) | nahi | _(PR #70 sync ke baad bharega)_ | open |
+| Q37 | Kitchen = isi browser ka session. Customer phone aur kitchen tablet par demo nahi chalega. 18 Oct demo ek device split view hai ya do device? Agar do, to #52 ko #50 se pehle lena hoga. | PR #70 / app/src/App.tsx line 42 (Top-3) | nahi | _(PR #70 sync ke baad bharega)_ | open |

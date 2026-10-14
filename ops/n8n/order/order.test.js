@@ -10,7 +10,7 @@ const { build, PLACEHOLDER } = require('./build');
 const { checkLayout } = require('../lib/layout_checks');
 
 const IDS = { main01: 'MAIN1', sub11: 'SUB11', sub12: 'SUB12' };
-const wf = build({ ids: { ...IDS, alert: 'ALERT1' } });
+const wf = build({ ids: { ...IDS, sub15: 'SUB15', alert: 'ALERT1' } });
 const run = (file, json) => new Function('$input', fs.readFileSync(path.join(__dirname, 'code', file), 'utf8'))({ first: () => ({ json }) })[0].json;
 const byName = (w, n) => w.nodes.find((x) => x.name === n);
 const UUID = '11111111-1111-1111-1111-111111111111';
@@ -97,7 +97,7 @@ test('wiring: order after the trigger is Config, token check, kill switch, then 
   assert.deepEqual(next('Check token'), ['Token ok?']);
   assert.deepEqual([next('Token ok?', 0), next('Token ok?', 1)], [['Kill switch?'], ['Respond 401']]);
   assert.deepEqual([next('Kill switch?', 0), next('Kill switch?', 1)], [['Respond 503'], ['Route']]);
-  assert.deepEqual([next('Route', 0), next('Route', 1), next('Route', 2), next('Route', 3)], [['Call SUB 11 Place order'], ['Call SUB 12 Change status'], ['Call SUB 13 Decide'], ['Respond 400']]);
+  assert.deepEqual([next('Route', 0), next('Route', 1), next('Route', 2), next('Route', 3), next('Route', 4)], [['Call SUB 11 Place order'], ['Call SUB 12 Change status'], ['Call SUB 13 Decide'], ['Call SUB 15 Add event'], ['Respond 400']]);
   assert.deepEqual(next('Call SUB 11 Place order'), ['Respond result']);
   assert.deepEqual(next('Call SUB 12 Change status'), ['Respond result']);
 });
@@ -131,7 +131,7 @@ test('safety: write SUBs only accept calls from MAIN 01; no secret is written in
 
 test('workflow names follow the house prefix and numbers (B11 95.18)', () => {
   assert.deepEqual([wf.main01.name, wf.sub11.name, wf.sub12.name], ['GS MAIN 01 Order API', 'GS SUB 11 Place order', 'GS SUB 12 Change status']);
-  assert.ok(wf.main01.nodes.filter((n) => n.type !== 'n8n-nodes-base.stickyNote').length <= 15);
+  assert.ok(wf.main01.nodes.filter((n) => n.type !== 'n8n-nodes-base.stickyNote').length <= 20);   // rulebook 95.1: aim for 15; split at about 25
 });
 
 for (const key of ['sub11', 'sub12', 'main01', 'alert']) {
@@ -158,10 +158,10 @@ test('error alert: the message escapes HTML and carries workflow, node, error an
   assert.doesNotThrow(() => run('format_alert.js', {}));
 });
 
-test('deploy: only the six GS workflows, alert first and MAIN last; the PUT body has only the allowed keys', () => {
+test('deploy: only the seven GS workflows, alert first and MAIN last; the PUT body has only the allowed keys', () => {
   const { payload, NAMES, ORDER } = require('./deploy');
-  assert.deepEqual(ORDER, ['alert', 'sub11', 'sub12', 'sub13', 'sub14', 'main01']);
-  assert.deepEqual(ORDER.map((k) => NAMES[k]), [wf.alert.name, wf.sub11.name, wf.sub12.name, wf.sub13.name, wf.sub14.name, wf.main01.name]);
+  assert.deepEqual(ORDER, ['alert', 'sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'main01']);
+  assert.deepEqual(ORDER.map((k) => NAMES[k]), [wf.alert.name, wf.sub11.name, wf.sub12.name, wf.sub13.name, wf.sub14.name, wf.sub15.name, wf.main01.name]);
   assert.deepEqual(Object.keys(payload(wf.main01)).sort(), ['connections', 'name', 'nodes', 'settings']);
   const src = fs.readFileSync(path.join(__dirname, 'deploy.js'), 'utf8');
   assert.ok(!/\/activate|'DELETE'/.test(src), 'deploy must never activate or delete');

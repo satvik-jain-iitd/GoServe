@@ -1,19 +1,20 @@
 // The customer flow in one place: menu, cart, bill, placed (story #48). No router yet: four steps in state.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { addDish, cartLines, cartTotal, changeQty, toOrderItems, type Cart } from "./lib/cart";
-import { kitchenOrders, mergeOrder, type Order } from "./lib/kitchen";
-import { fetchOrders, watchOrders } from "./lib/live";
+import { kitchenOrders, mergeOrder, riderOrders, type Order, type RiderAction } from "./lib/kitchen";
+import { useLiveOrders } from "./lib/useLiveOrders";
 import { loadMenu, type Dish } from "./lib/menu";
-import { changeStatus, placeOrder, PlaceError, type OrderDeps, type PlacedOrder } from "./lib/orders";
-import { ensureSession, fetchMenuRows, getClient } from "./lib/supabase";
+import { addEvent, changeStatus, placeOrder, PlaceError, type OrderDeps, type PlacedOrder } from "./lib/orders";
+import { ensureSession, fetchMenuRows } from "./lib/supabase";
 import { MenuScreen } from "./screens/MenuScreen";
 import { CartScreen } from "./screens/CartScreen";
 import { BillScreen } from "./screens/BillScreen";
 import { PlacedScreen } from "./screens/PlacedScreen";
 import { KitchenScreen } from "./screens/KitchenScreen";
+import { RiderScreen } from "./screens/RiderScreen";
 
 type Step = "menu" | "cart" | "bill" | "placed";
-type Role = "customer" | "kitchen";
+type Role = "customer" | "kitchen" | "rider";
 
 const api = (): OrderDeps => ({ url: import.meta.env.VITE_ORDER_URL, token: import.meta.env.VITE_DEMO_TOKEN, fetchFn: fetch.bind(window) });
 
@@ -27,49 +28,28 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [placed, setPlaced] = useState<PlacedOrder | null>(null);
   const [role, setRole] = useState<Role>("customer");
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [ordersLoading, setOrdersLoading] = useState(false);
-  const [kitchenError, setKitchenError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-  // One key per cart: a retry of the same cart reuses it, so the server never makes two orders. A changed cart gets a new key.
+  const [arrived, setArrived] = useState<Set<string>>(new Set());
+  // The live list runs for the kitchen, the rider, and the customer while the tracker is on screen.
+  const live = useLiveOrders(role === "kitchen" || role === "rider" || (role === "customer" && step === "placed"));
+  const { orders, setOrders } = live;
   const keyRef = useRef<{ fingerprint: string; key: string } | null>(null);
 
   useEffect(() => {
     loadMenu(fetchMenuRows, window.localStorage).then(setMenu, (e: Error) => setMenuError(e.message));
   }, []);
 
-  // The kitchen listens while its tab is open. One browser is one session, so the kitchen sees the orders this browser placed (ADR-010).
-  useEffect(() => {
-    if (role !== "kitchen") return;
-    let stop = () => {};
-    let alive = true;
-    setOrdersLoading(true);
-    setKitchenError(null);
-    (async () => {
-      try {
-        const sessionId = await ensureSession();
-        const client = getClient();
-        const reload = async () => { const rows = await fetchOrders(client); if (alive) setOrders((cur) => rows.reduce(mergeOrder, cur)); };
-        stop = watchOrders(client, sessionId, (o) => alive && setOrders((cur) => mergeOrder(cur, o)), () => void reload().catch(() => {}));
-        await reload();
-      } catch {
-        if (alive) setKitchenError("Could not load orders. Check your connection and try again.");
-      } finally {
-        if (alive) setOrdersLoading(false);
-      }
-    })();
-    return () => { alive = false; stop(); };
-  }, [role]);
-
-  async function tap(order: Order, to: string) {
+  // One tap for the kitchen and the rider: a status step or an event, sent as that role. The answer's updated_at decides which copy is newer.
+  async function act(order: Order, action: { kind: "status"; to: string } | RiderAction, actor: "kitchen" | "rider") {
     setBusyId(order.id);
-    setKitchenError(null);
+    live.setError(null);
     try {
-      const { order: saved } = await changeStatus({ sessionId: order.session_id, orderId: order.id, to, actor: "kitchen" }, api());
-      // The server's own updated_at decides which copy is newer, not this phone's clock.
+      const deps = { sessionId: order.session_id, orderId: order.id, actor };
+      const { order: saved } = action.kind === "status" ? await changeStatus({ ...deps, to: action.to }, api()) : await addEvent({ ...deps, event: action.event }, api());
       setOrders((cur) => mergeOrder(cur, { ...order, status: saved.status, updated_at: saved.updated_at }));
+      if (action.kind === "event") setArrived((cur) => new Set(cur).add(order.id));
     } catch (e) {
-      setKitchenError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+      live.setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
     } finally {
       setBusyId(null);
     }
@@ -106,14 +86,19 @@ export function App() {
     <main className="shell">
       <h1>GoServe</h1>
       <nav className="roles" aria-label="Screen">
-        {(["customer", "kitchen"] as const).map((r) => (
+        {(["customer", "kitchen", "rider"] as const).map((r) => (
           <button key={r} type="button" className={role === r ? "btn" : "btn ghost"} aria-pressed={role === r} onClick={() => setRole(r)}>
-            {r === "customer" ? "Customer" : "Kitchen"}
+            {r === "customer" ? "Customer" : r === "kitchen" ? "Kitchen" : "Rider"}
           </button>
         ))}
       </nav>
       {role === "kitchen" && (
-        <KitchenScreen orders={kitchenOrders(orders)} loading={ordersLoading} error={kitchenError} busyId={busyId} onStep={tap} />
+        <KitchenScreen orders={kitchenOrders(orders)} loading={live.loading} error={live.error} busyId={busyId}
+          onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} />
+      )}
+      {role === "rider" && (
+        <RiderScreen orders={riderOrders(orders)} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
+          onAct={(o, a) => act(o, a, "rider")} />
       )}
       {role === "customer" && (
         <>
@@ -131,7 +116,7 @@ export function App() {
           <BillScreen lines={lines} total={total} address={address.trim()} sending={sending} error={error}
             onBack={() => setStep("cart")} onPlace={place} />
         )}
-        {step === "placed" && placed && <PlacedScreen order={placed} onAgain={() => { setPlaced(null); setStep("menu"); }} />}
+        {step === "placed" && placed && <PlacedScreen order={placed} status={orders.find((o) => o.id === placed.id)?.status ?? placed.status} onAgain={() => { setPlaced(null); setStep("menu"); }} />}
         </>
       )}
     </main>

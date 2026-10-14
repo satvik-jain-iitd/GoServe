@@ -359,3 +359,40 @@ Har naya technical word yahan. Simple Hindi mein. Ek line ka "yeh kya hai", ek l
 - **Kya hai:** Supabase phone ko ek anonymous id deta hai. Yahi id session hai, aur Supabase client use phone ki localStorage mein rakhta hai (ADR-010).
 - **Analogy:** Darwaze par visitor ka token. Naam nahi, bas parchi ka malik pehchaan.
 - **File:** `app/src/lib/supabase.ts` (lines 24–31).
+
+## PR #70 se
+
+### Read then listen, then read again
+- **Kya hai:** Pehle list copy karo, phir live feed suno, aur subscription pakki hone ke baad ek baar phir copy karo. Beech ka gap band ho jaata hai.
+- **Analogy:** Register copy karo, ghanti par khade ho, phir ek baar aur copy karo.
+- **File:** `app/src/lib/live.ts` (line 20); `app/src/App.tsx` (line 55).
+
+### Later stamp wins
+- **Kya hai:** Ek hi order do baar aaye to server ka `updated_at` decide karta hai ki kaunsa copy jeetega. Phone ki ghadi nahi.
+- **Analogy:** Slip par jo aakhri stamp hai, woh sach hai.
+- **File:** `app/src/lib/kitchen.ts` (lines 24–28).
+
+### Next-step table
+- **Kya hai:** Ek chhota map: har status ke liye ek hi agla step. Aakhri kitchen step ke baad koi button nahi.
+- **Analogy:** Board par lagi niyam ki card.
+- **File:** `app/src/lib/kitchen.ts` (lines 10–15).
+
+### Actor is self-declared
+- **Kya hai:** Status call mein `actor: "kitchen"` phone bhejta hai. Server order, session aur step check karta hai, par yeh nahi ki kisne tap kiya.
+- **Analogy:** Jiske paas stamp hai, woh cook ke naam se sign kar sakta hai.
+- **File:** `app/src/lib/orders.ts` (line 51); `guard_status.js`.
+
+### Stand-in socket
+- **Kya hai:** E2E test Realtime server ka kaam khud karta hai (Phoenix v2 frames). Isliye live behaviour Supabase ke bina chalta hai.
+- **Analogy:** Rehearsal mein director ghanti bajata hai.
+- **File:** `app/tests/e2e/kitchen.spec.ts` (lines 45–60).
+
+### Rehearsal leaves marks
+- **Kya hai:** Integration test asli dev database par likhta hai. Jo rows likhi gayi, woh design se frozen hain aur mitti nahi.
+- **Analogy:** Aisi slips jo phaadi nahi ja sakti.
+- **File:** `app/tests/integration/kitchen.test.ts` (line 37).
+
+### One booklet, two covers
+- **Kya hai:** Customer aur kitchen dono ek app mein hain, role tabs se. Ek browser = ek session (ADR-010, A44).
+- **Analogy:** Ek booklet, do cover: ek hi kitab, do taraf se padhi jaati hai.
+- **File:** `app/src/App.tsx` (line 119).
