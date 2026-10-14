@@ -10,6 +10,9 @@ export function useLiveOrders(active: boolean) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // How long a new order took to reach this screen: server time of the order to this device's clock, for orders that arrived live.
+  // The two clocks can differ a little, so a negative result is shown as 0.
+  const [lags, setLags] = useState<number[]>([]);
 
   useEffect(() => {
     if (!active) return;
@@ -25,7 +28,11 @@ export function useLiveOrders(active: boolean) {
           const rows = await fetchOrders(client, sessionId);
           if (alive) setOrders((cur) => rows.reduce(mergeOrder, cur));
         };
-        stop = watchOrders(client, sessionId, (o) => alive && setOrders((cur) => mergeOrder(cur, o)), () => void reload().catch(() => {}), (id) => alive && setOrders((cur) => cur.filter((o) => o.id !== id)));
+        stop = watchOrders(client, sessionId, (o, event) => {
+          if (!alive) return;
+          if (event === "INSERT") setLags((cur) => [...cur, Math.max(0, Date.now() - Date.parse(o.created_at))]);
+          setOrders((cur) => mergeOrder(cur, o));
+        }, () => void reload().catch(() => {}), (id) => alive && setOrders((cur) => cur.filter((o) => o.id !== id)));
         await reload();
       } catch {
         if (alive) setError("Could not load orders. Check your connection and try again.");
@@ -39,5 +46,5 @@ export function useLiveOrders(active: boolean) {
     };
   }, [active]);
 
-  return { orders, loading, error, setOrders, setError };
+  return { orders, loading, error, lags, setOrders, setError };
 }

@@ -13,10 +13,12 @@ import { BillScreen } from "./screens/BillScreen";
 import { PlacedScreen } from "./screens/PlacedScreen";
 import { KitchenScreen } from "./screens/KitchenScreen";
 import { RiderScreen } from "./screens/RiderScreen";
+import { useOps } from "./lib/useOps";
+import { OpsScreen } from "./screens/OpsScreen";
 import { DemoBar } from "./screens/DemoBar";
 
 type Step = "menu" | "cart" | "bill" | "placed";
-type Role = "customer" | "kitchen" | "rider" | "split";
+type Role = "customer" | "kitchen" | "rider" | "split" | "ops";
 
 const api = (): OrderDeps => ({ url: import.meta.env.VITE_ORDER_URL, token: import.meta.env.VITE_DEMO_TOKEN, fetchFn: fetch.bind(window) });
 
@@ -35,8 +37,9 @@ export function App() {
   // The live list runs for the kitchen, the rider, and the customer while the tracker is on screen.
   // A device that opened a ?join= link joins that session first; the live list waits for it (story #52).
   const [ready, setReady] = useState(() => !joinCode(window.location.search));
-  const live = useLiveOrders(ready && (role === "kitchen" || role === "rider" || role === "split" || (role === "customer" && step === "placed")));
+  const live = useLiveOrders(ready && (role === "kitchen" || role === "rider" || role === "split" || role === "ops" || (role === "customer" && step === "placed")));
   const { orders, setOrders } = live;
+  const ops = useOps(ready && role === "ops", orders, api);
   const keyRef = useRef<{ fingerprint: string; key: string } | null>(null);
   // The tracker goes back to the menu when the order it showed has left the list (the other device reset the demo).
   const trackedSeen = useRef(false);
@@ -155,9 +158,9 @@ export function App() {
     <main className={role === "split" ? "shell split" : "shell"}>
       <h1>GoServe</h1>
       <nav className="roles" aria-label="Screen">
-        {(["customer", "kitchen", "rider", "split"] as const).map((r) => (
+        {(["customer", "kitchen", "rider", "split", "ops"] as const).map((r) => (
           <button key={r} type="button" className={role === r ? "btn" : "btn ghost"} aria-pressed={role === r} onClick={() => setRole(r)}>
-            {r === "customer" ? "Customer" : r === "kitchen" ? "Kitchen" : r === "rider" ? "Rider" : "Split"}
+            {r === "customer" ? "Customer" : r === "kitchen" ? "Kitchen" : r === "rider" ? "Rider" : r === "split" ? "Split" : "Ops"}
           </button>
         ))}
       </nav>
@@ -167,6 +170,7 @@ export function App() {
         <RiderScreen orders={riderOrders(orders)} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
           onAct={(o, a) => act(o, a, "rider")} />
       )}
+      {role === "ops" && <OpsScreen orders={orders} decisions={ops.decisions} lags={live.lags} stats={ops.stats} error={ops.error ?? live.error} />}
       {role === "customer" && customerView}
       {role === "split" && (
         <div className="panes">

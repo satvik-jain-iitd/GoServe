@@ -64,3 +64,9 @@ textarea { font: inherit; padding: var(--gs-space-3); border: 1px solid var(--md
 .shell.split { max-width: none; }
 .panes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gs-space-3); align-items: start; }
 .split .btn.bar { position: static; margin-top: var(--gs-space-3); max-width: none; }
+
+/* Ops screen (story #51). */
+.roles { flex-wrap: wrap; }
+.metrics { display: grid; grid-template-columns: 1fr auto; gap: var(--gs-space-2) var(--gs-space-4); margin: 0; }
+.metrics dt { color: var(--gs-text-muted); }
+.metrics dd { margin: 0; font-weight: 600; text-align: right; }
