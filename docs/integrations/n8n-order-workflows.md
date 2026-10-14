@@ -104,6 +104,24 @@ The Jev call is the one node that continues on error: Jev is advice, so a Jev fa
 A SUB writes only through the database function. If the kill switch is on or the input is bad, it returns the refusal and calls nothing.
 Only MAIN 01 may call a SUB (`callerPolicy: workflowsFromAList`).
 
+## The PROD copy (story #78, 15 Oct 2026)
+
+Nine more workflows, the same code and canvas, named with `PROD` at the end, deployed **inactive** by `node ops/n8n/order/deploy.js --env prod --apply`. They share nothing with dev except the one alert workflow (GS ERR 00) and the Jev credential: the prod set has its own address (`SUPABASE_GOSERVE_PROD_URL`), its own credential `GoServe Supabase prod` (id `A8f6jLIcNKE5UDxE`, n8n Custom Auth, host-limited to the prod Supabase host), its own demo token (`GOSERVE_PROD_DEMO_TOKEN` in the vault) and its own webhook path `POST /webhook/gs-order-prod`.
+
+| Workflow | Id |
+|---|---|
+| GS SUB 11 Place order PROD | `Tc0P8KJ9Bvhb9k2g` |
+| GS SUB 12 Change status PROD | `iIc3DLu42UYpBEv4` |
+| GS SUB 13 Decide PROD | `3GtSWAMVcOzYXlJs` |
+| GS SUB 14 Write logs PROD | `WpYOETtn7F9qz1rM` |
+| GS SUB 15 Add event PROD | `Y73A4NHIzQ3Q6EIL` |
+| GS SUB 16 Health PROD | `v8G786W0HQuOxpA1` |
+| GS SUB 91 Scorecard numbers PROD | `i6MABpuUTPoP1Lo6` |
+| GS MAIN 01 Order API PROD | `2WJNspPzlcBmpK8W` |
+| GS MAIN 90 Daily scorecard PROD | `qGuaCxJVmNPtARSp` |
+
+`node ops/n8n/order/verify_live.js --env prod` compares them with the build. To activate them, the owner says "activate" (sub-workflows first, then the two MAINs, as for dev). MAIN 90 PROD would send a second daily message, so activate it only when the owner wants a prod card. The prod app build uses `PROD_VITE_ORDER_URL` = `https://n8n.linkright.in/webhook/gs-order-prod`.
+
 ## Activation (15 Oct 2026)
 
 This n8n version will not publish a workflow whose sub-workflows are not published ("Cannot publish workflow: Node ... references workflow ... which is not published"). So "activate" means all ten, in this order: ERR 00, SUB 11 to 16, SUB 91, then MAIN 01 and MAIN 90. An earlier review reply that said sub-workflows need not be active was wrong. `node ops/n8n/order/verify_live.js` prints the active flag of each.

@@ -64,7 +64,9 @@ function finish(name, nodes, edges, sections, setts) {
   return { name, nodes: laid.nodes, connections: connect(edges), settings: setts, sections, edges };
 }
 
-function build({ ids, token, supabaseUrl, credential, openrouterCredential, chatId }) {
+// env 'prod' builds the PROD copy (story #78): a `PROD` name mark and its own webhook path. Everything else, including the canvas, is the same code.
+function build({ ids, token, supabaseUrl, credential, openrouterCredential, chatId, env }) {
+  const prod = env === 'prod';
   const settings = ids.alert ? Object.assign({}, baseSettings, { errorWorkflow: ids.alert }) : baseSettings;
   const cred = credential || { id: 'REPLACE_CREDENTIAL_ID', name: 'GoServe Supabase dev' };
   const url = supabaseUrl || 'https://REPLACE_PROJECT.supabase.co';
@@ -177,7 +179,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
   const answer = '={{ JSON.stringify({ ok: $json.ok, error: $json.error, message: $json.message, created: $json.created, order: $json.order, decision: $json.decision, jev: $json.jev }) }}';
 
   const nodes = [
-    node('gs-main01-01', 'Order webhook', 'n8n-nodes-base.webhook', 2, { httpMethod: 'POST', path: 'gs-order', responseMode: 'responseNode', options: { allowedOrigins: '*' } }, { webhookId: '6f1d7a52-2c43-4d0b-9b6e-5a1f0c9e7d11' }),
+    node('gs-main01-01', 'Order webhook', 'n8n-nodes-base.webhook', 2, { httpMethod: 'POST', path: prod ? 'gs-order-prod' : 'gs-order', responseMode: 'responseNode', options: { allowedOrigins: '*' } }, { webhookId: prod ? '9a3e6c14-7b52-4d8f-a1c9-2e5b8d0f4a63' : '6f1d7a52-2c43-4d0b-9b6e-5a1f0c9e7d11' }),
     node('gs-main01-02', 'Config', 'n8n-nodes-base.set', 3.4, { mode: 'manual', includeOtherFields: true, assignments: { assignments: [
       { id: 'cfg-1', name: 'kill_switch', type: 'boolean', value: false },
       { id: 'cfg-2', name: 'demo_token', type: 'string', value: token || PLACEHOLDER },
@@ -306,7 +308,9 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send alert'], color: 6 },
   ];
   const alert = finish('GS ERR 00 Alert', aNodes, aEdges, aSections, baseSettings);
-  return { sub11, sub12, sub13, sub14, sub15, sub16, sub91, main01, main90, alert, STATUS_ROLES };
+  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub91, main01, main90, alert };
+  if (prod) for (const k of Object.keys(all)) if (k !== 'alert') all[k].name += ' PROD';   // the one GS ERR 00 alert is shared (one bot, one chat)
+  return { ...all, STATUS_ROLES };
 }
 
 module.exports = { build, PLACEHOLDER };
