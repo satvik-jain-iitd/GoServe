@@ -29,3 +29,4 @@ reads but would send no live events.
 - Clearing the browser data gives a new session. That is fine for a demo; the reset button (story #52) also starts a new one.
 - The kitchen and rider views run in the same browser as the customer view (one PWA, roles are screens), so they share the session.
 - Real logins in MVP 1 replace this. The rule `session_id = auth.uid()` can stay, with `kitchen_id` rules added.
+- Story #52 (ADR-011) adds joined sessions: a device also reads the sessions it joined by link. The reset button clears rows; it does not start a new session.

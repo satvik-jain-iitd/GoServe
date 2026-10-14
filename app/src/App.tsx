@@ -5,16 +5,18 @@ import { kitchenOrders, mergeOrder, riderOrders, type Order, type RiderAction } 
 import { useLiveOrders } from "./lib/useLiveOrders";
 import { loadMenu, type Dish } from "./lib/menu";
 import { addEvent, changeStatus, placeOrder, PlaceError, type OrderDeps, type PlacedOrder } from "./lib/orders";
-import { ensureSession, fetchMenuRows } from "./lib/supabase";
+import { ensureSession, fetchMenuRows, getClient } from "./lib/supabase";
+import { currentSession, joinCode, joinLink, joinSession, rememberJoin, resetSession } from "./lib/session";
 import { MenuScreen } from "./screens/MenuScreen";
 import { CartScreen } from "./screens/CartScreen";
 import { BillScreen } from "./screens/BillScreen";
 import { PlacedScreen } from "./screens/PlacedScreen";
 import { KitchenScreen } from "./screens/KitchenScreen";
 import { RiderScreen } from "./screens/RiderScreen";
+import { DemoBar } from "./screens/DemoBar";
 
 type Step = "menu" | "cart" | "bill" | "placed";
-type Role = "customer" | "kitchen" | "rider";
+type Role = "customer" | "kitchen" | "rider" | "split";
 
 const api = (): OrderDeps => ({ url: import.meta.env.VITE_ORDER_URL, token: import.meta.env.VITE_DEMO_TOKEN, fetchFn: fetch.bind(window) });
 
@@ -31,9 +33,28 @@ export function App() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [arrived, setArrived] = useState<Set<string>>(new Set());
   // The live list runs for the kitchen, the rider, and the customer while the tracker is on screen.
-  const live = useLiveOrders(role === "kitchen" || role === "rider" || (role === "customer" && step === "placed"));
+  // A device that opened a ?join= link joins that session first; the live list waits for it (story #52).
+  const [ready, setReady] = useState(() => !joinCode(window.location.search));
+  const live = useLiveOrders(ready && (role === "kitchen" || role === "rider" || role === "split" || (role === "customer" && step === "placed")));
   const { orders, setOrders } = live;
   const keyRef = useRef<{ fingerprint: string; key: string } | null>(null);
+
+  useEffect(() => {
+    const code = joinCode(window.location.search);
+    if (!code) return;
+    (async () => {
+      try {
+        await ensureSession();
+        await joinSession(getClient(), code);
+        rememberJoin(code);
+      } catch (e) {
+        live.setError(e instanceof Error ? e.message : "Could not join that demo.");
+      } finally {
+        window.history.replaceState(null, "", window.location.pathname);
+        setReady(true);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     loadMenu(fetchMenuRows, window.localStorage).then(setMenu, (e: Error) => setMenuError(e.message));
@@ -57,6 +78,17 @@ export function App() {
     }
   }
 
+  async function reset() {
+    await resetSession(getClient(), await currentSession());
+    setOrders([]);
+    setPlaced(null);
+    setStep("menu");
+    setCart({});
+    setArrived(new Set());
+    keyRef.current = null;
+  }
+  const shareLink = async () => joinLink(window.location.href, await currentSession());
+
   const lines = useMemo(() => cartLines(cart, menu?.dishes ?? []), [cart, menu]);
   const total = cartTotal(lines);
   const count = lines.reduce((n, l) => n + l.qty, 0);
@@ -68,7 +100,7 @@ export function App() {
       const items = toOrderItems(cart);
       const fingerprint = JSON.stringify([items, address.trim()]);
       if (keyRef.current?.fingerprint !== fingerprint) keyRef.current = { fingerprint, key: crypto.randomUUID() };
-      const sessionId = await ensureSession();
+      const sessionId = await currentSession();
       const { order } = await placeOrder(
         { sessionId, key: keyRef.current.key, items, address: address.trim() },
         api(),
@@ -84,26 +116,12 @@ export function App() {
     }
   }
 
-  return (
-    <main className="shell">
-      <h1>GoServe</h1>
-      <nav className="roles" aria-label="Screen">
-        {(["customer", "kitchen", "rider"] as const).map((r) => (
-          <button key={r} type="button" className={role === r ? "btn" : "btn ghost"} aria-pressed={role === r} onClick={() => setRole(r)}>
-            {r === "customer" ? "Customer" : r === "kitchen" ? "Kitchen" : "Rider"}
-          </button>
-        ))}
-      </nav>
-      {role === "kitchen" && (
-        <KitchenScreen orders={kitchenOrders(orders)} loading={live.loading} error={live.error} busyId={busyId}
-          onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} />
-      )}
-      {role === "rider" && (
-        <RiderScreen orders={riderOrders(orders)} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
-          onAct={(o, a) => act(o, a, "rider")} />
-      )}
-      {role === "customer" && (
-        <>
+  const kitchenView = (
+    <KitchenScreen orders={kitchenOrders(orders)} loading={live.loading} error={live.error} busyId={busyId}
+      onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} />
+  );
+  const customerView = (
+    <>
         {menuError && <p role="alert" className="error">{menuError}</p>}
         {!menu && !menuError && <p>Loading the menu…</p>}
         {menu && step === "menu" && (
@@ -119,7 +137,31 @@ export function App() {
             onBack={() => setStep("cart")} onPlace={place} />
         )}
         {step === "placed" && placed && <PlacedScreen order={placed} status={orders.find((o) => o.id === placed.id)?.status ?? placed.status} onAgain={() => { setPlaced(null); setStep("menu"); }} />}
-        </>
+    </>
+  );
+
+  return (
+    <main className={role === "split" ? "shell split" : "shell"}>
+      <h1>GoServe</h1>
+      <nav className="roles" aria-label="Screen">
+        {(["customer", "kitchen", "rider", "split"] as const).map((r) => (
+          <button key={r} type="button" className={role === r ? "btn" : "btn ghost"} aria-pressed={role === r} onClick={() => setRole(r)}>
+            {r === "customer" ? "Customer" : r === "kitchen" ? "Kitchen" : r === "rider" ? "Rider" : "Split"}
+          </button>
+        ))}
+      </nav>
+      <DemoBar onReset={reset} getLink={shareLink} />
+      {role === "kitchen" && kitchenView}
+      {role === "rider" && (
+        <RiderScreen orders={riderOrders(orders)} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
+          onAct={(o, a) => act(o, a, "rider")} />
+      )}
+      {role === "customer" && customerView}
+      {role === "split" && (
+        <div className="panes">
+          <div>{customerView}</div>
+          <div>{kitchenView}</div>
+        </div>
       )}
     </main>
   );

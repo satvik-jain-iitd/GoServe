@@ -168,83 +168,103 @@ Yeh 20 threads PR par post ho chuke hain (review 5513955035). Har block mein Git
 
 <!-- gh-comment-id: 4267533234 --> `app/src/App.tsx:70` · Assumptions · **Top-3**
 > Kitchen tap `session_id: order.session_id` + `actor: "kitchen"` + wahi demo token bhejta hai. Server (`change_status`) sirf order + session + legal step dekhta hai; actor phone ki baat hai (guard_status sirf list check karta hai). Matlab token wala koi bhi "kitchen" ban kar status badal sakta hai. ADR-009 demo ke liye accepted. A44 mein yeh line jodo, aur kitchen login MVP 1 mein?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Yes, anyone with the demo token can send a kitchen tap: the actor is the phone's word (ADR-009, accepted for the demo). I add this line to A44, and a kitchen login is MVP 1.
+- **Status:** answered
 
 <!-- gh-comment-id: 4267533242 --> `app/tests/integration/kitchen.test.ts:37` · Impact · **Top-3**
 > Har run 2+ orders aur events goserve-dev par chhod deta hai (maine abhi gina: 12 orders, 15 events, 0 anon users). F71 cleanup = protection trigger ek transaction ke liye off. Owner se poochh raha hoon. Alternative bina trigger chhue: test rows ko address 'test' se tag rehne do aur reset story #52 ke saath ek `scripts/clear_dev.py` jo dry-run default ho aur dev project ref ke bina refuse kare. Kaunsa?
-- **Status:** open
+- **Reply (klickbae8yt-star):** I prefer the safer one: tag test rows and write a `clear_dev` script that is a dry run by default and refuses any project but dev, run with the owner's yes. Waiting for the owner on F71.
+- **Status:** answered
 
 <!-- gh-comment-id: 4267533253 --> `app/src/App.tsx:42` · Assumptions · **Top-3**
 > A44: kitchen = isi browser ka session, sirf apne orders. Do device (customer phone + kitchen tablet) par demo kaam nahi karega (F64 d, story #52). 18 Oct demo ek device split view hai ya do device? Agar do, to #52 ko #50 se pehle lena hoga.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Two devices will not work until the session can be shared (#52). If the 18 Oct demo is two devices, #52 must come before #50. It is the owner's call; until then I build #50 on one device with split view.
+- **Status:** answered
 
 <!-- gh-comment-id: 4267533264 --> `app/src/lib/kitchen.ts:26` · Understanding
 > `updated_at` string compare (`>`): REST row, Realtime record aur `to_jsonb` (change_status) teeno Postgres ISO `+00:00` dete hain, to aaj sahi. Koi source kabhi `Z` ya chhota fraction bheje to compare chupchaap galat. `Date.parse` ek line hai, ya ek unit test "same instant, different format" — kaunsa?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Agreed: `Date.parse` is one line and safer than a string compare. I add it with a unit test 'same instant, different format'.
+- **Status:** answered
 
 <!-- gh-comment-id: 4267533268 --> `app/src/lib/orders.ts:10` · Understanding
 > `PlacedOrder.updated_at?` optional, par `change_status` hamesha `to_jsonb(v_order)` deta hai (updated_at trigger se). Required karo to `tap()` ka `?? order.updated_at` fallback hat jaata hai aur purana stamp kabhi nahi bachta. Ponytail: ek type change.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Yes, making `updated_at` required is one type change and removes the fallback. I will do it.
+- **Status:** answered
 
 <!-- gh-comment-id: 4267533280 --> `app/src/lib/live.ts:20` · Purpose
 > "SUBSCRIBED par ek baar reload" first-moment order ke liye. Socket toot kar jude (reconnect) to supabase-js phir SUBSCRIBED deta hai? Agar haan, reload har rejoin par chalega (acha), par test nahi hai. Ek line comment ya e2e "reconnect" case?
-- **Status:** open
+- **Reply (klickbae8yt-star):** supabase-js sends SUBSCRIBED again after a reconnect, so the reload would run on every rejoin. I add a one-line comment; a reconnect e2e test is not worth it now.
+- **Status:** answered
 
 <!-- gh-comment-id: 4267533287 --> `app/src/lib/live.ts:17` · Risk
 > Filter + RLS authenticated JWT par. Anonymous JWT 1 ghante ka hai; supabase-js refresh ke baad naya token channel ko deta hai? Kitchen tab demo rehearsal mein ghante bhar khula rahe to events rukne nahi chahiye. Live row mein "1 hour open" check jodo?
-- **Status:** open
+- **Reply (klickbae8yt-star):** supabase-js passes the refreshed token to the channel, but I did not prove it. I add 'tab open for 1 hour' to the live checks.
+- **Status:** answered
 
 <!-- gh-comment-id: 4267533293 --> `app/src/lib/live.ts:6` · Understanding
 > `select("*")` bina limit, RLS se apna session, cap 20 → max 20 rows. Delivered bhi aate hain, `kitchenOrders` phone par hataata hai. Aaj theek; #50 ke baad list badhegi — server par `.in('status', ...)` tab, ya abhi?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fine for now: at most 20 rows per session. When the list grows after #50, the server filter `.in('status', ...)` goes in then.
+- **Status:** answered
 
 <!-- gh-comment-id: 4267533301 --> `app/src/App.tsx:35` · Alternatives
 > `sessionRef` set hota hai, kahin padha nahi jaata (dead). Hatao. Saath mein: Kitchen tab kholte hi `ensureSession` anonymous sign-in karta hai bina order ke — intended (30/hour limit ke saath)?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Removing `sessionRef`; it is dead. The anonymous sign-in on opening the Kitchen tab is intended (one per browser, within the 30 an hour limit).
+- **Status:** answered
 
 <!-- gh-comment-id: 4267533307 --> `app/tests/e2e/kitchen.spec.ts:131` · Testability
 > Naam "keeps the cart", assert sirf heading "GoServe". Menu stand-in `[]` deta hai, to menu alert dikhta hai aur cart banta hi nahi. Test wahi prove kare jo naam kehta hai: dish add → Kitchen → Customer → "View cart (1)". Ya naam badlo.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Right, the test did not prove its name. I change it: add a dish, go to Kitchen and back, and check 'View cart (1)'.
+- **Status:** answered
 
 <!-- gh-comment-id: 4267533309 --> `app/tests/e2e/kitchen.spec.ts:40` · Testability
 > `SETTLE_MS = 1500` + waiting queue: client join reply bind hone ka samay. 5 runs green, CI retry 1. Timing hack flake ka source ban sakta hai. Kya client ke `system` ok message (postgres_changes bound) ka wait zyada pakka hai? INFERRED. CI mein ek bhi retry dikhe to LEARNINGS.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Agreed that 1500 ms is a timing hack. Waiting for the client's 'bound' signal is better but I have not checked it. If CI ever needs a retry on this test, I switch and write it in LEARNINGS.
+- **Status:** answered
 
 <!-- gh-comment-id: 4267533315 --> `app/tests/e2e/kitchen.spec.ts:74` · Understanding
 > e2e 5 s wait, 2 s bound sirf integration par (1.5 s settle ke baad). Story S1 "within 2 seconds" ka proof CI mein nahi hai. Activation ke baad dev URL par bhi 2 s naapo (console timestamp) — live row 83 mein likho kaun aur kaise.
-- **Status:** open
+- **Reply (klickbae8yt-star):** True: the 2 second proof is only in the integration test. After activation I measure it on the dev URL with a console timestamp and write who and how in the live row.
+- **Status:** answered
 
 <!-- gh-comment-id: 4267533321 --> `app/tests/integration/kitchen.test.ts:10` · Risk
 > Service role key env se (code mein nahi: sahi). Par koi "dev only" check nahi: galti se prod keys env mein hon to prod par orders banenge. `skipIf(!url.includes('<dev project ref>'))` ek line hai.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Good catch. I add a guard that skips the integration tests unless the Supabase url is the dev project.
+- **Status:** answered
 
 <!-- gh-comment-id: 4267533327 --> `app/tests/integration/kitchen.test.ts:51` · Impact
 > "server needs about a second after SUBSCRIBED": asli app mein bhi us second ka order miss ho sakta hai; reload INSERT cover karta hai, UPDATE nahi. Demo mein kitchen tab pehle khulta hai, order baad mein — theek. A44 ya F-row mein note?
-- **Status:** open
+- **Reply (klickbae8yt-star):** True, and the first-moment gap covers INSERT (the reload) but not UPDATE. In the demo the Kitchen tab opens first. I note it in A44.
+- **Status:** answered
 
 <!-- gh-comment-id: 4267533336 --> `app/src/lib/orders.ts:17` · Purpose
 > `callApi` shared: place aur status ek hi window. `PlaceError` naam ab status ke liye bhi. `ApiError` rename ek line, ya rehne do (ponytail)? Sirf naam.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Keeping `PlaceError` (ponytail); only the name is off. A rename to `ApiError` is easy when we touch the file again.
+- **Status:** answered
 
 <!-- gh-comment-id: 4267533343 --> `app/src/screens/KitchenScreen.tsx:28` · Future
 > `disabled={busyId === o.id}`: ek order par double tap rukta hai, do orders par parallel taps chalte hain (theek). Accept ke baad "Start" server ke jawab se aata hai, optimistic nahi. Acha. Printer/multi-tablet story ponytail mein — #50 ke baad "ops stub" list (spec step 7) isi screen se?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Yes, an ops list (spec step 7) can come from the same list code later. Printer and multi-tablet stay out.
+- **Status:** answered
 
 <!-- gh-comment-id: 4267533353 --> `app/src/styles/app.css:52` · Understanding
 > Status rang tokens se (`--gs-status-*`, maine check kiya: sab hain). Label "Cooking" = `preparing`; spec step 5 customer tracker bhi "cooking" bolta hai. #50 mein wahi `statusLabel` map share karo, do copies nahi.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Agreed. #50 shares the same `statusLabel` map, not a second copy.
+- **Status:** answered
 
 <!-- gh-comment-id: 4267533361 --> `docs/assumptions.md:54` · Assumptions
 > A44 teen baatein: tab in same app; only this browser's orders; no button after Ready. Owner se alag alag haan le raha hoon.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Noted, waiting for your yes on each part of A44.
+- **Status:** answered
 
 <!-- gh-comment-id: 4267533365 --> `docs/follow-ups.md:78` · Future
 > F71: anonymous sign-ins 30/hour/IP. Ek device ek session → theek. Par #56 ke 20 runs agar har run reset (#52 = naya anonymous user) kare, rehearsal + demo same hour mein 30 cross ho sakta hai. #52 design mein "reset = same user, clear rows" vs "new user" tay karo.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Good point. #52 must decide: reset = a new anonymous user (counts against 30 an hour) or the same user with rows cleared. I write this into the #52 design.
+- **Status:** answered
 
 <!-- gh-comment-id: 4267533374 --> `docs/tests/test-cases.md:84` · Impact
 > Phone steps ache (6). Step 3 airplane mode mein Kitchen tap karein to "Could not load orders" dikhega (sign-in/fetch fail). Customer ko offline kitchen nahi chahiye; airplane story #53 ke liye note karo ki kitchen tab offline kya dikhaye.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Right: in airplane mode the Kitchen tab shows 'Could not load orders'. I note for #53 what the kitchen should show offline.
+- **Status:** answered
 
 ---
 

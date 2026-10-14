@@ -396,3 +396,40 @@ Har naya technical word yahan. Simple Hindi mein. Ek line ka "yeh kya hai", ek l
 - **Kya hai:** Customer aur kitchen dono ek app mein hain, role tabs se. Ek browser = ek session (ADR-010, A44).
 - **Analogy:** Ek booklet, do cover: ek hi kitab, do taraf se padhi jaati hai.
 - **File:** `app/src/App.tsx` (line 119).
+
+## PR #71 se
+
+### Event, not status
+- **Kya hai:** Kuch baatein order ke saath note hoti hain, step nahi (jaise "rider raasta mein hai"). Inka alag write path aur alag rules hote hain: sirf ek baar, sirf sadak par.
+- **Analogy:** Stamp aur margin note mein fark: stamp slip ki haalat badalta hai, note sirf bata deta hai.
+- **File:** `app/supabase/migrations/0005_rider_event.sql` (lines 4–27).
+
+### Row lock makes the once-check safe
+- **Kya hai:** Order ki row par lock lagta hai, to do taps ek ke baad ek chalte hain. "Pehle se hai to mana karo" wala check race se nahi tootta.
+- **Analogy:** Slip par ek waqt mein ek hi pen.
+- **File:** `app/supabase/migrations/0005_rider_event.sql` (lines 13, 20).
+
+### One hook, three rooms
+- **Kya hai:** Live order list ek hi state hai, jo us screen ke liye chalu hoti hai jisko chahiye (kitchen, rider, customer placed step).
+- **Analogy:** Ek board boy, jo kamra khula ho wahin sunta hai.
+- **File:** `app/src/lib/useLiveOrders.ts` (line 13).
+
+### Progress strip from a status list
+- **Kya hai:** Ek ordered list se har box ka haal (done, current, todo) nikalta hai. List badli to strip apne aap badal jaati hai.
+- **Analogy:** Chhe box ki strip, ek hi box roshan.
+- **File:** `app/src/lib/kitchen.ts` (lines 41–45).
+
+### Phone memory vs server truth
+- **Kya hai:** Phone ek Set mein yaad rakhta hai ki Arriving tap ho gaya. Server ka "already done" hi asli sach hai.
+- **Analogy:** Rider ki diary mein likha hai, par dhaba ka register hi pakka hai.
+- **File:** `app/src/App.tsx` (line 50); F72 b.
+
+### Moving the bar in the same PR
+- **Kya hai:** Ek limit test (node cap 15) isi PR mein 20 kiya gaya. Rulebook mein yeh allowed hai, par zor se bolna chahiye.
+- **Analogy:** Board par likha "15 darwaze" repaint karke "20" kar dena.
+- **File:** `ops/n8n/order/order.test.js` (line 134).
+
+### Gate clerk on names
+- **Kya hai:** Commit subject ki lambai CI check karta hai. Code kitna bhi sahi ho, 72 se lamba naam fail hota hai.
+- **Analogy:** Gate clerk badge ki length naapta hai.
+- **File:** `scripts/guard.py` (line 48).

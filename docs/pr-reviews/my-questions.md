@@ -93,3 +93,11 @@ Apne sawaal yahan. Status: **open** (jawab nahi mila) / **answered** / **dropped
 | Q35 | Kitchen tap demo token ke saath `actor: "kitchen"` bhejta hai. Server sirf order, session aur step dekhta hai. Matlab token wala koi bhi kitchen ban kar status badal sakta hai. A44 mein yeh line jodo, aur kitchen login MVP 1 mein? | PR #70 / app/src/App.tsx line 70 (Top-3) | nahi | _(PR #70 sync ke baad bharega)_ | open |
 | Q36 | Har integration run goserve-dev par 2+ orders aur events chhod deta hai. Cleanup ke liye protection trigger off karna padega (F71). Alternative: test rows ko tag rakho aur story #52 mein dry-run wala `clear_dev.py`. Kaunsa? | PR #70 / app/tests/integration/kitchen.test.ts line 37 (Top-3) | nahi | _(PR #70 sync ke baad bharega)_ | open |
 | Q37 | Kitchen = isi browser ka session. Customer phone aur kitchen tablet par demo nahi chalega. 18 Oct demo ek device split view hai ya do device? Agar do, to #52 ko #50 se pehle lena hoga. | PR #70 / app/src/App.tsx line 42 (Top-3) | nahi | _(PR #70 sync ke baad bharega)_ | open |
+
+## PR #71 ke baad
+
+| # | Sawaal | Kahan poocha (PR#/file) | Jawab mila? | Jawab | Status |
+|---|---|---|---|---|---|
+| Q38 | Guard CI laal hai: commit `af59a6e` ka subject 73 characters hai (limit 72). Subject chhota karo aur force-push karo; yeh ek hi must-fix hai. | PR #71 / docs/process-trace.md line 162 (Top-3) | nahi | _(PR #71 sync ke baad bharega)_ | open |
+| Q39 | Arriving tap customer ko nahi dikhta (A45). Demo mein iska fayda kya hai: sirf `order_events` row, tracker par ek line, ya ops screen (#51)? | PR #71 / app/src/lib/kitchen.ts line 36 (Top-3) | nahi | _(PR #71 sync ke baad bharega)_ | open |
+| Q40 | Node cap 15 → 20 isi PR mein hua. Agla action 20 chhu lega: MAIN 01 split karein ya 20 par rukein? | PR #71 / ops/n8n/order/order.test.js line 134 (Top-3) | nahi | _(PR #71 sync ke baad bharega)_ | open |

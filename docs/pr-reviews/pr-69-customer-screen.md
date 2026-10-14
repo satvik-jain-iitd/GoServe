@@ -159,83 +159,103 @@ Yeh 20 threads PR par post ho chuke hain (review 5511908806). Har block mein Git
 
 <!-- gh-comment-id: 4265736779 --> `app/src/App.tsx:39` · Risk · **Top-3**
 > Fingerprint = items + address, same cart → same key (e2e proves). Ek case: request server tak pahunchi, order bana, jawab phone tak nahi aaya (timeout). Customer cart badal kar phir try kare → naya key → doosra order. Demo mein cap 20 brake hai. Pilot ke liye "reply lost" plan — pehle apni session ke `orders` padho (RLS `orders_own_session` hai) phir naya key?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Yes, a lost reply plus a changed cart can make a second order. Demo scale accepts it (cap 20). For a pilot, the phone reads its own session's orders first (RLS allows it), then picks a key. Logged in F70.
+- **Status:** answered
 
 <!-- gh-comment-id: 4265736784 --> `app/src/lib/supabase.ts:28` · Assumptions · **Top-3**
 > `signInAnonymously` → session id = anonymous user id (ADR-010). Supabase session localStorage mein rehti hai, to ek phone = ek session hamesha; 20 orders ke baad (A42 cap) yeh phone 429 par atak jayega jab tak site data clear na ho. Demo script 20 runs (#56) hai aur reset story #52 hai — un dono se pehle phone par reset ka raasta kya hai?
-- **Status:** open
+- **Reply (klickbae8yt-star):** A phone that hits the 20-order cap stays stuck until the site data is cleared. The reset button comes in story #52 (a new session). Until then clearing site data in Chrome is the way. F70 notes it.
+- **Status:** answered
 
 <!-- gh-comment-id: 4265736794 --> `.github/workflows/deploy-dev.yml:36` · Impact · **Top-3**
 > `VITE_DEMO_TOKEN` build ke andar jaata hai: dev URL ka JS kholne wala koi bhi token padh sakta hai (ADR-009 "public by design", kill switch + caps = brakes). Secrets mein rakhne ka fayda sirf dev/prod alag rakhna hai, chhupana nahi. Yeh baat kisi assumption row mein likhi hai? A43 nahi kehta.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Right: secrets here are for keeping dev and prod apart, not for hiding. The token is public by design (ADR-009); the kill switch and the 20-order cap are the brakes. I add it to F70 so it is written in one place.
+- **Status:** answered
 
 <!-- gh-comment-id: 4265736796 --> `app/src/lib/orders.ts:29` · Understanding
 > Server ka `message` seedha screen par (503 paused, 429 cap, 409 key clash), shape check ke saath; 502 HTML par generic text (test proves). Server hamara n8n hai to theek. Sawaal: 409 (same key, different cart, F66 e) ka message customer ke liye kya kehta hai, aur tab key naya banta hai ya wahi rehta hai?
-- **Status:** open
+- **Reply (klickbae8yt-star):** For 409 the server's message is shown as it is, and the key stays the same until the cart or address changes. A friendlier 409 message is a UI job for the tracker story; the same-key-different-cart case is F66(e).
+- **Status:** answered
 
 <!-- gh-comment-id: 4265736799 --> `app/src/lib/supabase.ts:19` · Risk
 > `.retry(false)` + 4 s abort: e2e ne pakda ki library 7 s retry karti thi (LEARNINGS). `navigator.onLine === false` par turant throw; Android par Wi-Fi connected-but-dead mein onLine true rehta hai → 4 s wait phir copy. Theek. Prod Supabase (F69 a) par bhi 4 s kaafi hai, ya pehli call (cold) zyada le sakti hai?
-- **Status:** open
+- **Reply (klickbae8yt-star):** 4 s is enough for dev. A cold first call to prod can take longer, so we measure it on the first release and raise the wait if needed (F70).
+- **Status:** answered
 
 <!-- gh-comment-id: 4265736803 --> `app/src/lib/menu.ts:21` · Purpose
 > "empty answer never replaces a good copy": kitchen sab dishes `available=false` kar de to purana menu dikhega aur order server par unavailable dish se fail hoga (0003 line 29). Demo script mein dish off karna hai? Agar haan, customer ko kya message dikhega?
-- **Status:** open
+- **Reply (klickbae8yt-star):** If the kitchen turns every dish off, the old copy shows and the server refuses with an invalid-item error that the screen shows. The demo script does not switch dishes off. A better empty-menu message is F70.
+- **Status:** answered
 
 <!-- gh-comment-id: 4265736810 --> `app/src/lib/menu.ts:8` · Testability
 > `readCopy` sirf id/name/price_paise check karta hai, photo fields null allowed; key `gs.menu.v1` — schema badle to v2 aur purani copy khud gir jayegi. Acha pattern. Ek unit test "v1 key with a v2 shape" chahiye ya yeh kaafi hai?
-- **Status:** open
+- **Reply (klickbae8yt-star):** The v1 key is enough for now. A 'v1 key with a v2 shape' test comes the day the shape changes.
+- **Status:** answered
 
 <!-- gh-comment-id: 4265736816 --> `app/src/lib/cart.ts:5` · Understanding
 > `MAX_QTY = 20` = `place_order` ka per-dish limit, do jagah ek number. Test sirf client ka 20 pakadta hai; server badle to phone ko pata nahi (server 400 dega, message dikhega). Comment kaafi hai ya server limit ka naam/test jodna hai?
-- **Status:** open
+- **Reply (klickbae8yt-star):** One number in two places, with a comment on both. If the server limit changes, the server answers 400 and the screen shows its message. I will add a test that reads the SQL limit if it ever moves.
+- **Status:** answered
 
 <!-- gh-comment-id: 4265736817 --> `app/src/lib/cart.ts:20` · Purpose
 > Phone sirf id + qty bhejta hai, price nahi (e2e `not.toMatch(/price|total/)`). Bill screen ka total copy ke price se, placed screen server total dikhata hai. Dono alag ho sakte hain (price badli). Customer ko "total badla" bolna chahiye, ya demo ke liye ignore (A43 note)?
-- **Status:** open
+- **Reply (klickbae8yt-star):** For the demo the bill uses the menu price on the phone and the placed screen shows the server total. They can differ only if a price changes in between. A 'total changed' message is F70.
+- **Status:** answered
 
 <!-- gh-comment-id: 4265736820 --> `app/src/App.tsx:51` · Impact
 > `ensureSession` ka error bhi isi catch mein ("Could not start a session"). Anonymous sign-in dev par on hai (PR #65 ke 21 anon users proof). Prod project par on hai? F69 (a) mein chaar prod secrets hain par "anonymous sign-in on" nahi likha.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Anonymous sign-in must be on for prod too. I add it to F69(a) next to the four prod secrets.
+- **Status:** answered
 
 <!-- gh-comment-id: 4265736825 --> `app/src/App.tsx:12` · Alternatives
 > Chaar steps state mein, router nahi: URL nahi badalta, Android back button PWA band kar sakta hai. Demo ke liye theek. #49 kitchen aur #50 tracker ke saath route chahiye hoga — tab router aayega ya step state hi badhega? ADR?
-- **Status:** open
+- **Reply (klickbae8yt-star):** State only for now. The tracker (#50) needs a route (the back button and links), so I will decide router or step state in #50 and write an ADR if it changes the structure.
+- **Status:** answered
 
 <!-- gh-comment-id: 4265736830 --> `app/src/screens/CartScreen.tsx:30` · Risk
 > Address `maxLength 300` sirf phone par; server sirf khaali check karta hai (0004 line 19), column text hai to curl se 10 KB bhi jayega. Trust boundary: `check_body.js` ya `place_order` mein length cap? F-row kaafi.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Right, the 300 limit is on the phone only. A server-side cap in `place_order` is F70.
+- **Status:** answered
 
 <!-- gh-comment-id: 4265736834 --> `app/src/screens/MenuScreen.tsx:13` · Future
 > Photos Commons se, lazy, offline mein nahi dikhte (F69 c). Airplane-mode demo (#53) ke liye service worker image cache (runtimeCaching, kuch lines) chahiye hoga ya naam kaafi hain? Owner ka call.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Not decided. For the airplane-mode demo (#53) a service-worker image cache is a few lines. It is the owner's call; names show today.
+- **Status:** answered
 
 <!-- gh-comment-id: 4265736842 --> `app/src/screens/PlacedScreen.tsx:8` · Understanding
 > Order number = id ke pehle 8 chars. Kitchen screen (#49) bhi yahi 8 chars dikhaye to customer aur kitchen ek number bolein. Kahan tay hai (spec ya ADR)?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Not written down yet. I will make the kitchen screen (#49) show the same 8 characters and put the rule in the spec: order number = first 8 characters of the order id.
+- **Status:** answered
 
 <!-- gh-comment-id: 4265736849 --> `app/tests/e2e/customer.spec.ts:116` · Testability
 > `serviceWorker.ready` phir `setOffline` + reload: app shell SW se, menu localStorage se. Acha. Par Chromium Pixel 7 emulation hai; real Android Chrome ka SW first-load alag ho sakta hai → "founder's phone" row Pending. Phone check merge ke baad dev URL par — coder likhe owner ko kya tap karna hai (install, airplane, reload)?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Phone steps are in test-cases (merge note below): open the dev URL, wait for the menu, Add to Home Screen, open it, switch on airplane mode, close and open the app, check the menu shows with the saved-menu note.
+- **Status:** answered
 
 <!-- gh-comment-id: 4265736851 --> `app/playwright.config.ts:16` · Assumptions
 > `reuseExistingServer: !CI`: local par agar koi preview real keys se chal raha ho to specs `test.supabase.co` route nahi pakdenge aur test asli network par jayega. Chhota: comment ya alag port.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Good point. I will add a comment, and make the e2e server use its own port so a real-keys preview cannot be reused by mistake.
+- **Status:** answered
 
 <!-- gh-comment-id: 4265736854 --> `scripts/test_deploy_dev.py:18` · Testability
 > Test YAML text padhta hai (#62 jaisa). Chaar VITE secrets repo mein hain (maine `gh api` se dekha). Pehla asli proof = merge ke baad deploy run + dev URL par menu. Kaun check karega aur kahan likhega — coder trace row ya owner phone?
-- **Status:** open
+- **Reply (klickbae8yt-star):** I check the deploy-dev run and the dev URL right after merge and write it in the trace and test-cases. The owner then checks on the phone.
+- **Status:** answered
 
 <!-- gh-comment-id: 4265736863 --> `docs/assumptions.md:53` · Purpose
 > A43 mein chaar faisle ek row: no tax line, free delivery, no dish detail, one address box. Owner se main chat mein alag alag haan le raha hoon; tum confirm ke baad row ko Confirmed karna.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Noted. I mark A43 Confirmed after your answers.
+- **Status:** answered
 
 <!-- gh-comment-id: 4265736866 --> `docs/follow-ups.md:76` · Future
 > F69 (a) prod ke chaar VITE secrets release PR (F61 Cloudflare project) se pehle. "Deploy twice" (#68) ke hisaab se prod MAIN 01 ka webhook path alag hoga — path naam (`gs-order` vs `gs-order-prod`?) aur prod Supabase par anonymous sign-in on, dono F69 (a) mein likho.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Added to F69(a): prod webhook path (`gs-order` for dev, a different path for prod) and anonymous sign-in on for prod.
+- **Status:** answered
 
 <!-- gh-comment-id: 4265736874 --> `docs/tests/test-cases.md:76` · Impact
 > Live row "real order from dev URL saved in Supabase" activation ke baad. Yeh #48 ka DoD hai ya #50 ka? Agar #48 ka, to story close activation par rukti hai: owner ko merge ke baad "activate" bolna hoga.
-- **Status:** open
+- **Reply (klickbae8yt-star):** The live row belongs to #48's Done. The story stays open until you say activate and the row passes.
+- **Status:** answered
 
 ---
 

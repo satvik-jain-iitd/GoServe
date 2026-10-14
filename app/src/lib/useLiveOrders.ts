@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { mergeOrder, type Order } from "./kitchen";
 import { fetchOrders, watchOrders } from "./live";
-import { ensureSession, getClient } from "./supabase";
+import { currentSession } from "./session";
+import { getClient } from "./supabase";
 
 export function useLiveOrders(active: boolean) {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -18,13 +19,13 @@ export function useLiveOrders(active: boolean) {
     setError(null);
     (async () => {
       try {
-        const sessionId = await ensureSession();
+        const sessionId = await currentSession();
         const client = getClient();
         const reload = async () => {
-          const rows = await fetchOrders(client);
+          const rows = await fetchOrders(client, sessionId);
           if (alive) setOrders((cur) => rows.reduce(mergeOrder, cur));
         };
-        stop = watchOrders(client, sessionId, (o) => alive && setOrders((cur) => mergeOrder(cur, o)), () => void reload().catch(() => {}));
+        stop = watchOrders(client, sessionId, (o) => alive && setOrders((cur) => mergeOrder(cur, o)), () => void reload().catch(() => {}), (id) => alive && setOrders((cur) => cur.filter((o) => o.id !== id)));
         await reload();
       } catch {
         if (alive) setError("Could not load orders. Check your connection and try again.");
