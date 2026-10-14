@@ -21,6 +21,12 @@ class DeployApp(unittest.TestCase):
         for s in ("CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"):
             self.assertIn(f"secrets.{s}", self.text)
 
+    def test_the_prod_build_gets_its_own_keys_from_prod_secrets(self):
+        # Story #78: the dev build uses VITE_* secrets (dev Supabase and dev webhook). Prod must not reuse them.
+        for k in ("VITE_SUPABASE_URL", "VITE_SUPABASE_ANON_KEY", "VITE_ORDER_URL", "VITE_DEMO_TOKEN"):
+            self.assertIn(f"{k}: ${{{{ secrets.PROD_{k} }}}}", self.text)
+            self.assertNotIn(f"secrets.{k}", self.text)
+
     def test_s2_site_deploy_is_untouched(self):
         site = read("deploy.yml")
         self.assertIn("--project-name=goserve --branch=main", site)
