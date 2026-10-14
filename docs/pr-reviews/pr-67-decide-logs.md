@@ -3,8 +3,8 @@
 - **Branch:** `feat/46-decide-logs` → `dev`
 - **Author:** klickbae8yt-star (development account)
 - **Story / issue:** #46 "Decide and logs workflows (SUB 13, SUB 14)" (epic #35)
-- **State:** **APPROVED** — head `50853ce` (2026-10-14, review 5511373264 by `satvik-jain-iitd`), CI green, merge pending (owner: A42 + F67 yes)
-- **Files:** 26 (5 of them notebook files under `docs/pr-reviews/`) · **Lines:** +1316 / -37 (1 commit, subject 59 chars)
+- **State:** **APPROVED** — head `d1b2f62` (2026-10-14, review 5511731900 by `satvik-jain-iitd`), CI green, merge pending
+- **Files:** 26 (5 of them notebook files under `docs/pr-reviews/`) · **Lines:** +1316 / -37 (1 commit, subject 59 chars) (review ke baad: 27 files; fix commit d1b2f62)
 - **Reviewer:** satvik-jain-iitd
 - **Link:** https://github.com/satvik-jain-iitd/GoServe/pull/67
 
@@ -275,15 +275,21 @@ Samajhne wali baat: "nahi banaya" bhi design decision hai. Riders table nahi ban
 
 <!-- gh-comment-id: 4265247252 -->
 > Cap `count(*) >= 20` phir insert — koi lock nahi. Do calls ek saath (dono 19 dekhein) to 21 ho sakte hain. Demo scale par theek; `perform pg_advisory_xact_lock(hashtext(p_session))` ek line hai — add karein ya accept karke A42 mein likhein?
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Demo scale par accept. Advisory lock F68(b) mein hai. Ek hi waqt ki do calls 21 orders bana sakti hain, jisse koi nuksaan nahi hota.
+- **Lesson:** Race demo ke liye accept hai; lock ek line baad mein (F68 b).
 
 <!-- gh-comment-id: 4265247254 -->
 > Retry lookup cap se pehle hai, isliye cap par bhi purana token chalta hai (test proves). Ab `on conflict do nothing` + doosra lookup (line 61) sirf same-moment race ke liye hai — sahi samjha?
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Haan. Pehla lookup cap se pehle retry ko jawab deta hai. `on conflict do nothing` ke baad wala doosra lookup sirf do retries ke same moment ke liye hai.
+- **Lesson:** Pehla lookup retry sambhalta hai; doosra sirf same-moment race ke liye.
 
 <!-- gh-comment-id: 4265247258 -->
 > `place_order` pura copy hua (0003 ke 60 lines + cap). Har badlav = poori copy. Ek function source file + migration usse le — Supabase CLI convention aisi nahi, to ponytail accept; bas LEARNINGS/ADR mein ek line "functions are replaced whole, read the latest migration" likh do?
-- **Status:** open
+- **Status:** answered → **code badla**
+- **Reply (klickbae8yt-star):** Sahi, har migration mein function poora replace hota hai. F68(f) mein 'read the latest migration' jodi, aur LEARNINGS mein ek line.
+- **Lesson:** Function poora replace hota hai; hamesha latest migration padho.
 
 ### `ops/n8n/order/build.js` (+88/-8)
 
@@ -318,19 +324,27 @@ Samajhne wali baat: "nahi banaya" bhi design decision hai. Riders table nahi ban
 
 <!-- gh-comment-id: 4265247263 -->
 > `Ask Jev` 2 tries × 900 ms + 200 ms wait = ~2 s worst case per decision. Demo metrics panel "decision time" dikhayega. Retry 1 (ya off) aur sirf timeout 900 kaafi nahi?
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Contract mein ek retry likha hai, isliye do tries rakhe. Worst case ~2 s sirf tab hai jab Jev down ho; aam case 900 ms se kaafi neeche hai.
+- **Lesson:** Contract ke hisaab se ek retry. Panel slow dikhaye to retry band karo.
 
 <!-- gh-comment-id: 4265247266 -->
 > `params_version: 1` aur jev_* hardcoded — par `params` table khaali hai (live: 0 rows), to version 1 kisi row ki taraf nahi dekhta. F66(b) ne kaha tha "Config reads params with SUB 14" — yeh PR SUB 14 hai, phir bhi nahi hua. Kab: #47 ke saath, ya ek chhota alag PR?
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Is PR mein nahi hua. `params` table khaali hai, to version 1 kisi row ko nahi dekhta. Config ko `params` se padhna ek chhota alag step hai, #47 ke saath (F66 b).
+- **Lesson:** Config `params` se #47 ke saath aayega (F66 b), apna chhota step.
 
 <!-- gh-comment-id: 4265247270 -->
 > `Respond result` → `Log run` → SUB 14: jawab ke baad log, acha (critical path se bahar). Par gate ke refusals (401/503/400) log nahi hote (documented). Scorecard (#47) ko refusal counts chahiye honge — n8n executions se ginoge, ya REFUSE branch ke baad bhi SUB 14 call?
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Abhi refusals n8n executions se ginte hain. Agar scorecard ko unki row chahiye, to refusal branches se SUB 14 call hoga (F68 d).
+- **Lesson:** Refusals executions se ginne hain jab tak scorecard row na maange (F68 d).
 
 <!-- gh-comment-id: 4265247275 -->
 > `rpcPost` `Prefer: return=minimal` → khaali 201; `decide_done` 200/201/204 maanta hai, baaki 502. Matlab `decision_log` insert fail = rider assign bhi nahi (502), jabki rule pick taiyaar tha. "Decision only if stored" jaan-boojh kar (audit first)? Demo mein DB hiccup par order atak jayega — accept?
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Jaan-boojh kar: audit first. Row nahi, to decision wapas nahi. Demo mein DB hiccup ka risk hai. F68(c) mein logged hai; badalna aasaan hai ('rule pick anyway').
+- **Lesson:** Audit first: row nahi, decision nahi. Demo dikhaye to revisit (F68 c).
 
 ### `ops/n8n/order/code/decide_guard.js` (+24)
 
@@ -358,11 +372,15 @@ Samajhne wali baat: "nahi banaya" bhi design decision hai. Riders table nahi ban
 
 <!-- gh-comment-id: 4265247244 -->
 > **Top-3** — Riders list phone se aata hai (A42: "riders come in the request"). Build design §7 kehta hai phone kabhi rider decide nahi karta, server dobara check karta hai — par yahan `free` flag aur distance phone ke bataye hue hain, to rule phone ke state par chalta hai. Demo (ek device) theek; pilot se pehle riders table / server state chahiye. A42 mein yeh trust-boundary line add karo?
-- **Status:** open
+- **Status:** answered → **code badla**
+- **Reply (klickbae8yt-star):** Maan liya. A42 mein trust-boundary line d1b2f62 mein jodi: `free` flag aur distance phone ki baat hain, ek demo device ke liye theek hai. Server state F68(e) mein hai, pilot se pehle.
+- **Lesson:** Trust boundary assumption mein likho. Pilot se pehle server state chahiye (F68 e).
 
 <!-- gh-comment-id: 4265247288 -->
 > Jev ko chat/completions se JSON prompt bheja. CLAUDE.md §15 Jev ko "non-autoregressive decision API: choice/score/boolean" kehta hai — OpenRouter par Jev ka koi structured choice mode hai jo text-JSON se seedha fit ho? Ya chat JSON hi raasta hai (check kiya)?
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** OpenRouter par Jev ka structured choice mode mujhe nahi mila. Contract ke hisaab se chat JSON hi raasta hai. Wrapper invalid JSON reject karta hai aur rule par wapas jaata hai. Live call confirm karegi.
+- **Lesson:** Structured mode nahi mila: chat JSON, strict parser, rule fallback.
 
 ### `ops/n8n/order/code/decide_result.js` (+26)
 
@@ -390,7 +408,9 @@ Samajhne wali baat: "nahi banaya" bhi design decision hai. Riders table nahi ban
 
 <!-- gh-comment-id: 4265247247 -->
 > **Top-3** — Contract D1 "Guard after Jev answers": Jev ka chuna rider free/close na ho to fallback. Yahan rule hamesha decide karta hai (theek), par Jev busy rider (jaise r3, options mein hai) ko 0.9 se chune to `jev_status: 'ok'`, `agrees: false` record hota hai. Training labels ke liye alag `guard_failed` status rakhein?
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Clean labels ke liye accha idea. Jev busy ya door wala rider chune to `guard_failed` status F68(a) mein logged hai. Abhi woh `ok` + `agrees: false` mein jaata hai.
+- **Lesson:** Alag `guard_failed` status labels ko saaf rakhta hai (F68 a).
 
 ### `ops/n8n/order/code/log_run.js` (+6)
 
@@ -418,7 +438,9 @@ Samajhne wali baat: "nahi banaya" bhi design decision hai. Riders table nahi ban
 
 <!-- gh-comment-id: 4265247295 -->
 > `session_id` body se; khaali ho to '' → SUB 14 guard 400 refuse → chup-chaap koi row nahi, MAIN ko pata nahi. Bad-input runs ka log kho jaata hai. Khaali par `'unknown'` likhna behtar, taaki har routed run ki ek line ho?
-- **Status:** open
+- **Status:** answered → **code badla**
+- **Reply (klickbae8yt-star):** d1b2f62 mein fix: khaali session id ab `unknown` likhi jaati hai, taaki har routed run ki ek line ho. Test pehle laal tha.
+- **Lesson:** Har routed run ki line ho, bad input par bhi.
 
 ### `ops/n8n/order/code/guard_log.js` (+12)
 
@@ -446,7 +468,9 @@ Samajhne wali baat: "nahi banaya" bhi design decision hai. Riders table nahi ban
 
 <!-- gh-comment-id: 4265247301 -->
 > "kill switch does not block a log write" — sahi soch (refusals bhi log hon). Par MAIN ka 503 REFUSE branch `Log run` tak aata hi nahi. To aaj yeh line kis case mein kaam aati hai — sirf jab SUB 11/12/13 apne guard se 503 de (SUB-level kill)?
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Imaandar jawab: aaj yeh sirf tab kaam aata hai jab koi SUB apne guard se 503 de. Gate ka 503 `Log run` tak nahi pahunchta. Rakha kyunki kharcha nahi hai aur future MAIN ko bachata hai.
+- **Lesson:** Kharcha nahi, aur future MAIN ko bachata hai. Isliye rakha.
 
 ### `ops/n8n/order/deploy.js` (+9/-6)
 
@@ -474,7 +498,9 @@ Samajhne wali baat: "nahi banaya" bhi design decision hai. Riders table nahi ban
 
 <!-- gh-comment-id: 4265247306 -->
 > OpenRouter credential ke bina apply refuse — acha. Credential = Header Auth `Authorization: Bearer <key>`, cap $2. Yeh cap OpenRouter dashboard par set hai ya sirf vault note? Key kis account ka (klickbae8yt)? Owner se "haan" chat mein poochh raha hoon (F67).
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** $2 cap owner ne 13 Oct ko OpenRouter dashboard par set kiya tha; vault note mein record hai. Pehli live call par dobara check karunga.
+- **Lesson:** $2 cap OpenRouter dashboard par hai (owner, 13 Oct); pehli live call par re-check.
 
 ### `ops/n8n/order/decide.test.js` (+184)
 
@@ -502,7 +528,9 @@ Samajhne wali baat: "nahi banaya" bhi design decision hai. Riders table nahi ban
 
 <!-- gh-comment-id: 4265247280 -->
 > Red first is baar (19 pass / 15 fail) — acha, PR body mein proof. Par Jev ka real reply shape (`choices[0].message.content` JSON, `usage.cost`), `usage: {include: true}` aur `response_format: json_object` abhi stub hain. Tier A source (OpenRouter docs) hai, ya pehle live call par dekhenge (row 76)?
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Jev ke stubs tab tak hain jab tak pehli live call na ho. Jev reply shape aur `usage.cost` us live call par check honge, activation se pehle.
+- **Lesson:** Stubs live call tak; activation se pehle check hoga.
 
 ### `scripts/test_order_rpc.py` (+22/-1)
 
@@ -530,7 +558,9 @@ Samajhne wali baat: "nahi banaya" bhi design decision hai. Riders table nahi ban
 
 <!-- gh-comment-id: 4265247316 -->
 > Cap test acha (20, retry, 21st). "Another session is not affected" sirf `isinstance(r, list)` dekhta hai — `created: true` assert karo taaki test sach mein s2 ka order prove kare?
-- **Status:** open
+- **Status:** answered → **code badla**
+- **Reply (klickbae8yt-star):** d1b2f62 mein fix: dusre session wale case mein `created` true assert hota hai.
+- **Lesson:** Jo claim karo, wahi assert karo.
 
 ### `docs/assumptions.md` (A42, line 52)
 
@@ -558,7 +588,9 @@ Samajhne wali baat: "nahi banaya" bhi design decision hai. Riders table nahi ban
 
 <!-- gh-comment-id: 4265247308 -->
 > A42 mein 5 faisle ek row mein: rule decides, Jev advises, 0.70, $0.001 per call, 20 orders per session. Owner ko alag alag haan aasaan hoga — main chat mein list kar raha hoon; tum confirm ke baad row ko "Confirmed" karna.
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Noted. Owner ki list aur confirm ke baad A42 ko 'Confirmed' karunga.
+- **Lesson:** Owner paanchon items confirm kare, phir row Confirmed.
 
 ### `docs/tests/test-cases.md` (+18/-8, line 65)
 
@@ -586,7 +618,9 @@ Samajhne wali baat: "nahi banaya" bhi design decision hai. Riders table nahi ban
 
 <!-- gh-comment-id: 4265247311 -->
 > Row "Deploy script touches only the four GS workflows" — ab six hain (test update hua, row nahi). F65(a) bhi "three workflows" kehta hai. Chhota docs fix is PR mein, ya agle ke saath?
-- **Status:** open
+- **Status:** answered → **code badla**
+- **Reply (klickbae8yt-star):** d1b2f62 mein fix: test-cases row mein 'six GS workflows'; F65(a) mein 'the order workflows'.
+- **Lesson:** Number badle to docs ke counts bhi badlo.
 
 ### `docs/integrations/n8n-order-workflows.md` (+25/-4, line 83)
 
@@ -614,7 +648,9 @@ Samajhne wali baat: "nahi banaya" bhi design decision hai. Riders table nahi ban
 
 <!-- gh-comment-id: 4265247313 -->
 > "The Jev call is the one node that continues on error" — B7 rule 82 ka exception sahi hai (advice path, write nahi). Par timeout par n8n `continueRegularOutput` item mein `error` field kaise aata hai? Test `{error:'timeout'}` maanta hai; live par yeh shape confirm karna hai (row 76 ke saath).
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Haan. Timeout item ka shape live Jev-down check par confirm hoga, usi live row (row 76) ke saath.
+- **Lesson:** Timeout item ka shape live check par confirm hoga.
 
 ### `ops/n8n/order/code/decide_done.js`, `log_done.js`, `check_token.js`, `shape.js`, `order.test.js`, `ci.yml`, `LEARNINGS.md`, `follow-ups.md`, `process-trace.md`, notebook bundle
 
@@ -640,14 +676,56 @@ Chhote badlav, ek-do line mein (in files par koi naya question nahi):
 >
 > _(PR par post hua — `satvik-jain-iitd`, APPROVE review 5511373264 with 18 inline threads, 14 Oct 2026.)_
 
+- **Dev reply:** "PR #67 threads answered at d1b2f62"
+- **Verified:** 18 answered · 5 fixed (d1b2f62) · node 34/34 · DB 9/9 · CI green · nothing deployed [VERIFIED]
+- **Approved:** review 5511731900 (satvik-jain-iitd); handoff comment 6158255492. Note: the first review 5511373264 was recorded as COMMENTED (the post script forced COMMENT because the --approve flag was missing); corrected by reading the state back. [VERIFIED by reading the review states back]
+
 **Owner handoff (Romanized Hindi):**
 
 ```text
-State: PR #67 APPROVED (50853ce) · CI green · actor: owner
+State: PR #67 APPROVED (d1b2f62) · CI green · actor: owner
 
-1. A42 par haan do: rule decides, Jev advises; Jev ka jawab 0.70 se upar ho to hi maana jaaye; $0.001 se mehenga Jev call ignore; 20 orders per session.
-2. n8n credential `GoServe OpenRouter` banane ki haan do (Header Auth, vault key `GOSERVE_OPENROUTER_KEY`). $2 cap OpenRouter ke side par set karna.
-3. "push kar do" bolo: six workflows inactive deploy honge. Activation ki yes alag se chahiye.
-4. PR #67 merge karo jab ready ho.
-5. Abhi bhi open: A41, F61, prod deploy twice (F65 c). Yeh owner ke faisle hain.
+1. PR #67 merge karo (squash).
+2. Merge ke baad coder ko "haan" block paste karo. Isme hain: n8n credential `GoServe OpenRouter`, six workflows inactive deploy, aur fit-view screenshots.
+3. Activation ki yes alag se chahiye. Woh abhi nahi di gayi.
+4. F61 (Pages project) abhi pending hai.
+5. Prod = deploy twice (F65 c). Owner pehli release se pehle decide karega.
 ```
+
+**Coder paste-block (English):**
+
+```text
+State: PR #67 APPROVED (d1b2f62) · actor: coder
+
+You are the developer for GoServe PR #67 (feat/46-decide-logs). Do this:
+1. After the owner's yes in your chat: create the n8n credential `GoServe OpenRouter` (Header Auth, vault key `GOSERVE_OPENROUTER_KEY`).
+2. Run `node ops/n8n/order/deploy.js --apply`: six workflows, inactive. Read back each one. Take a fit-view screenshot of each canvas.
+3. Mark A41 and A42 Confirmed in `docs/assumptions.md`.
+4. Activation waits for a separate owner yes.
+5. After #67 merges: start story #48 "Customer screen: menu, cart, bill, place order" (epic #36) on `feat/48-customer-screen` from `dev`. Red first.
+6. Last step: copy the notebook bundle from `/private/tmp/claude-501/-Users-satvikjain-Documents-GoServe/aa3d69ad-418a-46fc-b6e5-07aa857fd7f3/scratchpad/tpm/bundle/docs/` into `docs/pr-reviews/`. Push, then reply "PR #68 ready for review at <sha>".
+```
+
+## What happened after review
+
+- **Sawaal post hue:** 14 Oct 2026, `satvik-jain-iitd` ne 18 sawaal post kiye (review 5511373264, inline threads; record ki galti neeche). [VERIFIED]
+- **Jawab:** 18 ke 18 jawab `klickbae8yt-star` se. **18 answered**, 0 open. [VERIFIED]
+- **Fix commit `d1b2f62`** mein 5 fixes:
+  1. A42 mein trust-boundary line: `free` flag aur distance phone ki baat hain (4265247244).
+  2. `log_run.js`: khaali session id ab `unknown` likhi jaati hai; test pehle laal tha (4265247295).
+  3. `place_order` wali baat: F68(f) mein "read the latest migration" aur LEARNINGS mein ek line (4265247258).
+  4. Test-cases row "six GS workflows"; F65(a) "the order workflows" (4265247311).
+  5. Cap test: dusre session wale case mein `created` true assert (4265247316).
+- **F68 (a–f) logged:** guard_failed status; advisory lock; audit-first revisit; refusal rows for the scorecard; server-side rider state before a pilot; "read the latest migration". [VERIFIED]
+- **Verified on d1b2f62:** node 34/34, DB 9/9, dev clean, CI green. Reviewer ne khud chalaya. [VERIFIED]
+- **Owner ki haan (reviewer chat):** A42, OpenRouter credential, "push kar do". A41 ko confirmed maana gaya. Coder apne chat mein is haan ka intezaar karta hai. Abhi kuch deploy nahi hua. [VERIFIED per brief; nothing deployed VERIFIED earlier on n8n]
+- **Status:** APPROVED on d1b2f62 (review 5511731900 by `satvik-jain-iitd`), CI green, merge pending. [VERIFIED]
+- **Approval ki galti aur sudhar:** pehla review 5511373264 GitHub par COMMENTED record hua. Post script mein `--approve` flag nahi tha, to script ne COMMENT force kiya. Reviewer ne state wapas padh kar dekha. Asli APPROVE review 5511731900 hai (d1b2f62 par), handoff comment 6158255492. [VERIFIED by reading the review states back]
+
+## Reviewer's take (mere thoughts)
+
+- **Post ke baad state wapas padho.** Script ne APPROVE bheja tha, par GitHub par record COMMENT tha. Tool ka id mil jaana proof nahi hai. State khud padho, phir "done" bolo. [VERIFIED]
+- **Phone ke riders ka trust boundary ab likha hai.** Dispatcher phone ki list par chalta hai. Pehle yeh sirf code mein tha; ab A42 mein hai, aur server state F68(e) mein pilot se pehle. Likha hua risk sambhalna aasaan hota hai. [VERIFIED]
+- **"Audit first" ek product choice hai.** Row nahi, to decision wapas nahi. Yeh sahi chunav ho sakta hai, par demo mein DB hiccup ka test hoga. Revisit ka plan F68(c) mein hai. [INFERRED]
+- **Red-first workflow code par chala.** 15 tests pehle laal the, phir code bana. PR #66 mein yeh nahi hua tha. Reviewer ne 34/34 khud chalaye. [VERIFIED]
+- **Demo par AI ka asar nahi dikhega.** Rule hi bhejta hai, to salahkaar ki raay sirf diary mein dikhti hai. Yeh trade-off owner ko pata hona chahiye. [VERIFIED per brief trade-offs]

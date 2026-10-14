@@ -2,7 +2,7 @@
 
 System ka ek-page picture. Har chapter ke baad update karta hoon.
 
-_Last updated: PR #67 (approved, `50853ce`); PRs #62–#66 merged_
+_Last updated: PR #67 (approved, `d1b2f62`); PRs #62–#66 merged; owner said haan to A41, A42, credential, push_
 
 ## GoServe — ab tak ki tasveer
 
@@ -134,7 +134,7 @@ _Status: 6 workflows built (ERR 00, SUB 11–14, MAIN 01), tests green (node 34,
 - Retry mein badla cart: key per cart (#48) ya 409?
 - Riders phone se aate hain (A42). Pilot se pehle riders table / server state chahiye.
 - Jev ka reply shape live test nahi hua (`usage.cost`, JSON reply stub). Row 76 pending deploy.
-- `guard_failed` status (Jev busy rider chune): abhi `ok` + `agrees:false`. Open.
+- `guard_failed` status (Jev busy rider chune): abhi `ok` + `agrees:false`; F68 a mein.
 - Router / screens ka shape (aage ke chapters).
 - Supabase aur auth kahan baithenge (ADR-009).
 - Role-wise code-splitting ka plan.
