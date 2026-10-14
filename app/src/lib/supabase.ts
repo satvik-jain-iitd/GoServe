@@ -4,7 +4,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Dish } from "./menu";
 
 let client: SupabaseClient | null = null;
-const getClient = (): SupabaseClient => {
+export const getClient = (): SupabaseClient => {
   const url = import.meta.env.VITE_SUPABASE_URL;
   const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
   if (!url || !key) throw new Error("The app is not set up: missing Supabase keys.");

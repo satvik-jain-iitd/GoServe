@@ -40,3 +40,15 @@ textarea { font: inherit; padding: var(--gs-space-3); border: 1px solid var(--md
 .note { color: var(--gs-text-muted); font-size: var(--gs-text-sm); }
 .notice { background: var(--md-tertiary-container); padding: var(--gs-space-3); border-radius: var(--gs-radius-m); }
 .error { background: var(--md-error); color: var(--md-on-error); padding: var(--gs-space-3); border-radius: var(--gs-radius-m); }
+
+/* Role switch and kitchen tickets (story #49). */
+.roles { display: flex; gap: var(--gs-space-3); margin-bottom: var(--gs-space-5); }
+.tickets { display: grid; gap: var(--gs-space-4); }
+.ticket { background: var(--md-surface); border-radius: var(--gs-radius-m); padding: var(--gs-space-4); box-shadow: var(--gs-shadow-s); display: grid; gap: var(--gs-space-2); }
+.ticket-head { display: flex; justify-content: space-between; align-items: center; }
+.ticket-lines { display: grid; gap: var(--gs-space-1); }
+.badge { padding: var(--gs-space-1) var(--gs-space-3); border-radius: var(--gs-radius-pill); background: var(--md-secondary-container); font-size: var(--gs-text-sm); font-weight: 600; }
+.badge.placed { background: var(--gs-status-placed); }
+.badge.accepted { background: var(--gs-status-accepted); }
+.badge.preparing { background: var(--gs-status-cooking); }
+.badge.ready { background: var(--gs-status-ready); }

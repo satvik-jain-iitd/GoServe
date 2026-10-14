@@ -2,7 +2,7 @@
 
 System ka ek-page picture. Har chapter ke baad update karta hoon.
 
-_Last updated: PR #68 (approved, `c40732d`); PRs #62–#67 merged_
+_Last updated: PR #69 (open, `5f2fa97`); PRs #62–#68 merged_
 
 ## GoServe — ab tak ki tasveer
 
@@ -23,11 +23,17 @@ _Last updated: PR #68 (approved, `c40732d`); PRs #62–#67 merged_
                           |
                           ├─ index.html      (main door)
                           ├─ src/main.tsx    (switchboard)
-                          ├─ src/App.tsx     (welcome board — abhi khaali)
+                          ├─ src/App.tsx     (switchboard: menu → cart → bill → placed; place() yahin)  ← PR #69
+                          ├─ src/lib/cart.ts     (order slip: dish id + count, cap 20)  ← PR #69
+                          ├─ src/lib/menu.ts     (menu card ki photocopy, localStorage)  ← PR #69
+                          ├─ src/lib/money.ts    (paise → ₹)  ← PR #69
+                          ├─ src/lib/orders.ts   (window: slip bhejna, receipt lana)  ← PR #69
+                          ├─ src/lib/supabase.ts (darwaza: menu rows + anonymous session)  ← PR #69
+                          ├─ src/screens/        (4 pages: MenuScreen, CartScreen, BillScreen, PlacedScreen)  ← PR #69
                           ├─ src/pwa-manifest.ts  (identity card, colours ← tokens.json)
                           ├─ src/styles/tokens.css + app.css (paint)
                           ├─ vite.config.ts  (assembly line + PWA)
-                          ├─ tests/          (unit + e2e)
+                          ├─ tests/          (unit: cart, menu, orders = 19; e2e customer.spec.ts = 6, stand-in counter)  ← PR #69
                           ├─ tests/integration/supabase.test.ts  (do mystery customers + ghanti ka stopwatch)  ← PR #65
                           ├─ vitest.integration.config.ts  ← PR #65
                           ├─ supabase/migrations/0001_schema.sql  (7 tables + 2 triggers)  ← PR #64
@@ -84,6 +90,7 @@ _Status: 6 workflows n8n par deployed, sab inactive (ids registry mein; VERIFIED
 4. Merge to dev (`app/` badla ho) → deploy to Vercel dev (`deploy-dev.yml`, PR #62).
 5. Release PR → `main` → deploy to Cloudflare Pages prod (`deploy-app.yml`, PR #63). Tiffin: van khana main tak laati hai, ab real customer ka address.
 6. Browser → anonymous sign-in → session id → menu read → Realtime subscribe → n8n writes order (service role) → ghanti (PR #65).
+6a. Phone → n8n gs-order (x-gs-token) → place_order (SUB 11: prices, caps, idempotent key) → receipt → Placed screen (PR #69; live row activation ke baad).
 7. App chalane par: index.html → main.tsx → App → service worker (offline).
 
 ## Yeh PR ke baad kya samajh aaya
@@ -121,6 +128,12 @@ _Status: 6 workflows n8n par deployed, sab inactive (ids registry mein; VERIFIED
 - **Red first workflow code par bhi chala:** 15 tests pehle laal, phir code.
 - **Deployed ≠ active** (PR #68): shutter band hai. Read-back check hua, par editor mein aankh se dekhna (B12.6) chhoot gaya kyunki coder ke paas n8n login nahi tha.
 
+- **Menu ki photocopy:** achhi copy kabhi khaali jawab se nahi badalti. Offline demo isi par chalta hai (PR #69).
+- **Slip par price nahi:** phone sirf dish aur count bhejta hai. Total counter (server) tay karta hai (PR #69).
+- **Slip number:** same cart, same key, same order. Cart badla to naya number (PR #69).
+- **Retry band, 4 s timeout:** fallback jaldi dikhta hai, par slow network par ek fail zyada (PR #69).
+- **Test stand-in:** e2e Supabase aur n8n ki jagah khada hai. Yeh request ki shape pakadta hai, live counter nahi (PR #69).
+
 ## Abhi bhi andhera (jawab nahi mila)
 - Kaun `order_events` likhega: app, n8n, ya trigger? (Abhi koi nahi.)
 - Cancel: A41 ke hisaab se nahi; owner confirm karega.
@@ -143,5 +156,6 @@ _Status: 6 workflows n8n par deployed, sab inactive (ids registry mein; VERIFIED
 ## Abhi kya NAHI hai
 - Phone ke liye write rules nahi (phone kabhi nahi likhta, ADR-009/010). Real logins: MVP 1. Self-hosted photos: #54. Indexes PK/unique ke alawa: screen stories ke saath.
 - Activation nahi (owner ka "activate" chahiye, pehle canvas look). Live rows (5 calls + Jev + Jev-down) pending. MAIN 90 scorecard = #47. Riders table nahi (A42). Laya = MVP 1.
-- Koi login, koi order, koi payment, koi kitchen/rider screen.
+- Customer screen ab hai (menu, cart, bill, place order; PR #69, open, 5f2fa97). Asli order ki row activation ke baad aayegi.
+- Kitchen screen nahi (#49). Order tracker nahi (#50). Real payment nahi (MVP 2). Koi login nahi.
 - Dev deploy job hai (PR #62, merged). Prod deploy workflow hai (PR #63, open), par `main` par `app/` abhi nahi hai. Release list fix ho gayi (4b77e65); pehli release PR ke baad app prod par aayega. `goserve-app.pages.dev` abhi 522 hai.
