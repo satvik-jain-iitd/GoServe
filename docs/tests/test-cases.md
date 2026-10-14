@@ -129,4 +129,6 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | After the owner's yes: prod has 10 dishes, 8 tables, 6 security rules and anonymous sign-in on | #78 | S1 | Live (after the owner's yes for `--apply`) | `python3 scripts/release_db.py --apply` | Pending |
 | After the release PR: `goserve-app.pages.dev` answers 200 with the menu and `/health` | #78 | S2 | Live (after the Pages project, the prod secrets and the release merge) | `goserve-app.pages.dev` | Pending |
 | A prod order reaches the prod kitchen screen | #78 | S3 | Live (after the prod workflow copy and "activate") | `goserve-app.pages.dev` | Pending |
+| Jev is asked at the decisions endpoint with a state and one choice question (SUB 13) or one yes/no question (SUB 16); the reply is read from `answers`; a chat-style, empty, wrong-type or out-of-range reply is a bad reply; fixtures copy the real answers of 15 Oct 2026 | #46 #54 | S1 S2 | Unit | `ops/n8n/order/decide.test.js`, `ops/n8n/order/health.test.js` | Pass |
+| Real call to the decisions endpoint with the GoServe key (choice over three riders, yes/no): both answered 200 in about 0.9 s and 0.6 s, cost about $0.00002 and $0.00001; the rule pick r2 got confidence 1 | #46 #54 | S1 | Manual, 15 Oct 2026 | `POST https://openrouter.ai/api/alpha/decisions` | Pass |
 

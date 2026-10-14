@@ -31,14 +31,21 @@ test('S1 rule: free rider with the fewest trips, then the shortest distance, els
   assert.deepEqual(guard({}).options, ['r1', 'r2', 'r3', 'none']);
 });
 
-test('S1 Jev request: pinned model, temperature 0, 32 tokens, allowed choices, no names or addresses', () => {
+test('S1 Jev request: the decisions endpoint body, pinned model, one choice question over the rider ids, no names or addresses', () => {
   const g = guard({ riders: [{ ...RIDERS[0], name: 'Ravi Kumar', phone: '999' }, RIDERS[1]], address: 'Flat 4' });
   const b = g.jev_body;
-  assert.deepEqual([b.model, b.temperature, b.max_tokens], ['typesafe/jev-1.13', 0, 32]);
-  const text = b.messages[0].content;
-  assert.match(text, /Allowed choices: r1, r2, none/);
-  assert.match(text, /Reply with JSON only/);
-  assert.ok(!/Ravi|999|Flat 4/.test(text + JSON.stringify(g.state)));
+  assert.equal(b.model, 'typesafe/jev-1.13');
+  assert.deepEqual(Object.keys(b.questions), ['rider']);
+  assert.equal(b.questions.rider.type, 'choice');
+  assert.deepEqual(Object.keys(b.questions.rider.criteria), ['r1', 'r2', 'none']);
+  assert.ok(b.questions.rider.instructions.length > 10);
+  assert.deepEqual(b.state, g.state);
+  assert.ok(!/Ravi|999|Flat 4/.test(JSON.stringify(b)));
+  assert.equal(b.messages, undefined);   // not a chat body: the decisions endpoint takes state and questions
+});
+
+test('S1 Jev is asked at the decisions endpoint, not chat completions (found live on 15 Oct: chat gives 400 for a decisions model)', () => {
+  assert.equal(byName(wf.sub13, 'Ask Jev').parameters.url, 'https://openrouter.ai/api/alpha/decisions');
 });
 
 test('S1 refusals: kill switch gives 503; bad input gives 400', () => {
@@ -50,7 +57,8 @@ test('S1 refusals: kill switch gives 503; bad input gives 400', () => {
 });
 
 const ctx = () => ({ Guard: guard({}) });
-const jevReply = (content, over) => ({ statusCode: 200, body: { model: 'typesafe/jev-1.13', choices: [{ message: { content: JSON.stringify(content) } }], usage: { cost: 0.00002 } }, ...over });
+// The shape OpenRouter's decisions endpoint answered on 15 Oct 2026 for a choice question (cost and fields from the real call).
+const jevReply = (content, over) => ({ statusCode: 200, body: { id: 'gen-dec-1', model: 'typesafe/jev-1.13', provider: 'TypeSafe', answers: { rider: { type: 'choice', choice: content.choice, confidence: content.confidence, probabilities: {} } }, usage: { input_tokens: 477, output_tokens: 50, cost: 0.00002 } }, ...over });
 const decide = (res, g) => run('decide_result.js', res, g || ctx());
 
 test('S1 one row records both: rule pick, Jev pick with confidence, and the pick used', () => {
@@ -72,7 +80,9 @@ test('S2 Jev down or unusable: the rule decision goes through and the row says w
   const cases = [
     ['jev_error', { error: 'timeout' }],
     ['jev_error', { statusCode: 500, body: {} }],
-    ['jev_bad_reply', { statusCode: 200, body: { choices: [{ message: { content: 'not json' } }] } }],
+    ['jev_bad_reply', { statusCode: 200, body: { answers: {} } }],
+    ['jev_bad_reply', { statusCode: 200, body: '<html>oops</html>' }],
+    ['jev_bad_reply', { statusCode: 200, body: { answers: { rider: { type: 'noul', noul: 0.9 } } } }],
     ['jev_bad_reply', jevReply({ choice: 'r9', confidence: 0.9, reason: 'x' })],
     ['jev_bad_reply', jevReply({ choice: 'r2', reason: 'x' })],
     ['jev_low_confidence', jevReply({ choice: 'r2', confidence: 0.5, reason: 'x' })],
@@ -152,7 +162,7 @@ test('wiring: SUB 13 asks Jev only after the guard, Jev failure never stops the 
   assert.equal(jev.onError, 'continueRegularOutput');                 // advice only, never a write path
   assert.equal(jev.parameters.options.timeout, 900);
   assert.equal(byName(wf.sub13, 'Write decision').onError, undefined);   // the write path fails closed (B7)
-  assert.match(jev.parameters.url, /openrouter\.ai\/api\/v1\/chat\/completions/);
+  assert.match(jev.parameters.url, /openrouter\.ai\/api\/alpha\/decisions/);
   assert.equal(jev.parameters.genericAuthType, 'httpHeaderAuth');
   assert.equal(byName(wf.sub14, 'Write run log').parameters.options.response.response.neverError, true);
 });

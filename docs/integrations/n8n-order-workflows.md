@@ -49,7 +49,7 @@ Decide which rider (story #46):
   "riders": [{ "id": "r1", "free": true, "distance_m": 1200, "trips_done": 2 }] }
 ```
 
-The answer carries `decision`: the rule pick, Jev's pick with confidence (or why Jev was not used: `jev_off`, `jev_error`, `jev_bad_reply`, `jev_low_confidence`, `cost_cap`), and the pick used. **In MVP 0 the rule always decides; Jev only advises.** The rule: the free rider with the fewest trips, then the shortest distance, else `none` (contract D1). Jev gets ids, free flag, distance and trips only, never names or addresses. Jev limits: pinned `typesafe/jev-1.13`, temperature 0, 32 tokens, 900 ms, accepted at confidence 0.70 or more, ignored over the per-call cost cap (Config `jev_cost_cap`).
+The answer carries `decision`: the rule pick, Jev's pick with confidence (or why Jev was not used: `jev_off`, `jev_error`, `jev_bad_reply`, `jev_low_confidence`, `cost_cap`), and the pick used. **In MVP 0 the rule always decides; Jev only advises.** The rule: the free rider with the fewest trips, then the shortest distance, else `none` (contract D1). Jev gets ids, free flag, distance and trips only, never names or addresses. Jev limits: pinned `typesafe/jev-1.13` on OpenRouter's decisions endpoint (`/api/alpha/decisions`, a choice question), 900 ms, accepted at confidence 0.70 or more, ignored over the per-call cost cap (Config `jev_cost_cap`).
 
 Health check (story #54):
 
@@ -103,6 +103,10 @@ SUB 14 input: `session_id`, `kitchen_id`, `workflow`, `params_version`, `duratio
 The Jev call is the one node that continues on error: Jev is advice, so a Jev failure never stops the rule decision. Every write node fails closed.
 A SUB writes only through the database function. If the kill switch is on or the input is bad, it returns the refusal and calls nothing.
 Only MAIN 01 may call a SUB (`callerPolicy: workflowsFromAList`).
+
+## Activation (15 Oct 2026)
+
+This n8n version will not publish a workflow whose sub-workflows are not published ("Cannot publish workflow: Node ... references workflow ... which is not published"). So "activate" means all ten, in this order: ERR 00, SUB 11 to 16, SUB 91, then MAIN 01 and MAIN 90. An earlier review reply that said sub-workflows need not be active was wrong. `node ops/n8n/order/verify_live.js` prints the active flag of each.
 
 ## Daily scorecard (story #47)
 

@@ -16,9 +16,10 @@ const state = { order_id: j.order_id, riders: riders.map((r) => ({ id: r.id, fre
 const free = state.riders.filter((r) => r.free).sort((a, b) => a.trips_done - b.trips_done || a.distance_m - b.distance_m);
 const rule_pick = free.length ? free[0].id : 'none';
 const options = state.riders.map((r) => r.id).concat('none');
-const prompt = 'State: ' + JSON.stringify(state) + '\nQuestion: which rider should get order ' + j.order_id
-  + '\nAllowed choices: ' + options.join(', ') + '\nReply with JSON only: {"choice":"...","confidence":0.0,"reason":"..."}';
+// OpenRouter's decisions endpoint (POST /api/alpha/decisions) takes the state and typed questions. Jev is a decisions model: the chat endpoint refuses it with a 400.
+const criteria = {};
+for (const o of options) criteria[o] = o === 'none' ? 'No rider is free.' : 'Rider ' + o + '.';
+const question = { type: 'choice', instructions: 'Which rider should get this order? Prefer a free rider with fewer trips and a short distance.', criteria };
 return [{ json: { ok: true, supabase_url: j.supabase_url, use_jev: j.jev_enabled === true, rule_pick, options, state,
   session_id: j.session_id, kitchen_id: j.kitchen_id, order_id: j.order_id, params_version: j.params_version, jev_cost_cap: j.jev_cost_cap, started_at: Date.now(),
-  jev_body: { model: j.jev_model || 'typesafe/jev-1.13', temperature: 0, max_tokens: 32, response_format: { type: 'json_object' }, usage: { include: true },
-    messages: [{ role: 'user', content: prompt }] } } }];
+  jev_body: { model: j.jev_model || 'typesafe/jev-1.13', state, questions: { rider: question } } } }];
