@@ -30,7 +30,9 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana â
 | 13 | [#72](pr-72-split-view.md) | feat(app): split view, shared session by link and reset | MERGED (20 answered) | #52 (epic #37) |
 | 14 | [#73](pr-73-ops-screen.md) | feat(app): ops screen with AI suggestion and metrics | MERGED (20 answered) | #51 (epic #36) |
 | 15 | [#74](pr-74-health-check.md) | feat(app): health check page for Supabase, n8n and Jev | MERGED (20 answered) | #54 (epic #37) |
-| 16 | [#75](pr-75-autopilot.md) | feat(app): autopilot with an offline demo story | MERGED (20 posted, replies pending, 2 should-fix) | #53 (epic #37) |
+| 16 | [#75](pr-75-autopilot.md) | feat(app): autopilot with an offline demo story | MERGED (20 answered, 2 should-fix landed in #76) | #53 (epic #37) |
+| 17 | [#76](pr-76-scorecard.md) | feat(ops): daily scorecard workflow with Telegram message | MERGED (17 answered, window gap fix pending the owner's pick) | #47 (epic #35) |
+| 18 | [#77](pr-77-autopilot-refusal.md) | fix(app): show the autopilot refusal, name the cost line | MERGED (4 answered) | follow-up to #47 |
 
 ## Journals
 - [concepts.md](concepts.md) â€” naye technical words, plain Hindi mein.
@@ -55,6 +57,8 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana â
 | Ops screen: AI advice vs rule, plain metrics, per-session read rules | #73 |
 | Health page: a real call per light, failure as a result, SPA fallback | #74 |
 | Autopilot: two modes behind one button, ref as clipboard, offline fallback | #75 |
+| Scorecard: schedule + timezone, day window, metric pairs, read-only SUB | #76 |
+| Refusal reason where the user looks, ordered reads under a cap | #77 |
 
 ## Notes
 - Chapters Romanized Hindi mein hain. Code, file paths, commands English mein.

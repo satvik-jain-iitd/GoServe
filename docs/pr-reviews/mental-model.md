@@ -2,7 +2,7 @@
 
 System ka ek-page picture. Har chapter ke baad update karta hoon.
 
-_Last updated: PR #75 merged (`35f78cd`); PRs #62–#75 merged_
+_Last updated: PR #77 merged (`d3d4cbe`); PRs #62–#77 merged; coder waits on the owner_
 
 ## GoServe — ab tak ki tasveer
 
@@ -55,6 +55,7 @@ _Last updated: PR #75 merged (`35f78cd`); PRs #62–#75 merged_
                           ├─ tests/e2e/health.spec.ts  (rehearsal: all green, ek fail, galat token, Run again)  ← PR #74
                           ├─ tests/e2e/autopilot.spec.ts, tests/unit/autopilot.test.ts  (rehearsal: offline story, online chhe calls, fallback)  ← PR #75
                           ├─ ops/n8n/order: SUB 16 Health, code/health_prepare.js, code/health_result.js, health.test.js (concierge test, kuch likhta nahi)  ← PR #74
+                          ├─ ops/n8n/order: MAIN 90 Daily scorecard + SUB 91 Scorecard numbers, code/score_window.js, score_summary.js, score_message.js, scorecard.test.js (raat ka auditor + ledger clerk, sirf padhta hai)  ← PR #76
                           ├─ ops/n8n/order: SUB 15 Add event, code/guard_event.js, event.test.js (margin note ki khidki)  ← PR #71
                           ├─ src/pwa-manifest.ts  (identity card, colours ← tokens.json)
                           ├─ src/styles/tokens.css + app.css (paint)
@@ -123,6 +124,7 @@ _Status: 6 workflows n8n par deployed, sab inactive (ids registry mein; VERIFIED
 6e. Ops tab → Ready order bina decision row → ek `decide` call (teen demo riders) → SUB 13 → `decision_log` row → screen ek line ("AI suggests R2 (81%). The rule agrees.") + numbers (order to screen, decision ms, runs today) (PR #73; live after activation).
 6f. Founder `/health` kholta hai → `main.tsx` HealthScreen chunta hai → Supabase ek menu row + ek `health` call → MAIN 01 → SUB 16 → Jev → teen batti OK/FAIL with ms (PR #74; SUB 16 deploy + activation pending).
 6g. Autopilot tap → online: session ka newest open order har 2 s kitchen phir rider ke asli calls se aage, Delivered par ruk; offline (airplane mode): sample order local copy par "Offline demo" banner ke neeche; network fail par fallback (PR #75).
+6h. Raat 21:00 (India): MAIN 90 raat ka auditor hai. Ledger clerk (SUB 91) aaj ke pages (run_log, decision_log) ginta hai, auditor tally ko slip mein likhta hai, aur Telegram se owner ke darwaze par bhejta hai. Clerk pen nahi chhoota, sirf padhta hai.
 7. App chalane par: index.html → main.tsx → App → service worker (offline).
 
 ## Yeh PR ke baad kya samajh aaya
@@ -194,6 +196,12 @@ _Status: 6 workflows n8n par deployed, sab inactive (ids registry mein; VERIFIED
 - **Ref = clipboard:** lamba timer har render par taaza state padhta hai, restart nahi (PR #75).
 - **Loop kab ruke:** Delivered ya koi open order na bache; server refusal par abhi nahi rukta (PR #75, pending fix).
 - **Pace build par fix:** stage 2 s, test 300 ms; chhe step = 12 s (PR #75, F77 c).
+- Ek scheduled workflow ka "aaj" uski deewar ghadi (timezone setting) se tay hota hai, cron se nahi. (PR #76)
+- Numbers hamesha jodi mein aate hain (runs aur errors, decisions aur agreed, cost aur per decision), taaki ek number akela achha na dikhe. (PR #76)
+- Read-only clerk (SUB 91) likh nahi sakta, aur sirf auditor use bula sakta hai. Yeh design se hai. (PR #76)
+- Din ki sheet ki seema hai: 21:00 ke baad ki rows aaj ke slip mein nahi aati (TOP-1, abhi khula). (PR #76)
+- Ek message ko code aur wajah dono saath le jaane chahiye, warna owner ko sirf number milta hai aur kaaran nahi. (PR #77)
+- Test wahan karo jahan user dekhta hai, aur cap wali read ko `order` chahiye, warna cut kaun si rows girega tay nahi hota. (PR #77)
 
 ## Abhi bhi andhera (jawab nahi mila)
 - Kaun `order_events` likhega: app, n8n, ya trigger? (Abhi koi nahi.)
@@ -218,5 +226,5 @@ _Status: 6 workflows n8n par deployed, sab inactive (ids registry mein; VERIFIED
 - Phone ke liye write rules nahi (phone kabhi nahi likhta, ADR-009/010). Real logins: MVP 1. Self-hosted photos: #54. Indexes PK/unique ke alawa: screen stories ke saath.
 - Activation nahi (owner ka "activate" chahiye, pehle canvas look). Live rows (5 calls + Jev + Jev-down) pending. MAIN 90 scorecard = #47. Riders table nahi (A42). Laya = MVP 1.
 - Customer screen ab hai (menu, cart, bill, place order; PR #69, open, 5f2fa97). Asli order ki row activation ke baad aayegi.
-- Kitchen (#49), rider + tracker (#50), split/join/reset (#52), ops (#51), health page (#54) merged. Autopilot ab hai (#53, PR #75, merged `35f78cd`); do ek-line fix pending (loop server refusal par ruke; `useOps` demo mein band). SUB 16 + MAIN 01 update deploy nahi (owner ka "push kar do"); activation nahi (owner ka "activate"): live rows aur #56 pending. Android airplane check #56. Scorecard #47, UptimeRobot #55 nahi. Ek-decision-per-order rule nahi (F75 j), riders table nahi, Leave/QR nahi (F74), prod migrations 0006/0007 nahi (F63). Real payment nahi (MVP 2). Koi login nahi.
+- Kitchen (#49), rider + tracker (#50), split/join/reset (#52), ops (#51), health page (#54), autopilot (#53) merged; #75 ke do fix PR #76 mein aaye. Scorecard MAIN 90 + SUB 91 ab hai (#47, PR #76, approved, `76ed3bb`); PR #77 (approved) refusal ki wajah button ke neeche dikhata hai; 21:00 ke baad ki rows ka window gap pending (owner chune: rolling 24 h ya cron 23:55). SUB 16 + SUB 91 + MAIN 90 + MAIN 01 update deploy nahi (owner ka "push kar do"); activation nahi (owner ka "activate"; MAIN 90 = schedule): live rows aur #56 pending. Prod copy of scorecard nahi (F78 b). UptimeRobot #55 nahi; #42 prod deploy PR #63 mein ho chuka (Pages project F61 owner ka). Agla story slot abhi khaali hai, jab tak owner teen prod sawaal ka jawab nahi deta; #42 PR #63 mein ho chuka hai. Ek-decision-per-order rule nahi (F75 j), riders table nahi, Leave/QR nahi (F74), prod migrations 0006/0007 nahi (F63). Real payment nahi (MVP 2). Koi login nahi.
 - Dev deploy job hai (PR #62, merged). Prod deploy workflow hai (PR #63, open), par `main` par `app/` abhi nahi hai. Release list fix ho gayi (4b77e65); pehli release PR ke baad app prod par aayega. `goserve-app.pages.dev` abhi 522 hai.

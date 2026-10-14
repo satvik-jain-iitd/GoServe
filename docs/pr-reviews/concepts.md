@@ -559,3 +559,48 @@ Har naya technical word yahan. Simple Hindi mein. Ek line ka "yeh kya hai", ek l
 - **Kya hai:** Offline maanne ke do raaste: `navigator.onLine` (airplane mode) aur ek failed call ya read (wifi on, internet dead, lagbhag 7 s).
 - **Analogy:** Hotel ke do darwaze: ek bijli ka switch, ek guest ka darwaza jo koi jawab nahi deta.
 - **File:** `app/src/App.tsx` (line 168); PR #75.
+
+### Schedule trigger + workflow timezone
+- **Kya hai:** Cron string ka apna timezone nahi hota. Workflow ki setting `timezone` tay karti hai ki kaunsa 21:00 hai. Test yeh setting check karta hai.
+- **Analogy:** Auditor ki deewar ghadi: yeh batati hai kaunse shehar ka 9 baje.
+- **File:** `ops/n8n/order/build.js` (line 266, 290); PR #76.
+
+### Day window in UTC
+- **Kya hai:** "Aaj India mein" nikaalne ke liye 5.5 ghante aage karo, din ke start par round karo, phir 5.5 ghante peeche karo. Ek chhota arithmetic, timezone library nahi.
+- **Analogy:** Hotel ka din India ki raat 12 baje shuru hota hai, Greenwich ki raat 12 baje nahi.
+- **File:** `ops/n8n/order/code/score_window.js` (line 6); PR #76.
+
+### Metric pairs (B13.3)
+- **Kya hai:** Har number apne check ke saath chhapta hai: runs errors ke saath, average worst ke saath, decisions agreement ke saath, cost cost-per-decision ke saath. Ek number akela achha nahi dikh sakta.
+- **Analogy:** Tally sheet ka rule: guest ki ginti ke saath complaint ki ginti bhi likho.
+- **File:** `ops/n8n/order/code/score_message.js` (line 11–14); PR #76.
+
+### Read-only SUB with a caller list
+- **Kya hai:** Ek SUB jo sirf GET karta hai, aur callerPolicy sirf ek MAIN ko allow karta hai. Koi aur use call nahi kar sakta, aur likhne ki capability hi nahi hai.
+- **Analogy:** Ledger clerk ke paas pen nahi hai, aur sirf auditor uske kamre ka darwaza khatkha sakta hai.
+- **File:** `ops/n8n/order/build.js` (line 262); PR #76.
+
+### neverError + fullResponse
+- **Kya hai:** HTTP node error ko throw nahi karta; status aur body data ke roop mein deta hai. Code node tay karta hai ki 500 ka matlab kya hai (yahan: 502 aur ek plain message).
+- **Analogy:** Clerk ka form: "bank ne mana kiya" bhi form ki ek entry hai, phone par chillana nahi.
+- **File:** `ops/n8n/order/build.js` (line 249); PR #76.
+
+### Truncation flag
+- **Kya hai:** 1000 rows maango. Agar 1000 aayi to "shayad aur bhi hain" likho, poora count mat maano.
+- **Analogy:** Tally sheet ki aakhri line: "sheet bhar gayi, aur pages ho sakte hain".
+- **File:** `ops/n8n/order/code/score_summary.js` (line 20); PR #76.
+
+### Return the message with the code
+- **Kya hai:** Ek function jo mana karne par sirf code deta hai, woh caller ko wajah nahi batata. Yahan `act` code aur message dono ek object mein deta hai, taaki jisko wajah dikhani hai uske paas text ho.
+- **Analogy:** Desk ka refusal slip: sirf "No" likha ho to night manager kuch nahi kar sakta. Slip par wajah bhi likhi ho to note card switch par lag jaata hai.
+- **File:** `app/src/App.tsx` (line 106); PR #77.
+
+### Assert where the user looks
+- **Kya hai:** Test wahan check karo jahan user asli mein dekhta hai. Code-level check pass ho sakta hai, par founder ka tab khaali ho sakta hai.
+- **Analogy:** Inspector ko wahi kamra dekhna hai jahan guest sota hai, sirf reception ka register nahi.
+- **File:** `app/tests/e2e/autopilot.spec.ts` (line 113); PR #77.
+
+### Ordered reads under a cap
+- **Kya hai:** Jab read ki limit hoti hai (1000 rows), to `order` ke bina yeh tay nahi hota ki kaunsi rows aayengi. `order=created_at.desc` se cut hamesha newest rows ka hota hai.
+- **Analogy:** Ledger clerk naye pages pehle padhta hai; sheet bhar jaaye to subah ke pages pehle bahar jaate hain.
+- **File:** `ops/n8n/order/build.js` (line 247); PR #77.

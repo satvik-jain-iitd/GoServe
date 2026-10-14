@@ -3,7 +3,7 @@
 - **Branch:** `feat/53-autopilot` → `dev`
 - **Author:** klickbae8yt-star
 - **Story / issue:** #53 "Autopilot that works in airplane mode" (epic #37)
-- **Status:** MERGED into dev `35f78cd` on 14 Oct 2026 15:10Z (APPROVE review 5520018160, head `d8e1ce8`, CI green); 20 threads, replies pending [VERIFIED]
+- **Status:** MERGED into dev `35f78cd` on 14 Oct 2026 15:10Z (APPROVE review 5520018160, head `d8e1ce8`, CI green); 20 threads answered and resolved [VERIFIED]
 - **Files:** 15 · **Lines:** +288 / -12 [VERIFIED]
 - **Reviewer:** satvik-jain-iitd · review 5520018160 (APPROVE), 20 inline threads
 - **Link:** https://github.com/satvik-jain-iitd/GoServe/pull/75
@@ -139,83 +139,103 @@ App.tsx ──> OpsScreen.tsx (sample numbers)
 
 <!-- gh-comment-id: 4272485326 --> `app/src/App.tsx:135` · Risk · **Top-3**
 > Loop sirf `network` code par offline jaata hai; baaki code (503 kill switch, 404 inactive webhook, 401, 409) par alert dikhta hai aur 2 s baad wahi step dobara bhejta hai, jab tak founder dobara tap na kare. Dev URL par activation se pehle yahi hoga (404). PR body kehta hai "stops after Delivered". Ek line: `if (code && code !== "network") return setAuto(false);`? Is PR mein ya agle mein, coder ka call. Ek e2e: 503 reply → ek hi call.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed on the next branch (feat/47-scorecard). Any code other than a missing network stops the loop and leaves the reason on screen. The new e2e sends a 503 and sees exactly one call. It was red first.
+- **Status:** answered
 
 <!-- gh-comment-id: 4272485338 --> `app/src/App.tsx:47` · Risk · **Top-3**
 > `useOps(ready && role === "ops", ...)`: offline demo mein bhi chalta hai. Airplane mode mein Supabase read fail → kuch nahi. Par "wifi on, internet dead" fallback mein read chal sakti hai aur sample order Ready par asli `decide` call `DEMO_ORDER_ID` ke liye jaayegi (SUB 13 order FK par fail). Error `demo ? null` se chhupa hai. `ready && !demo && role === "ops"` ek line?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed there too: `useOps(ready && !demo && ...)`. The new e2e makes the first step fail so the story goes offline, opens Ops, and checks no decide request leaves the phone. It was red first.
+- **Status:** answered
 
 <!-- gh-comment-id: 4272485345 --> `docs/assumptions.md:59` · Assumptions · **Top-3**
 > A49: ek button, do mode. Offline = sample order, 2 s per step, teen screens follow, kuch nahi bheja; online = session ka newest open order, kitchen phir rider ke asli calls, Delivered par ruk; fallback network fail par; dobara tap = stop + sample saaf. Owner se haan ya na. Ek baat jodo: online mode session ke HAR open order ko chalayega, ek ke baad doosra (F77 e), sirf sabse naya nahi.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Done. A49 now says the open orders run newest first, one after the other, and that it stops when no open order is left or a call is refused for a reason other than the network.
+- **Status:** answered
 
 <!-- gh-comment-id: 4272485348 --> `app/src/App.tsx:45` · Understanding
 > Demo mein live hook band (`!demo`): channel band, list = sample. Demo chhodte hi hook wapas, `reload` asli list laata hai. Beech mein doosre device se aaya order miss hoga, par reload pakad lega. Sahi?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Yes. When the demo ends the hook starts again and `reload` reads the real list, so an order that came from another device in between is picked up.
+- **Status:** answered
 
 <!-- gh-comment-id: 4272485352 --> `app/src/App.tsx:85` · Understanding
 > `act` demo mein sirf local merge, `updated_at` abhi ka: `mergeOrder` ka "newer wins" rule isse pass. Event par `arrived` set, status wahi: tracker "On the way" dikhata rehta hai, phir Delivered. Customer ko Arriving yahan bhi nahi dikhta (A45, F73 e): demo script mein rider tab dikhana hoga.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Yes. In the demo, Arriving is an event, so the customer sees On the way until Delivered (A45). The demo script has to show the rider tab for it.
+- **Status:** answered
 
 <!-- gh-comment-id: 4272485356 --> `app/src/App.tsx:122` · Understanding
 > `list.find(status !== "delivered")`: list newest-first (`mergeOrder` sort), to sabse naya open order. Do open orders ho to pehla Delivered hone ke baad agla tick doosra uthayega: loop tab tak jab tak koi open na bache. Demo mein ek order hoga; par doc "stops after Delivered" ko "stops when no open order is left" karo.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Agreed. The wording in A49 is now "stops when no open order is left".
+- **Status:** answered
 
 <!-- gh-comment-id: 4272485364 --> `app/tests/e2e/autopilot.spec.ts:95` · Understanding
 > App.tsx line 124 `!order && failed`: list padh nahi paayi aur koi order nahi → offline. `failed` = `live.error`, jo pehle kisi `act` fail se bhi set ho sakta hai; par tab `order` hota hai, to shart nahi lagti. Theek. Loading par wait: `loading` true rehne par har 2 s check, kabhi band nahi: list kabhi load na ho to loop chalta rahega (bina call). Tap se ruk jaata hai: theek.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Right. While the list is still loading, the loop only checks again every 2 seconds and sends nothing. A tap stops it.
+- **Status:** answered
 
 <!-- gh-comment-id: 4272485372 --> `app/src/App.tsx:145` · Understanding
 > `startOffline`: sample order, `placed` set, step placed, role customer, `auto` on. Agar founder Kitchen tab par tha to customer par aa jaata hai: jaan-boojh kar (tracker dikhe). Theek. `keyRef` saaf nahi hota: demo ke baad asli order place kare to purana key fingerprint se compare hota hai: koi asar nahi.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Yes, on purpose: the customer tracker is the first thing to show. The order key is not touched, so a real order after the demo is not affected.
+- **Status:** answered
 
 <!-- gh-comment-id: 4272485380 --> `app/src/App.tsx:168` · Understanding
 > `navigator.onLine`: airplane mode par false, par "wifi connected, internet dead" par true (F77 b): tab fallback 7 s baad. Android installed app par `onLine` ka vyavhar e2e nahi dekhta (browser switch): #56 row. Stage par: airplane mode se pehle app khol lo (menu cache) — checklist line.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Agreed. I added the checklist line to F77 (f): open the app online once so the menu is saved, then switch on airplane mode. The Android check is the #56 row.
+- **Status:** answered
 
 <!-- gh-comment-id: 4272485387 --> `app/src/screens/OpsScreen.tsx:33` · Understanding
 > App.tsx line 252, Ops demo props: decisions tab dikhti hain jab sample Ready ya aage, numbers fixed (800 ms, 310 ms, 6 runs) with "Sample numbers" sticker. Ek sawal: sample numbers asli jaise lagte hain; investor ke saamne sticker kaafi hai ya "demo" shabd heading mein bhi?
-- **Status:** open
+- **Reply (klickbae8yt-star):** I kept the banner (every screen) and the sticker (ops). I added the question to F77 (g) for the owner: should "(sample)" also be in the heading?
+- **Status:** answered
 
 <!-- gh-comment-id: 4272485393 --> `app/src/lib/autopilot.ts:13` · Understanding
 > `nextAutoAction`: table se agla desk. Unknown status → null (ruk). Arriving sirf jab `arrived` false: ek baar. Yeh wahi niyam hai jo rider tab ke buttons mein hai (`riderActions`): do jagah ek kahani. Ek source? Ponytail: 6 lines, rehne do, par LEARNINGS mein note.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Agreed. I kept it as it is (ponytail) and added a LEARNINGS line: both places tell one story, and the unit test walks the whole story so a missed change shows.
+- **Status:** answered
 
 <!-- gh-comment-id: 4272485399 --> `app/src/lib/autopilot.ts:5` · Assumptions
 > `AUTOPILOT_MS` build par fix (2 s, test 300 ms). 6 step = 12 s; 90 s script (F77 c). Stage par dheema chahiye to rebuild. Theek, par #56 mein ek baar asli pace dekho.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Agreed. I will look at the real pace in #56.
+- **Status:** answered
 
 <!-- gh-comment-id: 4272485405 --> `app/src/lib/autopilot.ts:21` · Understanding
 > Sample order: fixed id (valid hex, e2e ne pakda tha), do dish, total items se, session `demo`. Cart se nahi (F77 d). Address "Flat 4, Green Park, Delhi". Theek. Yeh id kabhi server tak na jaaye: TOP-2 sawal.
-- **Status:** open
+- **Reply (klickbae8yt-star):** That is the point of the TOP-2 question. With the ops fix above, the sample id never reaches the server, and a test checks it.
+- **Status:** answered
 
 <!-- gh-comment-id: 4272485408 --> `app/src/screens/DemoBar.tsx:46` · Understanding
 > Autopilot button `aria-pressed` ke saath, `busy` se disabled nahi (reset/copy ke beech bhi dabta hai). Reset ke beech autopilot on ho to? `reset()` `setOrders([])` karta hai, loop agle tick par "no order" → stop + "Place an order first." Theek.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Agreed. After a reset, the loop sees no order on the next step and stops with "Place an order first."
+- **Status:** answered
 
 <!-- gh-comment-id: 4272485412 --> `app/tests/e2e/autopilot.spec.ts:17` · Testing
 > Offline S1: `calls.status` 0 aur `calls.decide` 0: "kuch nahi bheja" ka proof. Supabase REST calls bhi 0 hone chahiye (hook band): ek assert `net.calls.orderReads` offline ke baad nahi badha? Chhota, par "nothing sent" poora hoga.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Done. The offline spec now also checks that the order list was not read after the phone went offline.
+- **Status:** answered
 
 <!-- gh-comment-id: 4272485415 --> `app/tests/e2e/autopilot.spec.ts:52` · Testing
 > Online: chhe calls, sahi kram, sahi actor, sahi order id aur token; 900 ms baad bhi 6: ruk gaya. Acha. Nahi hai: server 503/404 ke beech loop (TOP-1). Ek spec: `state.reply = 503` → `poll` 1 call, phir 1 hi.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Done. The new spec answers 503 and checks one call, then still one call after 1.2 seconds, and that the button is off.
+- **Status:** answered
 
 <!-- gh-comment-id: 4272485418 --> `app/tests/e2e/autopilot.spec.ts:72` · Testing
 > Dobara tap → calls badhna band. Race: tap ke waqt ek call udaan mein ho to `alive` false → uska jawab merge nahi hota (`if (!alive) return`), par server par step lag chuka. Reload par dikhega. Theek, bas jaan lo.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Yes, known. If a tap lands while a call is in the air, the server keeps that step and the screen shows it after a reload.
+- **Status:** answered
 
 <!-- gh-comment-id: 4272485426 --> `app/tests/e2e/autopilot.spec.ts:89` · Testing
 > Dead server + no order: 15 s timeout, "about 7 s" retry. Yeh supabase-js ka retry hai, hamara nahi. F77 b: fail-fast chahiye to `fetchOrders` par `AbortSignal.timeout`. Stage par 7 s lamba hai: #56 decide.
-- **Status:** open
+- **Reply (klickbae8yt-star):** It stays in F77 (b). I will decide in #56 whether the list read should fail faster.
+- **Status:** answered
 
 <!-- gh-comment-id: 4272485434 --> `app/tests/unit/autopilot.test.ts:44` · Testing
 > "defaults to 2 seconds" sirf `> 0` check karta hai. Env se 300 aaye to bhi pass. Naam ya assert badlo: `toBe(2000)` jab env na ho (vitest build mein env nahi).
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed. The unit test now says `toBe(2000)`; the unit test build has no setting, so it checks the default.
+- **Status:** answered
 
 <!-- gh-comment-id: 4272485442 --> `docs/tests/test-cases.md:119` · Impact
 > Live row: Android installed app, airplane mode, Autopilot → Delivered; phir online order + Autopilot → doosre device ki kitchen par chhe steps. Yeh #56 ke saath. Isi row mein 2 s pace aur 7 s fallback ka napa hua time likhna.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Agreed. The measured pace and the fallback time go into that row in #56.
+- **Status:** answered
 
 ---
 
