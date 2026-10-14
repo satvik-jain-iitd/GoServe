@@ -10,6 +10,7 @@ export class PlaceError extends Error {
 export type PlaceInput = { sessionId: string; key: string; items: { menu_item_id: string; qty: number }[]; address: string };
 export type PlacedOrder = { id: string; status: string; total_paise: number; updated_at: string };
 export type OrderDeps = { url: string; token: string; fetchFn: typeof fetch };
+export const orderDeps = (): OrderDeps => ({ url: import.meta.env.VITE_ORDER_URL, token: import.meta.env.VITE_DEMO_TOKEN, fetchFn: fetch.bind(window) });
 
 type ApiAnswer = { ok?: boolean; created?: boolean; order?: PlacedOrder; decision?: Decision; error?: string; message?: string };
 

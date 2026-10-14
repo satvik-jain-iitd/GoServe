@@ -10,6 +10,7 @@ Build code: `ops/n8n/order/build.js`. Tests: `node --test "ops/n8n/order/*.test.
 | GS ERR 00 Alert | ERR | Sends a Telegram message to the owner when an order workflow fails. | n8n (error workflow of the three below) | Deployed 14 Oct 2026, inactive (id `H9dl1O5HenAQ3sRm`) |
 | GS SUB 13 Decide | SUB | Picks a rider by the rule, asks Jev for a suggestion, writes one `decision_log` row. | MAIN 01 | Deployed 14 Oct 2026, inactive (id `4Qb0pB031ky91IKK`) |
 | GS SUB 15 Add event | SUB | Writes the rider's `order.arriving` event through `rider_event`; the status stays. | MAIN 01 | Deployed 14 Oct 2026, inactive (id `pH12pWtoV0R2CtjE`) |
+| GS SUB 16 Health | SUB | Asks Jev one tiny question and says if it answered and how fast. Writes nothing. | MAIN 01 | Built, not deployed (story #54) |
 | GS SUB 14 Write logs | SUB | Writes one `run_log` row. | MAIN 01 | Deployed 14 Oct 2026, inactive (id `RqjujaDaJSz0rSz7`) |
 | GS MAIN 01 Order API | MAIN | The phone's webhook. Checks the token and the kill switch, then calls a SUB. | The phone (`POST /webhook/gs-order`) | Deployed 14 Oct 2026, updated the same day with the event route, inactive (id `B0MaX7Sa6PaTVf81`) |
 | GS SUB 11 Place order | SUB | Checks the input, calls the database function `place_order`. | MAIN 01 | Deployed 14 Oct 2026, inactive (id `l5yCWExn5hQMqzNN`) |
@@ -49,6 +50,14 @@ Decide which rider (story #46):
 
 The answer carries `decision`: the rule pick, Jev's pick with confidence (or why Jev was not used: `jev_off`, `jev_error`, `jev_bad_reply`, `jev_low_confidence`, `cost_cap`), and the pick used. **In MVP 0 the rule always decides; Jev only advises.** The rule: the free rider with the fewest trips, then the shortest distance, else `none` (contract D1). Jev gets ids, free flag, distance and trips only, never names or addresses. Jev limits: pinned `typesafe/jev-1.13`, temperature 0, 32 tokens, 900 ms, accepted at confidence 0.70 or more, ignored over the per-call cost cap (Config `jev_cost_cap`).
 
+Health check (story #54):
+
+```json
+{ "action": "health" }
+```
+
+The answer is `{ ok: true, jev: { ok, status, ms } }`. `status` is `ok`, `jev_off`, `jev_error` or `jev_bad_reply`. A Jev failure is still a 200 answer: the health page shows it as FAIL. It writes no order data. It costs about $0.00002 for the one Jev call, and MAIN 01 logs it in `run_log` like any other call.
+
 Rider arriving (story #50):
 
 ```json
@@ -78,7 +87,7 @@ JSON `{ ok, error?, message?, created?, order? }` with an HTTP code:
 
 ## Run log
 
-After MAIN 01 has answered a routed call (place, status, decide), it calls SUB 14, which writes one `run_log` row: workflow, time taken, settings version (`params_version` in Config), cost (Jev cost for a decision) and error. Calls refused at the gate (401, 503, bad action) are in the n8n execution list, not in `run_log`.
+After MAIN 01 has answered a routed call (place, status, decide, event, health), it calls SUB 14, which writes one `run_log` row: workflow, time taken, settings version (`params_version` in Config), cost (Jev cost for a decision) and error. Calls refused at the gate (401, 503, bad action) are in the n8n execution list, not in `run_log`.
 
 ## Contract of each SUB
 
@@ -88,6 +97,7 @@ Output of both: `{ ok, status_code, error?, message?, created?, order? }`.
 
 SUB 13 input: `session_id`, `kitchen_id`, `order_id`, `riders` (1 to 10, unique ids), `params_version`, `jev_enabled`, `jev_model`, `jev_cost_cap`, `kill_switch`, `supabase_url`. Output: `{ ok, status_code, decision?, cost?, error?, message? }`. It writes only one `decision_log` row.
 SUB 15 input: `session_id`, `order_id`, `event`, `actor`, `kill_switch`, `supabase_url`. Output: `{ ok, status_code, order?, error?, message? }`. It writes only one `order_events` row, through `rider_event`.
+SUB 16 input: `jev_enabled`, `jev_model`. Output: `{ ok, status_code, jev: { ok, status, ms }, cost }`. It writes nothing.
 SUB 14 input: `session_id`, `kitchen_id`, `workflow`, `params_version`, `duration_ms`, `cost`, `error`, `supabase_url`. Output: `{ ok, status_code }`. It writes only one `run_log` row.
 The Jev call is the one node that continues on error: Jev is advice, so a Jev failure never stops the rule decision. Every write node fails closed.
 A SUB writes only through the database function. If the kill switch is on or the input is bad, it returns the refusal and calls nothing.
@@ -106,4 +116,4 @@ Activation (needs the owner's yes), rate limit, production copy of the workflows
 
 ## Deploy
 
-`node ops/n8n/order/deploy.js` shows the plan and writes nothing. `--apply` creates the missing workflows (inactive) and puts the content in: ERR 00, SUB 11, 12, 13, 14, then MAIN 01. It refuses until both credentials exist. It never activates or deletes. The demo token is made on the first apply and saved in the vault.
+`node ops/n8n/order/deploy.js` shows the plan and writes nothing. `--apply` creates the missing workflows (inactive) and puts the content in: ERR 00, SUB 11, 12, 13, 14, 15, 16, then MAIN 01. It refuses until both credentials exist. It never activates or deletes. The demo token is made on the first apply and saved in the vault.

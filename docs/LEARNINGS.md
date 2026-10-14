@@ -109,3 +109,5 @@ short. Say what happened and what to do next time.
 - A screen that asks a server once and never retries must also show the failed state on the item itself; an alert at the top plus "Asking…" on the slip reads as "still working". Check the refused path in every one-shot call.
 - `count: "exact"` with a `limit` gives the right total but the rows are only the first page; a "latest row of kind X" lookup needs its own filtered query, not a scan of the page.
 - Two lists of the same names (the Jev status in `decide_result.js` and the reasons in `ops.ts`) drift apart. Keep both in the test files so a new status fails a test, and a reason text of "no reason given" is the safe fallback.
+- A static host does not open `/health` on a fresh visit unless unknown paths fall back to `index.html`. The service worker only helps after the first load. Test the fallback in the deploy config, not only in the app.
+- A fake that ignores a query's `limit` hides the bug the limit causes. Make the test double cut rows the way the real server does, then the test fails when the code relies on an unbounded list.
