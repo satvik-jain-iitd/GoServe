@@ -1,7 +1,7 @@
-// Deploys the four GS order workflows to n8n. Default is a DRY RUN: it only reads and prints the plan.
+// Deploys the six GS order workflows to n8n. Default is a DRY RUN: it only reads and prints the plan.
 //   node ops/n8n/order/deploy.js            plan only (reads the workflow list and the credential list)
 //   node ops/n8n/order/deploy.js --apply    create missing workflows (inactive), then PUT the real content
-// It never activates, deletes or touches any other workflow. Deploy order: ERR 00, SUB 11, SUB 12, then MAIN 01 (rulebook 95.16).
+// It never activates, deletes or touches any other workflow. Deploy order: ERR 00, SUB 11, 12, 13, 14, then MAIN 01 (rulebook 95.16).
 // Secrets come from ~/Desktop/Secrets (N8N_API_KEY, GOSERVE_TELEGRAM_CHAT_ID, SUPABASE_GOSERVE_DEV_URL, GOSERVE_DEMO_TOKEN) and are never written to the repo.
 const fs = require('fs');
 const os = require('os');
@@ -10,9 +10,10 @@ const crypto = require('crypto');
 const { build } = require('./build');
 
 const BASE = 'https://n8n.linkright.in/api/v1';
-const NAMES = { alert: 'GS ERR 00 Alert', sub11: 'GS SUB 11 Place order', sub12: 'GS SUB 12 Change status', main01: 'GS MAIN 01 Order API' };
-const ORDER = ['alert', 'sub11', 'sub12', 'main01'];
+const NAMES = { alert: 'GS ERR 00 Alert', sub11: 'GS SUB 11 Place order', sub12: 'GS SUB 12 Change status', sub13: 'GS SUB 13 Decide', sub14: 'GS SUB 14 Write logs', main01: 'GS MAIN 01 Order API' };
+const ORDER = ['alert', 'sub11', 'sub12', 'sub13', 'sub14', 'main01'];
 const CREDENTIAL = 'GoServe Supabase dev';
+const JEV_CREDENTIAL = 'GoServe OpenRouter';
 
 // PUT /workflows/{id} accepts only these keys (rulebook 113).
 const payload = (w) => ({ name: w.name, nodes: w.nodes, connections: w.connections, settings: w.settings });
@@ -35,6 +36,7 @@ async function main() {
   const creds = (await call('GET', '/credentials?limit=250')).data;
   const credential = creds.find((c) => c.name === CREDENTIAL);
   if (!credential) throw new Error('credential "' + CREDENTIAL + '" not found');
+  const jevCredential = creds.find((c) => c.name === JEV_CREDENTIAL);   // needs the owner's yes; the apply refuses without it
   const ids = {};
   for (const k of ORDER) {
     const found = wfs.filter((w) => w.name === NAMES[k]);
@@ -43,9 +45,10 @@ async function main() {
   }
   console.log('Plan (' + (apply ? 'APPLY' : 'dry run') + '):');
   for (const k of ORDER) console.log('  ' + NAMES[k].padEnd(26) + (ids[k] ? 'update ' + ids[k] : 'create'));
-  console.log('  credential "' + CREDENTIAL + '" ' + credential.id + '; nothing is activated.');
+  console.log('  credential "' + CREDENTIAL + '" ' + credential.id + '; "' + JEV_CREDENTIAL + '" ' + (jevCredential ? jevCredential.id : 'MISSING (apply will refuse)') + '; nothing is activated.');
   if (!apply) return;
 
+  if (!jevCredential) throw new Error('credential "' + JEV_CREDENTIAL + '" not found: ask the owner for a yes to create it');
   let token = vault('04_integrations.env', 'GOSERVE_DEMO_TOKEN');
   if (!token) {   // saved to the vault at once (rule A6)
     token = crypto.randomBytes(24).toString('hex');
@@ -55,7 +58,7 @@ async function main() {
   for (const k of ORDER) {   // shells first, so every workflow knows the others' ids
     if (!ids[k]) ids[k] = (await call('POST', '/workflows', { name: NAMES[k], nodes: [{ id: 'shell', name: 'Shell', type: 'n8n-nodes-base.noOp', typeVersion: 1, position: [0, 0], parameters: {} }], connections: {}, settings: { executionOrder: 'v1' } })).id;
   }
-  const built = build({ ids, token, supabaseUrl: vault('02_databases.env', 'SUPABASE_GOSERVE_DEV_URL'), credential: { id: credential.id, name: CREDENTIAL }, chatId: vault('04_integrations.env', 'GOSERVE_TELEGRAM_CHAT_ID') });
+  const built = build({ ids, token, supabaseUrl: vault('02_databases.env', 'SUPABASE_GOSERVE_DEV_URL'), credential: { id: credential.id, name: CREDENTIAL }, openrouterCredential: { id: jevCredential.id, name: JEV_CREDENTIAL }, chatId: vault('04_integrations.env', 'GOSERVE_TELEGRAM_CHAT_ID') });
   for (const k of ORDER) {
     await call('PUT', '/workflows/' + ids[k], payload(built[k]));
     const back = await call('GET', '/workflows/' + ids[k]);

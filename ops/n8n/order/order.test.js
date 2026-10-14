@@ -1,4 +1,4 @@
-// Story #45 tests. Run: node --test ops/n8n/order/
+// Story #45 tests. Run: node --test "ops/n8n/order/*.test.js"
 // These were written with the code, not before it. The check that they bite (each made one test fail, 14 Oct 2026):
 //   1) code/shape.js: change out(409 to out(200   2) code/guard_place.js: replace j.kill_switch === true with false   3) lib/layout.js: GAP 200 to 100.
 // 1) the Code node logic, run exactly as written in code/*.js   2) wiring and contract   3) canvas layout (rulebook B12.5)
@@ -73,6 +73,7 @@ test('S1 S2 answers: database results map to codes and never leak raw text', () 
   assert.deepEqual([odd.ok, odd.status_code, odd.error], [false, 502, 'database_error']);
   assert.ok(!JSON.stringify(odd).includes('relation'));
   assert.equal(run('shape.js', { statusCode: 401, body: 'oops' }).status_code, 502);
+  assert.deepEqual([err('session_order_cap').status_code, err('session_order_cap').error], [429, 'session_order_cap']);
   assert.equal(run('shape.js', { statusCode: 200, body: {} }).status_code, 502);   // wrong function or url: never a fake success
 });
 
@@ -96,7 +97,7 @@ test('wiring: order after the trigger is Config, token check, kill switch, then 
   assert.deepEqual(next('Check token'), ['Token ok?']);
   assert.deepEqual([next('Token ok?', 0), next('Token ok?', 1)], [['Kill switch?'], ['Respond 401']]);
   assert.deepEqual([next('Kill switch?', 0), next('Kill switch?', 1)], [['Respond 503'], ['Route']]);
-  assert.deepEqual([next('Route', 0), next('Route', 1), next('Route', 2)], [['Call SUB 11 Place order'], ['Call SUB 12 Change status'], ['Respond 400']]);
+  assert.deepEqual([next('Route', 0), next('Route', 1), next('Route', 2), next('Route', 3)], [['Call SUB 11 Place order'], ['Call SUB 12 Change status'], ['Call SUB 13 Decide'], ['Respond 400']]);
   assert.deepEqual(next('Call SUB 11 Place order'), ['Respond result']);
   assert.deepEqual(next('Call SUB 12 Change status'), ['Respond result']);
 });
@@ -157,10 +158,10 @@ test('error alert: the message escapes HTML and carries workflow, node, error an
   assert.doesNotThrow(() => run('format_alert.js', {}));
 });
 
-test('deploy: only the four GS workflows, alert first and MAIN last; the PUT body has only the allowed keys', () => {
+test('deploy: only the six GS workflows, alert first and MAIN last; the PUT body has only the allowed keys', () => {
   const { payload, NAMES, ORDER } = require('./deploy');
-  assert.deepEqual(ORDER, ['alert', 'sub11', 'sub12', 'main01']);
-  assert.deepEqual(ORDER.map((k) => NAMES[k]), [wf.alert.name, wf.sub11.name, wf.sub12.name, wf.main01.name]);
+  assert.deepEqual(ORDER, ['alert', 'sub11', 'sub12', 'sub13', 'sub14', 'main01']);
+  assert.deepEqual(ORDER.map((k) => NAMES[k]), [wf.alert.name, wf.sub11.name, wf.sub12.name, wf.sub13.name, wf.sub14.name, wf.main01.name]);
   assert.deepEqual(Object.keys(payload(wf.main01)).sort(), ['connections', 'name', 'nodes', 'settings']);
   const src = fs.readFileSync(path.join(__dirname, 'deploy.js'), 'utf8');
   assert.ok(!/\/activate|'DELETE'/.test(src), 'deploy must never activate or delete');

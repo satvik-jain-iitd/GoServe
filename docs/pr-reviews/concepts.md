@@ -209,3 +209,97 @@ Har naya technical word yahan. Simple Hindi mein. Ek line ka "yeh kya hai", ek l
 - **Kya hai:** Ek chhota record: faisla, rejected options, aur nateeje.
 - **Analogy:** Dhaba ka faisla register.
 - **File:** `docs/decisions/ADR-010-session-id-is-the-anonymous-user-id.md`.
+
+## PR #66 se
+
+### RPC (remote procedure call) through PostgREST
+- **Kya hai:** `POST /rest/v1/rpc/<function>` se database ka function chalta hai. n8n seedha SQL nahi likhta, function ko bulata hai.
+- **Analogy:** Counter boy manager se ek sawaal poochta hai, aur manager hi register likhta hai.
+- **File:** `ops/n8n/order/build.js` line 41 (HTTP Request node).
+
+### Transactional function
+- **Kya hai:** Ek function ke andar sab likhna ek saath chalta hai. Koi ek step fail ho to sab undo ho jaata hai.
+- **Analogy:** Register aur carbon copy ek hi haath se, ek hi baar mein.
+- **File:** `app/supabase/migrations/0003_order_functions.sql` lines 5–59.
+
+### MAIN / SUB workflows (B11)
+- **Kya hai:** MAIN workflow trigger aur routing sambhalta hai. Har SUB ek hi kaam karta hai aur MAIN use id se bulata hai.
+- **Analogy:** Counter boy aur do helpers. Counter boy sawaal sunta hai, helper kaam karta hai.
+- **File:** `ops/n8n/order/build.js` (MAIN nodes lines 89–112, `callSub` lines 80–84).
+
+### Execute Workflow Trigger with defined inputs
+- **Kya hai:** SUB apne fields pehle se declare karta hai. n8n check karta hai ki sahi fields aayi hain ya nahi.
+- **Analogy:** Helper ka printed slip format: khaane ke blank khaane bharne hi hain.
+- **File:** `ops/n8n/order/build.js` line 36.
+
+### callerPolicy
+- **Kya hai:** Sirf listed workflows hi is SUB ko bula sakte hain. Baaki sab ke calls n8n rok deta hai.
+- **Analogy:** Sirf counter boy helpers ko bula sakta hai. Customer seedha helper ko nahi bula sakta.
+- **File:** `ops/n8n/order/build.js` line 59 (`workflowsFromAList`, `callerIds`).
+
+### Kill switch checked twice (rulebook 95.15)
+- **Kya hai:** "Orders band hain" ka check MAIN mein bhi hai aur har write SUB mein bhi. Ek jagah bypass ho to doosri jagah rok leta hai.
+- **Analogy:** "Orders paused" board counter par bhi, aur kitchen ke darwaze par bhi.
+- **File:** `ops/n8n/order/build.js` line 97 (MAIN), `ops/n8n/order/code/guard_place.js` and `guard_status.js` (SUB).
+
+### neverError + fullResponse
+- **Kya hai:** HTTP node error phenkne ki jagah status code aur body deta hai. Isse SUB khud decide karta hai ki jawab kaisa jaaye.
+- **Analogy:** Helper jawab padh kar apna reply card likhta hai, bina chillaye.
+- **File:** `ops/n8n/order/build.js` line 43; mapping in `ops/n8n/order/code/shape.js`.
+
+### Mutation check
+- **Kya hai:** Code ko jaan-boojh kar todna (jaise 409 ko 200 karna) aur dekhna ki test laal hota hai. Ye proof hai ki test asli cheez pakadta hai.
+- **Analogy:** Alarm test karne ke liye darwaza khol kar dekhna ki bell bajti hai.
+- **File:** `docs/LEARNINGS.md` line 74; PR #66 body.
+
+### Sticky-note layout as code (B12)
+- **Kya hai:** Workflow ke boxes aur positions code se bante hain, haath se nahi. Tests geometry check karte hain (overlap, gap, left-to-right).
+- **Analogy:** Kitchen ki deewar par chart, chhapa hua. Koi haath se nahi khinchta.
+- **File:** `ops/n8n/lib/layout.js` and `ops/n8n/lib/layout_checks.js`.
+
+### Commit subject limit (72)
+- **Kya hai:** Commit ki pehli line 72 characters se lambi ho to Guard CI use fail karta hai. Merge se pehle CI green chahiye.
+- **Analogy:** Register ki column ki chaudai. Lamba header column se bahar jaata hai.
+- **File:** `.github/workflows/ci.yml` (Guard job); commit `53dbce7` (77 chars).
+
+## PR #67 se
+
+### Rule first, model second (shown, not trusted)
+- **Kya hai:** Ek deterministic rule decide karta hai. AI (Jev) ka jawab saath mein likha jaata hai, par sirf salah ke roop mein.
+- **Analogy:** Dispatcher house rule se rider bhejta hai. Salahkaar ka tip diary ke margin mein likh deta hai.
+- **File:** `ops/n8n/order/code/decide_result.js` (lines 23–24: `decision` object, `chosen_pick` = rule pick).
+
+### Decision record for later learning
+- **Kya hai:** Ek row mein state, options, dono picks, status, settings version, place aur ek khaali `result` field. Result baad mein bharega.
+- **Analogy:** Diary ka page jisme "kya hua" ki line abhi khaali hai.
+- **File:** `ops/n8n/order/code/decide_result.js`; table `decision_log`.
+
+### Confidence threshold (0.70) aur cost cap
+- **Kya hai:** Jev ka jawab tabhi "usable" hai jab confidence 0.70 se upar ho aur cost cap (`$0.001`) ke andar ho. Warna raay rakhi jaati hai par mark hoti hai.
+- **Analogy:** Salahkaar bola "pata nahi", ya uski fees zyada hain. Raay likhi, par bhejne ke kaam nahi aayi.
+- **File:** `ops/n8n/order/code/decide_result.js` (line 5 THRESHOLD, line 19 statuses).
+
+### Continue on error, sirf advice path par (B7 exception)
+- **Kya hai:** Jev HTTP node error par bhi SUB ko aage chalne deta hai. Write nodes phir bhi fail-closed rehte hain.
+- **Analogy:** Salahkaar late hai, dispatcher phir bhi rider bhejta hai. Register ka pen toota, to counter ruk jaata hai.
+- **File:** `ops/n8n/order/build.js` (lines 101–104, `continueRegularOutput` on Ask Jev).
+
+### Log after the answer
+- **Kya hai:** MAIN pehle customer ko jawab bhejta hai (`Respond result`), phir `Log run` se SUB 14 ko log likhne bhejta hai. Logging customer ko slow nahi karti.
+- **Analogy:** Pehle parcel customer ko, phir duty register mein line.
+- **File:** `ops/n8n/order/build.js` (lines 196–198); `ops/n8n/order/code/log_run.js`.
+
+### Per-session cap (429)
+- **Kya hai:** Ek session ke 20 orders ke baad naya order 429 se ruk jaata hai. Retry (same key) chalta hai. Reset = nayi session (story #52).
+- **Analogy:** Ek customer ka token limit. Counter kehta hai "bahut ho gaya". Purani parchi pe purana order mil jaata hai.
+- **File:** `app/supabase/migrations/0004_session_order_cap.sql` (line 52); `shape.js` (429 mapping).
+
+### Red first for workflow code
+- **Kya hai:** Workflow code (n8n) ke tests pehle likhe gaye aur laal dekhe gaye, phir code aaya. 34 node tests mein se 15 pehle fail hue.
+- **Analogy:** Alarm pehle test hua, phir dukaan khuli. Pata chalta hai alarm kaam karta hai ya nahi.
+- **File:** `ops/n8n/order/decide.test.js` (line 1; PR body ke mutabik).
+
+### Deploy refuses without its credential
+- **Kya hai:** Deploy script pehle check karta hai ki zaroori credential (`GoServe OpenRouter`) hai ya nahi. Nahi hai to apply refuse karta hai, kuch nahi likhta.
+- **Analogy:** Delivery van key ke bina nahi nikalti.
+- **File:** `ops/n8n/order/deploy.js` (line 40 lookup, line 52 refuse).

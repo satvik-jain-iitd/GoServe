@@ -7,6 +7,7 @@ if (res.statusCode === 200 && body.order && typeof body.order === 'object') {
   return out(body.created === true ? 201 : 200, { order: body.order, created: body.created === true });
 }
 const msg = String(body.message || '');
+if (msg === 'session_order_cap') return out(429, { error: 'session_order_cap', message: 'Too many orders in this demo session.' });
 if (msg === 'order_not_found') return out(404, { error: 'order_not_found', message: 'No such order in this session.' });
 if (msg.startsWith('illegal status step')) return out(409, { error: 'illegal_step', message: 'That step is not allowed now.' });
 if (msg.startsWith('invalid_status')) return out(400, { error: 'invalid_status', message: 'Unknown status.' });

@@ -2,7 +2,7 @@
 
 System ka ek-page picture. Har chapter ke baad update karta hoon.
 
-_Last updated: PR #65 (merged `e7f1f2b`); ADR-010 accepted_
+_Last updated: PR #67 (approved, `50853ce`); PRs #62–#66 merged_
 
 ## GoServe — ab tak ki tasveer
 
@@ -15,6 +15,7 @@ _Last updated: PR #65 (merged `e7f1f2b`); ADR-010 accepted_
      |--- scripts/       → guard.py  (repo rules ka checklist)         ← PR #59
      |                    test_schema.py (auditor: DB rules ka test, rollback)  ← PR #64
      |                    apply_migration.py (printer: SQL file DB par bhejta hai)  ← PR #64
+     |                    test_order_rpc.py (6 DB tests, begin…rollback)  ← PR #66
      |--- .github/       → ci.yml  (site + app + guard jobs)           ← PR #59
      |                    deploy-dev.yml (push to dev → Vercel dev)   ← PR #62
      |                    deploy-app.yml (push to main → Cloudflare Pages goserve-app, prod) ← PR #63
@@ -30,7 +31,16 @@ _Last updated: PR #65 (merged `e7f1f2b`); ADR-010 accepted_
                           ├─ tests/integration/supabase.test.ts  (do mystery customers + ghanti ka stopwatch)  ← PR #65
                           ├─ vitest.integration.config.ts  ← PR #65
                           ├─ supabase/migrations/0001_schema.sql  (7 tables + 2 triggers)  ← PR #64
-                          └─ supabase/migrations/0002_rls_realtime_menu.sql  (RLS + Realtime + seed)  ← PR #65
+                          ├─ supabase/migrations/0002_rls_realtime_menu.sql  (RLS + Realtime + seed)  ← PR #65
+                          ├─ supabase/migrations/0003_order_functions.sql  (place_order, change_status = manager)  ← PR #66
+                          └─ supabase/migrations/0004_session_order_cap.sql  (place_order + session cap 20 → 429)  ← PR #67
+     |--- ops/n8n/       → lib/layout.js + layout_checks.js  (deewar chart: positions + checks)  ← PR #66
+     |                    order/build.js  (blueprint: GS MAIN 01 + SUB 11 + SUB 12)  ← PR #66
+     |                    order/code/*.js  (token check, guards, shape)  ← PR #66
+     |                    order/code/decide_guard.js, decide_result.js, decide_done.js  (dispatcher: rule, Jev advice, diary)  ← PR #67
+     |                    order/code/guard_log.js, log_done.js, log_run.js  (duty register: run_log)  ← PR #67
+     |                    order/order.test.js (18 tests) + order/decide.test.js (15 tests, red first)  ← PR #66/#67
+     |--- docs/integrations/n8n-order-workflows.md  (contract + registry)  ← PR #66
 
 [ pre-commit ] ──> guard.py (local, commit se pehle)   ← PR #59
 [ CI ]         ──> site + app + guard jobs (remote, push ke baad)  ← PR #59
@@ -51,6 +61,21 @@ Dhaba ka register: 7 pages, goserve-dev database mein. Ab taale (RLS) ke saath.
 Realtime (ghanti) on `orders`, `order_events` — RLS maanti hai.
 
 [VERIFIED by live query, 14 Oct: RLS on 7 tables, 4 read policies, 0 write policies; kitchens 1, menu_items 10, orders 0, order_events 0]
+
+## Order path (n8n + database) — PR #66, built, not deployed
+
+Dhaba counter: phone = customer, n8n = counter boy, database function = manager.
+
+- Phone parchi deta hai (`POST /webhook/gs-order`, header `x-gs-token`).
+- Counter boy (GS MAIN 01) token dekhta hai, "orders paused" board (kill switch) dekhta hai, action ke hisaab se helper ko bhejta hai.
+- Helper (GS SUB 11 place / SUB 12 status) board dobara dekhta hai, parchi check karta hai, manager ko ek hi call karta hai (`/rest/v1/rpc/place_order|change_status`, service role).
+- Manager order aur carbon copy ek saath likhta hai, ya kuch nahi. Price rate card se, parchi se nahi.
+- Helper reply card banata hai (201/200/400/404/409/429/503/502), counter boy wahi customer ko deta hai.
+- **Dispatcher (GS SUB 13 Decide, PR #67):** bahar khade riders dekhta hai (free? trips? distance?), house rule se pick karta hai, 900 ms mein salahkaar (Jev) se poochhta hai. Dono raay `decision_log` diary mein; bhejta rule ka rider hi.
+- **Duty register (GS SUB 14 Write logs):** jawab jaane ke baad ek line `run_log` mein: action, time, settings version, cost, error.
+- **Token limit (429):** ek session ke 20 orders ke baad "bahut ho gaya". Retry chalta hai; reset = nayi session.
+
+_Status: 6 workflows built (ERR 00, SUB 11–14, MAIN 01), tests green (node 34, DB 9). n8n par deploy nahi hua (VERIFIED). Owner ka A42 + OpenRouter credential + "push kar do" pending; activation alag yes. Live proof pending._
 
 ## Flow (ek code change)
 1. Dev commit → pre-commit hook (guard files + message).
@@ -85,6 +110,15 @@ Realtime (ghanti) on `orders`, `order_events` — RLS maanti hai.
 - **Anonymous user id = session.** Counter par token number milta hai, naam nahi. Wahi parchi ka malik hai (ADR-010).
 - **Realtime RLS ko maanta hai.** Ghanti sirf apni parchi par bajti hai; test mein insert se 2 s ke andar.
 - **Dev "clean" ka matlab har store.** Orders 0, events 0 — aur review ke baad anonymous users bhi 0 (test ab khud delete karta hai, 4bf41e1).
+- **DB kaam karta hai, n8n patla counter hai** (PR #66). Order aur price ka sach SQL function mein; n8n atomic multi-table write nahi kar sakta (ADR-007/009).
+- **MAIN / SUB pattern (B11) + callerPolicy.** Counter boy trigger sambhalta hai, helper ek kaam, sirf listed workflows helper ko bula sakte hain. Kill switch do baar (95.15).
+- **CI laal = gate ka kaam.** 77-char commit subject Guard ne pakda (review ke baad 60 chars, green). Guard hum par bhi chalta hai; CI status PR body se pehle padho.
+- **Tests green, par kuch deploy nahi.** Live webhook call (401/201/200/409/503) abhi nahi hui; asli proof pending.
+- **Rule decides, adviser shown** (PR #67): dispatcher rule se bhejta hai; Jev ki raay diary mein dikhti hai, faisla nahi badalti.
+- **Decision diary baad mein sikhane ke liye:** har decision ka ek row, dono raay + khaali "kya hua" line. Yahi label data banega (Laya, MVP 1).
+- **Log jawab ke baad:** customer ko pehle jawab, phir register. Logging order ko slow nahi karti.
+- **Cap ek brake hai:** 20 orders per session; race ka chhota gap khula.
+- **Red first workflow code par bhi chala:** 15 tests pehle laal, phir code.
 
 ## Abhi bhi andhera (jawab nahi mila)
 - Kaun `order_events` likhega: app, n8n, ya trigger? (Abhi koi nahi.)
@@ -93,11 +127,20 @@ Realtime (ghanti) on `orders`, `order_events` — RLS maanti hai.
 - Do-device demo: session browser ke saath hai; kitchen doosre device par 0 orders dekhegi. Demo ek device + split view par (ADR-010).
 - Prod par captcha chahiye ya nahi (F63). Abhi rate limit 30/hour/IP.
 - Ops data (`decision_log`, `run_log`, `params`) phone tak kaise aayega: n8n se, ya read policy se?
+- Error alert: `GS ERR 00 Alert` ban gaya (ddb12f1), deploy pending. Activation se pehle per-session cap (F66 c).
+- Rate limit public webhook par (F65 d, ADR-009): kaun, kab?
+- Config (kill switch, token) `params` se kab padhega; abhi hardcoded, badalne ke liye PUT (B13.1, #46).
+- Prod: same build do baar deploy ya copy (F65 c)? Reviewer: do baar deploy. Owner ka faisla.
+- Retry mein badla cart: key per cart (#48) ya 409?
+- Riders phone se aate hain (A42). Pilot se pehle riders table / server state chahiye.
+- Jev ka reply shape live test nahi hua (`usage.cost`, JSON reply stub). Row 76 pending deploy.
+- `guard_failed` status (Jev busy rider chune): abhi `ok` + `agrees:false`. Open.
 - Router / screens ka shape (aage ke chapters).
 - Supabase aur auth kahan baithenge (ADR-009).
 - Role-wise code-splitting ka plan.
 
 ## Abhi kya NAHI hai
 - Phone ke liye write rules nahi (phone kabhi nahi likhta, ADR-009/010). Real logins: MVP 1. Self-hosted photos: #54. Indexes PK/unique ke alawa: screen stories ke saath.
+- 6 workflows n8n par deploy/active nahi (owner: A42, OpenRouter credential F67, "push kar do"; activation alag yes). Live rows pending. MAIN 90 scorecard = #47. Riders table nahi (A42). Laya = MVP 1.
 - Koi login, koi order, koi payment, koi kitchen/rider screen.
 - Dev deploy job hai (PR #62, merged). Prod deploy workflow hai (PR #63, open), par `main` par `app/` abhi nahi hai. Release list fix ho gayi (4b77e65); pehli release PR ke baad app prod par aayega. `goserve-app.pages.dev` abhi 522 hai.
