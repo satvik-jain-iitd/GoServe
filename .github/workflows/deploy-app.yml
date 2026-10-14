@@ -30,7 +30,13 @@ jobs:
           cache: npm
           cache-dependency-path: app/package-lock.json
 
+      # Prod keys come from their own secrets (PROD_*), never the dev ones (story #78).
       - name: Build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.PROD_VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.PROD_VITE_SUPABASE_ANON_KEY }}
+          VITE_ORDER_URL: ${{ secrets.PROD_VITE_ORDER_URL }}
+          VITE_DEMO_TOKEN: ${{ secrets.PROD_VITE_DEMO_TOKEN }}
         run: |
           npm ci
           npm run build
