@@ -14,6 +14,11 @@ class DeployDev(unittest.TestCase):
             self.assertIn(f"secrets.{s}", self.text)
         self.assertRegex(self.text, r"vercel(@\S+)? deploy --prebuilt --prod")
 
+    def test_the_dev_build_gets_its_public_keys_from_secrets(self):
+        # Story #48: the app reads these at build time. They are public by design (ADR-009), but kept in secrets so dev and prod can differ.
+        for k in ("VITE_SUPABASE_URL", "VITE_SUPABASE_ANON_KEY", "VITE_ORDER_URL", "VITE_DEMO_TOKEN"):
+            self.assertIn(f"{k}: ${{{{ secrets.{k} }}}}", self.text)
+
     def test_s2_site_changes_never_trigger_it(self):
         m = re.search(r"paths:\n((?:\s+- .*\n)+)", self.text)
         self.assertIsNotNone(m, "deploy must have a paths filter")

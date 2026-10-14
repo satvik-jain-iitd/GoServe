@@ -12,3 +12,31 @@ body {
 h1 {
   color: var(--md-primary);
 }
+
+/* Customer screens (story #48). Colours and sizes come from the tokens only. */
+.shell { padding-bottom: var(--gs-space-9); }
+h2 { font-size: var(--gs-text-xl); color: var(--md-on-background); }
+ul { list-style: none; margin: 0; padding: 0; }
+.dishes { display: grid; gap: var(--gs-space-4); }
+.dish { display: grid; grid-template-columns: 5rem 1fr auto; gap: var(--gs-space-3); align-items: center; background: var(--md-surface); border-radius: var(--gs-radius-m); padding: var(--gs-space-3); box-shadow: var(--gs-shadow-s); }
+.dish img { width: 5rem; height: 5rem; object-fit: cover; border-radius: var(--gs-radius-s); background: var(--md-surface-variant); }
+.dish-body { display: grid; gap: var(--gs-space-1); }
+.dish-name { font-weight: 600; }
+.price { color: var(--md-primary); font-weight: 600; }
+.credit { color: var(--gs-text-muted); font-size: var(--gs-text-xs); }
+.btn { min-height: 2.75rem; min-width: 2.75rem; padding: 0 var(--gs-space-5); border: 0; border-radius: var(--gs-radius-pill); background: var(--md-primary); color: var(--md-on-primary); font: inherit; font-weight: 600; cursor: pointer; }
+.btn.small { padding: 0 var(--gs-space-4); }
+.btn.ghost { background: transparent; color: var(--md-primary); border: 1px solid var(--md-outline); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:focus-visible, textarea:focus-visible { outline: 3px solid var(--gs-ring); outline-offset: 2px; }
+.btn.bar { position: fixed; left: var(--gs-space-4); right: var(--gs-space-4); bottom: var(--gs-space-4); max-width: 26rem; margin: 0 auto; box-shadow: var(--gs-shadow-m); }
+.lines { display: grid; gap: var(--gs-space-3); margin-bottom: var(--gs-space-5); }
+.line { display: flex; justify-content: space-between; align-items: center; gap: var(--gs-space-3); }
+.qty { display: inline-flex; align-items: center; gap: var(--gs-space-2); }
+.field { display: grid; gap: var(--gs-space-2); margin-bottom: var(--gs-space-5); font-weight: 600; }
+textarea { font: inherit; padding: var(--gs-space-3); border: 1px solid var(--md-outline); border-radius: var(--gs-radius-m); background: var(--md-surface); color: var(--md-on-surface); }
+.actions { display: flex; gap: var(--gs-space-3); justify-content: space-between; }
+.total { font-size: var(--gs-text-lg); }
+.note { color: var(--gs-text-muted); font-size: var(--gs-text-sm); }
+.notice { background: var(--md-tertiary-container); padding: var(--gs-space-3); border-radius: var(--gs-radius-m); }
+.error { background: var(--md-error); color: var(--md-on-error); padding: var(--gs-space-3); border-radius: var(--gs-radius-m); }
