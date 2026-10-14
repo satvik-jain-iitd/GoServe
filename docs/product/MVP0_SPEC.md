@@ -69,7 +69,7 @@ All screens are responsive, Material Design 3, and live inside one PWA.
 3. **Cart.** Items, quantity, running total, address box, place order.
 4. **Bill / confirm.** Items, taxes, delivery fee, total, pay-later button.
 5. **Order status (customer).** A simple tracker: placed, accepted, cooking, ready, out for delivery, delivered. Updates live.
-6. **Kitchen display.** A list of incoming orders. Each has Accept, Start, Ready buttons. New orders appear live.
+6. **Kitchen display.** A list of incoming orders. Each has Accept, Start, Ready buttons. New orders appear live. The order number is the first 8 characters of the order id: the customer screen and the kitchen screen show the same 8 characters.
 7. **Ops stub (optional).** A plain list of all orders today. Nice to show, not required.
 
 Three roles, one link. The app knows who you are from the demo login and shows the right screen.

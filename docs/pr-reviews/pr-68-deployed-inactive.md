@@ -87,11 +87,15 @@ Yeh file har step ka log hai, dhaba ki ek-ek entry jaisi. Is PR mein rows 148 se
 
 <!-- gh-comment-id: 4265647403 -->
 > **Top-3** — Row 150 mein likha hai ki n8n login vault mein nahi hai, isliye editor ka screenshot nahi hai. B12.6 kehta hai deploy ke baad editor mein fit-view dekho. Owner khud six canvases dekh le (links registry mein), ya n8n login vault mein jaaye taaki agent dekhe? Activation se pehle yeh check chahiye.
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Owner editor mein 6 canvases fit-view kar sakta hai (links registry mein), ya n8n login vault mein. Owner ka choice; activation se pehle.
+- **Lesson:** Deploy ke baad aankh se dekhna owner ya agent kare, par kare zaroor (B12.6).
 
 <!-- gh-comment-id: 4265647410 -->
 > Rows 146 aur 149 dono owner ki haan hain (reviewer chat, coder chat). Do jagah bola to do rows theek hain. Kya ek line "same haan as 146" jod doge, taaki koi do faisle na gine?
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Sahi. Row 149 = wahi haan jo row 146 mein hai, do chats mein. #48 docs mein 'same haan as 146' jodunga.
+- **Lesson:** Ek faisla do jagah likha ho to link karo, warna do gine jaate hain.
 
 ### `docs/integrations/n8n-order-workflows.md`
 Yeh registry hai: contract aur ids ki list. Line 10 pehla row hai, jisme ab ids aur "Deployed 14 Oct 2026, inactive" likha hai.
@@ -100,9 +104,14 @@ Yeh registry hai: contract aur ids ki list. Line 10 pehla row hai, jisme ab ids 
 
 <!-- gh-comment-id: 4265647405 -->
 > Ids ab registry mein hain (live match: 6 workflows, sab inactive, ids same, dry run "update"). Rulebook 95.23 ka registry test (folder vs registry) ab possible hai. F66(f) kab, #47 ke saath?
-- **Status:** open
+- **Status:** answered
+- **Reply (klickbae8yt-star):** Haan, registry test ab possible hai; live activation step ke saath likhunga (F66 f).
+- **Lesson:** Registry test tab, jab registry aur folder dono sach hon.
 
 ## Handoff
+
+- **Sync (14 Oct):** 3/3 threads answered; canvas look = owner's choice before activation; registry test with activation (F66 f); row 149 gets 'same haan as 146' in the #48 docs. Merged by the owner.
+
 
 State: 3 posted · 0 must-fix · actor: owner (merge, canvas look, activation yes)
 

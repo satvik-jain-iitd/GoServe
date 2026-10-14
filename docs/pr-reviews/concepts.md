@@ -320,3 +320,42 @@ Har naya technical word yahan. Simple Hindi mein. Ek line ka "yeh kya hai", ek l
 - **Kya hai:** Ek faisla do jagah likha gaya, kyunki owner ne do chats mein haan kaha. Dono rows ek hi baat hain.
 - **Analogy:** Do kamron mein ek hi baat, dono register mein likhi.
 - **File:** `docs/process-trace.md` (rows 146, 149).
+
+## PR #69 se" section jodo. Format waisa hi jo PR #68 mein hai.
+
+## PR #69 se
+
+### Offline copy with a guard
+- **Kya hai:** Menu ki aakhri achhi copy phone mein rehti hai. Khaali ya kharab jawab copy ko kabhi nahi badalta.
+- **Analogy:** Menu card ki photocopy jeb mein. Counter band ho to copy padh lo, par copy ko kisi ki galat parchi se phaadna nahi.
+- **File:** `app/src/lib/menu.ts` (line 21).
+
+### Server prices, client estimates
+- **Kya hai:** Phone slip par sirf dish aur count likhta hai. Total phone dikhata hai (card se), par receipt ka total server deta hai.
+- **Analogy:** Order slip par price nahi likhi. Price counter ka manager tay karta hai.
+- **File:** `app/src/lib/cart.ts` (line 20); `app/src/screens/PlacedScreen.tsx` (line 9).
+
+### Idempotency key per cart
+- **Kya hai:** Same cart ka same key hai, to server ek hi order banata hai. Cart badle to naya key banta hai.
+- **Analogy:** Slip number. Wahi slip do baar aaye to wahi receipt; badli slip ka naya number.
+- **File:** `app/src/App.tsx` (lines 38–40).
+
+### Fail fast for a fallback
+- **Kya hai:** Retry band aur 4 s ka timeout, taaki saved copy seconds mein dikhe.
+- **Analogy:** Band window par der tak mat khade raho, jeb mein copy hai.
+- **File:** `app/src/lib/supabase.ts` (lines 15–20).
+
+### Network answered by the test
+- **Kya hai:** Playwright test Supabase aur n8n ka jawab khud deta hai. Isliye test wahi check karta hai jo phone bhejta hai.
+- **Analogy:** Rehearsal ek stand-in counter ke saath.
+- **File:** `app/tests/e2e/customer.spec.ts` (lines 18–39).
+
+### Build-time public keys
+- **Kya hai:** `VITE_*` values build ke time JS mein chhap jaati hain. Koi bhi unhe padh sakta hai. Isliye yeh public by design hain (ADR-009).
+- **Analogy:** Counter ka address card par chhapa hai. Chhupaya nahi jaata, bas dev aur prod card alag hote hain.
+- **File:** `.github/workflows/deploy-dev.yml` (lines 32–36).
+
+### Anonymous session = visitor id
+- **Kya hai:** Supabase phone ko ek anonymous id deta hai. Yahi id session hai, aur Supabase client use phone ki localStorage mein rakhta hai (ADR-010).
+- **Analogy:** Darwaze par visitor ka token. Naam nahi, bas parchi ka malik pehchaan.
+- **File:** `app/src/lib/supabase.ts` (lines 24–31).

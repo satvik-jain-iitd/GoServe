@@ -76,4 +76,12 @@ Apne sawaal yahan. Status: **open** (jawab nahi mila) / **answered** / **dropped
 
 | # | Sawaal | Kahan poocha (PR#/file) | Jawab mila? | Jawab | Status |
 |---|---|---|---|---|---|
-| Q31 | Row 150 mein n8n login vault mein nahi hai, isliye canvas ka editor look nahi hua (B12.6). Owner six canvases khud dekhega, ya n8n login vault mein jaayega taaki agent dekhe? Activation se pehle yeh check chahiye. | PR #68 / docs/process-trace.md line 158 (Top-3) | nahi | abhi nahi | open |
+| Q31 | Row 150 mein n8n login vault mein nahi hai, isliye canvas ka editor look nahi hua (B12.6). Owner six canvases khud dekhega, ya n8n login vault mein jaayega taaki agent dekhe? Activation se pehle yeh check chahiye. | PR #68 / docs/process-trace.md line 158 (Top-3) | haan | Owner editor mein 6 canvases dekhe ya n8n login vault mein; activation se pehle. | answered |
+
+## PR #69 ke baad
+
+| # | Sawaal | Kahan poocha (PR#/file) | Jawab mila? | Jawab | Status |
+|---|---|---|---|---|---|
+| Q32 | Ek order bana, par jawab phone tak nahi aaya. Cart badal kar retry kare to naya key, doosra order. Pilot ke liye "reply lost" plan kya hoga: pehle apni session ke `orders` padhna, phir naya key? | PR #69 / app/src/App.tsx line 39 (Top-3) | nahi | _(PR #69 sync ke baad bharega)_ | open |
+| Q33 | Ek phone ek session hamesha hai. 20 orders ke baad 429 jab tak site data clear na ho. Reset ka raasta (story #52) se pehle kya hai? | PR #69 / app/src/lib/supabase.ts line 28 (Top-3) | nahi | _(PR #69 sync ke baad bharega)_ | open |
+| Q34 | `VITE_DEMO_TOKEN` build mein jaata hai, dev JS mein koi bhi padh sakta hai. A43 ya kisi assumption row mein yeh baat likhi hai? | PR #69 / .github/workflows/deploy-dev.yml line 36 (Top-3) | nahi | _(PR #69 sync ke baad bharega)_ | open |

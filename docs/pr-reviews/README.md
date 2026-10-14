@@ -23,7 +23,8 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana â
 | 6 | [#65](pr-65-rls-realtime-menu.md) | feat(db): row level security, Realtime and the Delhi sample menu | MERGED (e7f1f2b; 17 answered, 4 fixed) | #44 (epic #34) |
 | 7 | [#66](pr-66-order-workflows.md) | feat(n8n): order database functions and order workflows (built, not deployed) | MERGED (0f9603a; 20 answered, 7 fixed) | #45 (epic #35) |
 | 8 | [#67](pr-67-decide-logs.md) | feat(n8n): decide and log workflows, order cap per session | MERGED (d7836d8; 18 answered, 5 fixed) | #46 (epic #35) |
-| 9 | [#68](pr-68-deployed-inactive.md) | docs: order workflows deployed inactive, A41 and A42 confirmed | APPROVED (3 questions posted), merge pending | follow-up to #46 (epic #35) |
+| 9 | [#68](pr-68-deployed-inactive.md) | docs: order workflows deployed inactive, A41 and A42 confirmed | MERGED (3 answered) | follow-up to #46 (epic #35) |
+| 10 | [#69](pr-69-customer-screen.md) | feat(app): customer menu, cart, bill and place order | OPEN (20 posted, APPROVE) | #48 (epic #36) |
 
 ## Journals
 - [concepts.md](concepts.md) â€” naye technical words, plain Hindi mein.
@@ -41,6 +42,7 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana â
 | Security + live data (RLS, Realtime, seed) | #65 |
 | Order path (n8n MAIN/SUB + SQL functions) | #66 |
 | Decisions + run log (SUB 13/14, Jev advice, session cap) | #67 |
+| Customer screen (menu, cart, bill, place order) | #69 |
 
 ## Notes
 - Chapters Romanized Hindi mein hain. Code, file paths, commands English mein.

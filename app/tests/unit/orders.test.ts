@@ -1,6 +1,6 @@
 // Story #48, S1: placing an order calls the n8n webhook (ADR-009) with the demo token. The server prices the order.
 import { describe, expect, it } from "vitest";
-import { placeOrder, PlaceError } from "../../src/lib/orders";
+import { changeStatus, placeOrder, PlaceError } from "../../src/lib/orders";
 
 const input = { sessionId: "s1", key: "k1", items: [{ menu_item_id: "a", qty: 2 }], address: "Flat 4, Delhi" };
 const deps = (res: () => Promise<Response>, seen: { url?: string; init?: RequestInit } = {}) => ({
@@ -45,5 +45,23 @@ describe("placeOrder", () => {
       .rejects.toMatchObject({ message: "Something went wrong. Please try again.", code: "unknown" });
     await expect(placeOrder(input, deps(json(200, { ok: true }))))
       .rejects.toMatchObject({ code: "unknown" });
+  });
+});
+
+describe("changeStatus", () => {
+  const change = { sessionId: "s1", orderId: "o1", to: "accepted", actor: "kitchen" as const };
+  it("posts the status action with the actor and the token", async () => {
+    const seen: { url?: string; init?: RequestInit } = {};
+    const order = { id: "o1", total_paise: 100, status: "accepted" };
+    expect(await changeStatus(change, deps(json(200, { ok: true, order }), seen))).toEqual({ order });
+    expect(JSON.parse(seen.init?.body as string)).toEqual({ action: "status", session_id: "s1", order_id: "o1", to_status: "accepted", actor: "kitchen" });
+    expect((seen.init?.headers as Record<string, string>)["x-gs-token"]).toBe("demo-token");
+  });
+  it("shows the server reason for an illegal step", async () => {
+    await expect(changeStatus(change, deps(json(409, { ok: false, error: "illegal_step", message: "That step is not allowed now." }))))
+      .rejects.toMatchObject({ message: "That step is not allowed now.", code: "illegal_step" });
+  });
+  it("explains a network failure in plain words", async () => {
+    await expect(changeStatus(change, deps(async () => { throw new TypeError("x"); }))).rejects.toMatchObject({ code: "network" });
   });
 });

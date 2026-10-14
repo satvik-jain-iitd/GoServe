@@ -85,3 +85,7 @@ short. Say what happened and what to do next time.
 - The notebook bundle is cumulative and copied by the coder; a chapter written after the copy rides with the next PR. Say which chapters a bundle holds in the handoff.
 - A library can retry a failed call for seconds, which hides an offline fallback behind a spinner. Turn retries off and set a short timeout where a saved copy exists, and test the slow-failure case, not only the instant one.
 - Test the screen with the network answered by the test (Playwright routes): fast, no keys, and it checks what the phone really sends. The real call is a separate live row.
+- An anonymous session is per device and persists. A per-session cap (20) is also a per-device cap until site data is cleared. Say so where the cap is decided, and give the demo a reset path before the cap can bite.
+- A test helper that pushes live events must keep them until the app has connected, and wait a moment after the join answer. A push into nothing made one test fail one run in three.
+- Integration tests that place real orders leave rows that cannot be deleted by design, and anonymous sign-ins are limited to 30 an hour. Plan the cleanup and the run count before writing such a test.
+- The permission guard refused a script that turned off a protection trigger to delete rows. Ask the owner first for anything that switches off a safety rule, even on dev.
