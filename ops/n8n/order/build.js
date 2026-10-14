@@ -244,7 +244,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
   // ---- SUB 91 Scorecard numbers: read today's rows, no writes (story #47) ----
   const f91 = [['since', 'string'], ['supabase_url', 'string']];
   const read = (id, name, table, select) => node(id, name, 'n8n-nodes-base.httpRequest', 4.2, {
-    method: 'GET', url: `={{ $('Start').first().json.supabase_url }}/rest/v1/${table}?select=${select}&created_at=gte.{{ $('Start').first().json.since }}&limit=1000`,
+    method: 'GET', url: `={{ $('Start').first().json.supabase_url }}/rest/v1/${table}?select=${select}&created_at=gte.{{ $('Start').first().json.since }}&order=created_at.desc&limit=1000`,
     authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
     options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 } }, { credentials: { httpCustomAuth: cred } });
   const n91 = [

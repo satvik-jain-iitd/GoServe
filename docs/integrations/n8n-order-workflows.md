@@ -111,14 +111,16 @@ GS MAIN 90 runs at 21:00 India time (workflow timezone `Asia/Kolkata`). Its Conf
 
 SUB 91 input: `since` (ISO time), `supabase_url`. It reads at most 1000 rows from each table, with the `GoServe Supabase dev` credential, and returns `{ ok, status_code, summary }`. A database failure is a 502 with a short message; the owner then gets a message that says the numbers could not be read.
 
-The message is made of pairs, so one number cannot be gamed alone: runs with errors, time per run with the slowest run, decisions with Jev use and agreement, cost with cost per decision. Health checks (`...: health` rows, session `unknown`) are counted apart and are not in the runs.
+The message is made of pairs, so one number cannot be gamed alone: runs with errors, time per run with the slowest run, decisions with Jev use and agreement, cost with cost per decision. Health checks (`...: health` rows, session `unknown`) are counted apart and are not in the runs, but their small cost is in "Cost of all calls" (the per-decision figure uses the decide runs only). "Jev advice used" means Jev answered in shape, at confidence 0.70 or more and under the cost cap (`jev_status` is `ok`); a low-confidence or over-cap answer was asked for but not used. The read takes the newest 1000 rows of each table.
+
+Two different Telegram messages mean two different things: "I could not read today's numbers" comes from the scorecard itself (the database refused), while a message from GS ERR 00 means the workflow itself fell over.
 
 ```text
 GoServe scorecard, 2026-10-14
 Runs: 4, errors: 1 (25%)
 Time per run: 425 ms on average, 900 ms at most
 Decisions: 3. Jev advice used: 2, agreed with the rule: 1
-Cost: $0.00010 (about $0.00003 per decision)
+Cost of all calls: $0.00010 (about $0.00003 per decision)
 Health checks: 1
 ```
 

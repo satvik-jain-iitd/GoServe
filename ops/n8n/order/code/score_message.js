@@ -12,7 +12,7 @@ else {
   lines.push('Time per run: ' + s.avg_ms + ' ms on average, ' + s.max_ms + ' ms at most');
 }
 lines.push('Decisions: ' + s.decisions + '. Jev advice used: ' + s.jev_used + ', agreed with the rule: ' + s.jev_agreed);
-lines.push('Cost: $' + s.cost.toFixed(5) + (s.decisions ? ' (about $' + (s.decide_cost / s.decisions).toFixed(5) + ' per decision)' : ''));
+lines.push('Cost of all calls: $' + s.cost.toFixed(5) + (s.decisions ? ' (about $' + (s.decide_cost / s.decisions).toFixed(5) + ' per decision)' : ''));
 lines.push('Health checks: ' + s.health_checks);
 if (s.truncated) lines.push('Note: first 1000 runs only; the day had more.');
 return [{ json: { chat_id, text: lines.join('\n') } }];
