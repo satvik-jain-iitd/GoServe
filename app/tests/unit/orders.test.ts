@@ -1,6 +1,6 @@
 // Story #48, S1: placing an order calls the n8n webhook (ADR-009) with the demo token. The server prices the order.
 import { describe, expect, it } from "vitest";
-import { changeStatus, placeOrder, PlaceError } from "../../src/lib/orders";
+import { addEvent, changeStatus, placeOrder, PlaceError } from "../../src/lib/orders";
 
 const input = { sessionId: "s1", key: "k1", items: [{ menu_item_id: "a", qty: 2 }], address: "Flat 4, Delhi" };
 const deps = (res: () => Promise<Response>, seen: { url?: string; init?: RequestInit } = {}) => ({
@@ -63,5 +63,18 @@ describe("changeStatus", () => {
   });
   it("explains a network failure in plain words", async () => {
     await expect(changeStatus(change, deps(async () => { throw new TypeError("x"); }))).rejects.toMatchObject({ code: "network" });
+  });
+});
+
+describe("addEvent", () => {
+  it("posts the event action for the rider's arriving tap", async () => {
+    const seen: { url?: string; init?: RequestInit } = {};
+    const order = { id: "o1", total_paise: 100, status: "out_for_delivery", updated_at: "t" };
+    expect(await addEvent({ sessionId: "s1", orderId: "o1", event: "order.arriving", actor: "rider" }, deps(json(200, { ok: true, order }), seen))).toEqual({ order });
+    expect(JSON.parse(seen.init?.body as string)).toEqual({ action: "event", session_id: "s1", order_id: "o1", event: "order.arriving", actor: "rider" });
+  });
+  it("shows 'Already done.' when the server says so", async () => {
+    await expect(addEvent({ sessionId: "s1", orderId: "o1", event: "order.arriving", actor: "rider" }, deps(json(409, { ok: false, error: "already_done", message: "Already done." }))))
+      .rejects.toMatchObject({ message: "Already done.", code: "already_done" });
   });
 });

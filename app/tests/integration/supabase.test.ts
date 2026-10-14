@@ -8,7 +8,9 @@ const anon = process.env.SUPABASE_GOSERVE_DEV_ANON_KEY;
 const service = process.env.SUPABASE_GOSERVE_DEV_SERVICE_ROLE_KEY;
 const KITCHEN = "11111111-1111-1111-1111-111111111111";
 
-describe.skipIf(!url || !anon || !service)("goserve-dev security and live data", () => {
+// Only the dev project: a wrong key in the environment must never run these against production.
+const isDev = !!url && url.includes("tmxyizmkpwwfyazvrfhw");
+describe.skipIf(!isDev || !anon || !service)("goserve-dev security and live data", () => {
   const admin = createClient(url!, service!, { auth: { persistSession: false } });
   const keys: string[] = [];
   const users: string[] = [];

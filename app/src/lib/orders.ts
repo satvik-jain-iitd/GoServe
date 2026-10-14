@@ -6,7 +6,7 @@ export class PlaceError extends Error {
   }
 }
 export type PlaceInput = { sessionId: string; key: string; items: { menu_item_id: string; qty: number }[]; address: string };
-export type PlacedOrder = { id: string; status: string; total_paise: number; updated_at?: string };
+export type PlacedOrder = { id: string; status: string; total_paise: number; updated_at: string };
 export type OrderDeps = { url: string; token: string; fetchFn: typeof fetch };
 
 type ApiAnswer = { ok?: boolean; created?: boolean; order?: PlacedOrder; error?: string; message?: string };
@@ -38,5 +38,11 @@ export async function placeOrder(input: PlaceInput, deps: OrderDeps): Promise<{ 
 export type StatusInput = { sessionId: string; orderId: string; to: string; actor: "customer" | "kitchen" | "rider" | "ops" };
 export async function changeStatus(input: StatusInput, deps: OrderDeps): Promise<{ order: PlacedOrder }> {
   const a = await callApi({ action: "status", session_id: input.sessionId, order_id: input.orderId, to_status: input.to, actor: input.actor }, deps);
+  return { order: a.order };
+}
+
+export type EventInput = { sessionId: string; orderId: string; event: "order.arriving"; actor: "customer" | "kitchen" | "rider" | "ops" };
+export async function addEvent(input: EventInput, deps: OrderDeps): Promise<{ order: PlacedOrder }> {
+  const a = await callApi({ action: "event", session_id: input.sessionId, order_id: input.orderId, event: input.event, actor: input.actor }, deps);
   return { order: a.order };
 }

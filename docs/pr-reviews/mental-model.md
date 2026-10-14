@@ -2,7 +2,7 @@
 
 System ka ek-page picture. Har chapter ke baad update karta hoon.
 
-_Last updated: PR #69 (open, `5f2fa97`); PRs #62–#68 merged_
+_Last updated: PR #70 (open, `a53b35a`); PRs #62–#69 merged_
 
 ## GoServe — ab tak ki tasveer
 
@@ -23,13 +23,18 @@ _Last updated: PR #69 (open, `5f2fa97`); PRs #62–#68 merged_
                           |
                           ├─ index.html      (main door)
                           ├─ src/main.tsx    (switchboard)
-                          ├─ src/App.tsx     (switchboard: menu → cart → bill → placed; place() yahin)  ← PR #69
+                          ├─ src/App.tsx     (switchboard: menu → cart → bill → placed; place() yahin)  ← PR #69, role tabs + kitchen effect + tap() ← PR #70
                           ├─ src/lib/cart.ts     (order slip: dish id + count, cap 20)  ← PR #69
                           ├─ src/lib/menu.ts     (menu card ki photocopy, localStorage)  ← PR #69
                           ├─ src/lib/money.ts    (paise → ₹)  ← PR #69
                           ├─ src/lib/orders.ts   (window: slip bhejna, receipt lana)  ← PR #69
                           ├─ src/lib/supabase.ts (darwaza: menu rows + anonymous session)  ← PR #69
                           ├─ src/screens/        (4 pages: MenuScreen, CartScreen, BillScreen, PlacedScreen)  ← PR #69
+                          ├─ src/lib/kitchen.ts  (board ke niyam: agla step, labels, later stamp jeetta)  ← PR #70
+                          ├─ src/lib/live.ts     (board boy: register copy + ghanti)  ← PR #70
+                          ├─ src/screens/KitchenScreen.tsx  (kitchen board: tickets, ek button per slip)  ← PR #70
+                          ├─ tests/e2e/kitchen.spec.ts  (stand-in counter + stand-in ghanti)  ← PR #70
+                          ├─ tests/integration/kitchen.test.ts  (rehearsal dhaba par, goserve-dev)  ← PR #70
                           ├─ src/pwa-manifest.ts  (identity card, colours ← tokens.json)
                           ├─ src/styles/tokens.css + app.css (paint)
                           ├─ vite.config.ts  (assembly line + PWA)
@@ -91,6 +96,7 @@ _Status: 6 workflows n8n par deployed, sab inactive (ids registry mein; VERIFIED
 5. Release PR → `main` → deploy to Cloudflare Pages prod (`deploy-app.yml`, PR #63). Tiffin: van khana main tak laati hai, ab real customer ka address.
 6. Browser → anonymous sign-in → session id → menu read → Realtime subscribe → n8n writes order (service role) → ghanti (PR #65).
 6a. Phone → n8n gs-order (x-gs-token) → place_order (SUB 11: prices, caps, idempotent key) → receipt → Placed screen (PR #69; live row activation ke baad).
+6b. Kitchen tab → fetchOrders + Realtime → merge by updated_at → tap → changeStatus → change_status (PR #70; live after activation).
 7. App chalane par: index.html → main.tsx → App → service worker (offline).
 
 ## Yeh PR ke baad kya samajh aaya
@@ -134,6 +140,12 @@ _Status: 6 workflows n8n par deployed, sab inactive (ids registry mein; VERIFIED
 - **Retry band, 4 s timeout:** fallback jaldi dikhta hai, par slow network par ek fail zyada (PR #69).
 - **Test stand-in:** e2e Supabase aur n8n ki jagah khada hai. Yeh request ki shape pakadta hai, live counter nahi (PR #69).
 
+- **Board boy do kaam karta hai:** pehle register copy, phir ghanti sunna, aur ghanti pakki hone ke baad ek baar aur copy (PR #70).
+- **Stamp ka faisla server karta hai:** do copies mein later `updated_at` jeetta hai, phone ki ghadi nahi (PR #70).
+- **Kitchen ka button ek hi hai:** agla step. Aakhri step ke baad slip waiting hai; rider (#50) use board se hatayega (PR #70).
+- **Status ka sach do jagah:** kitchen labels aur customer tracker ke words alag ho sakte hain; #50 mein ek hi map (PR #70).
+- **Demo token = kitchen ki chaabi:** `actor` phone ki baat hai; server order + session + step dekhta hai, tap karne wala nahi (PR #70).
+
 ## Abhi bhi andhera (jawab nahi mila)
 - Kaun `order_events` likhega: app, n8n, ya trigger? (Abhi koi nahi.)
 - Cancel: A41 ke hisaab se nahi; owner confirm karega.
@@ -157,5 +169,5 @@ _Status: 6 workflows n8n par deployed, sab inactive (ids registry mein; VERIFIED
 - Phone ke liye write rules nahi (phone kabhi nahi likhta, ADR-009/010). Real logins: MVP 1. Self-hosted photos: #54. Indexes PK/unique ke alawa: screen stories ke saath.
 - Activation nahi (owner ka "activate" chahiye, pehle canvas look). Live rows (5 calls + Jev + Jev-down) pending. MAIN 90 scorecard = #47. Riders table nahi (A42). Laya = MVP 1.
 - Customer screen ab hai (menu, cart, bill, place order; PR #69, open, 5f2fa97). Asli order ki row activation ke baad aayegi.
-- Kitchen screen nahi (#49). Order tracker nahi (#50). Real payment nahi (MVP 2). Koi login nahi.
+- Kitchen screen ab hai (#49, PR #70, open; live rows activation ke baad). Rider steps aur order tracker abhi nahi (#50). Split view aur reset abhi nahi (#52). F71 dev cleanup pending. Activation pending. Real payment nahi (MVP 2). Koi login nahi.
 - Dev deploy job hai (PR #62, merged). Prod deploy workflow hai (PR #63, open), par `main` par `app/` abhi nahi hai. Release list fix ho gayi (4b77e65); pehli release PR ke baad app prod par aayega. `goserve-app.pages.dev` abhi 522 hai.
