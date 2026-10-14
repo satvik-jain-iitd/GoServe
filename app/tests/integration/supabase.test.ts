@@ -34,6 +34,7 @@ describe.skipIf(!isDev || !anon || !service)("goserve-dev security and live data
 
   afterAll(async () => {
     if (keys.length) await admin.from("orders").delete().in("client_order_key", keys);
+    if (users.length) await admin.from("session_links").delete().in("member", users);
     for (const id of users) await admin.auth.admin.deleteUser(id);
   });
 
@@ -89,6 +90,42 @@ describe.skipIf(!isDev || !anon || !service)("goserve-dev security and live data
     expect(await got).toBeLessThan(2000);
     await a.client.removeAllChannels();
   }, 10000);
+
+  // Story #52: a second device joins by session id and hears the same live events; a reset reaches both.
+  it("S2 a joined device gets the first device's new order within 2 seconds, and a reset clears both", async () => {
+    const a = await newSession();
+    const b = await newSession();
+    const j = await b.client.rpc("join_session", { p_session: a.id });
+    expect(j.error).toBeNull();
+    let sentAt = 0;
+    let gone: (id: string) => void = () => {};
+    const deleted = new Promise<string>((resolve) => (gone = resolve));
+    const got = new Promise<number>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("no event in 5s")), 5000);
+      b.client
+        .channel(`join-${b.id}`)
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders", filter: `session_id=eq.${a.id}` }, () => {
+          clearTimeout(timer);
+          resolve(Date.now() - sentAt);
+        })
+        .on("postgres_changes", { event: "DELETE", schema: "public", table: "orders" }, (p) => gone((p.old as { id: string }).id))
+        .subscribe(async (status) => {
+          if (status === "SUBSCRIBED") {
+            await new Promise((r) => setTimeout(r, 1500));
+            sentAt = Date.now();
+            await insertOrder(a.id, `j-${a.id}`);
+          }
+        });
+    });
+    expect(await got).toBeLessThan(2000);
+    const seen = await b.client.from("orders").select("id").eq("session_id", a.id);
+    expect(seen.data).toHaveLength(1);
+    const r = await a.client.rpc("reset_session", { p_session: a.id });
+    expect(r.error).toBeNull();
+    expect(await Promise.race([deleted, new Promise((res) => setTimeout(() => res("none"), 3000))])).toBe(seen.data![0].id);
+    expect((await b.client.from("orders").select("id").eq("session_id", a.id)).data).toEqual([]);
+    await b.client.removeAllChannels();
+  }, 15000);
 
   it("S3 the menu has 8 to 10 Delhi dishes with photos", async () => {
     const a = await newSession();

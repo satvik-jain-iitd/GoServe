@@ -97,3 +97,7 @@ short. Say what happened and what to do next time.
 - Check CI before reading the diff. PR #71 had a red Guard from a 73-character commit subject; the code was green on every test. The must-fix was the name tag, not the code.
 - Inside the GoServe folder the `gh()` shell wrapper replaces `GH_TOKEN` with the development account, even after `export GH_TOKEN=...`. The reviewer's first APPROVE on PR #71 failed with 422 "Can not approve your own pull request". Reviewer posts use `command gh` (bypasses the wrapper), then read the review state back.
 - Review replies were never folded into chapters 10 and 11 after merge. A 25-line script (`fold_replies.py`) now pastes each thread's last reply and sets the status to answered; run it at every sync.
+- A frozen table still needs one clean door for deletes. A setting that only the owning function sets for one transaction (`goserve.reset`) kept `order_events` frozen for everyone else, and it replaced the "switch the trigger off" script that the permission guard blocked.
+- Realtime matches the server's list of listeners to the client's list by position. A test double for the socket must echo the client's join list back, or a second listener (delete events) breaks the channel.
+- Delete events cannot be filtered by column and carry only the primary key. A screen must drop only the ids it holds, and the docs must say which ids leak.
+- A session shared by link makes the link the key. Say so in the decision record, and keep the id random (uuid), not a short code.

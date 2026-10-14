@@ -65,7 +65,7 @@ describe.skipIf(!isDev || !anon || !service)("kitchen live list on goserve-dev",
     const b = await session();
     const oa = await place(a.id, `ka-${a.id}`);
     await place(b.id, `kb-${b.id}`);
-    const list = await fetchOrders(a.client);
+    const list = await fetchOrders(a.client, a.id);
     expect(list.map((o) => o.id)).toEqual([oa.id]);
   }, 15000);
 });

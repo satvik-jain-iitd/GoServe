@@ -58,3 +58,9 @@ textarea { font: inherit; padding: var(--gs-space-3); border: 1px solid var(--md
 .step { padding: var(--gs-space-2) var(--gs-space-3); border-radius: var(--gs-radius-m); border: 1px solid var(--md-outline); color: var(--gs-text-muted); }
 .step.done { color: var(--md-on-surface); background: var(--md-surface-variant); }
 .step.current { background: var(--md-primary); color: var(--md-on-primary); font-weight: 600; }
+
+/* Demo tools and split view (story #52). */
+.demobar { display: flex; flex-wrap: wrap; gap: var(--gs-space-3); align-items: center; margin-bottom: var(--gs-space-5); }
+.shell.split { max-width: none; }
+.panes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gs-space-3); align-items: start; }
+.split .btn.bar { position: static; margin-top: var(--gs-space-3); max-width: none; }

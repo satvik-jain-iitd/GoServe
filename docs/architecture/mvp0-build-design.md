@@ -26,7 +26,7 @@ Solo demo: tap **Autopilot**. The kitchen and rider steps move by themselves.
 ## 3. Safety net (the pitch must not fail)
 
 - **Autopilot on the phone.** If the network or the server fails, the phone plays the same story from local data. A banner says "Offline demo".
-- **Own space per session.** Every row carries a `session_id`. Investors who open the link do not see each other's orders. A reset button clears the session.
+- **Own space per session.** Every row carries a `session_id`. Investors who open the link do not see each other's orders. A reset button clears the session. A second device joins the same session by a link (ADR-011).
 - **Health check page.** Before the demo, one page checks Supabase, n8n and Jev.
 - **A recorded video** as the last backup.
 

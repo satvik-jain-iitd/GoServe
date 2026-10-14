@@ -108,6 +108,56 @@ class OrderRpc(unittest.TestCase):
         self.assertIsInstance(r, list, r)
         self.assertEqual(r[0], {"a": False, "b": False, "c": True, "d": False}, r)
 
+    # Story #52: sessions shared between devices, and reset. Sessions are uuids here because a device's session is its user id.
+    def _as(self, uid):
+        return ["set local role authenticated", f"select set_config('request.jwt.claims', '{{\"sub\":\"{uid}\",\"role\":\"authenticated\"}}', true)"]
+
+    A, B, C = ("00000000-0000-0000-0000-0000000000%s" % x for x in ("a1", "b1", "c1"))
+    USERS = "insert into auth.users (id, aud, role, is_anonymous) values " + ", ".join(f"('{u}', 'authenticated', 'authenticated', true)" for u in (A, B, C))
+
+    def _place(self, session, key):
+        return f"select place_order('{session}', '{key}', jsonb_build_array(jsonb_build_object('menu_item_id', {DISH}, 'qty', 1)), 'x')"
+
+    def test_a_device_sees_only_its_own_session_until_it_joins(self):
+        mine = "select (select count(*) from orders) as n"
+        before = run(self.USERS, self._place(self.A, "k1"), self._place(self.C, "k1"), *self._as(self.B), mine)
+        self.assertEqual(before[-1], {"n": 0}, before)
+        after = run(self.USERS, self._place(self.A, "k1"), self._place(self.C, "k1"), *self._as(self.B), f"select join_session('{self.A}')", mine)
+        self.assertEqual(after[-1], {"n": 1}, after)   # A's order, not C's
+        events = run(self.USERS, self._place(self.A, "k1"), *self._as(self.B), f"select join_session('{self.A}')", "select (select count(*) from order_events) as n")
+        self.assertEqual(events[-1], {"n": 1}, events)
+
+    def test_joining_a_session_that_does_not_exist_is_refused(self):
+        r = run(self.USERS, *self._as(self.B), "select join_session('00000000-0000-0000-0000-0000000000ff')")
+        self.assertIn("session_not_found", str(r))
+
+    def test_reset_clears_only_that_session_with_its_events_and_decisions(self):
+        k = "(select id from kitchens limit 1)"
+        decide = f"insert into decision_log (kitchen_id, session_id, order_id, decision) select {k}, '{self.A}', (select id from orders where session_id='{self.A}'), '{{}}'::jsonb"
+        left = "select (select count(*) from orders where session_id='%s') as a, (select count(*) from orders where session_id='%s') as c, " \
+               "(select count(*) from order_events where session_id='%s') as ea, (select count(*) from order_events where session_id='%s') as ec, " \
+               "(select count(*) from decision_log where session_id='%s') as da"
+        r = run(self.USERS, self._place(self.A, "k1"), self._place(self.C, "k1"), decide, *self._as(self.A), f"select reset_session('{self.A}')", "reset role",
+                left % (self.A, self.C, self.A, self.C, self.A))
+        self.assertEqual(r[-1], {"a": 0, "c": 1, "ea": 0, "ec": 1, "da": 0}, r)
+
+    def test_reset_works_for_a_joined_device_and_refuses_a_stranger(self):
+        n = "select (select count(*) from orders where session_id='%s') as n" % self.A
+        r = run(self.USERS, self._place(self.A, "k1"), *self._as(self.B), f"select join_session('{self.A}')", f"select reset_session('{self.A}')", "reset role", n)
+        self.assertEqual(r[-1], {"n": 0}, r)
+        r = run(self.USERS, self._place(self.A, "k1"), *self._as(self.B), f"select reset_session('{self.A}')")
+        self.assertIn("not_your_session", str(r))
+
+    def test_events_still_cannot_be_deleted_outside_reset(self):
+        r = run(PLACE, "delete from order_events where session_id='s1'")
+        self.assertIn("order_events cannot be changed", str(r))
+
+    def test_the_phone_keys_can_join_and_reset_but_the_bare_key_cannot(self):
+        r = sql("select has_function_privilege('authenticated', 'join_session(text)', 'execute') a, has_function_privilege('authenticated', 'reset_session(text)', 'execute') b, "
+                "has_function_privilege('anon', 'join_session(text)', 'execute') c, has_function_privilege('anon', 'reset_session(text)', 'execute') d")
+        self.assertIsInstance(r, list, r)
+        self.assertEqual(r[0], {"a": True, "b": True, "c": False, "d": False}, r)
+
 
 if __name__ == "__main__":
     unittest.main()
