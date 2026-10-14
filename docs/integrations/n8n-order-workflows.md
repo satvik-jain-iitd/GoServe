@@ -11,6 +11,8 @@ Build code: `ops/n8n/order/build.js`. Tests: `node --test "ops/n8n/order/*.test.
 | GS SUB 13 Decide | SUB | Picks a rider by the rule, asks Jev for a suggestion, writes one `decision_log` row. | MAIN 01 | Deployed 14 Oct 2026, inactive (id `4Qb0pB031ky91IKK`) |
 | GS SUB 15 Add event | SUB | Writes the rider's `order.arriving` event through `rider_event`; the status stays. | MAIN 01 | Deployed 14 Oct 2026, inactive (id `pH12pWtoV0R2CtjE`) |
 | GS SUB 16 Health | SUB | Asks Jev one tiny question and says if it answered and how fast. Writes nothing. | MAIN 01 | Built, not deployed (story #54) |
+| GS MAIN 90 Daily scorecard | MAIN | Once a day at 21:00 India time: one Telegram message to the owner with runs, errors, time, decisions, Jev use and cost. | Schedule | Built, not deployed (story #47) |
+| GS SUB 91 Scorecard numbers | SUB | Reads today's `run_log` and `decision_log` rows and counts them. Writes nothing. | MAIN 90 | Built, not deployed (story #47) |
 | GS SUB 14 Write logs | SUB | Writes one `run_log` row. | MAIN 01 | Deployed 14 Oct 2026, inactive (id `RqjujaDaJSz0rSz7`) |
 | GS MAIN 01 Order API | MAIN | The phone's webhook. Checks the token and the kill switch, then calls a SUB. | The phone (`POST /webhook/gs-order`) | Deployed 14 Oct 2026, updated the same day with the event route, inactive (id `B0MaX7Sa6PaTVf81`) |
 | GS SUB 11 Place order | SUB | Checks the input, calls the database function `place_order`. | MAIN 01 | Deployed 14 Oct 2026, inactive (id `l5yCWExn5hQMqzNN`) |
@@ -103,6 +105,23 @@ The Jev call is the one node that continues on error: Jev is advice, so a Jev fa
 A SUB writes only through the database function. If the kill switch is on or the input is bad, it returns the refusal and calls nothing.
 Only MAIN 01 may call a SUB (`callerPolicy: workflowsFromAList`).
 
+## Daily scorecard (story #47)
+
+GS MAIN 90 runs at 21:00 India time (workflow timezone `Asia/Kolkata`). Its Config holds `kill_switch`, `chat_id` (the owner chat, put in at deploy time from the vault) and `supabase_url`. With the kill switch on it sends nothing. It works out the start of the day in India time, calls SUB 91, formats one plain-text message and sends it with the `GoServeBot` credential.
+
+SUB 91 input: `since` (ISO time), `supabase_url`. It reads at most 1000 rows from each table, with the `GoServe Supabase dev` credential, and returns `{ ok, status_code, summary }`. A database failure is a 502 with a short message; the owner then gets a message that says the numbers could not be read.
+
+The message is made of pairs, so one number cannot be gamed alone: runs with errors, time per run with the slowest run, decisions with Jev use and agreement, cost with cost per decision. Health checks (`...: health` rows, session `unknown`) are counted apart and are not in the runs.
+
+```text
+GoServe scorecard, 2026-10-14
+Runs: 4, errors: 1 (25%)
+Time per run: 425 ms on average, 900 ms at most
+Decisions: 3. Jev advice used: 2, agreed with the rule: 1
+Cost: $0.00010 (about $0.00003 per decision)
+Health checks: 1
+```
+
 ## Settings and secrets
 
 - Config keys (MAIN 01): `kill_switch`, `demo_token`, `supabase_url`. The token and the url are put in at deploy time from the vault. They are never in the repo.
@@ -116,4 +135,4 @@ Activation (needs the owner's yes), rate limit, production copy of the workflows
 
 ## Deploy
 
-`node ops/n8n/order/deploy.js` shows the plan and writes nothing. `--apply` creates the missing workflows (inactive) and puts the content in: ERR 00, SUB 11, 12, 13, 14, 15, 16, then MAIN 01. It refuses until both credentials exist. It never activates or deletes. The demo token is made on the first apply and saved in the vault.
+`node ops/n8n/order/deploy.js` shows the plan and writes nothing. `--apply` creates the missing workflows (inactive) and puts the content in: ERR 00, SUB 11, 12, 13, 14, 15, 16, 91, then MAIN 01 and MAIN 90. It refuses until both credentials exist. It never activates or deletes. The demo token is made on the first apply and saved in the vault.

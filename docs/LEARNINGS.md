@@ -120,3 +120,5 @@ short. Say what happened and what to do next time.
 - The comment generator caps questions at 7 per file and exits non-zero; with `2>/dev/null` the empty output looked like success until the post failed. Never silence a generator's stderr in a pipeline; check its exit code.
 - The autopilot's next-step table (`autopilot.ts`) and the rider tab's buttons (`riderActions`) tell the same story in two places. A change to the order steps must change both; the unit test of the table walks the whole story so a missed change shows.
 - A loop that handles one error (network) must say what it does with every other error. Stopping on a refusal is the safe default; retrying one forever is not.
+- An average that includes health checks and a total cost that leaves them out tell two stories. Decide first what a "run" is, count the rest apart, and say so in the message.
+- A `$json` inside a second read node is the first read's answer, not the workflow input. Name the input node (`$('Start')`) in every read of a SUB.

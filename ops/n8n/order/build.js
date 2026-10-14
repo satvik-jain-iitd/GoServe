@@ -241,6 +241,54 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
   ];
   const main01 = finish('GS MAIN 01 Order API', nodes, edges, sections, settings);
 
+  // ---- SUB 91 Scorecard numbers: read today's rows, no writes (story #47) ----
+  const f91 = [['since', 'string'], ['supabase_url', 'string']];
+  const read = (id, name, table, select) => node(id, name, 'n8n-nodes-base.httpRequest', 4.2, {
+    method: 'GET', url: `={{ $('Start').first().json.supabase_url }}/rest/v1/${table}?select=${select}&created_at=gte.{{ $('Start').first().json.since }}&limit=1000`,
+    authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
+    options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 } }, { credentials: { httpCustomAuth: cred } });
+  const n91 = [
+    node('gs-sub91-01', 'Start', 'n8n-nodes-base.executeWorkflowTrigger', 1.1, inputs(f91)),
+    read('gs-sub91-02', 'Read runs', 'run_log', 'workflow,duration_ms,cost,error'),
+    read('gs-sub91-03', 'Read decisions', 'decision_log', 'decision'),
+    codeNode('gs-sub91-04', 'Summarise', code('score_summary.js')),
+  ];
+  const e91 = [['Start', 'Read runs'], ['Read runs', 'Read decisions'], ['Read decisions', 'Summarise']];
+  const s91 = [
+    { name: 'RECEIVE', what: 'The scorecard workflow calls this with the start of the day.', needs: 'Input: ' + f91.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
+    { name: 'READ', what: 'Read today\'s run rows and decision rows. This workflow only reads.', needs: 'Credential "GoServe Supabase dev". Tables: run_log, decision_log.', nodes: ['Read runs', 'Read decisions'], color: 6 },
+    { name: 'SUMMARISE', what: 'Count runs, errors, time, decisions, Jev use and cost. Health checks are counted apart.', needs: 'The two reads.', nodes: ['Summarise'], color: 5 },
+  ];
+  const sub91 = finish('GS SUB 91 Scorecard numbers', n91, e91, s91, Object.assign({}, settings, { callerPolicy: 'workflowsFromAList', callerIds: ids.main90 }));
+
+  // ---- MAIN 90 Daily scorecard: one schedule, one Telegram message (story #47) ----
+  const n90 = [
+    node('gs-main90-01', 'Every day 21:00', 'n8n-nodes-base.scheduleTrigger', 1.2, { rule: { interval: [{ field: 'cronExpression', expression: '0 21 * * *' }] } }),
+    node('gs-main90-02', 'Config', 'n8n-nodes-base.set', 3.4, { mode: 'manual', includeOtherFields: true, assignments: { assignments: [
+      { id: 'cfg-1', name: 'kill_switch', type: 'boolean', value: false },
+      { id: 'cfg-2', name: 'chat_id', type: 'string', value: chatId || PLACEHOLDER },
+      { id: 'cfg-3', name: 'supabase_url', type: 'string', value: url }] }, options: {} }),
+    ifNode('gs-main90-03', 'Kill switch?', '={{ $json.kill_switch }}', 'true'),
+    node('gs-main90-04', 'Paused', 'n8n-nodes-base.noOp', 1, {}),
+    codeNode('gs-main90-05', 'Prepare window', code('score_window.js')),
+    callSub('gs-main90-06', 'Call SUB 91 Scorecard numbers', ids.sub91, [['since', '={{ $json.since }}', 'string'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
+    codeNode('gs-main90-07', 'Format message', code('score_message.js')),
+    node('gs-main90-08', 'Send scorecard', 'n8n-nodes-base.telegram', 1.2, { resource: 'message', operation: 'sendMessage', chatId: '={{ $json.chat_id }}', text: '={{ $json.text }}',
+      additionalFields: { appendAttribution: false } }, { credentials: { telegramApi: { id: 'bBVpWzhaY0MCpoQ5', name: 'GoServeBot' } } }),
+  ];
+  const e90 = [['Every day 21:00', 'Config'], ['Config', 'Kill switch?'], ['Kill switch?', 'Paused', 0], ['Kill switch?', 'Prepare window', 1], ['Prepare window', 'Call SUB 91 Scorecard numbers'],
+    ['Call SUB 91 Scorecard numbers', 'Format message'], ['Format message', 'Send scorecard']];
+  const s90 = [
+    { name: 'SCHEDULE', what: 'Once a day at 21:00 India time.', needs: 'Workflow timezone: Asia/Kolkata.', nodes: ['Every day 21:00'], color: 4 },
+    { name: 'CONFIG', what: 'The kill switch, the owner chat and the database address live here.', needs: 'Config keys: kill_switch, chat_id, supabase_url.', nodes: ['Config'], color: 5 },
+    { name: 'GATE', what: 'If the kill switch is on, send nothing.', needs: 'Config: kill_switch.', nodes: ['Kill switch?', 'Paused'], color: 1 },
+    { name: 'WINDOW', what: 'Work out the start of today in India time.', needs: 'Nothing.', nodes: ['Prepare window'], color: 5 },
+    { name: 'COLLECT', what: 'Call SUB 91. It reads today\'s rows and counts them.', needs: 'SUB 91 id. Config: supabase_url.', nodes: ['Call SUB 91 Scorecard numbers'], color: 6 },
+    { name: 'FORMAT', what: 'Make one short message: runs with errors, time, decisions, cost.', needs: 'The SUB 91 numbers.', nodes: ['Format message'], color: 5 },
+    { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send scorecard'], color: 6 },
+  ];
+  const main90 = finish('GS MAIN 90 Daily scorecard', n90, e90, s90, Object.assign({}, settings, { timezone: 'Asia/Kolkata' }));
+
   // ---- ERR 00: tells the owner on Telegram when a GoServe workflow fails (rulebook 84) ----
   const aNodes = [
     node('gs-err00-01', 'Error trigger', 'n8n-nodes-base.errorTrigger', 1, {}),
@@ -258,7 +306,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send alert'], color: 6 },
   ];
   const alert = finish('GS ERR 00 Alert', aNodes, aEdges, aSections, baseSettings);
-  return { sub11, sub12, sub13, sub14, sub15, sub16, main01, alert, STATUS_ROLES };
+  return { sub11, sub12, sub13, sub14, sub15, sub16, sub91, main01, main90, alert, STATUS_ROLES };
 }
 
 module.exports = { build, PLACEHOLDER };

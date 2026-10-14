@@ -1,7 +1,7 @@
-// Deploys the eight GS order workflows to n8n. Default is a DRY RUN: it only reads and prints the plan.
+// Deploys the ten GS order workflows to n8n. Default is a DRY RUN: it only reads and prints the plan.
 //   node ops/n8n/order/deploy.js            plan only (reads the workflow list and the credential list)
 //   node ops/n8n/order/deploy.js --apply    create missing workflows (inactive), then PUT the real content
-// It never activates, deletes or touches any other workflow. Deploy order: ERR 00, SUB 11 to 16, then MAIN 01 (rulebook 95.16).
+// It never activates, deletes or touches any other workflow. Deploy order: ERR 00, SUB 11 to 16 and 91, then MAIN 01 and MAIN 90 (rulebook 95.16).
 // Secrets come from ~/Desktop/Secrets (N8N_API_KEY, GOSERVE_TELEGRAM_CHAT_ID, SUPABASE_GOSERVE_DEV_URL, GOSERVE_DEMO_TOKEN) and are never written to the repo.
 const fs = require('fs');
 const os = require('os');
@@ -10,8 +10,8 @@ const crypto = require('crypto');
 const { build } = require('./build');
 
 const BASE = 'https://n8n.linkright.in/api/v1';
-const NAMES = { alert: 'GS ERR 00 Alert', sub11: 'GS SUB 11 Place order', sub12: 'GS SUB 12 Change status', sub13: 'GS SUB 13 Decide', sub14: 'GS SUB 14 Write logs', sub15: 'GS SUB 15 Add event', sub16: 'GS SUB 16 Health', main01: 'GS MAIN 01 Order API' };
-const ORDER = ['alert', 'sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'sub16', 'main01'];
+const NAMES = { alert: 'GS ERR 00 Alert', sub11: 'GS SUB 11 Place order', sub12: 'GS SUB 12 Change status', sub13: 'GS SUB 13 Decide', sub14: 'GS SUB 14 Write logs', sub15: 'GS SUB 15 Add event', sub16: 'GS SUB 16 Health', sub91: 'GS SUB 91 Scorecard numbers', main01: 'GS MAIN 01 Order API', main90: 'GS MAIN 90 Daily scorecard' };
+const ORDER = ['alert', 'sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'sub16', 'sub91', 'main01', 'main90'];
 const CREDENTIAL = 'GoServe Supabase dev';
 const JEV_CREDENTIAL = 'GoServe OpenRouter';
 
@@ -44,7 +44,7 @@ async function main() {
     ids[k] = found[0] ? found[0].id : null;
   }
   console.log('Plan (' + (apply ? 'APPLY' : 'dry run') + '):');
-  for (const k of ORDER) console.log('  ' + NAMES[k].padEnd(26) + (ids[k] ? 'update ' + ids[k] : 'create'));
+  for (const k of ORDER) console.log('  ' + NAMES[k].padEnd(30) + (ids[k] ? 'update ' + ids[k] : 'create'));
   console.log('  credential "' + CREDENTIAL + '" ' + credential.id + '; "' + JEV_CREDENTIAL + '" ' + (jevCredential ? jevCredential.id : 'MISSING (apply will refuse)') + '; nothing is activated.');
   if (!apply) return;
 
