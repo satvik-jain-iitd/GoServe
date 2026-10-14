@@ -497,3 +497,65 @@ Har naya technical word yahan. Simple Hindi mein. Ek line ka "yeh kya hai", ek l
 - **Kya hai:** Ref yaad rakhta hai ki tracked order list mein tha. Isse khali pehla load reset nahi samjha jaata.
 - **Analogy:** Receipt desk: slip gayab hua to menu par wapas.
 - **File:** `app/src/App.tsx` (line 45); PR #73.
+
+
+### Health check = a real call
+- **Kya hai:** Health check ek asli call hai, ping nahi. Batti tab hi green hai jab token, kill switch aur workflow teeno pass hon. Jev bhi usi call se check hota hai.
+- **Analogy:** Front desk ko phone karke ek sawaal poochna, sirf ghanti bajana nahi. Busy tone, galat extension aur band desk, teen ka alag note.
+- **File:** `app/src/lib/health.ts` (line 39); PR #74.
+
+### Failure is a result
+- **Kya hai:** SUB 16 ka Ask Jev continue on error hai. Jev ka timeout red batti ban jaata hai, workflow crash nahi.
+- **Analogy:** Concierge ka na bolna bhi ek khabar hai.
+- **File:** `ops/n8n/order/build.js` (line 157); PR #74.
+
+### Status code as a sentence
+- **Kya hai:** 401, 503 aur 404 ko founder ke liye saaf note mein badla jaata hai.
+- **Analogy:** Darwan ki parchi par ek line: galat chaabi, band darwaza, abhi khula nahi.
+- **File:** `app/src/lib/health.ts` (line 39); PR #74.
+
+### SPA fallback
+- **Kya hai:** Server par `/health` naam ki file nahi hai, to har unknown path `index.html` dena chahiye. Vercel ko routes line chahiye; Cloudflare Pages yeh default mein karta hai (F76 c).
+- **Analogy:** Map par na hone wala darwaza bhi lobby mein khulta hai.
+- **File:** `.github/workflows/deploy-dev.yml` (line 47); PR #74.
+
+### Count by HEAD
+- **Kya hai:** `head: true` aur `count: "exact"` sirf total lautate hain, rows nahi.
+- **Analogy:** Ledger ka sirf page count, pages nahi.
+- **File:** `app/src/lib/ops.ts` (line 61); PR #74.
+
+### Failed state beside asked
+- **Kya hai:** Ek one-shot call ki failed state item par hi rakhni hai: `failed` map `asked` ke saath rehta hai.
+- **Analogy:** Ghanti ek baar bajti hai; slip par likha hota hai ki jawab kyun nahi aaya.
+- **File:** `app/src/lib/useOps.ts` (line 13); PR #74.
+
+
+### Two modes behind one button
+- **Kya hai:** `auto` (asli calls) aur `demo` (local copy) ek button ke peeche hain. Demo ke waqt live hook band hota hai.
+- **Analogy:** Hotel ka asli drill vs cardboard guest: ek switch, do rehearsal.
+- **File:** `app/src/App.tsx` (line 45); PR #75.
+
+### A ref as a clipboard
+- **Kya hai:** `latest.current` har render par update hota hai, to lamba chalne wala timer restart hue bina taaza state padhta hai.
+- **Analogy:** Manager ka clipboard, photocopy nahi: hamesha aaj ke boards.
+- **File:** `app/src/App.tsx` (line 122); PR #75.
+
+### Return the error code, not just show it
+- **Kya hai:** `act` ab `null` ya error code deta hai, taaki loop faisla le sake: `network` par offline, baaki par ruk ya retry.
+- **Analogy:** Front desk sirf "gadbad" nahi bolta, kaun si gadbad hai woh batata hai, taaki manager agla kadam chune.
+- **File:** `app/src/App.tsx` (line 135); PR #75.
+
+### Next-step table
+- **Kya hai:** `nextAutoAction` status dekh kar agla desk aur stamp batata hai. Rider ka Arriving ek hi baar bheja jaata hai.
+- **Analogy:** Drill card: slip ki stamp dekho, agla desk pehchano.
+- **File:** `app/src/lib/autopilot.ts` (line 13); PR #75.
+
+### Build-time knob for pace
+- **Kya hai:** `VITE_AUTOPILOT_MS` build ke waqt tay hota hai: test fast (300 ms), stage dheema (2 s). Badalne ke liye rebuild chahiye.
+- **Analogy:** Metronome: ek baar lagaya, drill ke beech nahi badalta.
+- **File:** `app/src/lib/autopilot.ts` (line 5); PR #75.
+
+### Two doors for offline detection
+- **Kya hai:** Offline maanne ke do raaste: `navigator.onLine` (airplane mode) aur ek failed call ya read (wifi on, internet dead, lagbhag 7 s).
+- **Analogy:** Hotel ke do darwaze: ek bijli ka switch, ek guest ka darwaza jo koi jawab nahi deta.
+- **File:** `app/src/App.tsx` (line 168); PR #75.

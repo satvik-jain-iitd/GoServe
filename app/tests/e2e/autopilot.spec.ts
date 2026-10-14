@@ -8,6 +8,7 @@ test("S1 in airplane mode Autopilot plays the whole order story from local data,
   const net = await setup(context, page);
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();   // the menu is saved for offline use
+  const readsBefore = net.calls.orderReads.length;
   await context.setOffline(true);
   await page.getByRole("button", { name: "Autopilot" }).click();
   await expect(page.getByText("Offline demo")).toBeVisible();
@@ -16,6 +17,7 @@ test("S1 in airplane mode Autopilot plays the whole order story from local data,
   await expect(page.getByText("Your order has been delivered.")).toBeVisible();
   expect(net.calls.status).toHaveLength(0);   // nothing was sent
   expect(net.calls.decide).toHaveLength(0);
+  expect(net.calls.orderReads).toHaveLength(readsBefore);   // the live list was not read either
 });
 
 test("S1 the other screens follow the same local story: kitchen card, rider list, ops suggestion", async ({ page, context }) => {
@@ -97,4 +99,28 @@ test("S1 if the server cannot be reached while Autopilot runs, it falls back to 
   await page.getByRole("button", { name: "Autopilot" }).click();
   await expect(page.getByText("Offline demo")).toBeVisible({ timeout: 5000 });
   await expect(tracker(page)).toHaveText("Delivered", { timeout: 8000 });
+});
+
+test("S2 online, a refused step (kill switch) stops Autopilot after one call and shows the reason", async ({ page, context }) => {
+  const net = await setup(context, page, [order("placed")]);
+  net.state.reply = { status: 503, body: { ok: false, error: "kill_switch", message: "Orders are paused. Please try again soon." } };
+  await page.goto("/");
+  await page.getByRole("button", { name: "Autopilot" }).click();
+  await expect.poll(() => net.calls.status.length, { timeout: 5000 }).toBe(1);
+  await page.waitForTimeout(1200);   // four more steps would have gone by
+  expect(net.calls.status).toHaveLength(1);
+  await expect(page.getByRole("button", { name: "Autopilot" })).toHaveAttribute("aria-pressed", "false");
+});
+
+test("S1 the offline story never asks the server for a decision, even if the phone could reach it", async ({ page, context }) => {
+  await setup(context, page, [order("placed")]);
+  await context.route("https://orders.test/**", (route) => route.abort());   // the first step fails, so the story goes offline
+  const asked: string[] = [];
+  page.on("request", (r) => { if (r.url().startsWith("https://orders.test") && (r.postData() ?? "").includes('"decide"')) asked.push(r.url()); });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Autopilot" }).click();
+  await expect(page.getByText("Offline demo")).toBeVisible({ timeout: 5000 });
+  await page.getByRole("button", { name: "Ops" }).click();
+  await expect(page.getByText("AI suggests rider R2 (81%). The rule agrees.")).toBeVisible({ timeout: 8000 });
+  expect(asked).toHaveLength(0);
 });

@@ -41,7 +41,7 @@ describe("demo data for airplane mode", () => {
   it("S1 the sample decision reads as the story line: AI suggests R2 and the rule agrees", () => {
     expect(DEMO_DECISION).toMatchObject({ rule_pick: "r2", jev: { pick: "r2", agrees: true } });
   });
-  it("the step time defaults to 2 seconds", () => {
-    expect(AUTOPILOT_MS).toBeGreaterThan(0);
+  it("the step time is 2 seconds when no build setting is given", () => {
+    expect(AUTOPILOT_MS).toBe(2000);
   });
 });

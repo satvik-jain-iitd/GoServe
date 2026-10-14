@@ -157,83 +157,103 @@ clear_dev.py ──> dev DB (Management API), same reset flag
 
 <!-- gh-comment-id: 4271095599 --> `app/supabase/migrations/0006_demo_sessions.sql:34` · Risk · **Top-3**
 > `join_session` sirf "session exist karta hai" check karta hai: link = key (ADR-011, F74 b). Demo ke liye theek. Par koi bhi joined member `reset_session` bhi kar sakta hai (line 57), to leak hua link beech pitch mein demo saaf kar sakta hai. Pilot se pehle: invite ek baar wala code ya host-only reset? Owner A46 par haan de to abhi yahi rehne do.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Yes, any member can reset. For the demo this is fine: the link stays in the room. Before a pilot, reset becomes host-only or the link becomes a one-time code. It is in F74 (b). It waits for the owner's yes on A46.
+- **Status:** answered
 
 <!-- gh-comment-id: 4271095612 --> `app/tests/integration/supabase.test.ts:120` · Testing · **Top-3**
 > Yeh ek hi test Realtime + RLS + security definer (`is_my_session`) ko joined device ke liye prove karta hai (INSERT < 2 s). Maine dobara nahi chalaya (rows chhodta hai). Activation ke baad live two-device row (test-cases line 102) isi ko asli phone par dohraati hai. Us run ki execution id aur napa hua time row mein likhna.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Agreed. After activation I run the live two-device row and write the execution ids and the measured time into that row.
+- **Status:** answered
 
 <!-- gh-comment-id: 4271095620 --> `app/src/App.tsx:139` · Impact · **Top-3**
 > Doosra device reset kare to is device ki live list khali ho jaati hai (DELETE), par `placed` state rehti hai: customer "Order placed" tracker purani `placed.status` ke saath dekhta rehta hai jab tak "Order again" na dabaye. Ek line: jab `placed.id` list se gayab ho aur list load ho chuki ho, `setPlaced(null)`? Ya demo mein host hi reset karega, to rehne do (F74 mein note).
-- **Status:** open
+- **Reply (klickbae8yt-star):** Good catch. I will fix it in the next PR (story #51). When the order the tracker showed leaves the list, the customer goes back to the menu. The test is written first.
+- **Status:** answered
 
 <!-- gh-comment-id: 4271095632 --> `app/src/App.tsx:37` · Understanding
 > `ready` gate: `?join=` ho to live list tab tak nahi chalti jab tak join khatam na ho (success ya fail). Fail par bhi `ready=true` aur device apne session mein rehta hai, error line ke saath. Sahi. Sawal: join fail ke baad URL saaf ho jaata hai, to user dobara link kaise khole? Reload se nahi, copy dobara chahiye: theek hai demo ke liye?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Yes, fine for the demo. The message says to ask for a new link, and the link stays in the chat, so it is one tap. A reload does not retry on purpose: a bad link cannot loop.
+- **Status:** answered
 
 <!-- gh-comment-id: 4271095639 --> `app/src/App.tsx:48` · Understanding
 > Join effect `ensureSession()` pehle karta hai: B ka apna anonymous user banta hai, phir `join_session(A)`. Matlab har joined device bhi `auth.users` mein ek row hai (30/hour/IP limit, F71). Do device = do users: theek. Bas confirm: yeh effect sirf ek baar chalta hai (`[]`), tab switch par nahi.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Confirmed. The effect has `[]`, so it runs once at start and not on a tab switch. Two devices make two anonymous users, so it costs two sign-ins from the hourly limit.
+- **Status:** answered
 
 <!-- gh-comment-id: 4271095657 --> `app/src/lib/session.ts:21` · Risk
 > Joined session localStorage mein hamesha rehti hai (F74 a). Agle din host apna site data saaf kare (naya session), kitchen device purani session padhta rahega aur kuch nahi dikhega. Demo checklist (#56) mein line: "dono device par site data saaf karo, phir naya link". Leave button F74 a tak theek?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Agreed. I added the line to the #56 checklist in F74: clear site data on both devices, then open a new link. The Leave button stays in F74 (a).
+- **Status:** answered
 
 <!-- gh-comment-id: 4271095674 --> `app/src/lib/live.ts:7` · Understanding
 > `fetchOrders` ab `.eq("session_id", sessionId)` filter karta hai jabki RLS pehle se sirf apni + joined sessions deta hai. Kyun dono? Mera samajh: joined device ko sirf joined room dikhe, apna purana nahi. Sahi? To RLS = suraksha, filter = chunav.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Your reading is right. RLS is the safety rule: what a device may see. The filter is the choice: what this screen shows. A joined device shows the joined room only.
+- **Status:** answered
 
 <!-- gh-comment-id: 4271095684 --> `app/src/lib/live.ts:22` · Risk
 > DELETE listener bina filter: Realtime delete ko column se filter nahi kar sakta aur sirf id bhejta hai (F74 c). Har khula screen har reset ki ids sunta hai, sirf apni girata hai. Leak = sirf uuid. Supabase ka yeh vyavhar RLS par bhi lagu hai (delete sab ko jaata hai)? Doc link LEARNINGS mein daalo.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Both. The Supabase docs say delete events are not filtered and not checked by RLS, and the live test reads `payload.old.id` from a real delete. I will add the docs link to LEARNINGS.
+- **Status:** answered
 
 <!-- gh-comment-id: 4271095695 --> `app/src/lib/useLiveOrders.ts:28` · Testing
 > Delete par `cur.filter(o => o.id !== id)`. Reconnect ke baad `reload()` phir se `fetchOrders` karta hai, to ek missed delete bhi agle reconnect par theek ho jaata hai? Nahi: reload merge karta hai, hataata nahi (`rows.reduce(mergeOrder, cur)`). Missed delete tab tak rehta hai jab tak tab band na ho. Demo mein chhota; F74 mein ek line?
-- **Status:** open
+- **Reply (klickbae8yt-star):** You are right. Reload adds and updates but never removes, so a missed delete stays until the tab is closed. I added it to F74 (h). The fix, when it matters: on reload, replace the list instead of merging.
+- **Status:** answered
 
 <!-- gh-comment-id: 4271095711 --> `app/src/screens/DemoBar.tsx:40` · Understanding
 > Reset do-step hai (ask → "Yes, clear"), aur `busy` dono button band karta hai. "No, keep" `setAsking(false)`. Accessibility: confirm text `<span>` hai, role nahi; screen reader ke liye `role="status"` ya ek `<p>`? Cosmetic, #56 polish ke saath.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Agreed, it is a small polish. Added to F74 (i), to do with the #56 polish.
+- **Status:** answered
 
 <!-- gh-comment-id: 4271095722 --> `app/src/screens/DemoBar.tsx:32` · Assumptions
 > Clipboard block ho to link text mein dikhta hai ("Copy this link: …"). Phone par long uuid link select karna mushkil; QR F74 d. Demo ke do device same WiFi par honge: link WhatsApp se bhejoge? Us raste ka ek test (#56 checklist) kaafi hai.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Good point. I added a line to F74 (j): in the #56 checklist, send the link by WhatsApp to the second device and open it. A QR code stays in F74 (d).
+- **Status:** answered
 
 <!-- gh-comment-id: 4271095732 --> `app/supabase/migrations/0006_demo_sessions.sql:13` · Risk
 > `is_my_session` security definer hai taaki policy `session_links` padh sake jo phone nahi padh sakta. `stable` + `set search_path = public`: theek. Yeh function har row par har read aur har Realtime change par chalta hai; demo scale par theek, `session_links` ka PK hi index hai. Pilot se pehle maapna.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Agreed. It runs on every read and every live change. The demo is small, and `session_links` has its primary key as an index. I added F74 (k): measure before a pilot.
+- **Status:** answered
 
 <!-- gh-comment-id: 4271095743 --> `app/supabase/migrations/0006_demo_sessions.sql:44` · Understanding
 > Frozen table mein ek darwaza: trigger DELETE tabhi jaane deta hai jab `goserve.reset` = 'on' aur flag transaction-local hai (`set_config(..., true)`). Phone ke paas order_events par DELETE policy nahi, to flag akela kaafi nahi: do taale. `clear_dev.py` bhi wahi flag set karta hai (line 33). Aur koi jagah yeh flag set karti hai? Grep se sirf do.
-- **Status:** open
+- **Reply (klickbae8yt-star):** I searched the repo. Only two places set the flag: `reset_session` in the migration and `scripts/clear_dev.py`. The ADR and LEARNINGS only describe it.
+- **Status:** answered
 
 <!-- gh-comment-id: 4271095753 --> `app/supabase/migrations/0006_demo_sessions.sql:61` · Impact
 > Reset order: events → decision_log → orders. `run_log` ka orders par FK nahi (0001), to reset us par nahi atakta: maine schema dekha. Par SUB 14 `run_log` mein `session_id` likhta hai; reset ke baad woh rows "bhoot session" ki hoti hain. Scorecard (#47) ke liye theek, bas ADR note.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Yes. After a reset, `run_log` keeps rows of a session that has no orders. That is fine for the scorecard (#47). I will add one line to ADR-011 in the next PR.
+- **Status:** answered
 
 <!-- gh-comment-id: 4271095769 --> `scripts/test_order_rpc.py:144` · Testing
 > Joined device reset kar sakta hai, stranger `not_your_session`. Maine chalaya: Ran 17 OK, rolled back, to migration 0006 dev par lagi hai. Yeh test `auth.users` mein rows banata hai transaction ke andar: rollback saaf karta hai, 30/hour sign-in limit par asar nahi. Sahi?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Yes. The test makes its users inside a transaction that is rolled back, so nothing stays. The sign-in limit counts sign-in calls, not rows.
+- **Status:** answered
 
 <!-- gh-comment-id: 4271095776 --> `scripts/clear_dev.py:9` · Risk
 > `--apply` paanch tables ki SAARI rows hataata hai (sab sessions, `run_log` bhi), ref `tmxyizmkpwwfyazvrfhw` ke alawa refuse. Dev only, test se proven. Body kehta hai 12 orders / 15 events saaf hue: owner ka haan F71 par tha (discussions line 22). Theek. `--ref` flag ka matlab sirf "galti pakdo" hai, prod kabhi nahi: docstring mein ek line.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Agreed. I will add one line to the docstring: `--ref` only exists to catch a mistake; production is never allowed.
+- **Status:** answered
 
 <!-- gh-comment-id: 4271095786 --> `app/tests/e2e/helpers.ts:62` · Testing
 > Fake socket ab client ki binding list wapas bhejta hai aur DELETE ko `old_record` ke saath sahi binding number par. LEARNINGS row 1 isi se aaya (position se match). Asli Realtime delete payload ka shape (`old` sirf PK) doc se confirm kiya ya integration test se? Dono ho to best.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Both. The Supabase docs describe the delete payload, and the live integration test reads `old.id` from a real delete on goserve-dev. The fake socket copies that shape.
+- **Status:** answered
 
 <!-- gh-comment-id: 4271095799 --> `app/tests/e2e/split.spec.ts:27` · Testing
 > Side-by-side ka proof = headings ki y-doori < 80 px aur kitchen x > customer x. Phone width (360 px) par grid do column rehta hai: `.panes` `1fr 1fr` bina media query. Demo laptop par theek; phone par split tab bekaar. Story S1 "one phone" kehti hai: split laptop par hi dikhega?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fair. Split is for a laptop or a tablet; on a 360 px phone the two columns are narrow. With two devices (A46) the demo does not need it on a phone. I will look at it on the real Android in #56 and then decide: stack under 600 px, or keep. Noted in F74 (l).
+- **Status:** answered
 
 <!-- gh-comment-id: 4271095811 --> `docs/assumptions.md:56` · Assumptions
 > A46 teen hisse: do device, link = key, phone sirf do DB functions (join, reset) seedhe bula sakta hai aur baaki writes n8n se. ADR-011 "merge = accept". Owner se alag haan ya na chahiye: A46 aur ADR-011 par.
-- **Status:** open
+- **Reply (klickbae8yt-star):** This needs the owner's own yes, apart from the merge. A46 stays Open until then. ADR-011 is accepted by the merge.
+- **Status:** answered
 
 <!-- gh-comment-id: 4271095822 --> `docs/tests/test-cases.md:102` · Impact
 > Live two-device row "Pending activation". Activation ke baad kram: customer phone order → kitchen device (copied link) dekhe → Reset dono saaf. Jab chalao, MAIN/SUB execution ids aur 2 s ka napa hua time isi row mein likho (F73 f ke saath ek hi run).
-- **Status:** open
+- **Reply (klickbae8yt-star):** Yes. The execution ids and the measured time go into this row, in the same run as F73 (f).
+- **Status:** answered
 
 ---
 
