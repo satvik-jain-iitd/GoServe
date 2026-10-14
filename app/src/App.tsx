@@ -4,7 +4,7 @@ import { addDish, cartLines, cartTotal, changeQty, toOrderItems, type Cart } fro
 import { kitchenOrders, mergeOrder, riderOrders, type Order, type RiderAction } from "./lib/kitchen";
 import { useLiveOrders } from "./lib/useLiveOrders";
 import { loadMenu, type Dish } from "./lib/menu";
-import { addEvent, changeStatus, placeOrder, PlaceError, type OrderDeps, type PlacedOrder } from "./lib/orders";
+import { addEvent, changeStatus, orderDeps, placeOrder, PlaceError, type PlacedOrder } from "./lib/orders";
 import { ensureSession, fetchMenuRows, getClient } from "./lib/supabase";
 import { currentSession, joinCode, joinLink, joinSession, rememberJoin, resetSession } from "./lib/session";
 import { MenuScreen } from "./screens/MenuScreen";
@@ -20,7 +20,7 @@ import { DemoBar } from "./screens/DemoBar";
 type Step = "menu" | "cart" | "bill" | "placed";
 type Role = "customer" | "kitchen" | "rider" | "split" | "ops";
 
-const api = (): OrderDeps => ({ url: import.meta.env.VITE_ORDER_URL, token: import.meta.env.VITE_DEMO_TOKEN, fetchFn: fetch.bind(window) });
+const api = orderDeps;
 
 export function App() {
   const [menu, setMenu] = useState<{ dishes: Dish[]; fromCache: boolean } | null>(null);
@@ -95,6 +95,7 @@ export function App() {
   async function reset() {
     await resetSession(getClient(), await currentSession());
     setOrders([]);
+    live.setLags([]);
     setPlaced(null);
     setStep("menu");
     setCart({});
@@ -170,7 +171,7 @@ export function App() {
         <RiderScreen orders={riderOrders(orders)} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
           onAct={(o, a) => act(o, a, "rider")} />
       )}
-      {role === "ops" && <OpsScreen orders={orders} decisions={ops.decisions} lags={live.lags} stats={ops.stats} error={ops.error ?? live.error} />}
+      {role === "ops" && <OpsScreen orders={orders} decisions={ops.decisions} lags={live.lags} stats={ops.stats} error={ops.error ?? live.error} failed={ops.failed} />}
       {role === "customer" && customerView}
       {role === "split" && (
         <div className="panes">

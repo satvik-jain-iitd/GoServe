@@ -32,7 +32,11 @@ export function useLiveOrders(active: boolean) {
           if (!alive) return;
           if (event === "INSERT") setLags((cur) => [...cur, Math.max(0, Date.now() - Date.parse(o.created_at))]);
           setOrders((cur) => mergeOrder(cur, o));
-        }, () => void reload().catch(() => {}), (id) => alive && setOrders((cur) => cur.filter((o) => o.id !== id)));
+        }, () => void reload().catch(() => {}), (id) => {
+          if (!alive) return;
+          setOrders((cur) => cur.filter((o) => o.id !== id));
+          setLags([]);   // after a reset the old timings no longer describe this demo
+        });
         await reload();
       } catch {
         if (alive) setError("Could not load orders. Check your connection and try again.");
@@ -46,5 +50,5 @@ export function useLiveOrders(active: boolean) {
     };
   }, [active]);
 
-  return { orders, loading, error, lags, setOrders, setError };
+  return { orders, loading, error, lags, setOrders, setError, setLags };
 }

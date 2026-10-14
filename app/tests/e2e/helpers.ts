@@ -16,10 +16,10 @@ export const decisionOf = (over: object = {}) => ({
   use_case: "D1", rule_pick: "r2", chosen_pick: "r2", chosen_by: "rule", jev_status: "ok", jev: { pick: "r2", confidence: 0.81, agrees: true, ms: 310 }, ...over,
 });
 
-type Calls = { status: any[]; decide: any[]; rpc: { name: string; body: any }[]; orderReads: string[] };
+type Calls = { status: any[]; decide: any[]; health: any[]; rpc: { name: string; body: any }[]; orderReads: string[] };
 export async function setup(context: BrowserContext, page: Page, initial: object[] = []) {
-  const calls: Calls = { status: [], decide: [], rpc: [], orderReads: [] };
-  const state = { orders: initial, reply: null as null | { status: number; body: unknown }, decisions: [] as object[], runs: [] as object[], runCount: 0 };
+  const calls: Calls = { status: [], decide: [], health: [], rpc: [], orderReads: [] };
+  const state = { orders: initial, reply: null as null | { status: number; body: unknown }, menuUp: true, decisions: [] as object[], runs: [] as object[], runCount: 0 };
   const json = (route: any, status: number, body: unknown) => route.fulfill({ status, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(body) });
   await context.route("https://test.supabase.co/**", async (route) => {
     const req = route.request();
@@ -36,12 +36,17 @@ export async function setup(context: BrowserContext, page: Page, initial: object
     }
     if (req.url().includes("/rest/v1/decision_log")) return json(route, 200, state.decisions);
     if (req.url().includes("/rest/v1/run_log")) {
-      return route.fulfill({ status: 200, headers: { ...CORS, "content-type": "application/json", "content-range": `0-${Math.max(0, state.runs.length - 1)}/${state.runCount || state.runs.length}` }, body: JSON.stringify(state.runs) });
+      const total = state.runCount || state.runs.length;
+      if (req.method() === "HEAD") return route.fulfill({ status: 200, headers: { ...CORS, "content-range": `*/${total}` } });   // the count query
+      const rows = req.url().includes("workflow=like") ? state.runs.filter((r: any) => String(r.workflow).endsWith(": decide")).slice(0, 1) : state.runs;   // the last-decide query
+      const limit = Number(new URL(req.url()).searchParams.get("limit") ?? rows.length);   // like PostgREST: only the first rows come back
+      return json(route, 200, rows.slice(0, limit));
     }
     if (req.url().includes("/rest/v1/orders")) {
       calls.orderReads.push(req.url());
       return json(route, 200, state.orders);
     }
+    if (req.url().includes("/rest/v1/menu_items") && !state.menuUp) return json(route, 500, {});
     if (req.url().includes("/rest/v1/menu_items")) return json(route, 200, [{ id: "d1", name: "Butter Chicken", price_paise: 32000, image_url: null, image_credit: null }]);
     return json(route, 404, {});
   });
@@ -49,6 +54,11 @@ export async function setup(context: BrowserContext, page: Page, initial: object
     const req = route.request();
     if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: CORS });
     const body = JSON.parse(req.postData() ?? "{}");
+    if (body.action === "health") {
+      calls.health.push({ headers: req.headers(), body });
+      const r = state.reply ?? { status: 200, body: { ok: true, jev: { ok: true, status: "ok", ms: 310 } } };
+      return json(route, r.status, r.body);
+    }
     if (body.action === "decide") {
       calls.decide.push(body);
       const r = state.reply ?? { status: 200, body: { ok: true, decision: decisionOf() } };

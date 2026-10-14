@@ -7,9 +7,10 @@ type Props = {
   lags: number[];
   stats: { runsToday: number; lastDecideMs: number | null };
   error: string | null;
+  failed: Record<string, string>;
 };
 
-export function OpsScreen({ orders, decisions, lags, stats, error }: Props) {
+export function OpsScreen({ orders, decisions, lags, stats, error, failed }: Props) {
   const latest = new Map<string, DecisionRow>();
   for (const d of decisions) if (d.order_id && !latest.has(d.order_id)) latest.set(d.order_id, d);   // newest first
   const rows = orders.filter((o) => o.status === "ready" || latest.has(o.id));
@@ -23,7 +24,7 @@ export function OpsScreen({ orders, decisions, lags, stats, error }: Props) {
         {rows.map((o) => (
           <li key={o.id} className="ticket">
             <strong>Order {shortId(o.id)}</strong>
-            <p>{latest.has(o.id) ? suggestionText(latest.get(o.id)!.decision) : "Asking for a suggestion…"}</p>
+            <p>{latest.has(o.id) ? suggestionText(latest.get(o.id)!.decision) : failed[o.id] ? `No suggestion: ${failed[o.id]}` : "Asking for a suggestion…"}</p>
           </li>
         ))}
       </ul>
@@ -33,7 +34,7 @@ export function OpsScreen({ orders, decisions, lags, stats, error }: Props) {
         <dd data-testid="metric-lag">{lag === null ? "No live order seen yet." : formatMs(lag)}</dd>
         <dt>Decision time</dt>
         <dd data-testid="metric-decision">{stats.lastDecideMs === null ? "No decision yet." : formatMs(stats.lastDecideMs)}</dd>
-        <dt>Runs today</dt>
+        <dt>Runs today (this demo)</dt>
         <dd data-testid="metric-runs">{stats.runsToday}</dd>
       </dl>
     </section>

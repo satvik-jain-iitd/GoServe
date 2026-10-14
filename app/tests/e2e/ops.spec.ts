@@ -37,7 +37,9 @@ test("S1 a refused decision call shows the reason once and does not loop", async
   net.state.reply = { status: 503, body: { ok: false, error: "kill_switch", message: "Orders are paused. Please try again soon." } };
   await openOps(page);
   await expect(page.getByRole("alert")).toHaveText("Orders are paused. Please try again soon.");
-  await page.waitForTimeout(1500);
+  await expect(page.getByText("No suggestion: Orders are paused. Please try again soon.")).toBeVisible();   // the slip says why
+  net.push("UPDATE", order("ready", "2020-01-01T10:05:00Z"));   // an order change reruns the effect: the loop would start here
+  await page.waitForTimeout(2500);
   expect(net.calls.decide).toHaveLength(1);
 });
 
@@ -51,6 +53,15 @@ test("S2 the metrics panel shows time to this screen, decision time and runs tod
   await expect(page.getByTestId("metric-lag")).toHaveText(/^\d+(\.\d)? s$|^\d+ ms$/, { timeout: 6000 });
   await expect(page.getByTestId("metric-decision")).toHaveText("420 ms");
   await expect(page.getByTestId("metric-runs")).toHaveText("7");
+});
+
+test("S2 the decision time is the last decide run even when more than 50 other runs came after it", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.runs = [...Array.from({ length: 60 }, () => ({ workflow: "GS MAIN 01 Order API: status", duration_ms: 90, created_at: new Date().toISOString() })),
+    { workflow: "GS MAIN 01 Order API: decide", duration_ms: 420, created_at: new Date().toISOString() }];
+  await openOps(page);
+  await expect(page.getByTestId("metric-decision")).toHaveText("420 ms");
+  await expect(page.getByTestId("metric-runs")).toHaveText("61");
 });
 
 test("S2 with no runs yet the panel says so instead of showing zeros as facts", async ({ page, context }) => {

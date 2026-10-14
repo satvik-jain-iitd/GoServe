@@ -26,7 +26,9 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana â
 | 9 | [#68](pr-68-deployed-inactive.md) | docs: order workflows deployed inactive, A41 and A42 confirmed | MERGED (3 answered) | follow-up to #46 (epic #35) |
 | 10 | [#69](pr-69-customer-screen.md) | feat(app): customer menu, cart, bill and place order | MERGED (20 answered) | #48 (epic #36) |
 | 11 | [#70](pr-70-kitchen-screen.md) | feat(app): kitchen screen with live orders and next-step buttons | MERGED (20 answered) | #49 (epic #36) |
-| 12 | [#71](pr-71-rider-tracker.md) | feat(app): rider steps and live customer tracker | APPROVED (20 answered, Guard fixed, d24d387) | #50 (epic #36) |
+| 12 | [#71](pr-71-rider-tracker.md) | feat(app): rider steps and live customer tracker | MERGED (20 answered) | #50 (epic #36) |
+| 13 | [#72](pr-72-split-view.md) | feat(app): split view, shared session by link and reset | MERGED (20 answered) | #52 (epic #37) |
+| 14 | [#73](pr-73-ops-screen.md) | feat(app): ops screen with AI suggestion and metrics | APPROVED (20 posted, 0 must-fix) | #51 (epic #36) |
 
 ## Journals
 - [concepts.md](concepts.md) â€” naye technical words, plain Hindi mein.
@@ -47,6 +49,8 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana â
 | Customer screen (menu, cart, bill, place order) | #69 |
 | Kitchen screen (live orders, Accept/Start/Ready) | #70 |
 | Rider steps + customer tracker (events vs status, SUB 15) | #71 |
+| Split view, join by link, reset (RLS via function, delete events) | #72 |
+| Ops screen: AI advice vs rule, plain metrics, per-session read rules | #73 |
 
 ## Notes
 - Chapters Romanized Hindi mein hain. Code, file paths, commands English mein.

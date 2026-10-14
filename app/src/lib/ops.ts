@@ -55,11 +55,13 @@ export async function fetchDecisions(client: SupabaseClient, sessionId: string):
   return (data ?? []) as DecisionRow[];
 }
 
-// Runs today, and how long the latest decision call took. Both come from run_log rows of this session.
+// Runs today (a count) and how long the latest decision call took (its own query, so many other runs cannot push it out). Both read run_log rows of this session.
 export async function fetchRunStats(client: SupabaseClient, sessionId: string): Promise<{ runsToday: number; lastDecideMs: number | null }> {
-  const { data, count, error } = await client.from("run_log").select("workflow, duration_ms, created_at", { count: "exact" })
-    .eq("session_id", sessionId).gte("created_at", startOfToday()).order("created_at", { ascending: false }).limit(50);
-  if (error) throw error;
-  const last = (data ?? []).find((r) => String(r.workflow).endsWith(": decide"));
-  return { runsToday: count ?? data?.length ?? 0, lastDecideMs: last ? Number(last.duration_ms) : null };
+  const [runs, last] = await Promise.all([
+    client.from("run_log").select("id", { count: "exact", head: true }).eq("session_id", sessionId).gte("created_at", startOfToday()),
+    client.from("run_log").select("duration_ms").eq("session_id", sessionId).like("workflow", "%: decide").order("created_at", { ascending: false }).limit(1),
+  ]);
+  if (runs.error) throw runs.error;
+  if (last.error) throw last.error;
+  return { runsToday: runs.count ?? 0, lastDecideMs: last.data?.length ? Number(last.data[0].duration_ms) : null };
 }

@@ -145,6 +145,28 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     guardFile: 'guard_event.js', rpc: { fn: 'rider_event', label: 'Add event' },
     what: 'It writes the rider\'s arriving event. The status does not change.' });
 
+  // ---- SUB 16 Health: one tiny Jev call (story #54). Writes nothing. ----
+  const f16 = [['jev_enabled', 'boolean'], ['jev_model', 'string']];
+  const n16 = [
+    node('gs-sub16-01', 'Start', 'n8n-nodes-base.executeWorkflowTrigger', 1.1, inputs(f16)),
+    codeNode('gs-sub16-02', 'Prepare', code('health_prepare.js')),
+    ifNode('gs-sub16-03', 'Ask Jev?', '={{ $json.use_jev }}', 'true'),
+    // Jev is the thing being checked, so a failure is a result and not an error: this one node continues on error. It writes nothing.
+    node('gs-sub16-04', 'Ask Jev', 'n8n-nodes-base.httpRequest', 4.2, { method: 'POST', url: 'https://openrouter.ai/api/v1/chat/completions',
+      authentication: 'genericCredentialType', genericAuthType: 'httpHeaderAuth', sendBody: true, specifyBody: 'json', jsonBody: '={{ $json.jev_body }}',
+      options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 3000 } },
+      { credentials: { httpHeaderAuth: jevCred }, onError: 'continueRegularOutput' }),
+    codeNode('gs-sub16-05', 'Health result', code('health_result.js')),
+  ];
+  const e16 = [['Start', 'Prepare'], ['Prepare', 'Ask Jev?'], ['Ask Jev?', 'Ask Jev', 0], ['Ask Jev?', 'Health result', 1], ['Ask Jev', 'Health result']];
+  const s16 = [
+    { name: 'RECEIVE', what: 'The MAIN workflow calls this when the health page asks.', needs: 'Input: ' + f16.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
+    { name: 'PREPARE', what: 'Make one tiny question for Jev. Nothing from an order goes in it.', needs: 'Input fields. No credential.', nodes: ['Prepare', 'Ask Jev?'], color: 5 },
+    { name: 'JEV', what: 'Ask Jev within 3 seconds. If Jev fails, go on and report it.', needs: 'Credential "GoServe OpenRouter". Config: jev_enabled, jev_model.', nodes: ['Ask Jev'], color: 3 },
+    { name: 'RESULT', what: 'Say if Jev answered and how long it took. This workflow writes nothing.', needs: 'The Jev answer.', nodes: ['Health result'], color: 5 },
+  ];
+  const sub16 = finish('GS SUB 16 Health', n16, e16, s16, subSettings);
+
   const callSub = (id, name, subId, mapping) => node(id, name, 'n8n-nodes-base.executeWorkflow', 1.2, {
     source: 'database', workflowId: { __rl: true, value: subId, mode: 'id' },
     workflowInputs: { mappingMode: 'defineBelow', value: Object.fromEntries(mapping.map(([k, v]) => [k, v])), matchingColumns: [],
@@ -152,7 +174,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     mode: 'once', options: { waitForSubWorkflow: true } });
   const body = (f) => `={{ $json.body.${f} }}`;
   const respond = (id, name, code_, text) => node(id, name, 'n8n-nodes-base.respondToWebhook', 1.1, { respondWith: 'json', responseBody: text, options: { responseCode: code_ } });
-  const answer = '={{ JSON.stringify({ ok: $json.ok, error: $json.error, message: $json.message, created: $json.created, order: $json.order, decision: $json.decision }) }}';
+  const answer = '={{ JSON.stringify({ ok: $json.ok, error: $json.error, message: $json.message, created: $json.created, order: $json.order, decision: $json.decision, jev: $json.jev }) }}';
 
   const nodes = [
     node('gs-main01-01', 'Order webhook', 'n8n-nodes-base.webhook', 2, { httpMethod: 'POST', path: 'gs-order', responseMode: 'responseNode', options: { allowedOrigins: '*' } }, { webhookId: '6f1d7a52-2c43-4d0b-9b6e-5a1f0c9e7d11' }),
@@ -168,7 +190,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     codeNode('gs-main01-03', 'Check token', code('check_token.js')),
     ifNode('gs-main01-04', 'Token ok?', '={{ $json.token_ok }}', 'true'),
     ifNode('gs-main01-05', 'Kill switch?', '={{ $json.kill_switch }}', 'true'),
-    node('gs-main01-06', 'Route', 'n8n-nodes-base.switch', 3.2, { rules: { values: ['place', 'status', 'decide', 'event'].map((k) => ({
+    node('gs-main01-06', 'Route', 'n8n-nodes-base.switch', 3.2, { rules: { values: ['place', 'status', 'decide', 'event', 'health'].map((k) => ({
       conditions: { options: { caseSensitive: true, leftValue: '', typeValidation: 'strict', version: 2 },
         conditions: [{ id: 'route-' + k, leftValue: '={{ $json.action }}', rightValue: k, operator: { type: 'string', operation: 'equals' } }], combinator: 'and' },
       renameOutput: true, outputKey: k })) }, options: { fallbackOutput: 'extra', renameFallbackOutput: 'bad' } }),
@@ -186,6 +208,8 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     callSub('gs-main01-16', 'Call SUB 15 Add event', ids.sub15, [
       ['session_id', body('session_id'), 'string'], ['order_id', body('order_id'), 'string'], ['event', body('event'), 'string'],
       ['actor', body('actor'), 'string'], ['kill_switch', '={{ $json.kill_switch }}', 'boolean'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
+    callSub('gs-main01-17', 'Call SUB 16 Health', ids.sub16, [
+      ['jev_enabled', '={{ $json.jev_enabled }}', 'boolean'], ['jev_model', '={{ $json.jev_model }}', 'string']]),
     respond('gs-main01-09', 'Respond result', '={{ $json.status_code }}', answer),
     codeNode('gs-main01-14', 'Log run', code('log_run.js')),
     callSub('gs-main01-15', 'Call SUB 14 Write logs', ids.sub14, [
@@ -198,11 +222,11 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
   ];
   const edges = [['Order webhook', 'Config'], ['Config', 'Check token'], ['Check token', 'Token ok?'],
     ['Token ok?', 'Kill switch?', 0], ['Token ok?', 'Respond 401', 1], ['Kill switch?', 'Respond 503', 0], ['Kill switch?', 'Route', 1],
-    ['Route', 'Call SUB 11 Place order', 0], ['Route', 'Call SUB 12 Change status', 1], ['Route', 'Call SUB 13 Decide', 2], ['Route', 'Call SUB 15 Add event', 3], ['Route', 'Respond 400', 4],
-    ['Call SUB 11 Place order', 'Respond result'], ['Call SUB 12 Change status', 'Respond result'], ['Call SUB 13 Decide', 'Respond result'], ['Call SUB 15 Add event', 'Respond result'],
+    ['Route', 'Call SUB 11 Place order', 0], ['Route', 'Call SUB 12 Change status', 1], ['Route', 'Call SUB 13 Decide', 2], ['Route', 'Call SUB 15 Add event', 3], ['Route', 'Call SUB 16 Health', 4], ['Route', 'Respond 400', 5],
+    ['Call SUB 11 Place order', 'Respond result'], ['Call SUB 12 Change status', 'Respond result'], ['Call SUB 13 Decide', 'Respond result'], ['Call SUB 15 Add event', 'Respond result'], ['Call SUB 16 Health', 'Respond result'],
     ['Respond result', 'Log run'], ['Log run', 'Call SUB 14 Write logs']];
   const sections = [
-    { name: 'RECEIVE', what: 'The phone posts here. Body field "action" is place, status, decide or event. The header x-gs-token carries the demo token.', needs: 'Path gs-order. Body: action and the fields of the SUB.', nodes: ['Order webhook'], color: 4 },
+    { name: 'RECEIVE', what: 'The phone posts here. Body field "action" is place, status, decide, event or health. The header x-gs-token carries the demo token.', needs: 'Path gs-order. Body: action and the fields of the SUB.', nodes: ['Order webhook'], color: 4 },
     { name: 'CONFIG', what: 'All tunables live here: the kill switch, the demo token and the database address.', needs: 'Config keys: kill_switch, demo_token, supabase_url.', nodes: ['Config'], color: 5 },
     { name: 'GATE', what: 'Wrong token gets 401. Kill switch on gets 503. Nothing else runs in both cases.', needs: 'Config: demo_token, kill_switch. Header x-gs-token.', nodes: ['Check token', 'Token ok?', 'Kill switch?'], color: 5 },
     { name: 'ROUTE', what: 'Pick the SUB workflow by the action field. Unknown action gets 400.', needs: 'Body field: action.', nodes: ['Route'], color: 5 },
@@ -210,6 +234,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     { name: 'CHANGE STATUS', what: 'Call SUB 12. It moves the order one step and writes the event.', needs: 'SUB 12 id. Body: session_id, order_id, to_status, actor.', nodes: ['Call SUB 12 Change status'], color: 6 },
     { name: 'DECIDE', what: 'Call SUB 13. The rule picks a rider; Jev only advises. One decision row is written.', needs: 'SUB 13 id. Body: session_id, order_id, riders. Config: jev keys, kitchen_id, params_version.', nodes: ['Call SUB 13 Decide'], color: 6 },
     { name: 'ADD EVENT', what: 'Call SUB 15. It writes the rider\'s arriving event; the status stays the same.', needs: 'SUB 15 id. Body: session_id, order_id, event, actor.', nodes: ['Call SUB 15 Add event'], color: 6 },
+    { name: 'HEALTH', what: 'Call SUB 16. It asks Jev one tiny question and says if it answered. Nothing is written.', needs: 'SUB 16 id. Config: jev_enabled, jev_model.', nodes: ['Call SUB 16 Health'], color: 6 },
     { name: 'ANSWER', what: 'Send the SUB result back to the phone with its status code.', needs: 'The SUB output: status_code, ok, order, decision.', nodes: ['Respond result'], color: 4 },
     { name: 'LOG', what: 'After the answer is out, write one run row: time taken, settings version, cost, error.', needs: 'SUB 14 id. Config: params_version, kitchen_id.', nodes: ['Log run', 'Call SUB 14 Write logs'], color: 6 },
     { name: 'REFUSE', what: 'Answer the calls that must not go on: 401, 503 and 400.', needs: 'Nothing.', nodes: ['Respond 401', 'Respond 503', 'Respond 400'], color: 1 },
@@ -233,7 +258,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send alert'], color: 6 },
   ];
   const alert = finish('GS ERR 00 Alert', aNodes, aEdges, aSections, baseSettings);
-  return { sub11, sub12, sub13, sub14, sub15, main01, alert, STATUS_ROLES };
+  return { sub11, sub12, sub13, sub14, sub15, sub16, main01, alert, STATUS_ROLES };
 }
 
 module.exports = { build, PLACEHOLDER };

@@ -19,6 +19,10 @@ class DeployDev(unittest.TestCase):
         for k in ("VITE_SUPABASE_URL", "VITE_SUPABASE_ANON_KEY", "VITE_ORDER_URL", "VITE_DEMO_TOKEN"):
             self.assertIn(f"{k}: ${{{{ secrets.{k} }}}}", self.text)
 
+    def test_any_path_such_as_health_serves_the_app(self):
+        # Story #54: /health must open on a fresh visit, so unknown paths fall back to index.html after the files.
+        self.assertIn('"routes":[{"handle":"filesystem"},{"src":"/(.*)","dest":"/index.html"}]', self.text)
+
     def test_s2_site_changes_never_trigger_it(self):
         m = re.search(r"paths:\n((?:\s+- .*\n)+)", self.text)
         self.assertIsNotNone(m, "deploy must have a paths filter")
