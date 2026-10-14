@@ -35,7 +35,7 @@ test('S1 window: the last 24 hours, so an evening after 21:00 is in the next car
   // a row at 23:00 India time on 14 Oct (17:30Z) is after this card and inside the next card's window (21:00 on 15 Oct)
   const next = run('score_window.js', { now: '2026-10-15T15:30:00Z' });
   assert.ok(Date.parse('2026-10-14T17:30:00Z') >= Date.parse(next.since));
-  assert.ok(Date.parse('2026-10-14T17:30:00Z') > Date.parse('2026-10-14T15:30:00Z'));
+  assert.equal(next.since, '2026-10-14T15:30:00.000Z');   // each card starts where the one before ended: no gap, no overlap
   assert.equal(run('score_window.js', { now: '2026-10-14T19:00:00Z' }).until_label, '2026-10-15 00:30');
 });
 
