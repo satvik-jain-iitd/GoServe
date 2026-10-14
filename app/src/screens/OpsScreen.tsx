@@ -8,9 +8,10 @@ type Props = {
   stats: { runsToday: number; lastDecideMs: number | null };
   error: string | null;
   failed: Record<string, string>;
+  sample?: boolean;   // offline demo: the numbers are samples
 };
 
-export function OpsScreen({ orders, decisions, lags, stats, error, failed }: Props) {
+export function OpsScreen({ orders, decisions, lags, stats, error, failed, sample }: Props) {
   const latest = new Map<string, DecisionRow>();
   for (const d of decisions) if (d.order_id && !latest.has(d.order_id)) latest.set(d.order_id, d);   // newest first
   const rows = orders.filter((o) => o.status === "ready" || latest.has(o.id));
@@ -29,6 +30,7 @@ export function OpsScreen({ orders, decisions, lags, stats, error, failed }: Pro
         ))}
       </ul>
       <h3>Numbers</h3>
+      {sample && <p className="note">Sample numbers (offline demo).</p>}
       <dl className="metrics">
         <dt>Order to this screen</dt>
         <dd data-testid="metric-lag">{lag === null ? "No live order seen yet." : formatMs(lag)}</dd>

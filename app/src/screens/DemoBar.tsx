@@ -1,9 +1,9 @@
 // Demo tools (story #52): copy the link a second device opens, and reset this session after a yes.
 import { useState } from "react";
 
-type Props = { onReset: () => Promise<void>; getLink: () => Promise<string> };
+type Props = { onReset: () => Promise<void>; getLink: () => Promise<string>; autoOn: boolean; autoNote: string | null; onAuto: () => void };
 
-export function DemoBar({ onReset, getLink }: Props) {
+export function DemoBar({ onReset, getLink, autoOn, autoNote, onAuto }: Props) {
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -43,10 +43,12 @@ export function DemoBar({ onReset, getLink }: Props) {
         </>
       ) : (
         <>
+          <button type="button" className={autoOn ? "btn small" : "btn small ghost"} aria-pressed={autoOn} onClick={onAuto}>Autopilot</button>
           <button type="button" className="btn small ghost" disabled={busy} onClick={copy}>Copy link for a second device</button>
           <button type="button" className="btn small ghost" disabled={busy} onClick={() => setAsking(true)}>Reset demo</button>
         </>
       )}
+      {autoNote && <p role="status" className="note">{autoNote}</p>}
       {message && <p role="status" className="note">{message}</p>}
       {error && <p role="alert" className="error">{error}</p>}
     </div>

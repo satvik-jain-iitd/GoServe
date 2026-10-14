@@ -12,7 +12,7 @@ export default defineConfig({
   webServer: {
     // Test keys are baked into the build; the specs answer those hosts themselves.
     command:
-      "VITE_SUPABASE_URL=https://test.supabase.co VITE_SUPABASE_ANON_KEY=anon-test VITE_ORDER_URL=https://orders.test/gs-order VITE_DEMO_TOKEN=demo-token npm run build && npm run preview -- --port 4180 --strictPort",
+      "VITE_SUPABASE_URL=https://test.supabase.co VITE_SUPABASE_ANON_KEY=anon-test VITE_ORDER_URL=https://orders.test/gs-order VITE_DEMO_TOKEN=demo-token VITE_AUTOPILOT_MS=300 npm run build && npm run preview -- --port 4180 --strictPort",
     url: "http://localhost:4180",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
