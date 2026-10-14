@@ -261,3 +261,45 @@ Har naya technical word yahan. Simple Hindi mein. Ek line ka "yeh kya hai", ek l
 - **Kya hai:** Commit ki pehli line 72 characters se lambi ho to Guard CI use fail karta hai. Merge se pehle CI green chahiye.
 - **Analogy:** Register ki column ki chaudai. Lamba header column se bahar jaata hai.
 - **File:** `.github/workflows/ci.yml` (Guard job); commit `53dbce7` (77 chars).
+
+## PR #67 se
+
+### Rule first, model second (shown, not trusted)
+- **Kya hai:** Ek deterministic rule decide karta hai. AI (Jev) ka jawab saath mein likha jaata hai, par sirf salah ke roop mein.
+- **Analogy:** Dispatcher house rule se rider bhejta hai. Salahkaar ka tip diary ke margin mein likh deta hai.
+- **File:** `ops/n8n/order/code/decide_result.js` (lines 23–24: `decision` object, `chosen_pick` = rule pick).
+
+### Decision record for later learning
+- **Kya hai:** Ek row mein state, options, dono picks, status, settings version, place aur ek khaali `result` field. Result baad mein bharega.
+- **Analogy:** Diary ka page jisme "kya hua" ki line abhi khaali hai.
+- **File:** `ops/n8n/order/code/decide_result.js`; table `decision_log`.
+
+### Confidence threshold (0.70) aur cost cap
+- **Kya hai:** Jev ka jawab tabhi "usable" hai jab confidence 0.70 se upar ho aur cost cap (`$0.001`) ke andar ho. Warna raay rakhi jaati hai par mark hoti hai.
+- **Analogy:** Salahkaar bola "pata nahi", ya uski fees zyada hain. Raay likhi, par bhejne ke kaam nahi aayi.
+- **File:** `ops/n8n/order/code/decide_result.js` (line 5 THRESHOLD, line 19 statuses).
+
+### Continue on error, sirf advice path par (B7 exception)
+- **Kya hai:** Jev HTTP node error par bhi SUB ko aage chalne deta hai. Write nodes phir bhi fail-closed rehte hain.
+- **Analogy:** Salahkaar late hai, dispatcher phir bhi rider bhejta hai. Register ka pen toota, to counter ruk jaata hai.
+- **File:** `ops/n8n/order/build.js` (lines 101–104, `continueRegularOutput` on Ask Jev).
+
+### Log after the answer
+- **Kya hai:** MAIN pehle customer ko jawab bhejta hai (`Respond result`), phir `Log run` se SUB 14 ko log likhne bhejta hai. Logging customer ko slow nahi karti.
+- **Analogy:** Pehle parcel customer ko, phir duty register mein line.
+- **File:** `ops/n8n/order/build.js` (lines 196–198); `ops/n8n/order/code/log_run.js`.
+
+### Per-session cap (429)
+- **Kya hai:** Ek session ke 20 orders ke baad naya order 429 se ruk jaata hai. Retry (same key) chalta hai. Reset = nayi session (story #52).
+- **Analogy:** Ek customer ka token limit. Counter kehta hai "bahut ho gaya". Purani parchi pe purana order mil jaata hai.
+- **File:** `app/supabase/migrations/0004_session_order_cap.sql` (line 52); `shape.js` (429 mapping).
+
+### Red first for workflow code
+- **Kya hai:** Workflow code (n8n) ke tests pehle likhe gaye aur laal dekhe gaye, phir code aaya. 34 node tests mein se 15 pehle fail hue.
+- **Analogy:** Alarm pehle test hua, phir dukaan khuli. Pata chalta hai alarm kaam karta hai ya nahi.
+- **File:** `ops/n8n/order/decide.test.js` (line 1; PR body ke mutabik).
+
+### Deploy refuses without its credential
+- **Kya hai:** Deploy script pehle check karta hai ki zaroori credential (`GoServe OpenRouter`) hai ya nahi. Nahi hai to apply refuse karta hai, kuch nahi likhta.
+- **Analogy:** Delivery van key ke bina nahi nikalti.
+- **File:** `ops/n8n/order/deploy.js` (line 40 lookup, line 52 refuse).

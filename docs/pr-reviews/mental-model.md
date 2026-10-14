@@ -2,7 +2,7 @@
 
 System ka ek-page picture. Har chapter ke baad update karta hoon.
 
-_Last updated: PR #66 (approved, `ddb12f1`); PRs #62–#65 merged_
+_Last updated: PR #67 (approved, `50853ce`); PRs #62–#66 merged_
 
 ## GoServe — ab tak ki tasveer
 
@@ -32,11 +32,14 @@ _Last updated: PR #66 (approved, `ddb12f1`); PRs #62–#65 merged_
                           ├─ vitest.integration.config.ts  ← PR #65
                           ├─ supabase/migrations/0001_schema.sql  (7 tables + 2 triggers)  ← PR #64
                           ├─ supabase/migrations/0002_rls_realtime_menu.sql  (RLS + Realtime + seed)  ← PR #65
-                          └─ supabase/migrations/0003_order_functions.sql  (place_order, change_status = manager)  ← PR #66
+                          ├─ supabase/migrations/0003_order_functions.sql  (place_order, change_status = manager)  ← PR #66
+                          └─ supabase/migrations/0004_session_order_cap.sql  (place_order + session cap 20 → 429)  ← PR #67
      |--- ops/n8n/       → lib/layout.js + layout_checks.js  (deewar chart: positions + checks)  ← PR #66
      |                    order/build.js  (blueprint: GS MAIN 01 + SUB 11 + SUB 12)  ← PR #66
      |                    order/code/*.js  (token check, guards, shape)  ← PR #66
-     |                    order/test.js  (14 tests, node --test)  ← PR #66
+     |                    order/code/decide_guard.js, decide_result.js, decide_done.js  (dispatcher: rule, Jev advice, diary)  ← PR #67
+     |                    order/code/guard_log.js, log_done.js, log_run.js  (duty register: run_log)  ← PR #67
+     |                    order/order.test.js (18 tests) + order/decide.test.js (15 tests, red first)  ← PR #66/#67
      |--- docs/integrations/n8n-order-workflows.md  (contract + registry)  ← PR #66
 
 [ pre-commit ] ──> guard.py (local, commit se pehle)   ← PR #59
@@ -67,9 +70,12 @@ Dhaba counter: phone = customer, n8n = counter boy, database function = manager.
 - Counter boy (GS MAIN 01) token dekhta hai, "orders paused" board (kill switch) dekhta hai, action ke hisaab se helper ko bhejta hai.
 - Helper (GS SUB 11 place / SUB 12 status) board dobara dekhta hai, parchi check karta hai, manager ko ek hi call karta hai (`/rest/v1/rpc/place_order|change_status`, service role).
 - Manager order aur carbon copy ek saath likhta hai, ya kuch nahi. Price rate card se, parchi se nahi.
-- Helper reply card banata hai (201/200/400/404/409/503/502), counter boy wahi customer ko deta hai.
+- Helper reply card banata hai (201/200/400/404/409/429/503/502), counter boy wahi customer ko deta hai.
+- **Dispatcher (GS SUB 13 Decide, PR #67):** bahar khade riders dekhta hai (free? trips? distance?), house rule se pick karta hai, 900 ms mein salahkaar (Jev) se poochhta hai. Dono raay `decision_log` diary mein; bhejta rule ka rider hi.
+- **Duty register (GS SUB 14 Write logs):** jawab jaane ke baad ek line `run_log` mein: action, time, settings version, cost, error.
+- **Token limit (429):** ek session ke 20 orders ke baad "bahut ho gaya". Retry chalta hai; reset = nayi session.
 
-_Status: built, tests green (node 18, DB 7), GS ERR 00 Alert + deploy.js bhi bane. n8n par deploy nahi hua (VERIFIED: koi GS workflow nahi). Owner ka "push kar do" + activation yes pending. Live proof pending._
+_Status: 6 workflows built (ERR 00, SUB 11–14, MAIN 01), tests green (node 34, DB 9). n8n par deploy nahi hua (VERIFIED). Owner ka A42 + OpenRouter credential + "push kar do" pending; activation alag yes. Live proof pending._
 
 ## Flow (ek code change)
 1. Dev commit → pre-commit hook (guard files + message).
@@ -108,6 +114,11 @@ _Status: built, tests green (node 18, DB 7), GS ERR 00 Alert + deploy.js bhi ban
 - **MAIN / SUB pattern (B11) + callerPolicy.** Counter boy trigger sambhalta hai, helper ek kaam, sirf listed workflows helper ko bula sakte hain. Kill switch do baar (95.15).
 - **CI laal = gate ka kaam.** 77-char commit subject Guard ne pakda (review ke baad 60 chars, green). Guard hum par bhi chalta hai; CI status PR body se pehle padho.
 - **Tests green, par kuch deploy nahi.** Live webhook call (401/201/200/409/503) abhi nahi hui; asli proof pending.
+- **Rule decides, adviser shown** (PR #67): dispatcher rule se bhejta hai; Jev ki raay diary mein dikhti hai, faisla nahi badalti.
+- **Decision diary baad mein sikhane ke liye:** har decision ka ek row, dono raay + khaali "kya hua" line. Yahi label data banega (Laya, MVP 1).
+- **Log jawab ke baad:** customer ko pehle jawab, phir register. Logging order ko slow nahi karti.
+- **Cap ek brake hai:** 20 orders per session; race ka chhota gap khula.
+- **Red first workflow code par bhi chala:** 15 tests pehle laal, phir code.
 
 ## Abhi bhi andhera (jawab nahi mila)
 - Kaun `order_events` likhega: app, n8n, ya trigger? (Abhi koi nahi.)
@@ -121,12 +132,15 @@ _Status: built, tests green (node 18, DB 7), GS ERR 00 Alert + deploy.js bhi ban
 - Config (kill switch, token) `params` se kab padhega; abhi hardcoded, badalne ke liye PUT (B13.1, #46).
 - Prod: same build do baar deploy ya copy (F65 c)? Reviewer: do baar deploy. Owner ka faisla.
 - Retry mein badla cart: key per cart (#48) ya 409?
+- Riders phone se aate hain (A42). Pilot se pehle riders table / server state chahiye.
+- Jev ka reply shape live test nahi hua (`usage.cost`, JSON reply stub). Row 76 pending deploy.
+- `guard_failed` status (Jev busy rider chune): abhi `ok` + `agrees:false`. Open.
 - Router / screens ka shape (aage ke chapters).
 - Supabase aur auth kahan baithenge (ADR-009).
 - Role-wise code-splitting ka plan.
 
 ## Abhi kya NAHI hai
 - Phone ke liye write rules nahi (phone kabhi nahi likhta, ADR-009/010). Real logins: MVP 1. Self-hosted photos: #54. Indexes PK/unique ke alawa: screen stories ke saath.
-- Order workflows n8n par deploy/active nahi (owner ka "push kar do" + yes, F65 a). Live test row pending. SUB 13/14 = #46, scorecard = #47. `0003` abhi F63 mein nahi.
+- 6 workflows n8n par deploy/active nahi (owner: A42, OpenRouter credential F67, "push kar do"; activation alag yes). Live rows pending. MAIN 90 scorecard = #47. Riders table nahi (A42). Laya = MVP 1.
 - Koi login, koi order, koi payment, koi kitchen/rider screen.
 - Dev deploy job hai (PR #62, merged). Prod deploy workflow hai (PR #63, open), par `main` par `app/` abhi nahi hai. Release list fix ho gayi (4b77e65); pehli release PR ke baad app prod par aayega. `goserve-app.pages.dev` abhi 522 hai.

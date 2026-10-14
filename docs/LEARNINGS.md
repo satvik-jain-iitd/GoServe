@@ -79,3 +79,4 @@ short. Say what happened and what to do next time.
 - A migration list in a follow-up (F63) must grow with every new migration. 0003 was applied to dev and missing from the prod list; prod would have had tables without the functions.
 - Replacing a function in a new migration can break an old test that relied on the order of its steps (the row level security lock test hit a uuid cast). Re-run all earlier tests after every migration, and give test claims real uuids.
 - A test glob must match every test file: `node --test <dir>` does not work on this Node, so name files `*.test.js` and pass a glob.
+- When a model only advises, record why its advice was unusable with a status the labels can use later (guard failed, low confidence, cost cap, error). A plain "ok" next to a wrong pick poisons future training data.

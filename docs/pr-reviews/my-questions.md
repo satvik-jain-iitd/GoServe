@@ -64,3 +64,10 @@ Apne sawaal yahan. Status: **open** (jawab nahi mila) / **answered** / **dropped
 | Q26 | Activation se pehle error alert workflow chahiye (rulebook 84 / 95.14). #46 ke saath banayein, ya is PR ke follow-up mein? Recommendation kya hai? | PR #66 / ops/n8n/order/build.js | haan | `GS ERR 00 Alert` (Telegram owner ko) ddb12f1 mein bana. Teeno order workflows ise `errorWorkflow` set karte hain; abhi deploy nahi hua, `deploy.js` pehle daalega. | answered |
 | Q27 | n8n tests code ke saath likhe gaye, red nahi dekhe. 3 mutations kahin likhe jaayein, aur SUB 13/14 par red-first wapas? | PR #66 / ops/n8n/order/test.js | haan | ddb12f1 mein 3 mutations `test.js` ke header mein likhe. SUB 13 aur 14 red-first se shuru honge. | answered |
 | Q28 | `from test_schema import` sirf discover mein chalta hai. Run line ko `sys.path` se theek karein, ya Run line ko discover wali karein? | PR #66 / scripts/test_order_rpc.py | haan | ddb12f1 mein import se pehle `sys.path.insert` laga; Run line ab chalti hai (7 tests OK). | answered |
+
+## PR #67 ke baad
+
+| # | Sawaal | Kahan poocha (PR#/file) | Jawab mila? | Jawab | Status |
+|---|---|---|---|---|---|
+| Q29 | Riders list phone se aata hai, to rule phone ke state par chalta hai. A42 mein trust-boundary line add karein? Pilot se pehle riders table ya server state chahiye? | PR #67 / ops/n8n/order/code/decide_guard.js line 15 (Top-3) | nahi | abhi nahi (open) | open |
+| Q30 | Jev busy rider ko 0.9 se chune to `jev_status: 'ok'`, `agrees: false` likha jaata hai. Training labels ke liye alag `guard_failed` status rakhein? | PR #67 / ops/n8n/order/code/decide_result.js line 19 (Top-3) | nahi | abhi nahi (open) | open |

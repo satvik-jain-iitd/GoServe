@@ -72,7 +72,7 @@ class OrderRpc(unittest.TestCase):
         self.assertIn("session_order_cap", str(run(fill, over)))
         r = run(fill, "select place_order('s2', 'k1', jsonb_build_array(jsonb_build_object('menu_item_id', "
                       f"{DISH}, 'qty', 1)), 'x')")
-        self.assertIsInstance(r, list, r)   # another session is not affected
+        self.assertTrue(r[-1]["place_order"]["created"], r)   # another session is not affected
 
     def test_decision_and_run_rows_in_the_shape_the_workflows_write_are_accepted(self):
         k = "(select id from kitchens limit 1)"

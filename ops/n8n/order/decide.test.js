@@ -113,6 +113,7 @@ test('S3 MAIN 01 writes a run row after it answers: time, settings version, cost
   assert.deepEqual([out.session_id, out.kitchen_id, out.workflow, out.params_version, out.error], ['s1', UUID, 'GS MAIN 01 Order API: place', 3, '']);
   assert.ok(out.duration_ms >= 0 && out.duration_ms < 1e12);
   assert.equal(out.cost, 0);
+  assert.equal(run('log_run.js', res, { 'Check token': { ...cfg['Check token'], body: {} } }).session_id, 'unknown');   // a bad-input run still gets a row
   const err = run('log_run.js', { ok: false, status_code: 409, error: 'illegal_step', message: 'm' }, cfg);
   assert.equal(err.error, 'illegal_step');
   const dec = run('log_run.js', { ok: true, status_code: 200, cost: 0.00002 }, { 'Check token': { ...cfg['Check token'], action: 'decide' } });

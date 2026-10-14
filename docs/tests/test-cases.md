@@ -51,10 +51,10 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Illegal step maps to 409 and unknown order to 404; database text is never returned | #45 | S2 | Unit (Code node) | `ops/n8n/order/order.test.js` | Pass |
 | Kill switch on: SUB 11 and SUB 12 refuse with 503 and a clear message | #45 | S3 | Unit (Code node) | `ops/n8n/order/order.test.js` | Pass |
 | MAIN calls the SUBs by id with the fields their triggers declare; order is Config, token, kill switch, route; refusals never reach the database | #45 | S1 S2 S3 | Unit (wiring) | `ops/n8n/order/order.test.js` | Pass |
-| Canvas layout of all three workflows: no overlap, 200 px gaps, text band, flow left to right, no link through a box or a node | #45 | S1 S2 S3 | Unit (layout) | `ops/n8n/order/order.test.js` | Pass |
+| Canvas layout of all workflows: no overlap, 200 px gaps, text band, flow left to right, no link through a box or a node | #45 | S1 S2 S3 | Unit (layout) | `ops/n8n/order/order.test.js` | Pass |
 | The webhook returns 401, 201, 200, 409, 503 for real calls on n8n | #45 | S1 S2 S3 | Live (after deploy and the owner's yes) | `gs-order` webhook | Pending deploy |
 | The alert message escapes HTML and names the workflow, node, error and execution; every order workflow reports to ERR 00 | #45 | S1 S2 S3 | Unit | `ops/n8n/order/order.test.js` | Pass |
-| Deploy script touches only the four GS workflows, never activates or deletes | #45 | S1 | Unit | `ops/n8n/order/order.test.js` | Pass |
+| Deploy script touches only the six GS workflows, never activates or deletes | #45 | S1 | Unit | `ops/n8n/order/order.test.js` | Pass |
 | Even if the order functions are granted to `authenticated` by mistake, row level security blocks the write | #45 | S1 | Integration (goserve-dev) | `scripts/test_order_rpc.py` | Pass (local only; CI skips, no token) |
 | A session can place 20 orders; a retry of an existing key still works at the cap; the 21st is refused; other sessions are not affected | #46 | S1 | Integration (goserve-dev) | `scripts/test_order_rpc.py` | Pass (local only; CI skips, no token) |
 | Cap maps to 429 with a short message | #46 | S1 | Unit (Code node) | `ops/n8n/order/order.test.js` | Pass |
