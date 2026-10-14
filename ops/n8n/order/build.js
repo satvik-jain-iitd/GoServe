@@ -255,8 +255,8 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
   ];
   const e91 = [['Start', 'Read runs'], ['Read runs', 'Read decisions'], ['Read decisions', 'Summarise']];
   const s91 = [
-    { name: 'RECEIVE', what: 'The scorecard workflow calls this with the start of the day.', needs: 'Input: ' + f91.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
-    { name: 'READ', what: 'Read today\'s run rows and decision rows. This workflow only reads.', needs: 'Credential "GoServe Supabase dev". Tables: run_log, decision_log.', nodes: ['Read runs', 'Read decisions'], color: 6 },
+    { name: 'RECEIVE', what: 'The scorecard workflow calls this with the start of the last 24 hours.', needs: 'Input: ' + f91.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
+    { name: 'READ', what: 'Read the run rows and decision rows of the last 24 hours (the newest 1000 of each). This workflow only reads.', needs: 'Credential "GoServe Supabase dev". Tables: run_log, decision_log.', nodes: ['Read runs', 'Read decisions'], color: 6 },
     { name: 'SUMMARISE', what: 'Count runs, errors, time, decisions, Jev use and cost. Health checks are counted apart.', needs: 'The two reads.', nodes: ['Summarise'], color: 5 },
   ];
   const sub91 = finish('GS SUB 91 Scorecard numbers', n91, e91, s91, Object.assign({}, settings, { callerPolicy: 'workflowsFromAList', callerIds: ids.main90 }));
@@ -282,8 +282,8 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     { name: 'SCHEDULE', what: 'Once a day at 21:00 India time.', needs: 'Workflow timezone: Asia/Kolkata.', nodes: ['Every day 21:00'], color: 4 },
     { name: 'CONFIG', what: 'The kill switch, the owner chat and the database address live here.', needs: 'Config keys: kill_switch, chat_id, supabase_url.', nodes: ['Config'], color: 5 },
     { name: 'GATE', what: 'If the kill switch is on, send nothing.', needs: 'Config: kill_switch.', nodes: ['Kill switch?', 'Paused'], color: 1 },
-    { name: 'WINDOW', what: 'Work out the start of today in India time.', needs: 'Nothing.', nodes: ['Prepare window'], color: 5 },
-    { name: 'COLLECT', what: 'Call SUB 91. It reads today\'s rows and counts them.', needs: 'SUB 91 id. Config: supabase_url.', nodes: ['Call SUB 91 Scorecard numbers'], color: 6 },
+    { name: 'WINDOW', what: 'Work out the last 24 hours, and the India time the card is for.', needs: 'Nothing.', nodes: ['Prepare window'], color: 5 },
+    { name: 'COLLECT', what: 'Call SUB 91. It reads the rows of the last 24 hours and counts them.', needs: 'SUB 91 id. Config: supabase_url.', nodes: ['Call SUB 91 Scorecard numbers'], color: 6 },
     { name: 'FORMAT', what: 'Make one short message: runs with errors, time, decisions, cost.', needs: 'The SUB 91 numbers.', nodes: ['Format message'], color: 5 },
     { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send scorecard'], color: 6 },
   ];
