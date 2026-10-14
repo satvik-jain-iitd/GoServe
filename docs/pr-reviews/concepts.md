@@ -303,3 +303,20 @@ Har naya technical word yahan. Simple Hindi mein. Ek line ka "yeh kya hai", ek l
 - **Kya hai:** Deploy script pehle check karta hai ki zaroori credential (`GoServe OpenRouter`) hai ya nahi. Nahi hai to apply refuse karta hai, kuch nahi likhta.
 - **Analogy:** Delivery van key ke bina nahi nikalti.
 - **File:** `ops/n8n/order/deploy.js` (line 40 lookup, line 52 refuse).
+
+## PR #68 se
+
+### Deployed vs active
+- **Kya hai:** Workflow n8n par ho sakta hai aur phir bhi sunta nahi. Deploy matlab saaman rakh diya. Active matlab shutter uthana.
+- **Analogy:** Shutter band dhaba. Saaman andar hai, par shutter neeche hai.
+- **File:** `docs/integrations/n8n-order-workflows.md` (registry, line 10).
+
+### Read-back check
+- **Kya hai:** Deploy ke baad workflow ko dobara GET karke compare karte hain. Sirf "PUT ho gaya" kaafi nahi.
+- **Analogy:** Register ki entry dobara padhna, taaki pata chale jo likha wahi likha hai.
+- **File:** `ops/n8n/order/deploy.js` (trace row 150).
+
+### Two registers for one haan
+- **Kya hai:** Ek faisla do jagah likha gaya, kyunki owner ne do chats mein haan kaha. Dono rows ek hi baat hain.
+- **Analogy:** Do kamron mein ek hi baat, dono register mein likhi.
+- **File:** `docs/process-trace.md` (rows 146, 149).

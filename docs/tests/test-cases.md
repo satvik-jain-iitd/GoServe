@@ -66,3 +66,12 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | SUB 14 builds the run row (time, settings version, cost, error) and refuses bad input; MAIN 01 logs every routed run after answering | #46 | S3 | Unit (Code node and wiring) | `ops/n8n/order/decide.test.js` | Pass |
 | Decision and run rows in the shape the workflows write are accepted by the database | #46 | S1 S3 | Integration (goserve-dev) | `scripts/test_order_rpc.py` | Pass (local only; CI skips, no token) |
 | Real Jev answer for a ready order and three riders, with a confidence, in one `decision_log` row; Jev down leaves the rule pick | #46 | S1 S2 | Live (after the OpenRouter credential, deploy and the owner's yes) | `gs-order` webhook | Pending deploy |
+| Cart: add, change quantity, remove at 0, cap 20, lines in menu order, total is the sum; money shown in rupees | #48 | S1 | Unit | `app/tests/unit/cart.test.ts` | Pass |
+| Menu: fresh load keeps a copy; network failure uses the copy; no network and no copy says so; a broken copy or an empty answer never replaces a good copy | #48 | S2 | Unit | `app/tests/unit/menu.test.ts` | Pass |
+| Place order posts action, session, key, ids and quantities (no price) with the demo token; refusals show the server message; network failure and odd answers give plain messages | #48 | S1 | Unit | `app/tests/unit/orders.test.ts` | Pass |
+| Order path: add 2 dishes, bill total is right, place order, order sent with token and key, "Order placed" shown (network answered by the test) | #48 | S1 | End-to-end | `app/tests/e2e/customer.spec.ts` | Pass |
+| Address is required; quantity buttons change the bill; a refused order shows the reason and the retry uses the same key | #48 | S1 | End-to-end | `app/tests/e2e/customer.spec.ts` | Pass |
+| Menu shows with the network off after one load; with no copy the screen says the menu is not available | #48 | S2 | End-to-end | `app/tests/e2e/customer.spec.ts` | Pass |
+| The dev build gets VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_ORDER_URL and VITE_DEMO_TOKEN from secrets | #48 | S1 | Unit (workflow check) | `scripts/test_deploy_dev.py` | Pass |
+| A real order from the dev URL is saved in Supabase (order row and `order.placed` event) | #48 | S1 | Live (after the owner says activate) | `goserve-app-dev.vercel.app` | Pending activation |
+| Menu on the founder's Android phone installs and works offline | #48 | S2 | Manual | founder's phone | Pending |

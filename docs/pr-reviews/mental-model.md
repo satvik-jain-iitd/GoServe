@@ -2,7 +2,7 @@
 
 System ka ek-page picture. Har chapter ke baad update karta hoon.
 
-_Last updated: PR #67 (approved, `d1b2f62`); PRs #62–#66 merged; owner said haan to A41, A42, credential, push_
+_Last updated: PR #68 (approved, `c40732d`); PRs #62–#67 merged_
 
 ## GoServe — ab tak ki tasveer
 
@@ -75,7 +75,7 @@ Dhaba counter: phone = customer, n8n = counter boy, database function = manager.
 - **Duty register (GS SUB 14 Write logs):** jawab jaane ke baad ek line `run_log` mein: action, time, settings version, cost, error.
 - **Token limit (429):** ek session ke 20 orders ke baad "bahut ho gaya". Retry chalta hai; reset = nayi session.
 
-_Status: 6 workflows built (ERR 00, SUB 11–14, MAIN 01), tests green (node 34, DB 9). n8n par deploy nahi hua (VERIFIED). Owner ka A42 + OpenRouter credential + "push kar do" pending; activation alag yes. Live proof pending._
+_Status: 6 workflows n8n par deployed, sab inactive (ids registry mein; VERIFIED live, PR #68). Canvas look (B12.6) + activation yes pending; live rows uske baad._
 
 ## Flow (ek code change)
 1. Dev commit → pre-commit hook (guard files + message).
@@ -119,6 +119,7 @@ _Status: 6 workflows built (ERR 00, SUB 11–14, MAIN 01), tests green (node 34,
 - **Log jawab ke baad:** customer ko pehle jawab, phir register. Logging order ko slow nahi karti.
 - **Cap ek brake hai:** 20 orders per session; race ka chhota gap khula.
 - **Red first workflow code par bhi chala:** 15 tests pehle laal, phir code.
+- **Deployed ≠ active** (PR #68): shutter band hai. Read-back check hua, par editor mein aankh se dekhna (B12.6) chhoot gaya kyunki coder ke paas n8n login nahi tha.
 
 ## Abhi bhi andhera (jawab nahi mila)
 - Kaun `order_events` likhega: app, n8n, ya trigger? (Abhi koi nahi.)
@@ -141,6 +142,6 @@ _Status: 6 workflows built (ERR 00, SUB 11–14, MAIN 01), tests green (node 34,
 
 ## Abhi kya NAHI hai
 - Phone ke liye write rules nahi (phone kabhi nahi likhta, ADR-009/010). Real logins: MVP 1. Self-hosted photos: #54. Indexes PK/unique ke alawa: screen stories ke saath.
-- 6 workflows n8n par deploy/active nahi (owner: A42, OpenRouter credential F67, "push kar do"; activation alag yes). Live rows pending. MAIN 90 scorecard = #47. Riders table nahi (A42). Laya = MVP 1.
+- Activation nahi (owner ka "activate" chahiye, pehle canvas look). Live rows (5 calls + Jev + Jev-down) pending. MAIN 90 scorecard = #47. Riders table nahi (A42). Laya = MVP 1.
 - Koi login, koi order, koi payment, koi kitchen/rider screen.
 - Dev deploy job hai (PR #62, merged). Prod deploy workflow hai (PR #63, open), par `main` par `app/` abhi nahi hai. Release list fix ho gayi (4b77e65); pehli release PR ke baad app prod par aayega. `goserve-app.pages.dev` abhi 522 hai.

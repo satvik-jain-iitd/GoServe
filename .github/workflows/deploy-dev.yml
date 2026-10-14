@@ -29,6 +29,11 @@ jobs:
 
       - name: Build
         working-directory: app
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_ORDER_URL: ${{ secrets.VITE_ORDER_URL }}
+          VITE_DEMO_TOKEN: ${{ secrets.VITE_DEMO_TOKEN }}
         run: |
           npm ci
           npm run build

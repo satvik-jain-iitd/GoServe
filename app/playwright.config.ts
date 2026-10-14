@@ -9,7 +9,9 @@ export default defineConfig({
   use: { baseURL: "http://localhost:4173" },
   projects: [{ name: "chromium", use: { ...devices["Pixel 7"] } }],
   webServer: {
-    command: "npm run build && npm run preview -- --port 4173 --strictPort",
+    // Test keys are baked into the build; the specs answer those hosts themselves.
+    command:
+      "VITE_SUPABASE_URL=https://test.supabase.co VITE_SUPABASE_ANON_KEY=anon-test VITE_ORDER_URL=https://orders.test/gs-order VITE_DEMO_TOKEN=demo-token npm run build && npm run preview -- --port 4173 --strictPort",
     url: "http://localhost:4173",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
