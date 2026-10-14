@@ -81,3 +81,7 @@ short. Say what happened and what to do next time.
 - A test glob must match every test file: `node --test <dir>` does not work on this Node, so name files `*.test.js` and pass a glob.
 - When a model only advises, record why its advice was unusable with a status the labels can use later (guard failed, low confidence, cost cap, error). A plain "ok" next to a wrong pick poisons future training data.
 - A tool's return id is not proof of the event. The reviewer told the owner PR #67 was approved while GitHub held a COMMENT review. After every post, read the state back (`gh api .../reviews`) and report what GitHub says.
+- "Left clean" must name every store the test touches. PR #65 cleaned the tables but left 21 anonymous users in auth.users. Count side effects outside the tables too (auth, storage, logs).
+- The notebook bundle is cumulative and copied by the coder; a chapter written after the copy rides with the next PR. Say which chapters a bundle holds in the handoff.
+- A library can retry a failed call for seconds, which hides an offline fallback behind a spinner. Turn retries off and set a short timeout where a saved copy exists, and test the slow-failure case, not only the instant one.
+- Test the screen with the network answered by the test (Playwright routes): fast, no keys, and it checks what the phone really sends. The real call is a separate live row.
