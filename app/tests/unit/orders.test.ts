@@ -1,6 +1,6 @@
 // Story #48, S1: placing an order calls the n8n webhook (ADR-009) with the demo token. The server prices the order.
 import { describe, expect, it } from "vitest";
-import { addEvent, changeStatus, placeOrder, PlaceError } from "../../src/lib/orders";
+import { addEvent, askDecision, changeStatus, placeOrder, PlaceError } from "../../src/lib/orders";
 
 const input = { sessionId: "s1", key: "k1", items: [{ menu_item_id: "a", qty: 2 }], address: "Flat 4, Delhi" };
 const deps = (res: () => Promise<Response>, seen: { url?: string; init?: RequestInit } = {}) => ({
@@ -76,5 +76,19 @@ describe("addEvent", () => {
   it("shows 'Already done.' when the server says so", async () => {
     await expect(addEvent({ sessionId: "s1", orderId: "o1", event: "order.arriving", actor: "rider" }, deps(json(409, { ok: false, error: "already_done", message: "Already done." }))))
       .rejects.toMatchObject({ message: "Already done.", code: "already_done" });
+  });
+});
+
+describe("askDecision", () => {
+  const riders = [{ id: "r1", free: true, distance_m: 1800, trips_done: 3 }];
+  it("S1 posts the decide action with the riders and returns the decision", async () => {
+    const seen: { url?: string; init?: RequestInit } = {};
+    const d = await askDecision({ sessionId: "s1", orderId: "o1", riders }, deps(json(200, { ok: true, decision: { rule_pick: "r1" } }), seen));
+    expect(JSON.parse(seen.init?.body as string)).toEqual({ action: "decide", session_id: "s1", order_id: "o1", riders });
+    expect(d).toEqual({ rule_pick: "r1" });
+  });
+  it("S1 a refused call becomes a plain message; a reply without a decision is not trusted", async () => {
+    await expect(askDecision({ sessionId: "s1", orderId: "o1", riders }, deps(json(503, { ok: false, error: "kill_switch", message: "Orders are paused." })))).rejects.toThrow("Orders are paused.");
+    await expect(askDecision({ sessionId: "s1", orderId: "o1", riders }, deps(json(200, { ok: true })))).rejects.toThrow("Something went wrong. Please try again.");
   });
 });

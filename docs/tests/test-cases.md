@@ -100,3 +100,11 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Reset asks first, clears on yes, keeps on no, returns the customer to the menu; a delete event from the other device empties this screen | #52 | S3 | End-to-end | `app/tests/e2e/split.spec.ts` | Pass |
 | `clear_dev.py` refuses any project but goserve-dev, runs only counts without `--apply`, deletes children before orders in one transaction | #52 | S3 | Unit | `scripts/test_clear_dev.py` | Pass |
 | Two real devices: customer phone places an order, kitchen device (opened from the copied link) sees it, both clear on Reset | #52 | S1 S2 S3 | Live (owner phone check, after activate) | `goserve-app-dev.vercel.app` | Pending activation |
+| A device reads decisions and runs of its own and joined sessions only; the bare anon key reads none | #51 | S1 S2 | Integration (goserve-dev) | `scripts/test_order_rpc.py` | Pass (local only; CI skips, no token) |
+| The suggestion line says what the AI suggests and whether the rule agrees, the rule pick when it disagrees, when the AI was too unsure, why there was no suggestion, and when no rider is free; helpers for time and median; the three demo riders | #51 | S1 S2 | Unit | `app/tests/unit/ops.test.ts` | Pass |
+| `askDecision` posts the decide action with riders, returns the decision, shows a refusal as a plain message and distrusts an answer with no decision | #51 | S1 | Unit | `app/tests/unit/orders.test.ts` | Pass |
+| A ready order gets one decision call and shows the line; an order that already has a decision is not asked again; an order that is not ready is not listed; a refused call shows the reason once and does not loop | #51 | S1 | End-to-end | `app/tests/e2e/ops.spec.ts` | Pass |
+| The metrics panel shows order-to-screen time, decision time and runs today, and says so when there is nothing yet | #51 | S2 | End-to-end | `app/tests/e2e/ops.spec.ts` | Pass |
+| A ready order on the dev URL shows "AI suggests rider R2 (nn%). The rule agrees." from a real Jev call, and the panel shows real numbers | #51 | S1 S2 | Live (after the owner says activate) | `goserve-app-dev.vercel.app` | Pending activation |
+| After the other device resets, the customer tracker goes back to the menu | #52 | S3 | End-to-end | `app/tests/e2e/split.spec.ts` | Pass |
+

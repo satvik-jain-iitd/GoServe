@@ -31,3 +31,4 @@ The demo also needs a reset button, and `order_events` are frozen (no delete).
 - A reset is the only way a phone deletes anything, and only for its own or a joined session.
 - `scripts/clear_dev.py` uses the same door to clean goserve-dev.
 - MVP 1 replaces this with real logins and `kitchen_id` rules.
+- After a reset, `run_log` still holds rows of a session that has no orders. That is fine for the scorecard (#47).

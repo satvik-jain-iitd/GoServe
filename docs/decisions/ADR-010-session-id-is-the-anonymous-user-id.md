@@ -30,3 +30,4 @@ reads but would send no live events.
 - The kitchen and rider views run in the same browser as the customer view (one PWA, roles are screens), so they share the session.
 - Real logins in MVP 1 replace this. The rule `session_id = auth.uid()` can stay, with `kitchen_id` rules added.
 - Story #52 (ADR-011) adds joined sessions: a device also reads the sessions it joined by link. The reset button clears rows; it does not start a new session.
+- Story #51 (ADR-012) adds a read rule on `decision_log` and `run_log` for the device's own and joined sessions. Point 4 above now covers `params` only.

@@ -82,3 +82,15 @@ test("S3 when the other device resets, this one clears too", async ({ page, cont
   net.push("DELETE", { id: "0f0f0f0f-1111-4222-8333-444444444444" });
   await expect(page.getByText("No orders yet.")).toBeVisible({ timeout: 5000 });
 });
+
+test("S3 when the other device resets, the customer tracker goes back to the menu", async ({ page, context }) => {
+  const net = await setup(context, page, [order("placed")]);
+  await page.goto("/");
+  await placeOne(page);
+  await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
+  net.push("UPDATE", order("accepted", "2020-01-01T10:01:00Z"));   // proves the tracker reads the list
+  await expect(page.locator("[aria-current=step]")).toHaveText("Accepted", { timeout: 5000 });
+  net.push("DELETE", { id: "0f0f0f0f-1111-4222-8333-444444444444" });
+  await expect(page.getByRole("heading", { name: "Order placed" })).toHaveCount(0, { timeout: 5000 });
+  await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
+});

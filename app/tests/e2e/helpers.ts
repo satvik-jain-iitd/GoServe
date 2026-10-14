@@ -3,7 +3,7 @@
 import { type BrowserContext, type Page } from "@playwright/test";
 
 export const SESSION = "7e57ab1e-0000-4000-8000-0000000000a1";
-const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
+const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*", "access-control-expose-headers": "content-range" };
 const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString("base64url");
 const JWT = `${b64({ alg: "HS256", typ: "JWT" })}.${b64({ sub: SESSION, role: "authenticated", is_anonymous: true, exp: Math.floor(Date.now() / 1000) + 3600 })}.sig`;
 export const ID = "0f0f0f0f-1111-4222-8333-444444444444";
@@ -12,10 +12,14 @@ export const order = (status: string, updated = "2020-01-01T10:00:00Z") => ({
   items: [{ menu_item_id: "d1", name: "Butter Chicken", qty: 2, price_paise: 32000 }], total_paise: 64000, created_at: "2020-01-01T10:00:00Z", updated_at: updated,
 });
 
-type Calls = { status: any[]; rpc: { name: string; body: any }[]; orderReads: string[] };
+export const decisionOf = (over: object = {}) => ({
+  use_case: "D1", rule_pick: "r2", chosen_pick: "r2", chosen_by: "rule", jev_status: "ok", jev: { pick: "r2", confidence: 0.81, agrees: true, ms: 310 }, ...over,
+});
+
+type Calls = { status: any[]; decide: any[]; rpc: { name: string; body: any }[]; orderReads: string[] };
 export async function setup(context: BrowserContext, page: Page, initial: object[] = []) {
-  const calls: Calls = { status: [], rpc: [], orderReads: [] };
-  const state = { orders: initial, reply: null as null | { status: number; body: unknown } };
+  const calls: Calls = { status: [], decide: [], rpc: [], orderReads: [] };
+  const state = { orders: initial, reply: null as null | { status: number; body: unknown }, decisions: [] as object[], runs: [] as object[], runCount: 0 };
   const json = (route: any, status: number, body: unknown) => route.fulfill({ status, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(body) });
   await context.route("https://test.supabase.co/**", async (route) => {
     const req = route.request();
@@ -30,6 +34,10 @@ export async function setup(context: BrowserContext, page: Page, initial: object
       if (name === "reset_session") state.orders = [];
       return json(route, 200, name === "reset_session" ? { orders: 1 } : null);
     }
+    if (req.url().includes("/rest/v1/decision_log")) return json(route, 200, state.decisions);
+    if (req.url().includes("/rest/v1/run_log")) {
+      return route.fulfill({ status: 200, headers: { ...CORS, "content-type": "application/json", "content-range": `0-${Math.max(0, state.runs.length - 1)}/${state.runCount || state.runs.length}` }, body: JSON.stringify(state.runs) });
+    }
     if (req.url().includes("/rest/v1/orders")) {
       calls.orderReads.push(req.url());
       return json(route, 200, state.orders);
@@ -41,6 +49,12 @@ export async function setup(context: BrowserContext, page: Page, initial: object
     const req = route.request();
     if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: CORS });
     const body = JSON.parse(req.postData() ?? "{}");
+    if (body.action === "decide") {
+      calls.decide.push(body);
+      const r = state.reply ?? { status: 200, body: { ok: true, decision: decisionOf() } };
+      if (r.status === 200) state.decisions = [{ id: 1, order_id: body.order_id, session_id: SESSION, created_at: new Date().toISOString(), decision: decisionOf() }];
+      return json(route, r.status, r.body);
+    }
     calls.status.push({ headers: req.headers(), body });
     const later = new Date(Date.now() + 1000).toISOString();
     const fresh =

@@ -158,6 +158,22 @@ class OrderRpc(unittest.TestCase):
         self.assertIsInstance(r, list, r)
         self.assertEqual(r[0], {"a": True, "b": True, "c": False, "d": False}, r)
 
+    # Story #51: the ops screen reads decision_log and run_log of its own and joined sessions, and nobody else's.
+    def test_a_device_reads_decisions_and_runs_of_its_own_and_joined_sessions_only(self):
+        k = "(select id from kitchens limit 1)"
+        seed = [self.USERS] + [f"insert into decision_log (kitchen_id, session_id, decision) select {k}, '{u}', '{{}}'::jsonb" for u in (self.A, self.C)] + \
+               [f"insert into run_log (kitchen_id, session_id, workflow) select {k}, '{u}', 'w'" for u in (self.A, self.C)]
+        look = "select (select count(*) from decision_log) as d, (select count(*) from run_log) as r"
+        self.assertEqual(run(*seed, *self._as(self.B), look)[-1], {"d": 0, "r": 0})   # B has not joined A
+        self.assertEqual(run(*seed, *self._as(self.A), look)[-1], {"d": 1, "r": 1})   # A sees its own, not C's
+        self.assertEqual(run(*seed, *self._as(self.B), f"select join_session('{self.A}')", look)[-1], {"d": 1, "r": 1})
+
+    def test_the_bare_anon_key_reads_no_decisions_or_runs(self):
+        k = "(select id from kitchens limit 1)"
+        r = run(f"insert into decision_log (kitchen_id, session_id, decision) select {k}, 's1', '{{}}'::jsonb", "set local role anon",
+                "select (select count(*) from decision_log) as d, (select count(*) from run_log) as r")
+        self.assertEqual(r[-1], {"d": 0, "r": 0}, r)
+
 
 if __name__ == "__main__":
     unittest.main()
