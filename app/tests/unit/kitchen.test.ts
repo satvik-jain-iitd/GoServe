@@ -1,0 +1,97 @@
+// Story #49: the kitchen list and its next-step buttons. Pure data in, pure data out.
+import { describe, expect, it } from "vitest";
+import { kitchenOrders, mergeOrder, nextStep, shortId, statusLabel, type Order } from "../../src/lib/kitchen";
+
+const o = (id: string, status: string, created_at: string, updated_at = created_at): Order => ({
+  id, status, created_at, updated_at, session_id: "s1", address: "Flat 4", total_paise: 100, items: [{ menu_item_id: "d1", name: "Butter Chicken", qty: 1, price_paise: 100 }],
+});
+
+describe("nextStep", () => {
+  it("S2 the three kitchen taps in order: Accept, Start, Ready", () => {
+    expect(nextStep("placed")).toEqual({ to: "accepted", label: "Accept" });
+    expect(nextStep("accepted")).toEqual({ to: "preparing", label: "Start" });
+    expect(nextStep("preparing")).toEqual({ to: "ready", label: "Ready" });
+  });
+  it("after Ready the kitchen has no button: the rider takes over", () => {
+    for (const s of ["ready", "out_for_delivery", "delivered", "nonsense"]) expect(nextStep(s)).toBeNull();
+  });
+});
+
+describe("mergeOrder", () => {
+  it("S1 adds a new order at the top, newest first", () => {
+    const list = mergeOrder([o("a", "placed", "2026-10-14T10:00:00Z")], o("b", "placed", "2026-10-14T10:05:00Z"));
+    expect(list.map((x) => x.id)).toEqual(["b", "a"]);
+  });
+  it("replaces an order with its new status", () => {
+    const list = mergeOrder([o("a", "placed", "2026-10-14T10:00:00Z")], o("a", "accepted", "2026-10-14T10:00:00Z", "2026-10-14T10:01:00Z"));
+    expect(list).toHaveLength(1);
+    expect(list[0].status).toBe("accepted");
+  });
+  it("ignores an older copy that arrives late (live event after the tap answer)", () => {
+    const fresh = o("a", "preparing", "2026-10-14T10:00:00Z", "2026-10-14T10:03:00Z");
+    const list = mergeOrder([fresh], o("a", "accepted", "2026-10-14T10:00:00Z", "2026-10-14T10:01:00Z"));
+    expect(list[0].status).toBe("preparing");
+  });
+  it("compares moments, not text: the same instant written two ways is not newer", () => {
+    const fresh = o("a", "preparing", "2020-01-01T10:00:00Z", "2020-01-01T10:03:00Z");
+    const sameInstant = o("a", "accepted", "2020-01-01T10:00:00Z", "2020-01-01T10:03:00+00:00");
+    expect(mergeOrder([fresh], sameInstant)[0].status).toBe("accepted");   // equal instants: the incoming copy wins
+    const older = o("a", "placed", "2020-01-01T10:00:00Z", "2020-01-01T10:02:59.999+00:00");
+    expect(mergeOrder([fresh], older)[0].status).toBe("preparing");
+  });
+  it("does not change the list it is given", () => {
+    const base = [o("a", "placed", "2026-10-14T10:00:00Z")];
+    mergeOrder(base, o("b", "placed", "2026-10-14T10:05:00Z"));
+    expect(base).toHaveLength(1);
+  });
+});
+
+describe("kitchenOrders and labels", () => {
+  it("shows orders until the rider has them", () => {
+    const list = ["placed", "accepted", "preparing", "ready", "out_for_delivery", "delivered"].map((s, i) => o("o" + i, s, "2026-10-14T10:0" + i + ":00Z"));
+    expect(kitchenOrders(list).map((x) => x.status).sort()).toEqual(["accepted", "placed", "preparing", "ready"]);
+  });
+  it("the order number is the first 8 characters of the id", () => {
+    expect(shortId("0f0f0f0f-1111-4222-8333-444444444444")).toBe("0f0f0f0f");
+  });
+  it("uses kitchen words for statuses", () => {
+    expect([statusLabel("placed"), statusLabel("accepted"), statusLabel("preparing"), statusLabel("ready")]).toEqual(["Placed", "Accepted", "Cooking", "Ready"]);
+  });
+});
+
+// ---- Story #50: rider steps and the customer tracker ----
+import { riderActions, riderOrders, trackerSteps } from "../../src/lib/kitchen";
+
+describe("rider steps", () => {
+  it("S1 a ready order can be picked up; an order on the road can be marked arriving or delivered", () => {
+    expect(riderActions("ready")).toEqual([{ kind: "status", to: "out_for_delivery", label: "Pick up" }]);
+    expect(riderActions("out_for_delivery")).toEqual([
+      { kind: "event", event: "order.arriving", label: "Arriving" },
+      { kind: "status", to: "delivered", label: "Delivered" },
+    ]);
+  });
+  it("the rider has no button before Ready or after Delivered", () => {
+    for (const s of ["placed", "accepted", "preparing", "delivered", "nonsense"]) expect(riderActions(s)).toEqual([]);
+  });
+  it("the rider list holds orders that are ready or on the road", () => {
+    const list = ["placed", "accepted", "preparing", "ready", "out_for_delivery", "delivered"].map((s, i) => o("o" + i, s, "2020-01-01T10:0" + i + ":00Z"));
+    expect(riderOrders(list).map((x) => x.status).sort()).toEqual(["out_for_delivery", "ready"]);
+  });
+});
+
+describe("customer tracker", () => {
+  it("S2 shows all six steps in order, with what is done, current and still to come", () => {
+    const steps = trackerSteps("preparing");
+    expect(steps.map((s) => s.label)).toEqual(["Placed", "Accepted", "Cooking", "Ready", "On the way", "Delivered"]);
+    expect(steps.map((s) => s.state)).toEqual(["done", "done", "current", "todo", "todo", "todo"]);
+  });
+  it("S2 ends at Delivered: every step done, the last one current", () => {
+    expect(trackerSteps("delivered").map((s) => s.state)).toEqual(["done", "done", "done", "done", "done", "current"]);
+  });
+  it("an unknown status shows nothing done", () => {
+    expect(trackerSteps("nonsense").every((s) => s.state === "todo")).toBe(true);
+  });
+  it("one label map for the kitchen and the customer", () => {
+    expect([statusLabel("placed"), statusLabel("out_for_delivery"), statusLabel("delivered")]).toEqual(["Placed", "On the way", "Delivered"]);
+  });
+});

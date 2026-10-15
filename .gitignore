@@ -34,3 +34,7 @@ npm-debug.log*
 
 # client source documents (kept outside the repo)
 knowledge/client_docs/
+__pycache__/
+
+# Cloudflare CLI cache (cf auth login makes it in the working folder)
+.cloudflare/

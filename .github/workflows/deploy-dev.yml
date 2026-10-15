@@ -1,0 +1,55 @@
+name: Deploy app to Vercel (dev)
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - "app/**"
+      - "design/tokens.json"
+      - ".github/workflows/deploy-dev.yml"
+  workflow_dispatch:
+
+# One deploy at a time; a newer push replaces a queued one.
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: true
+
+jobs:
+  vercel:
+    name: Build and publish to goserve-app-dev
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Build
+        working-directory: app
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_ORDER_URL: ${{ secrets.VITE_ORDER_URL }}
+          VITE_DEMO_TOKEN: ${{ secrets.VITE_DEMO_TOKEN }}
+        run: |
+          npm ci
+          npm run build
+
+      # Vercel "prebuilt" output: our own build is served as-is, no second build on Vercel.
+      - name: Stage prebuilt output
+        run: |
+          mkdir -p .vercel/output
+          cp -r app/dist .vercel/output/static
+          # Files first, then every other path (for example /health) gets the app: a single-page app, as on Cloudflare Pages.
+          echo '{"version":3,"routes":[{"handle":"filesystem"},{"src":"/(.*)","dest":"/index.html"}]}' > .vercel/output/config.json
+
+      # Secrets live only on this step, so npm install scripts never see them.
+      - name: Deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: npx --yes vercel@64 deploy --prebuilt --prod
