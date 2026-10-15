@@ -199,7 +199,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
       Object.assign({ credentials: { httpCustomAuth: cred } }, side)),
     codeNode('gs-sub17-11', 'Build message', code('feedback_message.js')),
     node('gs-sub17-12', 'Notify owner', 'n8n-nodes-base.telegram', 1.2, { resource: 'message', operation: 'sendMessage', chatId: '={{ $json.chat_id }}', text: '={{ $json.text }}',
-      additionalFields: { appendAttribution: false } }, Object.assign({ credentials: { telegramApi: { id: 'bBVpWzhaY0MCpoQ5', name: 'GoServeBot' } } }, side)),
+      additionalFields: { parse_mode: 'HTML', appendAttribution: false } }, Object.assign({ credentials: { telegramApi: { id: 'bBVpWzhaY0MCpoQ5', name: 'GoServeBot' } } }, side)),
     codeNode('gs-sub17-13', 'Answer', code('feedback_answer.js')),
     node('gs-sub17-14', 'Return refusal', 'n8n-nodes-base.noOp', 1, {}),
   ];

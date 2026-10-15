@@ -38,10 +38,23 @@ test('S2 Guard: no picture and no order are fine; an unset Drive folder turns th
 test('Guard: the kill switch, bad input and big pictures are refused with a code', () => {
   assert.deepEqual([guard({ kill_switch: true }).status_code, guard({ kill_switch: true }).error], [503, 'kill_switch']);
   for (const bad of [{ text: '   ' }, { text: 'x'.repeat(2001) }, { doing: 'flying' }, { role: 'admin' }, { session_id: '' }, { kitchen_id: 'x' }, { order_id: 'nope' }, { context: 'str' },
-    { image_b64: 'x'.repeat(2_000_001) }, { image_b64: 'not base64!' }, { screen: 'x'.repeat(201) }]) {
+    { image_b64: 'A'.repeat(2_100_001) }, { image_b64: 'not base64!' }, { screen: 'x'.repeat(201) }]) {
     const r = guard(bad);
     assert.deepEqual([r.ok, r.status_code, r.error], [false, 400, 'invalid_request'], JSON.stringify(bad).slice(0, 40));
   }
+});
+
+test('Guard: the biggest picture the phone can send (1.5 MB, 2,097,152 base64 characters) is accepted', () => {
+  assert.equal(guard({ image_b64: 'A'.repeat(2_097_152) }).ok, true);
+});
+
+test('Build message: <, > and & in the tester\'s words are escaped, so Telegram HTML never refuses the message', () => {
+  const g = { ...guard({ text: 'a <b> & c *star* _under_ [link]', screen: '/x?a=1&b=2' }), id: 'f1', ok: true };
+  const m = run('feedback_message.js', {}, { 'Check saved': g });
+  assert.match(m.text, /a &lt;b&gt; &amp; c \*star\* _under_ \[link\]/);
+  assert.match(m.text, /\/x\?a=1&amp;b=2/);
+  assert.ok(!/<b>/.test(m.text));
+  assert.equal(byName(wf.sub17, 'Notify owner').parameters.additionalFields.parse_mode, 'HTML');
 });
 
 test('S5 Check saved: only a stored row goes on; any database refusal is 502 and never leaks raw text', () => {
