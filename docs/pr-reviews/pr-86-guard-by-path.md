@@ -3,7 +3,7 @@
 - **Branch:** `feat/78-review-notes` → `dev`
 - **Author:** klickbae8yt-star
 - **Story / issue:** Follow-up to the review round on #81, #82, #84, #85; no new story
-- **Status:** NEEDS-FIX (COMMENT review 5527976909, head `67137f7`; Guard CI red: the cf CLI cache file is committed again) [VERIFIED]
+- **Status:** MERGED `31921e3` (fix `c6bdc09`, APPROVE 5528905183 on `75c4df8`; 5 replies folded) [VERIFIED]
 - **Files:** 10 · **Lines:** +30 / -4 [VERIFIED]
 - **Reviewer:** satvik-jain-iitd · review 5527976909 (COMMENT), 5 inline threads
 - **Link:** https://github.com/satvik-jain-iitd/GoServe/pull/86
