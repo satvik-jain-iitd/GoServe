@@ -4,7 +4,9 @@ import { addDish, cartLines, cartTotal, changeQty, toOrderItems, type Cart } fro
 import { kitchenOrders, mergeOrder, riderOrders, type Order, type RiderAction } from "./lib/kitchen";
 import { useLiveOrders } from "./lib/useLiveOrders";
 import { loadMenu, type Dish } from "./lib/menu";
-import { addEvent, changeStatus, orderDeps, placeOrder, PlaceError, type PlacedOrder } from "./lib/orders";
+import { addEvent, changeStatus, orderDeps, placeOrder, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
+import { pushTrail } from "./lib/trail";
+import { FeedbackSheet } from "./screens/FeedbackSheet";
 import { ensureSession, fetchMenuRows, getClient } from "./lib/supabase";
 import { currentSession, joinCode, joinLink, joinSession, rememberJoin, resetSession } from "./lib/session";
 import { MenuScreen } from "./screens/MenuScreen";
@@ -90,6 +92,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     }
     setBusyId(order.id);
     live.setError(null);
+    pushTrail(`${actor}: ${action.kind === "status" ? action.to : action.event}`);
     try {
       const deps = { sessionId: order.session_id, orderId: order.id, actor };
       const { order: saved } = action.kind === "status" ? await changeStatus({ ...deps, to: action.to }, api()) : await addEvent({ ...deps, event: action.event }, api());
@@ -103,6 +106,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         return null;
       }
       const message = e instanceof Error ? e.message : "Something went wrong. Please try again.";
+      pushTrail(`error: ${message}`);
       live.setError(message);
       return { code: e instanceof PlaceError ? e.code : "unknown", message };
     } finally {
@@ -161,6 +165,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setAuto(true);
   }
   function toggleAuto() {
+    pushTrail(auto || demo ? "autopilot off" : "autopilot on");
     setAutoNote(null);
     if (auto || demo) {   // tapped again: stop, and leave the demo
       setAuto(false);
@@ -176,6 +181,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }
 
   async function reset() {
+    pushTrail("reset demo");
     await resetSession(getClient(), await currentSession());
     setOrders([]);
     live.setLags([]);
@@ -192,6 +198,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const count = lines.reduce((n, l) => n + l.qty, 0);
 
   async function place() {
+    pushTrail("place order");
     setSending(true);
     setError(null);
     try {
@@ -208,6 +215,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       setCart({});
       keyRef.current = null;
     } catch (e) {
+      pushTrail(`error: ${e instanceof Error ? e.message : "place failed"}`);
       setError(e instanceof PlaceError || e instanceof Error ? e.message : "Something went wrong. Please try again.");
     } finally {
       setSending(false);
@@ -243,7 +251,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       <h1>{lock && lock !== "customer" ? `GoServe ${lock[0].toUpperCase()}${lock.slice(1)}` : "GoServe"}</h1>
       {!lock && <nav className="roles" aria-label="Screen">
         {(["customer", "kitchen", "rider", "split", "ops"] as const).map((r) => (
-          <button key={r} type="button" className={role === r ? "btn" : "btn ghost"} aria-pressed={role === r} onClick={() => setRole(r)}>
+          <button key={r} type="button" className={role === r ? "btn" : "btn ghost"} aria-pressed={role === r} onClick={() => { pushTrail(`open ${r} tab`); setRole(r); }}>
             {r === "customer" ? "Customer" : r === "kitchen" ? "Kitchen" : r === "rider" ? "Rider" : r === "split" ? "Split" : "Ops"}
           </button>
         ))}
@@ -258,6 +266,9 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       {role === "ops" && <OpsScreen orders={orders} decisions={demo ? (orders.some((o) => ["ready", "out_for_delivery", "delivered"].includes(o.status)) ? demoDecisions() : []) : ops.decisions} lags={demo ? [800] : live.lags}
         stats={demo ? { runsToday: 6, lastDecideMs: 310 } : ops.stats} error={demo ? null : ops.error ?? live.error} failed={ops.failed} sample={demo} />}
       {role === "customer" && customerView}
+      <FeedbackSheet role={lock ?? "console"} screen={`${window.location.pathname}${lock ? "" : ` (${role} tab)`}`}
+        order={placed ? { id: placed.id, status: orders.find((o) => o.id === placed.id)?.status ?? placed.status } : orders[0] ? { id: orders[0].id, status: orders[0].status } : null}
+        getSession={currentSession} send={(r) => sendFeedback(r, api())} />
       {role === "split" && (
         <div className="panes">
           <div>{customerView}</div>

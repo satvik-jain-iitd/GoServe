@@ -12,10 +12,10 @@ export type PlacedOrder = { id: string; status: string; total_paise: number; upd
 export type OrderDeps = { url: string; token: string; fetchFn: typeof fetch };
 export const orderDeps = (): OrderDeps => ({ url: import.meta.env.VITE_ORDER_URL, token: import.meta.env.VITE_DEMO_TOKEN, fetchFn: fetch.bind(window) });
 
-type ApiAnswer = { ok?: boolean; created?: boolean; order?: PlacedOrder; decision?: Decision; error?: string; message?: string };
+type ApiAnswer = { ok?: boolean; created?: boolean; order?: PlacedOrder; decision?: Decision; id?: string; error?: string; message?: string };
 
 // One call to the webhook. `need` names the part of the answer the caller must get; anything else becomes a plain message.
-async function callApi(body: object, deps: OrderDeps, need: "order" | "decision" = "order"): Promise<ApiAnswer> {
+async function callApi(body: object, deps: OrderDeps, need: "order" | "decision" | "id" = "order"): Promise<ApiAnswer> {
   let res: Response;
   try {
     res = await deps.fetchFn(deps.url, { method: "POST", headers: { "content-type": "application/json", "x-gs-token": deps.token }, body: JSON.stringify(body) });
@@ -54,4 +54,10 @@ export async function addEvent(input: EventInput, deps: OrderDeps): Promise<{ or
 export async function askDecision(input: { sessionId: string; orderId: string; riders: Rider[] }, deps: OrderDeps): Promise<Decision> {
   const a = await callApi({ action: "decide", session_id: input.sessionId, order_id: input.orderId, riders: input.riders }, deps, "decision");
   return a.decision as Decision;
+}
+
+// A tester's report from the Feedback button (story S-B). The server saves it and answers with the new id.
+export async function sendFeedback(report: object, deps: OrderDeps): Promise<string> {
+  const a = await callApi(report, deps, "id");
+  return a.id as string;
 }
