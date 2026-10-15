@@ -136,3 +136,4 @@ short. Say what happened and what to do next time.
 - Playwright's `getByRole("heading", { name: "Kitchen" })` matches by substring, so a new h1 "GoServe Kitchen" made the old test ambiguous. Use `exact: true` for headings whose name is part of another.
 - Several installed web apps on one origin share storage on Android Chrome but not on an iPhone. Write that down in the decision record before promising "one device works".
 - Two environments must share nothing by accident: one table (address, credential, token, name mark) in the deploy script, and a test that the prod build holds no dev address. The alert workflow is the one thing shared on purpose.
+- Look before asking the owner to click. The Pages project had existed since 12 Oct; the 522 only meant 'nothing deployed'. A read-only `cf pages list` settled it in one call after a one-time login.
