@@ -604,3 +604,153 @@ Har naya technical word yahan. Simple Hindi mein. Ek line ka "yeh kya hai", ek l
 - **Kya hai:** Jab read ki limit hoti hai (1000 rows), to `order` ke bina yeh tay nahi hota ki kaunsi rows aayengi. `order=created_at.desc` se cut hamesha newest rows ka hota hai.
 - **Analogy:** Ledger clerk naye pages pehle padhta hai; sheet bhar jaaye to subah ke pages pehle bahar jaate hain.
 - **File:** `ops/n8n/order/build.js` (line 247); PR #77.
+
+### Rolling window
+- **Kya hai:** "Last 24 hours" ko send ke waqt se ginna, calendar din ki jagah. Cards ek doosre se judte hain, koi ghanta nahi chhutta, jab tak schedule har 24 ghante par chale.
+- **Analogy:** Night auditor ab raat 12 baje ledger band nahi karta; slip hamesha pichhle 24 ghante ka hota hai.
+- **File:** `ops/n8n/order/code/score_window.js` (line 6); PR #79.
+
+### Read-back after deploy
+- **Kya hai:** Kisi doosre system mein likhne ke baad use wapas padho aur jo likha tha usse compare karo. Compare utna hi achha hai jitne fields wo cover karta hai.
+- **Analogy:** Inspector ten desks ginta hai aur dekhta hai har desk apni jagah par hai; drawers nahi kholta, to andar ki cheez check nahi hoti.
+- **File:** `ops/n8n/order/verify_live.js` (line 16); PR #79.
+
+### Label the period on the report
+- **Kya hai:** Report par likho ki wo kaunse ghante cover karta hai, taaki manual run ko scheduled card se alag samjha ja sake.
+- **Analogy:** Slip par time stamp "to 14 Oct 21:00 India time": guest ko pata rahe ki ye raat ki slip hai, dopahar ki nahi.
+- **File:** `ops/n8n/order/code/score_message.js` (line 5); PR #79.
+
+### Dry run by default
+- **Kya hai:** Script pehle sirf plan chhapti hai aur ruk jaati hai. Likhne ke liye `--apply` chahiye, aur owner ki haan dono ke beech mein hai.
+- **Analogy:** Fit-out crew pehle work order sab ke saamne padh kar sunati hai. Malik haan kare, tab deewar todti hai.
+- **File:** `scripts/release_db.py` (line 46); PR #80.
+
+### Refuse the wrong target
+- **Kya hai:** Likhne se pehle do guard chalte hain: dev ka ref mana hai, aur wo database bhi mana hai jis mein app ke tables pehle se hain.
+- **Analogy:** Crew galat building mein nahi jaati. Jis deewar mein wiring pehle se hai, wahan drill nahi karti.
+- **File:** `scripts/release_db.py` (line 40, 48); PR #80.
+
+### Handover counts
+- **Kya hai:** Release ke baad woh cheezein ginti karo jo hona hi chahiye: dishes, tables, rules, aur ek setting. Kam ho to zor se fail karo.
+- **Analogy:** Opening-day ki ginti: menu par das dish, aath kamre, chhe darwaze ke niyam, aur guest-entry on.
+- **File:** `scripts/release_db.py` (line 57); PR #80.
+
+### Separate key rings
+- **Kya hai:** Prod ke secrets ke naam alag hain (`PROD_VITE_*`), taaki build galti se dev ki chaabi na utha le.
+- **Analogy:** Nayi building ki chaabi uske apne ring par. Training hotel ka ring kabhi nahi chhoota jata.
+- **File:** `.github/workflows/deploy-app.yml` (line 36); PR #80.
+
+### Fake API in tests
+- **Kya hai:** Test ek nakli API leta hai jo har call yaad rakhta hai. Test order aur read-only hona check karta hai, bina network ke.
+- **Analogy:** Crew ke har kaam ka note ek register mein. Baad mein dekho kaun sa kaam kis kram mein hua.
+- **File:** `scripts/test_release_db.py` (line 12); PR #80.
+
+### Run sheet with roles
+- **Kya hai:** Har step ke saath O (owner) ya A (agent) likha hai. Kuch apne aap nahi chalta.
+- **Analogy:** Opening-day ka run sheet: har line ke aage likha hai kaun karega. Koi line bina naam ke nahi.
+- **File:** `docs/release-checklist.md` (line 3); PR #80.
+
+### Decisions endpoint vs chat endpoint
+- **Kya hai:** Jev ek decisions model hai. Woh state aur typed sawaal leta hai, aur typed jawab (choice, probabilities, noul) deta hai. Chat prompt aur free reason yahan nahi chalte.
+- **Analogy:** Concierge sirf decisions desk par sunta hai. Chat line par bulao to woh jawab nahi deta.
+- **File:** `ops/n8n/order/code/decide_guard.js` (line 24); PR #81.
+
+### Fixtures from real answers
+- **Kya hai:** Test ka fake wahi shape copy karta hai jo asli API ne bheji. Ek invented fake galat endpoint ko ek din chhupa sakta hai.
+- **Analogy:** Deewar par recorded jawab, asli concierge ke jawab jaise. Drill wahi hota hai jo asli desk par hota.
+- **File:** `ops/n8n/order/decide.test.js` (line 61); PR #81.
+
+### Publish needs the callees published
+- **Kya hai:** Is n8n version mein MAIN tab tak publish nahi hota jab tak uske SUB publish na hon. Isliye "activate" ka matlab sabhi das workflows, sahi order mein.
+- **Analogy:** Hotel ka front desk tab tak nahi khulta jab tak uske back offices khule na hon.
+- **File:** `docs/integrations/n8n-order-workflows.md` (line 109); PR #81.
+
+### wasActive guard
+- **Kya hai:** Deploy ek workflow ko update kar sakta hai jo pehle se active tha. Par woh kabhi khud on nahi karta, aur workflow khud active ho jaye to fail karta hai.
+- **Analogy:** Maintenance crew khuli desk ko refit kar sakti hai, par open sign kabhi nahi palti.
+- **File:** `ops/n8n/order/deploy.js` (line 69); PR #81.
+
+### Live walk script
+- **Kya hai:** Ek script jo ek asli order ko poore raaste se chalata hai aur har step ka PASS ya FAIL chhapta hai. Yeh dev par likhti hai, isliye clean-up chahiye.
+- **Analogy:** Raat ka manager, jo ek guest ko har desk se guzaarta hai aur har step par tick karta hai.
+- **File:** `scripts/live_check.py` (line 3); PR #81.
+
+### A name next to the id
+- **Kya hai:** Owner ka yes naam ke saamne diya jaata hai. Sirf id (ref) dekh kar yes dena galat project pakad nahi sakta. Script ab pehle naam padhti hai, aur naam galat ho to ruk jaati hai.
+- **Analogy:** Crew building ki naam-patti padh kar sunaati hai ("GoServe") before the owner signs the work order. Galat naam par darwaza nahi khulta.
+- **File:** `scripts/release_db.py` (line 49); PR #82.
+
+### Tool caches do not belong in git
+- **Kya hai:** CLI tools (jaise `cf`) login ke baad apna cache working folder mein likh dete hain, jisme account data hota hai. Is folder ko pehle hi ignore karna chahiye, pehli run se pehle.
+- **Analogy:** Visitor badge jo locksmith ne lobby ki mez par chhoda: chaabi nahi, par account number aur owner ka naam uspar hai. Badge pocket mein jaata hai, mez par nahi.
+- **File:** `.cloudflare/cache/cloudflare-account.json` (line 3); PR #82.
+
+### Throwaway user for a security test
+- **Kya hai:** Security test ke liye ek nayi anonymous user banti hai, woh sirf woh cheezein try karta hai jo use nahi karni chahiye, phir user delete hota hai, aur count zero check hota hai.
+- **Analogy:** Run sheet ki line: ek guest pass, check-in, locked doors try karo, check-out, pass phaad do, register mein zero guests bache.
+- **File:** `docs/tests/test-cases.md` (line 130); PR #82.
+
+### One origin, several apps
+- **Kya hai:** Ek hi domain par chaar apps. Address (`/kitchen/`) batata hai kaun sa app khulega. Storage, service worker aur session sab ek origin par share hote hain.
+- **Analogy:** Ek hotel building, chaar darwaze. Chaaron ke andar ek hi staff register.
+- **File:** `app/src/lib/roles.ts` (line 7); PR #84.
+
+### Manifest = install identity
+- **Kya hai:** Manifest ek app ki pehchan hai: naam, `id`, `scope`, `start_url`. In char cheezon se ek app doosre se alag install hota hai.
+- **Analogy:** Chaabi ka card. Har darwaze ka apna card hota hai.
+- **File:** `app/src/pwa-manifest.ts` (line 23); PR #84.
+
+### Lock a shell to one room
+- **Kya hai:** Ek prop (`lock`) poore console ko ek screen wala app bana deta hai. Tabs aur drill switches chhup jaate hain. Code copy nahi hota.
+- **Analogy:** Ek darwaza jo sirf ek kamre mein khulta hai. Corridor map nahi, drill switches nahi.
+- **File:** `app/src/App.tsx` (line 27); PR #84.
+
+### Build-time file emit
+- **Kya hai:** Build ke waqt ek chhota plugin extra static files likhta hai. Yahan chaar manifest files.
+- **Analogy:** Construction ke waqt chaar naam ki takhtiyan pehle se bana kar rakhna.
+- **File:** `app/vite.config.ts` (line 10); PR #84.
+
+### Swapping the manifest after load
+- **Kya hai:** Page khulne ke baad manifest link badalna. Install check kab manifest padhta hai, yeh browser ke upar hai. Yeh soft spot hai, isliye asli phone check baki hai.
+- **Analogy:** Darwaza khulne ke baad naam ki takhti lagana. Inspector ko yeh takhti dikhni chahiye, ya nahi, yeh pakka karna padta hai.
+- **File:** `app/src/main.tsx` (line 14); PR #84.
+
+### Count the sign-ins
+- **Kya hai:** Test "ek session" ko signup calls ginkar prove karta hai, storage padh kar nahi.
+- **Analogy:** Register mein entries ginna. Ek guest ka naam ek baar likha gaya ya teen baar, yeh ginti se dikhta hai.
+- **File:** `app/tests/e2e/helpers.ts` (line 28); PR #84.
+
+### Environment table
+- **Kya hai:** Ek chhoti table jis mein dev aur prod ki har alag cheez likhi hai: URL variable, credential ka naam, token variable, aur naam ka mark. Code is table ko padhta hai, kuch hard-code nahi hota.
+- **Analogy:** Crew ke sheet par do column, ek dev aur ek prod. Har line ke aage dono ka naam likha hai.
+- **File:** `ops/n8n/order/deploy.js` (line 17); PR #85.
+
+### Share only what is safe to share
+- **Kya hai:** Dev aur prod ke beech sirf alert workflow aur Jev credential shared hain. Database credential, token aur webhook path alag hain.
+- **Analogy:** Do buildings ke beech ek hi raat ki ghanti. Baaki sab chaabi alag hai.
+- **File:** `ops/n8n/order/build.js` (line 312); PR #85.
+
+### Same build, different stamp
+- **Kya hai:** Prod set dev jaisa hi canvas hai. Sirf naam par " PROD", path `gs-order-prod` aur alag webhookId lagta hai. Dev aur prod ka koi bhi farq ek finding hai.
+- **Analogy:** Ek hi floor plan, do building. Naam ki plate alag hai, deewar wahi hai.
+- **File:** `ops/n8n/order/prod.test.js` (line 41); PR #85.
+
+### Read-back per environment
+- **Kya hai:** Live check bhi env flag leta hai. Isliye prod ko activate se pehle proof ke saath milaya ja sakta hai ki woh apne build jaisa hai.
+- **Analogy:** Building ka final inspector. Har desk ko kholkar dekhta hai ki plan jaisa hi hai.
+- **File:** `ops/n8n/order/verify_live.js` (line 16); PR #85.
+
+### Block by path, not only by content
+- **Kya hai:** Guard ab file ke path se bhi rokta hai. Cache file mein token nahi hota, to content scan use pass kar deta. Path hi pehchan hai.
+- **Analogy:** Doorman badge ko uski shape se rokta hai. Likhe naam ki zaroorat nahi.
+- **File:** `scripts/guard.py` (line 19); PR #86.
+
+### A guard proves itself on its own PR
+- **Kya hai:** Naye rule ka pehla red run isi PR par hua. CI ne cache file pakdi, aur job fail hua.
+- **Analogy:** Naya lock tab sach maana jaata hai jab pehla chor usi lock par pakda jaaye.
+- **File:** CI log (Guard job); PR #86.
+
+### Ignore before you add
+- **Kya hai:** `.gitignore` sirf naye add par kaam karta hai. Jo file pehle se add ho chuki, usse nahi rokta. Jo branch dev se pehle kati gayi, use rebase chahiye.
+- **Analogy:** Lobby mat late bichhi. Purana corridor is mat ko nahi jaanta, woh purana badge phir le aata hai.
+- **File:** `docs/LEARNINGS.md` (line 139); PR #86.

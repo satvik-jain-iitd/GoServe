@@ -23,7 +23,7 @@ The owner asked (15 Oct 2026) that the user app, the driver app and the other ap
 
 ## Consequences
 
-- Android Chrome installed apps (WebAPKs) are expected to share storage with Chrome for the same origin, so one-device sharing should work there. **This is not yet sourced:** it is checked on the founder's phone in story #56 (F83 a). **iPhone is different:** a home-screen web app has its own storage, so two installed apps on an iPhone do not share a session; they use the join link. The founder's device is Android. Check on a real phone in story #56.
+- Android Chrome installed apps (WebAPKs) are expected to share storage with Chrome for the same origin, so one-device sharing should work there. **This is not yet sourced:** it is checked on the founder's phone in story #56 (F83 a). **iPhone is different (not yet sourced, checked on a real iPhone in story #56):** a home-screen web app has its own storage, so two installed apps on an iPhone do not share a session; they use the join link. The founder's device is Android. Check on a real phone in story #56.
 - The manifest is chosen by script on page load (the page swaps the manifest link by address). Chrome reads it for the install check after load; this needs the real-phone check too.
 - Each app opens inside its scope; a link out of the scope opens in the browser.
 - The service worker covers the whole origin, so every app address opens offline after the first visit.
