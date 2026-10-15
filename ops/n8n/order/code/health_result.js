@@ -9,9 +9,8 @@ if (prep.use_jev) {
     status = 'jev_bad_reply';
     const body = res.body && typeof res.body === 'object' ? res.body : {};
     cost = body.usage && typeof body.usage.cost === 'number' ? body.usage.cost : 0;
-    let reply = null;
-    try { reply = JSON.parse(body.choices[0].message.content); } catch (e) { reply = null; }
-    if (reply && prep.options.includes(reply.choice)) status = 'ok';
+    const a = body.answers && body.answers.sky;   // { type: 'noul', noul: 0 to 1 }
+    if (a && a.type === 'noul' && typeof a.noul === 'number' && a.noul >= 0 && a.noul <= 1) status = 'ok';
   }
 }
 return [{ json: { ok: true, status_code: 200, cost, jev: { ok: status === 'ok', status, ms: prep.use_jev ? Math.max(0, Date.now() - prep.started_at) : null } } }];

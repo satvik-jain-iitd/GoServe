@@ -19,63 +19,64 @@ The wrapper has four jobs:
 
 ### 1.1 Where it calls
 
-OpenRouter chat completions endpoint. We never call TypeSafe directly. The key lives in `~/Desktop/Secrets/openrouter.env` as `OPENROUTER_API_KEY`.
+OpenRouter's **decisions endpoint**: `POST https://openrouter.ai/api/alpha/decisions` (Tier A: OpenRouter's Jev tutorial; confirmed by a real call on 15 Oct 2026). Jev is a decisions model: the chat completions endpoint refuses it with a 400 ("is a decisions model and cannot be used with the chat/completions endpoint"). An earlier version of this contract said chat completions; the first live run found the mistake. We never call TypeSafe directly. The GoServe key lives in `~/Desktop/Secrets/` as `GOSERVE_OPENROUTER_KEY` and in the n8n credential `GoServe OpenRouter`.
 
 Model choice:
 
 - Default (general traffic): `typesafe/jev-router`. It picks the right Jev behind the scenes.
-- Pinned (tests and reproducible runs): `typesafe/jev-1.13`. Output is free, input is $0.042 per million tokens, 64K context, released 18 Sep 2026.
+- Pinned (tests and reproducible runs): `typesafe/jev-1.13`. Output is free, input is $0.042 per million tokens, released 18 Sep 2026. A real D1 call cost about $0.00002.
 - Testing only: `typesafe/jev-latest`.
 
 ### 1.2 Call settings
 
 | Setting | Value | Why |
 |---|---|---|
-| Temperature | 0 | We want the same answer for the same state. |
-| Max tokens | 32 | The reply is tiny. A choice, a number, a short reason. |
-| Timeout | 900 ms | If it is slower than this, fallback runs. |
-| Response format | JSON | We parse it as data, never as free text. |
+| Timeout | 900 ms | If it is slower than this, fallback runs. (A real call from a laptop took 560 to 900 ms; check the time on the n8n box.) |
+| Question type | `choice` (D1) | One option from a list, with a probability for each. |
 | Retries | 1 | One retry, then straight to fallback. |
 
-### 1.3 The message we send
+There is no temperature or token setting: the endpoint takes a state and typed questions and returns typed answers.
 
-We send one user message. It is plain text in a fixed shape.
+### 1.3 The body we send
 
-```
-State: <JSON of the current situation>
-Question: <the decision to make>
-Allowed choices: <comma separated list>
-Reply with JSON only: {"choice":"...","confidence":0.0,"reason":"..."}
+```json
+{
+  "model": "typesafe/jev-1.13",
+  "state": { "order_id": "o1", "riders": [{ "id": "r1", "free": true, "distance_m": 1200, "trips_done": 2 }, { "id": "r2", "free": true, "distance_m": 2100, "trips_done": 0 }] },
+  "questions": {
+    "rider": {
+      "type": "choice",
+      "instructions": "Which rider should get this order? Prefer a free rider with fewer trips and a short distance.",
+      "criteria": { "r1": "Rider r1.", "r2": "Rider r2.", "none": "No rider is free." }
+    }
+  }
+}
 ```
 
-Concrete D1 example:
-
-```
-State: {"orders":[{"id":"o1","prep_eta_sec":180,"items":3}],"riders":[{"id":"r1","free":true,"distance_m":1200,"trips_done":2},{"id":"r2","free":true,"distance_m":2100,"trips_done":0}],"kitchen":"k1"}
-Question: which rider should get order o1
-Allowed choices: r1, r2, none
-Reply with JSON only: {"choice":"...","confidence":0.0,"reason":"..."}
-```
+No names, phones or addresses go in the state.
 
 ### 1.4 The reply we accept
 
 ```json
-{ "choice": "r2", "confidence": 0.81, "reason": "closest free rider with no trips today" }
+{ "answers": { "rider": { "type": "choice", "choice": "r2", "confidence": 1, "probabilities": { "r1": 0, "r2": 1, "none": 0 } } },
+  "usage": { "input_tokens": 477, "output_tokens": 50, "cost": 0.00002 } }
 ```
 
-Three fields only:
+We read three things:
 
 | Field | Type | Meaning |
 |---|---|---|
-| choice | string | Must be one of the allowed choices. |
-| confidence | number | 0 to 1. Our trust in this answer. |
-| reason | string | One short line. For the log and for ops. |
+| answers.rider.choice | string | Must be one of the allowed options. |
+| answers.rider.confidence | number | 0 to 1. Our trust in this answer. |
+| usage.cost | number | US dollars for this call. Over the cost cap, we ignore the answer. |
+
+There is no `reason` text: the endpoint returns probabilities, not words.
 
 ### 1.5 When we ignore Jev and use fallback
 
 Fallback runs if any of these is true:
 
-1. The reply is not valid JSON.
+1. The reply is not in the shape above (no `answers.rider` of type `choice`).
 2. `choice` is not in the allowed list.
 3. `confidence` is missing, or not a number, or below the threshold for that decision.
 4. The call times out or errors.

@@ -15,3 +15,4 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - ID011 (2026-10-13, taken): Phase gate before every MVP phase (infra Q&A, research, setup, record). Rule: docs/architecture/phase-gate.md, CLAUDE.md rule 16. Second Brain ID073.
 - ID012 (2026-10-14, taken): PR review skill: Fable analyses, a Haiku subagent writes the prose. Strong brain, cheap pen. Done in tpm-pr-review (references/analysis-brief.md). Second Brain ID084.
 - ID013 (2026-10-14, taken): PR review skill critical-path first: post questions + coder handoff right after analysis, approve at once when nothing must change, notebook written in the background, one paste-block per handoff so reviewer, writer and coder never idle. Done in tpm-pr-review. Second Brain ID085.
+- ID093 (2026-10-15, taken): Customer, kitchen, rider and ops as separate installable PWAs that work on one device and on different devices, one device first. Story #83, ADR-013. Second Brain ID093.
