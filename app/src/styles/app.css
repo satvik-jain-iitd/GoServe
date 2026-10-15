@@ -1,0 +1,75 @@
+body {
+  margin: 0;
+  background: var(--md-background);
+  color: var(--md-on-background);
+  font-family: var(--gs-font);
+}
+.shell {
+  max-width: 28rem;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+h1 {
+  color: var(--md-primary);
+}
+
+/* Customer screens (story #48). Colours and sizes come from the tokens only. */
+.shell { padding-bottom: var(--gs-space-9); }
+h2 { font-size: var(--gs-text-xl); color: var(--md-on-background); }
+ul { list-style: none; margin: 0; padding: 0; }
+.dishes { display: grid; gap: var(--gs-space-4); }
+.dish { display: grid; grid-template-columns: 5rem 1fr auto; gap: var(--gs-space-3); align-items: center; background: var(--md-surface); border-radius: var(--gs-radius-m); padding: var(--gs-space-3); box-shadow: var(--gs-shadow-s); }
+.dish img { width: 5rem; height: 5rem; object-fit: cover; border-radius: var(--gs-radius-s); background: var(--md-surface-variant); }
+.dish-body { display: grid; gap: var(--gs-space-1); }
+.dish-name { font-weight: 600; }
+.price { color: var(--md-primary); font-weight: 600; }
+.credit { color: var(--gs-text-muted); font-size: var(--gs-text-xs); }
+.btn { min-height: 2.75rem; min-width: 2.75rem; padding: 0 var(--gs-space-5); border: 0; border-radius: var(--gs-radius-pill); background: var(--md-primary); color: var(--md-on-primary); font: inherit; font-weight: 600; cursor: pointer; }
+.btn.small { padding: 0 var(--gs-space-4); }
+.btn.ghost { background: transparent; color: var(--md-primary); border: 1px solid var(--md-outline); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:focus-visible, textarea:focus-visible { outline: 3px solid var(--gs-ring); outline-offset: 2px; }
+.btn.bar { position: fixed; left: var(--gs-space-4); right: var(--gs-space-4); bottom: var(--gs-space-4); max-width: 26rem; margin: 0 auto; box-shadow: var(--gs-shadow-m); }
+.lines { display: grid; gap: var(--gs-space-3); margin-bottom: var(--gs-space-5); }
+.line { display: flex; justify-content: space-between; align-items: center; gap: var(--gs-space-3); }
+.qty { display: inline-flex; align-items: center; gap: var(--gs-space-2); }
+.field { display: grid; gap: var(--gs-space-2); margin-bottom: var(--gs-space-5); font-weight: 600; }
+textarea { font: inherit; padding: var(--gs-space-3); border: 1px solid var(--md-outline); border-radius: var(--gs-radius-m); background: var(--md-surface); color: var(--md-on-surface); }
+.actions { display: flex; gap: var(--gs-space-3); justify-content: space-between; }
+.total { font-size: var(--gs-text-lg); }
+.note { color: var(--gs-text-muted); font-size: var(--gs-text-sm); }
+.notice { background: var(--md-tertiary-container); padding: var(--gs-space-3); border-radius: var(--gs-radius-m); }
+.error { background: var(--md-error); color: var(--md-on-error); padding: var(--gs-space-3); border-radius: var(--gs-radius-m); }
+
+/* Role switch and kitchen tickets (story #49). */
+.roles { display: flex; gap: var(--gs-space-3); margin-bottom: var(--gs-space-5); }
+.tickets { display: grid; gap: var(--gs-space-4); }
+.ticket { background: var(--md-surface); border-radius: var(--gs-radius-m); padding: var(--gs-space-4); box-shadow: var(--gs-shadow-s); display: grid; gap: var(--gs-space-2); }
+.ticket-head { display: flex; justify-content: space-between; align-items: center; }
+.ticket-lines { display: grid; gap: var(--gs-space-1); }
+.badge { padding: var(--gs-space-1) var(--gs-space-3); border-radius: var(--gs-radius-pill); background: var(--md-secondary-container); font-size: var(--gs-text-sm); font-weight: 600; }
+.badge.placed { background: var(--gs-status-placed); }
+.badge.accepted { background: var(--gs-status-accepted); }
+.badge.preparing { background: var(--gs-status-cooking); }
+.badge.ready { background: var(--gs-status-ready); }
+
+/* Customer tracker (story #50). */
+.tracker { list-style: none; display: grid; gap: var(--gs-space-2); margin: var(--gs-space-4) 0; padding: 0; }
+.step { padding: var(--gs-space-2) var(--gs-space-3); border-radius: var(--gs-radius-m); border: 1px solid var(--md-outline); color: var(--gs-text-muted); }
+.step.done { color: var(--md-on-surface); background: var(--md-surface-variant); }
+.step.current { background: var(--md-primary); color: var(--md-on-primary); font-weight: 600; }
+
+/* Demo tools and split view (story #52). */
+.demobar { display: flex; flex-wrap: wrap; gap: var(--gs-space-3); align-items: center; margin-bottom: var(--gs-space-5); }
+.shell.split { max-width: none; }
+.panes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gs-space-3); align-items: start; }
+.split .btn.bar { position: static; margin-top: var(--gs-space-3); max-width: none; }
+
+/* Ops screen (story #51). */
+.roles { flex-wrap: wrap; }
+.metrics { display: grid; grid-template-columns: 1fr auto; gap: var(--gs-space-2) var(--gs-space-4); margin: 0; }
+.metrics dt { color: var(--gs-text-muted); }
+.metrics dd { margin: 0; font-weight: 600; text-align: right; }
+
+/* Health page (story #54). */
+.badge.fail { background: var(--md-error); color: var(--md-on-error); }
