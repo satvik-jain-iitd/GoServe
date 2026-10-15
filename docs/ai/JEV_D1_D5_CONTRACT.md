@@ -33,7 +33,7 @@ Model choice:
 |---|---|---|
 | Timeout | 1500 ms (was 900 ms; 15 Oct 2026, the live decide step ran 6 times in 21 over 900 ms) | If it is slower than this, fallback runs. (A real call from a laptop took 560 to 900 ms; check the time on the n8n box.) |
 | Question type | `choice` (D1) | One option from a list, with a probability for each. |
-| Retries | 1 | One retry, then straight to fallback. |
+| Retries | 0 (owner, 15 Oct 2026, for the demo) | No retry: straight to fallback. Worst case 1.5 s. With one retry it would be 3.2 s. |
 
 There is no temperature or token setting: the endpoint takes a state and typed questions and returns typed answers.
 

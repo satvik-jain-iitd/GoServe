@@ -140,3 +140,4 @@ short. Say what happened and what to do next time.
 - `git add -A` after a tool made a cache folder in the working tree committed it. A guard that blocks by path (not only by content) and a `.gitignore` line close the gap. Check `git status` before `add -A` after any CLI login.
 - A live spec that reuses the selectors of a one-off script (the 15 Oct browser check) passed 20 of 20 first time, so keep one-off checks as a real spec file instead of a scratch script. It writes to dev, so it is run by hand, not in CI.
 - A limit that sits 150 ms from the normal time is a coin flip. We moved Jev from 900 to 1500 ms (owner, 15 Oct) after 6 of 21 decide steps ran over 900 ms. Keep a gap of at least half the normal time.
+- Total running cost of MVP 0 is about zero: every tier is free, the Oracle server is on the free tier (owner, 15 Oct), and Jev costs about $0.00002 a decision with a $2 cap.
