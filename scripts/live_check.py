@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """First live check of the order API on goserve-dev (F73 d): walks one real order from placed to delivered through the n8n webhook and prints PASS or FAIL for each call.
-It WRITES to goserve-dev (one anonymous user, one order, its events, one decision, run rows) and may spend about /bin/zsh.00002 on one Jev call. Dev only: the address comes from the dev vault names.
+It WRITES to goserve-dev (one anonymous user, one order, its events, one decision, run rows) and may spend about $0.00002 on one Jev call. Dev only: the address comes from the dev vault names.
 Needs the workflows active and the vault (04_integrations.env demo token, 02_databases.env dev keys). Clean up afterwards with scripts/clear_dev.py.
 Run: python3 scripts/live_check.py"""
 import json, os, re, time, urllib.request, urllib.error, uuid

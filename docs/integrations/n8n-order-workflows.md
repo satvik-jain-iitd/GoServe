@@ -122,6 +122,10 @@ Nine more workflows, the same code and canvas, named with `PROD` at the end, dep
 
 `node ops/n8n/order/verify_live.js --env prod` compares them with the build. To activate them, the owner says "activate" (sub-workflows first, then the two MAINs, as for dev). MAIN 90 PROD would send a second daily message, so activate it only when the owner wants a prod card. The prod app build uses `PROD_VITE_ORDER_URL` = `https://n8n.linkright.in/webhook/gs-order-prod`.
 
+Before the owner activates the prod set, run `node ops/n8n/order/verify_live.js --env prod` once.
+
+**Deploy means live.** For a workflow that is already active, `deploy.js --apply` changes the live copy at once (it never activates or deactivates anything by itself). "Push kar do" therefore means "live now" for an active workflow.
+
 ## Activation (15 Oct 2026)
 
 This n8n version will not publish a workflow whose sub-workflows are not published ("Cannot publish workflow: Node ... references workflow ... which is not published"). So "activate" means all ten, in this order: ERR 00, SUB 11 to 16, SUB 91, then MAIN 01 and MAIN 90. An earlier review reply that said sub-workflows need not be active was wrong. `node ops/n8n/order/verify_live.js` prints the active flag of each.
