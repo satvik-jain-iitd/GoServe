@@ -5,6 +5,7 @@ import guard
 
 def write(d, name, text, size=None):
     p = os.path.join(d, name)
+    os.makedirs(os.path.dirname(p), exist_ok=True)
     with open(p, "w") as f:
         f.write(text if size is None else "x" * size)
     return p
@@ -28,6 +29,13 @@ class Guard(unittest.TestCase):
                        "ey" + "J" + "a" * 20 + ".ey" + "J" + "a" * 20 + "." + "a" * 12]:
             p = write(self.d, "c.txt", sample + "\n")
             self.assertTrue(any("secret" in e for e in guard.check_files([p])), sample[:8])
+
+    def test_cli_cache_and_env_files_are_blocked_by_path(self):
+        # The Cloudflare CLI cache (account id and email) was committed by mistake on 15 Oct 2026 (PR #82 review).
+        for rel in (".cloudflare/cache/cloudflare-account.json", ".wrangler/state/x.json", ".env", "app/.env.local"):
+            p = write(self.d, rel, "{}\n")
+            self.assertTrue(any("not for the repo" in e for e in guard.check_files([p])), rel)
+        self.assertEqual(guard.check_files([write(self.d, "app/.env.example", "KEY=\n")]), [])
 
     def test_big_file_is_blocked(self):
         p = write(self.d, "big.bin", "", size=600 * 1024)

@@ -15,6 +15,8 @@ SECRET = re.compile(
     r"|AKIA[0-9A-Z]{16}|sk_live_[A-Za-z0-9]{20,}"
     r"|eyJ[A-Za-z0-9_-]{20,}\.eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}"  # JWT, e.g. Supabase keys
 )
+# Folders and files that tools make in the working folder and that never belong in the repo (account ids, emails, keys).
+BLOCKED_PATH = re.compile(r"(^|/)(\.cloudflare|\.wrangler)/|(^|/)\.env($|\.(?!example))")
 MARKER = re.compile(r"^(<<<<<<< |>>>>>>> )", re.M)
 FENCE = re.compile(r"^\s*(```|~~~)", re.M)
 MESSAGE = re.compile(r"^(feat|fix|docs|chore|refactor|test|ci|build|perf|style|revert)(\([a-z0-9-]+\))?!?: \S.*$")
@@ -24,6 +26,9 @@ def check_files(paths):
     errors = []
     for p in paths:
         if not os.path.isfile(p):
+            continue
+        if BLOCKED_PATH.search(p):
+            errors.append(f"{p}: not for the repo (tool cache or env file)")
             continue
         if os.path.getsize(p) > MAX_BYTES:
             errors.append(f"{p}: file over 500KB")

@@ -2,7 +2,7 @@
 
 System ka ek-page picture. Har chapter ke baad update karta hoon.
 
-_Last updated: PR #77 merged (`d3d4cbe`); PRs #62–#77 merged; coder waits on the owner_
+_Last updated: PRs #62–#82, #84, #85 merged; #86 needs a fix (15 Oct); ten dev workflows active; prod DB set up; nine prod workflows inactive_
 
 ## GoServe — ab tak ki tasveer
 
@@ -13,6 +13,8 @@ _Last updated: PR #77 merged (`d3d4cbe`); PRs #62–#77 merged; coder waits on t
      |--- design/        → tokens.json  (colours ka single source of truth)
      |--- docs/          → plan, decisions, follow-ups, test-cases, pr-reviews
      |--- scripts/       → guard.py  (repo rules ka checklist)         ← PR #59
+     scripts/release_db.py + test_release_db.py  (fit-out work order for the new building: dry run, owner's yes, --apply)  ← PR #80
+     docs/release-checklist.md  (opening-day run sheet, O/A roles)  ← PR #80
      |                  clear_dev.py  (training hotel ki housekeeping, sirf dev, dry run default)  ← PR #72
      |                    test_schema.py (auditor: DB rules ka test, rollback)  ← PR #64
      |                    apply_migration.py (printer: SQL file DB par bhejta hai)  ← PR #64
@@ -56,6 +58,14 @@ _Last updated: PR #77 merged (`d3d4cbe`); PRs #62–#77 merged; coder waits on t
                           ├─ tests/e2e/autopilot.spec.ts, tests/unit/autopilot.test.ts  (rehearsal: offline story, online chhe calls, fallback)  ← PR #75
                           ├─ ops/n8n/order: SUB 16 Health, code/health_prepare.js, code/health_result.js, health.test.js (concierge test, kuch likhta nahi)  ← PR #74
                           ├─ ops/n8n/order: MAIN 90 Daily scorecard + SUB 91 Scorecard numbers, code/score_window.js, score_summary.js, score_message.js, scorecard.test.js (raat ka auditor + ledger clerk, sirf padhta hai)  ← PR #76
+                          ├─ ops/n8n/order/verify_live.js  (inspector: live workflows vs blueprint, read-only)  ← PR #79
+                          ops/n8n/order/prod.test.js ← PR #85
+                          ops/n8n/order: nine PROD workflows on n8n, inactive ← PR #85
+                          app/src/lib/roles.ts  ← PR #84
+                          app/tests/e2e/apps.spec.ts  ← PR #84
+                          app/tests/unit/roles.test.ts  ← PR #84
+                          docs/decisions/ADR-013-role-apps-on-one-origin.md  ← PR #84
+                          scripts/live_check.py ← PR #81
                           ├─ ops/n8n/order: SUB 15 Add event, code/guard_event.js, event.test.js (margin note ki khidki)  ← PR #71
                           ├─ src/pwa-manifest.ts  (identity card, colours ← tokens.json)
                           ├─ src/styles/tokens.css + app.css (paint)
@@ -125,6 +135,8 @@ _Status: 6 workflows n8n par deployed, sab inactive (ids registry mein; VERIFIED
 6f. Founder `/health` kholta hai → `main.tsx` HealthScreen chunta hai → Supabase ek menu row + ek `health` call → MAIN 01 → SUB 16 → Jev → teen batti OK/FAIL with ms (PR #74; SUB 16 deploy + activation pending).
 6g. Autopilot tap → online: session ka newest open order har 2 s kitchen phir rider ke asli calls se aage, Delivered par ruk; offline (airplane mode): sample order local copy par "Offline demo" banner ke neeche; network fail par fallback (PR #75).
 6h. Raat 21:00 (India): MAIN 90 raat ka auditor hai. Ledger clerk (SUB 91) aaj ke pages (run_log, decision_log) ginta hai, auditor tally ko slip mein likhta hai, aur Telegram se owner ke darwaze par bhejta hai. Clerk pen nahi chhoota, sirf padhta hai.
+6i. Prod release ka kram (naya building, abhi khaali): fit-out crew pehle work order padhti hai (dry run, sirf plan). Owner dastakhat karta hai. Phir `--apply`: pehle check ki wiring nahi hai, 7 migration files order mein, guest-entry on, phir handover ginti 10 / 8 / 6. Secrets aur release PR baad mein, har ek ka apna yes.
+6j. Address darwaza chunta hai. `/kitchen/` = kitchen ka darwaza, sirf ek kamra, apni naam ki takhti aur chaabi. `/` = lobby console.
 7. App chalane par: index.html → main.tsx → App → service worker (offline).
 
 ## Yeh PR ke baad kya samajh aaya
@@ -202,6 +214,30 @@ _Status: 6 workflows n8n par deployed, sab inactive (ids registry mein; VERIFIED
 - Din ki sheet ki seema hai: 21:00 ke baad ki rows aaj ke slip mein nahi aati (TOP-1, abhi khula). (PR #76)
 - Ek message ko code aur wajah dono saath le jaane chahiye, warna owner ko sirf number milta hai aur kaaran nahi. (PR #77)
 - Test wahan karo jahan user dekhta hai, aur cap wali read ko `order` chahiye, warna cut kaun si rows girega tay nahi hota. (PR #77)
+- Rolling 24 h ka matlab: har card pichle 24 ghante ka hai, to 21:00 wale cards ek doosre se judte hain. Manual run se cards overlap ho sakte hain; head mein time likha hai. (PR #79)
+- Live check (`verify_live.js`) shape dekhta hai: naam, position, links, active flag. Parameters (Code source, URL) nahi dekhta, to "same" ka matlab sirf itna hai. (PR #79)
+- Deploy ke baad workflows abhi bhi covers ke neeche hain (inactive). Sirf "activate" (MAIN 01 webhook aur MAIN 90 schedule) se front door aur auditor ka alarm chalu hota hai. (PR #79)
+- Likhne se pehle plan dikhta hai. Owner ki haan ke baad hi script likhti hai; dry run aur apply ke beech ek insaan ka faisla hai. (PR #80)
+- Galat target par likhne se pehle do guard rokte hain, par dono sirf dev ref aur existing tables dekhte hain. Naam abhi check nahi hota. (PR #80)
+- Prod ki ginti (10 dishes, 8 tables, 6 policies, sign-in on) ek checklist hai. Release ke baad jo nahi mila, wo zor se fail hota hai. (PR #80)
+- Build ke keys ke naam alag hain (`PROD_VITE_*`), taaki build galti se dev ki chaabi na le. (PR #80)
+- Jev ek decisions model hai. Hum state aur typed sawaal bhejte hain, aur typed jawab lete hain. Chat prompt yahan nahi chalta. (PR #81)
+- Fake test sirf utna sach hota hai jitna asli jawab ne sikhaya. 63 green tests ek galat shape ka fake test kar rahe the, aur asli call ne hi pakda. (PR #81)
+- Deploy ek live active workflow ko update kar sakta hai, par khud on nahi karta. "Push kar do" ab live par turant pahunchta hai. (PR #81)
+- Activation ka order maayne rakhta hai: SUB pehle, MAIN baad mein. n8n is version mein galat order par publish nahi hone deta. (PR #81)
+- Release script pehle naam padhta hai: naam-patti wali plate jo crew sunaati hai. "GoServe" na mile to darwaza nahi khulta, dry run aur apply dono mein. (PR #82)
+- Owner ka yes ab ref ke saath naam par bhi tika hai. Dry run ki line `Prod project 'GoServe' (ref)` woh run sheet line hai jis par yes diya jaata hai. (PR #82)
+- Tool cache (`.cloudflare/`) repo ka hissa nahi hai; visitor badge lobby mein nahi chhodte. Pehle ignore karo, run baad mein. (PR #82)
+- One origin = ek building. Storage, service worker aur session ek hi. (PR #84)
+- Manifest = chaabi ka card. `id`, `scope`, `start_url` har app ko alag pehchan dete hain. (PR #84)
+- Lock = ek kamre ka darwaza. Same code, koi copy nahi. (PR #84)
+- Install prompt aur WebAPK storage ka pakka sabut sirf asli phone par milega (#56). (PR #84)
+- Ek build file, ek env flag: dev aur prod ek hi canvas se banate hain. Farq sirf naam, path, credential aur token mein hai. (PR #85)
+- Deploy karna aur batti jalana do alag faisle hain. Prod ka activate owner ka kadam hai, aur pehle verify karna ki prod inactive hai. (PR #85)
+- Shared cheezein kam hain: sirf alert (ERR 00) aur Jev credential. Baaki sab alag rakha gaya hai. (PR #85)
+- Guard ab do tarah se dekhta hai: file ka path, aur uske andar ka content. Hotel mein doorman badge ki shape se bhi pehchaanta hai. (PR #86)
+- Purana badge phir aa sakta hai. `.gitignore` lobby mat hai; jo branch use se pehle kati gayi, use rebase chahiye. (PR #86)
+- Guard ka apna red run hi uska sabut hai. Yeh PR khud is rule ka pehla test case bana. (PR #86)
 
 ## Abhi bhi andhera (jawab nahi mila)
 - Kaun `order_events` likhega: app, n8n, ya trigger? (Abhi koi nahi.)
@@ -226,5 +262,5 @@ _Status: 6 workflows n8n par deployed, sab inactive (ids registry mein; VERIFIED
 - Phone ke liye write rules nahi (phone kabhi nahi likhta, ADR-009/010). Real logins: MVP 1. Self-hosted photos: #54. Indexes PK/unique ke alawa: screen stories ke saath.
 - Activation nahi (owner ka "activate" chahiye, pehle canvas look). Live rows (5 calls + Jev + Jev-down) pending. MAIN 90 scorecard = #47. Riders table nahi (A42). Laya = MVP 1.
 - Customer screen ab hai (menu, cart, bill, place order; PR #69, open, 5f2fa97). Asli order ki row activation ke baad aayegi.
-- Kitchen (#49), rider + tracker (#50), split/join/reset (#52), ops (#51), health page (#54), autopilot (#53) merged; #75 ke do fix PR #76 mein aaye. Scorecard MAIN 90 + SUB 91 ab hai (#47, PR #76, approved, `76ed3bb`); PR #77 (approved) refusal ki wajah button ke neeche dikhata hai; 21:00 ke baad ki rows ka window gap pending (owner chune: rolling 24 h ya cron 23:55). SUB 16 + SUB 91 + MAIN 90 + MAIN 01 update deploy nahi (owner ka "push kar do"); activation nahi (owner ka "activate"; MAIN 90 = schedule): live rows aur #56 pending. Prod copy of scorecard nahi (F78 b). UptimeRobot #55 nahi; #42 prod deploy PR #63 mein ho chuka (Pages project F61 owner ka). Agla story slot abhi khaali hai, jab tak owner teen prod sawaal ka jawab nahi deta; #42 PR #63 mein ho chuka hai. Ek-decision-per-order rule nahi (F75 j), riders table nahi, Leave/QR nahi (F74), prod migrations 0006/0007 nahi (F63). Real payment nahi (MVP 2). Koi login nahi.
+- Kitchen (#49), rider + tracker (#50), split/join/reset (#52), ops (#51), health page (#54), autopilot (#53) merged; #75 ke do fix PR #76 mein aaye. Scorecard MAIN 90 + SUB 91 ab hai (#47, PR #76, approved, `76ed3bb`); PR #77 (approved) refusal ki wajah button ke neeche dikhata hai; 21:00 ke baad ki rows ka window gap pending (owner chune: rolling 24 h ya cron 23:55). Das n8n workflows deploy ho gaye (14 Oct, "push kar do"), sab inactive; Das workflows live hain par inactive: "activate" (MAIN 01 + MAIN 90) abhi nahi hua, phir live rows aur #56 pending hain, aur coder #78 prod release prep par hai. Prod copy of scorecard nahi (F78 b). UptimeRobot #55 nahi; #42 prod deploy PR #63 mein ho chuka (Pages project F61 owner ka). Agla story slot abhi khaali hai, jab tak owner teen prod sawaal ka jawab nahi deta; #42 PR #63 mein ho chuka hai. Ek-decision-per-order rule nahi (F75 j), riders table nahi, Leave/QR nahi (F74), prod migrations 0006/0007 nahi (F63). Real payment nahi (MVP 2). Koi login nahi. Prod abhi khaali hai (sirf dry run hua hai), Pages project `goserve-app` nahi bana, PROD secrets set nahi hain, aur prod workflow copy nahi bani; MAIN 01 + MAIN 90 ki activation coder ka agla kaam hai, owner ke "activate" ke baad. Das dev workflows 15 Oct se active hain, Jev ab decisions endpoint par hai aur live OK hai, par 21:00 scorecard card aur #56 abhi pending hain. Prod database set up hai (15 Oct, owner ka yes) aur Pages project `goserve-app` 12 Oct se hai, par PROD secrets aur release PR abhi pending hain, aur PR #82 cache-file fix ka intezaar kar raha hai. Per-role share links (slice 2, F83 b), asli phone install check (#56), aur iPhone ke liye join link zaroori hai; A52 abhi open hai. Nau prod workflows inactive hain (exist karte hain); prod activate, PROD secrets, release PR aur prod order abhi owner ke paas pending hain. PR #86 waits for the cache-file fix and a rebase; the guard rule by path is in the PR and proved itself on its own CI run.
 - Dev deploy job hai (PR #62, merged). Prod deploy workflow hai (PR #63, open), par `main` par `app/` abhi nahi hai. Release list fix ho gayi (4b77e65); pehli release PR ke baad app prod par aayega. `goserve-app.pages.dev` abhi 522 hai.

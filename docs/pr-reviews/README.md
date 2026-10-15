@@ -33,6 +33,13 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana â
 | 16 | [#75](pr-75-autopilot.md) | feat(app): autopilot with an offline demo story | MERGED (20 answered, 2 should-fix landed in #76) | #53 (epic #37) |
 | 17 | [#76](pr-76-scorecard.md) | feat(ops): daily scorecard workflow with Telegram message | MERGED (17 answered, window gap fix pending the owner's pick) | #47 (epic #35) |
 | 18 | [#77](pr-77-autopilot-refusal.md) | fix(app): show the autopilot refusal, name the cost line | MERGED (4 answered) | follow-up to #47 |
+| 19 | [#79](pr-79-scorecard-window.md) | fix(ops): scorecard covers the last 24 hours | MERGED (9 answered; verify_live parameters fix in #80) | follow-up to #47; n8n deployed, inactive |
+| 20 | [#80](pr-80-prod-release-prep.md) | feat(ops): prod database script, prod keys and release checklist | MERGED (12 answered; name check in #82) | #78 (epic #38), slice 1 |
+| 21 | [#81](pr-81-jev-decisions-endpoint.md) | fix(ops): ask Jev at the decisions endpoint, not chat completions | MERGED (10 answered) | refs #46 #54; dev live since 15 Oct |
+| 22 | [#82](pr-82-release-db-name-check.md) | feat(ops): release script checks the prod project name | MERGED (6 answered; cache file removed) | follow-up to #78; prod DB done 15 Oct |
+| 23 | [#84](pr-84-role-apps.md) | feat(app): role apps as separate installable PWAs on one origin | MERGED (10 answered; docs conflicts resolved) | #83 (slice 1), owner direction 15 Oct |
+| 24 | [#85](pr-85-prod-workflows.md) | feat(ops): prod copy of the order workflows, deployed inactive | MERGED (9 answered) | #78 (slice S3) |
+| 25 | [#86](pr-86-guard-by-path.md) | chore: guard blocks tool caches by path, small review notes | NEEDS-FIX (5 posted, 1 must-fix: cache file again, Guard red) | follow-up to the 15 Oct review round |
 
 ## Journals
 - [concepts.md](concepts.md) â€” naye technical words, plain Hindi mein.
@@ -59,6 +66,13 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana â
 | Autopilot: two modes behind one button, ref as clipboard, offline fallback | #75 |
 | Scorecard: schedule + timezone, day window, metric pairs, read-only SUB | #76 |
 | Refusal reason where the user looks, ordered reads under a cap | #77 |
+| Rolling window, read-back after deploy, label the period | #79 |
+| Prod release: dry run by default, refuse the wrong target, handover counts, separate key rings | #80 |
+| Jev decisions endpoint, fixtures from real answers, publish needs the callees, wasActive guard | #81 |
+| A name next to the id, tool caches out of git, throwaway user for a security test | #82 |
+| Role apps: one origin several apps, manifest = install identity, lock a shell, count the sign-ins | #84 |
+| Prod copy: environment table, share only what is safe, same build different stamp | #85 |
+| Block by path not only content, a guard proves itself on its own PR, ignore before you add | #86 |
 
 ## Notes
 - Chapters Romanized Hindi mein hain. Code, file paths, commands English mein.
