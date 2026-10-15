@@ -11,7 +11,7 @@ This replaces F63 and F64 (a). Read `docs/architecture/phase-gate.md` first.
 | Cloudflare Pages project `goserve-app` | **Exists** (made 12 Oct 2026, production branch `main`, no deployment yet; read with `cf pages list` after the owner's `cf auth login`, 15 Oct). `goserve-app.pages.dev` answers 522 only because nothing is deployed. |
 | Repo secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | Exist. |
 | Prod keys for the build (`PROD_VITE_*`) | Not set. |
-| Prod copy of the order workflows | Not built (needs its own address, credential and webhook path). |
+| Prod copy of the order workflows | **Done 15 Oct 2026, inactive:** nine `PROD` workflows, credential `GoServe Supabase prod`, webhook path `gs-order-prod`. Waits for "activate". |
 | `main` | Has only the investor site and old code. The app reaches it through a release PR. |
 
 ## Steps, in order
