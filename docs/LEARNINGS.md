@@ -142,3 +142,4 @@ short. Say what happened and what to do next time.
 - A limit that sits 150 ms from the normal time is a coin flip. We moved Jev from 900 to 1500 ms (owner, 15 Oct) after 6 of 21 decide steps ran over 900 ms. Keep a gap of at least half the normal time.
 - Total running cost of MVP 0 is about zero: every tier is free, the Oracle server is on the free tier (owner, 15 Oct), and Jev costs about $0.00002 a decision with a $2 cap.
 - A new action in the order webhook changes the Route node: the fallback output moves one place. Four older tests held the old index. When a Switch gets a new output, grep every test that reads `Route` outputs.
+- A new action needs three edits, not two: the Route switch, the Call node and the allow-list in Check token. The unit tests covered the first two; only the first live call showed the third (400 bad_action). Add the action to the Check token test whenever a route is added.
