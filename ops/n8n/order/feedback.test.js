@@ -152,6 +152,15 @@ test('wiring MAIN 01: the route `feedback` calls SUB 17 with the fields its trig
   assert.match(byName(wf.main01, 'Respond result').parameters.responseBody, /id: \$json\.id/);
 });
 
+test('MAIN 01 Check token: the action `feedback` is a known action, and the Config values SUB 17 needs reach the Route (caught by the first live call, 15 Oct 2026)', () => {
+  const j = { demo_token: 't', headers: { 'x-gs-token': 't' }, body: { action: 'feedback' }, kill_switch: false, supabase_url: 'u', params_version: 1, kitchen_id: UUID,
+    jev_enabled: true, jev_model: 'm', jev_cost_cap: 0.001, drive_folder_id: 'FOLDER1', chat_id: '42', env: 'dev' };
+  const r = run('check_token.js', j);
+  assert.equal(r.action, 'feedback');
+  assert.deepEqual([r.drive_folder_id, r.chat_id, r.env], ['FOLDER1', '42', 'dev']);
+  assert.equal(run('check_token.js', { ...j, body: { action: 'nope' } }).action, 'bad');
+});
+
 test('prod copy: its own folder, `prod` in the message, PROD in the name, nothing from dev', () => {
   const prod = build({ ids: IDS, env: 'prod', driveFolderId: 'FOLDERP', envName: 'prod', chatId: '42' });
   assert.equal(prod.sub17.name, 'GS SUB 17 Feedback PROD');
