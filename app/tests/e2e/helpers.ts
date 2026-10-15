@@ -16,15 +16,16 @@ export const decisionOf = (over: object = {}) => ({
   use_case: "D1", rule_pick: "r2", chosen_pick: "r2", chosen_by: "rule", jev_status: "ok", jev: { pick: "r2", confidence: 0.81, agrees: true, ms: 310 }, ...over,
 });
 
-type Calls = { status: any[]; decide: any[]; health: any[]; rpc: { name: string; body: any }[]; orderReads: string[] };
+type Calls = { signups: number; status: any[]; decide: any[]; health: any[]; rpc: { name: string; body: any }[]; orderReads: string[] };
 export async function setup(context: BrowserContext, page: Page, initial: object[] = []) {
-  const calls: Calls = { status: [], decide: [], health: [], rpc: [], orderReads: [] };
+  const calls: Calls = { signups: 0, status: [], decide: [], health: [], rpc: [], orderReads: [] };
   const state = { orders: initial, reply: null as null | { status: number; body: unknown }, menuUp: true, decisions: [] as object[], runs: [] as object[], runCount: 0 };
   const json = (route: any, status: number, body: unknown) => route.fulfill({ status, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(body) });
   await context.route("https://test.supabase.co/**", async (route) => {
     const req = route.request();
     if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: CORS });
     if (req.url().includes("/auth/v1/signup")) {
+      calls.signups++;
       return json(route, 200, { access_token: JWT, token_type: "bearer", expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: "r",
         user: { id: SESSION, aud: "authenticated", role: "authenticated", is_anonymous: true, app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() } });
     }
