@@ -7,7 +7,7 @@ const path = require('path');
 const { build, PLACEHOLDER } = require('./build');
 const { checkLayout } = require('../lib/layout_checks');
 
-const IDS = { main01: 'MAIN1', sub11: 'SUB11', sub12: 'SUB12', sub13: 'SUB13', sub14: 'SUB14', sub15: 'SUB15', sub16: 'SUB16', sub17: 'SUB17', sub91: 'SUB91', main90: 'MAIN90', alert: 'ALERT1' };
+const IDS = { main01: 'MAIN1', sub11: 'SUB11', sub12: 'SUB12', sub13: 'SUB13', sub14: 'SUB14', sub15: 'SUB15', sub16: 'SUB16', sub17: 'SUB17', sub18: 'SUB18', sub91: 'SUB91', main90: 'MAIN90', alert: 'ALERT1' };
 const wf = build({ ids: IDS, driveFolderId: 'FOLDER1', chatId: '42', envName: 'dev' });
 const UUID = '11111111-1111-1111-1111-111111111111';
 const ORDER = '22222222-2222-2222-2222-222222222222';
@@ -50,11 +50,11 @@ test('Guard: the biggest picture the phone can send (1.5 MB, 2,097,152 base64 ch
 
 test('Build message: <, > and & in the tester\'s words are escaped, so Telegram HTML never refuses the message', () => {
   const g = { ...guard({ text: 'a <b> & c *star* _under_ [link]', screen: '/x?a=1&b=2' }), id: 'f1', ok: true };
-  const m = run('feedback_message.js', {}, { 'Check saved': g });
+  const m = run('feedback_message.js', {}, { Start: g });
   assert.match(m.text, /a &lt;b&gt; &amp; c \*star\* _under_ \[link\]/);
   assert.match(m.text, /\/x\?a=1&amp;b=2/);
   assert.ok(!/<b>/.test(m.text));
-  assert.equal(byName(wf.sub17, 'Notify owner').parameters.additionalFields.parse_mode, 'HTML');
+  assert.equal(byName(wf.sub18, 'Notify owner').parameters.additionalFields.parse_mode, 'HTML');
 });
 
 test('S5 Check saved: only a stored row goes on; any database refusal is 502 and never leaks raw text', () => {
@@ -81,17 +81,17 @@ test('Make file: the picture becomes a JPEG named date, role and the first 8 cha
 
 test('Build message: first lines, the kind of work, the order, and the Drive link or why there is none', () => {
   const g = { ...guard({}), id: 'f1', ok: true };
-  const withLink = run('feedback_message.js', {}, { 'Check saved': g, 'Upload to Drive': { id: 'DRIVE9' } });
+  const withLink = run('feedback_message.js', {}, { Start: g, 'Upload to Drive': { id: 'DRIVE9' } });
   assert.match(withLink.text, /New feedback \(dev\) from kitchen/);
   assert.match(withLink.text, /Accept button did nothing/);
   assert.match(withLink.text, /cooking/);
   assert.match(withLink.text, /https:\/\/drive\.google\.com\/file\/d\/DRIVE9\/view/);
   assert.equal(withLink.chat_id, '42');
-  const none = run('feedback_message.js', {}, { 'Check saved': { ...g, has_image: false } });
+  const none = run('feedback_message.js', {}, { Start: { ...g, has_image: false } });
   assert.match(none.text, /no picture/);
-  const failed = run('feedback_message.js', {}, { 'Check saved': g, 'Upload to Drive': { error: { message: 'x' } } });
+  const failed = run('feedback_message.js', {}, { Start: g, 'Upload to Drive': { error: { message: 'x' } } });
   assert.match(failed.text, /picture not saved/i);
-  const off = run('feedback_message.js', {}, { 'Check saved': { ...g, drive_ready: false } });
+  const off = run('feedback_message.js', {}, { Start: { ...g, drive_ready: false } });
   assert.match(off.text, /picture not saved/i);
 });
 
@@ -100,7 +100,7 @@ test('Answer: 201 with the new id', () => {
   assert.deepEqual(r, { ok: true, status_code: 201, id: 'f1' });
 });
 
-test('wiring SUB 17: guard, then one write that fails closed, then the picture, then Telegram, then the answer', () => {
+test('wiring SUB 17: guard, then one write that fails closed, then the side effects are started without waiting, then the answer', () => {
   const w = wf.sub17;
   assert.equal(w.name, 'GS SUB 17 Feedback');
   assert.deepEqual(next(w, 'Start'), ['Guard']);
@@ -108,31 +108,49 @@ test('wiring SUB 17: guard, then one write that fails closed, then the picture, 
   assert.deepEqual([next(w, 'Allowed?', 0), next(w, 'Allowed?', 1)], [['Save report'], ['Return refusal']]);
   assert.deepEqual(next(w, 'Save report'), ['Check saved']);
   assert.deepEqual(next(w, 'Check saved'), ['Saved?']);
-  assert.deepEqual([next(w, 'Saved?', 0), next(w, 'Saved?', 1)], [['Has picture?'], ['Return refusal']]);
+  assert.deepEqual([next(w, 'Saved?', 0), next(w, 'Saved?', 1)], [['Start side effects'], ['Return refusal']]);
+  assert.deepEqual(next(w, 'Start side effects'), ['Answer']);
+  const save = byName(w, 'Save report');
+  assert.equal(save.onError, undefined);                                        // B7: the write path fails closed
+  assert.equal(save.parameters.options.response.response.neverError, true);    // read in Check saved, so a refusal becomes 502
+  assert.match(save.parameters.url, /\/rest\/v1\/feedback$/);
+  // F90: the phone gets its answer right after the row is saved. Drive and Telegram run in SUB 18 and are not waited for.
+  const side = byName(w, 'Start side effects');
+  assert.equal(side.parameters.workflowId.value, IDS.sub18);
+  assert.equal(side.parameters.options.waitForSubWorkflow, false);
+  assert.equal(side.onError, 'continueRegularOutput');
+  for (const slow of ['Upload to Drive', 'Make file', 'Link file', 'Notify owner', 'Build message']) assert.equal(byName(w, slow), undefined, slow + ' must not be in SUB 17');
+  const declared = byName(wf.sub18, 'Start').parameters.workflowInputs.values.map((v) => v.name).sort();
+  assert.deepEqual(Object.keys(side.parameters.workflowInputs.value).sort(), declared);
+});
+
+test('wiring SUB 18: picture to Drive, link, then the Telegram message; each side effect continues on error; only SUB 17 may call it', () => {
+  const w = wf.sub18;
+  assert.equal(w.name, 'GS SUB 18 Feedback side effects');
+  assert.deepEqual(next(w, 'Start'), ['Has picture?']);
   assert.deepEqual([next(w, 'Has picture?', 0), next(w, 'Has picture?', 1)], [['Make file'], ['Build message']]);
   assert.deepEqual(next(w, 'Make file'), ['Upload to Drive']);
   assert.deepEqual(next(w, 'Upload to Drive'), ['Link file']);
   assert.deepEqual(next(w, 'Link file'), ['Build message']);
   assert.deepEqual(next(w, 'Build message'), ['Notify owner']);
-  assert.deepEqual(next(w, 'Notify owner'), ['Answer']);
-  const save = byName(w, 'Save report');
-  assert.equal(save.onError, undefined);                                        // B7: the write path fails closed
-  assert.equal(save.parameters.options.response.response.neverError, true);    // read in Check saved, so a refusal becomes 502
-  assert.match(save.parameters.url, /\/rest\/v1\/feedback$/);
   for (const side of ['Upload to Drive', 'Link file', 'Notify owner']) assert.equal(byName(w, side).onError, 'continueRegularOutput', side);   // a side effect never undoes the saved report
+  assert.equal(w.settings.callerPolicy, 'workflowsFromAList');
+  assert.equal(w.settings.callerIds, IDS.sub17);
+  assert.match(byName(w, 'Link file').parameters.url, /\$\('Start'\)/);
 });
 
-test('wiring SUB 17: Drive and Telegram use the named credentials; the file goes into the folder from Config', () => {
-  const w = wf.sub17;
+test('wiring: Drive and Telegram use the named credentials; the file goes into the folder from Config', () => {
+  const w = wf.sub18;
   const drive = byName(w, 'Upload to Drive');
   assert.equal(drive.type, 'n8n-nodes-base.googleDrive');
   assert.deepEqual([drive.parameters.resource, drive.parameters.operation], ['file', 'upload']);
   assert.equal(drive.credentials.googleDriveOAuth2Api.name, 'Klickbae8yt@gmail.com');
   assert.match(drive.parameters.folderId.value, /drive_folder_id/);
   assert.equal(byName(w, 'Notify owner').credentials.telegramApi.name, 'GoServeBot');
-  assert.equal(byName(w, 'Save report').credentials.httpCustomAuth.name, 'GoServe Supabase dev');
-  assert.equal(w.settings.callerPolicy, 'workflowsFromAList');
-  assert.equal(w.settings.callerIds, IDS.main01);
+  assert.equal(byName(w, 'Notify owner').parameters.additionalFields.parse_mode, 'HTML');
+  assert.equal(byName(wf.sub17, 'Save report').credentials.httpCustomAuth.name, 'GoServe Supabase dev');
+  assert.equal(wf.sub17.settings.callerPolicy, 'workflowsFromAList');
+  assert.equal(wf.sub17.settings.callerIds, IDS.main01);
 });
 
 test('wiring MAIN 01: the route `feedback` calls SUB 17 with the fields its trigger declares, and the answer carries the id', () => {
@@ -164,11 +182,12 @@ test('MAIN 01 Check token: the action `feedback` is a known action, and the Conf
 test('prod copy: its own folder, `prod` in the message, PROD in the name, nothing from dev', () => {
   const prod = build({ ids: IDS, env: 'prod', driveFolderId: 'FOLDERP', envName: 'prod', chatId: '42' });
   assert.equal(prod.sub17.name, 'GS SUB 17 Feedback PROD');
+  assert.equal(prod.sub18.name, 'GS SUB 18 Feedback side effects PROD');
   const cfg = byName(prod.main01, 'Config').parameters.assignments.assignments;
   assert.deepEqual([cfg.find((a) => a.name === 'drive_folder_id').value, cfg.find((a) => a.name === 'env').value], ['FOLDERP', 'prod']);
 });
 
 test('safety and layout: no secret in the build, the canvas rules hold', () => {
   assert.ok(!/eyJ[A-Za-z0-9_-]{20,}/.test(JSON.stringify(wf.sub17)));
-  for (const key of ['sub17', 'main01']) assert.deepEqual(checkLayout(wf[key], wf[key].sections), []);
+  for (const key of ['sub17', 'sub18', 'main01']) assert.deepEqual(checkLayout(wf[key], wf[key].sections), []);
 });

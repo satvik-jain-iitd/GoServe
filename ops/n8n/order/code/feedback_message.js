@@ -1,7 +1,7 @@
-// SUB 17, node "Build message": one short Telegram message (HTML) for the owner: first lines, kind of work, order, and the Drive link or why there is none.
+// SUB 18, node "Build message": one short Telegram message (HTML) for the owner: first lines, kind of work, order, and the Drive link or why there is none.
 // What the tester typed is escaped (&, <, >) so Telegram never refuses the message.
 const esc = (v) => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const s = $('Check saved').first().json;
+const s = $('Start').first().json;
 const up = $('Upload to Drive');
 let picture = 'no picture';
 if (s.has_image) {
