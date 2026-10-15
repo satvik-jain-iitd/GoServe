@@ -138,3 +138,4 @@ short. Say what happened and what to do next time.
 - Two environments must share nothing by accident: one table (address, credential, token, name mark) in the deploy script, and a test that the prod build holds no dev address. The alert workflow is the one thing shared on purpose.
 - Look before asking the owner to click. The Pages project had existed since 12 Oct; the 522 only meant 'nothing deployed'. A read-only `cf pages list` settled it in one call after a one-time login.
 - `git add -A` after a tool made a cache folder in the working tree committed it. A guard that blocks by path (not only by content) and a `.gitignore` line close the gap. Check `git status` before `add -A` after any CLI login.
+- A live spec that reuses the selectors of a one-off script (the 15 Oct browser check) passed 20 of 20 first time, so keep one-off checks as a real spec file instead of a scratch script. It writes to dev, so it is run by hand, not in CI.

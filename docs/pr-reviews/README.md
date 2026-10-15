@@ -39,7 +39,7 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana â
 | 22 | [#82](pr-82-release-db-name-check.md) | feat(ops): release script checks the prod project name | MERGED (6 answered; cache file removed) | follow-up to #78; prod DB done 15 Oct |
 | 23 | [#84](pr-84-role-apps.md) | feat(app): role apps as separate installable PWAs on one origin | MERGED (10 answered; docs conflicts resolved) | #83 (slice 1), owner direction 15 Oct |
 | 24 | [#85](pr-85-prod-workflows.md) | feat(ops): prod copy of the order workflows, deployed inactive | MERGED (9 answered) | #78 (slice S3) |
-| 25 | [#86](pr-86-guard-by-path.md) | chore: guard blocks tool caches by path, small review notes | NEEDS-FIX (5 posted, 1 must-fix: cache file again, Guard red) | follow-up to the 15 Oct review round |
+| 25 | [#86](pr-86-guard-by-path.md) | chore: guard blocks tool caches by path, small review notes | MERGED `31921e3` (fix `c6bdc09`, APPROVE 5528905183 on `75c4df8`) | follow-up to the 15 Oct review round |
 
 ## Journals
 - [concepts.md](concepts.md) â€” naye technical words, plain Hindi mein.

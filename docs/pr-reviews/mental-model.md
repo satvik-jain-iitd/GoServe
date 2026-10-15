@@ -2,7 +2,7 @@
 
 System ka ek-page picture. Har chapter ke baad update karta hoon.
 
-_Last updated: PRs #62–#82, #84, #85 merged; #86 needs a fix (15 Oct); ten dev workflows active; prod DB set up; nine prod workflows inactive_
+_Last updated: PRs #62–#82, #84–#86 merged (15 Oct); ten dev workflows active; prod DB set up; nine prod workflows inactive_
 
 ## GoServe — ab tak ki tasveer
 
