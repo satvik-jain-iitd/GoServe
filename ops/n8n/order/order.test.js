@@ -158,10 +158,10 @@ test('error alert: the message escapes HTML and carries workflow, node, error an
   assert.doesNotThrow(() => run('format_alert.js', {}));
 });
 
-test('deploy: only the eleven GS workflows, alert first and MAIN last; the PUT body has only the allowed keys', () => {
+test('deploy: only the twelve GS workflows, alert first and MAIN last; the PUT body has only the allowed keys', () => {
   const { payload, NAMES, ORDER } = require('./deploy');
-  assert.deepEqual(ORDER, ['alert', 'sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'sub16', 'sub17', 'sub91', 'main01', 'main90']);
-  assert.deepEqual(ORDER.map((k) => NAMES[k]), [wf.alert.name, wf.sub11.name, wf.sub12.name, wf.sub13.name, wf.sub14.name, wf.sub15.name, wf.sub16.name, wf.sub17.name, wf.sub91.name, wf.main01.name, wf.main90.name]);
+  assert.deepEqual(ORDER, ['alert', 'sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'sub16', 'sub18', 'sub17', 'sub91', 'main01', 'main90']);
+  assert.deepEqual(ORDER.map((k) => NAMES[k]), [wf.alert.name, wf.sub11.name, wf.sub12.name, wf.sub13.name, wf.sub14.name, wf.sub15.name, wf.sub16.name, wf.sub18.name, wf.sub17.name, wf.sub91.name, wf.main01.name, wf.main90.name]);
   assert.deepEqual(Object.keys(payload(wf.main01)).sort(), ['connections', 'name', 'nodes', 'settings']);
   const src = fs.readFileSync(path.join(__dirname, 'deploy.js'), 'utf8');
   assert.ok(!/\/activate|'DELETE'/.test(src), 'deploy must never activate or delete');

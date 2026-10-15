@@ -170,10 +170,17 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
   const sub16 = finish('GS SUB 16 Health', n16, e16, s16, subSettings);
 
 
-  // ---- SUB 17 Feedback: save a tester's report, then Drive and Telegram as best effort (story S-B, #94) ----
+  const callSub = (id, name, subId, mapping, wait = true) => node(id, name, 'n8n-nodes-base.executeWorkflow', 1.2, {
+    source: 'database', workflowId: { __rl: true, value: subId, mode: 'id' },
+    workflowInputs: { mappingMode: 'defineBelow', value: Object.fromEntries(mapping.map(([k, v]) => [k, v])), matchingColumns: [],
+      schema: schemaOf(mapping.map(([k, , t]) => [k, t])), attemptToConvertTypes: false, convertFieldsToString: false },
+    mode: 'once', options: { waitForSubWorkflow: wait } });
+
+  // ---- SUB 17 Feedback: save a tester's report and answer; Drive and Telegram run in SUB 18 without being waited for (story S-B, #94; F90) ----
   const f17 = [['session_id', 'string'], ['kitchen_id', 'string'], ['role', 'string'], ['screen', 'string'], ['order_id', 'string'], ['doing', 'string'], ['text', 'string'], ['context', 'object'],
     ['image_b64', 'string'], ['kill_switch', 'boolean'], ['supabase_url', 'string'], ['drive_folder_id', 'string'], ['chat_id', 'string'], ['env', 'string']];
   const side = { onError: 'continueRegularOutput' };   // a side effect never undoes the saved report
+  const f18 = [['id', 'string'], ['row', 'object'], ['image_b64', 'string'], ['has_image', 'boolean'], ['drive_ready', 'boolean'], ['drive_folder_id', 'string'], ['chat_id', 'string'], ['env', 'string'], ['supabase_url', 'string']];
   const n17 = [
     node('gs-sub17-01', 'Start', 'n8n-nodes-base.executeWorkflowTrigger', 1.1, inputs(f17)),
     codeNode('gs-sub17-02', 'Guard', code('guard_feedback.js')),
@@ -185,43 +192,50 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
       options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 } }, { credentials: { httpCustomAuth: cred } }),
     codeNode('gs-sub17-05', 'Check saved', code('feedback_saved.js')),
     ifNode('gs-sub17-06', 'Saved?', '={{ $json.ok }}', 'true'),
-    ifNode('gs-sub17-07', 'Has picture?', '={{ $json.has_image && $json.drive_ready }}', 'true'),
-    codeNode('gs-sub17-08', 'Make file', code('feedback_file.js')),
-    node('gs-sub17-09', 'Upload to Drive', 'n8n-nodes-base.googleDrive', 3, { resource: 'file', operation: 'upload', inputDataFieldName: 'data', name: '={{ $json.file_name }}',
-      driveId: { __rl: true, mode: 'list', value: 'My Drive' }, folderId: { __rl: true, mode: 'id', value: '={{ $json.drive_folder_id }}' }, options: {} },
-      Object.assign({ credentials: { googleDriveOAuth2Api: { id: '6KXFSSShw2vwLVK5', name: 'Klickbae8yt@gmail.com' } } }, side)),
-    node('gs-sub17-10', 'Link file', 'n8n-nodes-base.httpRequest', 4.2, {
-      method: 'PATCH', url: "={{ $('Check saved').first().json.supabase_url }}/rest/v1/feedback?id=eq.{{ $('Check saved').first().json.id }}",
-      authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
-      sendHeaders: true, headerParameters: { parameters: [{ name: 'Prefer', value: 'return=minimal' }] },
-      sendBody: true, specifyBody: 'json', jsonBody: '={{ { drive_file_id: $json.id || null } }}',
-      options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 } },
-      Object.assign({ credentials: { httpCustomAuth: cred } }, side)),
-    codeNode('gs-sub17-11', 'Build message', code('feedback_message.js')),
-    node('gs-sub17-12', 'Notify owner', 'n8n-nodes-base.telegram', 1.2, { resource: 'message', operation: 'sendMessage', chatId: '={{ $json.chat_id }}', text: '={{ $json.text }}',
-      additionalFields: { parse_mode: 'HTML', appendAttribution: false } }, Object.assign({ credentials: { telegramApi: { id: 'bBVpWzhaY0MCpoQ5', name: 'GoServeBot' } } }, side)),
-    codeNode('gs-sub17-13', 'Answer', code('feedback_answer.js')),
-    node('gs-sub17-14', 'Return refusal', 'n8n-nodes-base.noOp', 1, {}),
+    Object.assign(callSub('gs-sub17-07', 'Start side effects', ids.sub18, f18.map(([k, t]) => [k, k === 'id' ? '={{ $json.id }}' : '={{ $json.' + k + ' }}', t]), false), side),
+    codeNode('gs-sub17-08', 'Answer', code('feedback_answer.js')),
+    node('gs-sub17-09', 'Return refusal', 'n8n-nodes-base.noOp', 1, {}),
   ];
   const e17 = [['Start', 'Guard'], ['Guard', 'Allowed?'], ['Allowed?', 'Save report', 0], ['Allowed?', 'Return refusal', 1], ['Save report', 'Check saved'], ['Check saved', 'Saved?'],
-    ['Saved?', 'Has picture?', 0], ['Saved?', 'Return refusal', 1], ['Has picture?', 'Make file', 0], ['Has picture?', 'Build message', 1], ['Make file', 'Upload to Drive'],
-    ['Upload to Drive', 'Link file'], ['Link file', 'Build message'], ['Build message', 'Notify owner'], ['Notify owner', 'Answer']];
+    ['Saved?', 'Start side effects', 0], ['Saved?', 'Return refusal', 1], ['Start side effects', 'Answer']];
   const s17 = [
     { name: 'RECEIVE', what: 'The MAIN workflow calls this with a tester\'s report.', needs: 'Input: ' + f17.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
     { name: 'CHECK', what: 'Refuse if the kill switch is on or the report is not valid. Nothing is written here.', needs: 'Input fields. No credential.', nodes: ['Guard', 'Allowed?'], color: 5 },
     { name: 'SAVE', what: 'Write one feedback row. If the database refuses, stop with 502: no Drive file and no message are made.', needs: 'Credential "GoServe Supabase dev". Table: feedback.', nodes: ['Save report', 'Check saved', 'Saved?'], color: 6 },
-    { name: 'PICTURE', what: 'If there is a screenshot, put it in the Google Drive folder and link the file to the row. If Drive fails, go on.', needs: 'Credential "Klickbae8yt@gmail.com". Config: drive_folder_id.', nodes: ['Has picture?', 'Make file', 'Upload to Drive', 'Link file'], color: 6 },
-    { name: 'TELL', what: 'Send the owner one Telegram message with the first lines and the Drive link. If Telegram fails, go on.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Build message', 'Notify owner'], color: 6 },
+    { name: 'SIDE EFFECTS', what: 'Start SUB 18 (Drive and Telegram) and do not wait for it. If it cannot start, go on.', needs: 'SUB 18 id. The saved row and the picture.', nodes: ['Start side effects'], color: 6 },
     { name: 'ANSWER', what: 'Tell the phone it is saved (201 and the new id).', needs: 'The saved row.', nodes: ['Answer'], color: 5 },
     refuseSection,
   ];
   const sub17 = finish('GS SUB 17 Feedback', n17, e17, s17, subSettings);
 
-  const callSub = (id, name, subId, mapping) => node(id, name, 'n8n-nodes-base.executeWorkflow', 1.2, {
-    source: 'database', workflowId: { __rl: true, value: subId, mode: 'id' },
-    workflowInputs: { mappingMode: 'defineBelow', value: Object.fromEntries(mapping.map(([k, v]) => [k, v])), matchingColumns: [],
-      schema: schemaOf(mapping.map(([k, , t]) => [k, t])), attemptToConvertTypes: false, convertFieldsToString: false },
-    mode: 'once', options: { waitForSubWorkflow: true } });
+  // ---- SUB 18 Feedback side effects: the screenshot to Google Drive and one Telegram message (story S-B; answered after the row, F90) ----
+  const n18 = [
+    node('gs-sub18-01', 'Start', 'n8n-nodes-base.executeWorkflowTrigger', 1.1, inputs(f18)),
+    ifNode('gs-sub18-02', 'Has picture?', '={{ $json.has_image && $json.drive_ready }}', 'true'),
+    codeNode('gs-sub18-03', 'Make file', code('feedback_file.js')),
+    node('gs-sub18-04', 'Upload to Drive', 'n8n-nodes-base.googleDrive', 3, { resource: 'file', operation: 'upload', inputDataFieldName: 'data', name: '={{ $json.file_name }}',
+      driveId: { __rl: true, mode: 'list', value: 'My Drive' }, folderId: { __rl: true, mode: 'id', value: '={{ $json.drive_folder_id }}' }, options: {} },
+      Object.assign({ credentials: { googleDriveOAuth2Api: { id: '6KXFSSShw2vwLVK5', name: 'Klickbae8yt@gmail.com' } } }, side)),
+    node('gs-sub18-05', 'Link file', 'n8n-nodes-base.httpRequest', 4.2, {
+      method: 'PATCH', url: "={{ $('Start').first().json.supabase_url }}/rest/v1/feedback?id=eq.{{ $('Start').first().json.id }}",
+      authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
+      sendHeaders: true, headerParameters: { parameters: [{ name: 'Prefer', value: 'return=minimal' }] },
+      sendBody: true, specifyBody: 'json', jsonBody: '={{ { drive_file_id: $json.id || null } }}',
+      options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 } },
+      Object.assign({ credentials: { httpCustomAuth: cred } }, side)),
+    codeNode('gs-sub18-06', 'Build message', code('feedback_message.js')),
+    node('gs-sub18-07', 'Notify owner', 'n8n-nodes-base.telegram', 1.2, { resource: 'message', operation: 'sendMessage', chatId: '={{ $json.chat_id }}', text: '={{ $json.text }}',
+      additionalFields: { parse_mode: 'HTML', appendAttribution: false } }, Object.assign({ credentials: { telegramApi: { id: 'bBVpWzhaY0MCpoQ5', name: 'GoServeBot' } } }, side)),
+  ];
+  const e18 = [['Start', 'Has picture?'], ['Has picture?', 'Make file', 0], ['Has picture?', 'Build message', 1], ['Make file', 'Upload to Drive'], ['Upload to Drive', 'Link file'],
+    ['Link file', 'Build message'], ['Build message', 'Notify owner']];
+  const s18 = [
+    { name: 'RECEIVE', what: 'SUB 17 calls this after the report is saved, and does not wait.', needs: 'Input: ' + f18.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
+    { name: 'PICTURE', what: 'If there is a screenshot, put it in the Google Drive folder and link the file to the row. If Drive fails, go on.', needs: 'Credential "Klickbae8yt@gmail.com". Input: drive_folder_id.', nodes: ['Has picture?', 'Make file', 'Upload to Drive', 'Link file'], color: 6 },
+    { name: 'TELL', what: 'Send the owner one Telegram message with the first lines and the Drive link. If Telegram fails, go on.', needs: 'Credential "GoServeBot". Input: chat_id.', nodes: ['Build message', 'Notify owner'], color: 6 },
+  ];
+  const sub18 = finish('GS SUB 18 Feedback side effects', n18, e18, s18, Object.assign({}, settings, { callerPolicy: 'workflowsFromAList', callerIds: ids.sub17 }));
+
   const body = (f) => `={{ $json.body.${f} }}`;
   const respond = (id, name, code_, text) => node(id, name, 'n8n-nodes-base.respondToWebhook', 1.1, { respondWith: 'json', responseBody: text, options: { responseCode: code_ } });
   const answer = '={{ JSON.stringify({ ok: $json.ok, error: $json.error, message: $json.message, created: $json.created, order: $json.order, decision: $json.decision, jev: $json.jev, id: $json.id, already_done: $json.already_done, confirm_after_ready_min: $(\'Config\').first().json.confirm_after_ready_min, confirm_after_place_min: $(\'Config\').first().json.confirm_after_place_min }) }}';
@@ -371,7 +385,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send alert'], color: 6 },
   ];
   const alert = finish('GS ERR 00 Alert', aNodes, aEdges, aSections, baseSettings);
-  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub91, main01, main90, alert };
+  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub91, main01, main90, alert };
   if (prod) for (const k of Object.keys(all)) if (k !== 'alert') all[k].name += ' PROD';   // the one GS ERR 00 alert is shared (one bot, one chat)
   return { ...all, STATUS_ROLES };
 }
