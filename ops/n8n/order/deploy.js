@@ -38,10 +38,12 @@ async function main() {
   if (!credential) throw new Error('credential "' + CREDENTIAL + '" not found');
   const jevCredential = creds.find((c) => c.name === JEV_CREDENTIAL);   // needs the owner's yes; the apply refuses without it
   const ids = {};
+  const wasActive = {};
   for (const k of ORDER) {
     const found = wfs.filter((w) => w.name === NAMES[k]);
     if (found.length > 1) throw new Error('two workflows named "' + NAMES[k] + '": report to the owner, do not deploy');
     ids[k] = found[0] ? found[0].id : null;
+    wasActive[k] = !!(found[0] && found[0].active);
   }
   console.log('Plan (' + (apply ? 'APPLY' : 'dry run') + '):');
   for (const k of ORDER) console.log('  ' + NAMES[k].padEnd(30) + (ids[k] ? 'update ' + ids[k] : 'create'));
@@ -62,8 +64,9 @@ async function main() {
   for (const k of ORDER) {
     await call('PUT', '/workflows/' + ids[k], payload(built[k]));
     const back = await call('GET', '/workflows/' + ids[k]);
-    if (back.nodes.length !== built[k].nodes.length || back.active) throw new Error(NAMES[k] + ': read-back differs or workflow is active');
-    console.log('  deployed ' + NAMES[k] + ' ' + ids[k] + ' (' + back.nodes.length + ' nodes, inactive)');
+    // Never activates: a workflow may only be active if it already was (the owner activated it).
+    if (back.nodes.length !== built[k].nodes.length || (back.active && !wasActive[k])) throw new Error(NAMES[k] + ': read-back differs or the workflow became active by itself');
+    console.log('  deployed ' + NAMES[k] + ' ' + ids[k] + ' (' + back.nodes.length + ' nodes, ' + (back.active ? 'active' : 'inactive') + ')');
   }
 }
 
