@@ -10,11 +10,11 @@ if (g.use_jev) {
   if (!res.error && res.statusCode === 200) {
     status = 'jev_bad_reply';
     const body = res.body && typeof res.body === 'object' ? res.body : {};
-    let reply = null;
-    try { reply = JSON.parse(body.choices[0].message.content); } catch (e) { reply = null; }
+    const a = body.answers && body.answers.rider;   // { type: 'choice', choice, confidence, probabilities }
+    const reply = a && a.type === 'choice' ? a : null;
     const cost = body.usage && typeof body.usage.cost === 'number' ? body.usage.cost : 0;
     if (reply && g.options.includes(reply.choice) && typeof reply.confidence === 'number' && reply.confidence >= 0 && reply.confidence <= 1) {
-      jev = { pick: reply.choice, confidence: reply.confidence, reason: String(reply.reason || '').slice(0, 200), model: body.model || null,
+      jev = { pick: reply.choice, confidence: reply.confidence, model: body.model || null,
         ms: Date.now() - g.started_at, cost, agrees: reply.choice === g.rule_pick };
       status = cost > g.jev_cost_cap ? 'cost_cap' : reply.confidence < THRESHOLD ? 'jev_low_confidence' : 'ok';
     }

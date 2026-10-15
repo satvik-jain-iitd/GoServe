@@ -98,7 +98,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     ifNode('gs-sub13-03', 'Allowed?', '={{ $json.ok }}', 'true'),
     ifNode('gs-sub13-04', 'Ask Jev?', '={{ $json.use_jev }}', 'true'),
     // Jev is advice. If it fails, the rule decision still goes through, so this one node continues on error. It is not a write path.
-    node('gs-sub13-05', 'Ask Jev', 'n8n-nodes-base.httpRequest', 4.2, { method: 'POST', url: 'https://openrouter.ai/api/v1/chat/completions',
+    node('gs-sub13-05', 'Ask Jev', 'n8n-nodes-base.httpRequest', 4.2, { method: 'POST', url: 'https://openrouter.ai/api/alpha/decisions',
       authentication: 'genericCredentialType', genericAuthType: 'httpHeaderAuth', sendBody: true, specifyBody: 'json', jsonBody: '={{ $json.jev_body }}',
       options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 900 } },
       { credentials: { httpHeaderAuth: jevCred }, onError: 'continueRegularOutput', retryOnFail: true, maxTries: 2, waitBetweenTries: 200 }),
@@ -152,7 +152,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     codeNode('gs-sub16-02', 'Prepare', code('health_prepare.js')),
     ifNode('gs-sub16-03', 'Ask Jev?', '={{ $json.use_jev }}', 'true'),
     // Jev is the thing being checked, so a failure is a result and not an error: this one node continues on error. It writes nothing.
-    node('gs-sub16-04', 'Ask Jev', 'n8n-nodes-base.httpRequest', 4.2, { method: 'POST', url: 'https://openrouter.ai/api/v1/chat/completions',
+    node('gs-sub16-04', 'Ask Jev', 'n8n-nodes-base.httpRequest', 4.2, { method: 'POST', url: 'https://openrouter.ai/api/alpha/decisions',
       authentication: 'genericCredentialType', genericAuthType: 'httpHeaderAuth', sendBody: true, specifyBody: 'json', jsonBody: '={{ $json.jev_body }}',
       options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 3000 } },
       { credentials: { httpHeaderAuth: jevCred }, onError: 'continueRegularOutput' }),
