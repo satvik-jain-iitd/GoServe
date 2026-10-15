@@ -16,10 +16,10 @@ export const decisionOf = (over: object = {}) => ({
   use_case: "D1", rule_pick: "r2", chosen_pick: "r2", chosen_by: "rule", jev_status: "ok", jev: { pick: "r2", confidence: 0.81, agrees: true, ms: 310 }, ...over,
 });
 
-type Calls = { signups: number; status: any[]; decide: any[]; health: any[]; rpc: { name: string; body: any }[]; orderReads: string[] };
+type Calls = { signups: number; status: any[]; decide: any[]; health: any[]; feedback: any[]; rpc: { name: string; body: any }[]; orderReads: string[] };
 export async function setup(context: BrowserContext, page: Page, initial: object[] = []) {
-  const calls: Calls = { signups: 0, status: [], decide: [], health: [], rpc: [], orderReads: [] };
-  const state = { orders: initial, reply: null as null | { status: number; body: unknown }, menuUp: true, decisions: [] as object[], runs: [] as object[], runCount: 0 };
+  const calls: Calls = { signups: 0, status: [], decide: [], health: [], feedback: [], rpc: [], orderReads: [] };
+  const state = { feedbackDown: false, orders: initial, reply: null as null | { status: number; body: unknown }, menuUp: true, decisions: [] as object[], runs: [] as object[], runCount: 0 };
   const json = (route: any, status: number, body: unknown) => route.fulfill({ status, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(body) });
   await context.route("https://test.supabase.co/**", async (route) => {
     const req = route.request();
@@ -58,6 +58,12 @@ export async function setup(context: BrowserContext, page: Page, initial: object
     if (body.action === "health") {
       calls.health.push({ headers: req.headers(), body });
       const r = state.reply ?? { status: 200, body: { ok: true, jev: { ok: true, status: "ok", ms: 310 } } };
+      return json(route, r.status, r.body);
+    }
+    if (body.action === "feedback") {   // story S-B: a report; when feedbackDown is set the phone cannot reach the server
+      if (state.feedbackDown) return route.abort("internetdisconnected");
+      calls.feedback.push({ headers: req.headers(), body });
+      const r = state.reply ?? { status: 201, body: { ok: true, id: "f1" } };
       return json(route, r.status, r.body);
     }
     if (body.action === "decide") {

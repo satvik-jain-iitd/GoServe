@@ -8,7 +8,7 @@ import glob, json, os, sys, urllib.request
 DEV_REF = "tmxyizmkpwwfyazvrfhw"  # goserve-dev: never touched here
 HERE = os.path.dirname(os.path.abspath(__file__))
 API = "https://api.supabase.com/v1/projects"
-APP_TABLES = {"kitchens", "menu_items", "orders", "order_events", "decision_log", "run_log", "params", "session_links"}
+APP_TABLES = {"kitchens", "menu_items", "orders", "order_events", "decision_log", "run_log", "params", "session_links", "feedback"}
 
 
 def _call(method, ref, path, body=None):

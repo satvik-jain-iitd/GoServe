@@ -17,7 +17,7 @@ class Fake:
     def sql(self, ref, query):
         self.calls.append(("sql", ref, query))
         if "count(*) from menu_items" in query:   # the check after the apply
-            return [{"dishes": 10, "tables": 8, "policies": 6}]
+            return [{"dishes": 10, "tables": 9, "policies": 6}]
         if "information_schema.tables" in query:   # the probe before
             return [{"table_name": t} for t in self.existing]
         return []
@@ -67,6 +67,10 @@ class ReleaseDb(unittest.TestCase):
         self.assertEqual(names[0], "0001_schema.sql")
         self.assertGreaterEqual(len(names), 7)
 
+    def test_the_feedback_table_is_a_checked_app_table_with_its_migration(self):   # story S-B (#94)
+        self.assertIn("feedback", release_db.APP_TABLES)
+        self.assertIn("0008_feedback.sql", [os.path.basename(p) for p in release_db.migration_files()])
+
     def test_dry_run_only_reads(self):
         release_db.main([], {"SUPABASE_GOSERVE_PROD_URL": URL})
         for c in self.api.calls:
@@ -97,7 +101,7 @@ class ReleaseDb(unittest.TestCase):
     def test_a_failed_check_stops_with_a_message(self):
         orig = self.api.sql
         def bad(ref, q):
-            return [{"dishes": 3, "tables": 8, "policies": 6}] if "count(*) from menu_items" in q else orig(ref, q)
+            return [{"dishes": 3, "tables": 9, "policies": 6}] if "count(*) from menu_items" in q else orig(ref, q)
         release_db.sql = bad
         with self.assertRaises(SystemExit) as e:
             release_db.main(["--apply"], {"SUPABASE_GOSERVE_PROD_URL": URL})

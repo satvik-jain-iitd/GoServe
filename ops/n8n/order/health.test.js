@@ -55,7 +55,7 @@ test('check token: health is a known action', () => {
 test('wiring: MAIN 01 routes health to SUB 16, unknown goes to 400, and the answer carries jev', () => {
   const c = wf.main01.connections;
   const next = (n, i = 0) => c[n].main[i].map((x) => x.node);
-  assert.deepEqual([next('Route', 4), next('Route', 5)], [['Call SUB 16 Health'], ['Respond 400']]);
+  assert.deepEqual([next('Route', 4), next('Route', 6)], [['Call SUB 16 Health'], ['Respond 400']]);
   assert.deepEqual(next('Call SUB 16 Health'), ['Respond result']);
   const call = byName(wf.main01, 'Call SUB 16 Health').parameters;
   assert.equal(call.workflowId.value, 'SUB16');
