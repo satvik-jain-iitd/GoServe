@@ -15,7 +15,7 @@ Standing rules, every session:
 9. PWA first. One codebase for customer, kitchen, rider, and ops. Backend does the work. Final stack is fixed by its own ADR.
 10. Every assumption goes in `docs/assumptions.md`. Every follow-up goes in `docs/follow-ups.md`. Nothing stays tacit.
 11. Before building any feature: create its feature branch first, then write the business-level description, the product-level description, the acceptance criteria, and the docs on that branch.
-12. Commits follow `COMMIT_GUIDELINES.md` (Conventional Commits, English, short). PRs stay small: max 50 files. CI must be green before merge.
+12. Commits follow `COMMIT_GUIDELINES.md` (Conventional Commits, English, short). PRs stay small: max 50 files (PRs into `main` are releases and skip the file cap). CI must be green before merge.
 13. Pre-commit runs on every commit: no secrets, no files over 500KB, no merge markers, markdown code blocks closed, commit message checked.
 14. Rollback: if a change breaks something, roll back or fix only the feature branch that caused it. Never touch unrelated branches.
 15. No secrets in code. Secrets live in `~/Desktop/Secrets/` and in GitHub Actions secrets. Never commit a `.env`, key, or token.

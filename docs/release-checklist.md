@@ -10,9 +10,9 @@ This replaces F63 and F64 (a). Read `docs/architecture/phase-gate.md` first.
 | Prod Supabase project | **Done 15 Oct 2026:** seven migrations applied, anonymous sign-in ON, 10 dishes, 8 tables, 6 rules; security spot check passed. Prod has no orders and no users. |
 | Cloudflare Pages project `goserve-app` | **Exists** (made 12 Oct 2026, production branch `main`, no deployment yet; read with `cf pages list` after the owner's `cf auth login`, 15 Oct). `goserve-app.pages.dev` answers 522 only because nothing is deployed. |
 | Repo secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | Exist. |
-| Prod keys for the build (`PROD_VITE_*`) | Not set. |
+| Prod keys for the build (`PROD_VITE_*`) | **Set 15 Oct 2026** (four GitHub secrets from the vault). |
 | Prod copy of the order workflows | **Done 15 Oct 2026, inactive:** nine `PROD` workflows, credential `GoServe Supabase prod`, webhook path `gs-order-prod`. Waits for "activate". |
-| `main` | Has only the investor site and old code. The app reaches it through a release PR. |
+| `main` | **Release PR #91 merged 15 Oct 2026** (`b7a2a05`). The app is live at `goserve-app.pages.dev`; prod workflows SUB 11 to 16 and MAIN 01 PROD are active, MAIN 90 PROD and SUB 91 PROD stay off. |
 
 ## Steps, in order
 

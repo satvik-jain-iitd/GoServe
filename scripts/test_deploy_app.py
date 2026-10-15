@@ -33,6 +33,7 @@ class DeployApp(unittest.TestCase):
         self.assertNotIn("app/", site)
         self.assertNotIn("site/", re.search(r"paths:\n((?:\s+- .*\n)+)", self.text).group(1))
 
+    @unittest.skipUnless(os.path.exists(os.path.join(WF, "..", "..", "docs", "PLAN.md")), "docs live on dev, not on main (rule 17)")
     def test_release_list_carries_the_app_and_its_guard(self):
         root = os.path.join(WF, "..", "..")
         plan = open(os.path.join(root, "docs", "PLAN.md")).read()
