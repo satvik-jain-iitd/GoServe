@@ -89,7 +89,8 @@ jobs:
         run: |
           base=origin/${{ github.base_ref }}
           git diff --name-only --diff-filter=d "$base"...HEAD | grep -vE '^knowledge/|package-lock\.json$' | xargs -r python3 scripts/guard.py files
-          python3 scripts/guard.py count "$(git diff --name-only "$base"...HEAD | wc -l)"
+          # PRs into main are releases: they skip the file cap (owner, 15 Oct 2026)
+          [ "${{ github.base_ref }}" = main ] || python3 scripts/guard.py count "$(git diff --name-only "$base"...HEAD | wc -l)"
 
       - name: Commit messages
         if: github.event_name == 'pull_request'
