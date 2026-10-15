@@ -36,6 +36,8 @@ Place an order:
   "items": [{ "menu_item_id": "<uuid>", "qty": 2 }], "address": "Flat 4, Delhi" }
 ```
 
+Confirm delivery (the customer's Yes, story S-C): `{ "action": "confirm", "session_id": "...", "order_id": "..." }`. MAIN 01 calls SUB 12 as the customer with `to_status: confirm`; SUB 12 then calls the database function `confirm_delivery` instead of `change_status`. A ready order goes out for delivery and is delivered (as the customer), `orders.paid_by` becomes `cash`, and the events `order.picked_up`, `order.delivered`, `order.confirmed` are written. An order the rider already delivered only gets the cash and `order.confirmed`. A repeat answers 200 with `already_done: true`. A kitchen tap on the same step twice answers 409 `already_done`. An order that is not ready yet answers 409 `illegal_step`. Every answer also carries `confirm_after_ready_min` (3) and `confirm_after_place_min` (8) from the MAIN 01 Config, so the phone knows when to ask.
+
 Change status:
 
 ```json

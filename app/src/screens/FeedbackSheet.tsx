@@ -11,12 +11,13 @@ type Props = {
   order: { id: string; status: string } | null;
   getSession: () => Promise<string>;
   send: (report: Report) => Promise<unknown>;
+  preset?: { nonce: number; text: string; doing: Doing };   // opens the sheet with these words (the third Not yet, story S-C)
 };
 
 const BUILD = import.meta.env.VITE_BUILD ?? "dev";
 const phoneName = () => (navigator.userAgent.match(/\(([^)]+)\)/)?.[1] ?? "unknown").slice(0, 80);
 
-export function FeedbackSheet({ role, screen, order, getSession, send }: Props) {
+export function FeedbackSheet({ role, screen, order, getSession, send, preset }: Props) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [doing, setDoing] = useState<Doing>("other");
@@ -24,6 +25,15 @@ export function FeedbackSheet({ role, screen, order, getSession, send }: Props) 
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!preset) return;
+    setText(preset.text);
+    setDoing(preset.doing);
+    setMessage(null);
+    setError(null);
+    setOpen(true);
+  }, [preset?.nonce]);
 
   // Reports saved while the phone was offline go out when the app opens and when the phone is back online.
   useEffect(() => {

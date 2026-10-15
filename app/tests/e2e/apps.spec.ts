@@ -53,7 +53,7 @@ test("S1 one device: the customer app and the kitchen app share one session, wit
   await page.getByRole("button", { name: /View cart/ }).click();
   await page.getByLabel("Delivery address").fill("Flat 4, Green Park");
   await page.getByRole("button", { name: "Review bill" }).click();
-  await page.getByRole("button", { name: "Place order (pay later)" }).click();
+  await page.getByRole("button", { name: "Place order (cash on delivery)" }).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   expect(net.calls.signups).toBe(1);
   const kitchen = await context.newPage();   // a second app window on the same device (same browser profile)

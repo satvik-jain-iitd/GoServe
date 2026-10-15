@@ -37,7 +37,7 @@ async function mockNetwork(context: BrowserContext): Promise<Net> {
   return net;
 }
 
-test("S1 order path: add 2 dishes, see the bill, place the order (pay later)", async ({ page, context }) => {
+test("S1 order path: add 2 dishes, see the bill, place the order (cash on delivery)", async ({ page, context }) => {
   const net = await mockNetwork(context);
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "GoServe" })).toBeVisible();
@@ -54,7 +54,7 @@ test("S1 order path: add 2 dishes, see the bill, place the order (pay later)", a
 
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
   await expect(page.getByTestId("bill-total")).toHaveText("₹380.50");
-  await page.getByRole("button", { name: "Place order (pay later)" }).click();
+  await page.getByRole("button", { name: "Place order (cash on delivery)" }).click();
 
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   await expect(page.getByText("₹380.50")).toBeVisible();
@@ -97,12 +97,12 @@ test("S1 a refused order shows the reason, and the retry sends the same order ke
   await page.getByRole("button", { name: /View cart/ }).click();
   await page.getByLabel("Delivery address").fill("Flat 4");
   await page.getByRole("button", { name: "Review bill" }).click();
-  await page.getByRole("button", { name: "Place order (pay later)" }).click();
+  await page.getByRole("button", { name: "Place order (cash on delivery)" }).click();
   await expect(page.getByRole("alert")).toHaveText("Orders are paused. Please try again soon.");
-  await expect(page.getByRole("button", { name: "Place order (pay later)" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Place order (cash on delivery)" })).toBeEnabled();
 
   net.orderReply = { status: 200, body: { ok: true, created: false, order: ORDER } };
-  await page.getByRole("button", { name: "Place order (pay later)" }).click();
+  await page.getByRole("button", { name: "Place order (cash on delivery)" }).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   expect(net.orders).toHaveLength(2);
   expect(net.orders[1].body.client_order_key).toBe(net.orders[0].body.client_order_key);

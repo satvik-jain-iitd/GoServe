@@ -97,7 +97,7 @@ test('wiring: order after the trigger is Config, token check, kill switch, then 
   assert.deepEqual(next('Check token'), ['Token ok?']);
   assert.deepEqual([next('Token ok?', 0), next('Token ok?', 1)], [['Kill switch?'], ['Respond 401']]);
   assert.deepEqual([next('Kill switch?', 0), next('Kill switch?', 1)], [['Respond 503'], ['Route']]);
-  assert.deepEqual([next('Route', 0), next('Route', 1), next('Route', 2), next('Route', 3), next('Route', 4), next('Route', 6)], [['Call SUB 11 Place order'], ['Call SUB 12 Change status'], ['Call SUB 13 Decide'], ['Call SUB 15 Add event'], ['Call SUB 16 Health'], ['Respond 400']]);
+  assert.deepEqual([next('Route', 0), next('Route', 1), next('Route', 2), next('Route', 3), next('Route', 4), next('Route', 7)], [['Call SUB 11 Place order'], ['Call SUB 12 Change status'], ['Call SUB 13 Decide'], ['Call SUB 15 Add event'], ['Call SUB 16 Health'], ['Respond 400']]);
   assert.deepEqual(next('Call SUB 11 Place order'), ['Respond result']);
   assert.deepEqual(next('Call SUB 12 Change status'), ['Respond result']);
 });
