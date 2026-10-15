@@ -42,7 +42,7 @@ test('check token: event is a known action', () => {
 test('wiring: MAIN 01 routes event to SUB 15 and answers through Respond result', () => {
   const c = wf.main01.connections;
   const next = (n, i = 0) => c[n].main[i].map((x) => x.node);
-  assert.deepEqual([next('Route', 3), next('Route', 6)], [['Call SUB 15 Add event'], ['Respond 400']]);
+  assert.deepEqual([next('Route', 3), next('Route', 7)], [['Call SUB 15 Add event'], ['Respond 400']]);
   assert.deepEqual(next('Call SUB 15 Add event'), ['Respond result']);
   const call = byName(wf.main01, 'Call SUB 15 Add event').parameters;
   assert.equal(call.workflowId.value, 'SUB15');

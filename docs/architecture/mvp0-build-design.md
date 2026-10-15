@@ -14,7 +14,7 @@ The founder opens one app on his Android phone in front of an investor. He place
 ## 2. The 90-second demo script
 
 1. Open the installed app. Pick "Customer".
-2. Add 2 dishes. Place the order (pay later).
+2. Add 2 dishes. Place the order (cash on delivery).
 3. Switch to split view. The kitchen side gets a live alert.
 4. Tap Accept, Start, Ready.
 5. The ops side shows: "AI suggests rider R2 (81%). The rule agrees."

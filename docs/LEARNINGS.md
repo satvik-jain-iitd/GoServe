@@ -143,3 +143,5 @@ short. Say what happened and what to do next time.
 - Total running cost of MVP 0 is about zero: every tier is free, the Oracle server is on the free tier (owner, 15 Oct), and Jev costs about $0.00002 a decision with a $2 cap.
 - A new action in the order webhook changes the Route node: the fallback output moves one place. Four older tests held the old index. When a Switch gets a new output, grep every test that reads `Route` outputs.
 - A new action needs three edits, not two: the Route switch, the Call node and the allow-list in Check token. The unit tests covered the first two; only the first live call showed the third (400 bad_action). Add the action to the Check token test whenever a route is added.
+- A Postgres function called twice in one SELECT does not show its first change to a sub-select in the same statement. Test a repeat call in two statements.
+- A rule that depends on "the same status again" belongs in the function, not the row trigger: the trigger also runs when another column changes.

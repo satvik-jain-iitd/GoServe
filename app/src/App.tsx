@@ -4,7 +4,8 @@ import { addDish, cartLines, cartTotal, changeQty, toOrderItems, type Cart } fro
 import { kitchenOrders, mergeOrder, riderOrders, type Order, type RiderAction } from "./lib/kitchen";
 import { useLiveOrders } from "./lib/useLiveOrders";
 import { loadMenu, type Dish } from "./lib/menu";
-import { addEvent, changeStatus, orderDeps, placeOrder, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
+import { addEvent, changeStatus, confirmDelivery, orderDeps, placeOrder, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
+import { confirmAt, DEFAULT_CFG, notYet, reaskMs, type ConfirmCfg } from "./lib/confirm";
 import { pushTrail } from "./lib/trail";
 import { FeedbackSheet } from "./screens/FeedbackSheet";
 import { ensureSession, fetchMenuRows, getClient } from "./lib/supabase";
@@ -49,6 +50,18 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const { orders, setOrders } = live;
   const ops = useOps(ready && !demo && role === "ops", orders, api);   // the offline story never asks the server
   const keyRef = useRef<{ fingerprint: string; key: string } | null>(null);
+  // Delivered by hand (story S-C): the delivery question for the customer's order, the Yes, and the Not yet.
+  const [confirmCfg, setConfirmCfg] = useState<ConfirmCfg>(DEFAULT_CFG);
+  const [placedAt, setPlacedAt] = useState(() => new Date().toISOString());
+  const [asking, setAsking] = useState(false);
+  const [snoozeUntil, setSnoozeUntil] = useState(0);
+  const [confirming, setConfirming] = useState(false);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [preset, setPreset] = useState<{ nonce: number; text: string; doing: "ordering" } | undefined>();
+  const notYetCount = useRef(0);
+  const askingRef = useRef(false);
+  askingRef.current = asking;
+  const [reminder, setReminder] = useState<"ask" | "on" | "none">(() => (typeof Notification === "undefined" ? "none" : Notification.permission === "default" ? "ask" : Notification.permission === "granted" ? "on" : "none"));
   // The tracker goes back to the menu when the order it showed has left the list (the other device reset the demo).
   const trackedSeen = useRef(false);
   useEffect(() => {
@@ -60,6 +73,66 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       setStep("menu");
     }
   }, [orders, placed]);
+
+  const tracked = placed ? orders.find((o) => o.id === placed.id) ?? { status: placed.status, created_at: placedAt, updated_at: placed.updated_at, paid_by: placed.paid_by ?? null } : null;
+  useEffect(() => {
+    if (!tracked || demo) return void setAsking(false);
+    const check = () => {
+      const due = confirmAt(tracked, confirmCfg);
+      if (due === null) return void setAsking(false);
+      if (Date.now() >= Math.max(due, snoozeUntil)) {
+        if (!askingRef.current) remind();
+        setAsking(true);
+      }
+    };
+    check();
+    const timer = setInterval(check, 1000);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, [placed?.id, tracked?.status, tracked?.updated_at, tracked?.created_at, confirmCfg, snoozeUntil, demo]);
+
+  // The phone also shows a notification when the question comes, if the tester allowed it. Some phones only allow it through the service worker.
+  function remind() {
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    try {
+      new Notification("Was your order delivered?");
+    } catch {
+      navigator.serviceWorker?.ready.then((r) => r.showNotification("Was your order delivered?")).catch(() => undefined);
+    }
+  }
+  function allowReminder() {
+    Notification.requestPermission().then((p) => setReminder(p === "granted" ? "on" : "none"), () => setReminder("none"));
+  }
+  async function yes() {
+    if (!placed) return;
+    pushTrail("customer: yes, delivered");
+    setConfirming(true);
+    setConfirmError(null);
+    try {
+      const { order: saved } = await confirmDelivery({ sessionId: await currentSession(), orderId: placed.id }, api());
+      setOrders((cur) => (cur.some((o) => o.id === saved.id) ? mergeOrder(cur, { ...cur.find((o) => o.id === saved.id)!, status: saved.status, updated_at: saved.updated_at, paid_by: saved.paid_by ?? null }) : cur));
+      setPlaced({ ...placed, status: saved.status, updated_at: saved.updated_at, paid_by: saved.paid_by ?? null });
+      setAsking(false);
+    } catch (e) {
+      pushTrail(`error: ${e instanceof Error ? e.message : "confirm failed"}`);
+      setConfirmError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+    } finally {
+      setConfirming(false);
+    }
+  }
+  function notYetTap() {
+    const n = ++notYetCount.current;
+    pushTrail(`customer: not yet (${n})`);
+    const next = notYet(n, Date.now(), reaskMs());
+    setAsking(false);
+    if (next.feedback) {
+      setSnoozeUntil(Number.MAX_SAFE_INTEGER);   // the question stops; the Feedback sheet takes over
+      setPreset({ nonce: Date.now(), text: "Order not delivered", doing: "ordering" });
+    } else setSnoozeUntil(next.askAgainAt!);
+  }
 
   useEffect(() => {
     const code = joinCode(window.location.search);
@@ -101,8 +174,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       return null;
     } catch (e) {
       // "Already done" for Arriving means an earlier tap went through (the page may have been reloaded): that is success, not an error.
-      if (e instanceof PlaceError && e.code === "already_done" && action.kind === "event") {
-        setArrived((cur) => new Set(cur).add(order.id));
+      if (e instanceof PlaceError && e.code === "already_done") {
+        if (action.kind === "event") setArrived((cur) => new Set(cur).add(order.id));
         return null;
       }
       const message = e instanceof Error ? e.message : "Something went wrong. Please try again.";
@@ -206,11 +279,17 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       const fingerprint = JSON.stringify([items, address.trim()]);
       if (keyRef.current?.fingerprint !== fingerprint) keyRef.current = { fingerprint, key: crypto.randomUUID() };
       const sessionId = await currentSession();
-      const { order } = await placeOrder(
+      const { order, confirm } = await placeOrder(
         { sessionId, key: keyRef.current.key, items, address: address.trim() },
         api(),
       );
       setPlaced(order);
+      setConfirmCfg(confirm);
+      setPlacedAt(new Date().toISOString());
+      setAsking(false);
+      setSnoozeUntil(0);
+      setConfirmError(null);
+      notYetCount.current = 0;
       setStep("placed");
       setCart({});
       keyRef.current = null;
@@ -242,7 +321,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
           <BillScreen lines={lines} total={total} address={address.trim()} sending={sending} error={error}
             onBack={() => setStep("cart")} onPlace={place} />
         )}
-        {step === "placed" && placed && <PlacedScreen order={placed} status={orders.find((o) => o.id === placed.id)?.status ?? placed.status} onAgain={() => { setPlaced(null); setStep("menu"); }} />}
+        {step === "placed" && placed && (
+          <PlacedScreen order={placed} status={tracked?.status ?? placed.status} paidBy={tracked?.paid_by ?? null}
+            confirmedAt={tracked && tracked.status === "delivered" ? tracked.updated_at : null}
+            asking={asking} busy={confirming} error={confirmError} reminder={reminder}
+            onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} onAgain={() => { setPlaced(null); setStep("menu"); }} />
+        )}
     </>
   );
 
@@ -268,7 +352,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       {role === "customer" && customerView}
       <FeedbackSheet role={lock ?? "console"} screen={`${window.location.pathname}${lock ? "" : ` (${role} tab)`}`}
         order={placed ? { id: placed.id, status: orders.find((o) => o.id === placed.id)?.status ?? placed.status } : orders[0] ? { id: orders[0].id, status: orders[0].status } : null}
-        getSession={currentSession} send={(r) => sendFeedback(r, api())} />
+        getSession={currentSession} send={(r) => sendFeedback(r, api())} preset={preset} />
       {role === "split" && (
         <div className="panes">
           <div>{customerView}</div>

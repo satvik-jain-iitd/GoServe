@@ -21,7 +21,7 @@ export function BillScreen({ lines, total, address, sending, error, onBack, onPl
       {error && <p role="alert" className="error">{error}</p>}
       <div className="actions">
         <button type="button" className="btn ghost" disabled={sending} onClick={onBack}>Back to cart</button>
-        <button type="button" className="btn" disabled={sending} onClick={onPlace}>Place order (pay later)</button>
+        <button type="button" className="btn" disabled={sending} onClick={onPlace}>Place order (cash on delivery)</button>
       </div>
     </section>
   );
