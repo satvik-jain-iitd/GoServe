@@ -31,7 +31,7 @@ Model choice:
 
 | Setting | Value | Why |
 |---|---|---|
-| Timeout | 900 ms | If it is slower than this, fallback runs. (A real call from a laptop took 560 to 900 ms; check the time on the n8n box.) |
+| Timeout | 1500 ms (was 900 ms; 15 Oct 2026, the live decide step ran 6 times in 21 over 900 ms) | If it is slower than this, fallback runs. (A real call from a laptop took 560 to 900 ms; check the time on the n8n box.) |
 | Question type | `choice` (D1) | One option from a list, with a probability for each. |
 | Retries | 1 | One retry, then straight to fallback. |
 
@@ -300,7 +300,7 @@ We feed the wrapper fake replies and check it does the right thing.
 | Choice not allowed | `choice: r99` | fallback, logged |
 | Confidence too low | `choice: r1, confidence: 0.2` | fallback, logged |
 | Good reply | `choice: r1, confidence: 0.9` | Jev answer used |
-| Timeout | no reply within 900 ms | fallback, logged |
+| Timeout | no reply within 1500 ms | fallback, logged |
 | Empty state | `{}` | fallback, no call made |
 
 Six contract tests. All must pass with no network access at all.

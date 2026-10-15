@@ -102,7 +102,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     // Jev is advice. If it fails, the rule decision still goes through, so this one node continues on error. It is not a write path.
     node('gs-sub13-05', 'Ask Jev', 'n8n-nodes-base.httpRequest', 4.2, { method: 'POST', url: 'https://openrouter.ai/api/alpha/decisions',
       authentication: 'genericCredentialType', genericAuthType: 'httpHeaderAuth', sendBody: true, specifyBody: 'json', jsonBody: '={{ $json.jev_body }}',
-      options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 900 } },
+      options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 1500 } },
       { credentials: { httpHeaderAuth: jevCred }, onError: 'continueRegularOutput', retryOnFail: true, maxTries: 2, waitBetweenTries: 200 }),
     codeNode('gs-sub13-06', 'Decide', code('decide_result.js')),
     rpcPost('gs-sub13-07', 'Write decision', 'decision_log'),
@@ -114,7 +114,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
   const s13 = [
     { name: 'RECEIVE', what: 'The MAIN workflow calls this with a ready order and the riders.', needs: 'Input: ' + f13.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
     { name: 'CHECK', what: 'Refuse if the kill switch is on or input is bad. Work out the rule pick and build the Jev question (no names or addresses).', needs: 'Input fields. No credential.', nodes: ['Guard', 'Allowed?'], color: 5 },
-    { name: 'JEV', what: 'Ask Jev for a suggestion within 900 ms. If Jev is off or fails, go on without it.', needs: 'Credential "GoServe OpenRouter". Config: jev_enabled, jev_model.', nodes: ['Ask Jev?', 'Ask Jev'], color: 3 },
+    { name: 'JEV', what: 'Ask Jev for a suggestion within 1500 ms. If Jev is off or fails, go on without it.', needs: 'Credential "GoServe OpenRouter". Config: jev_enabled, jev_model.', nodes: ['Ask Jev?', 'Ask Jev'], color: 3 },
     { name: 'DECIDE', what: 'The rule decides. Jev is kept in the record with its confidence, or the reason it was not used.', needs: 'Guard and Jev results. Config: jev_cost_cap.', nodes: ['Decide'], color: 5 },
     { name: 'WRITE', what: 'Write one decision_log row with the rule pick, the Jev pick and the pick used.', needs: 'Credential "GoServe Supabase dev". Table: decision_log.', nodes: ['Write decision'], color: 6 },
     { name: 'ANSWER', what: 'Return the decision if the row was stored, else a short error.', needs: 'The database answer.', nodes: ['Decision stored'], color: 5 },

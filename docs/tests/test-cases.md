@@ -149,3 +149,5 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Run log of the 20 runs: each run took 13.2 to 22.5 seconds (middle about 14.4 s); the 168 run rows written in that window (21 runs with one trial run) have no error; raw result in `app/test-results/live-runs.json` (not committed) | #56 | S1 | Live, 15 Oct 2026 | `run_log` on goserve-dev | Pass |
 | The installed app on the founder's Android phone opens, installs and walks the full path | #56 | S2 | Live (founder's phone) | installed app | Pending |
 | A recorded backup video of the demo exists | #56 | S3 | Manual | video file | Pending |
+| SUB 13 asks Jev with a 1500 ms limit (was 900 ms); the built workflow carries `timeout: 1500` | #46 | S1 | Unit | `ops/n8n/order/decide.test.js` | Pass (red first: 900 !== 1500) |
+| After "push kar do" (15 Oct 2026): ten dev workflows redeployed, all still active, live copy same as build (`verify_live.js`); `live_check.py`: health 200 with Jev OK 821 ms, decide 200 in 1770 ms with Jev pick r2, confidence 1, 789 ms | #46 | S1 | Live, 15 Oct 2026 | n8n dev | Pass |
