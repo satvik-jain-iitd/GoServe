@@ -103,7 +103,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     node('gs-sub13-05', 'Ask Jev', 'n8n-nodes-base.httpRequest', 4.2, { method: 'POST', url: 'https://openrouter.ai/api/alpha/decisions',
       authentication: 'genericCredentialType', genericAuthType: 'httpHeaderAuth', sendBody: true, specifyBody: 'json', jsonBody: '={{ $json.jev_body }}',
       options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 1500 } },
-      { credentials: { httpHeaderAuth: jevCred }, onError: 'continueRegularOutput', retryOnFail: true, maxTries: 2, waitBetweenTries: 200 }),
+      { credentials: { httpHeaderAuth: jevCred }, onError: 'continueRegularOutput' }),
     codeNode('gs-sub13-06', 'Decide', code('decide_result.js')),
     rpcPost('gs-sub13-07', 'Write decision', 'decision_log'),
     codeNode('gs-sub13-08', 'Decision stored', code('decide_done.js')),

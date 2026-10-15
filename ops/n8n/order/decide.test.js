@@ -161,6 +161,7 @@ test('wiring: SUB 13 asks Jev only after the guard, Jev failure never stops the 
   const jev = byName(wf.sub13, 'Ask Jev');
   assert.equal(jev.onError, 'continueRegularOutput');                 // advice only, never a write path
   assert.equal(jev.parameters.options.timeout, 1500);
+  assert.notEqual(jev.retryOnFail, true);                              // no retry: worst case 1.5 s, not 3.2 s (owner, 15 Oct)
   assert.equal(byName(wf.sub13, 'Write decision').onError, undefined);   // the write path fails closed (B7)
   assert.match(jev.parameters.url, /openrouter\.ai\/api\/alpha\/decisions/);
   assert.equal(jev.parameters.genericAuthType, 'httpHeaderAuth');
