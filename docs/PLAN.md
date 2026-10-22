@@ -38,7 +38,7 @@ Rules:
   git commit -m "chore: promote <what> to main"
   ```
 - I never push directly to `main`.
-- **One open PR at a time** (owner, 22 Oct 2026, `CLAUDE.md` rule 19): no new PR while one of mine is open and undecided. Review changes go on the same PR as new commits.
+- **One stack at a time** (owner, 22 Oct 2026, `CLAUDE.md` rule 19): one PR or one `gh stack` chain open in the whole repo. Dependent work is a layer on top, not a loose PR. Review and merge bottom up; GitHub rebases the rest. Review changes are commits on the same layer, then `gh stack sync`.
 - PR template: issue link, what changed, scenarios covered, test output pasted, demo, decisions made (ADR link), ideas noted.
 
 ---
