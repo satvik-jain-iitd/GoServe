@@ -179,3 +179,9 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Each role page links its own manifest, title, tab icon and iPhone icon in the raw HTML, also with the service worker ready; the root keeps the default | #93 | Install | Automatic | `app/tests/e2e/apps.spec.ts` | Pass |
 | Each role manifest has its own three icons (192, 512, maskable), files exist, all eight files differ, SVG sources use token colours only | #93 | Install | Automatic | `app/tests/unit/role-icons.test.ts` | Pass |
 | Prod front end after release #104 (22 Oct 2026): the four role pages answer 200 and each links its own manifest and title; each manifest has start_url, scope and id equal to its role path and three own icons; all twelve icon files answer 200. The first read right after the merge still showed the old pages (edge cache); a read with a new query string showed the new ones | #93 | Install | Live, 22 Oct 2026 | goserve-app.pages.dev | Pass (phone install row open: F98) |
+| Laya data generator: same seed gives identical files | #107 | S1 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
+| Laya data validator accepts right labels and rejects a wrong refund label | #107 | S2 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
+| No seed phrase and no state text sits in two of train, val, test | #107 | S3 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
+| Every row has only state, questions, expected; choice answers are listed options; noul answers are booleans | #107 | S4 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
+| Every choice option and noul side is at least 8% of train decisions (caught: positive mood 7.9%, needs_human 7%) | #107 | S5 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
+| Every choice option and noul side appears in val and in test (reviewer found val had no allergy=true; red first) | #107 | S6 | Automatic | `ops/ai/laya/test_gen.py` | Pass |

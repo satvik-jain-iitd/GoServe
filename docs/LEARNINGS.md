@@ -148,3 +148,7 @@ short. Say what happened and what to do next time.
 - Chrome reads the manifest from the first HTML it gets. A manifest link changed later by JavaScript is too late for Add to Home Screen. Write one static page per role at build time and test the raw HTML, also with the service worker ready.
 - Icons for several apps in one product need one grid, one stroke weight and one corner radius. Only the glyph and one ring colour change. Look at all of them together on a contact sheet before you commit.
 - A read of a fresh deploy can show the old page for a minute (edge cache). Read again with a new query string before you call a deploy broken.
+- A notebook started with `kaggle kernels push` does not get the Kaggle Secrets you attached on the web page. The run fails at the first `get_secret`. Start runs that need a secret from the web page, or log the need before you spend GPU hours.
+- A class-balance test on generated data caught two thin classes before any GPU time was spent. Put the balance check in the test, not in the training log.
+- Splitting seeds by list position (last two to test) hid whole classes from train because related seeds sat together. Split by `index % 5`.
+- Two Claude sessions in one checkout switch each other's branch and hide each other's files. Each session works in its own worktree: `git worktree add .worktrees/<issue>-<slug> <branch>` (the folder is in `.git/info/exclude`). One branch per issue number, temp files in the session's own scratchpad, never in `/tmp`.
