@@ -4,7 +4,7 @@ import json, os, sys
 
 here = os.path.dirname(os.path.abspath(__file__))
 out, mode, kv = sys.argv[1], sys.argv[2], dict(a.split("=", 1) for a in sys.argv[3:])
-slug = {"train": "goserve-laya-train", "eval": "goserve-laya-eval-" + kv.get("TAG", "base")}[mode]
+slug = {"train": "goserve-laya-train" + ("-" + kv["TAG"] if "TAG" in kv else ""), "eval": "goserve-laya-eval-" + kv.get("TAG", "base")}[mode]
 body = open(f"{here}/{mode}.py").read()
 if mode == "eval":
     src = open(f"{here}/../metrics.py").read()

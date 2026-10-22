@@ -148,21 +148,27 @@ def _late(rnd, target):
     raise RuntimeError("no late case")
 
 
-def build(seed=0, scale=1.0):
+def build(seed=0, scale=1.0, train_counts=None, human_weight=1):
+    """train_counts overrides the train sizes; human_weight repeats needs_human support seeds in train only."""
     rnd = random.Random(seed)
     sup = _split_seeds(SUPPORT, lambda t: (t[1], t[2], t[3]))
     note_idx = _split_seeds(NOTES, lambda t: (t[1], t[2]))
     out, seen = {}, set()
     for split, counts in BASE.items():
         rows = []
+        if split == "train" and train_counts:
+            counts, scale_ = train_counts, 1.0
+        else:
+            scale_ = scale
+        pool = sup[split] + [i for i in sup[split] if SUPPORT[i][3]] * (human_weight - 1) if split == "train" else sup[split]
         for kind, n in counts.items():
-            n = max(1, round(n * scale))
+            n = max(1, round(n * scale_))
             made, tries = 0, 0
             while made < n:
                 tries += 1
                 assert tries < n * 200, f"cannot make {n} unique {kind} cases for {split}"
                 if kind == "support":
-                    row = _support(rnd, rnd.choice(sup[split]))
+                    row = _support(rnd, rnd.choice(pool))
                 elif kind == "notes":
                     row = _notes(rnd, rnd.choice(note_idx[split]))
                 elif kind == "refund":
@@ -195,6 +201,22 @@ def validate(splits):
                 assert exp["refund"] == refund_rule(*r["_p"]), r
             else:
                 assert exp["at_risk"] == late_rule(*r["_p"]), r
+
+
+def write_retrain(base_dir, out_dir, seed, train_counts, human_weight=1):
+    """New train.jsonl; val and test are copied byte for byte from base_dir. Train never shares a state with them."""
+    os.makedirs(out_dir, exist_ok=True)
+    keep = set()
+    for name in ("val", "test"):
+        text = open(os.path.join(base_dir, name + ".jsonl"), encoding="utf-8").read()
+        open(os.path.join(out_dir, name + ".jsonl"), "w", encoding="utf-8").write(text)
+        keep |= {json.loads(l)["state"] for l in text.splitlines()}
+    rows = [r for r in build(seed, train_counts=train_counts, human_weight=human_weight)["train"] if r["state"] not in keep]
+    validate({"train": rows})
+    with open(os.path.join(out_dir, "train.jsonl"), "w", encoding="utf-8") as f:
+        for r in rows:
+            f.write(json.dumps({k: v for k, v in r.items() if not k.startswith("_")}, ensure_ascii=False) + "\n")
+    return len(rows)
 
 
 def write(out_dir, seed=0, scale=1.0):

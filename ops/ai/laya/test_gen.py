@@ -115,6 +115,28 @@ def test_number_cases_come_in_several_formats():
         assert len(shapes) >= 3, (kind, shapes)
 
 
+def test_train_counts_and_human_weight():
+    # Retrain knobs: train sizes can be set, and weighting raises the share of needs_human seeds in train only.
+    counts = {"support": 200, "notes": 20, "refund": 30, "late": 40}
+    a = gen.build(seed=9, train_counts=counts)["train"]
+    assert len(a) == sum(counts.values()), len(a)
+    share = lambda rows: sum(r["expected"]["needs_human"] for r in rows if "needs_human" in r["expected"]) / sum(1 for r in rows if "needs_human" in r["expected"])
+    b = gen.build(seed=9, train_counts=counts, human_weight=4)["train"]
+    assert share(b) > share(a) * 1.4, (share(a), share(b))
+
+
+def test_retrain_set_keeps_val_and_test_byte_identical():
+    # Given a first data set, the retrain set reuses its val and test files unchanged and shares no state with them.
+    with tempfile.TemporaryDirectory() as base, tempfile.TemporaryDirectory() as out:
+        gen.write(base, seed=0, scale=0.1)
+        gen.write_retrain(base, out, seed=1, train_counts={"support": 80, "notes": 20, "refund": 20, "late": 20}, human_weight=3)
+        for f in ("val.jsonl", "test.jsonl"):
+            assert open(os.path.join(base, f), "rb").read() == open(os.path.join(out, f), "rb").read(), f
+        keep = {json.loads(l)["state"] for f in ("val.jsonl", "test.jsonl") for l in open(os.path.join(out, f))}
+        train = [json.loads(l) for l in open(os.path.join(out, "train.jsonl"))]
+        assert train and not keep & {r["state"] for r in train}
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

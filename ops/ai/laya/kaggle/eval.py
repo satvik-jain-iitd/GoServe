@@ -38,7 +38,7 @@ raw_val, raw_test = predict(val), predict(test)
 temps = {}
 for qid in {q for r in val for q in r["expected"]}:
     pairs = [(a[qid]["p"], a[qid]["labels"].index(r["expected"][qid])) for r, a in zip(val, raw_val) if qid in a]
-    temps[qid] = metrics.fit_temperature([p for p, _ in pairs], [g for _, g in pairs])
+    temps[qid] = metrics.fit_temperature([p for p, _ in pairs], [g for _, g in pairs], lo=0.2)
 hp = [(r["expected"]["needs_human"], a["needs_human"]["p"][1] >= 0.5) for r, a in zip(test, raw_test) if "needs_human" in r["expected"]]
 prec, rec = metrics.precision_recall([g for g, _ in hp], [p for _, p in hp])
 rep = {"raw": metrics.report(test, metrics.from_raw(raw_test)),
