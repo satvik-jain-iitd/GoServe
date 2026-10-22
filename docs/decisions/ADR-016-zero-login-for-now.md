@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed. The owner accepts it by merging the pull request.
+Accepted 22 Oct 2026 (owner, in the MVP 1 plan). Updated by story S-M1 (#117): Google sign-in is linked to the anonymous user, not a replacement.
 
 ## Date
 
@@ -15,7 +15,7 @@ Login adds work for every test and every user. The apps are still in user testin
 ## Decision
 
 1. For now the apps have **no login**. The anonymous session id stays the user id (ADR-010). Two devices join by link (ADR-011).
-2. At MVP 1 we add **Sign in with Google** through Supabase Auth. No password screen is built.
+2. At MVP 1 we add **Continue with Google** through Supabase Auth. It **links** the Google identity to the same anonymous user (`linkIdentity`), so the user id and the session id do not change: orders, join links and tests keep working. No password screen, no email form.
 3. Tests keep using the anonymous session, so no test needs an account.
 
 ## Consequences
