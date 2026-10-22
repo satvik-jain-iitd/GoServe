@@ -191,6 +191,9 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Continue with Google asks Supabase to link Google to the current user (provider google, redirect back to the same page) and goes to Google; a signed-in user sees the name and no button; an anonymous user keeps the button | #117 | S-M1 | Automatic | `app/tests/e2e/login.spec.ts`, `app/tests/unit/auth.test.ts` | Pass |
 | Two parts of the screen asking for a session at once make only one anonymous user | #117 | S-M1 | Automatic | `app/tests/e2e/apps.spec.ts` (share one session) | Pass |
 | The Supabase Google settings payload turns on Google and manual linking, never prints the secret, refuses an empty client | #117 | S-M1 | Automatic | `scripts/test_set_google_auth.py` | Pass |
+| 20 orders, each sent twice, 5 with the connection cut after sending: 20 orders, 0 duplicates, every event chain in order; a repeated status answers 409 | #118 | S-M2 | Live, 22 Oct 2026 | `scripts/no_loss_check.py` (dev) | Pass |
+| The count rules of the no-loss proof: duplicate key, lost order, repeated event, events out of order | #118 | S-M2 | Automatic | `scripts/test_no_loss.py` | Pass |
+| /privacy/ and /terms/ are plain pages (heading, contact, no app), also when the service worker is ready | #123 | S-M5 | Automatic | `app/tests/e2e/legal.spec.ts` | Pass |
 | Laya seed files: labels in vocabulary, unique texts, at least 60 per topic, mood and needs_human not thin | #113 | S1 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
 | Refund and late-risk states come in at least 3 formats and labels still follow the rule | #113 | S1 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
 | Temperature fit: 1.0 when calibrated, grows for an overconfident model; precision and recall by hand | #113 | S3 | Automatic | `ops/ai/laya/test_metrics.py` | Pass |
