@@ -1,19 +1,20 @@
 import { useEffect, useState } from "react";
-import { linkGoogle, signedInName } from "../lib/auth";
+import { authErrorFrom, linkGoogle, signedInName } from "../lib/auth";
 import { ensureSession, getClient } from "../lib/supabase";
 
 // One line under the title: "Continue with Google", or "Signed in as <name>". No password, no email form.
 export function SignIn() {
   const [name, setName] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(() => authErrorFrom(window.location.search, window.location.hash));
   useEffect(() => {
+    if (error) history.replaceState(null, "", window.location.pathname);   // shown once
     let alive = true;
     ensureSession()
       .then(() => getClient().auth.getUser())
       .then(({ data }) => { if (alive) setName(signedInName(data.user)); })
       .catch(() => {});
     return () => { alive = false; };
-  }, []);
+  }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   if (name) return <p className="notice" data-testid="signed-in">Signed in as {name}</p>;
   return (
     <div>

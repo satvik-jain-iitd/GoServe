@@ -38,3 +38,11 @@ test("S3 an anonymous user keeps the same session and sees the button", async ({
   await expect(page.getByTestId("google-signin")).toBeVisible();
   await expect(page.getByTestId("signed-in")).toHaveCount(0);
 });
+
+test("S4 a failed link shows the reason once and clears it from the address", async ({ page, context }) => {
+  await setup(context, page, []);
+  await page.goto("/customer/?error=server_error&error_description=Identity+is+already+linked");
+  await expect(page.getByRole("alert")).toHaveText("Identity is already linked");
+  await expect(page).toHaveURL(/\/customer\/$/);
+  await expect(page.getByTestId("google-signin")).toBeVisible();
+});

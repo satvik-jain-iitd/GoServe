@@ -24,3 +24,14 @@ describe("signedInName", () => {
     expect(signedInName({ is_anonymous: false, user_metadata: {}, email: "a@x.com" })).toBe("a@x.com");
   });
 });
+
+import { authErrorFrom } from "../../src/lib/auth";
+describe("authErrorFrom", () => {
+  it("reads error_description from the return address, in the query or the hash", () => {
+    expect(authErrorFrom("?error=server_error&error_description=Identity+is+already+linked", "")).toBe("Identity is already linked");
+    expect(authErrorFrom("", "#error=access_denied&error_description=Access+denied")).toBe("Access denied");
+  });
+  it("is null when nothing went wrong", () => {
+    expect(authErrorFrom("?join=abc", "")).toBeNull();
+  });
+});

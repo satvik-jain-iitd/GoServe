@@ -5,13 +5,15 @@ Reads SUPABASE_ACCESS_TOKEN and GOSERVE_GOOGLE_OAUTH_CLIENT_ID / _SECRET from th
 import json, os, pathlib, re, sys, urllib.request
 
 REFS = {"dev": "tmxyizmkpwwfyazvrfhw", "prod": "vpuumnslnionplrxmqlf"}
+SITES = {"dev": "https://goserve-app-dev.vercel.app", "prod": "https://goserve-app.pages.dev"}
 
 
-def build_payload(client_id: str, secret: str) -> dict:
+def build_payload(env: str, client_id: str, secret: str) -> dict:
     if not client_id or not secret:
         raise ValueError("the Google client id and secret are both needed")
-    return {"external_google_enabled": True, "external_google_client_id": client_id,
-            "external_google_secret": secret, "security_manual_linking_enabled": True}
+    allow = [SITES[env] + "/**"] + (["http://localhost:5173/**"] if env == "dev" else [])   # without these the phone lands on localhost after Google
+    return {"external_google_enabled": True, "external_google_client_id": client_id, "external_google_secret": secret,
+            "security_manual_linking_enabled": True, "site_url": SITES[env], "uri_allow_list": ",".join(allow)}
 
 
 def plan(env: str, payload: dict) -> str:
@@ -29,7 +31,7 @@ def vault(name: str) -> str:
 
 if __name__ == "__main__":
     env = sys.argv[1]
-    payload = build_payload(vault("GOSERVE_GOOGLE_OAUTH_CLIENT_ID"), vault("GOSERVE_GOOGLE_OAUTH_CLIENT_SECRET"))
+    payload = build_payload(env, vault("GOSERVE_GOOGLE_OAUTH_CLIENT_ID"), vault("GOSERVE_GOOGLE_OAUTH_CLIENT_SECRET"))
     print(plan(env, payload))
     if "--apply" in sys.argv:
         req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{REFS[env]}/config/auth", method="PATCH",
