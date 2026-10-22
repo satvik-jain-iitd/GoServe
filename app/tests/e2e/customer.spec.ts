@@ -127,3 +127,25 @@ test("S2 with no network and no saved menu, the screen says so instead of stayin
   await page.goto("/");
   await expect(page.getByRole("alert")).toHaveText("The menu is not available. Connect once to load it.");
 });
+
+test("S3 after a refresh the customer lands back on the order that is still open", async ({ page, context }) => {
+  await mockNetwork(context);
+  const row = { ...ORDER, session_id: SESSION, address: "Flat 4, Delhi", items: [{ name: "Butter Chicken", qty: 1, price_paise: 32000, menu_item_id: "d1" }], created_at: new Date().toISOString(), updated_at: new Date().toISOString(), paid_by: null };
+  await context.route("https://test.supabase.co/rest/v1/orders**", (route) =>
+    route.request().method() === "OPTIONS" ? route.fulfill({ status: 204, headers: CORS }) : route.fulfill({ status: 200, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify([row]) }));
+  await page.goto("/customer/");
+  await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
+  await expect(page.getByText("0f0f0f0f", { exact: false })).toBeVisible();
+});
+
+test("S3 a delivered order does not pull the customer back from the menu", async ({ page, context }) => {
+  await mockNetwork(context);
+  const row = { ...ORDER, status: "delivered", session_id: SESSION, address: "x", items: [], created_at: new Date().toISOString(), updated_at: new Date().toISOString(), paid_by: "cash" };
+  await context.route("https://test.supabase.co/rest/v1/orders**", (route) =>
+    route.request().method() === "OPTIONS" ? route.fulfill({ status: 204, headers: CORS }) : route.fulfill({ status: 200, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify([row]) }));
+  await page.goto("/customer/");
+  await expect(page.getByText("Butter Chicken")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Order placed" })).toHaveCount(0);
+});
