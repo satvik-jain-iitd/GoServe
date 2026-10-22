@@ -1,5 +1,5 @@
 """Judges raw predictions from kaggle/eval.py against the E3 targets in docs/research/experiments.md.
-Usage: python3 score.py raw_TAG.json DATA_DIR [--latin]
+Usage: python3 score.py raw_TAG.json DATA_DIR [--latin] [--text-only] [--by-language]
 --latin scores only rows without Indic script (the English and Hinglish scope, owner decision 22 Oct 2026);
 the temperature is then fitted on the same kind of val rows. The test file itself is never changed.
 Targets: accuracy >= 0.90, ECE <= 0.08 each, macro ECE <= 0.05, at least 0.05 above the majority guess;
@@ -28,6 +28,8 @@ print(f"scope: {'English + Hinglish only' if scope else 'all rows'} | test rows 
 print(f"{'question':20}{'n':>4}{'acc':>7}{'maj':>7}{'ECEraw':>8}{'ECEcal':>8}{'T':>6}  accuracy  ece  >=maj+.05")
 ok = {}
 qs = sorted(rep)
+if "--text-only" in sys.argv:  # round 3: refund and at_risk run as code, Laya is judged on the 5 text decisions
+    qs = [q for q in qs if q in ("topic", "mood", "needs_human", "has_allergy", "has_special_request")]
 for q in qs:
     a, e = rep[q]["accuracy"], rep[q]["ece"]
     ok[q] = (a >= 0.90, e <= 0.08, a >= maj[q] + 0.05)
