@@ -14,6 +14,16 @@ describe("linkGoogle", () => {
   });
 });
 
+describe("linkGoogle in sign-in mode (story S-M5)", () => {
+  it("signs in as the Google user instead of linking, for the kitchen, rider and ops apps", async () => {
+    const signInWithOAuth = vi.fn().mockResolvedValue({ data: {}, error: null });
+    const linkIdentity = vi.fn();
+    await expect(linkGoogle({ auth: { linkIdentity, signInWithOAuth } }, "https://x/kitchen/", "signin")).resolves.toBeNull();
+    expect(signInWithOAuth).toHaveBeenCalledWith({ provider: "google", options: { redirectTo: "https://x/kitchen/" } });
+    expect(linkIdentity).not.toHaveBeenCalled();
+  });
+});
+
 describe("signedInName", () => {
   it("is null for an anonymous user", () => {
     expect(signedInName({ is_anonymous: true, user_metadata: {} })).toBeNull();

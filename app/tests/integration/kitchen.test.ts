@@ -3,6 +3,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, describe, expect, it } from "vitest";
 import { fetchOrders, watchOrders } from "../../src/lib/live";
+import { scopeFor } from "../../src/lib/session";
 import type { Order } from "../../src/lib/kitchen";
 
 const url = process.env.SUPABASE_GOSERVE_DEV_URL;
@@ -48,7 +49,7 @@ describe.skipIf(!isDev || !anon || !service)("kitchen live list on goserve-dev",
     const seen: Order[] = [];
     let ready!: () => void;
     const subscribed = new Promise<void>((r) => (ready = r));
-    const stop = watchOrders(client, id, (o) => seen.push(o), ready);
+    const stop = watchOrders(client, scopeFor(null, id), (o) => seen.push(o), ready);
     await subscribed;
     await new Promise((r) => setTimeout(r, 1500));   // the server needs about a second after SUBSCRIBED (LEARNINGS)
     const order = await place(id, `k-${id}`);   // the 2 seconds count from the moment this call has returned
@@ -65,7 +66,7 @@ describe.skipIf(!isDev || !anon || !service)("kitchen live list on goserve-dev",
     const b = await session();
     const oa = await place(a.id, `ka-${a.id}`);
     await place(b.id, `kb-${b.id}`);
-    const list = await fetchOrders(a.client, a.id);
+    const list = await fetchOrders(a.client, scopeFor(null, a.id));
     expect(list.map((o) => o.id)).toEqual([oa.id]);
   }, 15000);
 });
