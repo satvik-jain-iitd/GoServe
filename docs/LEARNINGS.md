@@ -175,3 +175,4 @@ short. Say what happened and what to do next time.
 - A metric helper that loops over the questions of the test file will crash when a question is absent from train (refund and at_risk run as code). Test the helper for missing questions, and save raw predictions before any report code runs: the CPU eval took 12 minutes to redo.
 - One seed in the test file can be 18% of a class. When recall moves in steps like that, the number is a coarse signal; look at which seeds miss before you retrain.
 - A claim about a vendor's error case (linkIdentity on a taken Google account) can be absent from its docs. Do not build on it; pick the path that does not depend on it, and log the proof as a follow-up (F114).
+- #128 was built on #124 without telling GitHub it was a stack, so #124 merging meant a hand rebase of #128. A `gh stack` layer would have rebased itself and kept its approval.
