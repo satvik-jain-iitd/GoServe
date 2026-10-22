@@ -74,6 +74,22 @@ def test_classes_are_balanced_enough():
             assert n / total >= 0.08, (qid, ans, n, total)
 
 
+def test_every_option_in_val_and_test():
+    # Each choice option and each noul side appears in val and in test (reviewer, PR #108).
+    splits = gen.build(seed=0, scale=1.0)
+    for name in ("val", "test"):
+        seen = {}
+        for r in splits[name]:
+            for qid, ans in r["expected"].items():
+                seen.setdefault(qid, set()).add(ans)
+        want = {}
+        for r in splits["train"]:
+            for qid, q in r["questions"].items():
+                want[qid] = set(q["criteria"]) if q["type"] == "choice" else {True, False}
+        for qid, opts in want.items():
+            assert seen.get(qid, set()) == opts, (name, qid, opts - seen.get(qid, set()))
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

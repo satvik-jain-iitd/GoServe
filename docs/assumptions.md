@@ -63,4 +63,4 @@ Every assumption we are working from, stated plainly. If an assumption turns out
 
 | A53 | Until MVP 1 there is no login (ADR-016). The session id is a secret only by being hard to guess. This is safe only while the data is test data. Before real customers: Google login through Supabase, and rules that tie a session to its account. | Open |
 
-| A54 | Synthetic Laya data (seed phrases times templates, rule-made labels for refund and late risk) is only a pipeline rehearsal. It teaches Laya our rules and our phrasing, not real customers. The final test set must be real GoServe data (LAYA_PLAN section 5). Until then no claim that a tuned Laya "works". | Epic #106 |
+| A54 | Synthetic Laya data (seed phrases times templates, rule-made labels for refund and late risk) is only a pipeline rehearsal. It teaches Laya our rules and our phrasing, not real customers. The final test set must be real GoServe data (LAYA_PLAN section 5). Until then no claim that a tuned Laya "works": no number from a Kaggle run says so while the test set is synthetic. | Epic #106 |

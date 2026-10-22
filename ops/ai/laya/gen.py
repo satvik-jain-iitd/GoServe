@@ -206,7 +206,7 @@ def _late(rnd, target):
 def build(seed=0, scale=1.0):
     rnd = random.Random(seed)
     sup = _split_seeds(SUPPORT, 1)
-    note_idx = _split_seeds([{"g": 0}] * len(NOTES), "g")
+    note_idx = _split_seeds([((a, sp),) for _, a, sp in NOTES], 0)
     out, seen = {}, set()
     for split, counts in BASE.items():
         rows = []
