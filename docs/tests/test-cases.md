@@ -191,7 +191,20 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Continue with Google asks Supabase to link Google to the current user (provider google, redirect back to the same page) and goes to Google; a signed-in user sees the name and no button; an anonymous user keeps the button | #117 | S-M1 | Automatic | `app/tests/e2e/login.spec.ts`, `app/tests/unit/auth.test.ts` | Pass |
 | Two parts of the screen asking for a session at once make only one anonymous user | #117 | S-M1 | Automatic | `app/tests/e2e/apps.spec.ts` (share one session) | Pass |
 | The Supabase Google settings payload turns on Google and manual linking, never prints the secret, refuses an empty client | #117 | S-M1 | Automatic | `scripts/test_set_google_auth.py` | Pass |
+<<<<<<< HEAD
 | Laya seed files: labels in vocabulary, unique texts, at least 60 per topic, mood and needs_human not thin | #113 | S1 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
 | Refund and late-risk states come in at least 3 formats and labels still follow the rule | #113 | S1 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
 | Temperature fit: 1.0 when calibrated, grows for an overconfident model; precision and recall by hand | #113 | S3 | Automatic | `ops/ai/laya/test_metrics.py` | Pass |
 | Blind audit of 2 x 220 seeds by the other writer: topic 2%, mood 7% (A) and 14% (B), needs_human 1 to 3% | #113 | S2 | Check | `ops/ai/laya/audit.py` | Mood in B above the 10% gate; sample disagreements dropped |
+=======
+| 20 orders, each sent twice, 5 with the connection cut after sending: 20 orders, 0 duplicates, every event chain in order; a repeated status answers 409 | #118 | S-M2 | Live, 22 Oct 2026 | `scripts/no_loss_check.py` (dev) | Pass |
+| The count rules of the no-loss proof: duplicate key, lost order, repeated event, events out of order | #118 | S-M2 | Automatic | `scripts/test_no_loss.py` | Pass |
+| /privacy/ and /terms/ are plain pages (heading, contact, no app), also when the service worker is ready | #123 | S-M5 | Automatic | `app/tests/e2e/legal.spec.ts` | Pass |
+| Every app screen has a footer with the GoServe line and links to Privacy and Terms; /privacy/ has a Google sign-in data block; the Google domain file answers its line | #119 | S-M3 | Automatic | `app/tests/e2e/legal.spec.ts` | Pass |
+| The roadmap page shows MVP 0 and MVP 1 as Done with the date, no OTP promise, MVP 2 coming soon | #119 | S-M3 | Automatic | `site/tests/e2e/site.spec.ts` | Pass |
+>>>>>>> origin/dev
+| Refund and late-risk rules in code give the label on every number row of train, val and test | #127 | S1 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
+| Near-copy filter flags a seed that is almost the same as another | #127 | S2 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
+| Train counts may be 0; extra seeds join train only, never val or test; retrain set keeps val and test byte-identical | #127 | S2 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
+| Majority guess skips questions absent from train (red first: crashed the CPU eval after 12 minutes) | #127 | S3 | Automatic | `ops/ai/laya/test_metrics.py` | Pass |
+| Round 3 on Kaggle: 5 text use cases vs the unchanged E3 targets; retrain 2 chosen on val | #127 | S3 | Experiment | `docs/research/experiments.md` E3 | 4 of 5 pass in full; topic 0.871 and needs_human recall 0.692 fail |

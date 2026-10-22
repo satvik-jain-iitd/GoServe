@@ -38,6 +38,7 @@ Rules:
   git commit -m "chore: promote <what> to main"
   ```
 - I never push directly to `main`.
+- **One open PR at a time** (owner, 22 Oct 2026, `CLAUDE.md` rule 19): no new PR while one of mine is open and undecided. Review changes go on the same PR as new commits.
 - PR template: issue link, what changed, scenarios covered, test output pasted, demo, decisions made (ADR link), ideas noted.
 
 ---

@@ -68,7 +68,7 @@ Phases (see `docs/architecture/evolution.md`): **MVP0** investor demo (≤10 use
 | M3 design system + tokens | Look and feel | Browser | OWNED (tokens ready) | USE | USE | USE | USE | USE | VERIFIED (site/src/styles/tokens.css) |
 | Web app manifest + service worker | Home-screen install | Browser | DECIDE | USE — install on Android, offline menu | USE | USE | USE | USE | INFERRED |
 | Live client (SSE/WebSocket) | Status without refresh | Browser | DECIDE | USE — Supabase Realtime client | USE | USE — + rider location | USE — Pro limits | USE | VERIFIED (Supabase realtime limits page, 13 Oct) |
-| Push client (Firebase Messaging SDK) | App push | Browser | FREE-ACCOUNT | NOT USED — on-screen only | USE — web push | USE | USE | USE | INFERRED |
+| Push client (Firebase Messaging SDK) | App push | Browser | FREE-ACCOUNT | NOT USED — on-screen only | DEFERRED to 23 Oct (#96, web push) | USE | USE | USE | INFERRED |
 | Geolocation capture | Rider live location | Browser | OWNED (browser API) | NOT USED — rider faked | NOT USED | USE — screen-on only (Wake Lock) | USE | USE — native background GPS | INFERRED (PWAs have no background location) |
 | Maps / geocoding | Rider map, zone display | Browser | DECIDE | USE — drawn zone, free map tiles | USE | USE — road distance (see D) | USE | USE | INFERRED |
 | Payment SDK (UPI/cards) | Checkout | Browser | LATER (MVP2) | FAKE — pay later | FAKE — pay later / cash | USE — Razorpay | USE | USE | INFERRED |
@@ -89,7 +89,7 @@ Phases (see `docs/architecture/evolution.md`): **MVP0** investor demo (≤10 use
 | Tunnel | Public entry to Oracle | Cloudflare Tunnel | OWNED | USE — reaches n8n | USE | USE — side jobs only | USE | USE | VERIFIED (n8n.LinkRight.in live) |
 | DNS + WAF | Domain, protection | Cloudflare | OWNED | USE | USE | USE | USE — + rate limit, bot check | USE | VERIFIED |
 | Temporary domain | letsdwelo.in | Cloudflare | OWNED | NOT USED for the app — `goserve-app.pages.dev` instead (letsdwelo is another brand; `goserve.pages.dev` belongs to someone else) | site only | retire | retire | retire | INFERRED |
-| Real brand domain + email | GoServe domain, hello@ | Registrar | PROCURE | NOT USED — pages.dev is fine for the demo | PROCURE | USE | USE | USE | UNKNOWN (price not checked) |
+| Real brand domain + email | GoServe domain, hello@ | Registrar | PROCURE | NOT USED — pages.dev is fine for the demo | DEFERRED, no date (founder step: buy the domain) | USE | USE | USE | UNKNOWN (price not checked) |
 | API/PWA subdomains | app and api hostnames | DNS | DECIDE | NOT USED | USE — `app.` on the real domain | USE | USE | USE | INFERRED |
 | Pages Function front door *(new, MVP0)* | `/api/*`: checks a token, limits spam, forwards to the brain | Cloudflare | — | NOT USED — dropped by ADR-009: the phone reads Supabase and writes to the n8n webhook | REVISIT (add when a secret must be hidden) | REVISIT | REVISIT | REVISIT | INFERRED (ADR-009) |
 | Health check page *(new, MVP0)* | One page that checks Supabase, n8n and Jev before a demo | Cloudflare | — | USE | USE | USE | USE | USE | INFERRED |
@@ -103,17 +103,17 @@ Phases (see `docs/architecture/evolution.md`): **MVP0** investor demo (≤10 use
 | Event bus + job queue | Order events, retries | Oracle / Redis | DECIDE | NOT USED — Supabase events table + Realtime | NOT USED | NOT USED | NOT USED | USE — real queue | INFERRED |
 | Background workers | Dispatch, notify, timers | Oracle | DECIDE | USE — n8n | USE | USE — n8n side jobs | USE | USE — workers | INFERRED |
 | Realtime gateway | SSE/WebSocket server | Oracle | DECIDE | NOT USED — Supabase Realtime | NOT USED | NOT USED | NOT USED | revisit | VERIFIED (Supabase realtime limits, 13 Oct) |
-| Auth service (OTP + roles) | customer/kitchen/rider/ops/admin | Supabase Auth or self-host | DECIDE | FAKE — role picker | USE — Supabase Auth, Google + email | USE — + phone OTP after DLT | USE | USE | VERIFIED (Supabase free plan includes auth, 13 Oct) |
+| Auth service (OTP + roles) | customer/kitchen/rider/ops/admin | Supabase Auth or self-host | DECIDE | FAKE — role picker | DONE 22 Oct — Google sign-in linked to the anonymous user (ADR-016); no email login | USE — + phone OTP after DLT | USE | USE | VERIFIED (Supabase free plan includes auth, 13 Oct) |
 | Jev wrapper module | Only code calling OpenRouter | Oracle | DECIDE | USE — n8n SUB 13 Decide | USE | USE — + Laya quietly | USE — Laya first, Jev backup | USE | INFERRED |
-| Notification sender | SMS/WhatsApp/push/in-app | Oracle | DECIDE | USE — on screen + Telegram to owner | USE — email + web push | USE — + WhatsApp/SMS | USE | USE | INFERRED |
+| Notification sender | SMS/WhatsApp/push/in-app | Oracle | DECIDE | USE — on screen + Telegram to owner | DEFERRED to 25 Oct (email sender); web push 23 Oct | USE — + WhatsApp/SMS | USE | USE | INFERRED |
 | Menu / catalogue service | Items, prices, photos | Oracle | DECIDE | USE — Supabase table, seeded | USE | USE — menu admin | USE | USE | INFERRED |
 | Dispatch service | Rider assignment | Oracle | LATER (MVP1) | USE — rule + Jev shown | USE | USE — + road distance | USE — Laya | USE | INFERRED |
 | Inventory (light) service | Stock, low-stock | Oracle | LATER (MVP2) | NOT USED | NOT USED | USE | USE | USE | INFERRED |
 | Ops/reporting service | Dashboards, alerts | Oracle | LATER (MVP2) | USE — ops screen + metrics panel | USE | USE | USE — reports from Mongo | USE — warehouse | INFERRED |
 | Payment service | Idempotent charge, refund | Oracle | LATER (MVP2) | NOT USED | NOT USED | USE — Razorpay webhook on Supabase, unique key | USE | USE | INFERRED |
-| Scheduler/cron | Backups, reports | Oracle | FREE (cron) | USE — n8n schedule | USE — + nightly archive | USE | USE | USE | INFERRED |
+| Scheduler/cron | Backups, reports | Oracle | FREE (cron) | USE — n8n schedule | DEFERRED to 25 Oct (nightly archive) | USE | USE | USE | INFERRED |
 | Rate limiting / abuse guard | Protect API | Oracle/Redis | DECIDE | USE — demo token check and throttle in the n8n webhook, RLS in Supabase (ADR-009) | USE | USE | USE — Cloudflare rules | USE | INFERRED |
-| n8n workflow set *(new, MVP0)* | `GS MAIN 01`, `GS SUB 11–14`, `GS MAIN 90` | Oracle | — | USE | USE — + archive, proposal | USE — side jobs only | USE | revisit | INFERRED |
+| n8n workflow set *(new, MVP0)* | `GS MAIN 01`, `GS SUB 11–14`, `GS MAIN 90` | Oracle | — | USE | DEFERRED to 25 Oct (archive, proposal) | USE — side jobs only | USE | revisit | INFERRED |
 | PII scrub *(new, MVP0)* | Removes names, phones, addresses before logs or models | n8n / Supabase | — | USE | USE | USE | USE | USE | INFERRED |
 | Order simulator *(new, MVP1)* | Makes realistic orders, riders and delays; also the load test | Laptop / Oracle | — | NOT USED | USE | USE | USE — 2× peak test | USE | INFERRED |
 
@@ -124,16 +124,16 @@ Phases (see `docs/architecture/evolution.md`): **MVP0** investor demo (≤10 use
 | Postgres (source of truth) | Orders, events, money | Supabase OR Oracle | **DECIDE** | USE — Supabase (decided, ADR-004) | USE | USE | PAID — Supabase Pro | USE — regional | VERIFIED (Supabase free: 500 MB, 13 Oct) |
 | Connection pooler | Many connections | Supabase (built-in) OR pgbouncer | DECIDE | USE — Supabase built-in | USE | USE | USE | USE | INFERRED |
 | Redis (cache + queue) | Events, retries, limits | Upstash OR local Oracle | FREE-ACCOUNT | NOT USED | NOT USED | NOT USED | NOT USED | revisit | INFERRED (ponytail: not needed) |
-| MongoDB | Lead capture (n8n) | Oracle | OWNED | USE — leads only | USE — + archive | USE | USE — + indexes, reports | USE — warehouse feed | VERIFIED (leads saved, 11 Oct) |
+| MongoDB | Lead capture (n8n) | Oracle | OWNED | USE — leads only | DEFERRED to 25 Oct (archive) | USE | USE — + indexes, reports | USE — warehouse feed | VERIFIED (leads saved, 11 Oct) |
 | Object storage | Photos, backups | Oracle disk OR Cloudflare R2 | OWNED | USE — a few menu photos | USE | USE | USE | USE | INFERRED |
 | Nightly backups | Postgres dumps | Oracle (+R2) | DECIDE | NOT USED — demo data | USE — export to Mongo/Oracle | USE | USE — Pro daily backups | USE | VERIFIED (Supabase free has no backups, 13 Oct) |
 | Jev decision log store | Audit + future training | Postgres | DECIDE | USE — `decision_log` table | USE — + outcome labels | USE | USE | USE | INFERRED |
 | `params`, `run_log` tables *(new, MVP0)* | Versioned settings; one row per workflow run | Supabase | — | USE | USE | USE | USE | USE | INFERRED |
 | Database step rules *(new, MVP0)* | The database rejects an illegal order step | Supabase | — | USE | USE | USE | USE | USE | INFERRED |
-| Row-level security *(new, MVP1)* | Each role and kitchen sees only its own rows | Supabase | — | NOT USED — session space only | USE | USE | USE | USE | INFERRED |
+| Row-level security *(new, MVP1)* | Each role and kitchen sees only its own rows | Supabase | — | NOT USED — session space only | PARTLY — session rules are on; per-role and per-kitchen rules wait for a second kitchen or staff accounts | USE | USE | USE | INFERRED |
 | Supabase keep-alive *(new, MVP0)* | Stops the free project from pausing | GitHub Actions | — | USE | USE | USE | NOT USED — Pro never pauses | NOT USED | VERIFIED (free projects pause after 1 week idle, 13 Oct) |
-| Archive job *(new, MVP1)* | Moves old orders and logs to Mongo nightly | n8n | — | NOT USED | USE | USE | USE | USE | INFERRED |
-| Dedicated Mongo user *(new, MVP1)* | Access to the `goserve` database only | Oracle | — | NOT USED | USE | USE | USE | USE | INFERRED |
+| Archive job *(new, MVP1)* | Moves old orders and logs to Mongo nightly | n8n | — | NOT USED | DEFERRED to 25 Oct | USE | USE | USE | INFERRED |
+| Dedicated Mongo user *(new, MVP1)* | Access to the `goserve` database only | Oracle | — | NOT USED | DEFERRED to 25 Oct (needs the owner's yes) | USE | USE | USE | INFERRED |
 | Road distance (OSRM, one city) *(new, MVP2)* | Real road distance and time | Oracle (or paid API) | — | NOT USED — straight line × 1.3 | NOT USED | DECIDE — by measurement | USE | USE | INFERRED |
 | Map tiles (OpenFreeMap + MapLibre) *(new, MVP0)* | Free map pictures | Browser | — | USE | USE | USE | USE | USE | UNKNOWN (terms not checked) |
 
@@ -163,7 +163,7 @@ Phases (see `docs/architecture/evolution.md`): **MVP0** investor demo (≤10 use
 | GitHub repo (public) | Code, issues, PRs | GitHub | OWNED | USE | USE | USE | USE | USE | VERIFIED |
 | CI/CD | Test + Pages deploy | GitHub Actions | OWNED | USE — + app jobs | USE | USE | USE | USE | VERIFIED |
 | Secrets store | Keys, tokens | GitHub + local folder | OWNED | USE | USE | USE | USE | USE | VERIFIED |
-| Monitoring / error alerts | Catch failures | Sentry free OR n8n | PROCURE/decide | USE — n8n error workflow to Telegram | USE — + Sentry free | USE | USE | USE | INFERRED |
+| Monitoring / error alerts | Catch failures | Sentry free OR n8n | PROCURE/decide | USE — n8n error workflow to Telegram | DEFERRED to 25 Oct (Sentry); n8n error workflow stays | USE | USE | USE | INFERRED |
 | Uptime checks | Ping site/API | Cloudflare / UptimeRobot | FREE-ACCOUNT | USE — UptimeRobot free (owner signs up, saves `UPTIMEROBOT_API_KEY`; Claude adds monitors + Telegram alert) | FREE-ACCOUNT | USE | USE | USE | INFERRED |
 | Load testing | Year-1 scale test | k6 / Artillery | FREE (local) | NOT USED | USE — simulator | USE | USE — 2× peak | USE | INFERRED |
 | Branch protection | Guard main/dev | GitHub | OWNED | USE | USE | USE | USE | USE | VERIFIED |
@@ -175,23 +175,23 @@ Phases (see `docs/architecture/evolution.md`): **MVP0** investor demo (≤10 use
 |---|---|---|---|---|---|---|---|---|---|
 | Server | Runs API/DB/workers | Oracle (4 vCPU) | OWNED | USE — n8n | USE — + archive | USE — side jobs, Laya | USE | USE | VERIFIED |
 | Cloudflare account + token | Host, DNS, tunnel | Owner | OWNED | USE | USE | USE | USE | USE | VERIFIED |
-| Firebase project (FCM) | App push | Owner | FREE-ACCOUNT | NOT USED | FREE-ACCOUNT | USE | USE | USE | INFERRED |
+| Firebase project (FCM) | App push | Owner | FREE-ACCOUNT | NOT USED | DEFERRED to 23 Oct (web push) | USE | USE | USE | INFERRED |
 | Supabase project | DB + Auth + Realtime (if chosen) | Owner | FREE-ACCOUNT | FREE-ACCOUNT — new project "goserve" in **Mumbai (ap-south-1)**; owner says one old project is paused and `sync.linkright.in` is live; check with the access token, then create | USE | USE | PAID — Pro | USE | VERIFIED (limit rule, 13 Oct) |
 | Upstash Redis | Cache/queue | Owner | FREE-ACCOUNT | NOT USED | NOT USED | NOT USED | NOT USED | revisit | INFERRED |
 | Payment gateway + KYC | Real money | Bank/gateway | **APPROVAL** | NOT USED | APPROVAL — Razorpay account OWNED (owner, 13 Oct); KYC not started | USE | USE | USE | INFERRED (lead time weeks) |
 | SMS sender / DLT (India) | OTP + updates | Telecom | **APPROVAL** | NOT USED | APPROVAL — start | USE | USE | USE | INFERRED |
 | WhatsApp Business Cloud API | Order updates | Meta | **APPROVAL** | NOT USED | APPROVAL — start | USE | USE | USE | INFERRED |
-| Real domain + business email | Brand + hello@ | Registrar | PROCURE | NOT USED | PROCURE | USE | USE | USE | UNKNOWN (price) |
+| Real domain + business email | Brand + hello@ | Registrar | PROCURE | NOT USED | DEFERRED, no date (founder step) | USE | USE | USE | UNKNOWN (price) |
 | Maps API (optional) | Geocoding | Google/Mapbox | PROCURE/decide | NOT USED | NOT USED | DECIDE — vs OSRM | USE if chosen | USE | UNKNOWN |
 | GST / business entity | Payment + WhatsApp onboarding | Legal | Business | NOT USED | OWNED — company and GST exist (owner, 13 Oct); used for KYC | USE | USE | USE | INFERRED |
 | FSSAI licence *(new, MVP1)* | Food business licence, needed for payments | Founder | — | NOT USED | APPROVAL — not started (owner, 13 Oct); see `docs/product/founder-checklist.md` | USE | USE | USE | INFERRED |
-| Privacy, terms and refund pages *(new, MVP1)* | Needed for payment KYC and user trust | Owner | — | NOT USED | USE | USE | USE | USE | INFERRED |
+| Privacy, terms and refund pages *(new, MVP1)* | Needed for payment KYC and user trust | Owner | — | NOT USED | DONE 22 Oct as dummy text (F106); a lawyer checks before the pilot | USE | USE | USE | INFERRED |
 | Consent notice (DPDP) *(new, MVP1)* | Tells users what we keep and why | Owner | — | NOT USED — demo data | USE | USE — + delete on request | USE | USE | UNKNOWN (DPDP Rules dates to verify) |
 | Play Store developer account *(new, MVP2)* | Publish the rider app wrapper | Founder | — | NOT USED | NOT USED | PROCURE if TWA needed | USE | USE | UNKNOWN (fee not checked today) |
 | Hugging Face account (private repo) *(new, MVP2)* | Store our Laya model | Owner | — | NOT USED | NOT USED | FREE-ACCOUNT | USE | USE | INFERRED |
 | GitHub development account `klickbae8yt-star` *(new, MVP0)* | Every commit, push and PR; `satvik-jain-iitd` reviews and merges | Owner | — | ✅ Write access; logged in to `gh` (browser login) | USE | USE | USE | USE | VERIFIED (owner, 13 Oct) |
 | Vercel account *(new row, owned)* | **Dev site host** (from `dev`), with the Supabase integration (ADR-008) | Owner (new account on klickbae8yt@gmail.com) | — | USE — dev site `goserve-app-dev` + Supabase `goserve-dev`; Hobby terms risk noted in ADR-008 | NOT USED | NOT USED | NOT USED | revisit only if we move to Next.js and pay for Pro | VERIFIED (Vercel fair-use page, 13 Oct) |
-| Google Cloud account *(new row, owned)* | Google login (OAuth), Firebase push | Owner | — | NOT USED | USE — OAuth client + Firebase | USE | USE | USE | VERIFIED (owner answer) |
+| Google Cloud account *(new row, owned)* | Google login (OAuth), Firebase push | Owner | — | NOT USED | DONE 22 Oct — OAuth client made, app in Testing mode with test users; Firebase push DEFERRED to 23 Oct | USE | USE | USE | VERIFIED (owner answer) |
 | Supabase account access token *(new, MVP0)* | Lets Claude create and manage the GoServe projects | Owner (new Supabase account on klickbae8yt@gmail.com) | — | ✅ saved; projects `GoServe` (prod) and `goserve-dev` created in Mumbai | USE | USE | USE | USE | VERIFIED (owner answer) |
 
 ## I. Operations tools (added 13 Oct 2026, starts MVP1)
@@ -206,7 +206,7 @@ Tools that run the business, not the product. Options and sources: `docs/researc
 | Accounts and GST *(new, MVP1)* | Invoices and GST reports | Zoho Books | — | NOT USED | FREE-ACCOUNT — Zoho Books Free (up to ₹25 lakh a year) + a CA | PAID — Standard ₹749/mo | PAID — Professional ₹1,499/mo | USE | VERIFIED (zoho.com/in/books/pricing, 13 Oct) |
 | Payroll and attendance *(new, MVP1)* | Staff and rider pay | Zoho Payroll, then greytHR | — | NOT USED | FREE-ACCOUNT — Zoho Payroll Free (up to 10 people) | PAID — Zoho Payroll or greytHR | PAID — greytHR Growth | USE | VERIFIED (vendor pages, 13 Oct; Zoho Payroll conf 0.7) |
 | Dashboards (BI) *(new, MVP1)* | Numbers for the founder and ops | Metabase on Oracle | — | NOT USED | USE — self-host | USE | USE, or Metabase Cloud | USE | VERIFIED (metabase.com, 13 Oct) |
-| Team email and docs *(new, MVP1)* | hello@ and team mail on our domain | Google Workspace or Zoho Mail Free | — | NOT USED | PAID — Workspace Starter ₹270 per user (or Zoho Mail Free) | PAID | PAID | USE | VERIFIED (Workspace India pricing, 13 Oct) |
+| Team email and docs *(new, MVP1)* | hello@ and team mail on our domain | Google Workspace or Zoho Mail Free | — | NOT USED | DEFERRED, no date (founder step) | PAID | PAID | USE | VERIFIED (Workspace India pricing, 13 Oct) |
 
 Rough monthly cost of these tools (excludes GST and WhatsApp messages; conf 0.6): MVP1 ≈ ₹540, MVP2 ≈ ₹4,600, MVP3 ≈ ₹30,000–40,000.
 
