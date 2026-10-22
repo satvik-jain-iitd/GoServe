@@ -159,3 +159,4 @@ short. Say what happened and what to do next time.
 - A merge conflict on the follow-ups and trace tables can drop rows without any error. After a merge, check that your own rows are still on dev.
 - Two parts of a screen that ask for a session at the same moment each make an anonymous user. Share one in-flight request. An old e2e test that counts sign-ups caught it.
 - A 200 from a settings PATCH is not proof. Read the setting back, and read it again after a minute if the first read looks old. Do not write "verified" before the read.
+- Three open PRs at once (#124, #125, #128) made the owner merge in a set order and made me rebase twice. Rule 19: one open PR at a time; a reviewer's change is a commit on the same PR.
