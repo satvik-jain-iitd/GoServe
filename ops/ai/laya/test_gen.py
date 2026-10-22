@@ -90,6 +90,31 @@ def test_every_option_in_val_and_test():
             assert seen.get(qid, set()) == opts, (name, qid, opts - seen.get(qid, set()))
 
 
+def test_seed_files_are_clean():
+    # Given the v2 seed files, labels are in vocabulary, texts are unique, and classes are not thin.
+    assert len(gen.SUPPORT) >= 500 and len(gen.NOTES) >= 180, (len(gen.SUPPORT), len(gen.NOTES))
+    texts = [t for t, *_ in gen.SUPPORT] + [t for t, *_ in gen.NOTES]
+    assert len({" ".join(t.lower().split()) for t in texts}) == len(texts), "duplicate seed text"
+    for t, topic, mood, human in gen.SUPPORT:
+        assert topic in gen.TOPICS and mood in gen.MOODS and human in (0, 1) and 2 <= len(t) <= 400, t
+    human = sum(h for *_, h in gen.SUPPORT) / len(gen.SUPPORT)
+    assert 0.08 <= human <= 0.20, human
+    for topic in gen.TOPICS:
+        assert sum(1 for _, t, *_ in gen.SUPPORT if t == topic) >= 60, topic
+    for mood in gen.MOODS:
+        assert sum(1 for _, _, m, _ in gen.SUPPORT if m == mood) >= 0.12 * len(gen.SUPPORT), mood
+    allergy = sum(a for _, a, _ in gen.NOTES) / len(gen.NOTES)
+    assert 0.2 <= allergy <= 0.5, allergy
+
+
+def test_number_cases_come_in_several_formats():
+    # Refund and late-risk states are written in at least 3 shapes, and labels still follow the rule.
+    rows = gen.build(seed=5, scale=0.3)["train"]
+    for kind in ("refund", "late"):
+        shapes = {r["state"][:12] for r in rows if r["_sc"][0] == kind}
+        assert len(shapes) >= 3, (kind, shapes)
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

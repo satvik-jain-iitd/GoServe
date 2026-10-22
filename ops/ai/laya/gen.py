@@ -3,11 +3,11 @@ Run: python3 ops/ai/laya/gen.py OUT_DIR [--seed N] [--scale X]
 Writes train.jsonl, val.jsonl, test.jsonl in the format of laya.train.finetune:
 {"state": str, "questions": {...}, "expected": {...}}.
 
-Text cases (support, notes) come from hand-written seed messages, split by seed so the
-test file holds phrasings the model never saw. Number cases (refund, late) get their
+Text cases (support, notes) come from seed messages in seeds/*.jsonl (two independent writers),
+split by seed so the test file holds phrasings the model never saw. Number cases (refund, late) get their
 label from a rule, so the label is exact. Synthetic data proves the pipeline only.
 """
-import json, os, random, re, sys
+import glob, hashlib, json, os, random, sys
 
 TOPICS = {
     "order_late": "Order is late or the customer asks where it is",
@@ -20,86 +20,22 @@ TOPICS = {
 MOODS = {"positive": "Customer is happy", "neutral": "Customer is calm or just asking", "negative": "Customer is upset"}
 REFUND = {"approve": "Refund the customer", "review": "Send to a human to decide", "reject": "Do not refund"}
 
-# (message, topic, mood, needs_human). {item} {item2} {mins} {n} are filled at build time.
-SUPPORT = [
-    ("{item} abhi tak nahi aaya, {mins} minute ho gaye", "order_late", "negative", 0),
-    ("Order is taking forever, it was supposed to arrive {mins} minutes ago", "order_late", "negative", 0),
-    ("kitni der lagegi? bhookh lagi hai, {mins} min se wait kar raha hoon", "order_late", "negative", 0),
-    ("Delivery is a bit late but no problem, just checking the status", "order_late", "neutral", 0),
-    ("Delivered before time, thanks!", "order_late", "positive", 0),
-    ("On time delivery aur garam khana, bahut khushi hui", "order_late", "positive", 0),
-    ("Where is my order? App shows preparing since {mins} minutes", "order_late", "negative", 0),
-    ("order late hai, please jaldi bhejo", "order_late", "negative", 0),
-    ("Still waiting for {item}. Can you tell me the new ETA?", "order_late", "neutral", 0),
-    ("{mins} min ho gaye, rider ka number do", "order_late", "negative", 0),
-    ("Maine {item} order kiya tha, par {item2} aaya hai", "wrong_item", "negative", 0),
-    ("You sent the wrong item, I ordered {item}", "wrong_item", "negative", 0),
-    ("ek item missing hai, raita nahi aaya", "wrong_item", "negative", 0),
-    ("Order mein {item} nahi tha, sirf rice aaya", "wrong_item", "negative", 0),
-    ("Wrong order delivered, this is not mine", "wrong_item", "negative", 0),
-    ("Half the order is missing, please check", "wrong_item", "negative", 0),
-    ("Got extra {item2} I did not order, no issue, just letting you know", "wrong_item", "neutral", 0),
-    ("sab kuch sahi aaya, shukriya", "wrong_item", "positive", 0),
-    ("{item} thanda tha aur bilkul swaad nahi tha", "quality", "negative", 0),
-    ("Food was cold and stale", "quality", "negative", 0),
-    ("khana bahut accha tha, thank you!", "quality", "positive", 0),
-    ("Loved the {item}, will order again", "quality", "positive", 0),
-    ("{item} mein bahut tel tha, thoda heavy laga", "quality", "negative", 0),
-    ("Portion size was very small for the price", "quality", "negative", 0),
-    ("Tasty food and quick packing, good job", "quality", "positive", 0),
-    ("swaad lajawab tha, best {item} in town", "quality", "positive", 0),
-    ("Fresh and hot, the {item} was superb", "quality", "positive", 0),
-    ("{item} was okay, nothing special", "quality", "neutral", 0),
-    ("khane mein baal mila, ghin aa rahi hai", "quality", "negative", 1),
-    ("Found an insect in my {item}, I feel sick", "quality", "negative", 1),
-    ("khana khane ke baad ulti ho rahi hai", "quality", "negative", 1),
-    ("Paisa kat gaya par order confirm nahi hua", "payment", "negative", 0),
-    ("I was charged twice for the same order", "payment", "negative", 0),
-    ("UPI payment failed but money deducted", "payment", "negative", 0),
-    ("refund kab milega? {n} din ho gaye", "payment", "negative", 0),
-    ("Coupon did not apply, please fix the bill", "payment", "neutral", 0),
-    ("Bill mein extra charge laga hai", "payment", "negative", 0),
-    ("How do I pay cash on delivery?", "payment", "neutral", 0),
-    ("Payment was smooth, loved the easy checkout", "payment", "positive", 0),
-    ("Rider ne phone nahi uthaya, address pe nahi aaya", "rider_issue", "negative", 0),
-    ("The delivery guy was rude to me", "rider_issue", "negative", 1),
-    ("Rider ne bahut badtameezi se baat ki", "rider_issue", "negative", 1),
-    ("Rider left the food outside the gate without calling", "rider_issue", "negative", 0),
-    ("rider bahut helpful tha, thank you", "rider_issue", "positive", 0),
-    ("Rider was polite and quick, five stars", "rider_issue", "positive", 0),
-    ("Rider asked for extra money", "rider_issue", "negative", 1),
-    ("Rider is waiting downstairs, coming now", "rider_issue", "neutral", 0),
-    ("app mein login nahi ho raha", "other", "neutral", 0),
-    ("Do you deliver to sector {n}?", "other", "neutral", 0),
-    ("kal ka menu kya hai?", "other", "neutral", 0),
-    ("Can I change my address for the next order?", "other", "neutral", 0),
-    ("I will complain to the consumer court and post on social media", "other", "negative", 1),
-    ("tum log chor ho, police ko bulaunga", "other", "negative", 1),
-    ("Great app!", "other", "positive", 0),
-    ("Please add more veg options", "other", "neutral", 0),
-]
+def _load(prefix):
+    """Seed dicts from seeds/<prefix>*.jsonl; the first of any repeated text wins."""
+    seen, out = set(), []
+    for f in sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), "seeds", prefix + "*.jsonl"))):
+        for line in open(f, encoding="utf-8"):
+            d = json.loads(line)
+            key = " ".join(d["text"].lower().split())
+            if key not in seen:
+                seen.add(key)
+                out.append(d)
+    return out
 
-# (note, has_allergy, has_special_request)
-NOTES = [
-    ("no onion no garlic", 0, 1), ("peanut allergy please, it is serious", 1, 1),
-    ("extra spicy", 0, 1), ("gate code 4521, call on arrival", 0, 1),
-    ("kisi ko dairy se allergy hai, bina paneer ke", 1, 1), ("less oil please", 0, 1),
-    ("bhaiya thoda jaldi", 0, 0), ("birthday hai, candle laga dena", 0, 1),
-    ("no cutlery", 0, 1), ("gluten free please, celiac", 1, 1),
-    ("dont ring the bell, baby sleeping", 0, 1), ("thanks", 0, 0), ("ok", 0, 0),
-    ("mujhe cashew se allergy hai", 1, 1), ("pack separately", 0, 1),
-    ("good food last time", 0, 0), ("shellfish allergy, anaphylaxis risk", 1, 1),
-    ("extra raita please", 0, 1), ("allergic to eggs", 1, 1),
-    ("bahut bhookh lagi hai", 0, 0), ("sauce alag se dena", 0, 1),
-    ("i am lactose intolerant, no cream", 1, 1), ("hello", 0, 0),
-    ("leave with the guard at the gate", 0, 1), ("less sugar, diabetic", 0, 1),
-    ("sesame se reaction hota hai", 1, 1), ("please make it fresh", 0, 0),
-    ("3rd floor, lift kharab hai", 0, 1),
-]
 
-ITEMS = ["paneer butter masala", "biryani", "masala dosa", "veg thali", "chole bhature", "momos", "dal makhani", "rajma chawal", "pav bhaji", "chicken curry"]
-OPENERS = ["", "", "Hi, ", "Hello bhaiya, ", "Sir ", "Hey ", "Namaste, "]
-CLOSERS = ["", "", " please help", " jaldi reply do", " thanks", " pls", "."]
+# (message, topic, mood, needs_human) and (note, has_allergy, has_special_request)
+SUPPORT = [(d["text"], d["topic"], d["mood"], int(d["needs_human"])) for d in _load("support_")]
+NOTES = [(d["text"], int(d["has_allergy"]), int(d["has_special_request"])) for d in _load("notes_")]
 
 SUPPORT_Q = {
     "topic": {"type": "choice", "instructions": "What is this customer message about?", "criteria": TOPICS},
@@ -115,9 +51,9 @@ LATE_Q = {"at_risk": {"type": "noul", "instructions": "Will this order miss its 
 
 REFUND_ISSUES = ["never_arrived", "missing_item", "wrong_item", "cold_food", "none"]
 LATE_STATUS = ["preparing", "ready", "out_for_delivery"]
-BASE = {"train": {"support": 800, "notes": 400, "refund": 400, "late": 400},
-        "val": {"support": 100, "notes": 50, "refund": 50, "late": 50},
-        "test": {"support": 150, "notes": 80, "refund": 80, "late": 80}}
+BASE = {"train": {"support": 1400, "notes": 400, "refund": 400, "late": 400},
+        "val": {"support": 170, "notes": 50, "refund": 60, "late": 60},
+        "test": {"support": 350, "notes": 120, "refund": 150, "late": 150}}
 
 
 def refund_rule(issue, late, r, amt, age):
@@ -137,35 +73,31 @@ def late_rule(age, sla, status, prep, eta):
     return prep + eta > sla - age - 3
 
 
-def _split_seeds(rows, key):
-    """Per group, every 5th seed -> test, the one two before it -> val, rest -> train. Returns {split: [idx]}."""
-    out = {"train": [], "val": [], "test": []}
+def _split_seeds(items, key):
+    """Stratified by key(item), order fixed by a hash of the item: 12 of 20 train, 3 val, 5 test."""
     groups = {}
-    for i, row in enumerate(rows):
-        groups.setdefault(row[key], []).append(i)
+    for i, it in enumerate(items):
+        groups.setdefault(key(it), []).append(i)
+    out = {"train": [], "val": [], "test": []}
     for idxs in groups.values():
+        idxs.sort(key=lambda i: hashlib.md5(repr(items[i]).encode()).hexdigest())
         for j, i in enumerate(idxs):
-            out["test" if j % 5 == 4 else "val" if j % 5 == 2 else "train"].append(i)
+            out["test" if j % 20 >= 15 else "val" if j % 20 >= 12 else "train"].append(i)
     return out
 
 
-def _typo(rnd, s):
-    if len(s) > 6 and rnd.random() < 0.15:
-        i = rnd.randrange(1, len(s) - 2)
-        s = s[:i] + s[i + 1] + s[i] + s[i + 2:]
-    return s.lower() if rnd.random() < 0.2 else s
-
-
 def _wrap(rnd, msg):
-    msg = _typo(rnd, rnd.choice(OPENERS) + msg + rnd.choice(CLOSERS))
-    return f"Order #{rnd.randint(1000, 9999)}: {msg}" if rnd.random() < 0.5 else msg
+    if msg.isascii() and len(msg) > 6 and rnd.random() < 0.1:  # swap two letters
+        i = rnd.randrange(1, len(msg) - 2)
+        msg = msg[:i] + msg[i + 1] + msg[i] + msg[i + 2:]
+    if msg.isascii() and rnd.random() < 0.1:
+        msg = msg.lower()
+    return f"Order #{rnd.randint(1000, 9999)}: {msg}" if rnd.random() < 0.35 else msg
 
 
 def _support(rnd, i):
-    msg, topic, mood, human = SUPPORT[i]
-    it = rnd.sample(ITEMS, 2)
-    msg = msg.format(item=it[0], item2=it[1], mins=rnd.randint(20, 90), n=rnd.randint(2, 9))
-    return {"state": _wrap(rnd, msg), "questions": SUPPORT_Q,
+    _, topic, mood, human = SUPPORT[i]
+    return {"state": _wrap(rnd, SUPPORT[i][0]), "questions": SUPPORT_Q,
             "expected": {"topic": topic, "mood": mood, "needs_human": bool(human)}, "_sc": ["support", i]}
 
 
@@ -175,38 +107,51 @@ def _notes(rnd, i):
             "expected": {"has_allergy": bool(allergy), "has_special_request": bool(special)}, "_sc": ["notes", i]}
 
 
-def refund_state(issue, late, r, amt, age):
-    return f"Order total Rs {amt}. Delivered {late} min after the promised time. Issue: {issue}. Refunds in last 30 days: {r}. Customer account age: {age} days."
+def refund_state(rnd, issue, late, r, amt, age):
+    f = rnd.randrange(3)
+    if f == 0:
+        return f"Order total Rs {amt}. Delivered {late} min after the promised time. Issue: {issue}. Refunds in last 30 days: {r}. Customer account age: {age} days."
+    if f == 1:
+        return f"Refund request | total: Rs {amt} | late_by_min: {late} | issue: {issue} | refunds_30d: {r} | account_age_days: {age}"
+    return json.dumps({"order_total": amt, "minutes_late": late, "issue": issue, "refunds_last_30_days": r,
+                       "account_age_days": age, "payment": rnd.choice(["UPI", "COD", "card"])})
 
 
 def _refund(rnd, target):
     for _ in range(500):
-        p = (rnd.choice(REFUND_ISSUES), rnd.choice([0, 0, 5, 15, 30, 45, 70, 100]), rnd.randint(0, 5),
-             rnd.randrange(150, 2500, 10), rnd.choice([2, 5, 20, 90, 400]))
+        p = (rnd.choice(REFUND_ISSUES), rnd.choice([0, 0, 5, 10, 15, 25, 30, 35, 45, 55, 60, 70, 100]), rnd.randint(0, 5),
+             rnd.randrange(150, 2500, 10), rnd.choice([2, 5, 6, 7, 20, 90, 400]))
         if refund_rule(*p) == target:
-            return {"state": refund_state(*p), "questions": REFUND_Q, "expected": {"refund": target}, "_sc": ["refund", None]}
+            return {"state": refund_state(rnd, *p), "questions": REFUND_Q, "expected": {"refund": target}, "_sc": ["refund", None], "_p": list(p)}
     raise RuntimeError("no refund case for " + target)
 
 
-def late_state(age, sla, status, prep, eta):
-    return (f"Order placed {age} min ago. Promised within {sla} min. Status: {status}. "
-            f"Kitchen needs about {prep} more min. Rider needs {eta} min to reach the customer.")
+def late_state(rnd, age, sla, status, prep, eta):
+    f = rnd.randrange(3)
+    if f == 0:
+        return (f"Order placed {age} min ago. Promised within {sla} min. Status: {status}. "
+                f"Kitchen needs about {prep} more min. Rider needs {eta} min to reach the customer.")
+    if f == 1:
+        return f"placed_min_ago: {age} | sla_min: {sla} | status: {status} | kitchen_left_min: {prep} | rider_eta_min: {eta}"
+    return json.dumps({"age_min": age, "promised_min": sla, "status": status, "prep_left_min": prep, "rider_eta_min": eta,
+                       "items": rnd.randint(1, 6)})
 
 
 def _late(rnd, target):
-    for _ in range(500):
+    near = rnd.random() < 0.3  # a third of cases sit within 6 minutes of the line
+    for _ in range(2000):
         sla = rnd.choice([30, 40, 45, 60])
         status = rnd.choice(LATE_STATUS)
         p = (rnd.randint(5, sla + 15), sla, status, rnd.randint(1, 25) if status == "preparing" else 0, rnd.randint(3, 30))
-        if late_rule(*p) == target:
-            return {"state": late_state(*p), "questions": LATE_Q, "expected": {"at_risk": target}, "_sc": ["late", None]}
+        if late_rule(*p) == target and (not near or abs(p[3] + p[4] - (sla - p[0] - 3)) <= 6):
+            return {"state": late_state(rnd, *p), "questions": LATE_Q, "expected": {"at_risk": target}, "_sc": ["late", None], "_p": list(p)}
     raise RuntimeError("no late case")
 
 
 def build(seed=0, scale=1.0):
     rnd = random.Random(seed)
-    sup = _split_seeds(SUPPORT, 1)
-    note_idx = _split_seeds([((a, sp),) for _, a, sp in NOTES], 0)
+    sup = _split_seeds(SUPPORT, lambda t: (t[1], t[2], t[3]))
+    note_idx = _split_seeds(NOTES, lambda t: (t[1], t[2]))
     out, seen = {}, set()
     for split, counts in BASE.items():
         rows = []
@@ -247,13 +192,9 @@ def validate(splits):
                 _, a, s = NOTES[i]
                 assert exp == {"has_allergy": bool(a), "has_special_request": bool(s)}, r
             elif kind == "refund":
-                m = re.fullmatch(r"Order total Rs (\d+)\. Delivered (\d+) min after the promised time\. Issue: (\w+)\. Refunds in last 30 days: (\d+)\. Customer account age: (\d+) days\.", r["state"])
-                amt, late, issue, rf, age = m.groups()
-                assert exp["refund"] == refund_rule(issue, int(late), int(rf), int(amt), int(age)), r
+                assert exp["refund"] == refund_rule(*r["_p"]), r
             else:
-                m = re.fullmatch(r"Order placed (\d+) min ago\. Promised within (\d+) min\. Status: (\w+)\. Kitchen needs about (\d+) more min\. Rider needs (\d+) min to reach the customer\.", r["state"])
-                a, sla, st, prep, eta = m.groups()
-                assert exp["at_risk"] == late_rule(int(a), int(sla), st, int(prep), int(eta)), r
+                assert exp["at_risk"] == late_rule(*r["_p"]), r
 
 
 def write(out_dir, seed=0, scale=1.0):

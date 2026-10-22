@@ -1,0 +1,314 @@
+{"text":"Order 52 minutes se Cyber Hub, Gurugram mein stuck hai, ETA 20 min tha. Lunch break khatam hone wala hai.","topic":"order_late","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Where is my order? It has shown 'preparing' for 40 minutes.","topic":"order_late","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"ordr abhi tak nhi aaya, 1 ghnta ho gya pls check","topic":"order_late","mood":"negative","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"MERA KHANA 1 GHANTE SE LATE HAI, MEETING MISS HO GAYI, KYA MAZAK HAI","topic":"order_late","mood":"negative","needs_human":false,"style":"caps","ambiguous":false}
+{"text":"आर्डर ४५ मिनट से लेट है, राइडर लोकेशन बिल्कुल हिल नहीं रही। ऑफिस में सब भूखे बैठे हैं।","topic":"order_late","mood":"negative","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Ordered Chicken Biryani from Behrouz at 1:05 pm from my desk in Powai, paid Rs 449. It is now 2:10 and the tracker still says 'rider assigned'. I have a client call at 2:30 and no lunch. Please tell me what is going on.","topic":"order_late","mood":"negative","needs_human":false,"style":"long","ambiguous":false}
+{"text":"Itna wait karwaya, ab dinner bhi nahi aaya 😡⏰","topic":"order_late","mood":"negative","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"Kitna time lagega abhi? Koramangala office, order 25 min pehle place kiya tha.","topic":"order_late","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Can you tell me the revised ETA for my Veg Thali order? App shows 12 minutes since half an hour.","topic":"order_late","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"eta kya hai mera","topic":"order_late","mood":"neutral","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"Delivery time 35 min bataya tha, ab 50 ho gaye. Rider restaurant se nikla ya nahi?","topic":"order_late","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"मेरा ऑर्डर कहाँ तक पहुँचा है? स्टेटस सुबह से वही दिख रहा है।","topic":"order_late","mood":"neutral","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Thanks, order 5 min early pahunch gaya, Andheri East se bhi. Great job!","topic":"order_late","mood":"positive","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Wow delivered in 18 minutes during peak lunch hour, impressive 👏","topic":"order_late","mood":"positive","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"Sorry for the angry message earlier, food came just in time for my 1 pm stand-up. Thank you.","topic":"order_late","mood":"positive","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Delivery 1 ghante 20 min late thi aur support ne bas 'sorry' bola. Agar ye pattern nahi ruka to main consumer court mein complaint daalunga, notice bhej raha hoon.","topic":"order_late","mood":"negative","needs_human":true,"style":"hinglish","ambiguous":false}
+{"text":"Third time late this week. I will post this on Twitter tagging media houses and file a consumer forum case if you do not respond today.","topic":"order_late","mood":"negative","needs_human":true,"style":"english","ambiguous":false}
+{"text":"Order 'on the way' dikha raha hai par rider 3 km door ghoom raha hai Whitefield mein, kuch gadbad lag rahi hai.","topic":"order_late","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"HYDERABAD HITECH CITY, 70 MIN LATE, PAISE KAATO","topic":"order_late","mood":"negative","needs_human":false,"style":"caps","ambiguous":false}
+{"text":"Dinner order Rs 612 from Faasos was due 8:30, it's 9:40 at Lower Parel. Kitchen says ready, rider not picked up. Nobody replies on chat.","topic":"order_late","mood":"negative","needs_human":false,"style":"long","ambiguous":false}
+{"text":"plz fast kro, bhookh lgi h bohot, 45 min ho gye","topic":"order_late","mood":"negative","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"Aaj lunch rush mein bhi time pe aya, thank you team 🙏","topic":"order_late","mood":"positive","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"Restaurant ne order accept hi nahi kiya 30 min se, kya cancel karna padega?","topic":"order_late","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"The app says arriving in 2 mins for the last 25 minutes. Is the timer broken?","topic":"order_late","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"order cancl krna hai kyunki bhot late ho gya, refund bhi chahiye","topic":"order_late","mood":"negative","needs_human":false,"style":"sms","ambiguous":true}
+{"text":"राइडर ने पिकअप के बाद एक घंटा लगा दिया, खाना ठंडा और देर दोनों। गुड़गांव सेक्टर 44 का ऑर्डर है।","topic":"order_late","mood":"negative","needs_human":false,"style":"devanagari","ambiguous":true}
+{"text":"Can I know if my order is delayed because of rain in Mumbai? Just want to plan my evening.","topic":"order_late","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Order ka status 'confirmed' pe atka hai, 15 min se. Normal hai kya?","topic":"order_late","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Will my scheduled 1 pm lunch for tomorrow arrive by 1? Last time it came at 1:40.","topic":"order_late","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Bhaiya jaldi bhejo, metro pakadni hai 6:10 ki, order 8 min mein aa jayega kya?","topic":"order_late","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Delay hua par aapki team ne chat pe turant update diya, achha laga.","topic":"order_late","mood":"positive","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"90 minutes for a sandwich from Sector 29 market to my Gurgaon office. Absolutely unacceptable, I am done with this app.","topic":"order_late","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Pehle 30 min bola, ab 'delayed due to high demand'. High demand ka bahana mat do.","topic":"order_late","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"order stuck at 'picked up' for 35 mins rider phone off","topic":"order_late","mood":"negative","needs_human":false,"style":"sms","ambiguous":true}
+{"text":"Itni der mein toh main khud Bandra se Lower Parel chal ke ja ke kha aata 🙄","topic":"order_late","mood":"negative","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"Is my order cancelled automatically if it is not delivered in 90 minutes?","topic":"order_late","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"order kab tak aayega, Salt Lake Sector V office se hoon","topic":"order_late","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"ऑर्डर की डिलीवरी का नया समय बताइए, पंद्रह मिनट पहले ज्यादा दिखा रहा था।","topic":"order_late","mood":"neutral","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Delivery on time, food hot, rider polite. Kuch aur nahi chahiye, bas thanks.","topic":"order_late","mood":"positive","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Late by 25 min is fine because of the traffic jam near Silk Board, was tracking live. No complaint, just FYI.","topic":"order_late","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"MY ORDER IS STILL NOT HERE AFTER 1 HR 15 MIN. CUSTOMER CARE NOT PICKING UP.","topic":"order_late","mood":"negative","needs_human":false,"style":"caps","ambiguous":false}
+{"text":"Hum 6 log team lunch ke liye wait kar rahe the, Rs 2,150 ka order tha Chaayos aur Wow Momo se. 1:45 ho gaya, abhi tak kuch nahi aaya. Manager ne bola agar nahi aaya to next time se kisi aur app se mangayenge.","topic":"order_late","mood":"negative","needs_human":false,"style":"long","ambiguous":false}
+{"text":"Can you expedite? Order placed 55 min ago, still 'preparing'.","topic":"order_late","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"kyu itni der lg rhi hai?? 😤","topic":"order_late","mood":"negative","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"Cloud kitchen wale ne bola order ready hai, rider abhi tak nahi aaya 25 min se. Kuch karo.","topic":"order_late","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Order was supposed to reach Hinjewadi by 1:15. It came at 2:00, and the paneer wrap was soggy. Should I be asking for a refund of the Rs 280?","topic":"order_late","mood":"negative","needs_human":false,"style":"english","ambiguous":true}
+{"text":"Thank you for the quick ETA update, it really helped me plan my break.","topic":"order_late","mood":"positive","needs_human":false,"style":"english","ambiguous":false}
+{"text":"order late hai but chalo, traffic hai. bas ye batao kitna aur?","topic":"order_late","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"आज सोमवार को भी ऑर्डर टाइम पर आया, धन्यवाद!","topic":"order_late","mood":"positive","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"ordr 1hr late, no refund yet, fed up","topic":"order_late","mood":"negative","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"Lunch tha 1 baje ka aur ab 3 baj gaye, order ka koi pata nahi. Kya aap rider se baat karwa sakte ho?","topic":"order_late","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Wrong biryani aaya, Hyderabadi ki jagah veg pulao de diya Rs 329 wala.","topic":"wrong_item","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"coke nhi aayi sath me, bill me hai","topic":"wrong_item","mood":"negative","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"MAINE VEG MANGAYA THA, CHICKEN BHEJ DIYA!! KYA HAI YE","topic":"wrong_item","mood":"negative","needs_human":false,"style":"caps","ambiguous":false}
+{"text":"मैंने दो रोटी ज्यादा मंगाई थीं लेकिन बस चार आईं, छह की जगह। बिल में छह का पैसा लगा है।","topic":"wrong_item","mood":"negative","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Ordered Butter Chicken combo from Box8 for Rs 399 at my Whitefield office. Got dal makhani instead and no rice at all. Whole team's lunch was ruined and we had to order again. Please correct this.","topic":"wrong_item","mood":"negative","needs_human":false,"style":"long","ambiguous":false}
+{"text":"Ye mera order nahi hai, kisi aur ka bag aa gaya 😕","topic":"wrong_item","mood":"negative","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"Received a Burger King bag with someone else's name on the receipt, Sector 18 Noida.","topic":"wrong_item","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Extra item aa gaya, 2 gulab jamun jo maine order nahi kiye the. Wapas karun ya rakh lun?","topic":"wrong_item","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Can you confirm whether the sauce packets are supposed to come separately? I got no mayo with my wrap.","topic":"wrong_item","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"qty galat h, 3 roll mangaye the 2 aaye","topic":"wrong_item","mood":"negative","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"Maine no onion bola tha lekin sabzi mein onion hai. Item hi alag lag raha hai, shayad kisi aur ka bheja hai.","topic":"wrong_item","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":true}
+{"text":"Chole Bhature ke saath achar aur pyaz nahi diya, lekin item to sahi aaya. Next time check kar lena.","topic":"wrong_item","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"आर्डर में पनीर टिक्का रोल की जगह एग रोल आ गया, मैं तो वेज हूँ।","topic":"wrong_item","mood":"negative","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Thanks for sending the replacement Thali so quickly, this one is correct.","topic":"wrong_item","mood":"positive","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Sab kuch sahi aaya aaj, even the extra raita! Thank you!","topic":"wrong_item","mood":"positive","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Replacement mil gaya, sahi item tha. Shukriya 🙏","topic":"wrong_item","mood":"positive","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"I ordered a Large Pepperoni but received Medium Margherita from Domino's, Rs 459 paid at Koramangala.","topic":"wrong_item","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Do brothers ek hi building mein hain, mera aur uska order swap ho gaya. Ab dono ko galat khana mila.","topic":"wrong_item","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"wrong order aya hai. pls replace","topic":"wrong_item","mood":"negative","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"Dal tadka ki jagah dal fry bhej diya, aur 1 roti kam hai. Rs 220 ka order tha Rasoi Box se, Gurugram sector 56.","topic":"wrong_item","mood":"negative","needs_human":false,"style":"long","ambiguous":false}
+{"text":"Packet khola to sirf rice nikla, curry gayab hai!","topic":"wrong_item","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"The order has a veg biryani in a package labelled non-veg. Is it the right dish or not?","topic":"wrong_item","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"MISSING ITEMS AGAIN. SECOND TIME THIS MONTH.","topic":"wrong_item","mood":"negative","needs_human":false,"style":"caps","ambiguous":false}
+{"text":"Mera order kisi aur ko chala gaya aur unka mere ko, wo wapas karna chahte hain. Kaise karein?","topic":"wrong_item","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"आज का आर्डर बिल्कुल सही था, हर चीज़ पूरी। बहुत धन्यवाद।","topic":"wrong_item","mood":"positive","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Instead of cold coffee I got hot filter coffee. Rs 119 charged. Delivered to Mindspace, Hyderabad.","topic":"wrong_item","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Order me 4 momos missing, 8 ki jagah 4 piece the. Photo bhej dun?","topic":"wrong_item","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"The wrong dish came and it has peanuts, I am allergic and ate a bite. My throat is swelling, I need help now.","topic":"wrong_item","mood":"negative","needs_human":true,"style":"english","ambiguous":true}
+{"text":"Aapne hamare saath fraud kiya hai, 2 baar galat item bheja aur paise bhi nahi lautaye. Ye cheating hai, police complaint karunga.","topic":"wrong_item","mood":"negative","needs_human":true,"style":"hinglish","ambiguous":false}
+{"text":"Sandwich ki jagah wrap aaya 🤦","topic":"wrong_item","mood":"negative","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"Got a plastic spoon but no actual cutlery for noodles. Missing fork?","topic":"wrong_item","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Meri Paneer Butter Masala me paneer kam tha aur ek item bhi missing. Pay mein Rs 285 hua. Bhai kya chal raha hai?","topic":"wrong_item","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":true}
+{"text":"Thank you for fixing the wrong item so quickly, nice service. Rider returned within 15 minutes with the right Rajma Chawal.","topic":"wrong_item","mood":"positive","needs_human":false,"style":"english","ambiguous":false}
+{"text":"आलू पराठा की जगह गोभी पराठा आया है, पर दही सही है।","topic":"wrong_item","mood":"neutral","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Itna bada order Rs 1,480 ka tha, 3 items hi nahi aaye: veg manchurian, fried rice, aur 2 spring rolls. Office party tha, sab pareshan. Bahut bura experience raha.","topic":"wrong_item","mood":"negative","needs_human":false,"style":"long","ambiguous":false}
+{"text":"Naan ki jagah roti aayi, chalega, par bata dena.","topic":"wrong_item","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Swapped orders: I got 'Egg Roll' and my colleague got my 'Veg Roll' even though both were separate orders. Could you look at why this happens?","topic":"wrong_item","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"galat saman 😡😡 kab tak sahi karoge","topic":"wrong_item","mood":"negative","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"Wrong sauce diya, par baaki sab theek. Koi baat nahi.","topic":"wrong_item","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"आर्डर में कोल्ड ड्रिंक नहीं आई, मैसेज पर बोला था 2 चाहिए।","topic":"wrong_item","mood":"negative","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Aaj ka order perfect tha, sab sahi, sab time pe. 5 star!","topic":"wrong_item","mood":"positive","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Gave me 1 samosa instead of 2 for Rs 40, small thing but annoying when it happens every week.","topic":"wrong_item","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Dosa ke saath sambar nahi bheja, chutney aayi hai bas.","topic":"wrong_item","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"wrong item delivered, no refund yet","topic":"wrong_item","mood":"negative","needs_human":false,"style":"sms","ambiguous":true}
+{"text":"Pizza tha order me, Pasta mil gaya. Refund bhi chahiye aur sahi item bhi.","topic":"wrong_item","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Biryani was cold and bland, Rs 349 wasted. Chicken piece tough as rubber.","topic":"quality","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Khana bilkul thanda aaya, microwave karna pada office mein.","topic":"quality","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"paneer baasi lag rha tha, smell aa rhi thi","topic":"quality","mood":"negative","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"DAL MEIN PAANI HI PAANI, QUANTITY KAM AUR TASTE KHARAB, Rs 189 BEKAR","topic":"quality","mood":"negative","needs_human":false,"style":"caps","ambiguous":false}
+{"text":"खाने में बहुत ज्यादा तेल था और पराठा कच्चा रह गया था। पैसे बर्बाद हुए।","topic":"quality","mood":"negative","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Ordered Dal Makhani and Butter Naan from Punjab Grill Express for Rs 520 at my Bandra Kurla desk. The dal was watery and the naan came hard like cardboard. I eat there often and never had this before. Please pass feedback to the kitchen.","topic":"quality","mood":"negative","needs_human":false,"style":"long","ambiguous":false}
+{"text":"Gravy poori bag me leak ho gayi 😭 pura bag kharab","topic":"quality","mood":"negative","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"The salad had wilted lettuce and a slightly sour dressing. Not fresh.","topic":"quality","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Portion bahut chhota tha, Rs 299 mein sirf 4 piece. Pehle double hota tha.","topic":"quality","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Aaj ka rajma chawal ekdum ghar jaisa tha, kya swaad! Thank you.","topic":"quality","mood":"positive","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Loved the Thai curry from the new cloud kitchen, perfectly spicy, well packed. 10/10.","topic":"quality","mood":"positive","needs_human":false,"style":"english","ambiguous":false}
+{"text":"tasty food 😍👌 will order again","topic":"quality","mood":"positive","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"मोमोज़ एकदम गरम और स्वादिष्ट थे, चटनी भी तीखी। बहुत अच्छा।","topic":"quality","mood":"positive","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Maine biryani me baal mila, bilkul saaf dikha raha tha. Ulti jaisa feel ho raha hai.","topic":"quality","mood":"negative","needs_human":true,"style":"hinglish","ambiguous":false}
+{"text":"Found a cockroach leg in my dal. This is disgusting, I want to report the kitchen to FSSAI.","topic":"quality","mood":"negative","needs_human":true,"style":"english","ambiguous":false}
+{"text":"khane me plastic ka tukda mila, bachha khane wala tha","topic":"quality","mood":"negative","needs_human":true,"style":"sms","ambiguous":false}
+{"text":"KHANA KHAKE PET DARD AUR ULTI SHURU HO GAYI, DOCTOR KE PAAS JA RAHA HOON","topic":"quality","mood":"negative","needs_human":true,"style":"caps","ambiguous":false}
+{"text":"आपके यहाँ से चिकन खाया और रात भर पेट खराब रहा, फूड पॉइज़निंग जैसा लग रहा है। अस्पताल जाना पड़ा।","topic":"quality","mood":"negative","needs_human":true,"style":"devanagari","ambiguous":false}
+{"text":"Got a metal wire piece inside the Chicken Roll from Kolkata Kati, Rs 169, Whitefield. I bit into it and cut my tongue. This is dangerous.","topic":"quality","mood":"negative","needs_human":true,"style":"long","ambiguous":false}
+{"text":"Sabzi me kida mila 🤢 ye to complaint ki baat hai","topic":"quality","mood":"negative","needs_human":true,"style":"emoji","ambiguous":false}
+{"text":"After eating your sandwich I got hives and swelling on my lips. I told the restaurant I'm allergic to cashew.","topic":"quality","mood":"negative","needs_human":true,"style":"english","ambiguous":false}
+{"text":"Ghatiya khana, subah se pet kharab hai. Legal action lena padega agar FSSAI ne bhi jaanch na ki.","topic":"quality","mood":"negative","needs_human":true,"style":"hinglish","ambiguous":false}
+{"text":"Spotted a bandage in the sambar. Never ordering again. I am sharing this on social media and informing the food safety authority.","topic":"quality","mood":"negative","needs_human":true,"style":"english","ambiguous":false}
+{"text":"glass ka chhota piece mila dessert me. sach me","topic":"quality","mood":"negative","needs_human":true,"style":"sms","ambiguous":false}
+{"text":"Chicken Tikka under-cooked, andar se kaccha tha aur 2 ghante baad se ulti ho rahi hai.","topic":"quality","mood":"negative","needs_human":true,"style":"hinglish","ambiguous":false}
+{"text":"Pizza ka base jala hua tha aur cheese kam. Rs 275 ka, bahut kharab.","topic":"quality","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"The soup spilled inside the bag and the box was half empty when I opened it.","topic":"quality","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"नमकीन ज्यादा, पूरी सब्ज़ी बेस्वाद। टिफिन से बेहतर होता।","topic":"quality","mood":"negative","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Veg Thali ki quality gir gayi hai, pehle jaisa swaad nahi. Rs 210 ke liye nahi worth.","topic":"quality","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"too salty cant eat","topic":"quality","mood":"negative","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"Is the chicken in the butter chicken fresh or frozen? It tastes odd.","topic":"quality","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Kya Chole Bhature ka oil roz change hota hai? Taste thoda kadva laga.","topic":"quality","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Thoda sa spicy tha, normal feedback hai. Mild bolna chahiye tha order me.","topic":"quality","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Dessert box tutaa hua tha but cake ok tha.","topic":"quality","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Packaging was excellent: sealed tamper tag, hot box, separate gravy container. Great job!","topic":"quality","mood":"positive","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Aaj ka Lunch box tasty bhi hai aur garam bhi. Mazaa aa gaya Hyderabad Madhapur ke office me!","topic":"quality","mood":"positive","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Pasta mast tha 👍🍝","topic":"quality","mood":"positive","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"Dosa crispy aur sambar garam. Dil khush!","topic":"quality","mood":"positive","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Cold coffee was watery and the ice melted. For Rs 149, poor.","topic":"quality","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Roti raw thi, aur dal me namak hi nahi. Kitchen ko feedback do.","topic":"quality","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Cheese burst pizza me cheese ka naam-o-nishaan nahi, phir bhi Rs 399 liya gaya. Kya ye galat charge nahi?","topic":"quality","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":true}
+{"text":"The sandwich was soggy because the rider kept it in an open bag in the rain, and the bread also felt stale.","topic":"quality","mood":"negative","needs_human":false,"style":"english","ambiguous":true}
+{"text":"quantity bohot kam, mere ko laga plate hi chhoti hai","topic":"quality","mood":"negative","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"स्वाद अच्छा था पर थोड़ा ठंडा आया। ठीक है।","topic":"quality","mood":"neutral","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"I just want to say the new Chicken Wrap from Wrap Chef near Saket metro is amazing, juicy and well sealed. Please tell the cloud kitchen team, we loved it. Ordered Rs 249 yesterday and again today.","topic":"quality","mood":"positive","needs_human":false,"style":"long","ambiguous":false}
+{"text":"Veg Biryani me achhe masale the, par aaj ek chhota plastic ka tukda mil gaya. Please kitchen ko batao.","topic":"quality","mood":"negative","needs_human":true,"style":"hinglish","ambiguous":false}
+{"text":"Maggi me chhipkali jaisa kuch dikha, plate dekh ke hi ulti aa gayi 🤮","topic":"quality","mood":"negative","needs_human":true,"style":"hinglish","ambiguous":false}
+{"text":"Not happy with the oily chowmein 😕","topic":"quality","mood":"negative","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"Muffin stale tha, expiry date bhi nikla hua tha. Dekho photo.","topic":"quality","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Mujhe Rs 449 ka refund chahiye, order pe 2 baar charge hua lag raha hai UPI se.","topic":"payment","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"I was charged twice for the same order via Google Pay. Please refund the extra Rs 329.","topic":"payment","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"refund kb milega 5 din ho gye","topic":"payment","mood":"negative","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"PAISE KAT GAYE LEKIN ORDER PLACE NAHI HUA, WALLET SE Rs 520 GAYE","topic":"payment","mood":"negative","needs_human":false,"style":"caps","ambiguous":false}
+{"text":"मेरा पैसा कट गया पर ऑर्डर कन्फर्म नहीं हुआ। बैंक में अब तक वापस नहीं आया।","topic":"payment","mood":"negative","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Used coupon OFFICE50 on my Rs 650 Faasos order yesterday and discount did not apply, paid full. Today the same code worked on a smaller bill. Please look into this since the offer says valid for all orders at Gurugram offices.","topic":"payment","mood":"negative","needs_human":false,"style":"long","ambiguous":false}
+{"text":"Menu me Rs 199 likha tha, bill me Rs 249 aaya 😡","topic":"payment","mood":"negative","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"Delivery charge Rs 35 added after I applied free delivery coupon.","topic":"payment","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Refund mil gaya, thanks! Itna jaldi socha nahi tha.","topic":"payment","mood":"positive","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Got my money back in just 2 hours, thank you for the quick resolution.","topic":"payment","mood":"positive","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Wallet cashback credit ho gaya, nice 👍","topic":"payment","mood":"positive","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"रिफंड की राशि मेरे खाते में आ गई है। धन्यवाद।","topic":"payment","mood":"positive","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"COD tha aur rider ke paas Rs 500 ka change nahi tha, to usne Rs 40 rakh liye.","topic":"payment","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":true}
+{"text":"Is there any minimum order for free delivery at Bengaluru HSR Layout?","topic":"payment","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Refund wallet me jayega ya bank account me? Pehle bataiye.","topic":"payment","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"can i pay by cod for rs 700","topic":"payment","mood":"neutral","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"UPI pending dikha raha hai, par bank se paise kat gaye. Kitne din lagenge?","topic":"payment","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"क्या मैं गूगल पे और वॉलेट दोनों से एक साथ पेमेंट कर सकता हूँ?","topic":"payment","mood":"neutral","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Bill me GST aur packaging charge ka breakup kya hai? Rs 38 extra laga.","topic":"payment","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Someone used my UPI to place two orders, I never ordered them. This looks like fraud, I will go to the cyber crime police if not resolved.","topic":"payment","mood":"negative","needs_human":true,"style":"english","ambiguous":false}
+{"text":"Unauthorised transaction of Rs 1,299 from my card on your app. Ye scam hai kya? Bank aur police dono ko batane wala hoon.","topic":"payment","mood":"negative","needs_human":true,"style":"hinglish","ambiguous":false}
+{"text":"आप लोग ग्राहकों को लूट रहे हो, दो बार पैसा काटा और रिफंड नहीं दिया। उपभोक्ता अदालत जाऊँगा।","topic":"payment","mood":"negative","needs_human":true,"style":"devanagari","ambiguous":false}
+{"text":"Wallet balance Rs 800 tha ab 0 dikha raha hai bina kuch order kiye. Fraud lag raha hai, bank ko likh raha hoon.","topic":"payment","mood":"negative","needs_human":true,"style":"hinglish","ambiguous":false}
+{"text":"coupon nhi lag rha, error aa rha","topic":"payment","mood":"negative","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"The refund shows 'processed' but my HDFC statement has nothing even after 7 days.","topic":"payment","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Maine order cancel kiya tha time pe, phir bhi Rs 340 nahi lauta. Support chat ne bola 3 din mein ayega, ab 6 ho gaye.","topic":"payment","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Price jyada hai in-app vs restaurant ke menu se. Rs 299 vs Rs 249 same dish.","topic":"payment","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Payment failed twice then succeeded and I think I'm charged three times. Please check, UPI ref ends with 4421.","topic":"payment","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"मेरे वॉलेट का कैशबैक नहीं आया ऑर्डर के बाद, ₹50 मिलने थे।","topic":"payment","mood":"negative","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Thanks for waiving the surge fee, appreciate the gesture.","topic":"payment","mood":"positive","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Coupon FIRST100 laga aur bill Rs 100 kam hua, bahut badhiya 😊","topic":"payment","mood":"positive","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"refund done thx","topic":"payment","mood":"positive","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"Ordered Rs 899 worth from Bowl Company, payment deducted by Paytm but status says 'failed'. Then another Rs 899 got deducted when I retried. I need the first one back as I had to rush to a client meeting in Lower Parel and can't wait for 7 working days.","topic":"payment","mood":"negative","needs_human":false,"style":"long","ambiguous":false}
+{"text":"Surge fee kab lagta hai? Mujhe Rs 60 extra laga raat 9 baje.","topic":"payment","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Is the tip I gave in the app going to the rider? Rs 30 was deducted.","topic":"payment","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Bill me Rs 120 ka item dikha raha hai jo maine liya hi nahi 😤","topic":"payment","mood":"negative","needs_human":false,"style":"emoji","ambiguous":true}
+{"text":"Order missing but money charged and refund still not initiated, please process.","topic":"payment","mood":"negative","needs_human":false,"style":"english","ambiguous":true}
+{"text":"Bhai discount code expire ho gaya pehle hi, refresh kar do ya naya do?","topic":"payment","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Cashless card payment se paise do baar kat gaye, refund Rs 275 abhi tak nahi aaya!!","topic":"payment","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"पेटीएम वॉलेट से पैसा नहीं कट रहा, क्या दिक्कत है?","topic":"payment","mood":"neutral","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Not getting my Rs 600 refund for 10 days. This is unacceptable.","topic":"payment","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"The invoice for my corporate lunch needs the GST number of our company in Bengaluru. Where can I add it?","topic":"payment","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Refund proper tarike se mila, aur cashback bhi diya. Aap log accha kaam kar rahe ho.","topic":"payment","mood":"positive","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"upi se pay nhi ho rha, card try kru?","topic":"payment","mood":"neutral","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"आज दाम ज्यादा क्यों दिख रहे हैं? कल ₹180 था आज ₹230।","topic":"payment","mood":"negative","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Auto-debit se Rs 99 membership kata, maine subscribe hi nahi kiya tha.","topic":"payment","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"The discount applied on the cart but disappeared at checkout (Rs 75 off). Is that a bug?","topic":"payment","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Rider ne call nahi kiya, mai gate pe 15 min wait karta raha. Gurugram DLF Phase 3.","topic":"rider_issue","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"The rider left my food at the reception without calling, and the guard had gone home.","topic":"rider_issue","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"rider ne call nhi kiya bs 'delivered' kr diya","topic":"rider_issue","mood":"negative","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"RIDER BADTAMEEZI SE BAAT KAR RAHA THA, GAALI DI MUJHE!!","topic":"rider_issue","mood":"negative","needs_human":true,"style":"caps","ambiguous":false}
+{"text":"राइडर पता नहीं ढूंढ पाया और मुझे ही बोला कि खुद नीचे आकर ले जाओ, वो भी बदतमीज़ी से।","topic":"rider_issue","mood":"negative","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Rider called me thrice from Koramangala 5th block saying he cannot find the building. I explained via the map, still he cancelled and returned the Rs 380 order to the restaurant. I stood downstairs for 25 minutes. Please arrange a new delivery.","topic":"rider_issue","mood":"negative","needs_human":false,"style":"long","ambiguous":false}
+{"text":"Rider ne order door pe chhod ke chala gaya aur mujhe call bhi nahi kiya 😕","topic":"rider_issue","mood":"negative","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"Rider asked for Rs 50 extra saying 'petrol ke liye'. I already paid online.","topic":"rider_issue","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Rider bohot polite tha, barish me bhi khana safe laya. Please usko appreciate karo.","topic":"rider_issue","mood":"positive","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Delivery partner was very kind, called twice and came up to the 6th floor. Thank you!","topic":"rider_issue","mood":"positive","needs_human":false,"style":"english","ambiguous":false}
+{"text":"rider ko thanks bolna 👍","topic":"rider_issue","mood":"positive","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"राइडर भैया बहुत अच्छे थे, मौसम खराब होने के बावजूद टाइम पर पहुँचे।","topic":"rider_issue","mood":"positive","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Rider ne meri female colleague ko ghoor ke dekha aur uska number maanga. Ye ekdum galat hai, action lo.","topic":"rider_issue","mood":"negative","needs_human":true,"style":"hinglish","ambiguous":false}
+{"text":"Delivery guy threatened me when I asked for a bill, said he knows where I live. I'm scared. Filing a police complaint.","topic":"rider_issue","mood":"negative","needs_human":true,"style":"english","ambiguous":false}
+{"text":"Rider ne mere saath badtameezi ki aur hath uthane ki koshish ki. Kal police station jaa raha hoon.","topic":"rider_issue","mood":"negative","needs_human":true,"style":"hinglish","ambiguous":false}
+{"text":"rider ne msg kiya raat 11 baje personal wala, pls ban him","topic":"rider_issue","mood":"negative","needs_human":true,"style":"sms","ambiguous":false}
+{"text":"राइडर ने शराब पीकर डिलीवरी की और मुझसे गाली-गलौज की। ये बहुत खतरनाक है।","topic":"rider_issue","mood":"negative","needs_human":true,"style":"devanagari","ambiguous":false}
+{"text":"Rider kept calling my personal number after delivery and sent inappropriate texts on WhatsApp. This is harassment and I will go to the media.","topic":"rider_issue","mood":"negative","needs_human":true,"style":"english","ambiguous":false}
+{"text":"RIDER NE MERE SAATH BAD BEHAVIOUR KIYA, MAINE COMPLAINT DAAL DI HAI CYBER CELL ME BHI","topic":"rider_issue","mood":"negative","needs_human":true,"style":"caps","ambiguous":false}
+{"text":"Rider has stolen the order? Delivered to wrong building and said customer refused. That sounds like theft, I will file an FIR.","topic":"rider_issue","mood":"negative","needs_human":true,"style":"english","ambiguous":false}
+{"text":"Order dene ke baad rider ne mujhse tip maanga, bola 'sir Rs 100 dedo warna next time late aayega'.","topic":"rider_issue","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Rider kisi aur galli me chala gaya, phone pe baat karte karte. Mera Andheri West ka address clear tha.","topic":"rider_issue","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"rider didnt come inside society, gate pe hi khada raha","topic":"rider_issue","mood":"negative","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"The rider spoke rudely in the lift and said I should pick up from the gate next time.","topic":"rider_issue","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"राइडर ने लोकेशन नहीं समझी, मैप पर तीन बार भेज दिया फिर भी नहीं आया।","topic":"rider_issue","mood":"negative","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Rider ka number nahi mil raha. Kaise contact karun? Order 20 min se bahar pada hai.","topic":"rider_issue","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Rider ne bola 'lift kharab hai, aap neeche aa jao'. Kya ye allowed hai?","topic":"rider_issue","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Rider arrived at the wrong gate, but he was polite and fixed it on his own. Just a heads up for the map pin.","topic":"rider_issue","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"The delivery executive was soaked but still smiling and carefully handed over the food. Kudos! I'm at Bandra Kurla Complex. Orders here during monsoon are tough, and he tried hard to keep my Rs 380 meal dry.","topic":"rider_issue","mood":"positive","needs_human":false,"style":"long","ambiguous":false}
+{"text":"राइडर ने ऑर्डर नीचे गार्ड को दे दिया, मुझे बिना बताए, गार्ड ने सुबह दिया।","topic":"rider_issue","mood":"negative","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Rider ne order dena mana kiya kyunki mai upar nahi aa paya 2 min late. Kitna attitude hai 😤","topic":"rider_issue","mood":"negative","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"Rider ne order cancel kar diya aur khana khud kha liya? Mujhe call aya 'order nahi mila' - I think rider kept it.","topic":"rider_issue","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":true}
+{"text":"Rider ne kaha mera order late hua kyunki wo naya hai aur galat route pe tha. Thoda sympathetic hu par fir bhi 40 min lag gaye.","topic":"rider_issue","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":true}
+{"text":"rider good, thanks","topic":"rider_issue","mood":"positive","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"Shukriya! Rider ne Saket metro station ke bahar aake order diya, bahut madad ki.","topic":"rider_issue","mood":"positive","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Rider called to confirm my location. Professional, thank you.","topic":"rider_issue","mood":"positive","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Rider phone nahi utha raha, aur meri building me 3 gate hain. Kahan aau lene?","topic":"rider_issue","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Rider was chewing tobacco and spat near my gate, then argued when I said something. Behaviour was very bad.","topic":"rider_issue","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"रात के 10 बजे राइडर ने गेट पर बहुत शोर किया, बोला तुरंत नीचे आओ। पड़ोसी भी परेशान हुए।","topic":"rider_issue","mood":"negative","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"rider ne bola payment cash me karo, app me online hone ke bawajood.","topic":"rider_issue","mood":"negative","needs_human":false,"style":"sms","ambiguous":true}
+{"text":"Rider kept my food bag on the road while he talked on phone for 10 minutes. I saw it from my window.","topic":"rider_issue","mood":"negative","needs_human":false,"style":"english","ambiguous":true}
+{"text":"The rider insisted I pay him cash for 'handling' even though the app says no extra charge. I refused; he mumbled abuse as he left. Please do something, this happens near Lower Parel often.","topic":"rider_issue","mood":"negative","needs_human":true,"style":"english","ambiguous":false}
+{"text":"राइडर ने मेरी पत्नी के साथ गलत बर्ताव किया। हम कानूनी कार्रवाई करेंगे।","topic":"rider_issue","mood":"negative","needs_human":true,"style":"devanagari","ambiguous":false}
+{"text":"Delivery wala bola 'madam akeli ho kya' aur door ke andar aane ki koshish ki. Mujhe darr lag raha hai.","topic":"rider_issue","mood":"negative","needs_human":true,"style":"hinglish","ambiguous":false}
+{"text":"Rider ka behaviour badhiya, kal wala rider bhi accha tha. Same team lagao please 🙏","topic":"rider_issue","mood":"positive","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"Do you deliver to Sector 62 Noida office parks? App says 'not serviceable'.","topic":"other","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"menu me jain options kab aayenge","topic":"other","mood":"neutral","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"APP BAHUT SLOW HAI, HAR BAAR HANG HO JAATA HAI LUNCH TIME PE!!","topic":"other","mood":"negative","needs_human":false,"style":"caps","ambiguous":false}
+{"text":"मेरा पता बदलकर ऑफिस का डालना है, पुराना घर का पता है। कैसे करूं?","topic":"other","mood":"neutral","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"I love how clean the app is and how easy reordering feels. Wish you also added a 'repeat last order' on the home screen for my Thursday lunch routine at the Indiranagar office, that would save me two taps every week.","topic":"other","mood":"positive","needs_human":false,"style":"long","ambiguous":false}
+{"text":"Hi 👋","topic":"other","mood":"neutral","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"Hello, kaise ho","topic":"other","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Good morning, can you help?","topic":"other","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"asdfgh qwerty zxcv","topic":"other","mood":"neutral","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"kkkkkk hhhh 12345 ???","topic":"other","mood":"neutral","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"App update ke baad mera purana address list gayab ho gaya.","topic":"other","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Please add a filter for 'under 400 kcal' meals. Office goers who diet would love it.","topic":"other","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Best app for office lunches, thank you team 😍","topic":"other","mood":"positive","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"ऐप का इंटरफ़ेस बहुत आसान है, मेट्रो में बैठे-बैठे ऑर्डर हो जाता है। धन्यवाद।","topic":"other","mood":"positive","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Bahut accha app hai, ghar jaisa khana milta hai Mumbai me. Keep it up!","topic":"other","mood":"positive","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"The app crashes whenever I open the cart on my Samsung phone. Please fix.","topic":"other","mood":"negative","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Aap ke app me Hindi language ka option kahan hai?","topic":"other","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Do you serve Gurugram Golf Course Road after 11 pm?","topic":"other","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Delivery area me Hebbal aata hai kya?","topic":"other","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"नई सर्विस कब शुरू होगी हमारे सेक्टर में?","topic":"other","mood":"neutral","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Your app is a scam. It collects data and sells it. I'll take legal action and inform cyber police.","topic":"other","mood":"negative","needs_human":true,"style":"english","ambiguous":false}
+{"text":"Mera account kisi ne hack karke fake orders kiye hain. Police me jaunga aur aapke upar case karunga.","topic":"other","mood":"negative","needs_human":true,"style":"hinglish","ambiguous":false}
+{"text":"Aapki kitchen staff ne mujhe phone karke gandi baatein ki. Ye harassment hai, action lo.","topic":"other","mood":"negative","needs_human":true,"style":"hinglish","ambiguous":false}
+{"text":"support agent ne mujhse badtameezi se baat ki aur dhamki di. complaint karunga police me","topic":"other","mood":"negative","needs_human":true,"style":"sms","ambiguous":false}
+{"text":"आपके ऐप पर मेरा पर्सनल डेटा लीक हुआ है, अनजान लोगों के फोन आ रहे हैं। कंज्यूमर कोर्ट जाऊँगा।","topic":"other","mood":"negative","needs_human":true,"style":"devanagari","ambiguous":false}
+{"text":"WHATSAPP PE KOI APNE AAP KO TUMHARA STAFF BATA KE PAISE MANG RAHA HAI, FRAUD HAI KYA??","topic":"other","mood":"negative","needs_human":true,"style":"caps","ambiguous":false}
+{"text":"Someone from your support called asking for my UPI PIN. Is this a scam? I'm reporting it to the police.","topic":"other","mood":"negative","needs_human":true,"style":"english","ambiguous":false}
+{"text":"Mera naam galat dikh raha hai profile me. Kaise badlun?","topic":"other","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"how do I delete my account","topic":"other","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Kya app mein dark mode hai?","topic":"other","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Aapka customer care number kahan milega? Chat bot samajh hi nahi raha 😡","topic":"other","mood":"negative","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"menu me Chinese kam hai, add karo plz","topic":"other","mood":"neutral","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"Search me 'veg' likhne par non-veg items bhi dikh rahe hain. Please filter fix karo.","topic":"other","mood":"negative","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Can you add Apple Pay or another wallet to the app? I'm tired of typing card details at office.","topic":"other","mood":"neutral","needs_human":false,"style":"english","ambiguous":true}
+{"text":"मैं नया यूज़र हूँ, पहला ऑर्डर कैसे करूं?","topic":"other","mood":"neutral","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"Thanks for the new 'office group order' feature! Split bill with 6 teammates was so easy, saved my afternoon.","topic":"other","mood":"positive","needs_human":false,"style":"english","ambiguous":false}
+{"text":"Is there a loyalty program for regular office customers? I order almost daily, about Rs 300 each.","topic":"other","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"The restaurant list for Bengaluru Whitefield is very short compared to Koramangala. When will you add more cloud kitchens near ITPL? We work here and have few choices for lunch, so we keep switching to other apps.","topic":"other","mood":"negative","needs_human":false,"style":"long","ambiguous":false}
+{"text":"testing testing","topic":"other","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"nahi pata kya likhu 😅","topic":"other","mood":"neutral","needs_human":false,"style":"emoji","ambiguous":false}
+{"text":"???","topic":"other","mood":"neutral","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"Aapke app ka UI mast hai, speed bhi achhi. Bas ek request: favourites list daalo.","topic":"other","mood":"positive","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"Can I schedule my lunch order a day ahead for 1 pm delivery at a Hyderabad Hitech City office?","topic":"other","mood":"neutral","needs_human":false,"style":"english","ambiguous":false}
+{"text":"आप लोगों का सपोर्ट बहुत धीमा है, चैट पर जवाब ही नहीं आता।","topic":"other","mood":"negative","needs_human":false,"style":"devanagari","ambiguous":false}
+{"text":"pincode 560103 serviceable hai ya nahi","topic":"other","mood":"neutral","needs_human":false,"style":"sms","ambiguous":false}
+{"text":"Referral code se friend ko discount milta hai kya? Kitna?","topic":"other","mood":"neutral","needs_human":false,"style":"hinglish","ambiguous":false}
+{"text":"APP ME BAAR BAAR LOGOUT HO JA RAHA HAI, FIX KARO!","topic":"other","mood":"negative","needs_human":false,"style":"caps","ambiguous":false}
+{"text":"The restaurant owner's phone number shown in the app, I called, and he abused me for a complaint. I plan to approach the consumer court and media.","topic":"other","mood":"negative","needs_human":true,"style":"english","ambiguous":false}
+{"text": "Lunch order 40 min se Sector 21 metro ke paas atka hai, rider ka pata nahi.", "topic": "order_late", "mood": "negative", "needs_human": false, "style": "hinglish", "ambiguous": false}
+{"text": "Is the delay because the Bengaluru Outer Ring Road is jammed? ETA keeps changing.", "topic": "order_late", "mood": "neutral", "needs_human": false, "style": "english", "ambiguous": false}
+{"text": "Is there a way to see the rider on the map for my Rs 275 poha order in Hyderabad?", "topic": "other", "mood": "neutral", "needs_human": false, "style": "english", "ambiguous": false}
+{"text": "Mera favourite restaurant app me dikh nahi raha Thane me, kya band ho gaya?", "topic": "other", "mood": "negative", "needs_human": false, "style": "hinglish", "ambiguous": false}
+{"text": "app ka design mast hai 👍", "topic": "other", "mood": "positive", "needs_human": false, "style": "emoji", "ambiguous": false}
+{"text": "Masala dosa bilkul kacha aur batter khatta tha, Rs 130 ka. Bahut kharab.", "topic": "quality", "mood": "negative", "needs_human": false, "style": "hinglish", "ambiguous": false}
+{"text": "Thank you for the hot, fresh Chole Kulche today from Delhi CP, great job!", "topic": "quality", "mood": "positive", "needs_human": false, "style": "english", "ambiguous": false}
+{"text": "Maine khana khaya aur turant saans lene mein dikkat hui, shayad kisi cheez se allergy ho gayi. Ambulance bulani padi.", "topic": "quality", "mood": "negative", "needs_human": true, "style": "hinglish", "ambiguous": false}
+{"text": "khane me baal aaya 🤮 Rs 210 ka burger", "topic": "quality", "mood": "negative", "needs_human": true, "style": "emoji", "ambiguous": false}
+{"text": "Pizza tha lukewarm, toppings kam aur crust chewy. Rs 349 for this?", "topic": "quality", "mood": "negative", "needs_human": false, "style": "english", "ambiguous": false}
+{"text": "पनीर में अजीब सी बदबू थी, खा नहीं पाया।", "topic": "quality", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "Refund of Rs 180 hasn't arrived and the support chat closed my ticket without reply.", "topic": "payment", "mood": "negative", "needs_human": false, "style": "english", "ambiguous": false}
+{"text": "Coupon applied hua, discount mila. Thanks!", "topic": "payment", "mood": "positive", "needs_human": false, "style": "hinglish", "ambiguous": false}
+{"text": "bill me GST double lag gaya hai kya? Rs 42 extra", "topic": "payment", "mood": "neutral", "needs_human": false, "style": "hinglish", "ambiguous": false}
+{"text": "Mera card clone hua lagta hai, aapke app se 3 transactions huye jo maine nahi kiye. Cyber crime me report kar raha hoon.", "topic": "payment", "mood": "negative", "needs_human": true, "style": "hinglish", "ambiguous": false}
+{"text": "RS 349 KAT GAYE ORDER CANCEL HUA, REFUND DO", "topic": "payment", "mood": "negative", "needs_human": false, "style": "caps", "ambiguous": false}
+{"text": "पेमेंट फेल हुआ पर ₹275 बैंक से कट गए।", "topic": "payment", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "Chicken roll ki jagah paneer roll aaya, Rs 149 wala. Veg hoon par choice meri thi.", "topic": "wrong_item", "mood": "negative", "needs_human": false, "style": "hinglish", "ambiguous": false}
+{"text": "Two items missing: Rs 90 raita and Rs 60 papad.", "topic": "wrong_item", "mood": "negative", "needs_human": false, "style": "english", "ambiguous": false}
+{"text": "galat order, dusre ka aaya hai", "topic": "wrong_item", "mood": "negative", "needs_human": false, "style": "sms", "ambiguous": false}
+{"text": "मेरे आर्डर से दो गुलाब जामुन गायब हैं।", "topic": "wrong_item", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "Got exactly what I ordered, incl. the extra mint chutney. Nice!", "topic": "wrong_item", "mood": "positive", "needs_human": false, "style": "english", "ambiguous": false}
+{"text": "Is it normal that combo meal came without the drink? Can I get it?", "topic": "wrong_item", "mood": "neutral", "needs_human": false, "style": "english", "ambiguous": false}
+{"text": "Rider ne bola 'madam aap bahut sundar ho' aur number maang raha tha. Bahut uncomfortable laga.", "topic": "rider_issue", "mood": "negative", "needs_human": true, "style": "hinglish", "ambiguous": false}
+{"text": "Rider polite tha, time pe aaya, thanks!", "topic": "rider_issue", "mood": "positive", "needs_human": false, "style": "hinglish", "ambiguous": false}
+{"text": "rider ne call nhi kia gate pe 20 min wait kiya", "topic": "rider_issue", "mood": "negative", "needs_human": false, "style": "sms", "ambiguous": false}
+{"text": "Rider was at the wrong tower, but he called me, understood the landmark and fixed it. Appreciated.", "topic": "rider_issue", "mood": "positive", "needs_human": false, "style": "english", "ambiguous": false}
+{"text": "राइडर ने बिना बताए खाना गेट पर रख दिया और चला गया।", "topic": "rider_issue", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "Can the rider hand over at my desk instead of the gate? Our office in Whitefield allows delivery partners inside.", "topic": "rider_issue", "mood": "neutral", "needs_human": false, "style": "english", "ambiguous": false}

@@ -191,3 +191,7 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Continue with Google asks Supabase to link Google to the current user (provider google, redirect back to the same page) and goes to Google; a signed-in user sees the name and no button; an anonymous user keeps the button | #117 | S-M1 | Automatic | `app/tests/e2e/login.spec.ts`, `app/tests/unit/auth.test.ts` | Pass |
 | Two parts of the screen asking for a session at once make only one anonymous user | #117 | S-M1 | Automatic | `app/tests/e2e/apps.spec.ts` (share one session) | Pass |
 | The Supabase Google settings payload turns on Google and manual linking, never prints the secret, refuses an empty client | #117 | S-M1 | Automatic | `scripts/test_set_google_auth.py` | Pass |
+| Laya seed files: labels in vocabulary, unique texts, at least 60 per topic, mood and needs_human not thin | #113 | S1 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
+| Refund and late-risk states come in at least 3 formats and labels still follow the rule | #113 | S1 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
+| Temperature fit: 1.0 when calibrated, grows for an overconfident model; precision and recall by hand | #113 | S3 | Automatic | `ops/ai/laya/test_metrics.py` | Pass |
+| Blind audit of 2 x 220 seeds by the other writer: topic 2%, mood 7% (A) and 14% (B), needs_human 1 to 3% | #113 | S2 | Check | `ops/ai/laya/audit.py` | Mood in B above the 10% gate; sample disagreements dropped |

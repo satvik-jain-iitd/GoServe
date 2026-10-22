@@ -35,6 +35,35 @@ def test_report_per_question():
     assert rep["q"]["n"] == 2
 
 
+def test_temperature_is_one_when_already_calibrated():
+    # 8 of 10 items are class 0 and the model says 0.8 every time: nothing to fix.
+    probs = [[0.8, 0.2]] * 10
+    gold = [0] * 8 + [1] * 2
+    assert abs(metrics.fit_temperature(probs, gold) - 1.0) < 0.06
+
+
+def test_temperature_softens_an_overconfident_model():
+    # Says 0.8 but is right 6 of 10 times: T must grow (ln4 / ln1.5 = 3.4), and the top prob lands near 0.6.
+    probs = [[0.8, 0.2]] * 10
+    gold = [0] * 6 + [1] * 4
+    t = metrics.fit_temperature(probs, gold)
+    assert t > 3
+    assert abs(metrics.apply_temperature(probs[0], t)[0] - 0.6) < 0.05
+
+
+def test_precision_recall_by_hand():
+    gold = [True, True, True, False, False]
+    pred = [True, True, False, True, False]
+    assert metrics.precision_recall(gold, pred) == (2 / 3, 2 / 3)
+
+
+def test_from_raw_picks_top_label_and_applies_temperature():
+    raw = [{"q": {"labels": ["a", "b"], "p": [0.9, 0.1]}}]
+    assert metrics.from_raw(raw)[0]["q"] == ("a", 0.9)
+    ans, conf = metrics.from_raw(raw, {"q": 5.0})[0]["q"]
+    assert ans == "a" and 0.5 < conf < 0.65
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

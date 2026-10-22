@@ -14,7 +14,7 @@ os.makedirs(out, exist_ok=True)
 open(f"{out}/script.py", "w").write(header + body)
 meta = {"id": "klickbae8yt/" + slug, "title": slug.replace("-", " "), "code_file": "script.py", "language": "python",
         "kernel_type": "script", "is_private": True, "enable_gpu": mode == "train", "enable_internet": True,
-        "dataset_sources": ["klickbae8yt/goserve-laya-synth-v1"], "kernel_sources": kv.get("SOURCE", "").split(",") if kv.get("SOURCE") else []}
+        "dataset_sources": [kv.get("DATA", "klickbae8yt/goserve-laya-synth-v1")], "kernel_sources": kv.get("SOURCE", "").split(",") if kv.get("SOURCE") else []}
 if mode == "train":
     meta["machine_shape"] = "NvidiaTeslaT4"
 json.dump(meta, open(f"{out}/kernel-metadata.json", "w"), indent=1)
