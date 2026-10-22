@@ -159,3 +159,4 @@ short. Say what happened and what to do next time.
 - A merge conflict on the follow-ups and trace tables can drop rows without any error. After a merge, check that your own rows are still on dev.
 - Two parts of a screen that ask for a session at the same moment each make an anonymous user. Share one in-flight request. An old e2e test that counts sign-ups caught it.
 - A 200 from a settings PATCH is not proof. Read the setting back, and read it again after a minute if the first read looks old. Do not write "verified" before the read.
+- `rl_agent_config.json` field `training.hours` is the history of the base checkpoint, not our run. I reported 1.96 h of GPU for a run that took about 12 minutes. Take run time from the kernel log timestamps and from `kaggle quota`, never from a config. A 3-epoch run on 5,400 items takes about 12 minutes on one T4, so retries are cheap.
