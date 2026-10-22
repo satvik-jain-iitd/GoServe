@@ -14,6 +14,7 @@ import { MenuScreen } from "./screens/MenuScreen";
 import { CartScreen } from "./screens/CartScreen";
 import { BillScreen } from "./screens/BillScreen";
 import { openOrderToResume } from "./lib/resume";
+import { SignIn } from "./screens/SignIn";
 import { PlacedScreen } from "./screens/PlacedScreen";
 import { KitchenScreen } from "./screens/KitchenScreen";
 import { RiderScreen } from "./screens/RiderScreen";
@@ -346,8 +347,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   );
 
   return (
+    <>
     <main className={role === "split" ? "shell split" : "shell"}>
       <h1>{lock && lock !== "customer" ? `GoServe ${lock[0].toUpperCase()}${lock.slice(1)}` : "GoServe"}</h1>
+      {!demo && <SignIn />}
       {!lock && <nav className="roles" aria-label="Screen">
         {(["customer", "kitchen", "rider", "split", "ops"] as const).map((r) => (
           <button key={r} type="button" className={role === r ? "btn" : "btn ghost"} aria-pressed={role === r} onClick={() => { pushTrail(`open ${r} tab`); setRole(r); }}>
@@ -375,5 +378,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         </div>
       )}
     </main>
+      <footer className="legal">
+        <p>GoServe: order food, the kitchen cooks, a rider brings it</p>
+        <p><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
+      </footer>
+    </>
   );
 }

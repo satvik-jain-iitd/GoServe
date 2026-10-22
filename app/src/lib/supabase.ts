@@ -21,11 +21,16 @@ export async function fetchMenuRows(): Promise<Dish[]> {
   return data ?? [];
 }
 
-export async function ensureSession(): Promise<string> {
-  const c = getClient();
-  const { data } = await c.auth.getSession();
-  if (data.session) return data.session.user.id;
-  const res = await c.auth.signInAnonymously();
-  if (res.error || !res.data.user) throw new Error("Could not start a session. Check your connection and try again.");
-  return res.data.user.id;
+// Two parts of the screen can ask at the same moment (the sign-in line and the order list): they share one request, so only one anonymous user is made.
+let starting: Promise<string> | null = null;
+export function ensureSession(): Promise<string> {
+  starting ??= (async () => {
+    const c = getClient();
+    const { data } = await c.auth.getSession();
+    if (data.session) return data.session.user.id;
+    const res = await c.auth.signInAnonymously();
+    if (res.error || !res.data.user) throw new Error("Could not start a session. Check your connection and try again.");
+    return res.data.user.id;
+  })().finally(() => { starting = null; });
+  return starting;
 }
