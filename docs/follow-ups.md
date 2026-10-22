@@ -100,3 +100,6 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F96 | APK build by GitHub Actions to Telegram. Only if the Chrome install fails on the owner's phone (`docs/research/android-apk-2026-10.md`). | Agent | Open, lowest priority |
 | F97 | Google login through Supabase at MVP 1 (ADR-016, A53). Part of the MVP 1 phase gate. | Owner + agent | Open |
 | F98 | Post-deploy smoke step: read `/customer/` (and the other three role pages) on dev and prod after each deploy and check the manifest link. The build plugin throws, but only a live read proves the deployed page. Also: prove on a real Android that the four installed apps share one session (WebAPK, ADR-013); add it to the phone install row. | Agent | Open |
+| F99 | Laya data v2: replace hand-written seeds with many Claude-written paraphrases (Hinglish, Hindi script, typos) checked by rules; add soft `gold` probabilities for borderline cases. Today: 49 support seeds, 28 note seeds. | Agent | Open |
+| F100 | Run `finetune --dry-run` on `train.jsonl` on Kaggle (booleans in `expected` for noul are assumed from the docs). Do before the first full training. | Agent | Open |
+| F101 | Secret `HF_TOKEN` is not given to a notebook run started by `kaggle kernels push`. Start the real training from the Kaggle page, or pass the token another way. | Agent | Open |

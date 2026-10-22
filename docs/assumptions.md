@@ -62,3 +62,5 @@ Every assumption we are working from, stated plainly. If an assumption turns out
 | A52 | The role apps are at `/customer/`, `/kitchen/`, `/rider/` and `/ops/`; `/` stays the demo console; `/health` stays. On one Android phone all of them share one session through the browser's storage; on an iPhone installed apps do not share storage and use the join link (ADR-013). The apps are the same code and the same build, not separate projects. | Agent, story #83, 15 Oct. | Open: owner to confirm |
 
 | A53 | Until MVP 1 there is no login (ADR-016). The session id is a secret only by being hard to guess. This is safe only while the data is test data. Before real customers: Google login through Supabase, and rules that tie a session to its account. | Open |
+
+| A54 | Synthetic Laya data (seed phrases times templates, rule-made labels for refund and late risk) is only a pipeline rehearsal. It teaches Laya our rules and our phrasing, not real customers. The final test set must be real GoServe data (LAYA_PLAN section 5). Until then no claim that a tuned Laya "works". | Epic #106 |
