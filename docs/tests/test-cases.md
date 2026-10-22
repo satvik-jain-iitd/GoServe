@@ -200,3 +200,8 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Refund and late-risk states come in at least 3 formats and labels still follow the rule | #113 | S1 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
 | Temperature fit: 1.0 when calibrated, grows for an overconfident model; precision and recall by hand | #113 | S3 | Automatic | `ops/ai/laya/test_metrics.py` | Pass |
 | Blind audit of 2 x 220 seeds by the other writer: topic 2%, mood 7% (A) and 14% (B), needs_human 1 to 3% | #113 | S2 | Check | `ops/ai/laya/audit.py` | Mood in B above the 10% gate; sample disagreements dropped |
+| Refund and late-risk rules in code give the label on every number row of train, val and test | #127 | S1 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
+| Near-copy filter flags a seed that is almost the same as another | #127 | S2 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
+| Train counts may be 0; extra seeds join train only, never val or test; retrain set keeps val and test byte-identical | #127 | S2 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
+| Majority guess skips questions absent from train (red first: crashed the CPU eval after 12 minutes) | #127 | S3 | Automatic | `ops/ai/laya/test_metrics.py` | Pass |
+| Round 3 on Kaggle: 5 text use cases vs the unchanged E3 targets; retrain 2 chosen on val | #127 | S3 | Experiment | `docs/research/experiments.md` E3 | 4 of 5 pass in full; topic 0.871 and needs_human recall 0.692 fail |

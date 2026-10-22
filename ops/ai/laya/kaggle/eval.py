@@ -34,7 +34,11 @@ def predict(rows):
     return out
 
 
+if os.environ.get("SKIPVAL"):  # val predictions of this model already exist from an earlier run
+    val = []
 raw_val, raw_test = predict(val), predict(test)
+os.makedirs("/kaggle/working", exist_ok=True)
+json.dump({"val": raw_val, "test": raw_test}, open(f"/kaggle/working/raw_{TAG}.json", "w"))  # saved first: slow to redo
 temps = {}
 for qid in {q for r in val for q in r["expected"]}:
     pairs = [(a[qid]["p"], a[qid]["labels"].index(r["expected"][qid])) for r, a in zip(val, raw_val) if qid in a]

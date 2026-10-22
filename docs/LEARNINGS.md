@@ -170,3 +170,7 @@ short. Say what happened and what to do next time.
   6. Run time comes from log timestamps and `kaggle quota`, never from a config field.
   7. First run of any new script: smallest size (1 epoch or a data slice) on the cheapest device. Scale up only after it finishes clean.
   8. Never pass the owner's cap. If the next step would, stop and ask.
+- Do not pick between two trained models by their score on the test file. That is selection on the test set. Pick on val, then report test as it is.
+- Check the class share in the train file against the real share before you train. Weighting a rare class twice on top of adding seeds of that class moved needs_human from about 11% to 34%; it was fixed to 23% before the run.
+- A metric helper that loops over the questions of the test file will crash when a question is absent from train (refund and at_risk run as code). Test the helper for missing questions, and save raw predictions before any report code runs: the CPU eval took 12 minutes to redo.
+- One seed in the test file can be 18% of a class. When recall moves in steps like that, the number is a coarse signal; look at which seeds miss before you retrain.

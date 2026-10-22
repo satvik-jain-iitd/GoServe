@@ -95,15 +95,15 @@ def _wrap(rnd, msg):
     return f"Order #{rnd.randint(1000, 9999)}: {msg}" if rnd.random() < 0.35 else msg
 
 
-def _support(rnd, i):
-    _, topic, mood, human = SUPPORT[i]
-    return {"state": _wrap(rnd, SUPPORT[i][0]), "questions": SUPPORT_Q,
+def _support(rnd, i, seeds):
+    text, topic, mood, human = seeds[i]
+    return {"state": _wrap(rnd, text), "questions": SUPPORT_Q, "_seed": seeds[i],
             "expected": {"topic": topic, "mood": mood, "needs_human": bool(human)}, "_sc": ["support", i]}
 
 
-def _notes(rnd, i):
-    note, allergy, special = NOTES[i]
-    return {"state": "Order note: " + _wrap(rnd, note), "questions": NOTES_Q,
+def _notes(rnd, i, seeds):
+    note, allergy, special = seeds[i]
+    return {"state": "Order note: " + _wrap(rnd, note), "questions": NOTES_Q, "_seed": seeds[i],
             "expected": {"has_allergy": bool(allergy), "has_special_request": bool(special)}, "_sc": ["notes", i]}
 
 
@@ -148,11 +148,30 @@ def _late(rnd, target):
     raise RuntimeError("no late case")
 
 
-def build(seed=0, scale=1.0, train_counts=None, human_weight=1):
-    """train_counts overrides the train sizes; human_weight repeats needs_human support seeds in train only."""
+def near_duplicates(new, old, thr=0.6):
+    """Indexes of texts in new whose character-trigram Jaccard with any text in old is at least thr."""
+    grams = lambda t: {t[i:i + 3] for i in range(max(len(t) - 2, 1))} if (t := " ".join(t.lower().split())) else set()
+    olds = [grams(t) for t in old]
+    out = []
+    for i, t in enumerate(new):
+        g = grams(t)
+        if any(len(g & o) / max(len(g | o), 1) >= thr for o in olds):
+            out.append(i)
+    return out
+
+
+def build(seed=0, scale=1.0, train_counts=None, human_weight=1, extra_support=(), extra_notes=()):
+    """train_counts overrides the train sizes (0 allowed); human_weight repeats needs_human support seeds in train only;
+    extra_support and extra_notes are seed dicts that join train only (never val or test)."""
     rnd = random.Random(seed)
     sup = _split_seeds(SUPPORT, lambda t: (t[1], t[2], t[3]))
     note_idx = _split_seeds(NOTES, lambda t: (t[1], t[2]))
+    all_sup = SUPPORT + [(d["text"], d["topic"], d["mood"], int(d["needs_human"])) for d in extra_support]
+    all_notes = NOTES + [(d["text"], int(d["has_allergy"]), int(d["has_special_request"])) for d in extra_notes]
+    sup = {k: list(v) for k, v in sup.items()}
+    note_idx = {k: list(v) for k, v in note_idx.items()}
+    sup["train"] += range(len(SUPPORT), len(all_sup))
+    note_idx["train"] += range(len(NOTES), len(all_notes))
     out, seen = {}, set()
     for split, counts in BASE.items():
         rows = []
@@ -160,17 +179,17 @@ def build(seed=0, scale=1.0, train_counts=None, human_weight=1):
             counts, scale_ = train_counts, 1.0
         else:
             scale_ = scale
-        pool = sup[split] + [i for i in sup[split] if SUPPORT[i][3]] * (human_weight - 1) if split == "train" else sup[split]
+        pool = sup[split] + [i for i in sup[split] if all_sup[i][3]] * (human_weight - 1) if split == "train" else sup[split]
         for kind, n in counts.items():
-            n = max(1, round(n * scale_))
+            n = round(n) if split == "train" and train_counts else max(1, round(n * scale_))
             made, tries = 0, 0
             while made < n:
                 tries += 1
                 assert tries < n * 200, f"cannot make {n} unique {kind} cases for {split}"
                 if kind == "support":
-                    row = _support(rnd, rnd.choice(pool))
+                    row = _support(rnd, rnd.choice(pool), all_sup)
                 elif kind == "notes":
-                    row = _notes(rnd, rnd.choice(note_idx[split]))
+                    row = _notes(rnd, rnd.choice(note_idx[split]), all_notes)
                 elif kind == "refund":
                     row = _refund(rnd, rnd.choice(list(REFUND)))
                 else:
@@ -192,10 +211,10 @@ def validate(splits):
             kind, i = r["_sc"]
             exp = r["expected"]
             if kind == "support":
-                _, topic, mood, human = SUPPORT[i]
+                _, topic, mood, human = r["_seed"]
                 assert exp == {"topic": topic, "mood": mood, "needs_human": bool(human)}, r
             elif kind == "notes":
-                _, a, s = NOTES[i]
+                _, a, s = r["_seed"]
                 assert exp == {"has_allergy": bool(a), "has_special_request": bool(s)}, r
             elif kind == "refund":
                 assert exp["refund"] == refund_rule(*r["_p"]), r
@@ -203,7 +222,7 @@ def validate(splits):
                 assert exp["at_risk"] == late_rule(*r["_p"]), r
 
 
-def write_retrain(base_dir, out_dir, seed, train_counts, human_weight=1):
+def write_retrain(base_dir, out_dir, seed, train_counts, human_weight=1, extra_support=(), extra_notes=()):
     """New train.jsonl; val and test are copied byte for byte from base_dir. Train never shares a state with them."""
     os.makedirs(out_dir, exist_ok=True)
     keep = set()
@@ -211,7 +230,7 @@ def write_retrain(base_dir, out_dir, seed, train_counts, human_weight=1):
         text = open(os.path.join(base_dir, name + ".jsonl"), encoding="utf-8").read()
         open(os.path.join(out_dir, name + ".jsonl"), "w", encoding="utf-8").write(text)
         keep |= {json.loads(l)["state"] for l in text.splitlines()}
-    rows = [r for r in build(seed, train_counts=train_counts, human_weight=human_weight)["train"] if r["state"] not in keep]
+    rows = [r for r in build(seed, train_counts=train_counts, human_weight=human_weight, extra_support=extra_support, extra_notes=extra_notes)["train"] if r["state"] not in keep]
     validate({"train": rows})
     with open(os.path.join(out_dir, "train.jsonl"), "w", encoding="utf-8") as f:
         for r in rows:

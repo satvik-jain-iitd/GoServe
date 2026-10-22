@@ -150,6 +150,49 @@ def test_heldout_rows_fit_laya_format():
     assert set(rows[0]) == ROW_KEYS and rows[0]["questions"] == gen.SUPPORT_Q
 
 
+def test_rules_exact_on_every_number_row():
+    # The code path for refund and late risk: the rule in code gives the label on 100% of rows of every file.
+    rows = [r for v in gen.build(seed=0).values() for r in v if r["_sc"][0] in ("refund", "late")]
+    assert len(rows) > 500
+    for r in rows:
+        want = gen.refund_rule(*r["_p"]) if r["_sc"][0] == "refund" else gen.late_rule(*r["_p"])
+        assert list(r["expected"].values())[0] == want, r
+
+
+def test_near_duplicate_filter():
+    # A new seed that is a near-copy of an existing one is flagged; a different one is not.
+    old = ["rider ne dhamki di ki bad review diya to dekh lunga", "खाना ठंडा था"]
+    new = ["rider ne dhamki di ki bad review diya to dekh lunga!!", "The curry had a bad smell and I feel sick", "खाना ठंडा था"]
+    assert gen.near_duplicates(new, old) == [0, 2]
+
+
+def test_zero_counts_and_extra_seeds_in_train_only():
+    # train_counts may be 0 (no number rows), and extra seeds appear in train only.
+    extra_s = [{"text": "Rider ne raat ko mujhe baar baar call kiya aur gande message bheje", "topic": "rider_issue", "mood": "negative", "needs_human": True}]
+    extra_n = [{"text": "please ring only once, I am recovering from surgery", "has_allergy": False, "has_special_request": True}]
+    counts = {"support": 3000, "notes": 600, "refund": 0, "late": 0}
+    sp = gen.build(seed=3, train_counts=counts, extra_support=extra_s, extra_notes=extra_n)
+    assert not [r for r in sp["train"] if r["_sc"][0] in ("refund", "late")]
+    assert any(r["_sc"] == ["support", len(gen.SUPPORT)] for r in sp["train"]), "extra support seed never drawn"
+    assert any(r["_sc"] == ["notes", len(gen.NOTES)] for r in sp["train"]), "extra note seed never drawn"
+    for name in ("val", "test"):
+        assert not any(r["_sc"][1] is not None and r["_sc"][1] >= (len(gen.SUPPORT) if r["_sc"][0] == "support" else len(gen.NOTES)) for r in sp[name] if r["_sc"][0] in ("support", "notes"))
+    gen.validate(sp)
+
+
+def test_retrain_set_with_extra_seeds_and_no_number_rows():
+    # Round 3 set: val and test unchanged, train holds the extra seeds, and has no refund or late rows.
+    extra_s = [{"text": "Mujhe rider ne raat ko dhamkaya aur gaali di, police ko bolunga", "topic": "rider_issue", "mood": "negative", "needs_human": True}]
+    with tempfile.TemporaryDirectory() as base, tempfile.TemporaryDirectory() as out:
+        gen.write(base, seed=0, scale=0.1)
+        gen.write_retrain(base, out, seed=2, train_counts={"support": 1500, "notes": 20, "refund": 0, "late": 0}, extra_support=extra_s)
+        for f in ("val.jsonl", "test.jsonl"):
+            assert open(os.path.join(base, f), "rb").read() == open(os.path.join(out, f), "rb").read(), f
+        train = [json.loads(l) for l in open(os.path.join(out, "train.jsonl"), encoding="utf-8")]
+    assert any("police ko bolunga" in r["state"] or "police ko bolunga".upper() in r["state"].upper() for r in train)
+    assert not [r for r in train if "refund" in r["expected"] or "at_risk" in r["expected"]]
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

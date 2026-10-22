@@ -24,6 +24,8 @@ def majority_accuracy(train_rows, test_rows):
         for r in train_rows:
             if qid in r["expected"]:
                 counts[r["expected"][qid]] = counts.get(r["expected"][qid], 0) + 1
+        if not counts:  # question not in train (runs as code): no guess to score
+            continue
         guess = max(counts, key=counts.get)
         rows = [r for r in test_rows if qid in r["expected"]]
         out[qid] = accuracy([r["expected"][qid] == guess for r in rows])
