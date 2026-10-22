@@ -78,6 +78,13 @@ def test_language_of_row():
     assert metrics.language("Where is my order? Please ka") == "english"  # one Hindi word is not enough
 
 
+def test_majority_skips_questions_absent_from_train():
+    # Round 3 train has no refund rows (they run as code): the guess must skip them, not crash.
+    train = [{"expected": {"q": "a"}}]
+    test = [{"expected": {"q": "a", "refund": "approve"}}]
+    assert metrics.majority_accuracy(train, test) == {"q": 1.0}
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

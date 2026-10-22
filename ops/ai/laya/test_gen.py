@@ -180,6 +180,19 @@ def test_zero_counts_and_extra_seeds_in_train_only():
     gen.validate(sp)
 
 
+def test_retrain_set_with_extra_seeds_and_no_number_rows():
+    # Round 3 set: val and test unchanged, train holds the extra seeds, and has no refund or late rows.
+    extra_s = [{"text": "Mujhe rider ne raat ko dhamkaya aur gaali di, police ko bolunga", "topic": "rider_issue", "mood": "negative", "needs_human": True}]
+    with tempfile.TemporaryDirectory() as base, tempfile.TemporaryDirectory() as out:
+        gen.write(base, seed=0, scale=0.1)
+        gen.write_retrain(base, out, seed=2, train_counts={"support": 1500, "notes": 20, "refund": 0, "late": 0}, extra_support=extra_s)
+        for f in ("val.jsonl", "test.jsonl"):
+            assert open(os.path.join(base, f), "rb").read() == open(os.path.join(out, f), "rb").read(), f
+        train = [json.loads(l) for l in open(os.path.join(out, "train.jsonl"), encoding="utf-8")]
+    assert any("police ko bolunga" in r["state"] or "police ko bolunga".upper() in r["state"].upper() for r in train)
+    assert not [r for r in train if "refund" in r["expected"] or "at_risk" in r["expected"]]
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

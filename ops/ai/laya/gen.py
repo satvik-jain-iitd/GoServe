@@ -222,7 +222,7 @@ def validate(splits):
                 assert exp["at_risk"] == late_rule(*r["_p"]), r
 
 
-def write_retrain(base_dir, out_dir, seed, train_counts, human_weight=1):
+def write_retrain(base_dir, out_dir, seed, train_counts, human_weight=1, extra_support=(), extra_notes=()):
     """New train.jsonl; val and test are copied byte for byte from base_dir. Train never shares a state with them."""
     os.makedirs(out_dir, exist_ok=True)
     keep = set()
@@ -230,7 +230,7 @@ def write_retrain(base_dir, out_dir, seed, train_counts, human_weight=1):
         text = open(os.path.join(base_dir, name + ".jsonl"), encoding="utf-8").read()
         open(os.path.join(out_dir, name + ".jsonl"), "w", encoding="utf-8").write(text)
         keep |= {json.loads(l)["state"] for l in text.splitlines()}
-    rows = [r for r in build(seed, train_counts=train_counts, human_weight=human_weight)["train"] if r["state"] not in keep]
+    rows = [r for r in build(seed, train_counts=train_counts, human_weight=human_weight, extra_support=extra_support, extra_notes=extra_notes)["train"] if r["state"] not in keep]
     validate({"train": rows})
     with open(os.path.join(out_dir, "train.jsonl"), "w", encoding="utf-8") as f:
         for r in rows:
