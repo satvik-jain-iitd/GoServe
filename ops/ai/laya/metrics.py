@@ -38,3 +38,55 @@ def report(rows, preds):
         right = [gold == ans for gold, (ans, _) in pairs]
         out[qid] = {"n": len(pairs), "accuracy": accuracy(right), "ece": ece([c for _, (_, c) in pairs], right)}
     return out
+
+
+def apply_temperature(p, t):
+    """Soften (t > 1) or sharpen (t < 1) a probability vector: softmax(log p / t)."""
+    w = [max(x, 1e-9) ** (1 / t) for x in p]
+    return [x / sum(w) for x in w]
+
+
+def fit_temperature(probs, gold, lo=0.5, hi=5.0, step=0.05):
+    """The t in [lo, hi] that minimises log loss on (probability vector, gold index) pairs."""
+    from math import log
+    best, t = None, lo
+    while t <= hi + 1e-9:
+        nll = -sum(log(max(apply_temperature(p, t)[g], 1e-9)) for p, g in zip(probs, gold))
+        if best is None or nll < best[0] - 1e-12:
+            best = (nll, t)
+        t = round(t + step, 10)
+    return best[1]
+
+
+def precision_recall(gold, pred):
+    tp = sum(g and p for g, p in zip(gold, pred))
+    return tp / max(sum(pred), 1), tp / max(sum(gold), 1)
+
+
+def from_raw(raw, temps=None):
+    """raw[i][qid] = {"labels": [...], "p": [...]} -> report() input; temps = {qid: t} optional."""
+    out = []
+    for row in raw:
+        pred = {}
+        for qid, a in row.items():
+            p = apply_temperature(a["p"], temps[qid]) if temps and qid in temps else a["p"]
+            k = max(range(len(p)), key=p.__getitem__)
+            pred[qid] = (a["labels"][k], p[k])
+        out.append(pred)
+    return out
+
+
+def latin_only(rows):
+    """Indexes of rows with no Indic-script letters (Unicode 0900 to 0DFF): the English and Hinglish scope."""
+    return [i for i, r in enumerate(rows) if not any(0x900 <= ord(c) <= 0xDFF for c in r["state"])]
+
+
+HINDI_WORDS = set("hai hain hu hoon ho tha thi nahi nhi na kya ko ka ki ke se mein par pe aur bhi bhai yaar kar karo kro kiya kiye raha rahi rahe mera meri mere mujhe mujhse aap aapka tum abhi jaldi bahut bohot accha acha thoda kuch koi kab kaha kahan kyun kyu lekin magar toh wala wali paisa paise wapas aaya aayi aaye nahin bhejo bhej diya diye gaya gayi hua hui ho gaye khana bhookh".split())
+
+
+def language(text):
+    """hindi (Devanagari letters), hinglish (at least 2 Roman-Hindi words), else english."""
+    if any(0x900 <= ord(c) <= 0x97F for c in text):
+        return "hindi"
+    words = "".join(c if c.isalnum() else " " for c in text.lower()).split()
+    return "hinglish" if sum(w in HINDI_WORDS for w in words) >= 2 else "english"

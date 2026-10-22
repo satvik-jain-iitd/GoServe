@@ -90,6 +90,66 @@ def test_every_option_in_val_and_test():
             assert seen.get(qid, set()) == opts, (name, qid, opts - seen.get(qid, set()))
 
 
+def test_seed_files_are_clean():
+    # Given the v2 seed files, labels are in vocabulary, texts are unique, and classes are not thin.
+    assert len(gen.SUPPORT) >= 500 and len(gen.NOTES) >= 180, (len(gen.SUPPORT), len(gen.NOTES))
+    texts = [t for t, *_ in gen.SUPPORT] + [t for t, *_ in gen.NOTES]
+    assert len({" ".join(t.lower().split()) for t in texts}) == len(texts), "duplicate seed text"
+    for t, topic, mood, human in gen.SUPPORT:
+        assert topic in gen.TOPICS and mood in gen.MOODS and human in (0, 1) and 2 <= len(t) <= 400, t
+    human = sum(h for *_, h in gen.SUPPORT) / len(gen.SUPPORT)
+    assert 0.08 <= human <= 0.20, human
+    for topic in gen.TOPICS:
+        assert sum(1 for _, t, *_ in gen.SUPPORT if t == topic) >= 60, topic
+    for mood in gen.MOODS:
+        assert sum(1 for _, _, m, _ in gen.SUPPORT if m == mood) >= 0.12 * len(gen.SUPPORT), mood
+    allergy = sum(a for _, a, _ in gen.NOTES) / len(gen.NOTES)
+    assert 0.2 <= allergy <= 0.5, allergy
+
+
+def test_number_cases_come_in_several_formats():
+    # Refund and late-risk states are written in at least 3 shapes, and labels still follow the rule.
+    rows = gen.build(seed=5, scale=0.3)["train"]
+    for kind in ("refund", "late"):
+        shapes = {r["state"][:12] for r in rows if r["_sc"][0] == kind}
+        assert len(shapes) >= 3, (kind, shapes)
+
+
+def test_train_counts_and_human_weight():
+    # Retrain knobs: train sizes can be set, and weighting raises the share of needs_human seeds in train only.
+    counts = {"support": 200, "notes": 20, "refund": 30, "late": 40}
+    a = gen.build(seed=9, train_counts=counts)["train"]
+    assert len(a) == sum(counts.values()), len(a)
+    share = lambda rows: sum(r["expected"]["needs_human"] for r in rows if "needs_human" in r["expected"]) / sum(1 for r in rows if "needs_human" in r["expected"])
+    b = gen.build(seed=9, train_counts=counts, human_weight=4)["train"]
+    assert share(b) > share(a) * 1.4, (share(a), share(b))
+
+
+def test_retrain_set_keeps_val_and_test_byte_identical():
+    # Given a first data set, the retrain set reuses its val and test files unchanged and shares no state with them.
+    with tempfile.TemporaryDirectory() as base, tempfile.TemporaryDirectory() as out:
+        gen.write(base, seed=0, scale=0.1)
+        gen.write_retrain(base, out, seed=1, train_counts={"support": 80, "notes": 20, "refund": 20, "late": 20}, human_weight=3)
+        for f in ("val.jsonl", "test.jsonl"):
+            assert open(os.path.join(base, f), "rb").read() == open(os.path.join(out, f), "rb").read(), f
+        keep = {json.loads(l)["state"] for f in ("val.jsonl", "test.jsonl") for l in open(os.path.join(out, f))}
+        train = [json.loads(l) for l in open(os.path.join(out, "train.jsonl"))]
+        assert train and not keep & {r["state"] for r in train}
+
+
+def test_heldout_rows_fit_laya_format():
+    # Held-out seed files become Laya rows with the same questions and no wrapper noise.
+    with tempfile.TemporaryDirectory() as d:
+        sp, nt = os.path.join(d, "s.jsonl"), os.path.join(d, "n.jsonl")
+        open(sp, "w", encoding="utf-8").write(json.dumps({"text": "खाना ठंडा था", "topic": "quality", "mood": "negative", "needs_human": False, "style": "devanagari", "ambiguous": False}, ensure_ascii=False) + "\n")
+        open(nt, "w", encoding="utf-8").write(json.dumps({"text": "बिना प्याज", "has_allergy": False, "has_special_request": True, "style": "devanagari", "ambiguous": False}, ensure_ascii=False) + "\n")
+        rows = gen.heldout_rows(sp, nt)
+    assert [r["state"] for r in rows] == ["खाना ठंडा था", "Order note: बिना प्याज"]
+    assert rows[0]["expected"] == {"topic": "quality", "mood": "negative", "needs_human": False}
+    assert rows[1]["expected"] == {"has_allergy": False, "has_special_request": True}
+    assert set(rows[0]) == ROW_KEYS and rows[0]["questions"] == gen.SUPPORT_Q
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):
