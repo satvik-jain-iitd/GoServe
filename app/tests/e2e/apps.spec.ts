@@ -23,7 +23,7 @@ test("S2 the rider app, the ops app and the customer app each open on their own 
   await expect(page.getByRole("heading", { name: "Ops", exact: true })).toBeVisible();
   await expect(page).toHaveTitle("GoServe Ops");
   await page.goto("/customer/");
-  await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();   // the session has an open order, so the customer app resumes it
   await expect(page.getByRole("navigation", { name: "Screen" })).toHaveCount(0);
   await expect(page).toHaveTitle("GoServe");
 });
@@ -48,12 +48,7 @@ test("S2 each app points to its own manifest, with its own name, install identit
 
 test("S1 one device: the customer app and the kitchen app share one session, with no sign-in twice and no link", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
-  await page.goto("/customer/");
-  await page.getByRole("button", { name: "Add Butter Chicken" }).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
-  await page.getByLabel("Delivery address").fill("Flat 4, Green Park");
-  await page.getByRole("button", { name: "Review bill" }).click();
-  await page.getByRole("button", { name: "Place order (cash on delivery)" }).click();
+  await page.goto("/customer/");   // the session already holds this open order, so the customer app resumes on it
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   expect(net.calls.signups).toBe(1);
   const kitchen = await context.newPage();   // a second app window on the same device (same browser profile)

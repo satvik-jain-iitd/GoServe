@@ -13,6 +13,7 @@ import { currentSession, joinCode, joinLink, joinSession, rememberJoin, resetSes
 import { MenuScreen } from "./screens/MenuScreen";
 import { CartScreen } from "./screens/CartScreen";
 import { BillScreen } from "./screens/BillScreen";
+import { openOrderToResume } from "./lib/resume";
 import { PlacedScreen } from "./screens/PlacedScreen";
 import { KitchenScreen } from "./screens/KitchenScreen";
 import { RiderScreen } from "./screens/RiderScreen";
@@ -46,8 +47,22 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [auto, setAuto] = useState(false);
   const [demo, setDemo] = useState(false);
   const [autoNote, setAutoNote] = useState<string | null>(null);
-  const live = useLiveOrders(ready && !demo && (auto || role === "kitchen" || role === "rider" || role === "split" || role === "ops" || (role === "customer" && step === "placed")));
+  const [resumed, setResumed] = useState(false);   // only the customer app (not the demo console) looks once, at load, for an order that is still open
+  const live = useLiveOrders(ready && !demo && (auto || role === "kitchen" || role === "rider" || role === "split" || role === "ops" || (role === "customer" && (step === "placed" || (lock === "customer" && !resumed)))));
   const { orders, setOrders } = live;
+  const sawLoading = useRef(false);
+  useEffect(() => {
+    if (resumed || lock !== "customer" || demo) return;
+    if (live.loading) return void (sawLoading.current = true);
+    if (!sawLoading.current) return;   // the first render comes before the load starts
+    setResumed(true);
+    const open = openOrderToResume(orders);
+    if (open && step === "menu" && !placed) {
+      setPlaced({ id: open.id, status: open.status, total_paise: open.total_paise, updated_at: open.updated_at, paid_by: open.paid_by ?? null });
+      setPlacedAt(open.created_at);
+      setStep("placed");
+    }
+  }, [live.loading, orders, resumed, lock, demo, step, placed]);
   const ops = useOps(ready && !demo && role === "ops", orders, api);   // the offline story never asks the server
   const keyRef = useRef<{ fingerprint: string; key: string } | null>(null);
   // Delivered by hand (story S-C): the delivery question for the customer's order, the Yes, and the Not yet.

@@ -155,3 +155,4 @@ short. Say what happened and what to do next time.
 - Fix the pass rule in the docs before the model result exists, and say how the numbers are averaged. E2 failed its own rule, and because the rule was written first nobody could bend it.
 - Laya fits its confidence temperature on a slice of the training items. If the test set uses unseen phrasings, the model is over-confident (97.9% in-sample, 72% on test). Check calibration on a split that has unseen seeds.
 - Run Kaggle jobs that need no GPU with `enable_gpu: false`. Dry-run and eval used no GPU quota at all.
+- State kept only in React is lost on refresh. Keep what the screen needs in the database or storage, and test a reload. When a new start-up rule is added, old tests that preload data may now land on another screen: run the whole suite, not one file.

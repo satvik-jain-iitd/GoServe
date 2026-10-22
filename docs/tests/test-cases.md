@@ -187,3 +187,4 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Every choice option and noul side appears in val and in test (reviewer found val had no allergy=true; red first) | #107 | S6 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
 | Metrics: accuracy and ECE match hand-made numbers; majority guess uses train labels and covers every question (red first: it dropped 4 of 7) | #111 | S4 | Automatic | `ops/ai/laya/test_metrics.py` | Pass |
 | E2 on Kaggle: tuned vs base Laya vs majority on 390 synthetic test rows | #111 | S2 | Experiment | `docs/research/experiments.md` E2 | Fail by the fixed rule (ECE 0.141; needs_human below majority); accuracy +0.306 |
+| Customer app resumes on its newest open order after a refresh; a delivered order does not pull the customer back; the demo console is unchanged | #93 | S3 | Automatic | `app/tests/e2e/customer.spec.ts`, `app/tests/unit/resume.test.ts` | Pass |
