@@ -43,3 +43,14 @@ export async function resetSession(client: Pick<SupabaseClient, "rpc">, session:
 
 // The session id for reads and new orders: the joined one, or this device's own.
 export const currentSession = async (): Promise<string> => activeSession(await ensureSession());
+
+// Story S-M5: a kitchen worker (a Google user listed in kitchen_staff) reads every order of the kitchen; anyone else reads one session.
+export type Scope = { column: "kitchen_id" | "session_id"; value: string };
+export const scopeFor = (kitchenId: string | null, session: string): Scope =>
+  kitchenId ? { column: "kitchen_id", value: kitchenId } : { column: "session_id", value: session };
+
+// The user can read only their own staff row (RLS), so no filter is needed. A failed read counts as "not staff".
+export async function myKitchen(client: Pick<SupabaseClient, "from">): Promise<string | null> {
+  const { data, error } = await client.from("kitchen_staff").select("kitchen_id").limit(1);
+  return error ? null : ((data?.[0] as { kitchen_id?: string } | undefined)?.kitchen_id ?? null);
+}

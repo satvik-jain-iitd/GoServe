@@ -23,3 +23,9 @@ Login adds work for every test and every user. The apps are still in user testin
 - Anyone with the session id can see that session's orders. That is fine for a demo with test data, and not fine for real customers. See assumption A53.
 - The MVP 1 phase gate must cover Google login, the consent screen and how an anonymous session moves into a real account.
 - Four separate Capacitor apps would not share storage, so they would need this login. Chrome WebAPKs on one phone share storage and do not.
+
+## Two sign-in modes (S-M5, 23 Oct 2026)
+
+- The customer app links Google to the anonymous user (`linkIdentity`), so the session id stays.
+- The kitchen, rider and ops apps sign in as the Google user (`signInWithOAuth`): a worker's phone must become the listed staff user, and linking may fail when that Google account already belongs to another user. The failing case is INFERRED and not yet proven on dev (F114); the kitchen path does not depend on it.
+- A staff row needs the user to have signed in with Google once (`scripts/add_kitchen_staff.py`).
