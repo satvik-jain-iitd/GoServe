@@ -152,3 +152,4 @@ short. Say what happened and what to do next time.
 - A class-balance test on generated data caught two thin classes before any GPU time was spent. Put the balance check in the test, not in the training log.
 - Splitting seeds by list position (last two to test) hid whole classes from train because related seeds sat together. Split by `index % 5`.
 - Two Claude sessions in one checkout switch each other's branch and hide each other's files. Each session works in its own worktree: `git worktree add .worktrees/<issue>-<slug> <branch>` (the folder is in `.git/info/exclude`). One branch per issue number, temp files in the session's own scratchpad, never in `/tmp`.
+- State kept only in React is lost on refresh. Keep what the screen needs in the database or storage, and test a reload. When a new start-up rule is added, old tests that preload data may now land on another screen: run the whole suite, not one file.
