@@ -220,7 +220,8 @@ def test_write_newkind_splits_seeds_and_keeps_old_files():
         d2 = [_ctx_seed(1000 + i) for i in range(50)]
         notes = [{"text": "no spice please", "has_allergy": False, "has_special_request": True, "style": "english", "ambiguous": False}] * 3
         w = lambda name, rows: open(os.path.join(src, name), "w", encoding="utf-8").write("".join(json.dumps(r) + "\n" for r in rows))
-        w("d1s.jsonl", d1); w("d1n.jsonl", notes); w("d2s.jsonl", d2); w("d2n.jsonl", notes)
+        notes2 = [dict(n, text="hand the parcel to the guard at gate B, my mother is not well " + str(i)) for i, n in enumerate(notes)]
+        w("d1s.jsonl", d1); w("d1n.jsonl", notes); w("d2s.jsonl", d2); w("d2n.jsonl", notes2)
         gen.write_newkind(base, out, os.path.join(src, "d1s.jsonl"), os.path.join(src, "d1n.jsonl"), os.path.join(src, "d2s.jsonl"), os.path.join(src, "d2n.jsonl"), seed=4, replay=40, val_frac=0.15)
         ld = lambda f: [json.loads(l) for l in open(os.path.join(out, f), encoding="utf-8")]
         for f in ("val.jsonl", "test.jsonl", "hindi_test.jsonl"):
@@ -230,6 +231,21 @@ def test_write_newkind_splits_seeds_and_keeps_old_files():
     import re
     nums = lambda rows: {m.group(1) for r in rows for m in [re.search(r"aaya (\d+)", r["state"])] if m}
     assert nums(fresh) and nums(val2) and not nums(fresh) & nums(train) and not nums(val2) & nums(train)
+
+
+def test_fresh_test_drops_near_copies_of_training_seeds():
+    # A fresh-test seed that is a near-copy of a D1 train seed or of an old train seed is removed from the fresh test.
+    with tempfile.TemporaryDirectory() as base, tempfile.TemporaryDirectory() as out, tempfile.TemporaryDirectory() as src:
+        gen.write(base, seed=0, scale=0.1)
+        open(os.path.join(base, "hindi_test.jsonl"), "w").write("")
+        d1 = [_ctx_seed(i) for i in range(60)]
+        d2 = [_ctx_seed(1000 + i) for i in range(10)]
+        d2[0] = dict(d1[5]); d2[1] = dict(d2[1], text=gen.SUPPORT[0][0] + "!")
+        w = lambda name, rows: open(os.path.join(src, name), "w", encoding="utf-8").write("".join(json.dumps(r) + "\n" for r in rows))
+        w("d1s.jsonl", d1); w("d1n.jsonl", []); w("d2s.jsonl", d2); w("d2n.jsonl", [])
+        summary = gen.write_newkind(base, out, os.path.join(src, "d1s.jsonl"), os.path.join(src, "d1n.jsonl"), os.path.join(src, "d2s.jsonl"), os.path.join(src, "d2n.jsonl"), seed=1, replay=5)
+        fresh = [json.loads(l) for l in open(os.path.join(out, "fresh_test.jsonl"), encoding="utf-8")]
+    assert len(fresh) == 8 and summary["fresh_dropped"] == 2, (len(fresh), summary)
 
 
 if __name__ == "__main__":

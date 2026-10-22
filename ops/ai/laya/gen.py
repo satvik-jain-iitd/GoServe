@@ -282,7 +282,17 @@ def write_newkind(base_dir, out_dir, d1_support, d1_notes, d2_support, d2_notes,
     rnd = random.Random(seed)
     ld = lambda f: [json.loads(l) for l in open(f, encoding="utf-8")]
     d1s, d1n, d2s, d2n = ld(d1_support), ld(d1_notes), ld(d2_support), ld(d2_notes)
-    # leakage guard: drop D1 seeds that are near-copies of fresh-test seeds or of the old val and test seeds
+    # leakage guards. Fresh test: drop seeds that are near-copies of any D1 seed or any old seed (the model has seen those).
+    old_texts = [t for t, *_ in SUPPORT] + [t for t, *_ in NOTES]
+    trainonly = os.path.join(os.path.dirname(os.path.abspath(__file__)), "trainonly")
+    for f in glob.glob(os.path.join(trainonly, "*_C.jsonl")):
+        old_texts += [json.loads(l)["text"] for l in open(f, encoding="utf-8")]
+    seen_texts = [d["text"] for d in d1s + d1n] + old_texts
+    n_fresh = len(d2s) + len(d2n)
+    drop = set(near_duplicates([d["text"] for d in d2s], seen_texts)); d2s = [d for i, d in enumerate(d2s) if i not in drop]
+    drop = set(near_duplicates([d["text"] for d in d2n], seen_texts)); d2n = [d for i, d in enumerate(d2n) if i not in drop]
+    fresh_dropped = n_fresh - len(d2s) - len(d2n)
+    # D1 train seeds: drop near-copies of the (filtered) fresh test or of the old val and test seeds
     ss = _split_seeds(SUPPORT, lambda t: (t[1], t[2], t[3]))
     guard = [d["text"] for d in d2s + d2n] + [SUPPORT[i][0] for sp in ("val", "test") for i in ss[sp]]
     drop = set(near_duplicates([d["text"] for d in d1s], guard)); d1s = [d for i, d in enumerate(d1s) if i not in drop]
@@ -307,7 +317,7 @@ def write_newkind(base_dir, out_dir, d1_support, d1_notes, d2_support, d2_notes,
     wr("fresh_test.jsonl", context_rows(d2s, rnd) + _note_rows(d2n))
     for name in ("val.jsonl", "test.jsonl", "hindi_test.jsonl"):
         open(os.path.join(out_dir, name), "wb").write(open(os.path.join(base_dir, name), "rb").read())
-    return {"train": len(train), "val2": len(val_s) + len(val_n), "fresh_test": len(d2s) + len(d2n), "dropped_near_copies": len(drop)}
+    return {"train": len(train), "val2": len(val_s) + len(val_n), "fresh_test": len(d2s) + len(d2n), "fresh_dropped": fresh_dropped}
 
 
 def write(out_dir, seed=0, scale=1.0):
