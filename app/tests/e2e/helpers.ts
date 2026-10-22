@@ -7,19 +7,19 @@ const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers
 const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString("base64url");
 const JWT = `${b64({ alg: "HS256", typ: "JWT" })}.${b64({ sub: SESSION, role: "authenticated", is_anonymous: true, exp: Math.floor(Date.now() / 1000) + 3600 })}.sig`;
 export const ID = "0f0f0f0f-1111-4222-8333-444444444444";
-export const order = (status: string, updated = "2020-01-01T10:00:00Z") => ({
+export const order = (status: string, updated = "2020-01-01T10:00:00Z", created = "2020-01-01T10:00:00Z") => ({
   id: ID, session_id: SESSION, kitchen_id: "k", client_order_key: "k1", status, address: "Flat 4, Green Park",
-  items: [{ menu_item_id: "d1", name: "Butter Chicken", qty: 2, price_paise: 32000 }], total_paise: 64000, created_at: "2020-01-01T10:00:00Z", updated_at: updated,
+  items: [{ menu_item_id: "d1", name: "Butter Chicken", qty: 2, price_paise: 32000 }], total_paise: 64000, created_at: created, updated_at: updated,
 });
 
 export const decisionOf = (over: object = {}) => ({
   use_case: "D1", rule_pick: "r2", chosen_pick: "r2", chosen_by: "rule", jev_status: "ok", jev: { pick: "r2", confidence: 0.81, agrees: true, ms: 310 }, ...over,
 });
 
-type Calls = { signups: number; status: any[]; decide: any[]; health: any[]; rpc: { name: string; body: any }[]; orderReads: string[] };
+type Calls = { signups: number; status: any[]; decide: any[]; health: any[]; feedback: any[]; confirm: any[]; rpc: { name: string; body: any }[]; orderReads: string[] };
 export async function setup(context: BrowserContext, page: Page, initial: object[] = []) {
-  const calls: Calls = { signups: 0, status: [], decide: [], health: [], rpc: [], orderReads: [] };
-  const state = { orders: initial, reply: null as null | { status: number; body: unknown }, menuUp: true, decisions: [] as object[], runs: [] as object[], runCount: 0 };
+  const calls: Calls = { signups: 0, status: [], decide: [], health: [], feedback: [], confirm: [], rpc: [], orderReads: [] };
+  const state = { confirmCfg: { confirm_after_ready_min: 3, confirm_after_place_min: 8 }, confirmDone: false, feedbackDown: false, orders: initial, reply: null as null | { status: number; body: unknown }, menuUp: true, decisions: [] as object[], runs: [] as object[], runCount: 0 };
   const json = (route: any, status: number, body: unknown) => route.fulfill({ status, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(body) });
   await context.route("https://test.supabase.co/**", async (route) => {
     const req = route.request();
@@ -60,6 +60,17 @@ export async function setup(context: BrowserContext, page: Page, initial: object
       const r = state.reply ?? { status: 200, body: { ok: true, jev: { ok: true, status: "ok", ms: 310 } } };
       return json(route, r.status, r.body);
     }
+    if (body.action === "confirm") {   // story S-C: the customer's Yes
+      calls.confirm.push({ headers: req.headers(), body });
+      const closed = { ...order("delivered", new Date(Date.now() + 1000).toISOString()), paid_by: "cash" };
+      return json(route, 200, state.confirmDone ? { ok: true, already_done: true, order: closed } : { ok: true, order: closed });
+    }
+    if (body.action === "feedback") {   // story S-B: a report; when feedbackDown is set the phone cannot reach the server
+      if (state.feedbackDown) return route.abort("internetdisconnected");
+      calls.feedback.push({ headers: req.headers(), body });
+      const r = state.reply ?? { status: 201, body: { ok: true, id: "f1" } };
+      return json(route, r.status, r.body);
+    }
     if (body.action === "decide") {
       calls.decide.push(body);
       const r = state.reply ?? { status: 200, body: { ok: true, decision: decisionOf() } };
@@ -69,7 +80,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
     calls.status.push({ headers: req.headers(), body });
     const later = new Date(Date.now() + 1000).toISOString();
     const fresh =
-      body.action === "place" ? { ok: true, created: true, order: { ...order("placed", later), total_paise: 32000 } }
+      body.action === "place" ? { ok: true, created: true, order: { ...order("placed", later), total_paise: 32000 }, ...state.confirmCfg }
       : body.action === "event" ? { ok: true, order: order("out_for_delivery", later) }
       : { ok: true, order: order(body.to_status, later) };
     const r = state.reply ?? { status: body.action === "place" ? 201 : 200, body: fresh };

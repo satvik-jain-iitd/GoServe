@@ -9,7 +9,7 @@ async function placeOne(page: Page) {
   await page.getByRole("button", { name: /View cart/ }).click();
   await page.getByLabel("Delivery address").fill("Flat 4, Green Park");
   await page.getByRole("button", { name: "Review bill" }).click();
-  await page.getByRole("button", { name: "Place order (pay later)" }).click();
+  await page.getByRole("button", { name: "Place order (cash on delivery)" }).click();
 }
 
 test("S1 split view shows the customer and the kitchen side by side", async ({ page, context }) => {

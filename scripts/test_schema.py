@@ -22,6 +22,9 @@ def sql(query):
 SEED = "insert into kitchens (id, name) values ('00000000-0000-0000-0000-000000000001', 'Test') ;"
 ORDER = "insert into orders (id, kitchen_id, client_order_key, items, total_paise, address) values ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-000000000001', 'k1', '[]', 100, 'x')"
 
+A1 = "'00000000-0000-0000-0000-0000000000a1'"
+TO_READY = " ".join(f"update orders set status='{x}' where id={A1};" for x in ("accepted", "preparing", "ready"))
+
 
 @unittest.skipUnless(TOKEN, "SUPABASE_ACCESS_TOKEN not set")
 class Schema(unittest.TestCase):
@@ -46,6 +49,49 @@ class Schema(unittest.TestCase):
         r = sql(f"begin; {SEED} {ORDER}; {ORDER.replace('0000000000a1', '0000000000a2')} on conflict (session_id, client_order_key) do nothing; "
                 f"select count(*) as n from orders; rollback;")
         self.assertEqual(r[-1]["n"], 1, r) if isinstance(r, list) else self.fail(r)
+
+    # Story S-C (#95): delivered by hand, paid by cash (migration 0009)
+    def test_s7_paid_by_only_takes_cash(self):
+        r = sql(f"begin; {SEED} {ORDER}; update orders set paid_by='card' where id={A1}; rollback;")
+        self.assertIn("error", r)
+        r = sql(f"begin; {SEED} {ORDER}; update orders set paid_by='cash' where id={A1}; rollback;")
+        self.assertNotIn("error", r)
+
+    def test_s8_a_second_tap_on_the_same_step_is_refused_as_already_done(self):
+        r = sql(f"begin; {SEED} {ORDER}; select change_status({A1}, 'demo', 'accepted', 'kitchen'); select change_status({A1}, 'demo', 'accepted', 'kitchen'); rollback;")
+        self.assertIn("already_done", json.dumps(r))
+        r = sql(f"begin; {SEED} {ORDER}; select count(*) as n from (select change_status({A1}, 'demo', 'accepted', 'kitchen')) x; rollback;")
+        self.assertNotIn("error", r)
+
+    def test_s9_yes_closes_a_ready_order_as_delivered_and_cash_and_a_second_yes_changes_nothing(self):
+        r = sql(f"begin; {SEED} {ORDER}; {TO_READY} select confirm_delivery({A1}, 'demo'); "
+                f"select jsonb_build_object('second', confirm_delivery({A1}, 'demo'), 'status', (select status from orders where id={A1}), "
+                f"'paid_by', (select paid_by from orders where id={A1}), 'events', (select jsonb_agg(event order by id) from order_events where order_id={A1}), "
+                f"'actors', (select jsonb_agg(distinct actor) from order_events where order_id={A1} and event like 'order.c%')) as out; rollback;")
+        self.assertIsInstance(r, list, r)
+        out = r[-1]["out"]
+        self.assertEqual((out["status"], out["paid_by"]), ("delivered", "cash"))
+        self.assertTrue(out["second"]["already_done"])
+        self.assertEqual(out["events"][-3:], ["order.picked_up", "order.delivered", "order.confirmed"])
+        self.assertEqual(out["events"].count("order.confirmed"), 1)
+        self.assertEqual(out["actors"], ["customer"])
+
+    def test_s10_yes_before_the_kitchen_is_ready_is_refused(self):
+        r = sql(f"begin; {SEED} {ORDER}; select confirm_delivery({A1}, 'demo'); rollback;")
+        self.assertIn("illegal status step", json.dumps(r))
+        r = sql(f"begin; {SEED} {ORDER}; select confirm_delivery({A1}, 'other-session'); rollback;")
+        self.assertIn("order_not_found", json.dumps(r))
+
+    def test_s11_yes_after_the_rider_delivered_records_cash_once(self):
+        r = sql(f"begin; {SEED} {ORDER}; {TO_READY} update orders set status='out_for_delivery' where id={A1}; update orders set status='delivered' where id={A1}; "
+                f"select confirm_delivery({A1}, 'demo'); "
+                f"select jsonb_build_object('second', confirm_delivery({A1}, 'demo'), 'paid_by', (select paid_by from orders where id={A1}), "
+                f"'confirmed', (select count(*) from order_events where order_id={A1} and event = 'order.confirmed')) as out; rollback;")
+        self.assertIsInstance(r, list, r)
+        out = r[-1]["out"]
+        self.assertEqual(out["paid_by"], "cash")
+        self.assertEqual(out["confirmed"], 1)
+        self.assertTrue(out["second"]["already_done"])
 
 
 if __name__ == "__main__":

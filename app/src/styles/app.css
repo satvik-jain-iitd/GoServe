@@ -73,3 +73,9 @@ textarea { font: inherit; padding: var(--gs-space-3); border: 1px solid var(--md
 
 /* Health page (story #54). */
 .badge.fail { background: var(--md-error); color: var(--md-on-error); }
+
+/* Feedback button and sheet (story S-B). The button stays at the bottom right on every screen; the sheet opens over the page. */
+.feedback-btn { position: fixed; right: var(--gs-space-4); bottom: calc(var(--gs-space-4) + 3.5rem);   /* above the bottom bar of the cart and bill screens */ z-index: 20; box-shadow: 0 2px 8px rgb(0 0 0 / 0.25); }
+.sheet-back { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end; justify-content: center; background: rgb(0 0 0 / 0.4); }
+.sheet { width: 100%; max-width: 32rem; max-height: 90vh; overflow-y: auto; padding: var(--gs-space-5); border-radius: var(--gs-radius-l) var(--gs-radius-l) 0 0; background: var(--md-surface); color: var(--md-on-surface); }
+select { font: inherit; padding: var(--gs-space-3); border: 1px solid var(--md-outline); border-radius: var(--gs-radius-m); background: var(--md-surface); color: inherit; }

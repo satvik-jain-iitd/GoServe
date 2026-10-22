@@ -10,7 +10,7 @@ test("S1 demo path: menu, order, kitchen, AI suggestion, delivered, reset", asyn
   await page.getByRole("button", { name: /View cart/ }).click();
   await page.getByLabel("Delivery address").fill("Flat 4, Green Park, Delhi");
   await page.getByRole("button", { name: "Review bill" }).click();
-  await page.getByRole("button", { name: "Place order (pay later)" }).click();
+  await page.getByRole("button", { name: "Place order (cash on delivery)" }).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible({ timeout: 15_000 });
 
   await page.getByRole("button", { name: "Kitchen" }).click();
