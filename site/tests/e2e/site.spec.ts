@@ -145,3 +145,16 @@ test.describe("first city", () => {
     });
   }
 });
+
+test.describe("roadmap", () => {
+  test("MVP 0 and MVP 1 are labelled Done with the date, and MVP 1 does not promise OTP login", async ({ page }) => {
+    await page.goto("/roadmap");
+    const item = (id: string) => page.locator("li.road-item", { has: page.getByText(id, { exact: true }) });
+    await expect(item("MVP 0")).toContainText("Done");
+    await expect(item("MVP 0")).toContainText("22 Oct 2026");
+    await expect(item("MVP 1")).toContainText("Done");
+    await expect(item("MVP 1")).toContainText("Sign in with Google");
+    await expect(item("MVP 1")).not.toContainText("OTP");
+    await expect(item("MVP 2")).toContainText("Coming soon");
+  });
+});
