@@ -152,3 +152,6 @@ short. Say what happened and what to do next time.
 - A class-balance test on generated data caught two thin classes before any GPU time was spent. Put the balance check in the test, not in the training log.
 - Splitting seeds by list position (last two to test) hid whole classes from train because related seeds sat together. Split by `index % 5`.
 - Two Claude sessions in one checkout switch each other's branch and hide each other's files. Each session works in its own worktree: `git worktree add .worktrees/<issue>-<slug> <branch>` (the folder is in `.git/info/exclude`). One branch per issue number, temp files in the session's own scratchpad, never in `/tmp`.
+- Fix the pass rule in the docs before the model result exists, and say how the numbers are averaged. E2 failed its own rule, and because the rule was written first nobody could bend it.
+- Laya fits its confidence temperature on a slice of the training items. If the test set uses unseen phrasings, the model is over-confident (97.9% in-sample, 72% on test). Check calibration on a split that has unseen seeds.
+- Run Kaggle jobs that need no GPU with `enable_gpu: false`. Dry-run and eval used no GPU quota at all.

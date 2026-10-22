@@ -13,6 +13,8 @@ import metrics
 data = os.path.dirname(glob.glob("/kaggle/input/**/test.jsonl", recursive=True)[0])
 load = lambda n: [json.loads(l) for l in open(f"{data}/{n}.jsonl")]
 train, test = load("train"), load("test")
+if MODEL.startswith("/kaggle") and not os.path.isdir(MODEL):  # kernel output mounts under a path we do not know
+    MODEL = os.path.dirname(glob.glob("/kaggle/input/**/" + os.path.basename(MODEL) + "/rl_agent_config.json", recursive=True)[0])
 agent = laya.load(MODEL)
 
 

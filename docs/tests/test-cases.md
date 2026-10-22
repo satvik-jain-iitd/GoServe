@@ -185,3 +185,5 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Every row has only state, questions, expected; choice answers are listed options; noul answers are booleans | #107 | S4 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
 | Every choice option and noul side is at least 8% of train decisions (caught: positive mood 7.9%, needs_human 7%) | #107 | S5 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
 | Every choice option and noul side appears in val and in test (reviewer found val had no allergy=true; red first) | #107 | S6 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
+| Metrics: accuracy and ECE match hand-made numbers; majority guess uses train labels and covers every question (red first: it dropped 4 of 7) | #111 | S4 | Automatic | `ops/ai/laya/test_metrics.py` | Pass |
+| E2 on Kaggle: tuned vs base Laya vs majority on 390 synthetic test rows | #111 | S2 | Experiment | `docs/research/experiments.md` E2 | Fail by the fixed rule (ECE 0.141; needs_human below majority); accuracy +0.306 |
