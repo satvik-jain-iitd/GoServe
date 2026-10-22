@@ -1,3 +1,4 @@
+import { DEFAULT_CFG, type ConfirmCfg } from "./confirm";
 import type { Decision, Rider } from "./ops";
 
 // Placing an order: one call to the n8n webhook with the demo token (ADR-009, docs/integrations/n8n-order-workflows.md).
@@ -8,14 +9,14 @@ export class PlaceError extends Error {
   }
 }
 export type PlaceInput = { sessionId: string; key: string; items: { menu_item_id: string; qty: number }[]; address: string };
-export type PlacedOrder = { id: string; status: string; total_paise: number; updated_at: string };
+export type PlacedOrder = { id: string; status: string; total_paise: number; updated_at: string; paid_by?: string | null };
 export type OrderDeps = { url: string; token: string; fetchFn: typeof fetch };
 export const orderDeps = (): OrderDeps => ({ url: import.meta.env.VITE_ORDER_URL, token: import.meta.env.VITE_DEMO_TOKEN, fetchFn: fetch.bind(window) });
 
-type ApiAnswer = { ok?: boolean; created?: boolean; order?: PlacedOrder; decision?: Decision; error?: string; message?: string };
+type ApiAnswer = { ok?: boolean; created?: boolean; order?: PlacedOrder; decision?: Decision; id?: string; already_done?: boolean; confirm_after_ready_min?: number; confirm_after_place_min?: number; error?: string; message?: string };
 
 // One call to the webhook. `need` names the part of the answer the caller must get; anything else becomes a plain message.
-async function callApi(body: object, deps: OrderDeps, need: "order" | "decision" = "order"): Promise<ApiAnswer> {
+async function callApi(body: object, deps: OrderDeps, need: "order" | "decision" | "id" = "order"): Promise<ApiAnswer> {
   let res: Response;
   try {
     res = await deps.fetchFn(deps.url, { method: "POST", headers: { "content-type": "application/json", "x-gs-token": deps.token }, body: JSON.stringify(body) });
@@ -33,9 +34,18 @@ async function callApi(body: object, deps: OrderDeps, need: "order" | "decision"
   throw new PlaceError("Something went wrong. Please try again.", "unknown");
 }
 
-export async function placeOrder(input: PlaceInput, deps: OrderDeps): Promise<{ order: PlacedOrder; created: boolean }> {
+// The answer also carries when to ask "Was your order delivered?" (story S-C); the times are settings on the server.
+export async function placeOrder(input: PlaceInput, deps: OrderDeps): Promise<{ order: PlacedOrder; created: boolean; confirm: ConfirmCfg }> {
   const a = await callApi({ action: "place", session_id: input.sessionId, client_order_key: input.key, items: input.items, address: input.address }, deps);
-  return { order: a.order as PlacedOrder, created: a.created === true };
+  const num = (v: unknown, d: number) => (typeof v === "number" && v >= 0 ? v : d);
+  return { order: a.order as PlacedOrder, created: a.created === true,
+    confirm: { afterReadyMin: num(a.confirm_after_ready_min, DEFAULT_CFG.afterReadyMin), afterPlaceMin: num(a.confirm_after_place_min, DEFAULT_CFG.afterPlaceMin) } };
+}
+
+// The customer's Yes: the order closes as delivered and paid by cash. A second Yes is not an error (alreadyDone).
+export async function confirmDelivery(input: { sessionId: string; orderId: string }, deps: OrderDeps): Promise<{ order: PlacedOrder; alreadyDone: boolean }> {
+  const a = await callApi({ action: "confirm", session_id: input.sessionId, order_id: input.orderId }, deps);
+  return { order: a.order as PlacedOrder, alreadyDone: a.already_done === true };
 }
 
 export type StatusInput = { sessionId: string; orderId: string; to: string; actor: "customer" | "kitchen" | "rider" | "ops" };
@@ -54,4 +64,10 @@ export async function addEvent(input: EventInput, deps: OrderDeps): Promise<{ or
 export async function askDecision(input: { sessionId: string; orderId: string; riders: Rider[] }, deps: OrderDeps): Promise<Decision> {
   const a = await callApi({ action: "decide", session_id: input.sessionId, order_id: input.orderId, riders: input.riders }, deps, "decision");
   return a.decision as Decision;
+}
+
+// A tester's report from the Feedback button (story S-B). The server saves it and answers with the new id.
+export async function sendFeedback(report: object, deps: OrderDeps): Promise<string> {
+  const a = await callApi(report, deps, "id");
+  return a.id as string;
 }

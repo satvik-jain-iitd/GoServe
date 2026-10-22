@@ -1,4 +1,5 @@
 // SUB 12, node "Guard": the kill switch is checked here again (rulebook 95.15), then the input shape. The database checks the step.
+// to_status 'confirm' is the customer's Yes (story S-C): it calls confirm_delivery with only the order and the session. Any other status calls change_status.
 const j = $input.first().json;
 const refuse = (status_code, error, message) => [{ json: { ok: false, status_code, error, message } }];
 if (j.kill_switch === true) return refuse(503, 'kill_switch', 'Orders are paused. Please try again soon.');
@@ -8,5 +9,9 @@ if (typeof j.session_id !== 'string' || j.session_id.trim() === '' || j.session_
   || !uuid.test(String(j.order_id)) || typeof j.to_status !== 'string' || !actors.includes(j.actor)) {
   return refuse(400, 'invalid_request', 'The status change is missing something.');
 }
-return [{ json: { ok: true, supabase_url: j.supabase_url,
+if (j.to_status === 'confirm') {
+  if (j.actor !== 'customer') return refuse(400, 'invalid_request', 'Only the customer can confirm.');
+  return [{ json: { ok: true, supabase_url: j.supabase_url, rpc_fn: 'confirm_delivery', rpc_body: { p_order: j.order_id, p_session: j.session_id } } }];
+}
+return [{ json: { ok: true, supabase_url: j.supabase_url, rpc_fn: 'change_status',
   rpc_body: { p_order: j.order_id, p_session: j.session_id, p_to: j.to_status, p_actor: j.actor } } }];

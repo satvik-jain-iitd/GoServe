@@ -40,7 +40,7 @@ function sub({ name, n, trigger, fields, guardFile, rpc, callerIds, what, creden
     codeNode(`${p}-02`, 'Guard', code(guardFile)),
     ifNode(`${p}-03`, 'Allowed?', '={{ $json.ok }}', 'true'),
     node(`${p}-04`, rpc.label, 'n8n-nodes-base.httpRequest', 4.2, {
-      method: 'POST', url: `={{ $json.supabase_url }}/rest/v1/rpc/${rpc.fn}`,
+      method: 'POST', url: rpc.dynamic ? '={{ $json.supabase_url }}/rest/v1/rpc/{{ $json.rpc_fn }}' : `={{ $json.supabase_url }}/rest/v1/rpc/${rpc.fn}`,
       authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
       sendBody: true, specifyBody: 'json', jsonBody: '={{ $json.rpc_body }}',
       options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 } },
@@ -65,7 +65,7 @@ function finish(name, nodes, edges, sections, setts) {
 }
 
 // env 'prod' builds the PROD copy (story #78): a `PROD` name mark and its own webhook path. Everything else, including the canvas, is the same code.
-function build({ ids, token, supabaseUrl, credential, openrouterCredential, chatId, env }) {
+function build({ ids, token, supabaseUrl, credential, openrouterCredential, chatId, driveFolderId, env }) {
   const prod = env === 'prod';
   const settings = ids.alert ? Object.assign({}, baseSettings, { errorWorkflow: ids.alert }) : baseSettings;
   const cred = credential || { id: 'REPLACE_CREDENTIAL_ID', name: 'GoServe Supabase dev' };
@@ -79,8 +79,8 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     what: 'It checks the dishes and prices and writes the order and its first event.' });
   const sub12 = sub({ name: 'GS SUB 12 Change status', n: 12, callerIds: main, credential: cred, settings,
     fields: [['session_id', 'string'], ['order_id', 'string'], ['to_status', 'string'], ['actor', 'string'], ['kill_switch', 'boolean'], ['supabase_url', 'string']],
-    guardFile: 'guard_status.js', rpc: { fn: 'change_status', label: 'Change status' },
-    what: 'It moves the order one step and writes the event.' });
+    guardFile: 'guard_status.js', rpc: { fn: 'change_status', label: 'Change status', dynamic: true },
+    what: 'It moves the order one step and writes the event. For the customer\'s Yes it calls confirm_delivery instead.' });
 
   const rpcPost = (id, name, fn, extra) => node(id, name, 'n8n-nodes-base.httpRequest', 4.2, {
     method: 'POST', url: `={{ $json.supabase_url }}/rest/v1/${fn}`, authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
@@ -169,14 +169,76 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
   ];
   const sub16 = finish('GS SUB 16 Health', n16, e16, s16, subSettings);
 
-  const callSub = (id, name, subId, mapping) => node(id, name, 'n8n-nodes-base.executeWorkflow', 1.2, {
+
+  const callSub = (id, name, subId, mapping, wait = true) => node(id, name, 'n8n-nodes-base.executeWorkflow', 1.2, {
     source: 'database', workflowId: { __rl: true, value: subId, mode: 'id' },
     workflowInputs: { mappingMode: 'defineBelow', value: Object.fromEntries(mapping.map(([k, v]) => [k, v])), matchingColumns: [],
       schema: schemaOf(mapping.map(([k, , t]) => [k, t])), attemptToConvertTypes: false, convertFieldsToString: false },
-    mode: 'once', options: { waitForSubWorkflow: true } });
+    mode: 'once', options: { waitForSubWorkflow: wait } });
+
+  // ---- SUB 17 Feedback: save a tester's report and answer; Drive and Telegram run in SUB 18 without being waited for (story S-B, #94; F90) ----
+  const f17 = [['session_id', 'string'], ['kitchen_id', 'string'], ['role', 'string'], ['screen', 'string'], ['order_id', 'string'], ['doing', 'string'], ['text', 'string'], ['context', 'object'],
+    ['image_b64', 'string'], ['kill_switch', 'boolean'], ['supabase_url', 'string'], ['drive_folder_id', 'string'], ['chat_id', 'string'], ['env', 'string']];
+  const side = { onError: 'continueRegularOutput' };   // a side effect never undoes the saved report
+  const f18 = [['id', 'string'], ['row', 'object'], ['image_b64', 'string'], ['has_image', 'boolean'], ['drive_ready', 'boolean'], ['drive_folder_id', 'string'], ['chat_id', 'string'], ['env', 'string'], ['supabase_url', 'string']];
+  const n17 = [
+    node('gs-sub17-01', 'Start', 'n8n-nodes-base.executeWorkflowTrigger', 1.1, inputs(f17)),
+    codeNode('gs-sub17-02', 'Guard', code('guard_feedback.js')),
+    ifNode('gs-sub17-03', 'Allowed?', '={{ $json.ok }}', 'true'),
+    node('gs-sub17-04', 'Save report', 'n8n-nodes-base.httpRequest', 4.2, {
+      method: 'POST', url: '={{ $json.supabase_url }}/rest/v1/feedback', authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
+      sendHeaders: true, headerParameters: { parameters: [{ name: 'Prefer', value: 'return=representation' }] },
+      sendBody: true, specifyBody: 'json', jsonBody: '={{ $json.row }}',
+      options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 } }, { credentials: { httpCustomAuth: cred } }),
+    codeNode('gs-sub17-05', 'Check saved', code('feedback_saved.js')),
+    ifNode('gs-sub17-06', 'Saved?', '={{ $json.ok }}', 'true'),
+    Object.assign(callSub('gs-sub17-07', 'Start side effects', ids.sub18, f18.map(([k, t]) => [k, k === 'id' ? '={{ $json.id }}' : '={{ $json.' + k + ' }}', t]), false), side),
+    codeNode('gs-sub17-08', 'Answer', code('feedback_answer.js')),
+    node('gs-sub17-09', 'Return refusal', 'n8n-nodes-base.noOp', 1, {}),
+  ];
+  const e17 = [['Start', 'Guard'], ['Guard', 'Allowed?'], ['Allowed?', 'Save report', 0], ['Allowed?', 'Return refusal', 1], ['Save report', 'Check saved'], ['Check saved', 'Saved?'],
+    ['Saved?', 'Start side effects', 0], ['Saved?', 'Return refusal', 1], ['Start side effects', 'Answer']];
+  const s17 = [
+    { name: 'RECEIVE', what: 'The MAIN workflow calls this with a tester\'s report.', needs: 'Input: ' + f17.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
+    { name: 'CHECK', what: 'Refuse if the kill switch is on or the report is not valid. Nothing is written here.', needs: 'Input fields. No credential.', nodes: ['Guard', 'Allowed?'], color: 5 },
+    { name: 'SAVE', what: 'Write one feedback row. If the database refuses, stop with 502: no Drive file and no message are made.', needs: 'Credential "GoServe Supabase dev". Table: feedback.', nodes: ['Save report', 'Check saved', 'Saved?'], color: 6 },
+    { name: 'SIDE EFFECTS', what: 'Start SUB 18 (Drive and Telegram) and do not wait for it. If it cannot start, go on.', needs: 'SUB 18 id. The saved row and the picture.', nodes: ['Start side effects'], color: 6 },
+    { name: 'ANSWER', what: 'Tell the phone it is saved (201 and the new id).', needs: 'The saved row.', nodes: ['Answer'], color: 5 },
+    refuseSection,
+  ];
+  const sub17 = finish('GS SUB 17 Feedback', n17, e17, s17, subSettings);
+
+  // ---- SUB 18 Feedback side effects: the screenshot to Google Drive and one Telegram message (story S-B; answered after the row, F90) ----
+  const n18 = [
+    node('gs-sub18-01', 'Start', 'n8n-nodes-base.executeWorkflowTrigger', 1.1, inputs(f18)),
+    ifNode('gs-sub18-02', 'Has picture?', '={{ $json.has_image && $json.drive_ready }}', 'true'),
+    codeNode('gs-sub18-03', 'Make file', code('feedback_file.js')),
+    node('gs-sub18-04', 'Upload to Drive', 'n8n-nodes-base.googleDrive', 3, { resource: 'file', operation: 'upload', inputDataFieldName: 'data', name: '={{ $json.file_name }}',
+      driveId: { __rl: true, mode: 'list', value: 'My Drive' }, folderId: { __rl: true, mode: 'id', value: '={{ $json.drive_folder_id }}' }, options: {} },
+      Object.assign({ credentials: { googleDriveOAuth2Api: { id: '6KXFSSShw2vwLVK5', name: 'Klickbae8yt@gmail.com' } } }, side)),
+    node('gs-sub18-05', 'Link file', 'n8n-nodes-base.httpRequest', 4.2, {
+      method: 'PATCH', url: "={{ $('Start').first().json.supabase_url }}/rest/v1/feedback?id=eq.{{ $('Start').first().json.id }}",
+      authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
+      sendHeaders: true, headerParameters: { parameters: [{ name: 'Prefer', value: 'return=minimal' }] },
+      sendBody: true, specifyBody: 'json', jsonBody: '={{ { drive_file_id: $json.id || null } }}',
+      options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 } },
+      Object.assign({ credentials: { httpCustomAuth: cred } }, side)),
+    codeNode('gs-sub18-06', 'Build message', code('feedback_message.js')),
+    node('gs-sub18-07', 'Notify owner', 'n8n-nodes-base.telegram', 1.2, { resource: 'message', operation: 'sendMessage', chatId: '={{ $json.chat_id }}', text: '={{ $json.text }}',
+      additionalFields: { parse_mode: 'HTML', appendAttribution: false } }, Object.assign({ credentials: { telegramApi: { id: 'bBVpWzhaY0MCpoQ5', name: 'GoServeBot' } } }, side)),
+  ];
+  const e18 = [['Start', 'Has picture?'], ['Has picture?', 'Make file', 0], ['Has picture?', 'Build message', 1], ['Make file', 'Upload to Drive'], ['Upload to Drive', 'Link file'],
+    ['Link file', 'Build message'], ['Build message', 'Notify owner']];
+  const s18 = [
+    { name: 'RECEIVE', what: 'SUB 17 calls this after the report is saved, and does not wait.', needs: 'Input: ' + f18.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
+    { name: 'PICTURE', what: 'If there is a screenshot, put it in the Google Drive folder and link the file to the row. If Drive fails, go on.', needs: 'Credential "Klickbae8yt@gmail.com". Input: drive_folder_id.', nodes: ['Has picture?', 'Make file', 'Upload to Drive', 'Link file'], color: 6 },
+    { name: 'TELL', what: 'Send the owner one Telegram message with the first lines and the Drive link. If Telegram fails, go on.', needs: 'Credential "GoServeBot". Input: chat_id.', nodes: ['Build message', 'Notify owner'], color: 6 },
+  ];
+  const sub18 = finish('GS SUB 18 Feedback side effects', n18, e18, s18, Object.assign({}, settings, { callerPolicy: 'workflowsFromAList', callerIds: ids.sub17 }));
+
   const body = (f) => `={{ $json.body.${f} }}`;
   const respond = (id, name, code_, text) => node(id, name, 'n8n-nodes-base.respondToWebhook', 1.1, { respondWith: 'json', responseBody: text, options: { responseCode: code_ } });
-  const answer = '={{ JSON.stringify({ ok: $json.ok, error: $json.error, message: $json.message, created: $json.created, order: $json.order, decision: $json.decision, jev: $json.jev }) }}';
+  const answer = '={{ JSON.stringify({ ok: $json.ok, error: $json.error, message: $json.message, created: $json.created, order: $json.order, decision: $json.decision, jev: $json.jev, id: $json.id, already_done: $json.already_done, confirm_after_ready_min: $(\'Config\').first().json.confirm_after_ready_min, confirm_after_place_min: $(\'Config\').first().json.confirm_after_place_min }) }}';
 
   const nodes = [
     node('gs-main01-01', 'Order webhook', 'n8n-nodes-base.webhook', 2, { httpMethod: 'POST', path: prod ? 'gs-order-prod' : 'gs-order', responseMode: 'responseNode', options: { allowedOrigins: '*' } }, { webhookId: prod ? '9a3e6c14-7b52-4d8f-a1c9-2e5b8d0f4a63' : '6f1d7a52-2c43-4d0b-9b6e-5a1f0c9e7d11' }),
@@ -188,11 +250,16 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
       { id: 'cfg-5', name: 'kitchen_id', type: 'string', value: KITCHEN },
       { id: 'cfg-6', name: 'jev_enabled', type: 'boolean', value: true },
       { id: 'cfg-7', name: 'jev_model', type: 'string', value: 'typesafe/jev-1.13' },
-      { id: 'cfg-8', name: 'jev_cost_cap', type: 'number', value: 0.001 }] }, options: {} }),
+      { id: 'cfg-8', name: 'jev_cost_cap', type: 'number', value: 0.001 },
+      { id: 'cfg-9', name: 'drive_folder_id', type: 'string', value: driveFolderId || PLACEHOLDER },
+      { id: 'cfg-10', name: 'chat_id', type: 'string', value: chatId || PLACEHOLDER },
+      { id: 'cfg-11', name: 'env', type: 'string', value: prod ? 'prod' : 'dev' },
+      { id: 'cfg-12', name: 'confirm_after_ready_min', type: 'number', value: 3 },
+      { id: 'cfg-13', name: 'confirm_after_place_min', type: 'number', value: 8 }] }, options: {} }),
     codeNode('gs-main01-03', 'Check token', code('check_token.js')),
     ifNode('gs-main01-04', 'Token ok?', '={{ $json.token_ok }}', 'true'),
     ifNode('gs-main01-05', 'Kill switch?', '={{ $json.kill_switch }}', 'true'),
-    node('gs-main01-06', 'Route', 'n8n-nodes-base.switch', 3.2, { rules: { values: ['place', 'status', 'decide', 'event', 'health'].map((k) => ({
+    node('gs-main01-06', 'Route', 'n8n-nodes-base.switch', 3.2, { rules: { values: ['place', 'status', 'decide', 'event', 'health', 'feedback', 'confirm'].map((k) => ({
       conditions: { options: { caseSensitive: true, leftValue: '', typeValidation: 'strict', version: 2 },
         conditions: [{ id: 'route-' + k, leftValue: '={{ $json.action }}', rightValue: k, operator: { type: 'string', operation: 'equals' } }], combinator: 'and' },
       renameOutput: true, outputKey: k })) }, options: { fallbackOutput: 'extra', renameFallbackOutput: 'bad' } }),
@@ -212,6 +279,14 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
       ['actor', body('actor'), 'string'], ['kill_switch', '={{ $json.kill_switch }}', 'boolean'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
     callSub('gs-main01-17', 'Call SUB 16 Health', ids.sub16, [
       ['jev_enabled', '={{ $json.jev_enabled }}', 'boolean'], ['jev_model', '={{ $json.jev_model }}', 'string']]),
+    callSub('gs-main01-19', 'Call SUB 12 Confirm', ids.sub12, [
+      ['session_id', body('session_id'), 'string'], ['order_id', body('order_id'), 'string'], ['to_status', 'confirm', 'string'],
+      ['actor', 'customer', 'string'], ['kill_switch', '={{ $json.kill_switch }}', 'boolean'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
+    callSub('gs-main01-18', 'Call SUB 17 Feedback', ids.sub17, [
+      ['session_id', body('session_id'), 'string'], ['kitchen_id', '={{ $json.kitchen_id }}', 'string'], ['role', body('role'), 'string'], ['screen', body('screen'), 'string'],
+      ['order_id', "={{ $json.body.order_id || '' }}", 'string'], ['doing', body('doing'), 'string'], ['text', body('text'), 'string'], ['context', body('context'), 'object'],
+      ['image_b64', "={{ $json.body.image_b64 || '' }}", 'string'], ['kill_switch', '={{ $json.kill_switch }}', 'boolean'], ['supabase_url', '={{ $json.supabase_url }}', 'string'],
+      ['drive_folder_id', '={{ $json.drive_folder_id }}', 'string'], ['chat_id', '={{ $json.chat_id }}', 'string'], ['env', '={{ $json.env }}', 'string']]),
     respond('gs-main01-09', 'Respond result', '={{ $json.status_code }}', answer),
     codeNode('gs-main01-14', 'Log run', code('log_run.js')),
     callSub('gs-main01-15', 'Call SUB 14 Write logs', ids.sub14, [
@@ -224,11 +299,11 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
   ];
   const edges = [['Order webhook', 'Config'], ['Config', 'Check token'], ['Check token', 'Token ok?'],
     ['Token ok?', 'Kill switch?', 0], ['Token ok?', 'Respond 401', 1], ['Kill switch?', 'Respond 503', 0], ['Kill switch?', 'Route', 1],
-    ['Route', 'Call SUB 11 Place order', 0], ['Route', 'Call SUB 12 Change status', 1], ['Route', 'Call SUB 13 Decide', 2], ['Route', 'Call SUB 15 Add event', 3], ['Route', 'Call SUB 16 Health', 4], ['Route', 'Respond 400', 5],
-    ['Call SUB 11 Place order', 'Respond result'], ['Call SUB 12 Change status', 'Respond result'], ['Call SUB 13 Decide', 'Respond result'], ['Call SUB 15 Add event', 'Respond result'], ['Call SUB 16 Health', 'Respond result'],
+    ['Route', 'Call SUB 11 Place order', 0], ['Route', 'Call SUB 12 Change status', 1], ['Route', 'Call SUB 13 Decide', 2], ['Route', 'Call SUB 15 Add event', 3], ['Route', 'Call SUB 16 Health', 4], ['Route', 'Call SUB 17 Feedback', 5], ['Route', 'Call SUB 12 Confirm', 6], ['Route', 'Respond 400', 7],
+    ['Call SUB 11 Place order', 'Respond result'], ['Call SUB 12 Change status', 'Respond result'], ['Call SUB 13 Decide', 'Respond result'], ['Call SUB 15 Add event', 'Respond result'], ['Call SUB 16 Health', 'Respond result'], ['Call SUB 17 Feedback', 'Respond result'], ['Call SUB 12 Confirm', 'Respond result'],
     ['Respond result', 'Log run'], ['Log run', 'Call SUB 14 Write logs']];
   const sections = [
-    { name: 'RECEIVE', what: 'The phone posts here. Body field "action" is place, status, decide, event or health. The header x-gs-token carries the demo token.', needs: 'Path gs-order. Body: action and the fields of the SUB.', nodes: ['Order webhook'], color: 4 },
+    { name: 'RECEIVE', what: 'The phone posts here. Body field "action" is place, status, decide, event, health, feedback or confirm. The header x-gs-token carries the demo token.', needs: 'Path gs-order. Body: action and the fields of the SUB.', nodes: ['Order webhook'], color: 4 },
     { name: 'CONFIG', what: 'All tunables live here: the kill switch, the demo token and the database address.', needs: 'Config keys: kill_switch, demo_token, supabase_url.', nodes: ['Config'], color: 5 },
     { name: 'GATE', what: 'Wrong token gets 401. Kill switch on gets 503. Nothing else runs in both cases.', needs: 'Config: demo_token, kill_switch. Header x-gs-token.', nodes: ['Check token', 'Token ok?', 'Kill switch?'], color: 5 },
     { name: 'ROUTE', what: 'Pick the SUB workflow by the action field. Unknown action gets 400.', needs: 'Body field: action.', nodes: ['Route'], color: 5 },
@@ -237,7 +312,9 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     { name: 'DECIDE', what: 'Call SUB 13. The rule picks a rider; Jev only advises. One decision row is written.', needs: 'SUB 13 id. Body: session_id, order_id, riders. Config: jev keys, kitchen_id, params_version.', nodes: ['Call SUB 13 Decide'], color: 6 },
     { name: 'ADD EVENT', what: 'Call SUB 15. It writes the rider\'s arriving event; the status stays the same.', needs: 'SUB 15 id. Body: session_id, order_id, event, actor.', nodes: ['Call SUB 15 Add event'], color: 6 },
     { name: 'HEALTH', what: 'Call SUB 16. It asks Jev one tiny question and says if it answered. Nothing is written.', needs: 'SUB 16 id. Config: jev_enabled, jev_model.', nodes: ['Call SUB 16 Health'], color: 6 },
-    { name: 'ANSWER', what: 'Send the SUB result back to the phone with its status code.', needs: 'The SUB output: status_code, ok, order, decision.', nodes: ['Respond result'], color: 4 },
+    { name: 'CONFIRM', what: 'The customer\'s Yes. Call SUB 12 as the customer: the order is delivered and paid by cash. The answer also tells the phone when to ask.', needs: 'SUB 12 id. Body: session_id, order_id. Config: confirm_after_ready_min, confirm_after_place_min.', nodes: ['Call SUB 12 Confirm'], color: 6 },
+    { name: 'FEEDBACK', what: 'Call SUB 17. It saves a tester\'s report, puts the screenshot in Google Drive and tells the owner on Telegram.', needs: 'SUB 17 id. Body: session_id, role, screen, order_id, doing, text, context, image_b64. Config: drive_folder_id, chat_id, env.', nodes: ['Call SUB 17 Feedback'], color: 6 },
+    { name: 'ANSWER', what: 'Send the SUB result back to the phone with its status code.', needs: 'The SUB output: status_code, ok, order, decision, id.', nodes: ['Respond result'], color: 4 },
     { name: 'LOG', what: 'After the answer is out, write one run row: time taken, settings version, cost, error.', needs: 'SUB 14 id. Config: params_version, kitchen_id.', nodes: ['Log run', 'Call SUB 14 Write logs'], color: 6 },
     { name: 'REFUSE', what: 'Answer the calls that must not go on: 401, 503 and 400.', needs: 'Nothing.', nodes: ['Respond 401', 'Respond 503', 'Respond 400'], color: 1 },
   ];
@@ -308,7 +385,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send alert'], color: 6 },
   ];
   const alert = finish('GS ERR 00 Alert', aNodes, aEdges, aSections, baseSettings);
-  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub91, main01, main90, alert };
+  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub91, main01, main90, alert };
   if (prod) for (const k of Object.keys(all)) if (k !== 'alert') all[k].name += ' PROD';   // the one GS ERR 00 alert is shared (one bot, one chat)
   return { ...all, STATUS_ROLES };
 }

@@ -24,8 +24,8 @@ describe("placeOrder", () => {
 
   it("returns the saved order (201 new, 200 retry)", async () => {
     const order = { id: "o1", total_paise: 44100, status: "placed" };
-    expect(await placeOrder(input, deps(json(201, { ok: true, created: true, order })))).toEqual({ order, created: true });
-    expect(await placeOrder(input, deps(json(200, { ok: true, created: false, order })))).toEqual({ order, created: false });
+    expect(await placeOrder(input, deps(json(201, { ok: true, created: true, order })))).toMatchObject({ order, created: true });
+    expect(await placeOrder(input, deps(json(200, { ok: true, created: false, order })))).toMatchObject({ order, created: false });
   });
 
   it("turns a refusal into a message the customer can read", async () => {

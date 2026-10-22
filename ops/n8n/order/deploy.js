@@ -2,7 +2,7 @@
 //   node ops/n8n/order/deploy.js            plan only (reads the workflow list and the credential list)
 //   node ops/n8n/order/deploy.js --apply    create missing workflows (inactive), then PUT the real content
 //   --env prod                              the PROD copy (nine workflows, `PROD` in the name, own webhook path, prod address, credential and token)
-// It never activates, deletes or touches any other workflow. Deploy order: ERR 00, SUB 11 to 16 and 91, then MAIN 01 and MAIN 90 (rulebook 95.16).
+// It never activates, deletes or touches any other workflow. Deploy order: ERR 00, SUB 11 to 17 and 91, then MAIN 01 and MAIN 90 (rulebook 95.16).
 // Secrets come from ~/Desktop/Secrets (N8N_API_KEY, GOSERVE_TELEGRAM_CHAT_ID, SUPABASE_GOSERVE_DEV_URL, GOSERVE_DEMO_TOKEN) and are never written to the repo.
 const fs = require('fs');
 const os = require('os');
@@ -11,12 +11,12 @@ const crypto = require('crypto');
 const { build } = require('./build');
 
 const BASE = 'https://n8n.linkright.in/api/v1';
-const NAMES = { alert: 'GS ERR 00 Alert', sub11: 'GS SUB 11 Place order', sub12: 'GS SUB 12 Change status', sub13: 'GS SUB 13 Decide', sub14: 'GS SUB 14 Write logs', sub15: 'GS SUB 15 Add event', sub16: 'GS SUB 16 Health', sub91: 'GS SUB 91 Scorecard numbers', main01: 'GS MAIN 01 Order API', main90: 'GS MAIN 90 Daily scorecard' };
-const ORDER = ['alert', 'sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'sub16', 'sub91', 'main01', 'main90'];
+const NAMES = { alert: 'GS ERR 00 Alert', sub11: 'GS SUB 11 Place order', sub12: 'GS SUB 12 Change status', sub13: 'GS SUB 13 Decide', sub14: 'GS SUB 14 Write logs', sub15: 'GS SUB 15 Add event', sub16: 'GS SUB 16 Health', sub17: 'GS SUB 17 Feedback', sub18: 'GS SUB 18 Feedback side effects', sub91: 'GS SUB 91 Scorecard numbers', main01: 'GS MAIN 01 Order API', main90: 'GS MAIN 90 Daily scorecard' };
+const ORDER = ['alert', 'sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'sub16', 'sub18', 'sub17', 'sub91', 'main01', 'main90'];
 // Dev and prod share nothing except the alert workflow and the Jev credential.
 const ENVS = {
-  dev: { urlVar: 'SUPABASE_GOSERVE_DEV_URL', credential: 'GoServe Supabase dev', tokenVar: 'GOSERVE_DEMO_TOKEN', suffix: '' },
-  prod: { urlVar: 'SUPABASE_GOSERVE_PROD_URL', credential: 'GoServe Supabase prod', tokenVar: 'GOSERVE_PROD_DEMO_TOKEN', suffix: ' PROD' },
+  dev: { driveVar: 'GOSERVE_UAT_DRIVE_FOLDER_DEV', urlVar: 'SUPABASE_GOSERVE_DEV_URL', credential: 'GoServe Supabase dev', tokenVar: 'GOSERVE_DEMO_TOKEN', suffix: '' },
+  prod: { driveVar: 'GOSERVE_UAT_DRIVE_FOLDER_PROD', urlVar: 'SUPABASE_GOSERVE_PROD_URL', credential: 'GoServe Supabase prod', tokenVar: 'GOSERVE_PROD_DEMO_TOKEN', suffix: ' PROD' },
 };
 const orderFor = (env) => (env === 'prod' ? ORDER.filter((k) => k !== 'alert') : ORDER);
 const namesFor = (env) => Object.fromEntries(orderFor(env).map((k) => [k, NAMES[k] + ENVS[env || 'dev'].suffix]));
@@ -75,7 +75,7 @@ async function main() {
   for (const k of ORD) {   // shells first, so every workflow knows the others' ids
     if (!ids[k]) ids[k] = (await call('POST', '/workflows', { name: NM[k], nodes: [{ id: 'shell', name: 'Shell', type: 'n8n-nodes-base.noOp', typeVersion: 1, position: [0, 0], parameters: {} }], connections: {}, settings: { executionOrder: 'v1' } })).id;
   }
-  const built = build({ ids, token, env, supabaseUrl: vault('02_databases.env', E.urlVar), credential: { id: credential.id, name: E.credential }, openrouterCredential: { id: jevCredential.id, name: JEV_CREDENTIAL }, chatId: vault('04_integrations.env', 'GOSERVE_TELEGRAM_CHAT_ID') });
+  const built = build({ ids, token, env, driveFolderId: vault('04_integrations.env', E.driveVar), supabaseUrl: vault('02_databases.env', E.urlVar), credential: { id: credential.id, name: E.credential }, openrouterCredential: { id: jevCredential.id, name: JEV_CREDENTIAL }, chatId: vault('04_integrations.env', 'GOSERVE_TELEGRAM_CHAT_ID') });
   for (const k of ORD) {
     await call('PUT', '/workflows/' + ids[k], payload(built[k]));
     const back = await call('GET', '/workflows/' + ids[k]);
