@@ -64,3 +64,5 @@ Every assumption we are working from, stated plainly. If an assumption turns out
 | A53 | Until MVP 1 there is no login (ADR-016). The session id is a secret only by being hard to guess. This is safe only while the data is test data. Google sign-in is linked to the same user from MVP 1 (S-M1), so an account follows the session id. Before real customers: rules that tie a session to its account, and a decision on what 'Sign out' means. | Open |
 
 | A54 | Synthetic Laya data (seed phrases times templates, rule-made labels for refund and late risk) is only a pipeline rehearsal. It teaches Laya our rules and our phrasing, not real customers. The final test set must be real GoServe data (LAYA_PLAN section 5). Until then no claim that a tuned Laya "works": no number from a Kaggle run says so while the test set is synthetic. | Epic #106 |
+
+| A55 | Scope of the Laya text decisions is Hindi in Devanagari, English, and Hinglish in Roman script (owner, 22 Oct 2026). Regional languages are out. Held-out Hindi slice has 170 rows; the main test has about 27 Hindi rows. | Epic #106 |

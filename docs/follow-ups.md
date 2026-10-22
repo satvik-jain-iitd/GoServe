@@ -111,3 +111,6 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F102 | E3: fit Laya's confidence temperature on `val.jsonl` (unseen seeds), not on the train slice it uses today (in-sample 97.9% vs test 72%). `noul` temperature hit the clamp 5.0. Then rerun E2's rule. | Agent | Open |
 | F103 | Push the tuned model to a private HF repo from the Mac with `HF_TOKEN_GOSERVE` (the model sits in the output of Kaggle kernel `goserve-laya-train`). Only after E3 passes. | Agent | Open |
 | F104 | Seed mood label noise is 7 to 14% by blind audit (neutral vs negative is subjective). Audit the rest of the seeds, or merge unclear moods, before trusting the mood target. | Agent | Open |
+| F105 | needs_human recall: add many more harassment, threat, unsafe-rider and legal-threat seeds (Hinglish, English, Hindi); the test has only about 9 distinct such seeds. Needs another writer round and a blind audit with the key file kept in another folder. | Agent | Open |
+| F106 | Decide whether refund and at_risk (rules over numbers) should be code instead of Laya. Laya reached 0.83 and 0.90; code is exact and free. Owner call. | Owner | Open |
+| F107 | Veg and non-veg mix-up for a pure-veg or Jain customer: should it set needs_human? Today it is only wrong_item. Owner call. | Owner | Open |

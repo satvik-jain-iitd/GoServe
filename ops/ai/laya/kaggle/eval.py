@@ -7,9 +7,9 @@ import laya
 import metrics
 
 MODEL, TAG = os.environ.get("MODEL", "convaiinnovations/laya"), os.environ.get("TAG", "base")
-data = os.path.dirname(glob.glob("/kaggle/input/**/test.jsonl", recursive=True)[0])
+data = os.path.dirname(glob.glob("/kaggle/input/**/val.jsonl", recursive=True)[0])
 load = lambda n: [json.loads(l) for l in open(f"{data}/{n}.jsonl")]
-train, val, test = load("train"), load("val"), load("test")
+train, val, test = load("train"), load("val"), load(os.environ.get("TEST", "test"))
 if MODEL.startswith("/kaggle") and not os.path.isdir(MODEL):  # kernel output mounts under a path we do not know
     MODEL = os.path.dirname(glob.glob("/kaggle/input/**/" + os.path.basename(MODEL) + "/rl_agent_config.json", recursive=True)[0])
 agent = laya.load(MODEL)

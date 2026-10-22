@@ -1,0 +1,120 @@
+{"text": "भैया दो घंटे हो गए ऑर्डर अभी तक नहीं आया, रेस्टोरेंट वाले बोल रहे थे बीस मिनट में निकल जाएगा, अब फोन भी नहीं उठा रहे", "topic": "order_late", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "दिवाली की भीड़ में तो हद ही हो गई, एक घंटा चालीस मिनट से ऑर्डर पैक होकर पड़ा है और राइडर असाइन ही नहीं हुआ", "topic": "order_late", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "बारिश का बहाना मत बनाओ यार, पिछले सत्तर मिनट से स्टेटस वही दिखा रहा है तैयार हो रहा है", "topic": "order_late", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "मेरा ऑर्डर कहां अटका है, ईटीए पैंतीस मिनट बता रहा था अब डेढ़ घंटा हो गया, बच्चे भूख से रो रहे हैं", "topic": "order_late", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "सर ये ट्रैकिंग में राइडर एक ही जगह खड़ा दिखा रहा है पैंतालीस मिनट से, कुछ करो", "topic": "order_late", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "नवरात्रि का व्रत शाम को आठ बजे खोलना था और खाना दस बजे तक नहीं पहुंचा, सारा मज़ा खराब कर दिया", "topic": "order_late", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "अगर आधे घंटे में ऑर्डर नहीं आया तो मैं उपभोक्ता फोरम में शिकायत करूंगा, हर बार देरी हो रही है, अब बर्दाश्त नहीं", "topic": "order_late", "mood": "negative", "needs_human": true, "style": "devanagari", "ambiguous": false}
+{"text": "होली वाले दिन भी तीन घंटे इंतज़ार, अब ऑर्डर कैंसल करो और पूरे पैसे वापस दो", "topic": "order_late", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": true}
+{"text": "देर पे देर, आज तो हद है। कब आएगा खाना", "topic": "order_late", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "छठ की सुबह प्रसाद का सामान मंगाया था, छह बजे तक आना था, आठ बज गए अभी तक राइडर का पता नहीं", "topic": "order_late", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "क्या मज़ाक है, ऐप में दिख रहा है डिलीवर हो गया लेकिन खाना आया ही नहीं, राइडर कहां है", "topic": "order_late", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": true}
+{"text": "ऑर्डर का स्टेटस बता दीजिए, कितनी देर और लगेगी", "topic": "order_late", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "भैया मेरा ऑर्डर कितने बजे तक पहुंचेगा, मीटिंग में हूं", "topic": "order_late", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "बारिश बहुत तेज़ है तो क्या डिलीवरी में ज़्यादा टाइम लगेगा", "topic": "order_late", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "ईद की शाम है, क्या मेरा ऑर्डर समय पर पहुंच जाएगा, मेहमान आने वाले हैं", "topic": "order_late", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "ऑर्डर पैक हो गया दिख रहा है पर राइडर अभी नहीं मिला, कितना टाइम लगेगा", "topic": "order_late", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "बारिश में भी बीस मिनट में खाना पहुंचा दिया, बहुत बढ़िया सर्विस, धन्यवाद", "topic": "order_late", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "समय से पहले ऑर्डर आ गया, मज़ा आ गया भाई", "topic": "order_late", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "दिवाली की भीड़ में भी टाइम पर डिलीवरी मिली, शुक्रिया पूरी टीम को", "topic": "order_late", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "ऑर्डर देर से आने वाला था पर आपने जो अपडेट भेजा उससे तसल्ली मिली, अच्छा लगा", "topic": "order_late", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "मैंने शुद्ध शाकाहारी पनीर बटर मसाला मंगाया था और चिकन आ गया है, हमारे घर में लहसुन प्याज़ भी नहीं चलता, ये क्या किया", "topic": "wrong_item", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "दाल मखनी की जगह राजमा भेज दिया भैया, ऑर्डर देखकर भेजते हो या आंख बंद करके", "topic": "wrong_item", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "चार रोटी कम हैं, पैकेट में सिर्फ़ दो ही निकलीं बाकी कहां गईं", "topic": "wrong_item", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "ये मेरा ऑर्डर नहीं है, किसी और का पैकेट पकड़ा गया, मैंने बिरयानी मंगाई थी इसमें तो पिज़्ज़ा है", "topic": "wrong_item", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "रायता और सलाद दोनों गायब हैं, पैसे पूरे लिए हैं", "topic": "wrong_item", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "मैडम मैंने बिना प्याज़ लहसुन का जैन खाना बोला था फिर भी सब्ज़ी में प्याज़ दिख रहा है, हमारा धर्म भ्रष्ट कर दिया", "topic": "wrong_item", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "वेज थाली मंगाई थी, उसमें चिकन का टुकड़ा निकला, पूरा परिवार शाकाहारी है, सबको उल्टी जैसा हो रहा है, ये बहुत गलत है", "topic": "wrong_item", "mood": "negative", "needs_human": true, "style": "devanagari", "ambiguous": false}
+{"text": "दो की जगह एक ही बर्गर आया और कोल्ड ड्रिंक तो है ही नहीं", "topic": "wrong_item", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "एक्स्ट्रा चीज़ बोला था नहीं डाला, और मैंने मीडियम नहीं लार्ज पिज़्ज़ा लिया था छोटा भेज दिया", "topic": "wrong_item", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "सामान गलत है यार, मैंने छोले भटूरे बोले थे ये तो पराठे आए हैं, पैसे वापस करो", "topic": "wrong_item", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": true}
+{"text": "पैकेट खोला तो नॉन वेज मोमोज निकले जबकि मैंने वेज बोला था, नवरात्रि में ये सब, बहुत गुस्सा आ रहा है", "topic": "wrong_item", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "मेरे ऑर्डर में चटनी नहीं आई, क्या अलग से भेज सकते हैं", "topic": "wrong_item", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "ऑर्डर में एक आइटम कम लग रहा है, कैसे चेक करूं", "topic": "wrong_item", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "क्या मैं गलत आया आइटम वापस करवा सकता हूं", "topic": "wrong_item", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "मैंने वेज मंगाया था, पैकेट पर लाल निशान दिख रहा है, कन्फर्म कर दीजिए ये वेज ही है न", "topic": "wrong_item", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "एक पराठा ज़्यादा आ गया है, इसका क्या करना है", "topic": "wrong_item", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "ऑर्डर बिल्कुल सही आया, हर आइटम पूरा था, धन्यवाद", "topic": "wrong_item", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "बिना प्याज़ लहसुन वाला खाना एकदम सही मिला, जैन परिवार की तरफ़ से शुक्रिया", "topic": "wrong_item", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "आपने एक्स्ट्रा रायता भी भेज दिया, अच्छा लगा भैया", "topic": "wrong_item", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "शाकाहारी और मांसाहारी अलग अलग पैक करके भेजा, बहुत ध्यान रखा, धन्यवाद", "topic": "wrong_item", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "खाने में बाल निकला है, मैडम देखिए फोटो भेजी है, बच्चे ने आधा खा लिया था", "topic": "quality", "mood": "negative", "needs_human": true, "style": "devanagari", "ambiguous": false}
+{"text": "दाल में कीड़ा तैर रहा था, मेरी तबीयत खराब लग रही है, उल्टी हो रही है", "topic": "quality", "mood": "negative", "needs_human": true, "style": "devanagari", "ambiguous": false}
+{"text": "सैंडविच में प्लास्टिक का टुकड़ा मिला, दांत में लग जाता तो क्या होता, मैं शिकायत ऊपर तक ले जाऊंगा", "topic": "quality", "mood": "negative", "needs_human": true, "style": "devanagari", "ambiguous": false}
+{"text": "पनीर खाते ही पेट में दर्द और उल्टियां शुरू हो गईं, लगता है बासी था, डॉक्टर के पास जाना पड़ा", "topic": "quality", "mood": "negative", "needs_human": true, "style": "devanagari", "ambiguous": false}
+{"text": "मुझे मूंगफली से एलर्जी है, खाने में मूंगफली निकली, होंठ सूज गए हैं", "topic": "quality", "mood": "negative", "needs_human": true, "style": "devanagari", "ambiguous": false}
+{"text": "बिरयानी में कांच का छोटा टुकड़ा मिला भैया, ये जानलेवा है", "topic": "quality", "mood": "negative", "needs_human": true, "style": "devanagari", "ambiguous": false}
+{"text": "खाना बिल्कुल ठंडा आया, रोटी रबड़ जैसी, ऐसे पैसे लेते हो", "topic": "quality", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "सब्ज़ी में नमक इतना ज़्यादा है कि मुंह में डाला नहीं गया", "topic": "quality", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "डिब्बे से सारी ग्रेवी बाहर बह गई, पूरा बैग तेल से भरा हुआ है", "topic": "quality", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "पोर्शन बहुत कम है, इतने पैसे में ये दो चम्मच चावल", "topic": "quality", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "पिज़्ज़ा कच्चा सा लग रहा है और बेस गीला, पहले जैसा स्वाद नहीं रहा", "topic": "quality", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "सब्ज़ी थोड़ी तीखी है, अगली बार कम मिर्च में बनवाना है, कैसे लिखूं", "topic": "quality", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "खाना गर्म रखने के लिए कोई खास पैकिंग होती है क्या", "topic": "quality", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "डिब्बे पर बनने की तारीख क्यों नहीं लिखी है", "topic": "quality", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "क्या यहां का तेल रोज़ बदलते हैं, पूछ रहा हूं क्योंकि पिताजी को दिक्कत है", "topic": "quality", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "आज की थाली अलग सी लगी, रेसिपी बदली है क्या", "topic": "quality", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "वाह भैया, मज़ा आ गया, घर जैसा स्वाद, गरम गरम पहुंचा", "topic": "quality", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "पूरा परिवार खुश है, पनीर लाजवाब बना था, पांच स्टार", "topic": "quality", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "पैकिंग एकदम साफ़ और सुथरी थी, खाना ताज़ा लगा, शुक्रिया", "topic": "quality", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "हलवा पूरी सच में बढ़िया थी, छठ के प्रसाद जैसी, दिल खुश हो गया", "topic": "quality", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "यूपीआई से पैसे कट गए लेकिन ऑर्डर कन्फर्म नहीं हुआ, दो घंटे हो गए पैसा वापस नहीं आया", "topic": "payment", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "दो बार पेमेंट कट गया भैया, पांच सौ चालीस रुपये दो बार, एक वापस करो", "topic": "payment", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "कैश ऑन डिलीवरी में राइडर बोला खुले पैसे नहीं हैं, मेरे पचास रुपये रख लिए, लौटाओ", "topic": "payment", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": true}
+{"text": "कूपन लगाया था सौ रुपये छूट दिख रही थी, बिल में घटी ही नहीं, ये धोखा है", "topic": "payment", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "आप लोग फ्रॉड हो, पैसे काट लिए और ऑर्डर कैंसल कर दिया, मैं साइबर क्राइम में रिपोर्ट करूंगा", "topic": "payment", "mood": "negative", "needs_human": true, "style": "devanagari", "ambiguous": false}
+{"text": "ये सरासर स्कैम है, मेरे अकाउंट से तीन बार पैसे कटे, पुलिस में एफआईआर कराऊंगा", "topic": "payment", "mood": "negative", "needs_human": true, "style": "devanagari", "ambiguous": false}
+{"text": "रिफंड कब आएगा, सात दिन हो गए, हर बार बोलते हो दो दिन में", "topic": "payment", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "ऐप में कीमत दो सौ नब्बे थी, बिल में तीन सौ बीस आ गई, ज़्यादा क्यों लिया", "topic": "payment", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "डिलीवरी चार्ज और पैकिंग चार्ज अलग से जोड़ दिया, पहले तो नहीं दिखाया था", "topic": "payment", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "पेमेंट फेल दिखा रहा है पर बैंक से पैसा कट गया, कोई सुनता ही नहीं", "topic": "payment", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "रिफंड तीन दिन से अटका है, बैंक बोल रहा है आपकी तरफ़ से नहीं आया", "topic": "payment", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "कैश ऑन डिलीवरी में पांच सौ का नोट चलेगा क्या, खुले नहीं हैं", "topic": "payment", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "क्या मैं ऑर्डर देने के बाद यूपीआई से पेमेंट बदल सकता हूं", "topic": "payment", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "बिल की रसीद कहां से डाउनलोड होगी, ऑफिस में जमा करनी है", "topic": "payment", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "रिफंड सीधे बैंक में आएगा या ऐप के वॉलेट में", "topic": "payment", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "पहले ऑर्डर का कोई कूपन कोड है क्या", "topic": "payment", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "रिफंड तुरंत आ गया, बहुत अच्छा लगा, धन्यवाद", "topic": "payment", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "कूपन से अच्छी बचत हुई, ऑफर बढ़िया है", "topic": "payment", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "कैश ऑन डिलीवरी में राइडर ने पूरे खुले पैसे लौटाए, ईमानदार बंदा है", "topic": "payment", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": true}
+{"text": "पैसे डबल कटे थे पर आपकी टीम ने जल्दी वापस कर दिए, शुक्रिया", "topic": "payment", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "राइडर रात को गली में खड़ा होकर गाली दे रहा था, मैडम अकेली थीं, डर लग रहा है", "topic": "rider_issue", "mood": "negative", "needs_human": true, "style": "devanagari", "ambiguous": false}
+{"text": "डिलीवरी वाले ने मेरी बहन से बदतमीज़ी की और उसका फोन नंबर मांगा, ये बहुत गलत है", "topic": "rider_issue", "mood": "negative", "needs_human": true, "style": "devanagari", "ambiguous": false}
+{"text": "रात ग्यारह बजे राइडर ने तेज़ बाइक से टक्कर मारने की कोशिश की और ऊपर से धमकी भी दी", "topic": "rider_issue", "mood": "negative", "needs_human": true, "style": "devanagari", "ambiguous": false}
+{"text": "ओटीपी बताने से पहले खाना मांगा तो राइडर ने मुझे धक्का दे दिया, मारपीट पर उतर आया", "topic": "rider_issue", "mood": "negative", "needs_human": true, "style": "devanagari", "ambiguous": false}
+{"text": "राइडर शराब पीकर आया था और अजीब बातें कर रहा था, मेरी पत्नी घबरा गई", "topic": "rider_issue", "mood": "negative", "needs_human": true, "style": "devanagari", "ambiguous": false}
+{"text": "डिलीवरी बॉय बार बार मैसेज कर रहा है, गंदे मैसेज, पुलिस को बताना पड़ेगा", "topic": "rider_issue", "mood": "negative", "needs_human": true, "style": "devanagari", "ambiguous": false}
+{"text": "राइडर ने कहा टिप नहीं दी तो ऑर्डर वापस ले जाऊंगा और धमकाया", "topic": "rider_issue", "mood": "negative", "needs_human": true, "style": "devanagari", "ambiguous": false}
+{"text": "रात में राइडर सोसाइटी में घुसकर गार्ड से झगड़ने लगा और मुझे भी अपशब्द बोले", "topic": "rider_issue", "mood": "negative", "needs_human": true, "style": "devanagari", "ambiguous": false}
+{"text": "राइडर ने ओटीपी पहले ही मांग लिया और बिना खाना दिए चला गया, ऐप में डिलीवर्ड दिख रहा है", "topic": "rider_issue", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": true}
+{"text": "भैया राइडर बोला पचास रुपये दे दो ऊपर चढ़कर आया हूं, ये कौन सा नियम है", "topic": "rider_issue", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "सोसाइटी का गार्ड अंदर नहीं आने दे रहा था, राइडर ने फोन ही नहीं किया, खाना गेट पर छोड़कर चला गया", "topic": "rider_issue", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "राइडर मंदिर के पास चौराहे पर खड़ा है, मैं पीले मकान में हूं, उसे कैसे बताऊं", "topic": "rider_issue", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "राइडर का नंबर कैसे मिलेगा, कॉल नहीं आ रहा", "topic": "rider_issue", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "क्या राइडर को टिप ऐप से दे सकते हैं", "topic": "rider_issue", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "गेट पर गार्ड अलग से एंट्री मांगता है, राइडर को पहले से क्या बताना चाहिए", "topic": "rider_issue", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "राइडर का फोन आया है पर सिग्नल नहीं है, पता कैसे समझाऊं, पुरानी मस्जिद के सामने वाली गली", "topic": "rider_issue", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "राइडर भैया बहुत शरीफ थे, बारिश में भीगकर भी हंसकर खाना दिया", "topic": "rider_issue", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "डिलीवरी वाले ने रात में ऊपर तक आकर दिया, बहुत मदद की, उन्हें इनाम दिलाओ", "topic": "rider_issue", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "राइडर ने पता ढूंढने में पूरी कोशिश की और विनम्रता से बात की, धन्यवाद", "topic": "rider_issue", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "आपके राइडर रमेश जी ने बुज़ुर्ग माता जी की मदद की, सलाम है उन्हें", "topic": "rider_issue", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "ऐप में लॉगिन ही नहीं हो रहा, ओटीपी आ ही नहीं रहा, कब से कोशिश कर रहा हूं", "topic": "other", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "मेरे इलाके में डिलीवरी क्यों नहीं दिखा रहे, पिछले हफ़्ते तो होती थी", "topic": "other", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "ऐप बार बार क्रैश हो जाता है, ये किसने बनाया है", "topic": "other", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "एड्रेस बदलना था पर ऐप बदलने ही नहीं दे रहा, ऑर्डर गलत जगह जा रहा है", "topic": "other", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": true}
+{"text": "मेन्यू में दाम पहले से ज़्यादा लगने लगे हैं, कोई सुनवाई नहीं", "topic": "other", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "कस्टमर केयर का नंबर लगता ही नहीं, सब बंद रखा है क्या", "topic": "other", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "ग्राहक सेवा वाले ने बात ही नहीं सुनी, फोन काट दिया, कितना बेकार रवैया", "topic": "other", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "मेरा अकाउंट बिना बताए बंद कर दिया, कारण बताओ", "topic": "other", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "ऐप में जैन ऑप्शन ही नहीं है, इतने बड़े ऐप में ये भी नहीं", "topic": "other", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "नोटिफिकेशन रात को बारह बजे क्यों भेजते हो, परेशान कर रखा है", "topic": "other", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "यार ये ऐप तो बिल्कुल बेकार है, कुछ काम का नहीं", "topic": "other", "mood": "negative", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "नमस्ते जी, कोई है यहां", "topic": "other", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "क्या आप लोग रांची के कांके रोड पर डिलीवरी करते हैं", "topic": "other", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "मेन्यू में रात के खाने के लिए क्या विकल्प हैं, जैन वाले भी बताइए", "topic": "other", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "पता बदलने का तरीका बताइए, घर शिफ्ट हुआ है", "topic": "other", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "ककक ललल मममम हहह", "topic": "other", "mood": "neutral", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "ऐप बहुत आसान है, बुज़ुर्ग भी चला लेते हैं, बढ़िया बनाया", "topic": "other", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "आपकी सर्विस सबसे अच्छी है, मेरे पूरे मोहल्ले को बता दिया", "topic": "other", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "नया अपडेट अच्छा है, डार्क मोड पसंद आया", "topic": "other", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}
+{"text": "धन्यवाद कस्टमर केयर वालों का, बहुत धैर्य से बात की", "topic": "other", "mood": "positive", "needs_human": false, "style": "devanagari", "ambiguous": false}

@@ -219,6 +219,20 @@ def write_retrain(base_dir, out_dir, seed, train_counts, human_weight=1):
     return len(rows)
 
 
+def heldout_rows(support_path, notes_path):
+    """Laya rows from held-out seed files (never trained on): the text as written, no wrapper noise."""
+    rows = []
+    for line in open(support_path, encoding="utf-8"):
+        d = json.loads(line)
+        rows.append({"state": d["text"], "questions": SUPPORT_Q,
+                     "expected": {"topic": d["topic"], "mood": d["mood"], "needs_human": bool(d["needs_human"])}})
+    for line in open(notes_path, encoding="utf-8"):
+        d = json.loads(line)
+        rows.append({"state": "Order note: " + d["text"], "questions": NOTES_Q,
+                     "expected": {"has_allergy": bool(d["has_allergy"]), "has_special_request": bool(d["has_special_request"])}})
+    return rows
+
+
 def write(out_dir, seed=0, scale=1.0):
     splits = build(seed, scale)
     validate(splits)

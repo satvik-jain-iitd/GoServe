@@ -137,6 +137,19 @@ def test_retrain_set_keeps_val_and_test_byte_identical():
         assert train and not keep & {r["state"] for r in train}
 
 
+def test_heldout_rows_fit_laya_format():
+    # Held-out seed files become Laya rows with the same questions and no wrapper noise.
+    with tempfile.TemporaryDirectory() as d:
+        sp, nt = os.path.join(d, "s.jsonl"), os.path.join(d, "n.jsonl")
+        open(sp, "w", encoding="utf-8").write(json.dumps({"text": "खाना ठंडा था", "topic": "quality", "mood": "negative", "needs_human": False, "style": "devanagari", "ambiguous": False}, ensure_ascii=False) + "\n")
+        open(nt, "w", encoding="utf-8").write(json.dumps({"text": "बिना प्याज", "has_allergy": False, "has_special_request": True, "style": "devanagari", "ambiguous": False}, ensure_ascii=False) + "\n")
+        rows = gen.heldout_rows(sp, nt)
+    assert [r["state"] for r in rows] == ["खाना ठंडा था", "Order note: बिना प्याज"]
+    assert rows[0]["expected"] == {"topic": "quality", "mood": "negative", "needs_human": False}
+    assert rows[1]["expected"] == {"has_allergy": False, "has_special_request": True}
+    assert set(rows[0]) == ROW_KEYS and rows[0]["questions"] == gen.SUPPORT_Q
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):
