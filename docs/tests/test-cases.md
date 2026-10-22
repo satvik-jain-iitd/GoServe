@@ -193,3 +193,4 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | The Supabase Google settings payload turns on Google and manual linking, never prints the secret, refuses an empty client | #117 | S-M1 | Automatic | `scripts/test_set_google_auth.py` | Pass |
 | 20 orders, each sent twice, 5 with the connection cut after sending: 20 orders, 0 duplicates, every event chain in order; a repeated status answers 409 | #118 | S-M2 | Live, 22 Oct 2026 | `scripts/no_loss_check.py` (dev) | Pass |
 | The count rules of the no-loss proof: duplicate key, lost order, repeated event, events out of order | #118 | S-M2 | Automatic | `scripts/test_no_loss.py` | Pass |
+| /privacy/ and /terms/ are plain pages (heading, contact, no app), also when the service worker is ready | #123 | S-M5 | Automatic | `app/tests/e2e/legal.spec.ts` | Pass |
