@@ -16,3 +16,8 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - ID012 (2026-10-14, taken): PR review skill: Fable analyses, a Haiku subagent writes the prose. Strong brain, cheap pen. Done in tpm-pr-review (references/analysis-brief.md). Second Brain ID084.
 - ID013 (2026-10-14, taken): PR review skill critical-path first: post questions + coder handoff right after analysis, approve at once when nothing must change, notebook written in the background, one paste-block per handoff so reviewer, writer and coder never idle. Done in tpm-pr-review. Second Brain ID085.
 - ID093 (2026-10-15, taken): Customer, kitchen, rider and ops as separate installable PWAs that work on one device and on different devices, one device first. Story #83, ADR-013. Second Brain ID093.
+- ID094 (2026-10-22, open): Anti-slop design skills picked by evidence, then a side-by-side test on the same brief. Research in `docs/research/design-skills-2026-10.md`.
+- ID095 (2026-10-22, open): Jev mode `live | stub | off` and a budget guard for automated tests. `docs/research/jev-cost-control-2026-10.md`.
+- ID096 (2026-10-22, open): Regression suite with stable `data-testid` ids that grows with every story.
+- ID097 (2026-10-22, open): APK built by GitHub Actions and sent to Telegram, only if the Chrome install fails.
+- ID098 (2026-10-22, open): Founder review message listing who reviews what. Draft in `docs/product/founder-review-message.md`.

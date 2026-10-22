@@ -145,3 +145,5 @@ short. Say what happened and what to do next time.
 - A new action needs three edits, not two: the Route switch, the Call node and the allow-list in Check token. The unit tests covered the first two; only the first live call showed the third (400 bad_action). Add the action to the Check token test whenever a route is added.
 - A Postgres function called twice in one SELECT does not show its first change to a sub-select in the same statement. Test a repeat call in two statements.
 - A rule that depends on "the same status again" belongs in the function, not the row trigger: the trigger also runs when another column changes.
+- Chrome reads the manifest from the first HTML it gets. A manifest link changed later by JavaScript is too late for Add to Home Screen. Write one static page per role at build time and test the raw HTML, also with the service worker ready.
+- Icons for several apps in one product need one grid, one stroke weight and one corner radius. Only the glyph and one ring colour change. Look at all of them together on a contact sheet before you commit.
