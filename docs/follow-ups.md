@@ -112,3 +112,4 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F109 | needs_human recall: add many more harassment, threat, unsafe-rider and legal-threat seeds (Hinglish, English, Hindi); the test has only about 9 distinct such seeds. Needs another writer round and a blind audit with the key file kept in another folder. | Agent | Open |
 | F110 | Decide whether refund and at_risk (rules over numbers) should be code instead of Laya. Laya reached 0.83 and 0.90; code is exact and free. Owner call. | Owner | Open |
 | F111 | Veg and non-veg mix-up for a pure-veg or Jain customer: should it set needs_human? Today it is only wrong_item. Owner call. | Owner | Open |
+| F112 | Port `refund_rule` and `late_rule` to the n8n order flow as code with the real policy numbers (A56). Today they exist only as the synthetic teacher in `gen.py`. Closes F110. | Owner + agent | Open |
