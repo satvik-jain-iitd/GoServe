@@ -64,6 +64,20 @@ def test_from_raw_picks_top_label_and_applies_temperature():
     assert ans == "a" and 0.5 < conf < 0.65
 
 
+def test_latin_only_drops_indic_scripts():
+    # Scope is English and Hinglish in Roman script: rows with Devanagari or other Indic letters are out.
+    rows = [{"state": "hello"}, {"state": "राइडर ने गाली दी"}, {"state": "Order #1: rider ne dhamki di"}, {"state": "வணக்கம்"}]
+    assert metrics.latin_only(rows) == [0, 2]
+
+
+def test_language_of_row():
+    # Hindi = Devanagari letters; Hinglish = at least 2 common Roman-Hindi words; else English.
+    assert metrics.language("राइडर ने गाली दी") == "hindi"
+    assert metrics.language("Order #12: rider ne dhamki di, mera paisa wapas karo") == "hinglish"
+    assert metrics.language("The food was cold and the rider was rude") == "english"
+    assert metrics.language("Where is my order? Please ka") == "english"  # one Hindi word is not enough
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

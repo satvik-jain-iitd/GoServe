@@ -74,3 +74,19 @@ def from_raw(raw, temps=None):
             pred[qid] = (a["labels"][k], p[k])
         out.append(pred)
     return out
+
+
+def latin_only(rows):
+    """Indexes of rows with no Indic-script letters (Unicode 0900 to 0DFF): the English and Hinglish scope."""
+    return [i for i, r in enumerate(rows) if not any(0x900 <= ord(c) <= 0xDFF for c in r["state"])]
+
+
+HINDI_WORDS = set("hai hain hu hoon ho tha thi nahi nhi na kya ko ka ki ke se mein par pe aur bhi bhai yaar kar karo kro kiya kiye raha rahi rahe mera meri mere mujhe mujhse aap aapka tum abhi jaldi bahut bohot accha acha thoda kuch koi kab kaha kahan kyun kyu lekin magar toh wala wali paisa paise wapas aaya aayi aaye nahin bhejo bhej diya diye gaya gayi hua hui ho gaye khana bhookh".split())
+
+
+def language(text):
+    """hindi (Devanagari letters), hinglish (at least 2 Roman-Hindi words), else english."""
+    if any(0x900 <= ord(c) <= 0x97F for c in text):
+        return "hindi"
+    words = "".join(c if c.isalnum() else " " for c in text.lower()).split()
+    return "hinglish" if sum(w in HINDI_WORDS for w in words) >= 2 else "english"
