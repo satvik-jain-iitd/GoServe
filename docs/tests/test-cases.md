@@ -191,3 +191,4 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Continue with Google asks Supabase to link Google to the current user (provider google, redirect back to the same page) and goes to Google; a signed-in user sees the name and no button; an anonymous user keeps the button | #117 | S-M1 | Automatic | `app/tests/e2e/login.spec.ts`, `app/tests/unit/auth.test.ts` | Pass |
 | Two parts of the screen asking for a session at once make only one anonymous user | #117 | S-M1 | Automatic | `app/tests/e2e/apps.spec.ts` (share one session) | Pass |
 | The Supabase Google settings payload turns on Google and manual linking, never prints the secret, refuses an empty client | #117 | S-M1 | Automatic | `scripts/test_set_google_auth.py` | Pass |
+| /privacy/ and /terms/ are plain pages (heading, contact, no app), also when the service worker is ready | #123 | S-M5 | Automatic | `app/tests/e2e/legal.spec.ts` | Pass |
