@@ -28,3 +28,27 @@ for (const [path, heading] of [["/privacy/", "Privacy policy"], ["/terms/", "Ter
     await expect(page.getByRole("button", { name: /Add / })).toHaveCount(0);
   });
 }
+
+// Google brand check: the home page names what GoServe does and links the policy pages; the domain file proves we own the site.
+test("S4 every page of the app has a footer with what GoServe does and links to Privacy and Terms", async ({ page, context }) => {
+  await setup(context, page, []);
+  await page.goto("/customer/");
+  const footer = page.getByRole("contentinfo");
+  await expect(footer).toContainText("GoServe: order food, the kitchen cooks, a rider brings it");
+  await expect(footer.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy/");
+  await expect(footer.getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/terms/");
+  await page.goto("/kitchen/");
+  await expect(page.getByRole("contentinfo").getByRole("link", { name: "Privacy" })).toBeVisible();
+});
+
+test("S5 the privacy page has a Google sign-in data block", async ({ request }) => {
+  const html = await (await request.get("/privacy/")).text();
+  expect(html).toContain("<h2>Google sign-in data</h2>");
+  for (const w of ["name, email and profile picture", "never shared or sold", "deleted when you write to us"]) expect(html).toContain(w);
+});
+
+test("S6 the Google Search Console file answers its one line", async ({ request }) => {
+  const res = await request.get("/google55109da819aaecf2.html");
+  expect(res.status()).toBe(200);
+  expect((await res.text()).trim()).toBe("google-site-verification: google55109da819aaecf2.html");
+});

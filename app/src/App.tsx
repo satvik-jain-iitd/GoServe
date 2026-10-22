@@ -347,6 +347,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   );
 
   return (
+    <>
     <main className={role === "split" ? "shell split" : "shell"}>
       <h1>{lock && lock !== "customer" ? `GoServe ${lock[0].toUpperCase()}${lock.slice(1)}` : "GoServe"}</h1>
       {!demo && <SignIn />}
@@ -377,5 +378,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         </div>
       )}
     </main>
+      <footer className="legal">
+        <p>GoServe: order food, the kitchen cooks, a rider brings it</p>
+        <p><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
+      </footer>
+    </>
   );
 }

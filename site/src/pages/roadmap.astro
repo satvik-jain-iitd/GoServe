@@ -1,23 +1,23 @@
 ---
 import Base from "../layouts/Base.astro";
 
-type State = "wip" | "soon" | "planned";
+type State = "done" | "wip" | "soon" | "planned";
 const phases: { id: string; title: string; date: string; state: State; label: string; items: string[] }[] = [
   {
     id: "MVP 0",
     title: "Clickable demo",
-    date: "14 Oct 2026",
-    state: "wip",
-    label: "Work in progress",
-    items: ["Full click flow", "Menu, cart, bill", "Place order (automation backend)", "Kitchen and rider screens"],
+    date: "22 Oct 2026",
+    state: "done",
+    label: "Done",
+    items: ["Full click flow", "Menu, cart, bill", "Place order (automation backend)", "Kitchen, rider and ops screens"],
   },
   {
     id: "MVP 1",
     title: "Golden path",
-    date: "21 Oct 2026",
-    state: "soon",
-    label: "Coming soon",
-    items: ["Login with OTP", "Real orders in database", "Jev D1–D5 decisions live", "Rider flow and live tracking"],
+    date: "22 Oct 2026",
+    state: "done",
+    label: "Done",
+    items: ["Sign in with Google", "Real orders in a real database", "No order lost or doubled (tested)", "Rider choice by rules and AI, with a rule fallback"],
   },
   {
     id: "MVP 2",
@@ -25,7 +25,7 @@ const phases: { id: string; title: string; date: string; state: State; label: st
     date: "18 Nov 2026",
     state: "soon",
     label: "Coming soon",
-    items: ["Payments", "Offers and discounts", "Ops dashboard", "Refund and abuse models"],
+    items: ["Payments", "Delivery-time estimate", "Web push alerts", "Ops dashboard", "Refund and abuse models"],
   },
   {
     id: "MVP 3",
@@ -46,6 +46,7 @@ const phases: { id: string; title: string; date: string; state: State; label: st
 ];
 
 const badgeClass: Record<State, string> = {
+  done: "badge--live",
   wip: "badge--wip",
   soon: "badge--soon",
   planned: "badge--wip",
