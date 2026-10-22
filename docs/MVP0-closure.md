@@ -45,3 +45,11 @@ See the last rows of `docs/LEARNINGS.md`. The main one: Chrome reads the manifes
 ## Not part of this closure
 
 Laya on Colab runs in another session. iOS is explained only.
+
+## Closed in GitHub (22 Oct 2026)
+
+Issues #94, #95, #78, #83, epic #93 and epics #33 to #38 are closed. Milestone "MVP0 demo" is closed. Issue #56 stays open until the founder's Android check is done.
+
+## Next: MVP 1
+
+Milestone "MVP 1 Golden path", epic #116 with stories #117 (S-M1 Google login), #118 (S-M2 no order lost or doubled), #119 (S-M3 gate, closure, release) and #120 (S-M4 Jev ETA, 23 Oct). Stories #96 (web push, 23 Oct) and #97 (UAT numbers, 24 Oct) moved there. Laya issues #106, #107, #111 and #113 moved to milestone "MVP 2 Pilot ready". Milestones MVP 3 and MVP 4 exist.
