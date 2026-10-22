@@ -193,6 +193,45 @@ def test_retrain_set_with_extra_seeds_and_no_number_rows():
     assert not [r for r in train if "refund" in r["expected"] or "at_risk" in r["expected"]]
 
 
+def _ctx_seed(i, topic="order_late", human=False):
+    return {"order": {"restaurant": "Sharma Rasoi", "items": ["dal makhani", "2 roti"], "amount": 349 + i, "minutes_since_order": 70,
+                      "status": "out_for_delivery", "payment": "UPI", "city": "Indore"},
+            "text": " ".join(f"w{(i * 31 + k * 17) % 997}q{(i * 7 + k) % 89}" for k in range(7)) + f" aaya {i}", "topic": topic, "mood": "negative", "needs_human": human, "style": "hinglish", "ambiguous": False}
+
+
+def test_context_rows_keep_message_and_labels():
+    # New input shape: order context plus message, in 3 formats; labels come from the seed, the message is not altered.
+    import random
+    seeds = [_ctx_seed(i) for i in range(60)]
+    rows = gen.context_rows(seeds, random.Random(1))
+    assert len(rows) == 60
+    for r, d in zip(rows, seeds):
+        assert d["text"] in r["state"] and "Sharma Rasoi" in r["state"] and str(d["order"]["amount"]) in r["state"]
+        assert r["expected"] == {"topic": "order_late", "mood": "negative", "needs_human": False} and r["questions"] == gen.SUPPORT_Q
+    assert len({r["state"][:8] for r in rows}) >= 3, "at least 3 formats"
+
+
+def test_write_newkind_splits_seeds_and_keeps_old_files():
+    # D1 seeds split into train and val2 by seed; D2 is the fresh test; old val, test and Hindi files are copied unchanged.
+    with tempfile.TemporaryDirectory() as base, tempfile.TemporaryDirectory() as out, tempfile.TemporaryDirectory() as src:
+        gen.write(base, seed=0, scale=0.1)
+        open(os.path.join(base, "hindi_test.jsonl"), "w").write("")
+        d1 = [_ctx_seed(i, "order_late" if i % 2 else "quality") for i in range(200)]
+        d2 = [_ctx_seed(1000 + i) for i in range(50)]
+        notes = [{"text": "no spice please", "has_allergy": False, "has_special_request": True, "style": "english", "ambiguous": False}] * 3
+        w = lambda name, rows: open(os.path.join(src, name), "w", encoding="utf-8").write("".join(json.dumps(r) + "\n" for r in rows))
+        w("d1s.jsonl", d1); w("d1n.jsonl", notes); w("d2s.jsonl", d2); w("d2n.jsonl", notes)
+        gen.write_newkind(base, out, os.path.join(src, "d1s.jsonl"), os.path.join(src, "d1n.jsonl"), os.path.join(src, "d2s.jsonl"), os.path.join(src, "d2n.jsonl"), seed=4, replay=40, val_frac=0.15)
+        ld = lambda f: [json.loads(l) for l in open(os.path.join(out, f), encoding="utf-8")]
+        for f in ("val.jsonl", "test.jsonl", "hindi_test.jsonl"):
+            assert open(os.path.join(base, f), "rb").read() == open(os.path.join(out, f), "rb").read(), f
+        train, val2, fresh = ld("train.jsonl"), ld("val2.jsonl"), ld("fresh_test.jsonl")
+    assert len(fresh) == 50 + 3 and len(val2) >= 30 and len(train) > 200
+    import re
+    nums = lambda rows: {m.group(1) for r in rows for m in [re.search(r"aaya (\d+)", r["state"])] if m}
+    assert nums(fresh) and nums(val2) and not nums(fresh) & nums(train) and not nums(val2) & nums(train)
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

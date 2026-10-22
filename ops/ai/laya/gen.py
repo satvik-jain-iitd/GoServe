@@ -252,6 +252,64 @@ def heldout_rows(support_path, notes_path):
     return rows
 
 
+def _context_state(rnd, o, text):
+    """Order context plus the customer message, in one of 3 shapes."""
+    items = ", ".join(o["items"])
+    f = rnd.randrange(3)
+    if f == 0:
+        return (f"Order: {o['restaurant']} | items: {items} | Rs {o['amount']} | placed {o['minutes_since_order']} min ago | "
+                f"status: {o['status']} | pay: {o['payment']} | city: {o['city']}\nCustomer: {text}")
+    if f == 1:
+        return json.dumps({"order": o, "message": text}, ensure_ascii=False)
+    return (f"{o['restaurant']} order of {items} (Rs {o['amount']}, {o['payment']}) placed {o['minutes_since_order']} minutes ago "
+            f"is {o['status']} in {o['city']}. Customer message: {text}")
+
+
+def context_rows(seeds, rnd):
+    """Laya rows for support seeds that carry an order context; one row per seed, labels from the seed."""
+    return [{"state": _context_state(rnd, d["order"], d["text"]), "questions": SUPPORT_Q,
+             "expected": {"topic": d["topic"], "mood": d["mood"], "needs_human": bool(d["needs_human"])}} for d in seeds]
+
+
+def _note_rows(notes):
+    return [{"state": "Order note: " + d["text"], "questions": NOTES_Q,
+             "expected": {"has_allergy": bool(d["has_allergy"]), "has_special_request": bool(d["has_special_request"])}} for d in notes]
+
+
+def write_newkind(base_dir, out_dir, d1_support, d1_notes, d2_support, d2_notes, seed=0, replay=1500, val_frac=0.15, reps=3):
+    """New-kind set. D1 (train writer): seeds split into train and val2 by seed. D2 (fresh-test writer): fresh_test.jsonl, never trained.
+    train.jsonl = D1 train rows (reps formats per seed) plus a replay sample of base_dir/train.jsonl. val, test and Hindi files copied unchanged."""
+    rnd = random.Random(seed)
+    ld = lambda f: [json.loads(l) for l in open(f, encoding="utf-8")]
+    d1s, d1n, d2s, d2n = ld(d1_support), ld(d1_notes), ld(d2_support), ld(d2_notes)
+    # leakage guard: drop D1 seeds that are near-copies of fresh-test seeds or of the old val and test seeds
+    ss = _split_seeds(SUPPORT, lambda t: (t[1], t[2], t[3]))
+    guard = [d["text"] for d in d2s + d2n] + [SUPPORT[i][0] for sp in ("val", "test") for i in ss[sp]]
+    drop = set(near_duplicates([d["text"] for d in d1s], guard)); d1s = [d for i, d in enumerate(d1s) if i not in drop]
+    drop = set(near_duplicates([d["text"] for d in d1n], guard)); d1n = [d for i, d in enumerate(d1n) if i not in drop]
+    for rows in (d1s, d1n):
+        rnd.shuffle(rows)
+    cut = lambda rows: int(len(rows) * val_frac)
+    val_s, tr_s = d1s[:cut(d1s)], d1s[cut(d1s):]
+    val_n, tr_n = d1n[:cut(d1n)], d1n[cut(d1n):]
+    train, seen = [], set()
+    for _ in range(reps):
+        for r in context_rows(tr_s, rnd) + _note_rows(tr_n):
+            if r["state"] not in seen:
+                seen.add(r["state"]); train.append(r)
+    old = ld(os.path.join(base_dir, "train.jsonl"))
+    train += rnd.sample(old, min(replay, len(old)))
+    rnd.shuffle(train)
+    os.makedirs(out_dir, exist_ok=True)
+    wr = lambda name, rows: open(os.path.join(out_dir, name), "w", encoding="utf-8").write("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows))
+    wr("train.jsonl", train)
+    wr("val2.jsonl", context_rows(val_s, rnd) + _note_rows(val_n))
+    wr("fresh_test.jsonl", context_rows(d2s, rnd) + _note_rows(d2n))
+    for name in ("val.jsonl", "test.jsonl", "hindi_test.jsonl"):
+        open(os.path.join(out_dir, name), "wb").write(open(os.path.join(base_dir, name), "rb").read())
+    return {"train": len(train), "val2": len(val_s) + len(val_n), "fresh_test": len(d2s) + len(d2n), "dropped_near_copies": len(drop)}
+
+
 def write(out_dir, seed=0, scale=1.0):
     splits = build(seed, scale)
     validate(splits)

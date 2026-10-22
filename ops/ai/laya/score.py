@@ -1,5 +1,5 @@
 """Judges raw predictions from kaggle/eval.py against the E3 targets in docs/research/experiments.md.
-Usage: python3 score.py raw_TAG.json DATA_DIR [--latin] [--text-only] [--by-language] [--test NAME] [--bar 0.85]
+Usage: python3 score.py raw_TAG.json DATA_DIR [--latin] [--text-only] [--by-language] [--test NAME] [--val NAME] [--bar 0.85]
 --latin scores only rows without Indic script (the English and Hinglish scope, owner decision 22 Oct 2026);
 the temperature is then fitted on the same kind of val rows. The test file itself is never changed.
 Targets: accuracy >= 0.90, ECE <= 0.08 each, macro ECE <= 0.05, at least 0.05 above the majority guess;
@@ -14,7 +14,7 @@ d, scope = sys.argv[2], "--latin" in sys.argv
 load = lambda n: [json.loads(l) for l in open(f"{d}/{n}.jsonl", encoding="utf-8")]
 arg = lambda f, d: sys.argv[sys.argv.index(f) + 1] if f in sys.argv else d
 BAR = float(arg("--bar", "0.90"))  # accuracy bar; 0.85 for the Hindi held-out slice
-train, val, test = load("train"), load("val"), load(arg("--test", "test"))
+train, val, test = load("train"), load(arg("--val", "val")), load(arg("--test", "test"))
 pick = lambda rows: metrics.latin_only(rows) if scope else list(range(len(rows)))
 iv, it, itr = pick(val), pick(test), pick(train)
 val_rows, val_raw = [val[i] for i in iv], [raw["val"][i] for i in iv]
