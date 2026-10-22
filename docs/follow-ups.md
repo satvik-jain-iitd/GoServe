@@ -99,3 +99,4 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F95 | Jev cost control: `jev_mode` in MAIN 01, budget guard in live checks, separate capped keys (`docs/research/jev-cost-control-2026-10.md`). | Agent | Open, priority 3 |
 | F96 | APK build by GitHub Actions to Telegram. Only if the Chrome install fails on the owner's phone (`docs/research/android-apk-2026-10.md`). | Agent | Open, lowest priority |
 | F97 | Google login through Supabase at MVP 1 (ADR-016, A53). Part of the MVP 1 phase gate. | Owner + agent | Open |
+| F98 | Post-deploy smoke step: read `/customer/` (and the other three role pages) on dev and prod after each deploy and check the manifest link. The build plugin throws, but only a live read proves the deployed page. Also: prove on a real Android that the four installed apps share one session (WebAPK, ADR-013); add it to the phone install row. | Agent | Open |
