@@ -158,3 +158,4 @@ short. Say what happened and what to do next time.
 - State kept only in React is lost on refresh. Keep what the screen needs in the database or storage, and test a reload. When a new start-up rule is added, old tests that preload data may now land on another screen: run the whole suite, not one file.
 - A merge conflict on the follow-ups and trace tables can drop rows without any error. After a merge, check that your own rows are still on dev.
 - Two parts of a screen that ask for a session at the same moment each make an anonymous user. Share one in-flight request. An old e2e test that counts sign-ups caught it.
+- A 200 from a settings PATCH is not proof. Read the setting back, and read it again after a minute if the first read looks old. Do not write "verified" before the read.
