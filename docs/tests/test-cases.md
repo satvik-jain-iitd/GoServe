@@ -191,3 +191,5 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Continue with Google asks Supabase to link Google to the current user (provider google, redirect back to the same page) and goes to Google; a signed-in user sees the name and no button; an anonymous user keeps the button | #117 | S-M1 | Automatic | `app/tests/e2e/login.spec.ts`, `app/tests/unit/auth.test.ts` | Pass |
 | Two parts of the screen asking for a session at once make only one anonymous user | #117 | S-M1 | Automatic | `app/tests/e2e/apps.spec.ts` (share one session) | Pass |
 | The Supabase Google settings payload turns on Google and manual linking, never prints the secret, refuses an empty client | #117 | S-M1 | Automatic | `scripts/test_set_google_auth.py` | Pass |
+| 20 orders, each sent twice, 5 with the connection cut after sending: 20 orders, 0 duplicates, every event chain in order; a repeated status answers 409 | #118 | S-M2 | Live, 22 Oct 2026 | `scripts/no_loss_check.py` (dev) | Pass |
+| The count rules of the no-loss proof: duplicate key, lost order, repeated event, events out of order | #118 | S-M2 | Automatic | `scripts/test_no_loss.py` | Pass |
