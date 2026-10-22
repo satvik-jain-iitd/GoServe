@@ -19,7 +19,7 @@ export const decisionOf = (over: object = {}) => ({
 type Calls = { signups: number; status: any[]; decide: any[]; health: any[]; feedback: any[]; confirm: any[]; rpc: { name: string; body: any }[]; orderReads: string[] };
 export async function setup(context: BrowserContext, page: Page, initial: object[] = []) {
   const calls: Calls = { signups: 0, status: [], decide: [], health: [], feedback: [], confirm: [], rpc: [], orderReads: [] };
-  const state = { confirmCfg: { confirm_after_ready_min: 3, confirm_after_place_min: 8 }, confirmDone: false, feedbackDown: false, orders: initial, reply: null as null | { status: number; body: unknown }, menuUp: true, decisions: [] as object[], runs: [] as object[], runCount: 0 };
+  const state = { confirmCfg: { confirm_after_ready_min: 3, confirm_after_place_min: 8 }, confirmDone: false, feedbackDown: false, orders: initial, reply: null as null | { status: number; body: unknown }, menuUp: true, kitchen: null as null | string, decisions: [] as object[], runs: [] as object[], runCount: 0 };
   const json = (route: any, status: number, body: unknown) => route.fulfill({ status, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(body) });
   await context.route("https://test.supabase.co/**", async (route) => {
     const req = route.request();
@@ -35,6 +35,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
       if (name === "reset_session") state.orders = [];
       return json(route, 200, name === "reset_session" ? { orders: 1 } : null);
     }
+    if (req.url().includes("/rest/v1/kitchen_staff")) return json(route, 200, state.kitchen ? [{ kitchen_id: state.kitchen }] : []);   // S-M5: the kitchen this user works for
     if (req.url().includes("/rest/v1/decision_log")) return json(route, 200, state.decisions);
     if (req.url().includes("/rest/v1/run_log")) {
       const total = state.runCount || state.runs.length;

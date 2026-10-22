@@ -205,3 +205,9 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Train counts may be 0; extra seeds join train only, never val or test; retrain set keeps val and test byte-identical | #127 | S2 | Automatic | `ops/ai/laya/test_gen.py` | Pass |
 | Majority guess skips questions absent from train (red first: crashed the CPU eval after 12 minutes) | #127 | S3 | Automatic | `ops/ai/laya/test_metrics.py` | Pass |
 | Round 3 on Kaggle: 5 text use cases vs the unchanged E3 targets; retrain 2 chosen on val | #127 | S3 | Experiment | `docs/research/experiments.md` E3 | 4 of 5 pass in full; topic 0.871 and needs_human recall 0.692 fail |
+| Staff user on /kitchen/ reads the kitchen's orders (no join link); a non-staff user keeps the session view; the customer app never switches | #132 | S1-S3 | Automatic | `app/tests/e2e/kitchen-account.spec.ts` | Pass |
+| Kitchen, rider and ops apps start a Google sign-in, not a link | #132 | S4 | Automatic | `app/tests/e2e/kitchen-account.spec.ts`, `app/tests/unit/auth.test.ts` | Pass |
+| Read scope is the kitchen for staff, the session otherwise; a failed staff read counts as not staff | #132 | S1 | Automatic | `app/tests/unit/session.test.ts` | Pass |
+| Policies on the real database: staff reads the kitchen's order and only their own staff row; a non-staff user reads zero (rolled back) | #132 | S1 | Check | `scripts/check_kitchen_staff.py dev` | Pass on dev, 23 Oct 2026 |
+| Staff SQL: user found by email, a bad email or kitchen id refused | #132 | S1 | Automatic | `scripts/test_add_kitchen_staff.py` | Pass |
+| Kitchen phone signed in with the kitchen Google account shows the order placed from the customer phone, no join link | #132 | S1 | Manual | owner, live row | Open |

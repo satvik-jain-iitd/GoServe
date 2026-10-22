@@ -3,7 +3,7 @@ import { authErrorFrom, linkGoogle, signedInName } from "../lib/auth";
 import { ensureSession, getClient } from "../lib/supabase";
 
 // One line under the title: "Continue with Google", or "Signed in as <name>". No password, no email form.
-export function SignIn() {
+export function SignIn({ mode = "link" }: { mode?: "link" | "signin" }) {
   const [name, setName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(() => authErrorFrom(window.location.search, window.location.hash));
   useEffect(() => {
@@ -19,7 +19,7 @@ export function SignIn() {
   return (
     <div>
       <button type="button" className="btn ghost small" data-testid="google-signin"
-        onClick={async () => { await ensureSession().catch(() => {}); setError(await linkGoogle(getClient(), window.location.href.split("?")[0])); }}>
+        onClick={async () => { await ensureSession().catch(() => {}); setError(await linkGoogle(getClient(), window.location.href.split("?")[0], mode)); }}>
         Continue with Google
       </button>
       {error && <p role="alert">{error}</p>}

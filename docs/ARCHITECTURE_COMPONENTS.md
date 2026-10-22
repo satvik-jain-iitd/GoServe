@@ -130,7 +130,7 @@ Phases (see `docs/architecture/evolution.md`): **MVP0** investor demo (≤10 use
 | Jev decision log store | Audit + future training | Postgres | DECIDE | USE — `decision_log` table | USE — + outcome labels | USE | USE | USE | INFERRED |
 | `params`, `run_log` tables *(new, MVP0)* | Versioned settings; one row per workflow run | Supabase | — | USE | USE | USE | USE | USE | INFERRED |
 | Database step rules *(new, MVP0)* | The database rejects an illegal order step | Supabase | — | USE | USE | USE | USE | USE | INFERRED |
-| Row-level security *(new, MVP1)* | Each role and kitchen sees only its own rows | Supabase | — | NOT USED — session space only | PARTLY — session rules are on; per-role and per-kitchen rules wait for a second kitchen or staff accounts | USE | USE | USE | INFERRED |
+| Row-level security *(new, MVP1)* | Each role and kitchen sees only its own rows | Supabase | — | NOT USED — session space only | PARTLY — session rules are on; kitchen staff read their kitchen's orders (S-M5, migration 0011); rider and ops rules wait for their accounts | USE | USE | USE | INFERRED |
 | Supabase keep-alive *(new, MVP0)* | Stops the free project from pausing | GitHub Actions | — | USE | USE | USE | NOT USED — Pro never pauses | NOT USED | VERIFIED (free projects pause after 1 week idle, 13 Oct) |
 | Archive job *(new, MVP1)* | Moves old orders and logs to Mongo nightly | n8n | — | NOT USED | DEFERRED to 25 Oct | USE | USE | USE | INFERRED |
 | Dedicated Mongo user *(new, MVP1)* | Access to the `goserve` database only | Oracle | — | NOT USED | DEFERRED to 25 Oct (needs the owner's yes) | USE | USE | USE | INFERRED |
