@@ -147,3 +147,4 @@ short. Say what happened and what to do next time.
 - A rule that depends on "the same status again" belongs in the function, not the row trigger: the trigger also runs when another column changes.
 - Chrome reads the manifest from the first HTML it gets. A manifest link changed later by JavaScript is too late for Add to Home Screen. Write one static page per role at build time and test the raw HTML, also with the service worker ready.
 - Icons for several apps in one product need one grid, one stroke weight and one corner radius. Only the glyph and one ring colour change. Look at all of them together on a contact sheet before you commit.
+- A read of a fresh deploy can show the old page for a minute (edge cache). Read again with a new query string before you call a deploy broken.
