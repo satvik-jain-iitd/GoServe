@@ -21,3 +21,4 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - ID096 (2026-10-22, open): Regression suite with stable `data-testid` ids that grows with every story.
 - ID097 (2026-10-22, open): APK built by GitHub Actions and sent to Telegram, only if the Chrome install fails.
 - ID098 (2026-10-22, open): Founder review message listing who reviews what. Draft in `docs/product/founder-review-message.md`.
+- ID099 (2026-10-22, open): the app must keep its state after a refresh (owner UAT feedback). F102 a.
