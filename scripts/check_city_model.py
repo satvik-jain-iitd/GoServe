@@ -124,6 +124,34 @@ true_for("kitchen staff see the numbers of their own kitchen only", "staff", f"(
 true_for("a stranger counts nothing", "stranger", f"(select count(*) from day_numbers where kitchen_id in ('{K1}', '{K2}')) = 0")
 
 
+# Story A5 (#152): dispatch. dispatch_candidates and assign_rider are for the service role (n8n) only; run here as the database owner.
+DISPATCH = f"""
+update riders set online = true, lat = 28.56, lng = 77.21 where user_id = '{U['rider']}';
+update orders set status = 'ready' where id = '{O['prep']}';   -- the rider already carries one ready order, so is not free
+update riders set online = true, lat = 28.90, lng = 77.60 where user_id = '{U['rider2']}';
+update kitchens set lat = 28.5494, lng = 77.2001 where id = '{K1}';
+insert into orders (id, kitchen_id, session_id, client_order_key, status, items, total_paise, address) values ('00000000-0000-4000-8000-0000000002e1', '{K1}', 'dispatch-s', 'k-d1', 'ready', '[]', 100, 'x');
+create temp table dx0 as select (select jsonb_array_length(dispatch_candidates('00000000-0000-4000-8000-0000000002e1') -> 'riders')) = 2 as v;
+create temp table dx1 as select (dispatch_candidates('00000000-0000-4000-8000-0000000002e1') -> 'riders' -> 0 ->> 'id') = '{U['rider']}' as v;
+create temp table dx2 as select (select (r ->> 'free')::boolean from jsonb_array_elements(dispatch_candidates('00000000-0000-4000-8000-0000000002e1') -> 'riders') r where r ->> 'id' = '{U['rider']}') is false as v;
+create temp table dx3 as select ((dispatch_candidates('00000000-0000-4000-8000-0000000002e1') -> 'riders' -> 0 ->> 'distance_m')::int between 100 and 2000) as v;
+do $$ begin begin perform dispatch_candidates('00000000-0000-4000-8000-0000000002ff'); create temp table dx4 as select false as v; exception when others then create temp table dx4 as select (sqlerrm like '%order_not_found%') as v; end; end $$;
+do $$ begin perform assign_rider('00000000-0000-4000-8000-0000000002e1', '{U['rider2']}'); end $$;
+create temp table dx5 as select (select rider_id from orders where id = '00000000-0000-4000-8000-0000000002e1') = '{U['rider2']}' and (select count(*) from order_events where order_id = '00000000-0000-4000-8000-0000000002e1' and event = 'order.assigned') = 1 as v;
+do $$ begin perform assign_rider('00000000-0000-4000-8000-0000000002e1', '{U['rider2']}'); end $$;
+create temp table dx6 as select (select count(*) from order_events where order_id = '00000000-0000-4000-8000-0000000002e1' and event = 'order.assigned') = 1 as v;
+do $$ begin begin perform assign_rider('00000000-0000-4000-8000-0000000002e1', '{U['rider']}'); create temp table dx7 as select false as v; exception when others then create temp table dx7 as select (sqlerrm like '%not_ready%') as v; end; end $$;
+do $$ begin begin perform assign_rider('{O['own']}', '{U['rider']}'); create temp table dx8 as select false as v; exception when others then create temp table dx8 as select (sqlerrm like '%not_ready%') as v; end; end $$;
+update orders set rider_id = null, status = 'ready' where id = '{O['prep']}';
+update riders set online = false where user_id = '{U['rider']}';
+do $$ begin begin perform assign_rider('{O['prep']}', '{U['rider']}'); create temp table dx9 as select false as v; exception when others then create temp table dx9 as select (sqlerrm like '%rider_not_available%') as v; end; end $$;
+create temp table dx10 as select (select count(*) from orders where id = '{O['prep']}' and rider_id is null) = 1 as v;
+"""
+DISPATCH_NAMES = ["candidates: both online riders are listed", "candidates: the nearest rider is first", "candidates: a rider with an open ready order is not free", "candidates: the distance to the kitchen is in metres", "candidates: an unknown order is refused",
+                  "assign: the rider is saved on the order and one event is written", "assign: a second call for the same rider changes nothing", "assign: another rider cannot take an assigned order", "assign: an order that is not ready is refused",
+                  "assign: a rider who is offline is refused", "assign: a refused call leaves the order unassigned"]
+
+
 def run(ref: str, query: str):
     req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/database/query", data=json.dumps({"query": query}).encode(),
                                  headers={"Authorization": f"Bearer {os.environ['SUPABASE_ACCESS_TOKEN']}", "Content-Type": "application/json", "User-Agent": "goserve-check"})
@@ -131,16 +159,16 @@ def run(ref: str, query: str):
 
 
 def build() -> str:
-    selects = [f"select 'c{i}' as k, v from c{i}" for i in range(len(checks))] + [f"select 'cx{j}' as k, v from cx{j}" for j in range(len(EXTRA_NAMES))]
-    return "\n".join(["begin;", SETUP, *[sql for _, sql in checks], FINAL_EXTRA, " union all ".join(selects) + ";", "rollback;"])
+    selects = [f"select 'c{i}' as k, v from c{i}" for i in range(len(checks))] + [f"select 'cx{j}' as k, v from cx{j}" for j in range(len(EXTRA_NAMES))] + [f"select 'dx{j}' as k, v from dx{j}" for j in range(len(DISPATCH_NAMES))]
+    return "\n".join(["begin;", SETUP, *[sql for _, sql in checks], FINAL_EXTRA, DISPATCH, " union all ".join(selects) + ";", "rollback;"])
 
 
 if __name__ == "__main__":
     if sys.argv[1:] != ["dev"]:
         sys.exit("Usage: check_city_model.py dev (prod is never allowed)")
     rows = {r["k"]: r["v"] for r in run(DEV_REF, build())}
-    names = [n for n, _ in checks] + EXTRA_NAMES
-    keys = [f"c{i}" for i in range(len(checks))] + [f"cx{j}" for j in range(len(EXTRA_NAMES))]
+    names = [n for n, _ in checks] + EXTRA_NAMES + DISPATCH_NAMES
+    keys = [f"c{i}" for i in range(len(checks))] + [f"cx{j}" for j in range(len(EXTRA_NAMES))] + [f"dx{j}" for j in range(len(DISPATCH_NAMES))]
     bad = 0
     for n, k in zip(names, keys):
         ok = rows.get(k) is True

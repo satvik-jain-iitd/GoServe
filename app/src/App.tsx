@@ -8,6 +8,7 @@ import { fetchKitchens, forgetArea, loadPin, resolveArea, savePin, type Area } f
 import { AreaScreen } from "./screens/AreaScreen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { AdminGate } from "./screens/AdminGate";
+import { RiderGate } from "./screens/RiderGate";
 import { loadProfile, saveProfile } from "./lib/profile";
 import { addEvent, changeStatus, confirmDelivery, orderDeps, placeOrder, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
 import { confirmAt, DEFAULT_CFG, notYet, reaskMs, type ConfirmCfg } from "./lib/confirm";
@@ -78,7 +79,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [demo, setDemo] = useState(false);
   const [autoNote, setAutoNote] = useState<string | null>(null);
   const [resumed, setResumed] = useState(false);   // only the customer app (not the demo console) looks once, at load, for an order that is still open
-  const live = useLiveOrders(ready && !demo && (auto || role === "kitchen" || role === "rider" || role === "split" || role === "ops" || (role === "customer" && (step === "placed" || step === "orders" || (lock === "customer" && !resumed)))), lock === "kitchen" || lock === "rider");
+  const live = useLiveOrders(ready && !demo && (auto || role === "kitchen" || role === "rider" || role === "split" || role === "ops" || (role === "customer" && (step === "placed" || step === "orders" || (lock === "customer" && !resumed)))), lock === "kitchen" || lock === "rider" ? lock : undefined);
   const { orders, setOrders } = live;
   const sawLoading = useRef(false);
   useEffect(() => {
@@ -399,6 +400,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <OpsScreen orders={orders} decisions={demo ? (orders.some((o) => ["ready", "out_for_delivery", "delivered"].includes(o.status)) ? demoDecisions() : []) : ops.decisions} lags={demo ? [800] : live.lags}
         stats={demo ? { runsToday: 6, lastDecideMs: 310 } : ops.stats} error={demo ? null : ops.error ?? live.error} failed={ops.failed} sample={demo} />
   );
+  const riderView = (
+    <RiderScreen orders={riderOrders(orders)} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
+      onAct={(o, a) => act(o, a, "rider")} />
+  );
   const kitchenView = (
     <KitchenScreen orders={kitchenOrders(orders)} loading={live.loading} error={live.error} busyId={busyId}
       onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} />
@@ -450,10 +455,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       {demo && <p role="status" className="notice"><strong>Offline demo</strong></p>}
       {!lock && <DemoBar onReset={reset} getLink={shareLink} autoOn={auto || demo} autoNote={autoNote} onAuto={toggleAuto} />}
       {role === "kitchen" && kitchenView}
-      {role === "rider" && (
-        <RiderScreen orders={riderOrders(orders)} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
-          onAct={(o, a) => act(o, a, "rider")} />
-      )}
+      {role === "rider" && (lock === "rider" ? <RiderGate>{riderView}</RiderGate> : riderView)}
       {role === "ops" && (lock === "ops" ? <AdminGate>{opsView}</AdminGate> : opsView)}
       {role === "customer" && customerView}
       {role === "admin" && <AdminScreen />}

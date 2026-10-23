@@ -13,6 +13,12 @@ class CityCheck(unittest.TestCase):
         self.assertIn("generate_series(1, 100)", q)
         self.assertEqual(q.count("place_order("), 2)   # every order is sent twice
 
+    def test_dispatch_is_only_in_the_sql_when_asked(self):
+        self.assertNotIn("assign_rider", build_sql(10, 20, 100))
+        q = build_sql(10, 20, 100, dispatch=True)
+        self.assertIn("dispatch_candidates", q)
+        self.assertIn("assign_rider", q)
+
     def test_the_line_names_every_count(self):
         row = {"orders": 100, "lost": 0, "duplicates": 0, "wrong_kitchen": 0, "unassigned": 100}
         self.assertEqual(summary(row), "orders=100 lost=0 duplicates=0 wrong_kitchen=0 unassigned=100")

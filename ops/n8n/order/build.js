@@ -120,7 +120,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     { name: 'ANSWER', what: 'Return the decision if the row was stored, else a short error.', needs: 'The database answer.', nodes: ['Decision stored'], color: 5 },
     refuseSection,
   ];
-  const sub13 = finish('GS SUB 13 Decide', n13, e13, s13, subSettings);
+  const sub13 = finish('GS SUB 13 Decide', n13, e13, s13, Object.assign({}, subSettings, { callerIds: main + ',' + ids.sub22 }));   // MAIN 01 (the demo decide) and SUB 22 (dispatch)
 
   // ---- SUB 14 Write logs: one run_log row ----
   const f14 = [['session_id', 'string'], ['kitchen_id', 'string'], ['workflow', 'string'], ['params_version', 'number'], ['duration_ms', 'number'], ['cost', 'number'], ['error', 'string'], ['supabase_url', 'string']];
@@ -175,6 +175,41 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     workflowInputs: { mappingMode: 'defineBelow', value: Object.fromEntries(mapping.map(([k, v]) => [k, v])), matchingColumns: [],
       schema: schemaOf(mapping.map(([k, , t]) => [k, t])), attemptToConvertTypes: false, convertFieldsToString: false },
     mode: 'once', options: { waitForSubWorkflow: wait } });
+
+  // ---- Dispatch (story A5): a ready order gets a rider. SUB 21 reads who is online, SUB 13 decides, SUB 19 saves the rider on the order, SUB 22 runs the three in order. ----
+  const sub21 = sub({ name: 'GS SUB 21 Dispatch riders', n: 21, callerIds: ids.sub22, credential: cred, settings,
+    fields: [['order_id', 'string'], ['kill_switch', 'boolean'], ['supabase_url', 'string']],
+    guardFile: 'guard_riders.js', rpc: { fn: 'dispatch_candidates', label: 'Read riders' },
+    what: 'It reads the riders that are online, with their distance to the kitchen and their trips today. It writes nothing.' });
+  const sub19 = sub({ name: 'GS SUB 19 Assign rider', n: 19, callerIds: ids.sub22, credential: cred, settings,
+    fields: [['order_id', 'string'], ['rider_id', 'string'], ['kill_switch', 'boolean'], ['supabase_url', 'string']],
+    guardFile: 'guard_assign.js', rpc: { fn: 'assign_rider', label: 'Assign rider' },
+    what: 'It saves the rider on a ready order and writes the event. A second call for the same rider changes nothing.' });
+  const f22 = [['session_id', 'string'], ['kitchen_id', 'string'], ['order_id', 'string'], ['params_version', 'number'], ['jev_enabled', 'boolean'], ['jev_model', 'string'],
+    ['jev_cost_cap', 'number'], ['kill_switch', 'boolean'], ['supabase_url', 'string']];
+  const n22 = [
+    node('gs-sub22-01', 'Start', 'n8n-nodes-base.executeWorkflowTrigger', 1.1, inputs(f22)),
+    callSub('gs-sub22-02', 'Call SUB 21 Riders', ids.sub21, [['order_id', "={{ $json.order_id }}", 'string'], ['kill_switch', '={{ $json.kill_switch }}', 'boolean'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
+    ifNode('gs-sub22-03', 'Riders found?', '={{ $json.ok && $json.riders.length > 0 }}', 'true'),
+    codeNode('gs-sub22-04', 'Prepare decision', code('dispatch_prepare.js')),
+    callSub('gs-sub22-05', 'Call SUB 13 Decide', ids.sub13, f13.map(([k, t]) => [k, '={{ $json.' + k + ' }}', t])),
+    codeNode('gs-sub22-06', 'Prepare assign', code('dispatch_assign.js')),
+    ifNode('gs-sub22-07', 'Rider chosen?', '={{ $json.ok }}', 'true'),
+    callSub('gs-sub22-08', 'Call SUB 19 Assign', ids.sub19, [['order_id', '={{ $json.order_id }}', 'string'], ['rider_id', '={{ $json.rider_id }}', 'string'],
+      ['kill_switch', '={{ $json.kill_switch }}', 'boolean'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
+    // The error stops this run, and the error workflow (GS ERR 00) tells the owner: a ready order has no rider.
+    node('gs-sub22-09', 'No rider', 'n8n-nodes-base.stopAndError', 1, { errorMessage: "={{ 'No rider could be assigned to ready order ' + $('Start').first().json.order_id }}" }),
+  ];
+  const e22 = [['Start', 'Call SUB 21 Riders'], ['Call SUB 21 Riders', 'Riders found?'], ['Riders found?', 'Prepare decision', 0], ['Riders found?', 'No rider', 1],
+    ['Prepare decision', 'Call SUB 13 Decide'], ['Call SUB 13 Decide', 'Prepare assign'], ['Prepare assign', 'Rider chosen?'], ['Rider chosen?', 'Call SUB 19 Assign', 0], ['Rider chosen?', 'No rider', 1]];
+  const s22 = [
+    { name: 'RECEIVE', what: 'MAIN 01 calls this after the kitchen taps Ready. It is called after the answer went to the phone.', needs: 'Input: ' + f22.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
+    { name: 'RIDERS', what: 'Ask SUB 21 which riders are online. If there are none, stop with an error.', needs: 'SUB 21 id. Input: order_id.', nodes: ['Call SUB 21 Riders', 'Riders found?'], color: 6 },
+    { name: 'DECIDE', what: 'SUB 13 picks by rule (online, nearest, fewest trips). Jev only advises. One decision row is written.', needs: 'SUB 13 id. Config values come from MAIN 01.', nodes: ['Prepare decision', 'Call SUB 13 Decide'], color: 6 },
+    { name: 'ASSIGN', what: 'Save the picked rider on the order through SUB 19. No pick means stop with an error.', needs: 'SUB 19 id.', nodes: ['Prepare assign', 'Rider chosen?', 'Call SUB 19 Assign'], color: 6 },
+    { name: 'STOP', what: 'No rider could be assigned. The run fails on purpose so GS ERR 00 tells the owner; the order stays ready.', needs: 'GS ERR 00 as the error workflow.', nodes: ['No rider'], color: 1 },
+  ];
+  const sub22 = finish('GS SUB 22 Dispatch', n22, e22, s22, Object.assign({}, settings, { callerPolicy: 'workflowsFromAList', callerIds: main }));
 
   // ---- SUB 17 Feedback: save a tester's report and answer; Drive and Telegram run in SUB 18 without being waited for (story S-B, #94; F90) ----
   const f17 = [['session_id', 'string'], ['kitchen_id', 'string'], ['role', 'string'], ['screen', 'string'], ['order_id', 'string'], ['doing', 'string'], ['text', 'string'], ['context', 'object'],
@@ -287,6 +322,12 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
       ['order_id', "={{ $json.body.order_id || '' }}", 'string'], ['doing', body('doing'), 'string'], ['text', body('text'), 'string'], ['context', body('context'), 'object'],
       ['image_b64', "={{ $json.body.image_b64 || '' }}", 'string'], ['kill_switch', '={{ $json.kill_switch }}', 'boolean'], ['supabase_url', '={{ $json.supabase_url }}', 'string'],
       ['drive_folder_id', '={{ $json.drive_folder_id }}', 'string'], ['chat_id', '={{ $json.chat_id }}', 'string'], ['env', '={{ $json.env }}', 'string']]),
+    ifNode('gs-main01-20', 'Ready?', "={{ $json.ok === true && !!$json.order && $json.order.status === 'ready' }}", 'true'),
+    callSub('gs-main01-21', 'Call SUB 22 Dispatch', ids.sub22, [
+      ['session_id', '={{ $json.order.session_id }}', 'string'], ['kitchen_id', '={{ $json.order.kitchen_id }}', 'string'], ['order_id', '={{ $json.order.id }}', 'string'],
+      ['params_version', "={{ $('Config').first().json.params_version }}", 'number'], ['jev_enabled', "={{ $('Config').first().json.jev_enabled }}", 'boolean'],
+      ['jev_model', "={{ $('Config').first().json.jev_model }}", 'string'], ['jev_cost_cap', "={{ $('Config').first().json.jev_cost_cap }}", 'number'],
+      ['kill_switch', "={{ $('Config').first().json.kill_switch }}", 'boolean'], ['supabase_url', "={{ $('Config').first().json.supabase_url }}", 'string']]),
     respond('gs-main01-09', 'Respond result', '={{ $json.status_code }}', answer),
     codeNode('gs-main01-14', 'Log run', code('log_run.js')),
     callSub('gs-main01-15', 'Call SUB 14 Write logs', ids.sub14, [
@@ -301,7 +342,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     ['Token ok?', 'Kill switch?', 0], ['Token ok?', 'Respond 401', 1], ['Kill switch?', 'Respond 503', 0], ['Kill switch?', 'Route', 1],
     ['Route', 'Call SUB 11 Place order', 0], ['Route', 'Call SUB 12 Change status', 1], ['Route', 'Call SUB 13 Decide', 2], ['Route', 'Call SUB 15 Add event', 3], ['Route', 'Call SUB 16 Health', 4], ['Route', 'Call SUB 17 Feedback', 5], ['Route', 'Call SUB 12 Confirm', 6], ['Route', 'Respond 400', 7],
     ['Call SUB 11 Place order', 'Respond result'], ['Call SUB 12 Change status', 'Respond result'], ['Call SUB 13 Decide', 'Respond result'], ['Call SUB 15 Add event', 'Respond result'], ['Call SUB 16 Health', 'Respond result'], ['Call SUB 17 Feedback', 'Respond result'], ['Call SUB 12 Confirm', 'Respond result'],
-    ['Respond result', 'Log run'], ['Log run', 'Call SUB 14 Write logs']];
+    ['Respond result', 'Log run'], ['Log run', 'Call SUB 14 Write logs'], ['Respond result', 'Ready?'], ['Ready?', 'Call SUB 22 Dispatch', 0]];
   const sections = [
     { name: 'RECEIVE', what: 'The phone posts here. Body field "action" is place, status, decide, event, health, feedback or confirm. The header x-gs-token carries the demo token.', needs: 'Path gs-order. Body: action and the fields of the SUB.', nodes: ['Order webhook'], color: 4 },
     { name: 'CONFIG', what: 'All tunables live here: the kill switch, the demo token and the database address.', needs: 'Config keys: kill_switch, demo_token, supabase_url.', nodes: ['Config'], color: 5 },
@@ -315,6 +356,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     { name: 'CONFIRM', what: 'The customer\'s Yes. Call SUB 12 as the customer: the order is delivered and paid by cash. The answer also tells the phone when to ask.', needs: 'SUB 12 id. Body: session_id, order_id. Config: confirm_after_ready_min, confirm_after_place_min.', nodes: ['Call SUB 12 Confirm'], color: 6 },
     { name: 'FEEDBACK', what: 'Call SUB 17. It saves a tester\'s report, puts the screenshot in Google Drive and tells the owner on Telegram.', needs: 'SUB 17 id. Body: session_id, role, screen, order_id, doing, text, context, image_b64. Config: drive_folder_id, chat_id, env.', nodes: ['Call SUB 17 Feedback'], color: 6 },
     { name: 'ANSWER', what: 'Send the SUB result back to the phone with its status code.', needs: 'The SUB output: status_code, ok, order, decision, id.', nodes: ['Respond result'], color: 4 },
+    { name: 'DISPATCH', what: 'After the answer is out: if the order just became Ready, call SUB 22. It picks a rider and saves the rider on the order. If no rider is online the run fails on purpose and GS ERR 00 tells the owner.', needs: 'SUB 22 id. Config: params_version, jev keys.', nodes: ['Ready?', 'Call SUB 22 Dispatch'], color: 6 },
     { name: 'LOG', what: 'After the answer is out, write one run row: time taken, settings version, cost, error.', needs: 'SUB 14 id. Config: params_version, kitchen_id.', nodes: ['Log run', 'Call SUB 14 Write logs'], color: 6 },
     { name: 'REFUSE', what: 'Answer the calls that must not go on: 401, 503 and 400.', needs: 'Nothing.', nodes: ['Respond 401', 'Respond 503', 'Respond 400'], color: 1 },
   ];
@@ -385,7 +427,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send alert'], color: 6 },
   ];
   const alert = finish('GS ERR 00 Alert', aNodes, aEdges, aSections, baseSettings);
-  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub91, main01, main90, alert };
+  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub19, sub21, sub22, sub91, main01, main90, alert };
   if (prod) for (const k of Object.keys(all)) if (k !== 'alert') all[k].name += ' PROD';   // the one GS ERR 00 alert is shared (one bot, one chat)
   return { ...all, STATUS_ROLES };
 }
