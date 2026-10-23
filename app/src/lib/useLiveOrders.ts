@@ -6,7 +6,7 @@ import { fetchOrders, watchOrders } from "./live";
 import { currentSession, myKitchen, scopeFor } from "./session";
 import { getClient } from "./supabase";
 
-// `kitchenApp` is true only on /kitchen/: a staff user there reads the kitchen's orders (S-M5); everywhere else the session's.
+// `kitchenApp` is true on /kitchen/ and /rider/: a staff user there reads the kitchen's orders (S-M5); everywhere else the session's.
 export function useLiveOrders(active: boolean, kitchenApp = false) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
