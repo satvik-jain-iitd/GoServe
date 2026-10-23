@@ -10,21 +10,22 @@ describe("roleFromPath", () => {
     expect(roleFromPath("/kitchen/")).toBe("kitchen");
     expect(roleFromPath("/rider/")).toBe("rider");
     expect(roleFromPath("/ops/")).toBe("ops");
+    expect(roleFromPath("/admin/")).toBe("admin");
   });
   it("S2 the root (the demo console), the health page and anything else pick no app", () => {
     for (const p of ["/", "", "/health", "/kitchenette", "/kitchen/extra", "/Kitchen/"]) expect(roleFromPath(p)).toBeNull();
   });
-  it("the four apps are customer, kitchen, rider and ops", () => {
-    expect(ROLE_APPS).toEqual(["customer", "kitchen", "rider", "ops"]);
+  it("the five apps are customer, kitchen, rider, ops and admin", () => {
+    expect(ROLE_APPS).toEqual(["customer", "kitchen", "rider", "ops", "admin"]);
   });
 });
 
 describe("roleManifest", () => {
   const all = ROLE_APPS.map((r) => roleManifest(r));
   it("S2 every app has its own name, install identity and scope, and starts inside its scope", () => {
-    expect(new Set(all.map((m) => m.id)).size).toBe(4);
-    expect(new Set(all.map((m) => m.scope)).size).toBe(4);
-    expect(new Set(all.map((m) => m.name)).size).toBe(4);
+    expect(new Set(all.map((m) => m.id)).size).toBe(5);
+    expect(new Set(all.map((m) => m.scope)).size).toBe(5);
+    expect(new Set(all.map((m) => m.name)).size).toBe(5);
     for (const m of all) {
       expect(m.start_url.startsWith(m.scope)).toBe(true);
       expect(m.display).toBe("standalone");
@@ -32,7 +33,7 @@ describe("roleManifest", () => {
     }
   });
   it("S2 the names say the role", () => {
-    expect(all.map((m) => m.name)).toEqual(["GoServe", "GoServe Kitchen", "GoServe Rider", "GoServe Ops"]);
+    expect(all.map((m) => m.name)).toEqual(["GoServe", "GoServe Kitchen", "GoServe Rider", "GoServe Ops", "GoServe Admin"]);
     expect(roleManifest("kitchen")).toMatchObject({ id: "/kitchen/", scope: "/kitchen/", start_url: "/kitchen/", short_name: "Kitchen" });
   });
 });

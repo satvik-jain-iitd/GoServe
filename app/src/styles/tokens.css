@@ -86,6 +86,9 @@
   --gs-shadow-l: 0 24px 60px rgba(38, 53, 40, 0.16);
   --gs-ring: 0 0 0 3px rgba(69, 101, 78, 0.45);
 
+  /* ---- touch ---- */
+  --gs-tap: 2.75rem;   /* 44 px, the smallest tap target */
+
   /* ---- layout ---- */
   --gs-container: 72rem;
   --gs-container-narrow: 46rem;

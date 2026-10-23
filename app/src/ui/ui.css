@@ -1,0 +1,66 @@
+/* Design system (story D1). Colours, spacing, radius and type come from tokens.css only. Spacing steps are multiples of 8 pt (4 pt for the smallest gap). */
+.ui-btn { min-height: var(--gs-tap); min-width: var(--gs-tap); padding: 0 var(--gs-space-5); border: 0; border-radius: var(--gs-radius-pill); background: var(--md-primary); color: var(--md-on-primary); font: inherit; font-weight: 500; cursor: pointer; transition: transform 120ms ease, opacity 120ms ease; }
+.ui-btn.ghost { background: transparent; color: var(--md-primary); border: 1px solid var(--md-outline); }
+.ui-btn:active { transform: scale(0.97); }
+.ui-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ui-btn:focus-visible, .ui-chip:focus-visible, .ui-step button:focus-visible, .ui-back:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
+
+.ui-appbar { display: flex; align-items: center; gap: var(--gs-space-3); padding: var(--gs-space-2) 0; margin-bottom: var(--gs-space-4); }
+.ui-appbar h1 { flex: 1; margin: 0; font-size: var(--gs-text-lg); font-weight: 500; color: var(--md-on-background); }
+.ui-back { min-height: var(--gs-tap); min-width: var(--gs-tap); border: 0; border-radius: var(--gs-radius-pill); background: transparent; color: var(--md-primary); font-size: var(--gs-text-xl); cursor: pointer; }
+
+.ui-tile { display: grid; grid-template-columns: 5rem 1fr auto; gap: var(--gs-space-3); align-items: center; padding: var(--gs-space-3); border-radius: var(--gs-radius-m); background: var(--md-surface); box-shadow: var(--gs-shadow-s); }
+.ui-tile img, .ui-photo { width: 5rem; height: 5rem; object-fit: cover; border-radius: var(--gs-radius-s); background: var(--md-surface-variant); }
+.ui-tile-body { display: grid; gap: var(--gs-space-1); min-width: 0; }
+.ui-tile h3 { margin: 0; font-size: var(--gs-text-base); font-weight: 500; }
+.ui-meta { margin: 0; color: var(--gs-text-muted); font-size: var(--gs-text-sm); }
+.ui-price { margin: 0; color: var(--md-primary); font-weight: 500; }
+.ui-dot { display: inline-block; width: var(--gs-space-3); height: var(--gs-space-3); margin-right: var(--gs-space-2); border-radius: var(--gs-radius-s); border: 2px solid var(--md-primary); }
+.ui-dot.nonveg { border-color: var(--md-error); }
+
+.ui-chip { min-height: var(--gs-tap); padding: 0 var(--gs-space-4); border: 1px solid var(--md-outline); border-radius: var(--gs-radius-pill); background: transparent; color: var(--md-on-surface); font: inherit; cursor: pointer; transition: background 120ms ease, color 120ms ease; }
+.ui-chip.on { background: var(--md-primary); color: var(--md-on-primary); }
+
+.ui-step { display: inline-flex; align-items: center; gap: var(--gs-space-2); }
+.ui-step button { min-height: var(--gs-tap); min-width: var(--gs-tap); border: 1px solid var(--md-outline); border-radius: var(--gs-radius-pill); background: var(--md-surface); color: var(--md-primary); font: inherit; font-size: var(--gs-text-lg); cursor: pointer; }
+.ui-step button:disabled { opacity: 0.4; cursor: not-allowed; }
+.ui-step span { min-width: var(--gs-space-5); text-align: center; font-weight: 500; }
+
+.ui-sticky { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; gap: var(--gs-space-3); padding: var(--gs-space-3) var(--gs-space-4); background: var(--md-surface); box-shadow: var(--gs-shadow-m); }
+.ui-sticky .ui-btn { flex: 1; max-width: 26rem; }
+
+.ui-timeline { display: grid; gap: var(--gs-space-2); margin: var(--gs-space-4) 0; padding: 0; list-style: none; }
+.ui-timeline li { padding: var(--gs-space-2) var(--gs-space-3); border-radius: var(--gs-radius-m); border: 1px solid var(--md-outline-variant, var(--md-outline)); color: var(--gs-text-muted); transition: background 200ms ease; }
+.ui-timeline li.done { background: var(--md-surface-variant); color: var(--md-on-surface); }
+.ui-timeline li.now { background: var(--md-primary); color: var(--md-on-primary); font-weight: 500; }
+
+.ui-sheet-back { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end; justify-content: center; background: rgb(38 53 40 / 0.4); }
+.ui-sheet { width: 100%; max-width: 32rem; max-height: 90vh; overflow-y: auto; padding: var(--gs-space-5); border-radius: var(--gs-radius-l) var(--gs-radius-l) 0 0; background: var(--md-surface); color: var(--md-on-surface); animation: ui-rise 200ms ease; }
+.ui-sheet-head { display: flex; justify-content: space-between; align-items: center; gap: var(--gs-space-3); margin-bottom: var(--gs-space-4); }
+.ui-sheet-head h2 { margin: 0; }
+
+.ui-empty { display: grid; gap: var(--gs-space-2); justify-items: center; padding: var(--gs-space-7) var(--gs-space-4); text-align: center; }
+.ui-empty h2 { margin: 0; }
+
+.ui-skel { display: grid; gap: var(--gs-space-3); }
+.ui-skel span { display: block; height: var(--gs-space-4); border-radius: var(--gs-radius-s); background: var(--md-surface-variant); animation: ui-pulse 1.2s ease-in-out infinite; }
+
+@keyframes ui-rise { from { transform: translateY(2rem); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes ui-pulse { 50% { opacity: 0.5; } }
+@media (prefers-reduced-motion: reduce) {
+  .ui-btn, .ui-chip, .ui-timeline li, .ui-sheet, .ui-skel span { transition: none; animation: none; }
+}
+
+a.ui-btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.ui-search { width: 100%; box-sizing: border-box; min-height: var(--gs-tap); margin-bottom: var(--gs-space-3); padding: 0 var(--gs-space-4); border: 1px solid var(--md-outline); border-radius: var(--gs-radius-pill); background: var(--md-surface); color: var(--md-on-surface); font: inherit; }
+.ui-chips { display: flex; flex-wrap: wrap; gap: var(--gs-space-2); margin-bottom: var(--gs-space-4); }
+.ui-kitchen h2 { margin: 0; }
+.ui-kitchen .ui-meta { margin-bottom: var(--gs-space-3); }
+
+/* Staff screens (story D3): one thumb, wet hands. The main button is tall and as wide as its card. */
+.ui-btn.big { min-height: 3.5rem; width: 100%; font-size: var(--gs-text-lg); }
+.ui-ticket-lines { display: grid; gap: var(--gs-space-1); font-size: var(--gs-text-lg); font-weight: 500; }
+.ui-table { width: 100%; border-collapse: collapse; }
+.ui-table th, .ui-table td { padding: var(--gs-space-2) var(--gs-space-3); text-align: right; border-bottom: 1px solid var(--md-outline-variant, var(--md-outline)); }
+.ui-table th:first-child, .ui-table td:first-child { text-align: left; }
+.ui-table th { color: var(--gs-text-muted); font-weight: 500; font-size: var(--gs-text-sm); }

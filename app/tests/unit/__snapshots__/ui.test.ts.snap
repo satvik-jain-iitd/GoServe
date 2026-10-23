@@ -1,0 +1,23 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`components (one snapshot each) > S1 AppBar 1`] = `"<header class="ui-appbar"><button type="button" class="ui-back" aria-label="Back">‹</button><h1>Menu</h1></header>"`;
+
+exports[`components (one snapshot each) > S1 Button 1`] = `"<button type="button" class="ui-btn ghost">Back</button>"`;
+
+exports[`components (one snapshot each) > S1 Chip 1`] = `"<button type="button" class="ui-chip on" aria-pressed="true">Veg</button>"`;
+
+exports[`components (one snapshot each) > S1 Empty 1`] = `"<div class="ui-empty"><h2>No orders yet</h2><p class="ui-meta">Pick a dish.</p></div>"`;
+
+exports[`components (one snapshot each) > S1 Sheet 1`] = `"<div class="ui-sheet-back"><section class="ui-sheet" role="dialog" aria-modal="true" aria-label="Feedback"><div class="ui-sheet-head"><h2>Feedback</h2><button type="button" class="ui-btn ghost">Close</button></div>Hello</section></div>"`;
+
+exports[`components (one snapshot each) > S1 Skeleton 1`] = `"<div class="ui-skel" aria-busy="true" aria-label="Loading"><span style="width:100%"></span><span style="width:85%"></span><span style="width:70%"></span></div>"`;
+
+exports[`components (one snapshot each) > S1 Stepper 1`] = `"<div class="ui-step"><button type="button" aria-label="Less Dal Makhani">−</button><span role="status" aria-label="Quantity of Dal Makhani">2</span><button type="button" aria-label="More Dal Makhani">+</button></div>"`;
+
+exports[`components (one snapshot each) > S1 StickyBar 1`] = `"<div class="ui-sticky"><button type="button" class="ui-btn">View cart</button></div>"`;
+
+exports[`components (one snapshot each) > S1 Tile 1`] = `"<article class="ui-tile"><img src="/x.png" alt="" loading="lazy"/><div class="ui-tile-body"><h3><span class="ui-dot veg" role="img" aria-label="Veg"></span>Dal Makhani</h3><p class="ui-meta">Hauz Khas Kitchen</p><p class="ui-price">₹220</p></div><div class="ui-tile-act"><button type="button" class="ui-btn">Add</button></div></article>"`;
+
+exports[`components (one snapshot each) > S1 Timeline 1`] = `"<ol class="ui-timeline"><li class="done">Placed</li><li class="now" aria-current="step">Cooking</li><li class="next">Ready</li></ol>"`;
+
+exports[`components (one snapshot each) > S1 big Button 1`] = `"<button type="button" class="ui-btn big">Accept</button>"`;
