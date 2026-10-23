@@ -7,7 +7,7 @@ const path = require('path');
 const { build, PLACEHOLDER } = require('./build');
 const { checkLayout } = require('../lib/layout_checks');
 
-const IDS = { main01: 'MAIN1', sub11: 'SUB11', sub12: 'SUB12', sub13: 'SUB13', sub14: 'SUB14', alert: 'ALERT1' };
+const IDS = { main01: 'MAIN1', sub11: 'SUB11', sub12: 'SUB12', sub13: 'SUB13', sub14: 'SUB14', sub19: 'SUB19', sub21: 'SUB21', sub22: 'SUB22', alert: 'ALERT1' };
 const wf = build({ ids: IDS });
 const UUID = '11111111-1111-1111-1111-111111111111';
 const ORDER = '22222222-2222-2222-2222-222222222222';
@@ -136,7 +136,7 @@ test('wiring: MAIN 01 has a decide route and logs every routed run through SUB 1
   assert.deepEqual(next('Route', 2), ['Call SUB 13 Decide']);
   assert.deepEqual(next('Route', 7), ['Respond 400']);
   assert.deepEqual(next('Call SUB 13 Decide'), ['Respond result']);
-  assert.deepEqual(next('Respond result'), ['Log run']);
+  assert.deepEqual(next('Respond result').sort(), ['Log run', 'Ready?']);   // story A5: a ready order is dispatched after the answer
   assert.deepEqual(next('Log run'), ['Call SUB 14 Write logs']);
   assert.equal(byName(wf.main01, 'Call SUB 13 Decide').parameters.workflowId.value, 'SUB13');
   assert.equal(byName(wf.main01, 'Call SUB 14 Write logs').parameters.workflowId.value, 'SUB14');
@@ -146,7 +146,7 @@ test('wiring: MAIN 01 has a decide route and logs every routed run through SUB 1
     const declared = byName(sub, 'Start').parameters.workflowInputs.values.map((v) => v.name).sort();
     assert.deepEqual(Object.keys(byName(wf.main01, call).parameters.workflowInputs.value).sort(), declared);
   }
-  assert.ok(wf.main01.nodes.filter((n) => n.type !== 'n8n-nodes-base.stickyNote').length <= 20);   // rulebook 95.1: aim for 15; split at about 25
+  assert.ok(wf.main01.nodes.filter((n) => n.type !== 'n8n-nodes-base.stickyNote').length <= 22);   // rulebook 95.1: aim for 15; split at about 25
 });
 
 test('wiring: SUB 13 asks Jev only after the guard, Jev failure never stops the rule, then one log write', () => {
@@ -171,7 +171,7 @@ test('wiring: SUB 13 asks Jev only after the guard, Jev failure never stops the 
 test('safety: SUB 13 and SUB 14 only accept MAIN 01, report to ERR 00, and hold no secret', () => {
   for (const sub of [wf.sub13, wf.sub14]) {
     assert.equal(sub.settings.callerPolicy, 'workflowsFromAList');
-    assert.equal(sub.settings.callerIds, 'MAIN1');
+    assert.deepEqual(sub.settings.callerIds.split(',').filter((x) => x !== 'SUB22'), ['MAIN1']);   // SUB 13 is also called by SUB 22, the dispatch (story A5)
     assert.equal(sub.settings.errorWorkflow, 'ALERT1');
   }
   assert.ok(!/sk-or-v1/.test(JSON.stringify(wf)));

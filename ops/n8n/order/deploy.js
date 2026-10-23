@@ -11,8 +11,8 @@ const crypto = require('crypto');
 const { build } = require('./build');
 
 const BASE = 'https://n8n.linkright.in/api/v1';
-const NAMES = { alert: 'GS ERR 00 Alert', sub11: 'GS SUB 11 Place order', sub12: 'GS SUB 12 Change status', sub13: 'GS SUB 13 Decide', sub14: 'GS SUB 14 Write logs', sub15: 'GS SUB 15 Add event', sub16: 'GS SUB 16 Health', sub17: 'GS SUB 17 Feedback', sub18: 'GS SUB 18 Feedback side effects', sub91: 'GS SUB 91 Scorecard numbers', main01: 'GS MAIN 01 Order API', main90: 'GS MAIN 90 Daily scorecard' };
-const ORDER = ['alert', 'sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'sub16', 'sub18', 'sub17', 'sub91', 'main01', 'main90'];
+const NAMES = { alert: 'GS ERR 00 Alert', sub11: 'GS SUB 11 Place order', sub12: 'GS SUB 12 Change status', sub13: 'GS SUB 13 Decide', sub14: 'GS SUB 14 Write logs', sub15: 'GS SUB 15 Add event', sub16: 'GS SUB 16 Health', sub17: 'GS SUB 17 Feedback', sub18: 'GS SUB 18 Feedback side effects', sub19: 'GS SUB 19 Assign rider', sub21: 'GS SUB 21 Dispatch riders', sub22: 'GS SUB 22 Dispatch', sub91: 'GS SUB 91 Scorecard numbers', main01: 'GS MAIN 01 Order API', main90: 'GS MAIN 90 Daily scorecard' };
+const ORDER = ['alert', 'sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'sub16', 'sub18', 'sub17', 'sub19', 'sub21', 'sub22', 'sub91', 'main01', 'main90'];
 // Dev and prod share nothing except the alert workflow and the Jev credential.
 const ENVS = {
   dev: { driveVar: 'GOSERVE_UAT_DRIVE_FOLDER_DEV', urlVar: 'SUPABASE_GOSERVE_DEV_URL', credential: 'GoServe Supabase dev', tokenVar: 'GOSERVE_DEMO_TOKEN', suffix: '' },

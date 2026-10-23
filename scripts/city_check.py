@@ -13,10 +13,29 @@ def uid(prefix: str, i: str) -> str:
     return f"('00000000-0000-4000-8000-{prefix}' || lpad({i}::text, 8, '0'))"
 
 
-def build_sql(kitchens: int, riders: int, customers: int) -> str:
+def build_sql(kitchens: int, riders: int, customers: int, dispatch: bool = False) -> str:
+    # With dispatch, every order goes ready, gets the rider the rule picks (free, fewest trips, nearest; SUB 13) through dispatch_candidates and assign_rider,
+    # and is delivered at once so the rider is free for the next order (the real flow is slower, the rule is the same).
+    dispatch_sql = f"""
+do $$
+declare o record; c jsonb; pick text;
+begin
+  for o in select * from orders where session_id in (select user_id::text from customers where name like 'Customer %') order by created_at loop
+    update orders set status = 'accepted' where id = o.id;
+    update orders set status = 'preparing' where id = o.id;
+    update orders set status = 'ready' where id = o.id;
+    c := dispatch_candidates(o.id) -> 'riders';
+    select r ->> 'id' into pick from jsonb_array_elements(c) r where (r ->> 'free')::boolean order by (r ->> 'trips_done')::int, (r ->> 'distance_m')::int limit 1;
+    if pick is not null then
+      perform assign_rider(o.id, pick::uuid);
+      update orders set status = 'out_for_delivery' where id = o.id;
+      update orders set status = 'delivered' where id = o.id;
+    end if;
+  end loop;
+end $$;""" if dispatch else ""
     return f"""begin;
-insert into kitchens (id, name, pin_codes, open, active)
-  select {uid('000c', 'g')}::uuid, 'city check ' || lpad(g::text, 2, '0'), array[(900000 + g)::text], true, true from generate_series(1, {kitchens}) g;
+insert into kitchens (id, name, pin_codes, open, active, lat, lng)
+  select {uid('000c', 'g')}::uuid, 'city check ' || lpad(g::text, 2, '0'), array[(900000 + g)::text], true, true, 28.5 + g / 100.0, 77.2 from generate_series(1, {kitchens}) g;
 insert into menu_items (id, kitchen_id, name, price_paise)
   select {uid('000d', 'g')}::uuid, {uid('000c', 'g')}::uuid, 'check dish', 10000 from generate_series(1, {kitchens}) g;
 insert into riders (user_id, name, online, lat, lng)
@@ -33,6 +52,7 @@ begin
     perform place_order(c.user_id::text, 'check-' || c.user_id, jsonb_build_array(jsonb_build_object('menu_item_id', d, 'qty', 1)), c.address);   -- the retry
   end loop;
 end $$;
+{dispatch_sql}
 select count(*)::int as orders,
   ({customers} - count(distinct o.session_id))::int as lost,
   (count(*) - count(distinct (o.session_id, o.client_order_key)))::int as duplicates,
@@ -59,7 +79,7 @@ def run(ref: str, query: str):
 if __name__ == "__main__":
     if sys.argv[1:2] != ["dev"]:
         sys.exit("Usage: city_check.py dev [--riders] (prod is never allowed)")
-    row = run(DEV_REF, build_sql(10, 20, 100))[0]
+    row = run(DEV_REF, build_sql(10, 20, 100, dispatch="--riders" in sys.argv))[0]
     print(summary(row))
     ok = passed(row, "--riders" in sys.argv)
     print("OK" if ok else "FAILED")

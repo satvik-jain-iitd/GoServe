@@ -9,6 +9,9 @@ Build code: `ops/n8n/order/build.js`. Tests: `node --test "ops/n8n/order/*.test.
 |---|---|---|---|---|
 | GS ERR 00 Alert | ERR | Sends a Telegram message to the owner when an order workflow fails. | n8n (error workflow of the three below) | Deployed 14 Oct 2026, inactive (id `H9dl1O5HenAQ3sRm`) |
 | GS SUB 13 Decide | SUB | Picks a rider by the rule, asks Jev for a suggestion, writes one `decision_log` row. | MAIN 01 | Deployed 14 Oct 2026, inactive (id `4Qb0pB031ky91IKK`) |
+| GS SUB 19 Assign rider | SUB | Saves the rider on a ready order through `assign_rider` and writes `order.assigned`. | SUB 22 | Built 23 Oct 2026 (A5), not deployed |
+| GS SUB 21 Dispatch riders | SUB | Reads the online riders (distance, trips today, free) through `dispatch_candidates`. Writes nothing. | SUB 22 | Built 23 Oct 2026 (A5), not deployed |
+| GS SUB 22 Dispatch | SUB | A ready order: SUB 21 riders, SUB 13 decide, SUB 19 assign. No rider means Stop and Error, so GS ERR 00 tells the owner. | MAIN 01 | Built 23 Oct 2026 (A5), not deployed |
 | GS SUB 15 Add event | SUB | Writes the rider's `order.arriving` event through `rider_event`; the status stays. | MAIN 01 | Deployed 14 Oct 2026, inactive (id `pH12pWtoV0R2CtjE`) |
 | GS SUB 16 Health | SUB | Asks Jev one tiny question and says if it answered and how fast. Writes nothing. | MAIN 01 | Deployed 14 Oct 2026, inactive (id `waOKwiTQNQWh96EW`) |
 | GS MAIN 90 Daily scorecard | MAIN | Once a day at 21:00 India time: one Telegram message to the owner for the last 24 hours with runs, errors, time, decisions, Jev use and cost. | Schedule | Deployed 14 Oct 2026, inactive (id `odx6zXlMhMh74JLw`) |
@@ -101,6 +104,9 @@ SUB 12 input: `session_id` string, `order_id` string, `to_status` string, `actor
 Output of both: `{ ok, status_code, error?, message?, created?, order? }`.
 
 SUB 13 input: `session_id`, `kitchen_id`, `order_id`, `riders` (1 to 10, unique ids), `params_version`, `jev_enabled`, `jev_model`, `jev_cost_cap`, `kill_switch`, `supabase_url`. Output: `{ ok, status_code, decision?, cost?, error?, message? }`. It writes only one `decision_log` row.
+SUB 19 input: `order_id`, `rider_id`, `kill_switch`, `supabase_url`. Output: `{ ok, status_code, order?, error?, message? }`; 409 `not_ready` or `rider_not_available`. It writes the rider on the order and one `order.assigned` event.
+SUB 21 input: `order_id`, `kill_switch`, `supabase_url`. Output: `{ ok, status_code, riders? }` (each `{ id, free, distance_m, trips_done }`, nearest first, at most ten). It writes nothing.
+SUB 22 input: `session_id`, `kitchen_id`, `order_id`, `params_version`, `jev_enabled`, `jev_model`, `jev_cost_cap`, `kill_switch`, `supabase_url`. MAIN 01 calls it after it has answered a status change to `ready`. It ends in SUB 19, or fails on purpose when no rider is online or the rule picks none.
 SUB 15 input: `session_id`, `order_id`, `event`, `actor`, `kill_switch`, `supabase_url`. Output: `{ ok, status_code, order?, error?, message? }`. It writes only one `order_events` row, through `rider_event`.
 SUB 16 input: `jev_enabled`, `jev_model`. Output: `{ ok, status_code, jev: { ok, status, ms }, cost }`. It writes nothing.
 SUB 14 input: `session_id`, `kitchen_id`, `workflow`, `params_version`, `duration_ms`, `cost`, `error`, `supabase_url`. Output: `{ ok, status_code }`. It writes only one `run_log` row.

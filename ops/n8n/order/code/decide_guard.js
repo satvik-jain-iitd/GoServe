@@ -6,7 +6,7 @@ if (j.kill_switch === true) return refuse(503, 'kill_switch', 'Orders are paused
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const riders = j.riders;
 const ridersOk = Array.isArray(riders) && riders.length >= 1 && riders.length <= 10
-  && riders.every((r) => r && typeof r.id === 'string' && r.id.length > 0 && r.id.length <= 32 && typeof r.free === 'boolean')
+  && riders.every((r) => r && typeof r.id === 'string' && r.id.length > 0 && r.id.length <= 36 && typeof r.free === 'boolean')
   && new Set(riders.map((r) => r.id)).size === riders.length;
 if (!ridersOk || typeof j.session_id !== 'string' || j.session_id.trim() === '' || j.session_id.length > 64
   || !uuid.test(String(j.kitchen_id)) || !uuid.test(String(j.order_id))) {
