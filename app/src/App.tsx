@@ -3,7 +3,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { addDish, cartLines, cartTotal, changeQty, toOrderItems, type Cart } from "./lib/cart";
 import { kitchenOrders, mergeOrder, riderOrders, type Order, type RiderAction } from "./lib/kitchen";
 import { useLiveOrders } from "./lib/useLiveOrders";
-import { loadMenu, type Dish } from "./lib/menu";
+import { loadMenu, MENU_KEY, type Dish } from "./lib/menu";
+import { fetchKitchens, forgetArea, loadPin, resolveArea, savePin, type Area } from "./lib/area";
+import { AreaScreen } from "./screens/AreaScreen";
 import { addEvent, changeStatus, confirmDelivery, orderDeps, placeOrder, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
 import { confirmAt, DEFAULT_CFG, notYet, reaskMs, type ConfirmCfg } from "./lib/confirm";
 import { pushTrail } from "./lib/trail";
@@ -33,6 +35,11 @@ const api = orderDeps;
 // `lock` makes this one of the role apps (story #83): that role only, no role tabs, no demo tools. Without it, this is the demo console.
 export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [menu, setMenu] = useState<{ dishes: Dish[]; fromCache: boolean } | null>(null);
+  // The customer app asks for a pin code and shows the menu of the kitchen that serves it (story B2). The demo console and the other apps keep the plain menu.
+  const [pin, setPin] = useState<string | null>(() => (lock === "customer" ? loadPin() : null));
+  const [area, setArea] = useState<Area | null>(null);
+  const [areaError, setAreaError] = useState<string | null>(null);
+  const [looking, setLooking] = useState(false);
   const [menuError, setMenuError] = useState<string | null>(null);
   // The customer app keeps an unfinished order across a refresh (story B1); the demo console and the other apps start fresh.
   const [draft0] = useState(() => (lock === "customer" ? loadDraft() : null));
@@ -175,8 +182,41 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }, []);
 
   useEffect(() => {
-    loadMenu(fetchMenuRows, window.localStorage).then(setMenu, (e: Error) => setMenuError(e.message));
-  }, []);
+    if (lock !== "customer") return void loadMenu(() => fetchMenuRows(), window.localStorage).then(setMenu, (e: Error) => setMenuError(e.message));
+    if (!pin) return;
+    let alive = true;
+    setLooking(true);
+    setAreaError(null);
+    resolveArea(pin, () => fetchKitchens(getClient()), window.localStorage)
+      .then(async (found) => {
+        if (!alive) return;
+        setArea(found);
+        if (found.kind !== "ok") return;
+        try {
+          const loaded = await loadMenu(() => fetchMenuRows(found.kitchen.id), window.localStorage, `${MENU_KEY}.${found.kitchen.id}`);
+          if (alive) setMenu(loaded);
+        } catch (e) {
+          if (alive) setMenuError((e as Error).message);
+        }
+      }, () => { if (alive) setAreaError("Could not look up kitchens. Connect and try again."); })
+      .finally(() => { if (alive) setLooking(false); });
+    return () => { alive = false; };
+  }, [lock, pin]);
+  function choosePin(p: string) {
+    savePin(p);
+    setArea(null);
+    setMenu(null);
+    setMenuError(null);
+    setPin(p);
+    ensureSession().then((uid) => getClient().from("customers").upsert({ user_id: uid, pin_code: p, updated_at: new Date().toISOString() }, { onConflict: "user_id" })).catch(() => {});
+  }
+  function changeArea() {
+    forgetArea();
+    setPin(null);
+    setArea(null);
+    setMenu(null);
+    setCart({});
+  }
 
   // One tap for the kitchen and the rider: a status step or an event, sent as that role. The answer's updated_at decides which copy is newer.
   // Returns null when it worked, or the error code. The offline demo changes the local copy only and sends nothing.
@@ -328,8 +368,14 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <KitchenScreen orders={kitchenOrders(orders)} loading={live.loading} error={live.error} busyId={busyId}
       onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} />
   );
-  const customerView = (
+  const needArea = lock === "customer" && step !== "placed" && !(pin && area?.kind === "ok");
+  const customerView = needArea ? (
+    <AreaScreen pin={pin} area={area} busy={looking} error={areaError} onPin={choosePin} />
+  ) : (
     <>
+        {lock === "customer" && step === "menu" && area?.kind === "ok" && (
+          <div><h2>{area.kitchen.name}</h2><button type="button" className="btn ghost small" onClick={changeArea}>Change area</button></div>
+        )}
         {menuError && <p role="alert" className="error">{menuError}</p>}
         {!menu && !menuError && <p>Loading the menu…</p>}
         {menu && step === "menu" && (

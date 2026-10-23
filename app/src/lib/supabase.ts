@@ -13,9 +13,11 @@ export const getClient = (): SupabaseClient => {
 
 // Retries are off and the wait is short: with a bad network the saved menu should show in seconds, not after the library's retries.
 const MENU_TIMEOUT_MS = 4000;
-export async function fetchMenuRows(): Promise<Dish[]> {
+export async function fetchMenuRows(kitchenId?: string): Promise<Dish[]> {
   if (navigator.onLine === false) throw new Error("offline");
-  const { data, error } = await getClient().from("menu_items").select("id, name, price_paise, image_url, image_credit").eq("available", true).order("name")
+  let q = getClient().from("menu_items").select("id, name, price_paise, image_url, image_credit").eq("available", true);
+  if (kitchenId) q = q.eq("kitchen_id", kitchenId);
+  const { data, error } = await q.order("name")
     .retry(false).abortSignal(AbortSignal.timeout(MENU_TIMEOUT_MS));
   if (error) throw error;
   return data ?? [];

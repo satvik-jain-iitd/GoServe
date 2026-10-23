@@ -16,9 +16,11 @@ export const decisionOf = (over: object = {}) => ({
   use_case: "D1", rule_pick: "r2", chosen_pick: "r2", chosen_by: "rule", jev_status: "ok", jev: { pick: "r2", confidence: 0.81, agrees: true, ms: 310 }, ...over,
 });
 
-type Calls = { kitchenWrites: { method: string; url: string; body: any }[]; signups: number; status: any[]; decide: any[]; health: any[]; feedback: any[]; confirm: any[]; rpc: { name: string; body: any }[]; orderReads: string[] };
-export async function setup(context: BrowserContext, page: Page, initial: object[] = []) {
-  const calls: Calls = { kitchenWrites: [], signups: 0, status: [], decide: [], health: [], feedback: [], confirm: [], rpc: [], orderReads: [] };
+type Calls = { menuReads: string[]; kitchenWrites: { method: string; url: string; body: any }[]; signups: number; status: any[]; decide: any[]; health: any[]; feedback: any[]; confirm: any[]; rpc: { name: string; body: any }[]; orderReads: string[] };
+// `pin` is the pin code this device already knows (story B2); pass null for a first visit. The test kitchen k-1 serves 110016.
+export async function setup(context: BrowserContext, page: Page, initial: object[] = [], { pin = "110016" as string | null } = {}) {
+  if (pin) await context.addInitScript((p) => { try { if (!window.localStorage.getItem("gs-pin")) window.localStorage.setItem("gs-pin", p); } catch { /* blocked */ } }, pin);
+  const calls: Calls = { menuReads: [], kitchenWrites: [], signups: 0, status: [], decide: [], health: [], feedback: [], confirm: [], rpc: [], orderReads: [] };
   const state = { confirmCfg: { confirm_after_ready_min: 3, confirm_after_place_min: 8 }, confirmDone: false, feedbackDown: false, orders: initial, reply: null as null | { status: number; body: unknown }, menuUp: true, kitchen: null as null | string, admin: false, people: [] as object[], kitchens: [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: true, active: true }] as object[], decisions: [] as object[], runs: [] as object[], runCount: 0 };
   const json = (route: any, status: number, body: unknown) => route.fulfill({ status, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(body) });
   await context.route("https://test.supabase.co/**", async (route) => {
@@ -55,6 +57,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
       calls.orderReads.push(req.url());
       return json(route, 200, state.orders);
     }
+    if (req.url().includes("/rest/v1/menu_items") && req.method() === "GET") calls.menuReads.push(req.url());
     if (req.url().includes("/rest/v1/menu_items") && !state.menuUp) return json(route, 500, {});
     if (req.url().includes("/rest/v1/menu_items")) return json(route, 200, [{ id: "d1", name: "Butter Chicken", price_paise: 32000, image_url: null, image_credit: null }]);
     return json(route, 404, {});

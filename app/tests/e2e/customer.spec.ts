@@ -15,6 +15,7 @@ const ORDER = { id: "0f0f0f0f-1111-4222-8333-444444444444", status: "placed", to
 type Net = { orders: { headers: Record<string, string>; body: any }[]; menuUp: boolean; orderReply: { status: number; body: unknown } };
 
 async function mockNetwork(context: BrowserContext): Promise<Net> {
+  await context.addInitScript(() => { try { window.localStorage.setItem("gs-pin", "110016"); } catch { /* blocked */ } });   // story B2: this device already knows its pin code
   const net: Net = { orders: [], menuUp: true, orderReply: { status: 201, body: { ok: true, created: true, order: ORDER } } };
   const reply = (route: any, status: number, body: unknown) => route.fulfill({ status, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(body) });
   await context.route("https://test.supabase.co/**", async (route) => {
@@ -24,6 +25,7 @@ async function mockNetwork(context: BrowserContext): Promise<Net> {
       return reply(route, 200, { access_token: JWT, token_type: "bearer", expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: "r",
         user: { id: SESSION, aud: "authenticated", role: "authenticated", is_anonymous: true, app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() } });
     }
+    if (req.url().includes("/rest/v1/kitchens")) return reply(route, 200, [{ id: "k-1", name: "Hauz Khas Kitchen", pin_codes: ["110016"], lat: null, lng: null, open: true, active: true }]);
     if (req.url().includes("/rest/v1/menu_items")) return net.menuUp ? reply(route, 200, MENU) : route.abort("internetdisconnected");
     return reply(route, 404, {});
   });
