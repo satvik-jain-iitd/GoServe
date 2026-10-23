@@ -233,3 +233,8 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | My orders lists past orders by what was ordered, with no order id; Sign out calls the auth logout | #159 | S6-S7 | Automatic | `app/tests/e2e/profile.spec.ts` | Pass |
 | Phone rule, estimate (15 min plus 1.5 min a km, minimum 20), order summary, cancelled order is final for the kitchen, rider and resume, draft keeps name and phone | #159 | S1-S5 | Automatic | `app/tests/unit/profile.test.ts`, `app/tests/unit/draft.test.ts` | Pass |
 | place_order copies the customer's saved name, phone and pin code into the order | #159 | S1 | Check | `scripts/check_city_model.py dev` | Pass on dev, 46 of 46 |
+| Admin Orders tab: today's orders of all kitchens with who ordered, filter by kitchen and status, cancel with a required reason (calls cancel_order) | #151 | S1-S2 | Automatic | `app/tests/e2e/admin.spec.ts` | Pass |
+| Admin Numbers tab: one day total and one line per kitchen from the day_numbers view; the Ops app is for admins only and shows the same numbers | #151 | S3-S4 | Automatic | `app/tests/e2e/admin.spec.ts`, `app/tests/e2e/apps.spec.ts` | Pass |
+| The day in India, order filter and sums | #151 | S1-S3 | Automatic | `app/tests/unit/admin.test.ts` | Pass |
+| day_numbers is counted as the caller: admin sees every kitchen, staff their own, a stranger nothing | #151 | S3 | Check | `scripts/check_city_model.py dev` | Pass on dev, 49 of 49 |
+| One city on dev: 10 kitchens, 20 riders, 100 customers order by pin code, each order sent twice: orders=100 lost=0 duplicates=0 wrong_kitchen=0 (unassigned=100 until layer A5) | #151 | S4 | Check | `scripts/city_check.py dev` (rolled back), rules in `scripts/test_city_check.py` | Pass on dev |

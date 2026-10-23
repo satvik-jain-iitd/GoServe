@@ -14,7 +14,8 @@ test("S2 the kitchen app shows only the kitchen: no role tabs, no demo tools, it
 });
 
 test("S2 the rider app, the ops app and the customer app each open on their own screen", async ({ page, context }) => {
-  await setup(context, page, [order("ready")]);
+  const net = await setup(context, page, [order("ready")]);
+  net.state.admin = true;   // the Ops app is for admins only (story A4)
   await page.goto("/rider/");
   await expect(page.getByRole("heading", { name: "Rider", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Pick up 0f0f0f0f" })).toBeVisible();

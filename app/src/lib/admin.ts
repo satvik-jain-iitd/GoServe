@@ -21,6 +21,8 @@ const MESSAGES: Record<string, string> = {
   last_admin: "This is the last admin. Add another admin first.",
   not_allowed: "Not allowed.",
   invalid_kind: "Pick a role, and a kitchen for kitchen staff.",
+  reason_required: "Give a reason for the cancel.",
+  cannot_cancel: "This order can no longer be cancelled.",
 };
 export const adminMessage = (error: { message?: string } | null): string | null =>
   !error ? null : Object.entries(MESSAGES).find(([code]) => error.message?.includes(code))?.[1] ?? "That did not work. Try again.";
@@ -80,3 +82,32 @@ export async function addDish(c: Client & { storage: Store }, d: { kitchenId: st
 }
 export const setDish = async (c: Client, id: string, change: { available?: boolean; price_paise?: number }) => adminMessage((await c.from("menu_items").update(change).eq("id", id)).error);
 export const deleteDish = async (c: Client, id: string) => adminMessage((await c.from("menu_items").delete().eq("id", id)).error);
+
+// Orders and the day's numbers (story A4). "Today" is the day in India, whatever the phone's own clock zone says.
+export type AdminOrder = { id: string; kitchen_id: string; status: string; created_at: string; total_paise: number; items: { name: string; qty: number }[]; address: string; customer_name: string | null; customer_phone: string | null; cancel_reason: string | null };
+export type DayNumbers = { kitchen_id: string; kitchen_name: string; orders: number; delivered: number; cancelled: number; cash_paise: number; day?: string };
+
+export const istDayStart = (now: Date): string => {
+  const IST = 330 * 60 * 1000;   // UTC+5:30, no daylight saving
+  const local = new Date(now.getTime() + IST);
+  local.setUTCHours(0, 0, 0, 0);
+  return new Date(local.getTime() - IST).toISOString();
+};
+export const filterAdminOrders = (orders: AdminOrder[], kitchen: string, status: string): AdminOrder[] =>
+  orders.filter((o) => (!kitchen || o.kitchen_id === kitchen) && (!status || o.status === status));
+export const sumNumbers = (rows: DayNumbers[]) =>
+  rows.reduce((t, r) => ({ orders: t.orders + r.orders, delivered: t.delivered + r.delivered, cancelled: t.cancelled + r.cancelled, cash_paise: t.cash_paise + Number(r.cash_paise) }), { orders: 0, delivered: 0, cancelled: 0, cash_paise: 0 });
+
+export async function listTodayOrders(c: Client): Promise<AdminOrder[]> {
+  const { data, error } = await c.from("orders").select("id, kitchen_id, status, created_at, total_paise, items, address, customer_name, customer_phone, cancel_reason")
+    .gte("created_at", istDayStart(new Date())).order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as AdminOrder[];
+}
+export async function dayNumbers(c: Client): Promise<DayNumbers[]> {
+  const today = new Date(Date.now() + 330 * 60 * 1000).toISOString().slice(0, 10);
+  const { data, error } = await c.from("day_numbers").select("day, kitchen_id, kitchen_name, orders, delivered, cancelled, cash_paise").eq("day", today).order("kitchen_name");
+  if (error) throw error;
+  return (data ?? []) as DayNumbers[];
+}
+export const cancelOrder = async (c: Client, id: string, reason: string) => adminMessage((await c.rpc("cancel_order", { p_order: id, p_reason: reason })).error);
