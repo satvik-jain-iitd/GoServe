@@ -40,7 +40,7 @@ export function Stepper({ label, value, onChange, min = 0, max = 20 }: { label: 
   return (
     <div className="ui-step">
       <button type="button" aria-label={`Less ${label}`} disabled={value <= min} onClick={() => onChange(value - 1)}>−</button>
-      <span aria-live="polite">{value}</span>
+      <span role="status" aria-label={`Quantity of ${label}`}>{value}</span>
       <button type="button" aria-label={`More ${label}`} disabled={value >= max} onClick={() => onChange(value + 1)}>+</button>
     </div>
   );
@@ -50,9 +50,9 @@ export function StickyBar({ children }: { children: ReactNode }) {
   return <div className="ui-sticky">{children}</div>;
 }
 
-export function Timeline({ steps, current }: { steps: string[]; current: number }) {
+export function Timeline({ steps, current, label }: { steps: string[]; current: number; label?: string }) {
   return (
-    <ol className="ui-timeline">
+    <ol className="ui-timeline" aria-label={label}>
       {steps.map((s, i) => (
         <li key={s} className={i < current ? "done" : i === current ? "now" : "next"} aria-current={i === current ? "step" : undefined}>{s}</li>
       ))}

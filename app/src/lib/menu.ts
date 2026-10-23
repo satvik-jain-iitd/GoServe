@@ -1,5 +1,5 @@
 // The menu is read from Supabase and a copy is kept on the phone, so it still shows with the network off (story #48, S2).
-export type Dish = { id: string; name: string; price_paise: number; image_url: string | null; image_credit: string | null };
+export type Dish = { id: string; name: string; price_paise: number; image_url: string | null; image_credit: string | null; veg?: boolean; category?: string | null };
 export type KeyValue = { getItem(key: string): string | null; setItem(key: string, value: string): void };
 
 export const MENU_KEY = "gs.menu.v1";

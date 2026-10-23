@@ -12,7 +12,7 @@ exports[`components (one snapshot each) > S1 Sheet 1`] = `"<div class="ui-sheet-
 
 exports[`components (one snapshot each) > S1 Skeleton 1`] = `"<div class="ui-skel" aria-busy="true" aria-label="Loading"><span style="width:100%"></span><span style="width:85%"></span><span style="width:70%"></span></div>"`;
 
-exports[`components (one snapshot each) > S1 Stepper 1`] = `"<div class="ui-step"><button type="button" aria-label="Less Dal Makhani">−</button><span aria-live="polite">2</span><button type="button" aria-label="More Dal Makhani">+</button></div>"`;
+exports[`components (one snapshot each) > S1 Stepper 1`] = `"<div class="ui-step"><button type="button" aria-label="Less Dal Makhani">−</button><span role="status" aria-label="Quantity of Dal Makhani">2</span><button type="button" aria-label="More Dal Makhani">+</button></div>"`;
 
 exports[`components (one snapshot each) > S1 StickyBar 1`] = `"<div class="ui-sticky"><button type="button" class="ui-btn">View cart</button></div>"`;
 

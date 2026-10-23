@@ -39,7 +39,7 @@ textarea { font: inherit; padding: var(--gs-space-3); border: 1px solid var(--md
 .actions { display: flex; gap: var(--gs-space-3); justify-content: space-between; }
 .total { font-size: var(--gs-text-lg); }
 .note { color: var(--gs-text-muted); font-size: var(--gs-text-sm); }
-.notice { background: var(--md-tertiary-container); padding: var(--gs-space-3); border-radius: var(--gs-radius-m); }
+.notice { background: var(--md-tertiary-container); padding: var(--gs-space-3); border-radius: var(--gs-radius-m); margin: var(--gs-space-3) 0; }
 .error { background: var(--md-error); color: var(--md-on-error); padding: var(--gs-space-3); border-radius: var(--gs-radius-m); }
 
 /* Role switch and kitchen tickets (story #49). */
