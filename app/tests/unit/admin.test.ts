@@ -43,3 +43,35 @@ describe("photoPath", () => {
     expect(photoPath("k-1", "noext", "abc")).toBe("k-1/abc.jpg");
   });
 });
+
+import { filterAdminOrders, istDayStart, sumNumbers, type AdminOrder, type DayNumbers } from "../../src/lib/admin";
+
+describe("istDayStart (story A4)", () => {
+  it("is midnight in India, as a UTC moment", () => {
+    expect(istDayStart(new Date("2026-10-23T10:00:00Z"))).toBe("2026-10-22T18:30:00.000Z");
+    expect(istDayStart(new Date("2026-10-23T19:00:00Z"))).toBe("2026-10-23T18:30:00.000Z");   // 00:30 on 24 Oct in India
+  });
+});
+
+const ord = (id: string, kitchen_id: string, status: string): AdminOrder => ({ id, kitchen_id, status, created_at: "2026-10-23T10:00:00Z", total_paise: 100, items: [], address: "a", customer_name: null, customer_phone: null, cancel_reason: null });
+describe("filterAdminOrders", () => {
+  const list = [ord("a", "k1", "placed"), ord("b", "k2", "delivered"), ord("c", "k1", "cancelled")];
+  it("keeps all when no filter is set", () => {
+    expect(filterAdminOrders(list, "", "").map((o) => o.id)).toEqual(["a", "b", "c"]);
+  });
+  it("filters by kitchen and by status", () => {
+    expect(filterAdminOrders(list, "k1", "").map((o) => o.id)).toEqual(["a", "c"]);
+    expect(filterAdminOrders(list, "", "delivered").map((o) => o.id)).toEqual(["b"]);
+    expect(filterAdminOrders(list, "k1", "cancelled").map((o) => o.id)).toEqual(["c"]);
+  });
+});
+
+describe("sumNumbers", () => {
+  const row = (kitchen_name: string, orders: number, delivered: number, cancelled: number, cash_paise: number): DayNumbers => ({ kitchen_id: kitchen_name, kitchen_name, orders, delivered, cancelled, cash_paise });
+  it("adds the kitchens into one day total", () => {
+    expect(sumNumbers([row("A", 5, 3, 1, 90000), row("B", 2, 2, 0, 40000)])).toEqual({ orders: 7, delivered: 5, cancelled: 1, cash_paise: 130000 });
+  });
+  it("is all zeros for no kitchens", () => {
+    expect(sumNumbers([])).toEqual({ orders: 0, delivered: 0, cancelled: 0, cash_paise: 0 });
+  });
+});

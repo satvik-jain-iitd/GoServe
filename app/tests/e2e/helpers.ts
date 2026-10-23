@@ -21,7 +21,7 @@ type Calls = { customerWrites: { method: string; body: any }[]; menuReads: strin
 export async function setup(context: BrowserContext, page: Page, initial: object[] = [], { pin = "110016" as string | null } = {}) {
   if (pin) await context.addInitScript((p) => { try { if (!window.localStorage.getItem("gs-pin")) window.localStorage.setItem("gs-pin", p); } catch { /* blocked */ } }, pin);
   const calls: Calls = { customerWrites: [], menuReads: [], menuWrites: [], uploads: [], kitchenWrites: [], signups: 0, status: [], decide: [], health: [], feedback: [], confirm: [], rpc: [], orderReads: [] };
-  const state = { confirmCfg: { confirm_after_ready_min: 3, confirm_after_place_min: 8 }, confirmDone: false, feedbackDown: false, orders: initial, reply: null as null | { status: number; body: unknown }, menuUp: true, kitchen: null as null | string, customer: null as null | object, admin: false, people: [] as object[], kitchens: [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: true, active: true }] as object[], decisions: [] as object[], runs: [] as object[], runCount: 0 };
+  const state = { confirmCfg: { confirm_after_ready_min: 3, confirm_after_place_min: 8 }, confirmDone: false, feedbackDown: false, orders: initial, reply: null as null | { status: number; body: unknown }, menuUp: true, kitchen: null as null | string, customer: null as null | object, numbers: [] as object[], admin: false, people: [] as object[], kitchens: [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: true, active: true }] as object[], decisions: [] as object[], runs: [] as object[], runCount: 0 };
   const json = (route: any, status: number, body: unknown) => route.fulfill({ status, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(body) });
   await context.route("https://test.supabase.co/**", async (route) => {
     const req = route.request();
@@ -39,6 +39,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
       if (name === "reset_session") state.orders = [];
       return json(route, 200, name === "reset_session" ? { orders: 1 } : null);
     }
+    if (req.url().includes("/rest/v1/day_numbers")) return json(route, 200, state.numbers);   // A4: the day's numbers
     if (req.url().includes("/rest/v1/customers")) {   // B3: the customer's saved details
       if (req.method() === "GET") return json(route, 200, state.customer ? [state.customer] : []);
       calls.customerWrites.push({ method: req.method(), body: JSON.parse(req.postData() ?? "{}") });

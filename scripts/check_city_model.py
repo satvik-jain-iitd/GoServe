@@ -117,6 +117,13 @@ raises("an admin adds a dish photo", "admin", "insert into storage.objects (buck
 raises("a non-admin cannot add a dish photo", "stranger", "insert into storage.objects (bucket_id, name) values ('menu', 'check/b.png')")
 
 
+# Story A4 (#151): the day's numbers view (security_invoker, so row level security decides what is counted).
+DAY = "(now() at time zone 'Asia/Kolkata')::date"
+true_for("an admin's day numbers count the kitchen's orders and cancels", "admin", f"(select orders = 3 and cancelled = 2 and delivered = 0 from day_numbers where kitchen_id = '{K1}' and day = {DAY})")
+true_for("kitchen staff see the numbers of their own kitchen only", "staff", f"(select count(*) from day_numbers where kitchen_id = '{K1}') = 1 and (select count(*) from day_numbers where kitchen_id = '{K2}') = 0")
+true_for("a stranger counts nothing", "stranger", f"(select count(*) from day_numbers where kitchen_id in ('{K1}', '{K2}')) = 0")
+
+
 def run(ref: str, query: str):
     req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/database/query", data=json.dumps({"query": query}).encode(),
                                  headers={"Authorization": f"Bearer {os.environ['SUPABASE_ACCESS_TOKEN']}", "Content-Type": "application/json", "User-Agent": "goserve-check"})

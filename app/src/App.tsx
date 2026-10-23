@@ -7,6 +7,7 @@ import { loadMenu, MENU_KEY, type Dish } from "./lib/menu";
 import { fetchKitchens, forgetArea, loadPin, resolveArea, savePin, type Area } from "./lib/area";
 import { AreaScreen } from "./screens/AreaScreen";
 import { OrdersScreen } from "./screens/OrdersScreen";
+import { AdminGate } from "./screens/AdminGate";
 import { loadProfile, saveProfile } from "./lib/profile";
 import { addEvent, changeStatus, confirmDelivery, orderDeps, placeOrder, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
 import { confirmAt, DEFAULT_CFG, notYet, reaskMs, type ConfirmCfg } from "./lib/confirm";
@@ -394,6 +395,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     }
   }
 
+  const opsView = (
+    <OpsScreen orders={orders} decisions={demo ? (orders.some((o) => ["ready", "out_for_delivery", "delivered"].includes(o.status)) ? demoDecisions() : []) : ops.decisions} lags={demo ? [800] : live.lags}
+        stats={demo ? { runsToday: 6, lastDecideMs: 310 } : ops.stats} error={demo ? null : ops.error ?? live.error} failed={ops.failed} sample={demo} />
+  );
   const kitchenView = (
     <KitchenScreen orders={kitchenOrders(orders)} loading={live.loading} error={live.error} busyId={busyId}
       onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} />
@@ -449,8 +454,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         <RiderScreen orders={riderOrders(orders)} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
           onAct={(o, a) => act(o, a, "rider")} />
       )}
-      {role === "ops" && <OpsScreen orders={orders} decisions={demo ? (orders.some((o) => ["ready", "out_for_delivery", "delivered"].includes(o.status)) ? demoDecisions() : []) : ops.decisions} lags={demo ? [800] : live.lags}
-        stats={demo ? { runsToday: 6, lastDecideMs: 310 } : ops.stats} error={demo ? null : ops.error ?? live.error} failed={ops.failed} sample={demo} />}
+      {role === "ops" && (lock === "ops" ? <AdminGate>{opsView}</AdminGate> : opsView)}
       {role === "customer" && customerView}
       {role === "admin" && <AdminScreen />}
       <FeedbackSheet role={lock ?? "console"} screen={`${window.location.pathname}${lock ? "" : ` (${role} tab)`}`}
