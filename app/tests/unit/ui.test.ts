@@ -25,6 +25,7 @@ describe("components (one snapshot each)", () => {
   it("S1 Sheet", () => expect(render(h(Sheet, { open: true, title: "Feedback", onClose: () => {} }, "Hello"))).toMatchSnapshot());
   it("S1 Sheet closed renders nothing", () => expect(render(h(Sheet, { open: false, title: "x", onClose: () => {} }, "Hello"))).toBe(""));
   it("S1 Button", () => expect(render(h(Button, { variant: "ghost" }, "Back"))).toMatchSnapshot());
+  it("S1 big Button", () => expect(render(h(Button, { size: "big" }, "Accept"))).toMatchSnapshot());
   it("S1 Empty", () => expect(render(h(Empty, { title: "No orders yet", hint: "Pick a dish." }))).toMatchSnapshot());
   it("S1 Skeleton", () => expect(render(h(Skeleton, { lines: 3 }))).toMatchSnapshot());
 });
@@ -73,6 +74,9 @@ describe("css rules", () => {
       expect(rule, sel).toMatch(/min-height:\s*var\(--gs-tap\)/);
     }
     expect(readFileSync(resolve(__dirname, "../../src/styles/tokens.css"), "utf8")).toMatch(/--gs-tap:\s*2\.75rem/);
+  });
+  it("S3 the big button is at least 56 px for one-thumb staff screens", () => {
+    expect(css).toMatch(/\.ui-btn\.big \{[^}]*min-height:\s*3\.5rem/);
   });
   it("S3 motion is switched off for people who ask for less", () => {
     expect(css).toContain("prefers-reduced-motion");

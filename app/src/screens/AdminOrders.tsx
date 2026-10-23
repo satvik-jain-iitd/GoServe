@@ -4,6 +4,7 @@ import { cancelOrder, filterAdminOrders, listTodayOrders, type AdminOrder, type 
 import { statusLabel } from "../lib/kitchen";
 import { formatRupees } from "../lib/money";
 import { getClient } from "../lib/supabase";
+import { Button } from "../ui";
 
 const time = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true });
 const STATUSES = ["placed", "accepted", "preparing", "ready", "out_for_delivery", "delivered", "cancelled"];
@@ -48,12 +49,12 @@ export function AdminOrders({ kitchens, onError }: { kitchens: KitchenRow[]; onE
             <p className="note">{o.address}</p>
             {o.cancel_reason && <p className="note">Cancelled: {o.cancel_reason}</p>}
             {(o.status === "placed" || o.status === "accepted") && cancelling !== o.id && (
-              <button type="button" className="btn ghost small" aria-label={`Cancel order of ${o.customer_name ?? "customer"}`} onClick={() => { onError(null); setCancelling(o.id); }}>Cancel order</button>
+              <Button variant="ghost" aria-label={`Cancel order of ${o.customer_name ?? "customer"}`} onClick={() => { onError(null); setCancelling(o.id); }}>Cancel order</Button>
             )}
             {cancelling === o.id && (
               <>
                 <label>Reason<input value={reason} onChange={(e) => setReason(e.target.value)} /></label>
-                <button type="button" className="btn small" onClick={() => void confirm(o.id)}>Confirm cancel</button>
+                <Button onClick={() => void confirm(o.id)}>Confirm cancel</Button>
               </>
             )}
           </li>

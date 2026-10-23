@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { listDishes, setDish, type DishRow } from "../lib/admin";
 import { formatRupees } from "../lib/money";
+import { Button } from "../ui";
 import { myKitchen } from "../lib/session";
 import { ensureSession, getClient } from "../lib/supabase";
 
@@ -41,7 +42,7 @@ export function KitchenTools() {
     <section>
       <h2>Your kitchen</h2>
       <p role="status" className="notice">{kitchen.open ? "Kitchen is open" : "Kitchen is closed"}{" "}
-        <button type="button" className="btn small" onClick={() => void flip()}>{kitchen.open ? "Close kitchen" : "Open kitchen"}</button>
+        <Button onClick={() => void flip()}>{kitchen.open ? "Close kitchen" : "Open kitchen"}</Button>
       </p>
       {error && <p role="alert" className="error">{error}</p>}
       <ul className="tickets">
@@ -49,9 +50,9 @@ export function KitchenTools() {
           <li key={d.id} className="ticket">
             <strong>{d.name}</strong> {d.available === false ? <span className="badge">Sold out</span> : null}
             <p className="note">{formatRupees(d.price_paise)}</p>
-            <button type="button" className="btn ghost small" aria-label={d.available === false ? `Put ${d.name} back in stock` : `Mark ${d.name} sold out`} onClick={() => void stock(d)}>
+            <Button variant="ghost" aria-label={d.available === false ? `Put ${d.name} back in stock` : `Mark ${d.name} sold out`} onClick={() => void stock(d)}>
               {d.available === false ? "Back in stock" : "Sold out"}
-            </button>
+            </Button>
           </li>
         ))}
       </ul>

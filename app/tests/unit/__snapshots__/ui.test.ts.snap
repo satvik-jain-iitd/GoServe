@@ -19,3 +19,5 @@ exports[`components (one snapshot each) > S1 StickyBar 1`] = `"<div class="ui-st
 exports[`components (one snapshot each) > S1 Tile 1`] = `"<article class="ui-tile"><img src="/x.png" alt="" loading="lazy"/><div class="ui-tile-body"><h3><span class="ui-dot veg" role="img" aria-label="Veg"></span>Dal Makhani</h3><p class="ui-meta">Hauz Khas Kitchen</p><p class="ui-price">₹220</p></div><div class="ui-tile-act"><button type="button" class="ui-btn">Add</button></div></article>"`;
 
 exports[`components (one snapshot each) > S1 Timeline 1`] = `"<ol class="ui-timeline"><li class="done">Placed</li><li class="now" aria-current="step">Cooking</li><li class="next">Ready</li></ol>"`;
+
+exports[`components (one snapshot each) > S1 big Button 1`] = `"<button type="button" class="ui-btn big">Accept</button>"`;

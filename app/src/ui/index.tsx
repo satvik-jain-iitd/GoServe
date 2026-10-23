@@ -4,8 +4,8 @@ import "./ui.css";
 
 const cx = (...a: (string | false | undefined)[]) => a.filter(Boolean).join(" ");
 
-export function Button({ variant = "primary", className, ...p }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "ghost" }) {
-  return <button type="button" {...p} className={cx("ui-btn", variant === "ghost" && "ghost", className)} />;
+export function Button({ variant = "primary", size, className, ...p }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "ghost"; size?: "big" }) {
+  return <button type="button" {...p} className={cx("ui-btn", variant === "ghost" && "ghost", size === "big" && "big", className)} />;
 }
 
 export function AppBar({ title, onBack, action }: { title: string; onBack?: () => void; action?: ReactNode }) {

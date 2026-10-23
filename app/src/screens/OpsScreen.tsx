@@ -1,4 +1,5 @@
 import { formatMs, median, suggestionText, type DecisionRow } from "../lib/ops";
+import { Empty } from "../ui";
 import { shortId, type Order } from "../lib/kitchen";
 
 type Props = {
@@ -20,7 +21,7 @@ export function OpsScreen({ orders, decisions, lags, stats, error, failed, sampl
     <section>
       <h2>Ops</h2>
       {error && <p role="alert" className="error">{error}</p>}
-      {rows.length === 0 && !error && <p>No ready orders yet.</p>}
+      {rows.length === 0 && !error && <Empty title="No ready orders yet." />}
       <ul className="tickets">
         {rows.map((o) => (
           <li key={o.id} className="ticket">
