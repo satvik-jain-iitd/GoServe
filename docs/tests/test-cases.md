@@ -217,3 +217,5 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | cancel_order: the customer (own order), the kitchen's staff and an admin may cancel a placed or accepted order; others, other kitchens and later states are refused; a reason is required except for the customer; one event is written | #148 | S2 | Check | `scripts/check_city_model.py dev` | Pass on dev |
 | A cancelled order cannot move on; kitchen_staff refuses role rider; 20 orders per session per 24 hours | #148 | S1 | Check | `scripts/check_city_model.py dev` | Pass on dev |
 | add_admin.py: user found by email, a bad email refused before any SQL | #148 | S1 | Automatic | `scripts/test_add_admin.py` | Pass |
+| A refresh on the cart or the bill keeps the screen, the dishes and the address; the tracker resumes the open order; the demo console keeps no draft | #157 | S1-S4 | Automatic | `app/tests/e2e/refresh.spec.ts` | Pass |
+| The draft is saved and loaded; damaged data is ignored; the tracker is saved as the menu | #157 | S1 | Automatic | `app/tests/unit/draft.test.ts` | Pass |
