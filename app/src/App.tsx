@@ -15,6 +15,7 @@ import { CartScreen } from "./screens/CartScreen";
 import { BillScreen } from "./screens/BillScreen";
 import { openOrderToResume } from "./lib/resume";
 import { SignIn } from "./screens/SignIn";
+import { loadDraft, saveDraft } from "./lib/draft";
 import { PlacedScreen } from "./screens/PlacedScreen";
 import { KitchenScreen } from "./screens/KitchenScreen";
 import { RiderScreen } from "./screens/RiderScreen";
@@ -32,9 +33,14 @@ const api = orderDeps;
 export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [menu, setMenu] = useState<{ dishes: Dish[]; fromCache: boolean } | null>(null);
   const [menuError, setMenuError] = useState<string | null>(null);
-  const [step, setStep] = useState<Step>("menu");
-  const [cart, setCart] = useState<Cart>({});
-  const [address, setAddress] = useState("");
+  // The customer app keeps an unfinished order across a refresh (story B1); the demo console and the other apps start fresh.
+  const [draft0] = useState(() => (lock === "customer" ? loadDraft() : null));
+  const [step, setStep] = useState<Step>(draft0?.step ?? "menu");
+  const [cart, setCart] = useState<Cart>(draft0?.cart ?? {});
+  const [address, setAddress] = useState(draft0?.address ?? "");
+  useEffect(() => {
+    if (lock === "customer") saveDraft({ step, cart, address });
+  }, [lock, step, cart, address]);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [placed, setPlaced] = useState<PlacedOrder | null>(null);
