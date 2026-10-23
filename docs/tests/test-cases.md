@@ -213,3 +213,7 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Kitchen phone signed in with the kitchen Google account shows the order placed from the customer phone, no join link | #132 | S1 | Manual | owner, live row | Open |
 | Staff user on /rider/ reads the kitchen's orders; script writes role rider (default kitchen, others refused) | #135 | S1 | Automatic | `app/tests/e2e/kitchen-account.spec.ts`, `scripts/test_add_kitchen_staff.py` | Pass |
 | Rider phone signed in with the rider Google account shows the order placed from the customer phone, no join link | #135 | S1 | Manual | owner, live row | Open |
+| City data model on a real database: staff, admin, rider, customer and stranger read exactly their rows; admin writes the setup tables; a rider and a customer edit only their own row | #148 | S1 | Check | `scripts/check_city_model.py dev` (rolled back) | Pass on dev, 30 of 30 |
+| cancel_order: the customer (own order), the kitchen's staff and an admin may cancel a placed or accepted order; others, other kitchens and later states are refused; a reason is required except for the customer; one event is written | #148 | S2 | Check | `scripts/check_city_model.py dev` | Pass on dev |
+| A cancelled order cannot move on; kitchen_staff refuses role rider; 20 orders per session per 24 hours | #148 | S1 | Check | `scripts/check_city_model.py dev` | Pass on dev |
+| add_admin.py: user found by email, a bad email refused before any SQL | #148 | S1 | Automatic | `scripts/test_add_admin.py` | Pass |
