@@ -219,3 +219,7 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | add_admin.py: user found by email, a bad email refused before any SQL | #148 | S1 | Automatic | `scripts/test_add_admin.py` | Pass |
 | A refresh on the cart or the bill keeps the screen, the dishes and the address; the tracker resumes the open order; the demo console keeps no draft | #157 | S1-S4 | Automatic | `app/tests/e2e/refresh.spec.ts` | Pass |
 | The draft is saved and loaded; damaged data is ignored; the tracker is saved as the menu | #157 | S1 | Automatic | `app/tests/unit/draft.test.ts` | Pass |
+| Admin app `/admin/`: an admin sees the Kitchens and Staff tabs; a non-admin sees "Not allowed" and no tabs; adding a kitchen sends name and pin codes and refuses a bad pin code before sending; adding and removing staff by email with a role | #149 | S1-S4 | Automatic | `app/tests/e2e/admin.spec.ts` | Pass |
+| Pin codes: six digits, separators, repeats dropped, bad entries named | #149 | S3 | Automatic | `app/tests/unit/admin.test.ts` | Pass |
+| The admin app is a fifth role app: address, manifest, title and its own icon | #149 | S1 | Automatic | `app/tests/unit/roles.test.ts`, `app/tests/unit/role-icons.test.ts`, `app/tests/e2e/apps.spec.ts` | Pass |
+| Admin functions on a real database: list people with emails, add by email (kitchen, rider, admin), unknown email, bad kind and a missing kitchen refused, remove, the last admin kept, non-admins refused | #149 | S2-S4 | Check | `scripts/check_city_model.py dev` | Pass on dev, 43 of 43 |

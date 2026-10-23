@@ -5,7 +5,7 @@ Usage: check_city_model.py dev   (needs SUPABASE_ACCESS_TOKEN). Refuses prod."""
 import json, os, sys, urllib.request
 
 DEV_REF = "tmxyizmkpwwfyazvrfhw"
-U = {n: f"00000000-0000-4000-8000-0000000000{i:02x}" for i, n in enumerate(["cust", "other", "staff", "rider", "rider2", "admin", "stranger"], start=1)}
+U = {n: f"00000000-0000-4000-8000-0000000000{i:02x}" for i, n in enumerate(["cust", "other", "staff", "rider", "rider2", "admin", "stranger", "cook", "newrider"], start=1)}
 K1, K2 = "00000000-0000-4000-8000-0000000001a1", "00000000-0000-4000-8000-0000000001a2"
 O = {n: f"00000000-0000-4000-8000-0000000002{i:02x}" for i, n in enumerate(["own", "far", "prep", "kit"], start=1)}
 DISH = "00000000-0000-4000-8000-0000000003a1"
@@ -15,6 +15,7 @@ insert into kitchens (id, name, pin_codes, open, active) values ('{K1}', 'check 
 insert into menu_items (id, kitchen_id, name, price_paise, category, veg, sort) values ('{DISH}', '{K1}', 'check dish', 1000, 'main', true, 1);
 insert into riders (user_id, name, online) values ('{U['rider']}', 'R One', false), ('{U['rider2']}', 'R Two', false);
 insert into admins (user_id) values ('{U['admin']}');
+insert into auth.users (id, email) values ('{U['admin']}', 'founder@check.test'), ('{U['cook']}', 'cook@check.test'), ('{U['newrider']}', 'newrider@check.test'), ('{U['rider2']}', 'rider2@check.test');
 insert into kitchen_staff (kitchen_id, user_id) values ('{K1}', '{U['staff']}');
 insert into customers (user_id, name, phone) values ('{U['cust']}', 'C', '9999999999'), ('{U['other']}', 'O', '8888888888');
 insert into orders (id, kitchen_id, session_id, client_order_key, status, items, total_paise, address, rider_id) values
@@ -89,6 +90,22 @@ do $$ begin begin perform place_order('cap-today', 'new', '[{{"menu_item_id":"{D
 do $$ begin begin perform place_order('cap-old', 'new', '[{{"menu_item_id":"{DISH}","qty":1}}]'::jsonb, 'x'); create temp table cx4 as select true as v; exception when others then create temp table cx4 as select false as v; end; end $$;
 """
 EXTRA_NAMES = ["cancel wrote the status, the default customer reason and one event", "a cancelled order cannot move on", "kitchen_staff refuses role rider (riders live in riders)", "the 21st order of a session today is refused", "orders older than a day do not count to the cap"]
+
+
+# Story A2 (#149): the admin functions of migration 0014.
+true_for("an admin lists the people with their emails", "admin", "(select count(*) from admin_people() where email in ('founder@check.test', 'rider2@check.test')) = 2")
+raises("a non-admin cannot list the people", "stranger", "perform * from admin_people()")
+raises("an admin adds kitchen staff by email", "admin", f"perform admin_add_person('Cook@Check.test', 'kitchen', '{K1}')", expect_ok=True)
+true_for("the added staff row exists for that kitchen", "admin", f"(select count(*) from kitchen_staff where user_id = '{U['cook']}' and kitchen_id = '{K1}') = 1")
+raises("an admin adds a rider by email", "admin", "perform admin_add_person('newrider@check.test', 'rider', null)", expect_ok=True)
+raises("an unknown email is refused", "admin", "perform admin_add_person('nobody@check.test', 'rider', null)")
+raises("a bad kind is refused", "admin", f"perform admin_add_person('cook@check.test', 'boss', '{K1}')")
+raises("kitchen staff needs a kitchen", "admin", "perform admin_add_person('cook@check.test', 'kitchen', null)")
+raises("a non-admin cannot add people", "stranger", "perform admin_add_person('cook@check.test', 'admin', null)")
+raises("an admin removes kitchen staff", "admin", f"perform admin_remove_person('kitchen', '{U['cook']}', '{K1}')", expect_ok=True)
+true_for("the removed staff row is gone", "admin", f"(select count(*) from kitchen_staff where user_id = '{U['cook']}') = 0")
+raises("the last admin cannot be removed", "admin", f"perform admin_remove_person('admin', '{U['admin']}', null)")
+raises("a non-admin cannot remove people", "stranger", f"perform admin_remove_person('rider', '{U['rider']}', null)")
 
 
 def run(ref: str, query: str):
