@@ -128,3 +128,4 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F124 | `release_db.py` refuses a database with tables. Add `--from NNNN` so a later release applies only newer migrations. | Coder | Open |
 | F125 | `DemoBar` and the Feedback button keep the old `.btn` class. Move them to the shared Button. | Coder | Open |
 | F126 | Web push: only the iPhone home-screen app is a live row. Other browsers and per-order opt-out are later. | Coder | Open |
+| F127 | `ci.yml` runs on pull_request only for base main or dev, so a stacked layer gets no CI until it is retargeted (PR #129 needed an empty commit). Add `feat/**` as a base in the next runtime PR. Also: pass `VITE_VAPID_PUBLIC_KEY` to the prod and dev builds in `deploy-app.yml` and `deploy-dev.yml` (secret `PROD_VITE_VAPID_PUBLIC_KEY`). | Coder | Open |
