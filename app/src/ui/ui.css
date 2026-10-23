@@ -50,3 +50,9 @@
 @media (prefers-reduced-motion: reduce) {
   .ui-btn, .ui-chip, .ui-timeline li, .ui-sheet, .ui-skel span { transition: none; animation: none; }
 }
+
+a.ui-btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.ui-search { width: 100%; box-sizing: border-box; min-height: var(--gs-tap); margin-bottom: var(--gs-space-3); padding: 0 var(--gs-space-4); border: 1px solid var(--md-outline); border-radius: var(--gs-radius-pill); background: var(--md-surface); color: var(--md-on-surface); font: inherit; }
+.ui-chips { display: flex; flex-wrap: wrap; gap: var(--gs-space-2); margin-bottom: var(--gs-space-4); }
+.ui-kitchen h2 { margin: 0; }
+.ui-kitchen .ui-meta { margin-bottom: var(--gs-space-3); }

@@ -1,12 +1,13 @@
 import type { Line } from "../lib/cart";
 import { formatRupees } from "../lib/money";
+import { AppBar, Button } from "../ui";
 
 type Props = { lines: Line[]; total: number; address: string; sending: boolean; error: string | null; onBack: () => void; onPlace: () => void };
 
 export function BillScreen({ lines, total, address, sending, error, onBack, onPlace }: Props) {
   return (
     <section>
-      <h2>Your bill</h2>
+      <AppBar title="Your bill" onBack={onBack} />
       <ul className="lines">
         {lines.map(({ dish, qty, line_paise }) => (
           <li key={dish.id} className="line">
@@ -20,8 +21,8 @@ export function BillScreen({ lines, total, address, sending, error, onBack, onPl
       <p className="note">Delivering to: {address}</p>
       {error && <p role="alert" className="error">{error}</p>}
       <div className="actions">
-        <button type="button" className="btn ghost" disabled={sending} onClick={onBack}>Back to cart</button>
-        <button type="button" className="btn" disabled={sending} onClick={onPlace}>Place order (cash on delivery)</button>
+        <Button variant="ghost" disabled={sending} onClick={onBack}>Back to cart</Button>
+        <Button disabled={sending} onClick={onPlace}>Place order (cash on delivery)</Button>
       </div>
     </section>
   );

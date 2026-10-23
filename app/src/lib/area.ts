@@ -1,7 +1,7 @@
 // Pin code to kitchen (story B2). The customer app asks for a pin code once, finds the open kitchen that serves it and shows that kitchen's menu.
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type AreaKitchen = { id: string; name: string; pin_codes: string[]; lat: number | null; lng: number | null; open: boolean; active: boolean; opens_at?: string | null };
+export type AreaKitchen = { id: string; name: string; pin_codes: string[]; lat: number | null; lng: number | null; open: boolean; active: boolean; opens_at?: string | null; closes_at?: string | null };
 export type Area = { kind: "ok"; kitchen: AreaKitchen } | { kind: "closed"; name: string; opens_at: string | null } | { kind: "none" };
 
 export const isPin = (text: string): boolean => /^\d{6}$/.test(text);
@@ -18,12 +18,12 @@ export function chooseKitchen(kitchens: AreaKitchen[], pin: string, from?: { lat
 }
 
 // "10:00:00" becomes "10:00 am" (story A6).
-const clock12 = (t: string): string => {
+export const openingClock = (t: string): string => {
   const [h, m] = t.split(":").map(Number);
   return `${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, "0")} ${h < 12 ? "am" : "pm"}`;
 };
 export const openingText = (name: string, opensAt: string | null): string =>
-  opensAt ? `${name} is closed right now. It opens at ${clock12(opensAt)}.` : `${name} is closed right now. Please try again later.`;
+  opensAt ? `${name} is closed right now. It opens at ${openingClock(opensAt)}.` : `${name} is closed right now. Please try again later.`;
 
 const PIN_KEY = "gs-pin";
 const KITCHEN_KEY = "gs-kitchen";
@@ -43,7 +43,7 @@ export function forgetArea(store: Storage = window.localStorage): void {
 }
 
 export async function fetchKitchens(client: Pick<SupabaseClient, "from">): Promise<AreaKitchen[]> {
-  const { data, error } = await client.from("kitchens").select("id, name, pin_codes, lat, lng, open, active, opens_at");
+  const { data, error } = await client.from("kitchens").select("id, name, pin_codes, lat, lng, open, active, opens_at, closes_at");
   if (error) throw error;
   return (data ?? []) as AreaKitchen[];
 }

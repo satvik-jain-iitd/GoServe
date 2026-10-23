@@ -21,7 +21,7 @@ type Calls = { riderWrites: { method: string; body: any }[]; customerWrites: { m
 export async function setup(context: BrowserContext, page: Page, initial: object[] = [], { pin = "110016" as string | null } = {}) {
   if (pin) await context.addInitScript((p) => { try { if (!window.localStorage.getItem("gs-pin")) window.localStorage.setItem("gs-pin", p); } catch { /* blocked */ } }, pin);
   const calls: Calls = { riderWrites: [], customerWrites: [], menuReads: [], menuWrites: [], uploads: [], kitchenWrites: [], signups: 0, status: [], decide: [], health: [], feedback: [], confirm: [], rpc: [], orderReads: [] };
-  const state = { confirmCfg: { confirm_after_ready_min: 3, confirm_after_place_min: 8 }, confirmDone: false, feedbackDown: false, orders: initial, reply: null as null | { status: number; body: unknown }, menuUp: true, kitchen: null as null | string, rider: { user_id: SESSION, name: "Rider", online: true, lat: null, lng: null } as null | { online: boolean; [k: string]: unknown }, customer: null as null | object, numbers: [] as object[], admin: false, people: [] as object[], kitchens: [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: true, active: true }] as object[], decisions: [] as object[], runs: [] as object[], runCount: 0 };
+  const state = { confirmCfg: { confirm_after_ready_min: 3, confirm_after_place_min: 8 }, confirmDone: false, feedbackDown: false, orders: initial, reply: null as null | { status: number; body: unknown }, menuUp: true, kitchen: null as null | string, rider: { user_id: SESSION, name: "Rider", online: true, lat: null, lng: null } as null | { online: boolean; [k: string]: unknown }, customer: null as null | object, numbers: [] as object[], admin: false, people: [] as object[], kitchens: [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: true, active: true, opens_at: "10:00:00", closes_at: "22:00:00" }] as object[], menu: [{ id: "d1", name: "Butter Chicken", price_paise: 32000, image_url: null, image_credit: null }] as object[], riderCard: null as null | { name: string; phone: string }, decisions: [] as object[], runs: [] as object[], runCount: 0 };
   const json = (route: any, status: number, body: unknown) => route.fulfill({ status, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(body) });
   await context.route("https://test.supabase.co/**", async (route) => {
     const req = route.request();
@@ -36,6 +36,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
       calls.rpc.push({ name, body: JSON.parse(req.postData() ?? "{}") });
       if (name === "is_admin") return json(route, 200, state.admin);   // A2: the admin screen asks once
       if (name === "admin_people") return json(route, 200, state.people);
+      if (name === "order_rider") return json(route, 200, state.riderCard ? [state.riderCard] : []);   // D2: the rider card
       if (name === "reset_session") state.orders = [];
       return json(route, 200, name === "reset_session" ? { orders: 1 } : null);
     }
@@ -77,7 +78,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
       return route.fulfill({ status: 201, headers: CORS, body: "" });
     }
     if (req.url().includes("/rest/v1/menu_items") && !state.menuUp) return json(route, 500, {});
-    if (req.url().includes("/rest/v1/menu_items")) return json(route, 200, [{ id: "d1", name: "Butter Chicken", price_paise: 32000, image_url: null, image_credit: null }]);
+    if (req.url().includes("/rest/v1/menu_items")) return json(route, 200, state.menu);
     return json(route, 404, {});
   });
   await context.route("https://test.supabase.co/storage/v1/object/**", async (route) => {   // A3: photo upload

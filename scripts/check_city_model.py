@@ -189,6 +189,26 @@ raises("a customer cannot call the service-only push_targets", "cust", f"perform
 raises("a customer cannot call push_forget", "cust", f"perform push_forget('{EP}')")
 
 
+# Story D2 (#161): the rider card. Only the owner of an order sees its rider, and only while the order is ready or on the way.
+def _as(uid: str, i: int, expr: str) -> str:
+    return f"set local role authenticated; select set_config('request.jwt.claim.sub', '{uid}', true); create temp table dr{i} as select ({expr}) as v; reset role;"
+RIDER_CARD = f"""
+update riders set name = 'Ravi Kumar', phone = '9876500000' where user_id = '{U['rider']}';
+insert into orders (id, kitchen_id, session_id, client_order_key, status, items, total_paise, address, rider_id) values ('00000000-0000-4000-8000-0000000002e2', '{K1}', '{U['cust']}', 'k-rc', 'preparing', '[]', 100, 'x', '{U['rider']}');
+{_as(U['cust'], 0, f"(select count(*) from order_rider('00000000-0000-4000-8000-0000000002e2')) = 0")}
+update orders set status = 'ready' where id = '00000000-0000-4000-8000-0000000002e2';
+{_as(U['cust'], 1, f"(select name = 'Ravi' and phone = '9876500000' from order_rider('00000000-0000-4000-8000-0000000002e2'))")}
+{_as(U['other'], 2, f"(select count(*) from order_rider('00000000-0000-4000-8000-0000000002e2')) = 0")}
+{_as(U['stranger'], 3, f"(select count(*) from order_rider('00000000-0000-4000-8000-0000000002e2')) = 0")}
+update orders set status = 'out_for_delivery' where id = '00000000-0000-4000-8000-0000000002e2';
+{_as(U['cust'], 4, f"(select count(*) from order_rider('00000000-0000-4000-8000-0000000002e2')) = 1")}
+update orders set status = 'delivered' where id = '00000000-0000-4000-8000-0000000002e2';
+{_as(U['cust'], 5, f"(select count(*) from order_rider('00000000-0000-4000-8000-0000000002e2')) = 0")}
+"""
+RIDER_NAMES = ["rider card: nothing while the order is still being cooked", "rider card: the owner sees the first name and the phone once the order is ready", "rider card: another customer sees nothing",
+               "rider card: a stranger sees nothing", "rider card: still there while the order is on the way", "rider card: gone once the order is delivered"]
+
+
 def run(ref: str, query: str):
     req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/database/query", data=json.dumps({"query": query}).encode(),
                                  headers={"Authorization": f"Bearer {os.environ['SUPABASE_ACCESS_TOKEN']}", "Content-Type": "application/json", "User-Agent": "goserve-check"})
@@ -196,16 +216,16 @@ def run(ref: str, query: str):
 
 
 def build() -> str:
-    selects = [f"select 'c{i}' as k, v from c{i}" for i in range(len(checks))] + [f"select 'cx{j}' as k, v from cx{j}" for j in range(len(EXTRA_NAMES))] + [f"select 'dx{j}' as k, v from dx{j}" for j in range(len(DISPATCH_NAMES))]
-    return "\n".join(["begin;", SETUP, *[sql for _, sql in checks], FINAL_EXTRA, DISPATCH, " union all ".join(selects) + ";", "rollback;"])
+    selects = [f"select 'c{i}' as k, v from c{i}" for i in range(len(checks))] + [f"select 'cx{j}' as k, v from cx{j}" for j in range(len(EXTRA_NAMES))] + [f"select 'dx{j}' as k, v from dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"select 'dr{j}' as k, v from dr{j}" for j in range(len(RIDER_NAMES))]
+    return "\n".join(["begin;", SETUP, *[sql for _, sql in checks], FINAL_EXTRA, DISPATCH, RIDER_CARD, " union all ".join(selects) + ";", "rollback;"])
 
 
 if __name__ == "__main__":
     if sys.argv[1:] != ["dev"]:
         sys.exit("Usage: check_city_model.py dev (prod is never allowed)")
     rows = {r["k"]: r["v"] for r in run(DEV_REF, build())}
-    names = [n for n, _ in checks] + EXTRA_NAMES + DISPATCH_NAMES
-    keys = [f"c{i}" for i in range(len(checks))] + [f"cx{j}" for j in range(len(EXTRA_NAMES))] + [f"dx{j}" for j in range(len(DISPATCH_NAMES))]
+    names = [n for n, _ in checks] + EXTRA_NAMES + DISPATCH_NAMES + RIDER_NAMES
+    keys = [f"c{i}" for i in range(len(checks))] + [f"cx{j}" for j in range(len(EXTRA_NAMES))] + [f"dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"dr{j}" for j in range(len(RIDER_NAMES))]
     bad = 0
     for n, k in zip(names, keys):
         ok = rows.get(k) is True
