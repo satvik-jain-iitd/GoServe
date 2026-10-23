@@ -49,7 +49,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [demo, setDemo] = useState(false);
   const [autoNote, setAutoNote] = useState<string | null>(null);
   const [resumed, setResumed] = useState(false);   // only the customer app (not the demo console) looks once, at load, for an order that is still open
-  const live = useLiveOrders(ready && !demo && (auto || role === "kitchen" || role === "rider" || role === "split" || role === "ops" || (role === "customer" && (step === "placed" || (lock === "customer" && !resumed)))), lock === "kitchen");
+  const live = useLiveOrders(ready && !demo && (auto || role === "kitchen" || role === "rider" || role === "split" || role === "ops" || (role === "customer" && (step === "placed" || (lock === "customer" && !resumed)))), lock === "kitchen" || lock === "rider");
   const { orders, setOrders } = live;
   const sawLoading = useRef(false);
   useEffect(() => {

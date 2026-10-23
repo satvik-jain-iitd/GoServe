@@ -4,7 +4,7 @@
 
 Proposed (story #52). The owner accepts it by merging the pull request.
 
-**Superseded for the kitchen by S-M5 (#132, 23 Oct 2026):** a kitchen worker signs in with Google and is listed in `kitchen_staff`; they read every order of the kitchen with no join link (migration 0011). The join link stays for the rider and ops apps until their stories.
+**Superseded for the kitchen by S-M5 (#132, 23 Oct 2026):** a kitchen worker signs in with Google and is listed in `kitchen_staff`; they read every order of the kitchen with no join link (migration 0011). The join link stays for the ops app until its story. The rider app follows the same rule (S-M6, #135).
 
 ## Date
 

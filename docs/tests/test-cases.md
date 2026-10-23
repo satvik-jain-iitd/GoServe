@@ -211,3 +211,5 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Policies on the real database: staff reads the kitchen's order and only their own staff row; a non-staff user reads zero (rolled back) | #132 | S1 | Check | `scripts/check_kitchen_staff.py dev` | Pass on dev, 23 Oct 2026 |
 | Staff SQL: user found by email, a bad email or kitchen id refused | #132 | S1 | Automatic | `scripts/test_add_kitchen_staff.py` | Pass |
 | Kitchen phone signed in with the kitchen Google account shows the order placed from the customer phone, no join link | #132 | S1 | Manual | owner, live row | Open |
+| Staff user on /rider/ reads the kitchen's orders; script writes role rider (default kitchen, others refused) | #135 | S1 | Automatic | `app/tests/e2e/kitchen-account.spec.ts`, `scripts/test_add_kitchen_staff.py` | Pass |
+| Rider phone signed in with the rider Google account shows the order placed from the customer phone, no join link | #135 | S1 | Manual | owner, live row | Open |

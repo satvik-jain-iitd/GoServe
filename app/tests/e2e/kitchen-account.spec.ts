@@ -38,3 +38,11 @@ test("S4 the kitchen, rider and ops apps start a Google sign-in, not a link", as
   await expect(page).toHaveURL(/\/auth\/v1\/authorize\?.*provider=google/);
   expect(hits).not.toContain("/auth/v1/user/identities/authorize");
 });
+
+test("S5 a staff user on /rider/ reads the orders of the kitchen too (story #135)", async ({ page, context }) => {
+  const net = await setup(context, page, [{ ...order("ready"), session_id: "7e57ab1e-0000-4000-8000-0000000000c3", kitchen_id: "k-1" }]);
+  net.state.kitchen = "k-1";
+  await page.goto("/rider/");
+  await expect(page.getByRole("button", { name: "Pick up 0f0f0f0f" })).toBeVisible();
+  expect(net.calls.orderReads.some((u) => u.includes("kitchen_id=eq.k-1"))).toBe(true);
+});
