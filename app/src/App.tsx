@@ -6,6 +6,8 @@ import { useLiveOrders } from "./lib/useLiveOrders";
 import { loadMenu, MENU_KEY, type Dish } from "./lib/menu";
 import { fetchKitchens, forgetArea, loadPin, resolveArea, savePin, type Area } from "./lib/area";
 import { AreaScreen } from "./screens/AreaScreen";
+import { OrdersScreen } from "./screens/OrdersScreen";
+import { loadProfile, saveProfile } from "./lib/profile";
 import { addEvent, changeStatus, confirmDelivery, orderDeps, placeOrder, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
 import { confirmAt, DEFAULT_CFG, notYet, reaskMs, type ConfirmCfg } from "./lib/confirm";
 import { pushTrail } from "./lib/trail";
@@ -27,7 +29,7 @@ import { OpsScreen } from "./screens/OpsScreen";
 import { DemoBar } from "./screens/DemoBar";
 import { AUTOPILOT_MS, demoDecisions, demoOrder, nextAutoAction } from "./lib/autopilot";
 
-type Step = "menu" | "cart" | "bill" | "placed";
+type Step = "menu" | "cart" | "bill" | "placed" | "orders";
 type Role = "customer" | "kitchen" | "rider" | "split" | "ops" | "admin";
 
 const api = orderDeps;
@@ -43,12 +45,24 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [menuError, setMenuError] = useState<string | null>(null);
   // The customer app keeps an unfinished order across a refresh (story B1); the demo console and the other apps start fresh.
   const [draft0] = useState(() => (lock === "customer" ? loadDraft() : null));
-  const [step, setStep] = useState<Step>(draft0?.step ?? "menu");
+  const [step, setStep] = useState<Step>(draft0 && draft0.step !== "placed" && draft0.step !== "orders" ? draft0.step : "menu");
   const [cart, setCart] = useState<Cart>(draft0?.cart ?? {});
   const [address, setAddress] = useState(draft0?.address ?? "");
+  const [name, setName] = useState(draft0?.name ?? "");
+  const [phone, setPhone] = useState(draft0?.phone ?? "");
   useEffect(() => {
-    if (lock === "customer") saveDraft({ step, cart, address });
-  }, [lock, step, cart, address]);
+    if (lock === "customer") saveDraft({ step, cart, address, name, phone });
+  }, [lock, step, cart, address, name, phone]);
+  // Saved details come back on the next visit (story B3); what the customer already typed this time is kept.
+  useEffect(() => {
+    if (lock !== "customer") return;
+    ensureSession().then(() => loadProfile(getClient())).then((p) => {
+      if (!p) return;
+      setName((v) => v || p.name);
+      setPhone((v) => v || p.phone);
+      setAddress((v) => v || p.address);
+    }).catch(() => {});
+  }, [lock]);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [placed, setPlaced] = useState<PlacedOrder | null>(null);
@@ -63,7 +77,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [demo, setDemo] = useState(false);
   const [autoNote, setAutoNote] = useState<string | null>(null);
   const [resumed, setResumed] = useState(false);   // only the customer app (not the demo console) looks once, at load, for an order that is still open
-  const live = useLiveOrders(ready && !demo && (auto || role === "kitchen" || role === "rider" || role === "split" || role === "ops" || (role === "customer" && (step === "placed" || (lock === "customer" && !resumed)))), lock === "kitchen" || lock === "rider");
+  const live = useLiveOrders(ready && !demo && (auto || role === "kitchen" || role === "rider" || role === "split" || role === "ops" || (role === "customer" && (step === "placed" || step === "orders" || (lock === "customer" && !resumed)))), lock === "kitchen" || lock === "rider");
   const { orders, setOrders } = live;
   const sawLoading = useRef(false);
   useEffect(() => {
@@ -333,6 +347,18 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const total = cartTotal(lines);
   const count = lines.reduce((n, l) => n + l.qty, 0);
 
+  const [cancelling, setCancelling] = useState(false);
+  // The customer cancels while the order is still placed (story B3). The database checks the rule; the live list brings the new status.
+  async function cancelOrder() {
+    if (!placed) return;
+    setCancelling(true);
+    setConfirmError(null);
+    const { data, error: failed } = await getClient().rpc("cancel_order", { p_order: placed.id, p_reason: null });
+    if (failed) setConfirmError("This order can no longer be cancelled.");
+    else if (data?.order) setOrders((cur) => mergeOrder(cur, data.order as Order));
+    setCancelling(false);
+  }
+
   async function place() {
     pushTrail("place order");
     setSending(true);
@@ -342,6 +368,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       const fingerprint = JSON.stringify([items, address.trim()]);
       if (keyRef.current?.fingerprint !== fingerprint) keyRef.current = { fingerprint, key: crypto.randomUUID() };
       const sessionId = await currentSession();
+      if (lock === "customer" && !(await saveProfile(getClient(), await ensureSession(), { name, phone, address, pin }))) {   // the kitchen and the rider need the name and phone; place_order copies them
+        setError("Could not save your details. Try again.");
+        return;
+      }
       const { order, confirm } = await placeOrder(
         { sessionId, key: keyRef.current.key, items, address: address.trim() },
         api(),
@@ -368,13 +398,13 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <KitchenScreen orders={kitchenOrders(orders)} loading={live.loading} error={live.error} busyId={busyId}
       onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} />
   );
-  const needArea = lock === "customer" && step !== "placed" && !(pin && area?.kind === "ok");
+  const needArea = lock === "customer" && step !== "placed" && step !== "orders" && !(pin && area?.kind === "ok");
   const customerView = needArea ? (
     <AreaScreen pin={pin} area={area} busy={looking} error={areaError} onPin={choosePin} />
   ) : (
     <>
         {lock === "customer" && step === "menu" && area?.kind === "ok" && (
-          <div><h2>{area.kitchen.name}</h2><button type="button" className="btn ghost small" onClick={changeArea}>Change area</button></div>
+          <div><h2>{area.kitchen.name}</h2><button type="button" className="btn ghost small" onClick={changeArea}>Change area</button> <button type="button" className="btn ghost small" onClick={() => setStep("orders")}>My orders</button></div>
         )}
         {menuError && <p role="alert" className="error">{menuError}</p>}
         {!menu && !menuError && <p>Loading the menu…</p>}
@@ -382,8 +412,9 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
           <MenuScreen dishes={menu.dishes} fromCache={menu.fromCache} cartCount={count}
             onAdd={(id) => setCart((c) => addDish(c, id))} onOpenCart={() => setStep("cart")} />
         )}
+        {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} onBack={() => setStep("menu")} />}
         {menu && step === "cart" && (
-          <CartScreen lines={lines} address={address} onAddress={setAddress} onChange={(id, d) => setCart((c) => changeQty(c, id, d))}
+          <CartScreen lines={lines} address={address} onAddress={setAddress} details={lock === "customer" ? { name, phone, onName: setName, onPhone: setPhone } : undefined} onChange={(id, d) => setCart((c) => changeQty(c, id, d))}
             onBack={() => setStep("menu")} onReview={() => { setError(null); setStep("bill"); }} />
         )}
         {menu && step === "bill" && (
@@ -394,7 +425,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
           <PlacedScreen order={placed} status={tracked?.status ?? placed.status} paidBy={tracked?.paid_by ?? null}
             confirmedAt={tracked && tracked.status === "delivered" ? tracked.updated_at : null}
             asking={asking} busy={confirming} error={confirmError} reminder={reminder}
-            onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} onAgain={() => { setPlaced(null); setStep("menu"); }} />
+            onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} onAgain={() => { setPlaced(null); setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} />
         )}
     </>
   );

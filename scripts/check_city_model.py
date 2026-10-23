@@ -88,8 +88,12 @@ insert into orders (kitchen_id, session_id, client_order_key, items, total_paise
   select '{K1}', 'cap-old', 'k' || g, '[]', 100, 'x', now() - interval '2 days' from generate_series(1, 20) g;
 do $$ begin begin perform place_order('cap-today', 'new', '[{{"menu_item_id":"{DISH}","qty":1}}]'::jsonb, 'x'); create temp table cx3 as select false as v; exception when others then create temp table cx3 as select (sqlerrm like '%session_order_cap%') as v; end; end $$;
 do $$ begin begin perform place_order('cap-old', 'new', '[{{"menu_item_id":"{DISH}","qty":1}}]'::jsonb, 'x'); create temp table cx4 as select true as v; exception when others then create temp table cx4 as select false as v; end; end $$;
+
+insert into customers (user_id, name, phone, pin_code) values ('{U['stranger']}', 'Asha', '9876543210', '110016') on conflict (user_id) do update set name = 'Asha', phone = '9876543210', pin_code = '110016';
+do $$ begin perform place_order('{U['stranger']}', 'contact-1', '[{{"menu_item_id":"{DISH}","qty":1}}]'::jsonb, 'Flat 4'); end $$;
+create temp table cx5 as select (select customer_name || '/' || customer_phone || '/' || pin_code from orders where session_id = '{U['stranger']}' and client_order_key = 'contact-1') = 'Asha/9876543210/110016' as v;
 """
-EXTRA_NAMES = ["cancel wrote the status, the default customer reason and one event", "a cancelled order cannot move on", "kitchen_staff refuses role rider (riders live in riders)", "the 21st order of a session today is refused", "orders older than a day do not count to the cap"]
+EXTRA_NAMES = ["cancel wrote the status, the default customer reason and one event", "a cancelled order cannot move on", "kitchen_staff refuses role rider (riders live in riders)", "the 21st order of a session today is refused", "orders older than a day do not count to the cap", "place_order copies the customer's name, phone and pin code into the order"]
 
 
 # Story A2 (#149): the admin functions of migration 0014.

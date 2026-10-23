@@ -15,7 +15,11 @@ export function SignIn({ mode = "link" }: { mode?: "link" | "signin" }) {
       .catch(() => {});
     return () => { alive = false; };
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
-  if (name) return <p className="notice" data-testid="signed-in">Signed in as {name}</p>;
+  if (name) return (
+    <p className="notice"><span data-testid="signed-in">Signed in as {name}</span>{" "}
+      <button type="button" className="btn ghost small" onClick={async () => { await getClient().auth.signOut(); window.location.reload(); }}>Sign out</button>
+    </p>
+  );
   return (
     <div>
       <button type="button" className="btn ghost small" data-testid="google-signin"
