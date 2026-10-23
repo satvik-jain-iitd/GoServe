@@ -7,7 +7,7 @@ const path = require('path');
 const { build } = require('./build');
 const { checkLayout } = require('../lib/layout_checks');
 
-const IDS = { main01: 'MAIN1', sub11: 'SUB11', sub12: 'SUB12', sub13: 'SUB13', sub15: 'SUB15', sub19: 'SUB19', sub21: 'SUB21', sub22: 'SUB22', alert: 'ALERT1' };
+const IDS = { main01: 'MAIN1', sub11: 'SUB11', sub12: 'SUB12', sub13: 'SUB13', sub15: 'SUB15', sub19: 'SUB19', sub20: 'SUB20', sub21: 'SUB21', sub22: 'SUB22', alert: 'ALERT1' };
 const wf = build({ ids: IDS });
 const src = (file) => fs.readFileSync(path.join(__dirname, 'code', file), 'utf8');
 // $input is the item that arrives; $ looks a node up by name, as n8n does.
@@ -65,12 +65,12 @@ test('S3 prepare assign: the rule pick is assigned; "none" is not', () => {
 });
 
 test('wiring: MAIN 01 answers first, then dispatches a ready order through SUB 22', () => {
-  assert.deepEqual(next(wf.main01, 'Respond result').sort(), ['Log run', 'Ready?']);
+  assert.deepEqual(next(wf.main01, 'Respond result').sort(), ['Log run', 'Push?', 'Ready?']);
   assert.deepEqual(next(wf.main01, 'Ready?', 0), ['Call SUB 22 Dispatch']);
   assert.equal(next(wf.main01, 'Ready?', 1).length, 0);
   assert.equal(byName(wf.main01, 'Call SUB 22 Dispatch').parameters.workflowId.value, 'SUB22');
   assert.match(byName(wf.main01, 'Ready?').parameters.conditions.conditions[0].leftValue, /status === 'ready'/);
-  assert.ok(wf.main01.nodes.filter((n) => n.type !== 'n8n-nodes-base.stickyNote').length <= 22);
+  assert.ok(wf.main01.nodes.filter((n) => n.type !== 'n8n-nodes-base.stickyNote').length <= 24);
 });
 
 test('wiring: SUB 22 asks for riders, decides, assigns once; no rider and no pick stop with an error', () => {

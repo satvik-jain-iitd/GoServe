@@ -10,6 +10,7 @@ import { OrdersScreen } from "./screens/OrdersScreen";
 import { AdminGate } from "./screens/AdminGate";
 import { RiderGate } from "./screens/RiderGate";
 import { KitchenTools } from "./screens/KitchenTools";
+import { enablePush } from "./lib/push";
 import { loadProfile, saveProfile } from "./lib/profile";
 import { addEvent, changeStatus, confirmDelivery, orderDeps, placeOrder, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
 import { confirmAt, DEFAULT_CFG, notYet, reaskMs, type ConfirmCfg } from "./lib/confirm";
@@ -150,8 +151,19 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       navigator.serviceWorker?.ready.then((r) => r.showNotification("Was your order delivered?")).catch(() => undefined);
     }
   }
+  // One tap allows the local reminder and, where the phone can, the web push (story A7), so the customer hears about placed, ready and delivered with the app closed.
   function allowReminder() {
-    Notification.requestPermission().then((p) => setReminder(p === "granted" ? "on" : "none"), () => setReminder("none"));
+    void enablePush({
+      vapidKey: import.meta.env.VITE_VAPID_PUBLIC_KEY ?? "",
+      supported: () => "serviceWorker" in navigator && "PushManager" in window,
+      permission: () => Notification.requestPermission(),
+      subscribe: async (key) => (await (await navigator.serviceWorker.ready).pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key as BufferSource })),
+      save: async (payload) => (await getClient().rpc("save_push", payload)).error?.message ?? null,
+    }).then((r) => {
+      if (r === "denied") return setReminder("none");
+      if (r === "unsupported" || r === "not_set_up") return void Notification.requestPermission().then((p) => setReminder(p === "granted" ? "on" : "none"), () => setReminder("none"));
+      setReminder("on");   // on, or failed to save: the permission is given, the local reminder still works
+    });
   }
   async function yes() {
     if (!placed) return;

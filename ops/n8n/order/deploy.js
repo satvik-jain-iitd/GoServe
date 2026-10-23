@@ -11,8 +11,8 @@ const crypto = require('crypto');
 const { build } = require('./build');
 
 const BASE = 'https://n8n.linkright.in/api/v1';
-const NAMES = { alert: 'GS ERR 00 Alert', sub11: 'GS SUB 11 Place order', sub12: 'GS SUB 12 Change status', sub13: 'GS SUB 13 Decide', sub14: 'GS SUB 14 Write logs', sub15: 'GS SUB 15 Add event', sub16: 'GS SUB 16 Health', sub17: 'GS SUB 17 Feedback', sub18: 'GS SUB 18 Feedback side effects', sub19: 'GS SUB 19 Assign rider', sub21: 'GS SUB 21 Dispatch riders', sub22: 'GS SUB 22 Dispatch', sub91: 'GS SUB 91 Scorecard numbers', main01: 'GS MAIN 01 Order API', main90: 'GS MAIN 90 Daily scorecard' };
-const ORDER = ['alert', 'sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'sub16', 'sub18', 'sub17', 'sub19', 'sub21', 'sub22', 'sub91', 'main01', 'main90'];
+const NAMES = { alert: 'GS ERR 00 Alert', sub11: 'GS SUB 11 Place order', sub12: 'GS SUB 12 Change status', sub13: 'GS SUB 13 Decide', sub14: 'GS SUB 14 Write logs', sub15: 'GS SUB 15 Add event', sub16: 'GS SUB 16 Health', sub17: 'GS SUB 17 Feedback', sub18: 'GS SUB 18 Feedback side effects', sub19: 'GS SUB 19 Assign rider', sub20: 'GS SUB 20 Push', sub21: 'GS SUB 21 Dispatch riders', sub22: 'GS SUB 22 Dispatch', sub91: 'GS SUB 91 Scorecard numbers', main01: 'GS MAIN 01 Order API', main90: 'GS MAIN 90 Daily scorecard' };
+const ORDER = ['alert', 'sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'sub16', 'sub18', 'sub17', 'sub19', 'sub20', 'sub21', 'sub22', 'sub91', 'main01', 'main90'];
 // Dev and prod share nothing except the alert workflow and the Jev credential.
 const ENVS = {
   dev: { driveVar: 'GOSERVE_UAT_DRIVE_FOLDER_DEV', urlVar: 'SUPABASE_GOSERVE_DEV_URL', credential: 'GoServe Supabase dev', tokenVar: 'GOSERVE_DEMO_TOKEN', suffix: '' },
@@ -21,6 +21,7 @@ const ENVS = {
 const orderFor = (env) => (env === 'prod' ? ORDER.filter((k) => k !== 'alert') : ORDER);
 const namesFor = (env) => Object.fromEntries(orderFor(env).map((k) => [k, NAMES[k] + ENVS[env || 'dev'].suffix]));
 const JEV_CREDENTIAL = 'GoServe OpenRouter';
+const VAPID_CREDENTIAL = 'GoServe VAPID';   // JWT Auth (ES256) holding the VAPID private key; created by the owner's yes, never by this script
 
 // PUT /workflows/{id} accepts only these keys (rulebook 113).
 const payload = (w) => ({ name: w.name, nodes: w.nodes, connections: w.connections, settings: w.settings });
@@ -46,6 +47,7 @@ async function main() {
   const creds = (await call('GET', '/credentials?limit=250')).data;
   const credential = creds.find((c) => c.name === E.credential);
   if (!credential) throw new Error('credential "' + E.credential + '" not found');
+  const vapidCredential = creds.find((c) => c.name === VAPID_CREDENTIAL);
   const jevCredential = creds.find((c) => c.name === JEV_CREDENTIAL);   // needs the owner's yes; the apply refuses without it
   const ids = {};
   const wasActive = {};
@@ -62,9 +64,10 @@ async function main() {
   }
   console.log('Plan (' + env + ', ' + (apply ? 'APPLY' : 'dry run') + '):');
   for (const k of ORD) console.log('  ' + NM[k].padEnd(30) + (ids[k] ? 'update ' + ids[k] : 'create'));
-  console.log('  credential "' + E.credential + '" ' + credential.id + '; "' + JEV_CREDENTIAL + '" ' + (jevCredential ? jevCredential.id : 'MISSING (apply will refuse)') + '; nothing is activated.');
+  console.log('  credential "' + E.credential + '" ' + credential.id + '; "' + JEV_CREDENTIAL + '" ' + (jevCredential ? jevCredential.id : 'MISSING (apply will refuse)') + '; "' + VAPID_CREDENTIAL + '" ' + (vapidCredential ? vapidCredential.id : 'MISSING (apply will refuse)') + '; nothing is activated.');
   if (!apply) return;
 
+  if (!vapidCredential) throw new Error('credential "' + VAPID_CREDENTIAL + '" not found: ask the owner for "yes vapid"');
   if (!jevCredential) throw new Error('credential "' + JEV_CREDENTIAL + '" not found: ask the owner for a yes to create it');
   let token = vault('04_integrations.env', E.tokenVar);
   if (!token) {   // saved to the vault at once (rule A6)
@@ -75,7 +78,7 @@ async function main() {
   for (const k of ORD) {   // shells first, so every workflow knows the others' ids
     if (!ids[k]) ids[k] = (await call('POST', '/workflows', { name: NM[k], nodes: [{ id: 'shell', name: 'Shell', type: 'n8n-nodes-base.noOp', typeVersion: 1, position: [0, 0], parameters: {} }], connections: {}, settings: { executionOrder: 'v1' } })).id;
   }
-  const built = build({ ids, token, env, driveFolderId: vault('04_integrations.env', E.driveVar), supabaseUrl: vault('02_databases.env', E.urlVar), credential: { id: credential.id, name: E.credential }, openrouterCredential: { id: jevCredential.id, name: JEV_CREDENTIAL }, chatId: vault('04_integrations.env', 'GOSERVE_TELEGRAM_CHAT_ID') });
+  const built = build({ ids, token, env, driveFolderId: vault('04_integrations.env', E.driveVar), supabaseUrl: vault('02_databases.env', E.urlVar), credential: { id: credential.id, name: E.credential }, vapidCredential: { id: vapidCredential.id, name: VAPID_CREDENTIAL }, vapidPublicKey: vault('04_integrations.env', 'GOSERVE_VAPID_PUBLIC_KEY'), vapidSubject: vault('04_integrations.env', 'GOSERVE_VAPID_SUBJECT'), openrouterCredential: { id: jevCredential.id, name: JEV_CREDENTIAL }, chatId: vault('04_integrations.env', 'GOSERVE_TELEGRAM_CHAT_ID') });
   for (const k of ORD) {
     await call('PUT', '/workflows/' + ids[k], payload(built[k]));
     const back = await call('GET', '/workflows/' + ids[k]);

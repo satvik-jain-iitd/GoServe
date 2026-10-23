@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 import { manifest, roleManifest } from "./src/pwa-manifest.ts";
 import { ROLE_APPS, roleTitle } from "./src/lib/roles.ts";
+import { pushWorkerSource } from "./src/pwa-push.ts";
 
 // One manifest file and one static HTML page per role app (story #83, install fix 22 Oct 2026).
 // Chrome reads the manifest from the first HTML it gets, before any script runs. So each role page (dist/<role>/index.html) already links its own
@@ -24,6 +25,14 @@ const rolePages = (): Plugin => ({
   },
 });
 
+// The push handlers (story A7) are written at build time with this project's address and public key, then loaded by the generated service worker.
+const pushWorker = (): Plugin => ({
+  name: "push-worker",
+  generateBundle() {
+    this.emitFile({ type: "asset", fileName: "push-sw.js", source: pushWorkerSource(process.env.VITE_SUPABASE_URL ?? "", process.env.VITE_SUPABASE_ANON_KEY ?? "") });
+  },
+});
+
 export default defineConfig({
-  plugins: [react(), rolePages(), VitePWA({ registerType: "autoUpdate", manifest, includeAssets: ["icons/*"] })],
+  plugins: [react(), rolePages(), pushWorker(), VitePWA({ registerType: "autoUpdate", manifest, includeAssets: ["icons/*"], workbox: { importScripts: ["push-sw.js"] } })],
 });

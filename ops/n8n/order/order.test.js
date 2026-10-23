@@ -131,7 +131,7 @@ test('safety: write SUBs only accept calls from MAIN 01; no secret is written in
 
 test('workflow names follow the house prefix and numbers (B11 95.18)', () => {
   assert.deepEqual([wf.main01.name, wf.sub11.name, wf.sub12.name], ['GS MAIN 01 Order API', 'GS SUB 11 Place order', 'GS SUB 12 Change status']);
-  assert.ok(wf.main01.nodes.filter((n) => n.type !== 'n8n-nodes-base.stickyNote').length <= 22);   // rulebook 95.1: aim for 15; split at about 25
+  assert.ok(wf.main01.nodes.filter((n) => n.type !== 'n8n-nodes-base.stickyNote').length <= 24);   // rulebook 95.1: aim for 15; split at about 25
 });
 
 for (const key of ['sub11', 'sub12', 'main01', 'alert']) {
@@ -158,10 +158,10 @@ test('error alert: the message escapes HTML and carries workflow, node, error an
   assert.doesNotThrow(() => run('format_alert.js', {}));
 });
 
-test('deploy: only the fifteen GS workflows, alert first and MAIN last; the PUT body has only the allowed keys', () => {
+test('deploy: only the sixteen GS workflows, alert first and MAIN last; the PUT body has only the allowed keys', () => {
   const { payload, NAMES, ORDER } = require('./deploy');
-  assert.deepEqual(ORDER, ['alert', 'sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'sub16', 'sub18', 'sub17', 'sub19', 'sub21', 'sub22', 'sub91', 'main01', 'main90']);
-  assert.deepEqual(ORDER.map((k) => NAMES[k]), [wf.alert.name, wf.sub11.name, wf.sub12.name, wf.sub13.name, wf.sub14.name, wf.sub15.name, wf.sub16.name, wf.sub18.name, wf.sub17.name, wf.sub19.name, wf.sub21.name, wf.sub22.name, wf.sub91.name, wf.main01.name, wf.main90.name]);
+  assert.deepEqual(ORDER, ['alert', 'sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'sub16', 'sub18', 'sub17', 'sub19', 'sub20', 'sub21', 'sub22', 'sub91', 'main01', 'main90']);
+  assert.deepEqual(ORDER.map((k) => NAMES[k]), [wf.alert.name, wf.sub11.name, wf.sub12.name, wf.sub13.name, wf.sub14.name, wf.sub15.name, wf.sub16.name, wf.sub18.name, wf.sub17.name, wf.sub19.name, wf.sub20.name, wf.sub21.name, wf.sub22.name, wf.sub91.name, wf.main01.name, wf.main90.name]);
   assert.deepEqual(Object.keys(payload(wf.main01)).sort(), ['connections', 'name', 'nodes', 'settings']);
   const src = fs.readFileSync(path.join(__dirname, 'deploy.js'), 'utf8');
   assert.ok(!/\/activate|'DELETE'/.test(src), 'deploy must never activate or delete');
