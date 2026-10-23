@@ -209,6 +209,19 @@ RIDER_NAMES = ["rider card: nothing while the order is still being cooked", "rid
                "rider card: a stranger sees nothing", "rider card: still there while the order is on the way", "rider card: gone once the order is delivered"]
 
 
+# Story H1 (#184): kitchen and dish rules (migration 0022). Run as the admin, so row level security allows the write and only the rule can refuse it.
+raises("a kitchen with no pin code cannot be active", "admin", "insert into kitchens (name, pin_codes, active) values ('rule no pins', '{}', true)")
+raises("a kitchen with no pin code can be saved while inactive", "admin", "insert into kitchens (name, pin_codes, active) values ('rule inactive', '{}', false)", expect_ok=True)
+raises("a kitchen phone must be ten digits starting 6 to 9", "admin", "insert into kitchens (name, pin_codes, phone) values ('rule phone', '{110016}', '1234567890')")
+raises("a good kitchen phone is accepted", "admin", "insert into kitchens (name, pin_codes, phone) values ('rule phone ok', '{110016}', '9876543210')", expect_ok=True)
+raises("the opening and closing time cannot be the same", "admin", "insert into kitchens (name, pin_codes, opens_at, closes_at) values ('rule hours', '{110016}', '10:00', '10:00')")
+raises("a late-night kitchen (22:00 to 02:00) is accepted", "admin", "insert into kitchens (name, pin_codes, opens_at, closes_at) values ('rule night', '{110016}', '22:00', '02:00')", expect_ok=True)
+raises("a kitchen name is unique, ignoring case", "admin", "insert into kitchens (name, pin_codes) values ('CHECK TWO', '{110016}')")
+raises("a dish price of zero is refused", "admin", f"insert into menu_items (kitchen_id, name, price_paise) values ('{K1}', 'free dish', 0)")
+raises("a dish name is unique in its kitchen, ignoring case", "admin", f"insert into menu_items (kitchen_id, name, price_paise) values ('{K1}', 'CHECK DISH', 500)")
+raises("the same dish name in another kitchen is fine", "admin", f"insert into menu_items (kitchen_id, name, price_paise) values ('{K2}', 'check dish', 500)", expect_ok=True)
+
+
 def run(ref: str, query: str):
     req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/database/query", data=json.dumps({"query": query}).encode(),
                                  headers={"Authorization": f"Bearer {os.environ['SUPABASE_ACCESS_TOKEN']}", "Content-Type": "application/json", "User-Agent": "goserve-check"})
