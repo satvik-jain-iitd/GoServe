@@ -1,4 +1,4 @@
-// Builds the four role icons of the GoServe apps (customer, kitchen, rider, ops) from one template, so they read as one family.
+// Builds the five role icons of the GoServe apps (customer, kitchen, rider, ops, admin) from one template, so they read as one family.
 // Same pin, same white badge, same grid and stroke; only the glyph and the ring colour change. Colours come from design/tokens.json.
 // Run: node design/brand/icons/build.mjs   (it borrows Playwright from the app folder)
 // Writes design/brand/icons/<role>.svg, <role>-maskable.svg and app/public/icons/<role>-192.png, <role>-512.png, <role>-maskable-512.png.
@@ -25,8 +25,10 @@ const glyph = {
     <path d="M-26 32h22l12-30"/><path d="M20 32l10-46h-14"/></g>
     <rect x="-46" y="-18" width="36" height="32" rx="6" fill="${W}"/>`,
   ops: `<g fill="${W}"><rect x="-40" y="2" width="22" height="42" rx="5"/><rect x="-11" y="-22" width="22" height="66" rx="5"/><rect x="18" y="-8" width="22" height="52" rx="5"/></g>`,
+  admin: `<g fill="none" stroke="${W}" stroke-width="9" stroke-linecap="round"><path d="M-40 -22h80M-40 4h80M-40 30h80"/></g>
+    <g fill="${W}"><circle cx="-14" cy="-22" r="11"/><circle cx="16" cy="4" r="11"/><circle cx="-8" cy="30" r="11"/></g>`,
 };
-const ring = { customer: c.lime, kitchen: c.warmYellow, rider: c.earthLight, ops: c.sage };
+const ring = { customer: c.lime, kitchen: c.warmYellow, rider: c.earthLight, ops: c.sage, admin: c.olive };
 
 // The pin of the GoServe mark: a round head and a point. Centre of the head: (256, 200). `k` scales it for the maskable version.
 const svg = (role, { maskable = false } = {}) => {

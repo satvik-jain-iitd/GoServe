@@ -14,7 +14,8 @@ test("S2 the kitchen app shows only the kitchen: no role tabs, no demo tools, it
 });
 
 test("S2 the rider app, the ops app and the customer app each open on their own screen", async ({ page, context }) => {
-  await setup(context, page, [order("ready")]);
+  const net = await setup(context, page, [order("ready")]);
+  net.state.admin = true;   // the Ops app is for admins only (story A4)
   await page.goto("/rider/");
   await expect(page.getByRole("heading", { name: "Rider", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Pick up 0f0f0f0f" })).toBeVisible();
@@ -37,7 +38,7 @@ test("S2 the demo console at / is unchanged: five tabs and the demo tools", asyn
 
 test("S2 each app points to its own manifest, with its own name, install identity and scope", async ({ page, context }) => {
   await setup(context, page);
-  for (const [path, role, name] of [["/kitchen/", "kitchen", "GoServe Kitchen"], ["/rider/", "rider", "GoServe Rider"], ["/ops/", "ops", "GoServe Ops"], ["/customer/", "customer", "GoServe"]]) {
+  for (const [path, role, name] of [["/kitchen/", "kitchen", "GoServe Kitchen"], ["/rider/", "rider", "GoServe Rider"], ["/ops/", "ops", "GoServe Ops"], ["/customer/", "customer", "GoServe"], ["/admin/", "admin", "GoServe Admin"]]) {
     await page.goto(path);
     const href = await page.locator("link[rel=manifest]").getAttribute("href");
     expect(href).toBe(`/manifests/${role}.webmanifest`);
@@ -83,7 +84,7 @@ test("S3 another device opens the link on the kitchen address and joins that ses
 // The install bug of 22 Oct 2026: Add to Home Screen opened the domain, not /customer/. Chrome reads the manifest from the first HTML it gets,
 // so every role page must already carry its own manifest link before any script runs. These tests read the raw HTML, as the browser first sees it.
 test("S2 the first HTML of each role page already links its own manifest and title (no script needed)", async ({ request }) => {
-  for (const [path, role, title] of [["/customer/", "customer", "GoServe"], ["/kitchen/", "kitchen", "GoServe Kitchen"], ["/rider/", "rider", "GoServe Rider"], ["/ops/", "ops", "GoServe Ops"]]) {
+  for (const [path, role, title] of [["/customer/", "customer", "GoServe"], ["/kitchen/", "kitchen", "GoServe Kitchen"], ["/rider/", "rider", "GoServe Rider"], ["/ops/", "ops", "GoServe Ops"], ["/admin/", "admin", "GoServe Admin"]]) {
     const html = await (await request.get(path)).text();
     expect(html, path).toContain(`href="/manifests/${role}.webmanifest"`);
     expect(html, path).not.toContain('href="/manifest.webmanifest"');   // the default manifest would install the domain
@@ -111,7 +112,7 @@ test("S2 once the service worker is in charge, a role page still gets its own ma
 });
 
 test("S2 each role page uses its own tab icon and iPhone home-screen icon", async ({ request }) => {
-  for (const role of ["customer", "kitchen", "rider", "ops"]) {
+  for (const role of ["customer", "kitchen", "rider", "ops", "admin"]) {
     const html = await (await request.get(`/${role}/`)).text();
     expect(html, role).toContain(`<link rel="apple-touch-icon" href="/icons/${role}-192.png"`);
     expect(html, role).toContain(`<link rel="icon" href="/icons/${role}-192.png"`);

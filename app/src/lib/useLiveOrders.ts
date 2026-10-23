@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { mergeOrder, type Order } from "./kitchen";
 import { fetchOrders, watchOrders } from "./live";
-import { currentSession, myKitchen, scopeFor } from "./session";
-import { getClient } from "./supabase";
+import { currentSession, myKitchen, riderScope, scopeFor } from "./session";
+import { ensureSession, getClient } from "./supabase";
 
-// `kitchenApp` is true on /kitchen/ and /rider/: a staff user there reads the kitchen's orders (S-M5); everywhere else the session's.
-export function useLiveOrders(active: boolean, kitchenApp = false) {
+// `appRole` is set on /kitchen/ and /rider/. Kitchen: a staff user reads the kitchen's orders (S-M5). Rider: the orders assigned to them (A5).
+// Everywhere else the session's orders.
+export function useLiveOrders(active: boolean, appRole?: "kitchen" | "rider") {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +26,7 @@ export function useLiveOrders(active: boolean, kitchenApp = false) {
       try {
         const sessionId = await currentSession();
         const client = getClient();
-        const scope = scopeFor(kitchenApp ? await myKitchen(client) : null, sessionId);
+        const scope = appRole === "rider" ? riderScope(await ensureSession()) : scopeFor(appRole === "kitchen" ? await myKitchen(client) : null, sessionId);
         const reload = async () => {
           const rows = await fetchOrders(client, scope);
           if (alive) setOrders((cur) => rows.reduce(mergeOrder, cur));
@@ -50,7 +51,7 @@ export function useLiveOrders(active: boolean, kitchenApp = false) {
       alive = false;
       stop();
     };
-  }, [active, kitchenApp]);
+  }, [active, appRole]);
 
   return { orders, loading, error, lags, setOrders, setError, setLags };
 }

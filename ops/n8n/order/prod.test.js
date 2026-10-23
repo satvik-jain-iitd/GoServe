@@ -7,7 +7,7 @@ const { build } = require('./build');
 const { ENVS, NAMES, namesFor, orderFor } = require('./deploy');
 const { checkLayout } = require('../lib/layout_checks');
 
-const IDS = { main01: 'MAIN1', sub11: 'SUB11', sub12: 'SUB12', sub13: 'SUB13', sub14: 'SUB14', sub15: 'SUB15', sub16: 'SUB16', sub91: 'SUB91', main90: 'MAIN90', alert: 'ALERT1' };
+const IDS = { main01: 'MAIN1', sub11: 'SUB11', sub12: 'SUB12', sub13: 'SUB13', sub14: 'SUB14', sub15: 'SUB15', sub16: 'SUB16', sub19: 'SUB19', sub20: 'SUB20', sub21: 'SUB21', sub22: 'SUB22', sub91: 'SUB91', main90: 'MAIN90', alert: 'ALERT1' };
 const prod = build({ ids: IDS, env: 'prod', supabaseUrl: 'https://prodref.supabase.co', token: 'prodtoken', chatId: '42' });
 const dev = build({ ids: IDS, supabaseUrl: 'https://devref.supabase.co', token: 'devtoken', chatId: '42' });
 const byName = (w, n) => w.nodes.find((x) => x.name === n);
@@ -20,9 +20,9 @@ test('S3 environments: prod has its own address, credential, token and name mark
   assert.equal(ENVS.dev.suffix, '');
 });
 
-test('S3 the prod set has eleven workflows (no second alert), the dev set keeps twelve; SUBs before MAINs', () => {
-  assert.deepEqual(orderFor('prod'), ['sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'sub16', 'sub18', 'sub17', 'sub91', 'main01', 'main90']);
-  assert.equal(orderFor('dev').length, 12);
+test('S3 the prod set has fifteen workflows (no second alert), the dev set keeps sixteen; SUBs before MAINs', () => {
+  assert.deepEqual(orderFor('prod'), ['sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'sub16', 'sub18', 'sub17', 'sub19', 'sub20', 'sub21', 'sub22', 'sub91', 'main01', 'main90']);
+  assert.equal(orderFor('dev').length, 16);
   assert.equal(orderFor('dev')[0], 'alert');
   assert.equal(namesFor('prod').main01, 'GS MAIN 01 Order API PROD');
   assert.equal(namesFor('dev').main01, NAMES.main01);
@@ -30,7 +30,7 @@ test('S3 the prod set has eleven workflows (no second alert), the dev set keeps 
 });
 
 test('S3 prod workflows carry the PROD mark and their own webhook path; dev is unchanged', () => {
-  for (const k of ['sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'sub16', 'sub18', 'sub17', 'sub91', 'main01', 'main90']) assert.equal(prod[k].name, namesFor('prod')[k], k);
+  for (const k of ['sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'sub16', 'sub18', 'sub17', 'sub19', 'sub20', 'sub21', 'sub22', 'sub91', 'main01', 'main90']) assert.equal(prod[k].name, namesFor('prod')[k], k);
   assert.equal(dev.main01.name, 'GS MAIN 01 Order API');
   const p = byName(prod.main01, 'Order webhook'), d = byName(dev.main01, 'Order webhook');
   assert.equal(p.parameters.path, 'gs-order-prod');

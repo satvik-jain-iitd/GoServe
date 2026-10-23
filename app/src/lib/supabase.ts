@@ -13,9 +13,11 @@ export const getClient = (): SupabaseClient => {
 
 // Retries are off and the wait is short: with a bad network the saved menu should show in seconds, not after the library's retries.
 const MENU_TIMEOUT_MS = 4000;
-export async function fetchMenuRows(): Promise<Dish[]> {
+export async function fetchMenuRows(kitchenId?: string): Promise<Dish[]> {
   if (navigator.onLine === false) throw new Error("offline");
-  const { data, error } = await getClient().from("menu_items").select("id, name, price_paise, image_url, image_credit").eq("available", true).order("name")
+  let q = getClient().from("menu_items").select("id, name, price_paise, image_url, image_credit, veg, category").eq("available", true);
+  if (kitchenId) q = q.eq("kitchen_id", kitchenId);
+  const { data, error } = await q.order("name")
     .retry(false).abortSignal(AbortSignal.timeout(MENU_TIMEOUT_MS));
   if (error) throw error;
   return data ?? [];
@@ -33,4 +35,12 @@ export function ensureSession(): Promise<string> {
     return res.data.user.id;
   })().finally(() => { starting = null; });
   return starting;
+}
+
+// The rider on a customer's order, once there is one (story D2). The database answers only for the caller's own order.
+export type RiderCard = { name: string; phone: string };
+export async function fetchRiderCard(orderId: string): Promise<RiderCard | null> {
+  const { data, error } = await getClient().rpc("order_rider", { p_order: orderId });
+  if (error || !Array.isArray(data) || !data[0]?.phone) return null;
+  return { name: data[0].name || "Your rider", phone: data[0].phone };
 }
