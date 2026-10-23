@@ -11,12 +11,18 @@ class AddKitchenStaff(unittest.TestCase):
         self.assertIn("lower(email) = 'asha@example.com'", q)
         self.assertIn(f"'{K}'", q)
         self.assertIn("on conflict do nothing", q)
-        self.assertIn("returning kitchen_id, user_id", q)
+        self.assertIn("returning kitchen_id, user_id, role", q)
 
     def test_a_bad_email_or_kitchen_id_is_refused_before_any_sql(self):
         for email, kid in [("a'; drop table orders;--@x.com", K), ("not-an-email", K), ("a@x.com", "k-1"), ("a@x.com", K + "'")]:
             with self.assertRaises(ValueError):
                 build_sql(email, kid)
+
+    def test_a_rider_row_carries_the_role_and_the_default_is_kitchen(self):
+        self.assertIn("'rider'", build_sql("a@x.com", K, "rider"))
+        self.assertIn("'kitchen'", build_sql("a@x.com", K))
+        with self.assertRaises(ValueError):
+            build_sql("a@x.com", K, "admin")
 
     def test_both_projects_are_known(self):
         self.assertEqual(set(REFS), {"dev", "prod"})
