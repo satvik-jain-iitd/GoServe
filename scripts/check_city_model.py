@@ -9,6 +9,7 @@ U = {n: f"00000000-0000-4000-8000-0000000000{i:02x}" for i, n in enumerate(["cus
 K1, K2 = "00000000-0000-4000-8000-0000000001a1", "00000000-0000-4000-8000-0000000001a2"
 O = {n: f"00000000-0000-4000-8000-0000000002{i:02x}" for i, n in enumerate(["own", "far", "prep", "kit"], start=1)}
 DISH = "00000000-0000-4000-8000-0000000003a1"
+EP = "https://push.example/check-endpoint"   # story A7: a push subscription of the customer
 
 SETUP = f"""
 insert into kitchens (id, name, pin_codes, open, active) values ('{K1}', 'check one', '{{110016,110017}}', true, true), ('{K2}', 'check two', '{{110001}}', true, true);
@@ -156,11 +157,15 @@ do $$ begin begin perform place_order('closed-s', 'closed-2', '[{{"menu_item_id"
 update kitchens set active = true where id = '{K1}';
 do $$ begin perform place_order('closed-s', 'closed-3', '[{{"menu_item_id":"{DISH}","qty":1}}]'::jsonb, 'x'); end $$;
 create temp table dx13 as select (select count(*) from orders where session_id = 'closed-s') = 1 as v;
+create temp table dx14 as select (push_targets('{U['cust']}') -> 'targets' -> 0 ->> 'endpoint') = '{EP}' as v;
+do $$ begin perform push_forget('{EP}'); end $$;
+create temp table dx15 as select jsonb_array_length(push_targets('{U['cust']}') -> 'targets') = 0 as v;
 """
 DISPATCH_NAMES = ["candidates: both online riders are listed", "candidates: the nearest rider is first", "candidates: a rider with an open ready order is not free", "candidates: the distance to the kitchen is in metres", "candidates: an unknown order is refused",
                   "assign: the rider is saved on the order and one event is written", "assign: a second call for the same rider changes nothing", "assign: another rider cannot take an assigned order", "assign: an order that is not ready is refused",
                   "assign: a rider who is offline is refused", "assign: a refused call leaves the order unassigned",
-                  "place_order refuses a closed kitchen", "place_order refuses an inactive kitchen", "place_order works again once the kitchen is open and active"]
+                  "place_order refuses a closed kitchen", "place_order refuses an inactive kitchen", "place_order works again once the kitchen is open and active",
+                  "push_targets lists the endpoint for the session (service role)", "push_forget removes it"]
 
 
 # Story A6 (#153): the kitchen's own controls.
@@ -171,6 +176,17 @@ true_for("the kitchen is closed after that", "admin", f"(select not open from ki
 raises("kitchen staff cannot close another kitchen", "staff", f"perform set_kitchen_open('{K2}', false)")
 raises("an admin can open any kitchen", "admin", f"perform set_kitchen_open('{K1}', true)", expect_ok=True)
 raises("a stranger cannot open or close a kitchen", "stranger", f"perform set_kitchen_open('{K1}', false)")
+
+
+# Story A7 (#154): web push subscriptions and the notification text.
+raises("a customer saves their push subscription", "cust", f"perform save_push('{EP}', 'P', 'A')", expect_ok=True)
+raises("an empty subscription is refused", "cust", "perform save_push('', 'P', 'A')")
+true_for("a customer reads only their own subscription", "cust", f"(select count(*) from push_subscriptions) = 1")
+true_for("another customer cannot read it", "other", f"(select count(*) from push_subscriptions) = 0")
+true_for("push_latest says what the newest order is, for a stranger asking with the endpoint (the service worker has no login)", "stranger", f"(push_latest('{EP}') ->> 'body') in ('Your order was cancelled.', 'Your order is being cooked.', 'Your order is ready.')")
+true_for("push_latest knows nothing about an unknown endpoint", "stranger", "push_latest('https://push.example/nope') is null")
+raises("a customer cannot call the service-only push_targets", "cust", f"perform push_targets('{U['cust']}')")
+raises("a customer cannot call push_forget", "cust", f"perform push_forget('{EP}')")
 
 
 def run(ref: str, query: str):

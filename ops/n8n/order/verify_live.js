@@ -18,7 +18,7 @@ const call=async p=>(await fetch('https://n8n.linkright.in/api/v1'+p,{headers:{'
   const vault=(file,k)=>{const m=fs.readFileSync(path.join(os.homedir(),'Desktop/Secrets',file),'utf8').match(new RegExp('^'+k+'=(\\S+)','m'));return m?m[1]:null;};
   const creds=(await call('/credentials?limit=250')).data;
   const cred=(name)=>{const c=creds.find(x=>x.name===name);return {id:c.id,name};};
-  const b=build({ids,env,driveFolderId:vault('04_integrations.env',E.driveVar),token:vault('04_integrations.env',E.tokenVar),supabaseUrl:vault('02_databases.env',E.urlVar),credential:cred(E.credential),openrouterCredential:cred('GoServe OpenRouter'),chatId:vault('04_integrations.env','GOSERVE_TELEGRAM_CHAT_ID')});
+  const b=build({ids,env,driveFolderId:vault('04_integrations.env',E.driveVar),token:vault('04_integrations.env',E.tokenVar),supabaseUrl:vault('02_databases.env',E.urlVar),credential:cred(E.credential),vapidCredential:cred('GoServe VAPID'),vapidPublicKey:vault('04_integrations.env','GOSERVE_VAPID_PUBLIC_KEY'),vapidSubject:vault('04_integrations.env','GOSERVE_VAPID_SUBJECT'),openrouterCredential:cred('GoServe OpenRouter'),chatId:vault('04_integrations.env','GOSERVE_TELEGRAM_CHAT_ID')});
   for(const k of ORD){
     const live=await call('/workflows/'+ids[k]);
     const mine=b[k];

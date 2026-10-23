@@ -65,7 +65,7 @@ function finish(name, nodes, edges, sections, setts) {
 }
 
 // env 'prod' builds the PROD copy (story #78): a `PROD` name mark and its own webhook path. Everything else, including the canvas, is the same code.
-function build({ ids, token, supabaseUrl, credential, openrouterCredential, chatId, driveFolderId, env }) {
+function build({ ids, token, supabaseUrl, credential, openrouterCredential, vapidCredential, vapidPublicKey, vapidSubject, chatId, driveFolderId, env }) {
   const prod = env === 'prod';
   const settings = ids.alert ? Object.assign({}, baseSettings, { errorWorkflow: ids.alert }) : baseSettings;
   const cred = credential || { id: 'REPLACE_CREDENTIAL_ID', name: 'GoServe Supabase dev' };
@@ -211,6 +211,45 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
   ];
   const sub22 = finish('GS SUB 22 Dispatch', n22, e22, s22, Object.assign({}, settings, { callerPolicy: 'workflowsFromAList', callerIds: main }));
 
+  // ---- SUB 20 Push (story A7): a text-less web push to every subscription of the customer. The phone's service worker asks the database what to say. ----
+  const vapidCred = vapidCredential || { id: 'REPLACE_VAPID_CRED_ID', name: 'GoServe VAPID' };
+  const f20 = [['session_id', 'string'], ['status', 'string'], ['vapid_public_key', 'string'], ['vapid_subject', 'string'], ['kill_switch', 'boolean'], ['supabase_url', 'string']];
+  const rpcCall = (id, name, fn) => node(id, name, 'n8n-nodes-base.httpRequest', 4.2, {
+    method: 'POST', url: `={{ $json.supabase_url }}/rest/v1/rpc/${fn}`, authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
+    sendBody: true, specifyBody: 'json', jsonBody: '={{ $json.rpc_body }}',
+    options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 } }, { credentials: { httpCustomAuth: cred } });
+  const n20 = [
+    node('gs-sub20-01', 'Start', 'n8n-nodes-base.executeWorkflowTrigger', 1.1, inputs(f20)),
+    codeNode('gs-sub20-02', 'Guard', code('guard_push.js')),
+    ifNode('gs-sub20-03', 'Allowed?', '={{ $json.ok }}', 'true'),
+    rpcCall('gs-sub20-04', 'Read targets', 'push_targets'),
+    ifNode('gs-sub20-05', 'Targets?', '={{ $json.statusCode === 200 && $json.body.targets.length > 0 }}', 'true'),
+    codeNode('gs-sub20-06', 'Expand', code('push_expand.js')),
+    // The private key lives only in the n8n credential "GoServe VAPID" (JWT Auth, ES256). The node keeps only the token, so later nodes pair back to "Expand".
+    node('gs-sub20-07', 'Sign VAPID', 'n8n-nodes-base.jwt', 1, { operation: 'sign', useJson: true, claimsJson: '={{ JSON.stringify($json.claims) }}', options: {} },
+      { credentials: { jwtAuth: vapidCred } }),
+    node('gs-sub20-08', 'Send push', 'n8n-nodes-base.httpRequest', 4.2, {
+      method: 'POST', url: "={{ $('Expand').item.json.endpoint }}", sendHeaders: true,
+      headerParameters: { parameters: [
+        { name: 'Authorization', value: "=vapid t={{ $json.token }}, k={{ $('Expand').item.json.vapid_public_key }}" },
+        { name: 'TTL', value: '3600' }, { name: 'Urgency', value: 'high' }, { name: 'Content-Length', value: '0' }] },
+      options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 8000 } }),
+    codeNode('gs-sub20-09', 'Clean', code('push_clean.js')),
+    rpcCall('gs-sub20-10', 'Forget', 'push_forget'),
+    node('gs-sub20-11', 'Return refusal', 'n8n-nodes-base.noOp', 1, {}),
+  ];
+  const e20 = [['Start', 'Guard'], ['Guard', 'Allowed?'], ['Allowed?', 'Read targets', 0], ['Allowed?', 'Return refusal', 1], ['Read targets', 'Targets?'], ['Targets?', 'Expand', 0],
+    ['Expand', 'Sign VAPID'], ['Sign VAPID', 'Send push'], ['Send push', 'Clean'], ['Clean', 'Forget']];
+  const s20 = [
+    { name: 'RECEIVE', what: 'MAIN 01 calls this after it has answered, for a new order, a ready order or a delivered order. It is not waited for.', needs: 'Input: ' + f20.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
+    { name: 'CHECK', what: 'Refuse if the kill switch is on or input is bad. Any status other than placed, ready or delivered has nothing to send.', needs: 'Input fields. No credential.', nodes: ['Guard', 'Allowed?'], color: 5 },
+    { name: 'TARGETS', what: 'Read the push subscriptions of this customer. No subscription means stop quietly.', needs: 'Credential "GoServe Supabase dev". Function push_targets.', nodes: ['Read targets', 'Targets?'], color: 6 },
+    { name: 'SEND', what: 'For each subscription sign a VAPID token and send an empty push. The phone asks the database what to show.', needs: 'Credential "GoServe VAPID" (JWT Auth, ES256). Config: the public key and the contact address.', nodes: ['Expand', 'Sign VAPID', 'Send push'], color: 6 },
+    { name: 'CLEAN', what: 'A 404 or 410 means the phone unsubscribed. Forget that subscription.', needs: 'Credential "GoServe Supabase dev". Function push_forget.', nodes: ['Clean', 'Forget'], color: 6 },
+    refuseSection,
+  ];
+  const sub20 = finish('GS SUB 20 Push', n20, e20, s20, Object.assign({}, settings, { callerPolicy: 'workflowsFromAList', callerIds: main }));
+
   // ---- SUB 17 Feedback: save a tester's report and answer; Drive and Telegram run in SUB 18 without being waited for (story S-B, #94; F90) ----
   const f17 = [['session_id', 'string'], ['kitchen_id', 'string'], ['role', 'string'], ['screen', 'string'], ['order_id', 'string'], ['doing', 'string'], ['text', 'string'], ['context', 'object'],
     ['image_b64', 'string'], ['kill_switch', 'boolean'], ['supabase_url', 'string'], ['drive_folder_id', 'string'], ['chat_id', 'string'], ['env', 'string']];
@@ -290,7 +329,9 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
       { id: 'cfg-10', name: 'chat_id', type: 'string', value: chatId || PLACEHOLDER },
       { id: 'cfg-11', name: 'env', type: 'string', value: prod ? 'prod' : 'dev' },
       { id: 'cfg-12', name: 'confirm_after_ready_min', type: 'number', value: 3 },
-      { id: 'cfg-13', name: 'confirm_after_place_min', type: 'number', value: 8 }] }, options: {} }),
+      { id: 'cfg-13', name: 'confirm_after_place_min', type: 'number', value: 8 },
+      { id: 'cfg-14', name: 'vapid_public_key', type: 'string', value: vapidPublicKey || PLACEHOLDER },
+      { id: 'cfg-15', name: 'vapid_subject', type: 'string', value: vapidSubject || PLACEHOLDER }] }, options: {} }),
     codeNode('gs-main01-03', 'Check token', code('check_token.js')),
     ifNode('gs-main01-04', 'Token ok?', '={{ $json.token_ok }}', 'true'),
     ifNode('gs-main01-05', 'Kill switch?', '={{ $json.kill_switch }}', 'true'),
@@ -328,6 +369,11 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
       ['params_version', "={{ $('Config').first().json.params_version }}", 'number'], ['jev_enabled', "={{ $('Config').first().json.jev_enabled }}", 'boolean'],
       ['jev_model', "={{ $('Config').first().json.jev_model }}", 'string'], ['jev_cost_cap', "={{ $('Config').first().json.jev_cost_cap }}", 'number'],
       ['kill_switch', "={{ $('Config').first().json.kill_switch }}", 'boolean'], ['supabase_url', "={{ $('Config').first().json.supabase_url }}", 'string']]),
+    ifNode('gs-main01-22', 'Push?', "={{ $json.ok === true && $json.already_done !== true && !!$json.order && (($json.order.status === 'placed' && $json.created === true) || $json.order.status === 'ready' || $json.order.status === 'delivered') }}", 'true'),
+    callSub('gs-main01-23', 'Call SUB 20 Push', ids.sub20, [
+      ['session_id', '={{ $json.order.session_id }}', 'string'], ['status', '={{ $json.order.status }}', 'string'],
+      ['vapid_public_key', "={{ $('Config').first().json.vapid_public_key }}", 'string'], ['vapid_subject', "={{ $('Config').first().json.vapid_subject }}", 'string'],
+      ['kill_switch', "={{ $('Config').first().json.kill_switch }}", 'boolean'], ['supabase_url', "={{ $('Config').first().json.supabase_url }}", 'string']], false),
     respond('gs-main01-09', 'Respond result', '={{ $json.status_code }}', answer),
     codeNode('gs-main01-14', 'Log run', code('log_run.js')),
     callSub('gs-main01-15', 'Call SUB 14 Write logs', ids.sub14, [
@@ -342,7 +388,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     ['Token ok?', 'Kill switch?', 0], ['Token ok?', 'Respond 401', 1], ['Kill switch?', 'Respond 503', 0], ['Kill switch?', 'Route', 1],
     ['Route', 'Call SUB 11 Place order', 0], ['Route', 'Call SUB 12 Change status', 1], ['Route', 'Call SUB 13 Decide', 2], ['Route', 'Call SUB 15 Add event', 3], ['Route', 'Call SUB 16 Health', 4], ['Route', 'Call SUB 17 Feedback', 5], ['Route', 'Call SUB 12 Confirm', 6], ['Route', 'Respond 400', 7],
     ['Call SUB 11 Place order', 'Respond result'], ['Call SUB 12 Change status', 'Respond result'], ['Call SUB 13 Decide', 'Respond result'], ['Call SUB 15 Add event', 'Respond result'], ['Call SUB 16 Health', 'Respond result'], ['Call SUB 17 Feedback', 'Respond result'], ['Call SUB 12 Confirm', 'Respond result'],
-    ['Respond result', 'Log run'], ['Log run', 'Call SUB 14 Write logs'], ['Respond result', 'Ready?'], ['Ready?', 'Call SUB 22 Dispatch', 0]];
+    ['Respond result', 'Log run'], ['Log run', 'Call SUB 14 Write logs'], ['Respond result', 'Ready?'], ['Ready?', 'Call SUB 22 Dispatch', 0], ['Respond result', 'Push?'], ['Push?', 'Call SUB 20 Push', 0]];
   const sections = [
     { name: 'RECEIVE', what: 'The phone posts here. Body field "action" is place, status, decide, event, health, feedback or confirm. The header x-gs-token carries the demo token.', needs: 'Path gs-order. Body: action and the fields of the SUB.', nodes: ['Order webhook'], color: 4 },
     { name: 'CONFIG', what: 'All tunables live here: the kill switch, the demo token and the database address.', needs: 'Config keys: kill_switch, demo_token, supabase_url.', nodes: ['Config'], color: 5 },
@@ -357,6 +403,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     { name: 'FEEDBACK', what: 'Call SUB 17. It saves a tester\'s report, puts the screenshot in Google Drive and tells the owner on Telegram.', needs: 'SUB 17 id. Body: session_id, role, screen, order_id, doing, text, context, image_b64. Config: drive_folder_id, chat_id, env.', nodes: ['Call SUB 17 Feedback'], color: 6 },
     { name: 'ANSWER', what: 'Send the SUB result back to the phone with its status code.', needs: 'The SUB output: status_code, ok, order, decision, id.', nodes: ['Respond result'], color: 4 },
     { name: 'DISPATCH', what: 'After the answer is out: if the order just became Ready, call SUB 22. It picks a rider and saves the rider on the order. If no rider is online the run fails on purpose and GS ERR 00 tells the owner.', needs: 'SUB 22 id. Config: params_version, jev keys.', nodes: ['Ready?', 'Call SUB 22 Dispatch'], color: 6 },
+    { name: 'PUSH', what: 'After the answer is out: a new order, a ready order or a delivered order sends a web push through SUB 20. It is not waited for.', needs: 'SUB 20 id. Config: vapid_public_key, vapid_subject.', nodes: ['Push?', 'Call SUB 20 Push'], color: 6 },
     { name: 'LOG', what: 'After the answer is out, write one run row: time taken, settings version, cost, error.', needs: 'SUB 14 id. Config: params_version, kitchen_id.', nodes: ['Log run', 'Call SUB 14 Write logs'], color: 6 },
     { name: 'REFUSE', what: 'Answer the calls that must not go on: 401, 503 and 400.', needs: 'Nothing.', nodes: ['Respond 401', 'Respond 503', 'Respond 400'], color: 1 },
   ];
@@ -427,7 +474,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, chat
     { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send alert'], color: 6 },
   ];
   const alert = finish('GS ERR 00 Alert', aNodes, aEdges, aSections, baseSettings);
-  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub19, sub21, sub22, sub91, main01, main90, alert };
+  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub19, sub20, sub21, sub22, sub91, main01, main90, alert };
   if (prod) for (const k of Object.keys(all)) if (k !== 'alert') all[k].name += ' PROD';   // the one GS ERR 00 alert is shared (one bot, one chat)
   return { ...all, STATUS_ROLES };
 }
