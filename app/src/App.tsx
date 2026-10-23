@@ -214,7 +214,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }, []);
 
   useEffect(() => {
-    if (lock !== "customer") return void loadMenu(() => fetchMenuRows(), window.localStorage).then(setMenu, (e: Error) => setMenuError(e.message));
+    if (lock && lock !== "customer") return;   // story H2: the kitchen, rider, ops and admin apps have nothing to sell
+    if (!lock) return void loadMenu(() => fetchMenuRows(), window.localStorage).then(setMenu, (e: Error) => setMenuError(e.message));
     if (!pin) return;
     let alive = true;
     setLooking(true);
@@ -395,6 +396,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }
 
   async function place() {
+    if (lock && lock !== "customer") return;   // story H2: only the customer app and the demo console place orders
     pushTrail("place order");
     setSending(true);
     setError(null);
