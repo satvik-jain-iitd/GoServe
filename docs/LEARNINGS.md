@@ -176,3 +176,9 @@ short. Say what happened and what to do next time.
 - One seed in the test file can be 18% of a class. When recall moves in steps like that, the number is a coarse signal; look at which seeds miss before you retrain.
 - A claim about a vendor's error case (linkIdentity on a taken Google account) can be absent from its docs. Do not build on it; pick the path that does not depend on it, and log the proof as a follow-up (F114).
 - #128 was built on #124 without telling GitHub it was a stack, so #124 merging meant a hand rebase of #128. A `gh stack` layer would have rebased itself and kept its approval.
+- A stack of PRs needs the next layer cut from the one under review, and a rebase with `git rebase --onto origin/dev <old head>` after each squash merge. Keep the old head's hash before you rebase.
+- n8n code nodes have no `URL` class. A node that parsed an address with it skipped every target without an error. Test the code in the same sandbox rules, with a case that must send.
+- A screen test that asserts an internal id on screen blocks a design rule. Assert the rule (no id on a customer screen), not the id.
+- macOS `sed -i` needs an empty string (`sed -i ''`). In a `&&` chain, one failed step hides the next ones; look at every exit code.
+- When you swap many buttons for one component, pair each open tag with the next close tag, then run lint and all e2e. Timing tests can fail under load; run the failing one alone before you call it a break.
+- A production database that already has tables is refused by `release_db.py`. A later release needs a `--from` option, or the migrations go one at a time through the Management API.

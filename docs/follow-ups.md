@@ -118,3 +118,13 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F114 | Prove on dev that `linkIdentity` fails when the Google identity already belongs to another user (the reason the kitchen app uses `signInWithOAuth`). Supabase docs are silent. Design: device A (customer app, anonymous user A) taps Continue with Google with account G, which links G to A. Device B (a fresh anonymous user B) taps Continue with Google with the same G on a build that still calls `linkIdentity`. Expect an error and B unchanged; record the error text. Then the kitchen build on B signs in as A. Needs two real devices and one Google account. | Coder with owner | Open |
 | F115 | S-M5 has no sign-out and no staff admin screen; a second staff member is added with `scripts/add_kitchen_staff.py`. Rider and ops accounts are later stories. | Coder | Open |
 | F116 | Google OAuth brand verification (issue #139, backlog, MVP 2). Homepage verified in Search Console on 23 Oct 2026; next click is "I have fixed the issues" after 24 hours. If Google then asks to verify the `supabase.co` authorised domains, the fix needs an owned domain plus the Supabase custom domain add-on (Pro plan, about 10 dollars a month); decide then. It blocks only the app name and logo on the consent screen; sign-in works without it. | Owner | Parked |
+| F117 | Dispatch does not retry when every rider is busy: the order ends in the error workflow and an alert. Add a retry or a queue. | Coder | Open |
+| F118 | Customer coordinates are not collected, so the nearest kitchen and the ETA use the name order and a fixed estimate. | Coder | Open |
+| F119 | Admin orders have no paging. Fine for 100 orders a day, not for more. | Coder | Open |
+| F120 | A failed dish insert leaves its uploaded photo in storage. Delete it on failure. | Coder | Open |
+| F121 | `scripts/test_live_*` fail against a seeded dev database when the vault token is in the environment; CI has no token. Make them skip or clean their data. | Coder | Open |
+| F122 | `kitchens.opens_at` is information only: the kitchen is opened and closed by hand. Decide if a clock should do it. | Owner | Open |
+| F123 | The tile shows no prep time yet (the kitchen has no prep number). Account has no edit form (details change in the cart). The rider card has no map. | Coder | Open |
+| F124 | `release_db.py` refuses a database with tables. Add `--from NNNN` so a later release applies only newer migrations. | Coder | Open |
+| F125 | `DemoBar` and the Feedback button keep the old `.btn` class. Move them to the shared Button. | Coder | Open |
+| F126 | Web push: only the iPhone home-screen app is a live row. Other browsers and per-order opt-out are later. | Coder | Open |
