@@ -15,6 +15,7 @@ const openFeedback = async (page: Page) => {
 
 test("S1 a report with a screenshot: words, kind of work, order, trail and picture reach the server", async ({ page, context }) => {
   const net = await setup(context, page, [order("accepted")]);
+  net.state.kitchen = "k-1";
   await openFeedback(page);
   await page.getByLabel("What happened?").fill("Accept button did nothing");
   await page.getByLabel("What were you doing?").selectOption("cooking");
@@ -31,6 +32,7 @@ test("S1 a report with a screenshot: words, kind of work, order, trail and pictu
 
 test("S2 a report without a screenshot sends no picture", async ({ page, context }) => {
   const net = await setup(context, page, [order("accepted")]);
+  net.state.kitchen = "k-1";
   await openFeedback(page);
   await page.getByLabel("What happened?").fill("The card is hard to read");
   await page.getByRole("button", { name: "Send" }).click();
@@ -40,6 +42,7 @@ test("S2 a report without a screenshot sends no picture", async ({ page, context
 
 test("S3 an offline report waits on the phone and is sent when the phone is back online", async ({ page, context }) => {
   const net = await setup(context, page, [order("accepted")]);
+  net.state.kitchen = "k-1";
   await openFeedback(page);
   net.state.feedbackDown = true;
   await page.getByLabel("What happened?").fill("Lost signal in the kitchen");

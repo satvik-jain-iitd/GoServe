@@ -9,6 +9,7 @@ import { AreaScreen } from "./screens/AreaScreen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { AdminGate } from "./screens/AdminGate";
 import { RiderGate } from "./screens/RiderGate";
+import { KitchenGate } from "./screens/KitchenGate";
 import { KitchenTools } from "./screens/KitchenTools";
 import { enablePush } from "./lib/push";
 import { loadProfile, saveProfile } from "./lib/profile";
@@ -494,7 +495,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       </nav>}
       {demo && <p role="status" className="notice"><strong>Offline demo</strong></p>}
       {!lock && <DemoBar onReset={reset} getLink={shareLink} autoOn={auto || demo} autoNote={autoNote} onAuto={toggleAuto} />}
-      {role === "kitchen" && (lock === "kitchen" ? <>{kitchenView}<KitchenTools /></> : kitchenView)}
+      {role === "kitchen" && (lock === "kitchen" ? <KitchenGate>{kitchenView}<KitchenTools /></KitchenGate> : kitchenView)}
       {role === "rider" && (lock === "rider" ? <RiderGate>{riderView}</RiderGate> : riderView)}
       {role === "ops" && (lock === "ops" ? <AdminGate>{opsView}</AdminGate> : opsView)}
       {role === "customer" && customerView}

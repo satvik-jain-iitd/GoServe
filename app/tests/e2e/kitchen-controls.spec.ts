@@ -33,7 +33,7 @@ test("S3 Close kitchen calls set_kitchen_open with false and the screen says the
 test("S4 a user who is not kitchen staff sees no controls", async ({ page, context }) => {
   await setup(context, page);
   await page.goto("/kitchen/");
-  await expect(page.getByText("No orders yet.")).toBeVisible();
+  await expect(page.getByText("This account is not kitchen staff. Ask the admin.")).toBeVisible();
   await expect(page.getByText("Kitchen is open")).toHaveCount(0);
 });
 

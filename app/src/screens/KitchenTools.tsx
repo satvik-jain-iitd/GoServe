@@ -12,9 +12,9 @@ export function KitchenTools() {
   const [error, setError] = useState<string | null>(null);
   const load = useCallback(async () => {
     try {
-      await ensureSession();
+      const uid = await ensureSession();
       const c = getClient();
-      const id = await myKitchen(c);
+      const id = await myKitchen(c, uid);
       if (!id) return setKitchen(null);
       const { data } = await c.from("kitchens").select("open").eq("id", id).limit(1);
       setKitchen({ id, open: (data?.[0] as { open?: boolean } | undefined)?.open !== false });

@@ -11,7 +11,7 @@ export function RiderGate({ children }: { children: ReactNode }) {
   const lastSent = useRef<number | null>(null);
 
   useEffect(() => {
-    ensureSession().then(async (id) => { setUid(id); setRider(await getRider(getClient())); }, () => setRider(null))
+    ensureSession().then(async (id) => { setUid(id); setRider(await getRider(getClient(), id)); }, () => setRider(null))
       .catch(() => { setError("Could not load your rider details. Check your connection."); setRider(null); });
   }, []);
 

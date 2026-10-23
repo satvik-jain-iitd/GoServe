@@ -6,8 +6,8 @@ export const LOCATION_EVERY_MS = 30_000;
 export const shouldSendLocation = (lastSentMs: number | null, nowMs: number): boolean => lastSentMs === null || nowMs - lastSentMs >= LOCATION_EVERY_MS;
 
 type Client = Pick<SupabaseClient, "from">;
-export async function getRider(c: Client): Promise<RiderRow | null> {
-  const { data, error } = await c.from("riders").select("name, online").limit(1);   // only the own row is readable
+export async function getRider(c: Client, userId: string): Promise<RiderRow | null> {
+  const { data, error } = await c.from("riders").select("name, online").eq("user_id", userId).limit(1);   // kitchen staff and admins can read other riders too, so ask for this user's row
   if (error) throw error;
   return (data?.[0] as RiderRow | undefined) ?? null;
 }
