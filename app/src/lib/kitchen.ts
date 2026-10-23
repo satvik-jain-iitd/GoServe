@@ -15,10 +15,10 @@ const STEPS: Record<string, { to: string; label: string }> = {
 export const nextStep = (status: string) => STEPS[status] ?? null;
 
 // One label map for the kitchen, the rider and the customer tracker.
-const LABELS: Record<string, string> = { placed: "Placed", accepted: "Accepted", preparing: "Cooking", ready: "Ready", out_for_delivery: "On the way", delivered: "Delivered" };
+const LABELS: Record<string, string> = { placed: "Placed", accepted: "Accepted", preparing: "Cooking", ready: "Ready", out_for_delivery: "On the way", delivered: "Delivered", cancelled: "Cancelled" };
 export const statusLabel = (status: string): string => LABELS[status] ?? status;
 
-const WITH_RIDER = ["out_for_delivery", "delivered"];
+const WITH_RIDER = ["out_for_delivery", "delivered", "cancelled"];   // not the kitchen's any more
 export const kitchenOrders = (orders: Order[]): Order[] => orders.filter((o) => !WITH_RIDER.includes(o.status));
 
 // A live event and the answer to a tap can arrive in either order: the copy with the later updated_at wins.
