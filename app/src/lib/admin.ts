@@ -1,7 +1,7 @@
 // The admin app's data calls and input rules (story A2). Row level security lets only an admin write these tables; the people functions check it again.
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type KitchenRow = { id: string; name: string; address: string | null; phone: string | null; pin_codes: string[]; open: boolean; active: boolean };
+export type KitchenRow = { id: string; name: string; address: string | null; phone: string | null; pin_codes: string[]; open: boolean; active: boolean; opens_at?: string | null; closes_at?: string | null };
 export type PersonKind = "kitchen" | "rider" | "admin";
 export type Person = { kind: PersonKind; user_id: string; email: string | null; kitchen_id: string | null; kitchen_name: string | null };
 
@@ -33,12 +33,12 @@ export const isAdmin = async (c: Client): Promise<boolean> => {
   return !error && data === true;
 };
 export async function listKitchens(c: Client): Promise<KitchenRow[]> {
-  const { data, error } = await c.from("kitchens").select("id, name, address, phone, pin_codes, open, active").order("name");
+  const { data, error } = await c.from("kitchens").select("id, name, address, phone, pin_codes, open, active, opens_at, closes_at").order("name");
   if (error) throw error;
   return (data ?? []) as KitchenRow[];
 }
-export const addKitchen = async (c: Client, k: { name: string; address: string; phone: string; pins: string[] }) =>
-  adminMessage((await c.from("kitchens").insert({ name: k.name, address: k.address || null, phone: k.phone || null, pin_codes: k.pins })).error);
+export const addKitchen = async (c: Client, k: { name: string; address: string; phone: string; pins: string[]; opensAt?: string; closesAt?: string }) =>
+  adminMessage((await c.from("kitchens").insert({ name: k.name, address: k.address || null, phone: k.phone || null, pin_codes: k.pins, opens_at: k.opensAt || null, closes_at: k.closesAt || null })).error);
 export async function listPeople(c: Client): Promise<Person[]> {
   const { data, error } = await c.rpc("admin_people");
   if (error) throw error;

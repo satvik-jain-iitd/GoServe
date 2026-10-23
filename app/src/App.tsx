@@ -9,6 +9,7 @@ import { AreaScreen } from "./screens/AreaScreen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { AdminGate } from "./screens/AdminGate";
 import { RiderGate } from "./screens/RiderGate";
+import { KitchenTools } from "./screens/KitchenTools";
 import { loadProfile, saveProfile } from "./lib/profile";
 import { addEvent, changeStatus, confirmDelivery, orderDeps, placeOrder, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
 import { confirmAt, DEFAULT_CFG, notYet, reaskMs, type ConfirmCfg } from "./lib/confirm";
@@ -454,7 +455,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       </nav>}
       {demo && <p role="status" className="notice"><strong>Offline demo</strong></p>}
       {!lock && <DemoBar onReset={reset} getLink={shareLink} autoOn={auto || demo} autoNote={autoNote} onAuto={toggleAuto} />}
-      {role === "kitchen" && kitchenView}
+      {role === "kitchen" && (lock === "kitchen" ? <>{kitchenView}<KitchenTools /></> : kitchenView)}
       {role === "rider" && (lock === "rider" ? <RiderGate>{riderView}</RiderGate> : riderView)}
       {role === "ops" && (lock === "ops" ? <AdminGate>{opsView}</AdminGate> : opsView)}
       {role === "customer" && customerView}

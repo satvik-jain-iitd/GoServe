@@ -14,7 +14,7 @@ export function AdminScreen() {
   const [kitchens, setKitchens] = useState<KitchenRow[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", address: "", phone: "", pins: "" });
+  const [form, setForm] = useState({ name: "", address: "", phone: "", pins: "", opensAt: "", closesAt: "" });
   const [who, setWho] = useState<{ email: string; kind: PersonKind; kitchen: string }>({ email: "", kind: "kitchen", kitchen: "" });
 
   const load = useCallback(async () => {
@@ -40,9 +40,9 @@ export function AdminScreen() {
     const { pins, bad } = parsePins(form.pins);
     if (!form.name.trim()) return setError("Give the kitchen a name.");
     if (bad.length) return setError(`Pin codes are six digits. Check: ${bad.join(", ")}`);
-    const failed = await addKitchen(getClient(), { name: form.name.trim(), address: form.address.trim(), phone: form.phone.trim(), pins });
+    const failed = await addKitchen(getClient(), { name: form.name.trim(), address: form.address.trim(), phone: form.phone.trim(), pins, opensAt: form.opensAt, closesAt: form.closesAt });
     setError(failed);
-    if (!failed) { setForm({ name: "", address: "", phone: "", pins: "" }); await load(); }
+    if (!failed) { setForm({ name: "", address: "", phone: "", pins: "", opensAt: "", closesAt: "" }); await load(); }
   };
   const submitPerson = async () => {
     const failed = await addPerson(getClient(), who.email, who.kind, who.kitchen || null);
@@ -73,7 +73,7 @@ export function AdminScreen() {
               <li key={k.id} className="ticket">
                 <strong>{k.name}</strong>
                 <p className="note">{k.address ?? "No address"} · {k.phone ?? "No phone"}</p>
-                <p className="note">Pin codes: {k.pin_codes.length ? k.pin_codes.join(", ") : "none"} · {k.open ? "Open" : "Closed"}</p>
+                <p className="note">Pin codes: {k.pin_codes.length ? k.pin_codes.join(", ") : "none"} · {k.open ? "Open" : "Closed"}{k.opens_at && k.closes_at ? ` · ${k.opens_at.slice(0, 5)} to ${k.closes_at.slice(0, 5)}` : ""}</p>
               </li>
             ))}
           </ul>
@@ -82,6 +82,8 @@ export function AdminScreen() {
           <label>Address<input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></label>
           <label>Phone<input inputMode="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></label>
           <label>Pin codes<input value={form.pins} placeholder="110016, 110017" onChange={(e) => setForm({ ...form, pins: e.target.value })} /></label>
+          <label>Opens at<input type="time" value={form.opensAt} onChange={(e) => setForm({ ...form, opensAt: e.target.value })} /></label>
+          <label>Closes at<input type="time" value={form.closesAt} onChange={(e) => setForm({ ...form, closesAt: e.target.value })} /></label>
           <button type="button" className="btn" onClick={() => void submitKitchen()}>Add kitchen</button>
         </>
       )}

@@ -79,6 +79,8 @@ raises("an admin cancels any order", "admin", f"perform cancel_order('{O['far']}
 raises("staff must give a reason", "staff", f"perform cancel_order('{O['kit']}', '')")
 
 FINAL_EXTRA = f"""
+update menu_items set available = true where id = '{DISH}';   -- the A6 checks marked it sold out
+update kitchens set open = true where id = '{K1}';
 create temp table cx0 as select (select status from orders where id = '{O['own']}') = 'cancelled' and (select cancel_reason from orders where id = '{O['own']}') = 'cancelled by customer' and (select count(*) from order_events where order_id = '{O['own']}' and event = 'order.cancelled') = 1 as v;
 do $$ begin begin update orders set status = 'accepted' where id = '{O['own']}'; create temp table cx1 as select false as v; exception when others then create temp table cx1 as select true as v; end; end $$;
 do $$ begin begin insert into kitchen_staff (kitchen_id, user_id, role) values ('{K1}', '{U['stranger']}', 'rider'); create temp table cx2 as select false as v; exception when others then create temp table cx2 as select true as v; end; end $$;
@@ -146,10 +148,29 @@ update orders set rider_id = null, status = 'ready' where id = '{O['prep']}';
 update riders set online = false where user_id = '{U['rider']}';
 do $$ begin begin perform assign_rider('{O['prep']}', '{U['rider']}'); create temp table dx9 as select false as v; exception when others then create temp table dx9 as select (sqlerrm like '%rider_not_available%') as v; end; end $$;
 create temp table dx10 as select (select count(*) from orders where id = '{O['prep']}' and rider_id is null) = 1 as v;
+update menu_items set available = true where id = '{DISH}';
+update kitchens set open = false where id = '{K1}';
+do $$ begin begin perform place_order('closed-s', 'closed-1', '[{{"menu_item_id":"{DISH}","qty":1}}]'::jsonb, 'x'); create temp table dx11 as select false as v; exception when others then create temp table dx11 as select (sqlerrm like '%kitchen_closed%') as v; end; end $$;
+update kitchens set open = true, active = false where id = '{K1}';
+do $$ begin begin perform place_order('closed-s', 'closed-2', '[{{"menu_item_id":"{DISH}","qty":1}}]'::jsonb, 'x'); create temp table dx12 as select false as v; exception when others then create temp table dx12 as select (sqlerrm like '%kitchen_closed%') as v; end; end $$;
+update kitchens set active = true where id = '{K1}';
+do $$ begin perform place_order('closed-s', 'closed-3', '[{{"menu_item_id":"{DISH}","qty":1}}]'::jsonb, 'x'); end $$;
+create temp table dx13 as select (select count(*) from orders where session_id = 'closed-s') = 1 as v;
 """
 DISPATCH_NAMES = ["candidates: both online riders are listed", "candidates: the nearest rider is first", "candidates: a rider with an open ready order is not free", "candidates: the distance to the kitchen is in metres", "candidates: an unknown order is refused",
                   "assign: the rider is saved on the order and one event is written", "assign: a second call for the same rider changes nothing", "assign: another rider cannot take an assigned order", "assign: an order that is not ready is refused",
-                  "assign: a rider who is offline is refused", "assign: a refused call leaves the order unassigned"]
+                  "assign: a rider who is offline is refused", "assign: a refused call leaves the order unassigned",
+                  "place_order refuses a closed kitchen", "place_order refuses an inactive kitchen", "place_order works again once the kitchen is open and active"]
+
+
+# Story A6 (#153): the kitchen's own controls.
+rows("kitchen staff mark a dish of their kitchen sold out", "staff", f"update menu_items set available = false where id = '{DISH}'", 1)
+rows("a stranger cannot mark a dish sold out", "stranger", f"update menu_items set available = true where id = '{DISH}'", 0)
+raises("kitchen staff close their own kitchen", "staff", f"perform set_kitchen_open('{K1}', false)", expect_ok=True)
+true_for("the kitchen is closed after that", "admin", f"(select not open from kitchens where id = '{K1}')")
+raises("kitchen staff cannot close another kitchen", "staff", f"perform set_kitchen_open('{K2}', false)")
+raises("an admin can open any kitchen", "admin", f"perform set_kitchen_open('{K1}', true)", expect_ok=True)
+raises("a stranger cannot open or close a kitchen", "stranger", f"perform set_kitchen_open('{K1}', false)")
 
 
 def run(ref: str, query: str):

@@ -1,6 +1,6 @@
 // The first question of the customer app (story B2): where to deliver. Answered once; "Change area" asks again.
 import { useState } from "react";
-import { isPin } from "../lib/area";
+import { isPin, openingText } from "../lib/area";
 import type { Area } from "../lib/area";
 
 type Props = { pin: string | null; area: Area | null; busy: boolean; error: string | null; onPin: (pin: string) => void };
@@ -16,7 +16,7 @@ export function AreaScreen({ pin, area, busy, error, onPin }: Props) {
       {busy && <p>Finding your kitchen…</p>}
       {(problem || error) && <p role="alert" className="error">{problem ?? error}</p>}
       {area?.kind === "none" && <p role="status">We are not in {pin} yet. We saved your pin code and will tell you when we arrive.</p>}
-      {area?.kind === "closed" && <p role="status">{area.name} is closed right now. Please try again later.</p>}
+      {area?.kind === "closed" && <p role="status">{openingText(area.name, area.opens_at)}</p>}
     </section>
   );
 }

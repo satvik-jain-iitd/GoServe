@@ -12,6 +12,7 @@ const msg = String(body.message || '');
 if (msg === 'session_order_cap') return out(429, { error: 'session_order_cap', message: 'Too many orders in this demo session.' });
 if (msg === 'order_not_found') return out(404, { error: 'order_not_found', message: 'No such order in this session.' });
 if (msg === 'not_ready' || msg === 'rider_not_available') return out(409, { error: msg, message: msg === 'not_ready' ? 'The order is not ready yet.' : 'That rider is not available.' });
+if (msg === 'kitchen_closed') return out(409, { error: 'kitchen_closed', message: 'The kitchen is closed right now. Please try again later.' });
 if (msg === 'event_exists' || msg === 'already_done') return out(409, { error: 'already_done', message: 'Already done.' });
 if (msg.startsWith('illegal status step') || msg.startsWith('illegal_event')) return out(409, { error: 'illegal_step', message: 'That step is not allowed now.' });
 if (msg.startsWith('invalid_status') || msg.startsWith('invalid_event')) return out(400, { error: msg.split(':')[0], message: msg.startsWith('invalid_event') ? 'Unknown event.' : 'Unknown status.' });

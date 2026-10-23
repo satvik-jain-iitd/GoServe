@@ -35,11 +35,11 @@ test("S3 a pin code that is not six digits is refused before anything is asked",
 
 test("S4 a kitchen that serves the pin code but is closed says it is closed", async ({ page, context }) => {
   const net = await setup(context, page, [], { pin: null });
-  net.state.kitchens = [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: false, active: true, lat: null, lng: null }];
+  net.state.kitchens = [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: false, active: true, lat: null, lng: null, opens_at: "10:00:00" }];
   await page.goto("/customer/");
   await page.getByLabel("Pin code").fill("110016");
   await page.getByRole("button", { name: "Show kitchen" }).click();
-  await expect(page.getByText("Hauz Khas Kitchen is closed right now")).toBeVisible();
+  await expect(page.getByText("Hauz Khas Kitchen is closed right now. It opens at 10:00 am.")).toBeVisible();
 });
 
 test("S5 a known pin code goes straight to the menu, and Change area goes back to the question", async ({ page, context }) => {
