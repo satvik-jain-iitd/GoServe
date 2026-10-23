@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { authErrorFrom, linkGoogle, signedInName } from "../lib/auth";
 import { ensureSession, getClient } from "../lib/supabase";
+import { Button } from "../ui";
 
 // One line under the title: "Continue with Google", or "Signed in as <name>". No password, no email form.
 export function SignIn({ mode = "link" }: { mode?: "link" | "signin" }) {
@@ -17,15 +18,15 @@ export function SignIn({ mode = "link" }: { mode?: "link" | "signin" }) {
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   if (name) return (
     <p className="notice"><span data-testid="signed-in">Signed in as {name}</span>{" "}
-      <button type="button" className="btn ghost small" onClick={async () => { await getClient().auth.signOut(); window.location.reload(); }}>Sign out</button>
+      <Button variant="ghost" onClick={async () => { await getClient().auth.signOut(); window.location.reload(); }}>Sign out</Button>
     </p>
   );
   return (
     <div>
-      <button type="button" className="btn ghost small" data-testid="google-signin"
+      <Button variant="ghost" data-testid="google-signin"
         onClick={async () => { await ensureSession().catch(() => {}); setError(await linkGoogle(getClient(), window.location.href.split("?")[0], mode)); }}>
         Continue with Google
-      </button>
+      </Button>
       {error && <p role="alert">{error}</p>}
     </div>
   );

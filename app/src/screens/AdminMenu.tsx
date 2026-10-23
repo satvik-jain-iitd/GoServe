@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { addDish, deleteDish, listDishes, photoProblem, rupeesToPaise, setDish, type DishRow, type KitchenRow } from "../lib/admin";
 import { formatRupees } from "../lib/money";
 import { getClient } from "../lib/supabase";
+import { Button } from "../ui";
 
 export function AdminMenu({ kitchens, onError }: { kitchens: KitchenRow[]; onError: (m: string | null) => void }) {
   const [kitchen, setKitchen] = useState("");
@@ -59,15 +60,15 @@ export function AdminMenu({ kitchens, onError }: { kitchens: KitchenRow[]; onErr
             <p className="note">{formatRupees(d.price_paise)} · {d.veg ? "Veg" : "Non-veg"}{d.category ? ` · ${d.category}` : ""}</p>
             {d.image_url && <img src={d.image_url} alt="" width={64} height={64} />}
             <div className="dish-actions">
-              <button type="button" className="btn ghost small" aria-label={d.available === false ? `Make ${d.name} available` : `Mark ${d.name} sold out`}
-                onClick={() => void change(d.id, { available: d.available === false })}>{d.available === false ? "Make available" : "Sold out"}</button>
+              <Button variant="ghost" aria-label={d.available === false ? `Make ${d.name} available` : `Mark ${d.name} sold out`}
+                onClick={() => void change(d.id, { available: d.available === false })}>{d.available === false ? "Make available" : "Sold out"}</Button>
               <label>New price for {d.name}<input aria-label={`New price for ${d.name}`} inputMode="decimal" value={prices[d.id] ?? ""} onChange={(e) => setPrices({ ...prices, [d.id]: e.target.value })} /></label>
-              <button type="button" className="btn ghost small" aria-label={`Save price of ${d.name}`} onClick={() => {
+              <Button variant="ghost" aria-label={`Save price of ${d.name}`} onClick={() => {
                 const paise = rupeesToPaise(prices[d.id] ?? "");
                 if (paise === null) return onError("Type the price in rupees, for example 220 or 220.50.");
                 void change(d.id, { price_paise: paise });
-              }}>Save price</button>
-              <button type="button" className="btn ghost small" aria-label={`Delete ${d.name}`} onClick={() => void remove(d.id)}>Delete</button>
+              }}>Save price</Button>
+              <Button variant="ghost" aria-label={`Delete ${d.name}`} onClick={() => void remove(d.id)}>Delete</Button>
             </div>
           </li>
         ))}
@@ -78,7 +79,7 @@ export function AdminMenu({ kitchens, onError }: { kitchens: KitchenRow[]; onErr
       <label>Category<input value={form.category} placeholder="main, starter, dessert" onChange={(e) => setForm({ ...form, category: e.target.value })} /></label>
       <label><input type="checkbox" checked={form.veg} onChange={(e) => setForm({ ...form, veg: e.target.checked })} /> Veg</label>
       <label>Photo<input key={fileKey} type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} /></label>
-      <button type="button" className="btn" onClick={() => void submit()}>Add dish</button>
+      <Button onClick={() => void submit()}>Add dish</Button>
     </>
   );
 }

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { getRider, sendLocation, setOnline, shouldSendLocation, type RiderRow } from "../lib/rider";
 import { ensureSession, getClient } from "../lib/supabase";
+import { Button } from "../ui";
 
 export function RiderGate({ children }: { children: ReactNode }) {
   const [rider, setRider] = useState<RiderRow | null | undefined>(undefined);   // undefined: still loading
@@ -39,7 +40,7 @@ export function RiderGate({ children }: { children: ReactNode }) {
   return (
     <>
       <p role="status" className="notice">{online ? "You are online" : "You are offline"}{" "}
-        <button type="button" className="btn small" onClick={() => void flip()}>{online ? "Go offline" : "Go online"}</button>
+        <Button onClick={() => void flip()}>{online ? "Go offline" : "Go online"}</Button>
       </p>
       {error && <p role="alert" className="error">{error}</p>}
       {children}

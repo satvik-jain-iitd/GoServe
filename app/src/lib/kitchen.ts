@@ -3,6 +3,7 @@
 export type OrderLine = { menu_item_id: string; name: string; qty: number; price_paise: number };
 export type Order = {
   id: string; session_id: string; status: string; address: string; items: OrderLine[]; total_paise: number; created_at: string; updated_at: string; paid_by?: string | null;
+  customer_name?: string | null; customer_phone?: string | null;
 };
 
 export const shortId = (id: string): string => id.slice(0, 8);   // the order number the customer and the kitchen both say

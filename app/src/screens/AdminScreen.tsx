@@ -5,6 +5,7 @@ import { ensureSession, getClient } from "../lib/supabase";
 import { AdminMenu } from "./AdminMenu";
 import { AdminNumbers } from "./AdminNumbers";
 import { AdminOrders } from "./AdminOrders";
+import { Button } from "../ui";
 
 type Tab = "kitchens" | "staff" | "menu" | "orders" | "numbers";
 
@@ -84,7 +85,7 @@ export function AdminScreen() {
           <label>Pin codes<input value={form.pins} placeholder="110016, 110017" onChange={(e) => setForm({ ...form, pins: e.target.value })} /></label>
           <label>Opens at<input type="time" value={form.opensAt} onChange={(e) => setForm({ ...form, opensAt: e.target.value })} /></label>
           <label>Closes at<input type="time" value={form.closesAt} onChange={(e) => setForm({ ...form, closesAt: e.target.value })} /></label>
-          <button type="button" className="btn" onClick={() => void submitKitchen()}>Add kitchen</button>
+          <Button onClick={() => void submitKitchen()}>Add kitchen</Button>
         </>
       )}
       {tab === "orders" && <AdminOrders kitchens={kitchens} onError={setError} />}
@@ -97,7 +98,7 @@ export function AdminScreen() {
               <li key={`${p.kind}-${p.user_id}-${p.kitchen_id ?? ""}`} className="ticket">
                 <strong>{p.email ?? p.user_id}</strong>
                 <p className="note">{p.kind === "kitchen" ? `Kitchen staff, ${p.kitchen_name ?? ""}` : p.kind === "rider" ? "Rider" : "Admin"}</p>
-                <button type="button" className="btn ghost small" aria-label={`Remove ${p.email ?? p.user_id}`} onClick={() => void remove(p)}>Remove</button>
+                <Button variant="ghost" aria-label={`Remove ${p.email ?? p.user_id}`} onClick={() => void remove(p)}>Remove</Button>
               </li>
             ))}
           </ul>
@@ -116,7 +117,7 @@ export function AdminScreen() {
               </select>
             </label>
           )}
-          <button type="button" className="btn" onClick={() => void submitPerson()}>Add person</button>
+          <Button onClick={() => void submitPerson()}>Add person</Button>
         </>
       )}
     </section>

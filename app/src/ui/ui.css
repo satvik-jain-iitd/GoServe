@@ -56,3 +56,11 @@ a.ui-btn { display: inline-flex; align-items: center; justify-content: center; t
 .ui-chips { display: flex; flex-wrap: wrap; gap: var(--gs-space-2); margin-bottom: var(--gs-space-4); }
 .ui-kitchen h2 { margin: 0; }
 .ui-kitchen .ui-meta { margin-bottom: var(--gs-space-3); }
+
+/* Staff screens (story D3): one thumb, wet hands. The main button is tall and as wide as its card. */
+.ui-btn.big { min-height: 3.5rem; width: 100%; font-size: var(--gs-text-lg); }
+.ui-ticket-lines { display: grid; gap: var(--gs-space-1); font-size: var(--gs-text-lg); font-weight: 500; }
+.ui-table { width: 100%; border-collapse: collapse; }
+.ui-table th, .ui-table td { padding: var(--gs-space-2) var(--gs-space-3); text-align: right; border-bottom: 1px solid var(--md-outline-variant, var(--md-outline)); }
+.ui-table th:first-child, .ui-table td:first-child { text-align: left; }
+.ui-table th { color: var(--gs-text-muted); font-weight: 500; font-size: var(--gs-text-sm); }

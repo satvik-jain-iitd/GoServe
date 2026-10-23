@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { dayNumbers, sumNumbers, type DayNumbers } from "../lib/admin";
 import { formatRupees } from "../lib/money";
+import { Skeleton } from "../ui";
 import { getClient } from "../lib/supabase";
 
 export function AdminNumbers() {
@@ -9,19 +10,19 @@ export function AdminNumbers() {
   const [error, setError] = useState(false);
   useEffect(() => { dayNumbers(getClient()).then(setRows, () => setError(true)); }, []);
   if (error) return <p role="alert" className="error">Could not load the numbers. Try again.</p>;
-  if (!rows) return <p>Loading…</p>;
+  if (!rows) return <Skeleton lines={3} />;
   const t = sumNumbers(rows);
   return (
     <>
       <p data-testid="day-total"><strong>Today: {t.orders} orders</strong> · {t.delivered} delivered · {t.cancelled} cancelled · cash {formatRupees(t.cash_paise)}</p>
-      <ul className="tickets">
-        {rows.map((r) => (
-          <li key={r.kitchen_id} className="ticket">
-            <strong>{r.kitchen_name}</strong>
-            <p className="note">{r.orders} orders · {r.delivered} delivered · {r.cancelled} cancelled · cash {formatRupees(Number(r.cash_paise))}</p>
-          </li>
-        ))}
-      </ul>
+      <table className="ui-table">
+        <thead><tr><th scope="col">Kitchen</th><th scope="col">Orders</th><th scope="col">Delivered</th><th scope="col">Cancelled</th><th scope="col">Cash</th></tr></thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.kitchen_id}><td>{r.kitchen_name}</td><td>{r.orders}</td><td>{r.delivered}</td><td>{r.cancelled}</td><td>{formatRupees(Number(r.cash_paise))}</td></tr>
+          ))}
+        </tbody>
+      </table>
     </>
   );
 }
