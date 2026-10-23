@@ -108,6 +108,11 @@ raises("the last admin cannot be removed", "admin", f"perform admin_remove_perso
 raises("a non-admin cannot remove people", "stranger", f"perform admin_remove_person('rider', '{U['rider']}', null)")
 
 
+# Story A3 (#150): dish photos in the public bucket `menu`; only an admin writes.
+raises("an admin adds a dish photo", "admin", "insert into storage.objects (bucket_id, name) values ('menu', 'check/a.png')", expect_ok=True)
+raises("a non-admin cannot add a dish photo", "stranger", "insert into storage.objects (bucket_id, name) values ('menu', 'check/b.png')")
+
+
 def run(ref: str, query: str):
     req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/database/query", data=json.dumps({"query": query}).encode(),
                                  headers={"Authorization": f"Bearer {os.environ['SUPABASE_ACCESS_TOKEN']}", "Content-Type": "application/json", "User-Agent": "goserve-check"})

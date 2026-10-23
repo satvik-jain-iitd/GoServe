@@ -2,8 +2,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { addKitchen, addPerson, isAdmin, listKitchens, listPeople, parsePins, removePerson, type KitchenRow, type Person, type PersonKind } from "../lib/admin";
 import { ensureSession, getClient } from "../lib/supabase";
+import { AdminMenu } from "./AdminMenu";
 
-type Tab = "kitchens" | "staff";
+type Tab = "kitchens" | "staff" | "menu";
 
 export function AdminScreen() {
   const [allowed, setAllowed] = useState<boolean | null>(null);
@@ -56,9 +57,9 @@ export function AdminScreen() {
     <section>
       <h2>Admin</h2>
       <div role="tablist" aria-label="Admin">
-        {(["kitchens", "staff"] as const).map((t) => (
+        {(["kitchens", "menu", "staff"] as const).map((t) => (
           <button key={t} role="tab" type="button" className={tab === t ? "btn" : "btn ghost"} aria-selected={tab === t} onClick={() => { setError(null); setTab(t); }}>
-            {t === "kitchens" ? "Kitchens" : "Staff"}
+            {t === "kitchens" ? "Kitchens" : t === "menu" ? "Menu" : "Staff"}
           </button>
         ))}
       </div>
@@ -82,6 +83,7 @@ export function AdminScreen() {
           <button type="button" className="btn" onClick={() => void submitKitchen()}>Add kitchen</button>
         </>
       )}
+      {tab === "menu" && <AdminMenu kitchens={kitchens} onError={setError} />}
       {tab === "staff" && (
         <>
           <ul className="tickets">
