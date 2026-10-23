@@ -37,6 +37,7 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.PROD_VITE_SUPABASE_ANON_KEY }}
           VITE_ORDER_URL: ${{ secrets.PROD_VITE_ORDER_URL }}
           VITE_DEMO_TOKEN: ${{ secrets.PROD_VITE_DEMO_TOKEN }}
+          VITE_VAPID_PUBLIC_KEY: ${{ secrets.PROD_VITE_VAPID_PUBLIC_KEY }}
           VITE_BUILD: ${{ github.sha }}
         run: |
           npm ci
