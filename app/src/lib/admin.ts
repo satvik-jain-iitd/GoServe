@@ -45,3 +45,38 @@ export async function listPeople(c: Client): Promise<Person[]> {
 export const addPerson = async (c: Client, email: string, kind: PersonKind, kitchen: string | null) =>
   adminMessage((await c.rpc("admin_add_person", { p_email: email.trim(), p_kind: kind, p_kitchen: kind === "kitchen" ? kitchen : null })).error);
 export const removePerson = async (c: Client, p: Person) => adminMessage((await c.rpc("admin_remove_person", { p_kind: p.kind, p_user: p.user_id, p_kitchen: p.kitchen_id })).error);
+
+// Menu (story A3). Prices are typed in rupees and kept in paise.
+export const rupeesToPaise = (text: string): number | null => {
+  const t = text.trim();
+  if (!/^\d+(\.\d{1,2})?$/.test(t)) return null;
+  const paise = Math.round(parseFloat(t) * 100);
+  return paise > 0 ? paise : null;
+};
+const MAX_PHOTO = 3 * 1024 * 1024;
+export const photoProblem = (f: { type: string; size: number }): string | null =>
+  !f.type.startsWith("image/") ? "The photo must be a picture." : f.size > MAX_PHOTO ? "The photo must be 3 MB or less." : null;
+export const photoPath = (kitchenId: string, fileName: string, id: string): string => {
+  const ext = /\.(jpe?g|png|webp|gif)$/i.exec(fileName)?.[1].toLowerCase().replace("jpeg", "jpg") ?? "jpg";
+  return `${kitchenId}/${id}.${ext}`;
+};
+
+export type DishRow = { id: string; name: string; price_paise: number; available: boolean; veg: boolean; category: string | null; image_url: string | null };
+export async function listDishes(c: Client, kitchenId: string): Promise<DishRow[]> {
+  const { data, error } = await c.from("menu_items").select("id, name, price_paise, available, veg, category, image_url").eq("kitchen_id", kitchenId).order("sort").order("name");
+  if (error) throw error;
+  return (data ?? []) as DishRow[];
+}
+type Store = SupabaseClient["storage"];
+export async function addDish(c: Client & { storage: Store }, d: { kitchenId: string; name: string; paise: number; veg: boolean; category: string; photo: File | null }): Promise<string | null> {
+  let image_url: string | null = null;
+  if (d.photo) {
+    const path = photoPath(d.kitchenId, d.photo.name, crypto.randomUUID());
+    const up = await c.storage.from("menu").upload(path, d.photo, { contentType: d.photo.type });
+    if (up.error) return "The photo could not be uploaded. Try again.";
+    image_url = c.storage.from("menu").getPublicUrl(path).data.publicUrl;
+  }
+  return adminMessage((await c.from("menu_items").insert({ kitchen_id: d.kitchenId, name: d.name, price_paise: d.paise, veg: d.veg, category: d.category || null, image_url })).error);
+}
+export const setDish = async (c: Client, id: string, change: { available?: boolean; price_paise?: number }) => adminMessage((await c.from("menu_items").update(change).eq("id", id)).error);
+export const deleteDish = async (c: Client, id: string) => adminMessage((await c.from("menu_items").delete().eq("id", id)).error);
