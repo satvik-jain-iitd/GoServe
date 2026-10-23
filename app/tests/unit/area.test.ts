@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { chooseKitchen, isPin, loadPin, savePin, type AreaKitchen } from "../../src/lib/area";
 import { MENU_KEY, loadMenu } from "../../src/lib/menu";
 
-const k = (id: string, name: string, pins: string[], over: Partial<AreaKitchen> = {}): AreaKitchen => ({ id, name, pin_codes: pins, lat: null, lng: null, open: true, active: true, ...over });
+const k = (id: string, name: string, pins: string[], over: Partial<AreaKitchen> = {}): AreaKitchen => ({ id, name, pin_codes: pins, lat: null, lng: null, open: true, active: true, opens_at: null, ...over });
 const store = () => {
   const m = new Map<string, string>();
   return { getItem: (x: string) => m.get(x) ?? null, setItem: (x: string, v: string) => void m.set(x, v), removeItem: (x: string) => void m.delete(x) } as Storage;
@@ -24,7 +24,7 @@ describe("chooseKitchen", () => {
     expect(chooseKitchen([k("a", "A", ["110016"])], "110099")).toEqual({ kind: "none" });
   });
   it("says closed, with the name, when every kitchen that serves it is closed or inactive", () => {
-    expect(chooseKitchen([k("a", "A", ["110016"], { open: false }), k("b", "B", ["110016"], { active: false })], "110016")).toEqual({ kind: "closed", name: "A" });
+    expect(chooseKitchen([k("a", "A", ["110016"], { open: false }), k("b", "B", ["110016"], { active: false })], "110016")).toEqual({ kind: "closed", name: "A", opens_at: null });
   });
   it("with several open kitchens takes the nearest to a place, else the first by name", () => {
     const list = [k("far", "Zed", ["110016"], { lat: 28.9, lng: 77.5 }), k("near", "Beta", ["110016"], { lat: 28.55, lng: 77.2 }), k("noco", "Alpha", ["110016"])];
@@ -53,5 +53,21 @@ describe("loadMenu per kitchen", () => {
     const offline = async () => { throw new Error("offline"); };
     expect((await loadMenu(offline, s, `${MENU_KEY}.a`)).dishes[0].id).toBe("a1");
     expect((await loadMenu(offline, s, `${MENU_KEY}.b`)).dishes[0].id).toBe("b1");
+  });
+});
+
+import { openingText } from "../../src/lib/area";
+
+describe("openingText (story A6)", () => {
+  it("says when a closed kitchen opens, in plain am and pm", () => {
+    expect(openingText("Hauz Khas Kitchen", "10:00:00")).toBe("Hauz Khas Kitchen is closed right now. It opens at 10:00 am.");
+    expect(openingText("Rohini Kitchen", "18:30:00")).toBe("Rohini Kitchen is closed right now. It opens at 6:30 pm.");
+    expect(openingText("Rohini Kitchen", "00:00:00")).toBe("Rohini Kitchen is closed right now. It opens at 12:00 am.");
+  });
+  it("without opening hours it only says closed", () => {
+    expect(openingText("Rohini Kitchen", null)).toBe("Rohini Kitchen is closed right now. Please try again later.");
+  });
+  it("chooseKitchen carries the opening time of a closed kitchen", () => {
+    expect(chooseKitchen([k("a", "A", ["110016"], { open: false, opens_at: "10:00:00" })], "110016")).toEqual({ kind: "closed", name: "A", opens_at: "10:00:00" });
   });
 });

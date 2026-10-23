@@ -115,3 +115,9 @@ test('deploy: the dispatch SUBs are deployed before MAIN 01 and are never activa
   assert.ok(order.indexOf('sub22') > order.indexOf('sub19') && order.indexOf('sub22') > order.indexOf('sub21') && order.indexOf('sub22') > order.indexOf('sub13'));
   assert.deepEqual([NAMES.sub19, NAMES.sub21, NAMES.sub22], [wf.sub19.name, wf.sub21.name, wf.sub22.name]);
 });
+
+test('S6 shape: a closed kitchen is a 409 with its own code (story A6)', () => {
+  const r = run('shape.js', { statusCode: 400, body: { message: 'kitchen_closed' } });
+  assert.deepEqual([r.ok, r.status_code, r.error], [false, 409, 'kitchen_closed']);
+  assert.match(r.message, /closed/);
+});
