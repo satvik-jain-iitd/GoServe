@@ -15,6 +15,7 @@ import { CartScreen } from "./screens/CartScreen";
 import { BillScreen } from "./screens/BillScreen";
 import { openOrderToResume } from "./lib/resume";
 import { SignIn } from "./screens/SignIn";
+import { AdminScreen } from "./screens/AdminScreen";
 import { loadDraft, saveDraft } from "./lib/draft";
 import { PlacedScreen } from "./screens/PlacedScreen";
 import { KitchenScreen } from "./screens/KitchenScreen";
@@ -25,7 +26,7 @@ import { DemoBar } from "./screens/DemoBar";
 import { AUTOPILOT_MS, demoDecisions, demoOrder, nextAutoAction } from "./lib/autopilot";
 
 type Step = "menu" | "cart" | "bill" | "placed";
-type Role = "customer" | "kitchen" | "rider" | "split" | "ops";
+type Role = "customer" | "kitchen" | "rider" | "split" | "ops" | "admin";
 
 const api = orderDeps;
 
@@ -374,6 +375,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       {role === "ops" && <OpsScreen orders={orders} decisions={demo ? (orders.some((o) => ["ready", "out_for_delivery", "delivered"].includes(o.status)) ? demoDecisions() : []) : ops.decisions} lags={demo ? [800] : live.lags}
         stats={demo ? { runsToday: 6, lastDecideMs: 310 } : ops.stats} error={demo ? null : ops.error ?? live.error} failed={ops.failed} sample={demo} />}
       {role === "customer" && customerView}
+      {role === "admin" && <AdminScreen />}
       <FeedbackSheet role={lock ?? "console"} screen={`${window.location.pathname}${lock ? "" : ` (${role} tab)`}`}
         order={placed ? { id: placed.id, status: orders.find((o) => o.id === placed.id)?.status ?? placed.status } : orders[0] ? { id: orders[0].id, status: orders[0].status } : null}
         getSession={currentSession} send={(r) => sendFeedback(r, api())} preset={preset} />
