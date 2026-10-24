@@ -1,57 +1,94 @@
 ---
 import Base from "../layouts/Base.astro";
+import { Card } from "@/components/ui/card";
+import Reveal from "../islands/Reveal";
+import AnimatedNumber from "../islands/AnimatedNumber";
+import TextEffect from "../islands/TextEffect";
+import Tilt from "../islands/Tilt";
+import Spotlight from "../islands/Spotlight";
 import InvestorForm from "../components/InvestorForm.astro";
+
+const why = [
+  ["Short radius", "Hot food and honest minutes come from distance, not from speed. We keep the radius small on purpose."],
+  ["One codebase", "Customer, kitchen, rider, admin: one product, one truth, one deploy. A new city is a row in a table."],
+  ["Decisions by models", "Dispatch, ETA and risk run on small calibrated models, not on an ops floor. Cost per order stays flat as orders grow."],
+  ["Lean by design", "Free tiers, one Oracle box, a two-person build. Capital buys kitchens, not overhead."],
+];
+const steps = [
+  ["Now", "Delhi pilot", "One kitchen, a few pin codes, cash at the door, 25 to 35 minutes."],
+  ["Next", "Ten kitchens", "Synthetic city proved the dispatch at scale. Real kitchens follow the orders."],
+  ["Then", "Maps", "Real distance and ETA, address check, nearest kitchen by the customer's point."],
+  ["Then", "Payments", "UPI and cards after the food licence. Cash stays."],
+  ["Later", "Second city", "Same code, same kitchen playbook, a new row in the table."],
+];
 ---
-<Base title="For investors" description="Why GoServe: a hyperlocal food OS with a 15-minute promise, a decision engine, and a focused first market. Reach out to the founders.">
-  <section class="section">
-    <div class="container container-narrow">
-      <span class="eyebrow">For investors</span>
-      <h1 class="h1">Fast food, done fresh. Owned by a system.</h1>
-      <p class="lead">
-        GoServe is a hyperlocal food OS. We start in one city, win it completely,
-        and scale a proven machine. The difference is not a courier fleet. It is
-        the decision engine under it.
-      </p>
+<Base title="For investors" description="GoServe runs its own kitchens, one for every few pin codes. The system picks the kitchen and the rider for every order. A Delhi pilot today, ten kitchens next.">
+  <section class="hero" aria-label="For investors">
+    <div class="blob" aria-hidden="true"></div>
+    <div class="wrap">
+      <div class="copy">
+        <span class="eyebrow">For investors · Delhi pilot</span>
+        <TextEffect client:idle text="Hot meals as quick commerce." className="display xl" />
+        <p class="lead">GoServe runs its own kitchens, one for every few pin codes. The system picks the kitchen and the rider for every order. Cash at the door today, payments after the licence. One codebase for four roles.</p>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;"><a href="#ask" class="ui-btn big" style="width: auto; padding: 0 28px;">Talk to us</a><a href="/" class="ui-btn ghost big" style="width: auto; padding: 0 28px;">See the product</a></div>
+      </div>
+      <div class="art"><Tilt client:visible><div class="phone"><img src="/site-img/phone-slip.webp" alt="The order slip on a phone" width="280" height="606" fetchpriority="high" loading="eager" decoding="async" /></div></Tilt></div>
     </div>
   </section>
-
-  <section class="section section--sage" style="padding-block: var(--gs-space-8)">
-    <div class="container">
-      <h2 class="h2" style="margin-bottom: var(--gs-space-6)">Why this can win.</h2>
-      <div class="thesis">
-        <article class="card"><h3 class="h3">A promise people feel</h3><p>Under 15 minutes, still hot. Few players can honestly say both.</p></article>
-        <article class="card"><h3 class="h3">A machine, not a hustle</h3><p>Jev turns operations into software. Margins improve as it learns.</p></article>
-        <article class="card"><h3 class="h3">A focused start</h3><p>One city, one kitchen network, one clean loop. Win it, then repeat it.</p></article>
-        <article class="card"><h3 class="h3">Built lean</h3><p>One codebase, free-tier infrastructure, a small team. Capital does not buy our speed; the system does.</p></article>
+  <div class="strip" aria-label="Today">
+    <div class="wrap"><span>Where we are</span><span><b>1</b> kitchen live in Delhi</span><span><b>4</b> apps, one codebase</span><span><b>25 to 35</b> min promise</span><span>Cash at the door</span></div>
+  </div>
+  <section class="section" aria-label="The model">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow">The model</span><h2 class="display l">We run the kitchen. We own the minutes.</h2><p class="lead">A marketplace sells other people's food and cannot promise the time. We cook one plate a day per slot, in our kitchen, a short way from the door.</p><div class="ui-zigzag" aria-hidden="true"></div></div>
+      <div class="cards">
+        <Reveal client:visible><Card className="card"><span class="num">Kitchen</span><h3>Ours, per few pin codes</h3><p>One menu, one thali per meal, batch cooked. The prep plan is the menu. Stock, hours and sold-out are one switch for the cook.</p></Card></Reveal>
+        <Reveal client:visible delay={0.1}><Card className="card"><span class="num">System</span><h3>Decides, does not ask</h3><p>Which kitchen, which rider, when to start cooking, which order is about to be late. Small decision models answer in milliseconds, on free tiers.</p></Card></Reveal>
+        <Reveal client:visible delay={0.2}><Card className="card"><span class="num">Rider</span><h3>One job at a time</h3><p>A short radius, one delivery in hand, cash handed over at the kitchen each night. The app is three tabs.</p></Card></Reveal>
       </div>
     </div>
   </section>
-
-  <section class="section">
-    <div class="container container-narrow">
-      <h2 class="h2" style="margin-bottom: var(--gs-space-2)">Talk to us.</h2>
-      <p class="muted" style="margin-bottom: var(--gs-space-6)">
-        Tell us who you are and how you would like to help. We reply to every
-        serious message.
-      </p>
-      <div class="card">
-        <InvestorForm />
+  <section class="section" aria-label="Why it wins">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow">Why it wins</span><h2 class="display l">Four things a marketplace cannot copy cheaply.</h2><div class="ui-zigzag" aria-hidden="true"></div></div>
+      <div class="cards four">
+        {why.map(([h, p]) => (
+          <Spotlight client:visible className="card"><h3>{h}</h3><p>{p}</p></Spotlight>
+        ))}
       </div>
-      <p class="muted" style="margin-top: var(--gs-space-4)">
-        Prefer email? Write to <a href="mailto:hello@letsdwelo.in">hello@letsdwelo.in</a>.
-      </p>
+    </div>
+  </section>
+  <section class="section" aria-label="Traction">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow">Traction</span><h2 class="display l">Only what is true today.</h2><p class="lead">We publish order counts and on-time rates once the pilot has numbers worth reading. Until then, this is where we stand.</p><div class="ui-zigzag" aria-hidden="true"></div></div>
+      <div class="numbers">
+        <div class="n"><b><AnimatedNumber client:visible value={1} /></b><span>Kitchen live in Delhi, run by GoServe</span></div>
+        <div class="n"><b><AnimatedNumber client:visible value={4} /></b><span>Apps on one codebase: customer, kitchen, rider, admin</span></div>
+        <div class="n"><b>25–35</b><span>Minutes to the door, said before the order</span></div>
+        <div class="n"><b><AnimatedNumber client:visible value={0} prefix="₹" /></b><span>Payment fees. Cash at the door.</span></div>
+      </div>
+    </div>
+  </section>
+  <div class="waves" aria-hidden="true"></div>
+  <section class="section" style="background: var(--md-surface); border-top: 0;" aria-label="Roadmap">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow">Roadmap</span><h2 class="display l">Honest about where we are.</h2><div class="ui-zigzag" aria-hidden="true"></div></div>
+      <div class="steps">
+        {steps.map(([when, b, d], i) => (
+          <Reveal client:visible delay={i * 0.08}><div class={`s ${i === 0 ? "now" : ""}`}><span class="when">{when}</span><b>{b}</b><span>{d}</span></div></Reveal>
+        ))}
+      </div>
+    </div>
+  </section>
+  <section class="band" id="ask" style="position: relative;" aria-label="The ask">
+    <div class="glow" aria-hidden="true"></div>
+    <div class="wrap" style="position: relative;">
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <span class="eyebrow">The ask</span>
+        <h2 class="display l" style="color: #e8ecf5;">Ten kitchens in Delhi. Talk to us.</h2>
+        <p class="lead">The pilot kitchen is live. The next step is ten GoServe-run kitchens across Delhi, then the food licence and payments. Write to us, or leave your details and we reply within two days.</p>
+      </div>
+      <InvestorForm />
     </div>
   </section>
 </Base>
-
-<style>
-  .thesis {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: var(--gs-space-5);
-  }
-  .h3 {
-    font-size: var(--gs-text-lg);
-    margin-bottom: var(--gs-space-3);
-  }
-</style>

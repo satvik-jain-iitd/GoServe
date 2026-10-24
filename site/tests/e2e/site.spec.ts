@@ -2,15 +2,7 @@ import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
 // All the pages the doorway ships. Every one must be reachable.
-const PAGES = [
-  "/",
-  "/palette",
-  "/how-it-works",
-  "/technology",
-  "/roadmap",
-  "/investors",
-  "/pre-register",
-];
+const PAGES = ["/", "/investors", "/pre-register"];
 
 test.describe("pages load", () => {
   for (const path of PAGES) {
@@ -18,8 +10,8 @@ test.describe("pages load", () => {
       const res = await page.goto(path);
       expect(res?.status(), `${path} status`).toBeLessThan(400);
       await expect(page).toHaveTitle(/GoServe/);
-      // The header brand must always be present.
-      await expect(page.locator("header .brand")).toBeVisible();
+      // The nav brand must always be present.
+      await expect(page.locator('nav[aria-label="Site"] a[href="/"]').first()).toBeVisible();
     });
   }
 });
@@ -45,17 +37,21 @@ test.describe("no dead links", () => {
 });
 
 test.describe("navigation", () => {
-  test("primary nav moves between pages with no redirect failure", async ({ page }) => {
+  test("primary nav moves between the three pages", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: "Palette" }).first().click();
-    await expect(page).toHaveURL(/\/palette\/?$/);
-    await expect(page.getByRole("heading", { level: 1 })).toContainText(/palette/i);
-
-    await page.getByRole("link", { name: "Roadmap" }).first().click();
-    await expect(page).toHaveURL(/\/roadmap\/?$/);
-
+    await page.getByRole("link", { name: "For investors" }).first().click();
+    await expect(page).toHaveURL(/\/investors\/?$/);
     await page.getByRole("link", { name: "Pre-register" }).first().click();
     await expect(page).toHaveURL(/\/pre-register\/?$/);
+    await page.getByRole("link", { name: "How it works" }).first().click();
+    await expect(page).toHaveURL(/\/$/);
+  });
+
+  test("the v1 pages redirect to the v2 pages", async ({ page }) => {
+    for (const [from, to] of [["/how-it-works", /\/$/], ["/roadmap", /\/investors\/?$/], ["/technology", /\/investors\/?$/], ["/palette", /\/$/]] as const) {
+      await page.goto(from);
+      await expect(page, from).toHaveURL(to);
+    }
   });
 });
 
@@ -76,7 +72,7 @@ test.describe("pre-registration form", () => {
     await page.goto("/pre-register");
 
     // Empty submit should surface errors and not leave the page.
-    await page.getByRole("button", { name: /pre-register my interest/i }).click();
+    await page.getByRole("button", { name: /join the list/i }).click();
     await expect(page.locator('[data-error-for="name"]')).toBeVisible();
     await expect(page.locator('[data-error-for="email"]')).toBeVisible();
 
@@ -85,9 +81,14 @@ test.describe("pre-registration form", () => {
     await page.fill("#pr-email", "satvik@example.com");
     await page.fill("#pr-city", "Delhi");
     await page.selectOption("#pr-role", "investor");
-    await page.getByRole("button", { name: /pre-register my interest/i }).click();
+    await page.fill("#pr-pin", "110024");
+    let body: any;
+    await page.unroute("**/goserve-preregister");
+    await page.route("**/goserve-preregister", (route) => { body = route.request().postDataJSON(); return route.fulfill({ status: 200, body: "{}" }); });
+    await page.getByRole("button", { name: /join the list/i }).click();
 
     await expect(page.locator("#preregister-status")).toContainText(/thank you/i);
+    expect(body).toMatchObject({ name: "Satvik Jain", email: "satvik@example.com", city: "Delhi 110024", role: "investor" });   // the webhook keeps only today's fields, so the pin rides in city
   });
 });
 
@@ -102,7 +103,7 @@ test.describe("investor form", () => {
     await page.fill("#inv-firm", "FoF Ventures");
     await page.fill("#inv-email", "anita@fof.vc");
     await page.fill("#inv-message", "We would love to learn more about the round.");
-    await page.getByRole("button", { name: /send message/i }).click();
+    await page.getByRole("button", { name: "Send", exact: true }).click();
 
     await expect(page.locator("#investor-status")).toContainText(/thank you/i);
   });
@@ -111,13 +112,9 @@ test.describe("investor form", () => {
 test.describe("accessibility", () => {
   for (const path of PAGES) {
     test(`${path} has no serious or critical axe violations`, async ({ page }) => {
+      // Motion starts words half-faded; axe would measure that mid-animation. Reduced motion shows the final page.
+      await page.emulateMedia({ reducedMotion: "reduce" });
       await page.goto(path);
-      // Reveal-on-scroll starts elements at opacity 0. Force them visible so
-      // axe checks the real, fully-shown page and not a partially hidden one.
-      await page.addStyleTag({
-        content:
-          ".reveal{opacity:1 !important;transform:none !important;transition:none !important;}",
-      });
       const results = await new AxeBuilder({ page }).analyze();
       const bad = results.violations.filter(
         (v) => v.impact === "serious" || v.impact === "critical",
@@ -134,7 +131,7 @@ test.describe("first city", () => {
     await expect(page.locator("main")).toContainText("Delhi");
     await expect(page.locator("footer")).toContainText("Delhi");
     await page.goto("/pre-register");
-    await expect(page.locator("main")).toContainText("Delhi");
+    await expect(page.locator("#pr-city")).toHaveValue("Delhi");
   });
 
   for (const path of PAGES) {
@@ -146,15 +143,77 @@ test.describe("first city", () => {
   }
 });
 
-test.describe("roadmap", () => {
-  test("MVP 0 and MVP 1 are labelled Done with the date, and MVP 1 does not promise OTP login", async ({ page }) => {
-    await page.goto("/roadmap");
-    const item = (id: string) => page.locator("li.road-item", { has: page.getByText(id, { exact: true }) });
-    await expect(item("MVP 0")).toContainText("Done");
-    await expect(item("MVP 0")).toContainText("22 Oct 2026");
-    await expect(item("MVP 1")).toContainText("Done");
-    await expect(item("MVP 1")).toContainText("Sign in with Google");
-    await expect(item("MVP 1")).not.toContainText("OTP");
-    await expect(item("MVP 2")).toContainText("Coming soon");
+test.describe("pin code on the home page", () => {
+  test("See if we deliver carries the pin to the pre-register form", async ({ page }) => {
+    await page.goto("/");
+    await page.fill("#pin", "110024");
+    await page.getByRole("button", { name: "See if we deliver" }).click();
+    await expect(page).toHaveURL(/\/pre-register\/?\?pin=110024/);
+    await expect(page.locator("#pr-pin")).toHaveValue("110024");
   });
+});
+
+test.describe("motion", () => {
+  test("with reduced motion every heading and number shows its final text at once", async ({ browser }) => {
+    const ctx = await browser.newContext({ reducedMotion: "reduce" });
+    const page = await ctx.newPage();
+    await page.goto("/investors");
+    await expect(page.getByRole("heading", { level: 1, name: "Hot meals as quick commerce." })).toBeVisible();
+    await expect(page.locator(".numbers .n b").first()).toHaveText("1");
+    await expect(page.locator(".progress")).toBeHidden();
+    expect(await page.locator("[style*='opacity']").count()).toBe(0);   // nothing is held half-hidden
+    await ctx.close();
+  });
+
+  test("the final numbers are in the server HTML, so they read without JavaScript", async ({ request }) => {
+    const html = await (await request.get("/investors")).text();
+    expect(html).toContain("25–35");
+    expect(html).toContain("Hot meals as quick commerce.");
+  });
+});
+
+test.describe("review fixes", () => {
+  test("the heading keeps its spaces in the page text and for copy and paste", async ({ page }) => {
+    await page.goto("/");
+    const text = await page.getByRole("heading", { level: 1 }).evaluate((h) => (h as HTMLElement).textContent);
+    expect(text).toContain("Hot meals from our kitchen. At your door in 25 to 35 minutes.");
+    const html = await (await page.request.get("/")).text();
+    expect(html).toMatch(/Hot<\/span>\s*<span[^>]*>meals|Hot meals/);
+  });
+
+  test("the footer credits Wikimedia Commons and has no dead Privacy or Terms links", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("footer")).toContainText("Punjabi Thali by Sarahbatra");
+    await expect(page.locator("footer")).toContainText("Malwani Chicken Thali by Shailesh V Nigawale");
+    await expect(page.locator("footer").getByRole("link", { name: "CC BY-SA 4.0" })).toHaveAttribute("href", /creativecommons\.org\/licenses\/by-sa\/4\.0/);
+    await expect(page.locator("footer")).toContainText("Wikimedia Commons");
+    await expect(page.locator("footer").getByRole("link", { name: /privacy|terms/i })).toHaveCount(0);
+    expect(await page.locator('a[href="#"]').count()).toBe(0);
+  });
+
+  test("theme-color is the cream of the page", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#e4e6d9");
+  });
+
+  test("the nav comes from Watermelon UI and opens a menu on a phone", async ({ browser }) => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    await page.goto("/", { waitUntil: "networkidle" });   // the menu is an island: wait for it to wake up
+    await page.getByRole("button", { name: "Open menu" }).click();
+    await expect(page.getByRole("dialog").getByRole("link", { name: "For investors" })).toBeVisible();
+    await ctx.close();
+  });
+});
+
+test.describe("phone width", () => {
+  for (const path of PAGES) {
+    test(`${path} does not scroll sideways at 390 px`, async ({ browser }) => {
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+      const page = await ctx.newPage();
+      await page.goto(path);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+      await ctx.close();
+    });
+  }
 });
