@@ -67,12 +67,12 @@ test("S4 Numbers shows the day's tiles and one row per kitchen", async ({ page, 
   await expect(page.getByText("Rohini Kitchen")).toBeVisible();
 });
 
-test("S5 City keeps the kitchens, staff and menu tools until the A5 to A7 layer", async ({ page, context }) => {
+test("S5 City opens on the kitchens and riders (board A5, see admin-city.spec)", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.admin = true;
   await page.goto("/admin/");
   await tab(page, "City").click();
-  await expect(page.getByRole("tab", { name: "Kitchens" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Kitchens" })).toBeVisible();
   await expect(page.getByText("Hauz Khas Kitchen")).toBeVisible();
 });
 

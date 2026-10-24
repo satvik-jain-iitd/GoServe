@@ -261,4 +261,33 @@ for (const theme of ["day", "night"] as const) {
     await page.getByRole("heading", { name: "Not an admin account" }).waitFor();
     await shot("A-NotAdmin");
   });
+  test(`shots admin city ${theme}`, async ({ page, context }) => {   // story H12b (#195): boards A5 to A7
+    await context.addInitScript((v) => localStorage.setItem("gs-theme", v), theme);
+    const shot = (name: string) => page.screenshot({ path: `${OUT}/${theme}/${name}-${theme}.png` });
+    const net = await setup(context, page);
+    net.state.admin = true;
+    net.state.kitchens = [
+      { id: "k", name: "Tau Ka Dhaba", address: "C-4, Lajpat Nagar II, back lane", phone: "9876500011", pin_codes: ["110024", "110025"], open: true, active: true, opens_at: "11:00:00", closes_at: "22:00:00" },
+      { id: "k2", name: "Amma's Kitchen", address: null, phone: null, pin_codes: ["110016", "110017"], open: true, active: true, opens_at: null, closes_at: null },
+      { id: "k3", name: "Punjab Rasoi", address: null, phone: null, pin_codes: ["110048"], open: false, active: true, opens_at: null, closes_at: null }];
+    net.state.people = [{ kind: "kitchen", user_id: "u-1", email: "sunita@example.com", kitchen_id: "k", kitchen_name: "Tau Ka Dhaba" }, { kind: "kitchen", user_id: "u-2", email: "raju@example.com", kitchen_id: "k", kitchen_name: "Tau Ka Dhaba" }, { kind: "kitchen", user_id: "u-3", email: "lakshmi@example.com", kitchen_id: "k2", kitchen_name: "Amma's Kitchen" }];
+    net.state.riders = [{ user_id: "r1", name: "Amit Kumar", phone: "9810011223", online: true }, { user_id: "r2", name: "Ravi Yadav", phone: "9810011224", online: true }, { user_id: "r3", name: "Deepak Singh", phone: null, online: false }];
+    net.state.menu = MENU.map((d, i) => ({ ...d, kitchen_id: "k", available: i !== 3 }));
+    await page.goto("/admin/");
+    await page.getByRole("button", { name: "City", exact: true }).click();
+    await page.getByText("Amit Kumar").waitFor();
+    await page.evaluate(() => document.fonts.ready);
+    await shot("A-City");
+    await page.getByRole("button", { name: /^Open kitchen Tau Ka Dhaba/ }).click();
+    await page.getByText("Paneer Butter Masala").waitFor();
+    await shot("A-Kitchen");
+    await page.getByRole("button", { name: "Back to city" }).click();
+    await page.getByRole("button", { name: "Add a kitchen" }).click();
+    await page.getByRole("heading", { name: "Add a kitchen" }).waitFor();
+    await page.getByLabel("Kitchen name").fill("Punjab Rasoi");
+    await page.getByLabel("Address").fill("A-12, Greater Kailash I");
+    await page.getByLabel("Phone").fill("9810022334");
+    await page.getByLabel("Pin codes").fill("11004");
+    await shot("A-AddKitchen");
+  });
 }
