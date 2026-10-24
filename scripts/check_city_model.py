@@ -301,6 +301,7 @@ do $$ begin begin set local role authenticated; perform set_config('request.jwt.
 {_pn(23, f"(select count(*) from pilot_watch(3, 5) where order_id in ('{P['unseen']}', '{P['norider']}')) = 0 and (select count(*) from order_events where order_id = '{P['unseen']}' and event = 'watch.accept_late') = 1")}
 {_pn(24, f"pilot_watch_mark(jsonb_build_array(jsonb_build_object('order_id', '{P['unseen']}', 'kind', 'accept_late'))) = 0")}
 create temp table dpn as select pilot_prune() as n;
+{_pn(26, "(pilot_numbers(now() - interval '1 day', now(), null)->'numbers'->>'pins')::int = (select max(cardinality(pin_codes)) from kitchens where active)")}
 {_pn(25, f"(select n from dpn) >= 1 and (select count(*) from rider_pings where at < now() - interval '30 days') = 0 and (select count(*) from rider_pings where user_id = '{U['rider']}' and lat = 28.61) = 1 and (select count(*) from rider_pings where user_id = '{U['rider']}') >= 9")}
 """
 PILOT_NAMES = ["rider_ping updates the rider's last place (the history row is counted in the prune check)", "rider_ping refuses someone who is not a rider", "rider_ping refuses a place outside the earth",
@@ -311,7 +312,7 @@ PILOT_NAMES = ["rider_ping updates the rider's last place (the history row is co
                "pilot_numbers: location gap share, pin codes, and unmeasured numbers are null", "pilot_numbers: a quiet kitchen gives zero orders and no shares", "nobody reads the ping history directly (only the functions do)",
                "pilot_numbers: an admin may read", "pilot_numbers: a customer is refused", "pilot_watch: an unseen placed order and a ready order with no rider are listed",
                "pilot_watch: finished and on-the-way orders are not listed", "pilot_watch_mark writes one event per order", "pilot_watch: marked orders are not listed again and the event is stored",
-               "pilot_watch_mark: a second mark writes nothing", "pilot_prune deletes pings older than 30 days and keeps the rest"]
+               "pilot_watch_mark: a second mark writes nothing", "pilot_prune deletes pings older than 30 days and keeps the rest", "pilot_numbers: pin codes served is the most around one kitchen, not the sum over all kitchens"]
 
 
 # Story H15 (#205): platform health numbers and the cost caps (migration 0025). Read as the database owner, like the service role.

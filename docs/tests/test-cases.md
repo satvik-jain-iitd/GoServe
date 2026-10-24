@@ -290,3 +290,4 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | SUB 94 wiring, MAIN 93 calls it, the UptimeRobot key comes in at deploy time, canvas layout | #205 | S2 | Automatic | `ops/n8n/order/cost.test.js` | Pass |
 | UptimeRobot plan: six monitors, only the missing ones, no delete or edit call | #205 | S3 | Automatic | `scripts/test_uptimerobot.py` | Pass |
 | Live row: `ops/health/uptimerobot.py` plan, `--apply` after the owner's yes, then `getMonitors` lists six more | #205 | S3 | Manual | owner | Open (plan read on 24 Oct: 1 monitor today, 6 missing) |
+| pilot_numbers reports the most pin codes around one kitchen, not the sum over all kitchens (migration 0026; red first: 134 of 135) | #204 | S1 | Check | `scripts/check_city_model.py dev` | Pass on dev, 135 of 135 |
