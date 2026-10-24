@@ -45,6 +45,7 @@ test("S5 the admin's kitchen form takes opening and closing times", async ({ pag
   const net = await setup(context, page);
   net.state.admin = true;
   await page.goto("/admin/");
+  await page.getByRole("button", { name: "City", exact: true }).click();   // H12: the form lives on the City tab
   await page.getByLabel("Kitchen name").fill("Rohini Kitchen");
   await page.getByLabel("Address").fill("Sector 7, Rohini, Delhi");
   await page.getByLabel("Phone").fill("9876543210");

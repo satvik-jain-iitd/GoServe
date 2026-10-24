@@ -111,6 +111,8 @@ const TAB_ICONS = {
   new: <><path d="M4 4h16v16H4z" /><path d="M8 9h8M8 13h5" /></>,
   cooking: <><path d="M4 11h16v3a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6z" /><path d="M9 4v3M12 3v4M15 4v3" /></>,
   kitchen: <><path d="M3 11l9-7 9 7" /><path d="M5 10v10h14V10" /></>,
+  city: <><path d="M3 21h18M5 21V8l4-3v16M9 21V11h6v10M15 21V5l4 3v13" /></>,
+  numbers: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
 };
 export type TabIcon = keyof typeof TAB_ICONS;
 // Bottom tabs of the rider and kitchen apps (story H11, #194): the visible word is the accessible name.

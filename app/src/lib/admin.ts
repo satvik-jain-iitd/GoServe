@@ -91,7 +91,10 @@ export const setDish = async (c: Client, id: string, change: { available?: boole
 export const deleteDish = async (c: Client, id: string) => adminMessage((await c.from("menu_items").delete().eq("id", id)).error);
 
 // Orders and the day's numbers (story A4). "Today" is the day in India, whatever the phone's own clock zone says.
-export type AdminOrder = { id: string; kitchen_id: string; status: string; created_at: string; total_paise: number; items: { name: string; qty: number }[]; address: string; customer_name: string | null; customer_phone: string | null; cancel_reason: string | null };
+export type AdminOrder = { id: string; kitchen_id: string; status: string; created_at: string; updated_at?: string; total_paise: number; items: { name: string; qty: number; price_paise?: number }[]; address: string; customer_name: string | null; customer_phone: string | null; cancel_reason: string | null; rider_id?: string | null };
+export const LIVE = ["placed", "accepted", "preparing", "ready", "out_for_delivery"];
+export const liveOrders = (orders: AdminOrder[]): AdminOrder[] => orders.filter((o) => LIVE.includes(o.status));
+export const doneOrders = (orders: AdminOrder[]): AdminOrder[] => orders.filter((o) => !LIVE.includes(o.status));
 export type DayNumbers = { kitchen_id: string; kitchen_name: string; orders: number; delivered: number; cancelled: number; cash_paise: number; day?: string };
 
 export const istDayStart = (now: Date): string => {
@@ -106,7 +109,7 @@ export const sumNumbers = (rows: DayNumbers[]) =>
   rows.reduce((t, r) => ({ orders: t.orders + r.orders, delivered: t.delivered + r.delivered, cancelled: t.cancelled + r.cancelled, cash_paise: t.cash_paise + Number(r.cash_paise) }), { orders: 0, delivered: 0, cancelled: 0, cash_paise: 0 });
 
 export async function listTodayOrders(c: Client): Promise<AdminOrder[]> {
-  const { data, error } = await c.from("orders").select("id, kitchen_id, status, created_at, total_paise, items, address, customer_name, customer_phone, cancel_reason")
+  const { data, error } = await c.from("orders").select("id, kitchen_id, status, created_at, updated_at, total_paise, items, address, customer_name, customer_phone, cancel_reason, rider_id")
     .gte("created_at", istDayStart(new Date())).order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as AdminOrder[];

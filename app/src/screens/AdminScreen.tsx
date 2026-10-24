@@ -1,4 +1,4 @@
-// The founder's screen (story A2): who may use the system, and which kitchens exist. Only an admin sees it; row level security enforces that too.
+// The founder's app on the Ink v3 boards A1 to A4 and A8 (story H12, #195; story A2): the gate, Orders, City (the kitchen, staff and menu tools until the A5 to A7 layer), Numbers.
 import { useCallback, useEffect, useState } from "react";
 import { addKitchen, addPerson, isAdmin, listKitchens, listPeople, parsePins, removePerson, type KitchenRow, type Person, type PersonKind } from "../lib/admin";
 import { kitchenProblem } from "../lib/validate";
@@ -6,13 +6,20 @@ import { ensureSession, getClient } from "../lib/supabase";
 import { AdminMenu } from "./AdminMenu";
 import { AdminNumbers } from "./AdminNumbers";
 import { AdminOrders } from "./AdminOrders";
-import { Button } from "../ui";
+import { SignIn } from "./SignIn";
+import { Button, Tabs } from "../ui";
 
-type Tab = "kitchens" | "staff" | "menu" | "orders" | "numbers";
+type Tab = "orders" | "city" | "numbers";
+type CityTab = "kitchens" | "staff" | "menu";
 
 export function AdminScreen() {
   const [allowed, setAllowed] = useState<boolean | null>(null);
-  const [tab, setTab] = useState<Tab>("kitchens");
+  const [anonymous, setAnonymous] = useState(true);
+  const [tab, setTab] = useState<Tab>("orders");
+  const [city, setCity] = useState<CityTab>("kitchens");
+  const [openOrder, setOpenOrder] = useState<string | null>(null);
+  const [count, setCount] = useState({ live: 0, total: 0 });
+  const onCount = useCallback((live: number, total: number) => setCount({ live, total }), []);
   const [kitchens, setKitchens] = useState<KitchenRow[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +30,7 @@ export function AdminScreen() {
     try {
       await ensureSession();
       const c = getClient();
+      try { const { data } = await c.auth.getUser(); setAnonymous(data.user?.is_anonymous !== false); } catch { /* unknown: treat as not signed in */ }
       const ok = await isAdmin(c);
       setAllowed(ok);
       if (!ok) return;
@@ -35,8 +43,36 @@ export function AdminScreen() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  if (allowed === null) return <section><h2>Admin</h2><p>Loading…</p></section>;
-  if (!allowed) return <section><h2>Admin</h2><p role="status">Not allowed. Sign in with an admin Google account.</p>{error && <p role="alert" className="error">{error}</p>}</section>;
+  if (allowed === null) return <><header className="ui-head"><h1>Orders</h1></header><div className="ui-pad"><p className="ui-meta">Loading…</p></div></>;
+  if (!allowed) return (   // A1 when there is no Google sign-in yet, A2 when the account is not on the admin list
+    <section className="ui-landing">
+      <header className="ui-landing-head">
+        <h1><img className="ui-logo ui-lockup" src="/brand/lockup-day.png" alt="GoServe" width="350" height="50" /></h1>
+        <div className="ui-zigzag" aria-hidden="true" />
+        <p className="ui-kicker">Admin · the city in one hand</p>
+      </header>
+      <div className="ui-slip" role="group" aria-label={anonymous ? "Sign in" : "Not an admin"}>
+        <div className="ui-slip-body">
+          <div className="ui-slip-head"><span>Admin</span><span>{anonymous ? "Google" : "Signed in"}</span></div>
+          {anonymous ? (
+            <>
+              <h2 className="ui-slip-title">Sign in to run the city</h2>
+              <p className="ui-meta">Only the admin accounts on the list can sign in. No password, no form.</p>
+              <SignIn mode="signin" />
+            </>
+          ) : (
+            <>
+              <h2 className="ui-slip-title">Not an admin account</h2>
+              <p role="status">This Google account is not on the admin list. Sign in with the admin account, or ask an admin to add this one.</p>
+              <button type="button" className="ui-btn big" onClick={async () => { try { await getClient().auth.signOut(); } catch { /* offline */ } window.location.reload(); }}>Sign out</button>
+            </>
+          )}
+          {error && <p role="alert" className="ui-field-error">{error}</p>}
+        </div>
+      </div>
+      <footer className="ui-landing-foot"><p className="ui-kicker">No app to install · works in the browser</p></footer>
+    </section>
+  );
 
   const submitKitchen = async () => {
     const problem = kitchenProblem(form);
@@ -57,18 +93,25 @@ export function AdminScreen() {
     if (!failed) await load();
   };
 
+  const head = tab === "orders" ? { h: "Orders", meta: `Today · ${count.total}` } : tab === "city" ? { h: "City", meta: "Delhi" } : { h: "Numbers", meta: `Today · ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` };
+  const ordersView = <AdminOrders kitchens={kitchens} onError={setError} open={openOrder} onOpen={setOpenOrder} onCount={onCount} />;
+  if (tab === "orders" && openOrder) return <>{error && <p role="alert" className="ui-note error">{error}</p>}{ordersView}</>;   // A4 sits over the tabs
   return (
-    <section>
-      <h2>Admin</h2>
-      <div role="tablist" aria-label="Admin">
-        {(["kitchens", "menu", "orders", "numbers", "staff"] as const).map((t) => (
-          <button key={t} role="tab" type="button" className={tab === t ? "btn" : "btn ghost"} aria-selected={tab === t} onClick={() => { setError(null); setTab(t); }}>
-            {t === "kitchens" ? "Kitchens" : t === "menu" ? "Menu" : t === "orders" ? "Orders" : t === "numbers" ? "Numbers" : "Staff"}
+    <>
+      <header className="ui-head"><h1>{head.h}</h1><span className="meta">{head.meta}</span></header>
+      {error && <p role="alert" className="ui-note error">{error}</p>}
+      {tab === "orders" && ordersView}
+      {tab === "numbers" && <div className="ui-scroll"><AdminNumbers live={count.live} kitchens={kitchens} /></div>}
+      {tab === "city" && <div className="ui-scroll ui-city">
+      <div role="tablist" aria-label="City" className="ui-chips ui-pad">
+        {(["kitchens", "staff", "menu"] as const).map((t) => (
+          <button key={t} role="tab" type="button" className={city === t ? "ui-chip on" : "ui-chip"} aria-selected={city === t} onClick={() => { setError(null); setCity(t); }}>
+            {t === "kitchens" ? "Kitchens" : t === "menu" ? "Menu" : "Staff"}
           </button>
         ))}
       </div>
-      {error && <p role="alert" className="error">{error}</p>}
-      {tab === "kitchens" && (
+      <section className="ui-pad">
+      {city === "kitchens" && (
         <>
           <ul className="tickets">
             {kitchens.map((k) => (
@@ -89,10 +132,8 @@ export function AdminScreen() {
           <Button onClick={() => void submitKitchen()}>Add kitchen</Button>
         </>
       )}
-      {tab === "orders" && <AdminOrders kitchens={kitchens} onError={setError} />}
-      {tab === "numbers" && <AdminNumbers />}
-      {tab === "menu" && <AdminMenu kitchens={kitchens} onError={setError} />}
-      {tab === "staff" && (
+      {city === "menu" && <AdminMenu kitchens={kitchens} onError={setError} />}
+      {city === "staff" && (
         <>
           <ul className="tickets">
             {people.map((p) => (
@@ -121,6 +162,9 @@ export function AdminScreen() {
           <Button onClick={() => void submitPerson()}>Add person</Button>
         </>
       )}
-    </section>
+      </section>
+      </div>}
+      <Tabs current={tab} onPick={(t) => { setError(null); setTab(t); }} tabs={[{ key: "orders", label: "Orders", icon: "orders", badge: count.live }, { key: "city", label: "City", icon: "city" }, { key: "numbers", label: "Numbers", icon: "numbers" }]} />
+    </>
   );
 }
