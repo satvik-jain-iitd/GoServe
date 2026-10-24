@@ -77,5 +77,5 @@ test("the customer menu is one tap away and keeps the cart while you look at the
   await page.getByRole("button", { name: "Kitchen" }).click();
   await expect(page.getByRole("heading", { name: "Kitchen" })).toBeVisible();
   await page.getByRole("button", { name: "Customer" }).click();
-  await expect(page.getByRole("button", { name: "View cart (1)" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "View bill (1)" })).toBeVisible();
 });

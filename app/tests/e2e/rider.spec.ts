@@ -55,7 +55,7 @@ test("S2 the customer sees every step live, without a refresh, and it ends at De
   const net = await setup(context, page);
   await page.goto("/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Delivery address").fill("Flat 4, Green Park");
   await page.getByRole("button", { name: "Review bill" }).click();
   await page.getByRole("button", { name: "Place order (cash on delivery)" }).click();

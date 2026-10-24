@@ -455,7 +455,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   );
   const needArea = lock === "customer" && step !== "placed" && step !== "orders" && !(pin && (area?.kind === "ok" || area?.kind === "closed"));
   const customerView = needArea ? (
-    <AreaScreen pin={pin} area={area} busy={looking} error={areaError} onPin={choosePin} />
+    <AreaScreen pin={pin} area={area} busy={looking} error={areaError} onPin={choosePin} onTrack={() => setStep("orders")} />
   ) : (
     <>
         {step === "menu" && (

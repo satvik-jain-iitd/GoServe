@@ -78,8 +78,8 @@ export function MenuScreen(p: Props) {
       </div>
       {p.cartCount > 0 && !closed && (
         <div className="ui-sticky float">
-          <button type="button" className="ui-btn bar" aria-label={`View cart (${p.cartCount}) · ${formatRupees(p.cartTotal)}`} onClick={p.onOpenCart}>
-            <span className="mono">{p.cartCount} {p.cartCount === 1 ? "item" : "items"} · {formatRupees(p.cartTotal)}</span><span className="verb">View cart ›</span>
+          <button type="button" className="ui-btn bar" aria-label={`View bill (${p.cartCount}) · ${formatRupees(p.cartTotal)}`} onClick={p.onOpenCart}>
+            <span className="mono">{p.cartCount} {p.cartCount === 1 ? "item" : "items"} · {formatRupees(p.cartTotal)}</span><span className="verb">View bill ›</span>
           </button>
         </div>
       )}

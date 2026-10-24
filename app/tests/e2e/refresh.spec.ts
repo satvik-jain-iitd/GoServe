@@ -6,7 +6,7 @@ test("S1 a refresh on the cart keeps the dishes and the address", async ({ page,
   await setup(context, page);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Delivery address").fill("Flat 4, Green Park");
   await page.getByLabel("Your name").fill("Asha");
   await page.getByLabel("Phone number").fill("9876543210");
@@ -20,7 +20,7 @@ test("S2 a refresh on the bill stays on the bill with the same total", async ({ 
   await setup(context, page);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Delivery address").fill("Flat 4");
   await page.getByLabel("Your name").fill("Asha");
   await page.getByLabel("Phone number").fill("9876543210");
@@ -35,7 +35,7 @@ test("S3 after the order is placed the cart is empty again on the next visit", a
   await setup(context, page);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Delivery address").fill("Flat 4");
   await page.getByLabel("Your name").fill("Asha");
   await page.getByLabel("Phone number").fill("9876543210");
@@ -51,5 +51,5 @@ test("S4 the demo console at / does not keep a draft", async ({ page, context })
   await page.goto("/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.reload();
-  await expect(page.getByRole("button", { name: /View cart/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /View bill/ })).toHaveCount(0);
 });

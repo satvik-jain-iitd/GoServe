@@ -4,9 +4,9 @@ import { useState } from "react";
 import { isPin, openingText } from "../lib/area";
 import type { Area } from "../lib/area";
 
-type Props = { pin: string | null; area: Area | null; busy: boolean; error: string | null; onPin: (pin: string) => void };
+type Props = { pin: string | null; area: Area | null; busy: boolean; error: string | null; onPin: (pin: string) => void; onTrack: () => void };
 
-export function AreaScreen({ pin, area, busy, error, onPin }: Props) {
+export function AreaScreen({ pin, area, busy, error, onPin, onTrack }: Props) {
   const [text, setText] = useState(pin ?? "");
   const [problem, setProblem] = useState<string | null>(null);
   const none = area?.kind === "none";
@@ -21,9 +21,9 @@ export function AreaScreen({ pin, area, busy, error, onPin }: Props) {
       <div className="ui-slip" role="group" aria-label="Delivery place">
         <div className="ui-slip-body">
           <div className="ui-slip-head"><span>Pin code</span><span>Cash only</span></div>
-          <h2 className="ui-slip-title">Where should we deliver?</h2>
+          <h2 className="ui-slip-title">Where do we deliver?</h2>
           <div className="ui-field">
-            <label htmlFor="pin">Pin code</label>
+            <label htmlFor="pin">Your pin code</label>
             <input id="pin" className="ui-pin-input" type="tel" inputMode="numeric" maxLength={6} placeholder="110024" value={text}
               aria-invalid={!!(shown || none) || undefined} aria-describedby={shown || none ? "pin-help" : undefined}
               onChange={(e) => setText(e.target.value.trim())} />
@@ -33,10 +33,13 @@ export function AreaScreen({ pin, area, busy, error, onPin }: Props) {
           <p className="ui-note">{none ? "We add pin codes every week. A pin next to yours may work." : "We serve a few pin codes for now."}</p>
           {busy && <p role="status" className="ui-note">Finding your kitchen…</p>}
           {area?.kind === "closed" && <p role="status" className="ui-note">{openingText(area.name, area.opens_at)}</p>}
-          <button type="button" className="ui-btn big" disabled={busy} onClick={() => (isPin(text) ? (setProblem(null), onPin(text)) : setProblem("A pin code is six digits."))}>Show kitchen</button>
+          <button type="button" className="ui-btn big" disabled={busy} onClick={() => (isPin(text) ? (setProblem(null), onPin(text)) : setProblem("A pin code is six digits."))}>See the menu</button>
         </div>
       </div>
-      <p className="ui-kicker ui-landing-foot">No app to install · no card needed</p>
+      <div className="ui-landing-foot">
+        <button type="button" className="ui-btn ghost big" onClick={onTrack}>Track an order</button>
+        <p className="ui-kicker">No app to install · no card needed</p>
+      </div>
     </section>
   );
 }

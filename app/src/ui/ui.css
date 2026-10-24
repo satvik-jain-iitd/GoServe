@@ -206,7 +206,8 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-landing-head .ui-logo { display: block; width: 100%; height: auto; }
 .ui-kicker { margin: 0; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); letter-spacing: 0.04em; text-transform: uppercase; color: var(--gs-text-muted); }
 .ui-landing .ui-slip { margin-top: var(--gs-space-6); }
-.ui-landing-foot { margin-top: auto; padding-top: var(--gs-space-5); text-align: center; font-size: var(--gs-mono-xs); }
+.ui-landing-foot { margin-top: auto; padding-top: var(--gs-space-5); display: flex; flex-direction: column; gap: var(--gs-space-2); text-align: center; }
+.ui-landing-foot .ui-kicker { font-size: var(--gs-mono-xs); }
 .ui-slip-title { margin: 0; font-family: var(--gs-font-display); font-weight: 800; font-size: var(--gs-display-l); line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; }
 .ui-field { display: flex; flex-direction: column; gap: 6px; }
 .ui-field label { font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); text-transform: uppercase; color: var(--gs-text-muted); }

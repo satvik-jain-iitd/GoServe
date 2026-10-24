@@ -6,7 +6,7 @@ const OTHER = "7e57ab1e-0000-4000-8000-0000000000b2";
 
 async function placeOne(page: Page) {
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Delivery address").fill("Flat 4, Green Park");
   await page.getByRole("button", { name: "Review bill" }).click();
   await page.getByRole("button", { name: "Place order (cash on delivery)" }).click();

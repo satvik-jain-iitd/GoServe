@@ -34,11 +34,11 @@ test("S2 the sticky cart bar shows the count and the total, and opens the cart",
   const net = await setup(context, page);
   net.state.menu = MENU;
   await page.goto("/customer/");
-  await expect(page.getByRole("button", { name: /View cart/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /View bill/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Add Dal Makhani" }).click();
   await page.getByRole("button", { name: "Add Gulab Jamun" }).click();
-  await expect(page.getByRole("button", { name: /View cart \(2\)/ })).toContainText("₹310");
-  await page.getByRole("button", { name: /View cart/ }).click();
+  await expect(page.getByRole("button", { name: /View bill \(2\)/ })).toContainText("₹310");
+  await page.getByRole("button", { name: /View bill/ }).click();
   await expect(page.getByRole("heading", { name: "Your cart" })).toBeVisible();
 });
 
@@ -100,7 +100,7 @@ test("S7 the bill says cash on delivery and the delivery is free, in plain words
   await setup(context, page);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Your name").fill("Asha");
   await page.getByLabel("Phone number").fill("9876543210");
   await page.getByLabel("Delivery address").fill("Flat 4");

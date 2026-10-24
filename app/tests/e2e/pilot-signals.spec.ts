@@ -5,7 +5,7 @@ import { ID, order, setup } from "./helpers";
 async function placeOrder(page: import("@playwright/test").Page) {
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Delivery address").fill("Flat 4, Green Park");
   await page.getByLabel("Your name").fill("Asha");
   await page.getByLabel("Phone number").fill("9876543210");

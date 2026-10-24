@@ -4,7 +4,7 @@ import { ID, SESSION, order, setup } from "./helpers";
 
 async function toCart(page: Page) {
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
 }
 
 test("S1 the cart asks for a name and a ten digit phone before the bill, and saves them with the address", async ({ page, context }) => {

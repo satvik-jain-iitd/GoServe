@@ -48,7 +48,7 @@ test("S1 order path: add 2 dishes, see the bill, place the order (cash on delive
 
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: "Add Samosa (2 pieces)" }).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
 
   await expect(page.getByRole("heading", { name: "Your cart" })).toBeVisible();
   await page.getByLabel("Delivery address").fill("Flat 4, Green Park, Delhi");
@@ -74,7 +74,7 @@ test("S1 the address is required before the bill", async ({ page, context }) => 
   await mockNetwork(context);
   await page.goto("/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
   await expect(page.getByRole("button", { name: "Review bill" })).toBeDisabled();
   await page.getByLabel("Delivery address").fill("Flat 4");
   await expect(page.getByRole("button", { name: "Review bill" })).toBeEnabled();
@@ -84,7 +84,7 @@ test("S1 quantity buttons change the bill", async ({ page, context }) => {
   await mockNetwork(context);
   await page.goto("/");
   await page.getByRole("button", { name: "Add Samosa (2 pieces)" }).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByRole("button", { name: "More Samosa (2 pieces)" }).click();
   await page.getByLabel("Delivery address").fill("x");
   await page.getByRole("button", { name: "Review bill" }).click();
@@ -96,7 +96,7 @@ test("S1 a refused order shows the reason, and the retry sends the same order ke
   net.orderReply = { status: 503, body: { ok: false, error: "kill_switch", message: "Orders are paused. Please try again soon." } };
   await page.goto("/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Delivery address").fill("Flat 4");
   await page.getByRole("button", { name: "Review bill" }).click();
   await page.getByRole("button", { name: "Place order (cash on delivery)" }).click();

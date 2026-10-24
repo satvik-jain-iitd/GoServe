@@ -7,7 +7,7 @@ test("S1 demo path: menu, order, kitchen, AI suggestion, delivered, reset", asyn
   await dishes.first().waitFor({ timeout: 20_000 });
   await dishes.nth(0).click();
   await dishes.nth(1).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Delivery address").fill("Flat 4, Green Park, Delhi");
   await page.getByRole("button", { name: "Review bill" }).click();
   await page.getByRole("button", { name: "Place order (cash on delivery)" }).click();
