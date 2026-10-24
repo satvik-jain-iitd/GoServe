@@ -56,9 +56,8 @@ test("S2 the customer sees every step live, without a refresh, and it ends at De
   await page.goto("/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
-  await page.getByLabel("Delivery address").fill("Flat 4, Green Park");
-  await page.getByRole("button", { name: "Review bill" }).click();
-  await page.getByRole("button", { name: "Place order (cash on delivery)" }).click();
+  await page.getByLabel("Address").fill("Flat 4, Green Park");
+  await page.getByRole("button", { name: /Place order/ }).click();
 
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   const current = page.locator('[aria-current="step"]');
@@ -68,7 +67,8 @@ test("S2 the customer sees every step live, without a refresh, and it ends at De
   const steps: [string, string][] = [["accepted", "Accepted"], ["preparing", "Cooking"], ["ready", "Ready"], ["out_for_delivery", "On the way"], ["delivered", "Delivered"]];
   for (const [i, [status, label]] of steps.entries()) {
     net.push("UPDATE", order(status, `2020-01-01T10:0${i + 1}:00Z`));
-    await expect(current).toHaveText(label, { timeout: 6000 });
+    if (label === "Delivered") await expect(page.getByRole("heading", { name: "Delivered" })).toBeVisible({ timeout: 6000 });
+    else await expect(current).toHaveText(label, { timeout: 6000 });
   }
-  await expect(page.getByText("Your order has been delivered.")).toBeVisible();
+  await expect(page.getByText(/Thank you for eating with GoServe/)).toBeVisible();
 });

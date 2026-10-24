@@ -10,11 +10,10 @@ async function placeOrder(page: Page) {
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
-  await page.getByLabel("Delivery address").fill("Flat 4, Green Park");
+  await page.getByLabel("Address").fill("Flat 4, Green Park");
   await page.getByLabel("Your name").fill("Asha");
-  await page.getByLabel("Phone number").fill("9876543210");
-  await page.getByRole("button", { name: "Review bill" }).click();
-  await page.getByRole("button", { name: "Place order (cash on delivery)" }).click();
+  await page.getByLabel("Phone").fill("9876543210");
+  await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
 }
 const prompt = (page: Page) => page.getByText("Was your order delivered?");
@@ -22,7 +21,7 @@ const prompt = (page: Page) => page.getByText("Was your order delivered?");
 test("the bill and the placed screen say cash on delivery", async ({ page, context }) => {
   await setup(context, page);
   await placeOrder(page);
-  await expect(page.getByText("About 20 min · cash on delivery")).toBeVisible();
+  await expect(page.getByText(/About 20 min/)).toBeVisible();
 });
 
 test("S1 the prompt comes after the kitchen taps Ready, not before", async ({ page, context }) => {

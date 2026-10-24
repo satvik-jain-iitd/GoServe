@@ -25,7 +25,7 @@ test("S2 the rider app, the ops app and the customer app each open on their own 
   await expect(page.getByRole("heading", { name: "Ops", exact: true })).toBeVisible();
   await expect(page).toHaveTitle("GoServe Ops");
   await page.goto("/customer/");
-  await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();   // the session has an open order, so the customer app resumes it
+  await expect(page.getByRole("heading", { name: "Your order", exact: true })).toBeVisible();   // the session has an open order, so the customer app resumes it
   await expect(page.getByRole("navigation", { name: "Screen" })).toHaveCount(0);
   await expect(page).toHaveTitle("GoServe");
 });
