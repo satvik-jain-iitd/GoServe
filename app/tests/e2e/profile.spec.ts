@@ -4,22 +4,21 @@ import { ID, SESSION, order, setup } from "./helpers";
 
 async function toCart(page: Page) {
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
 }
 
 test("S1 the cart asks for a name and a ten digit phone before the bill, and saves them with the address", async ({ page, context }) => {
   const net = await setup(context, page);
   await page.goto("/customer/");
   await toCart(page);
-  await page.getByLabel("Delivery address").fill("Flat 4, Green Park");
-  await expect(page.getByRole("button", { name: "Review bill" })).toBeDisabled();
+  await page.getByLabel("Address").fill("Flat 4, Green Park");
+  await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
   await page.getByLabel("Your name").fill("Asha");
-  await page.getByLabel("Phone number").fill("98765");
-  await expect(page.getByRole("button", { name: "Review bill" })).toBeDisabled();
-  await page.getByLabel("Phone number").fill("9876543210");
-  await expect(page.getByRole("button", { name: "Review bill" })).toBeEnabled();
-  await page.getByRole("button", { name: "Review bill" }).click();
-  await page.getByRole("button", { name: "Place order (cash on delivery)" }).click();
+  await page.getByLabel("Phone").fill("98765");
+  await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
+  await page.getByLabel("Phone").fill("9876543210");
+  await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
+  await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   await expect.poll(() => net.calls.customerWrites.length).toBeGreaterThan(0);
   expect(net.calls.customerWrites.at(-1)!.body).toMatchObject({ user_id: SESSION, name: "Asha", phone: "9876543210", address: "Flat 4, Green Park", pin_code: "110016" });
@@ -31,18 +30,18 @@ test("S2 next time the details are filled in already", async ({ page, context })
   await page.goto("/customer/");
   await toCart(page);
   await expect(page.getByLabel("Your name")).toHaveValue("Asha");
-  await expect(page.getByLabel("Phone number")).toHaveValue("9876543210");
-  await expect(page.getByLabel("Delivery address")).toHaveValue("Flat 4, Green Park");
-  await expect(page.getByRole("button", { name: "Review bill" })).toBeEnabled();
+  await expect(page.getByLabel("Phone")).toHaveValue("9876543210");
+  await expect(page.getByLabel("Address")).toHaveValue("Flat 4, Green Park");
+  await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
 });
 
 test("S3 the demo console at / still needs only the address", async ({ page, context }) => {
   await setup(context, page);
   await page.goto("/");
   await toCart(page);
-  await page.getByLabel("Delivery address").fill("Flat 4");
+  await page.getByLabel("Address").fill("Flat 4");
   await expect(page.getByLabel("Your name")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Review bill" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
 });
 
 test("S4 the tracker shows an estimate and a Cancel button while the order is placed; cancelling tells the database and the screen", async ({ page, context }) => {
@@ -61,7 +60,7 @@ test("S4 the tracker shows an estimate and a Cancel button while the order is pl
 test("S5 once the kitchen has accepted, there is no Cancel button", async ({ page, context }) => {
   await setup(context, page, [order("accepted", "2020-01-01T10:01:00Z")]);
   await page.goto("/customer/");
-  await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your order", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Cancel order" })).toHaveCount(0);
 });
 

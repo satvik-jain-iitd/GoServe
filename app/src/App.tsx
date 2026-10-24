@@ -24,7 +24,6 @@ import { openTill } from "./lib/browse";
 import { AccountScreen } from "./screens/AccountScreen";
 import { currentSession, joinCode, joinLink, joinSession, rememberJoin, resetSession } from "./lib/session";
 import { MenuScreen } from "./screens/MenuScreen";
-import { CartScreen } from "./screens/CartScreen";
 import { BillScreen } from "./screens/BillScreen";
 import { openOrderToResume } from "./lib/resume";
 import { SignIn } from "./screens/SignIn";
@@ -38,7 +37,7 @@ import { OpsScreen } from "./screens/OpsScreen";
 import { DemoBar } from "./screens/DemoBar";
 import { AUTOPILOT_MS, demoDecisions, demoOrder, nextAutoAction } from "./lib/autopilot";
 
-type Step = "menu" | "cart" | "bill" | "placed" | "orders" | "account";
+type Step = "menu" | "bill" | "placed" | "orders" | "account";
 type Role = "customer" | "kitchen" | "rider" | "split" | "ops" | "admin";
 
 const api = orderDeps;
@@ -54,7 +53,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [menuError, setMenuError] = useState<string | null>(null);
   // The customer app keeps an unfinished order across a refresh (story B1); the demo console and the other apps start fresh.
   const [draft0] = useState(() => (lock === "customer" ? loadDraft() : null));
-  const [step, setStep] = useState<Step>(draft0 && draft0.step !== "placed" && draft0.step !== "orders" ? draft0.step : "menu");
+  const [step, setStep] = useState<Step>(draft0 && draft0.step !== "placed" && draft0.step !== "orders" ? draft0.step === "cart" ? "bill" : (draft0.step as Step) : "menu");   // an older draft may hold the cart step: the bill replaced it (H10c)
   const [cart, setCart] = useState<Cart>(draft0?.cart ?? {});
   const [address, setAddress] = useState(draft0?.address ?? "");
   const [name, setName] = useState(draft0?.name ?? "");
@@ -106,6 +105,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // Delivered by hand (story S-C): the delivery question for the customer's order, the Yes, and the Not yet.
   const [confirmCfg, setConfirmCfg] = useState<ConfirmCfg>(DEFAULT_CFG);
   const [placedAt, setPlacedAt] = useState(() => new Date().toISOString());
+  const [placedLines, setPlacedLines] = useState<{ name: string; qty: number; paise: number }[]>([]);   // what the bill showed, for the slip until the live copy arrives
   const [asking, setAsking] = useState(false);
   const [snoozeUntil, setSnoozeUntil] = useState(0);
   const [confirming, setConfirming] = useState(false);
@@ -385,10 +385,11 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   function orderAgain(o: { items: { menu_item_id: string; qty: number }[] }) {
     const ids = new Set((menu?.dishes ?? []).map((d) => d.id));
     setCart(Object.fromEntries(o.items.filter((i) => ids.has(i.menu_item_id)).map((i) => [i.menu_item_id, Math.min(i.qty, MAX_QTY)])));
-    setStep("cart");
+    setStep("bill");
   }
 
   const lines = useMemo(() => cartLines(cart, menu?.dishes ?? []), [cart, menu]);
+  const kitchenName = area?.kind === "ok" ? area.kitchen.name : area?.kind === "closed" ? area.name : "";
   const total = cartTotal(lines);
   const count = lines.reduce((n, l) => n + l.qty, 0);
 
@@ -423,6 +424,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         api(),
       );
       setPlaced(order);
+      setPlacedLines(lines.map((l) => ({ name: l.dish.name, qty: l.qty, paise: l.line_paise })));
       if (!demo) void savePlatform(getClient(), order.id, clientPlatform(navigator.userAgent));   // story H14: the iPhone share of orders
       setConfirmCfg(confirm);
       setPlacedAt(new Date().toISOString());
@@ -455,30 +457,30 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   );
   const needArea = lock === "customer" && step !== "placed" && step !== "orders" && !(pin && (area?.kind === "ok" || area?.kind === "closed"));
   const customerView = needArea ? (
-    <AreaScreen pin={pin} area={area} busy={looking} error={areaError} onPin={choosePin} />
+    <AreaScreen pin={pin} area={area} busy={looking} error={areaError} onPin={choosePin} onTrack={() => setStep("orders")} />
   ) : (
     <>
         {step === "menu" && (
           <MenuScreen dishes={menu?.dishes ?? null} fromCache={menu?.fromCache ?? false} error={menuError}
             pin={pin} name={name} qty={cart} cartCount={count} cartTotal={total}
-            kitchenName={area?.kind === "ok" ? area.kitchen.name : area?.kind === "closed" ? area.name : ""}
+            kitchenName={kitchenName}
             openText={area?.kind === "ok" ? openTill(area.kitchen.closes_at) : ""}
             closedText={area?.kind === "closed" ? openingText(area.name, area.opens_at) : null}
-            onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => setStep("cart")}
+            onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
             onChangePin={changeArea} onOrders={() => setStep("orders")} onYou={() => setStep("account")} />
         )}
         {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} onBack={() => setStep("menu")} onAgain={orderAgain} />}
         {step === "account" && <AccountScreen name={name} phone={phone} address={address} pin={pin} onBack={() => setStep("menu")} onChangeArea={changeArea} />}
-        {menu && step === "cart" && (
-          <CartScreen lines={lines} address={address} onAddress={setAddress} details={lock === "customer" ? { name, phone, onName: setName, onPhone: setPhone } : undefined} onChange={(id, d) => setCart((c) => changeQty(c, id, d))}
-            onBack={() => setStep("menu")} onReview={() => { setError(null); setStep("bill"); }} />
-        )}
         {menu && step === "bill" && (
-          <BillScreen lines={lines} total={total} address={address.trim()} sending={sending} error={error}
-            onBack={() => setStep("cart")} onPlace={place} />
+          <BillScreen lines={lines} total={total} kitchenName={kitchenName} pin={pin} address={address} onAddress={setAddress}
+            details={lock === "customer" ? { name, phone, onName: setName, onPhone: setPhone } : undefined} sending={sending} error={error}
+            onBack={() => setStep("menu")} onPlace={place} />
         )}
         {step === "placed" && placed && (
           <PlacedScreen order={placed} status={tracked?.status ?? placed.status} paidBy={tracked?.paid_by ?? null}
+            placedAt={tracked?.created_at ?? placedAt} kitchenName={kitchenName} pin={pin} kitchenPhone={area?.kind === "ok" ? area.kitchen.phone ?? null : null}
+            lines={tracked && "items" in tracked ? tracked.items.map((i) => ({ name: i.name, qty: i.qty, paise: i.price_paise * i.qty })) : placedLines}
+            address={tracked && "address" in tracked ? tracked.address : address.trim()}
             confirmedAt={tracked && tracked.status === "delivered" ? tracked.updated_at : null}
             asking={asking} busy={confirming} error={confirmError} reminder={reminder}
             onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} onAgain={() => { setPlaced(null); setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} onCall={() => void tapCall(getClient(), placed.id)} />
@@ -486,7 +488,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     </>
   );
 
-  const framed = lock === "customer" && role === "customer" && (step === "menu" || needArea);   // the Ink boards fill the phone; the chrome goes below
+  const framed = lock === "customer" && role === "customer" && (step === "menu" || step === "bill" || step === "placed" || needArea);   // the Ink boards fill the phone; the chrome goes below
   const Shell = framed ? "div" : "main";
   return (
     <>

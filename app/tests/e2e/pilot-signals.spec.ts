@@ -5,12 +5,11 @@ import { ID, order, setup } from "./helpers";
 async function placeOrder(page: import("@playwright/test").Page) {
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
-  await page.getByLabel("Delivery address").fill("Flat 4, Green Park");
+  await page.getByRole("button", { name: /View bill/ }).click();
+  await page.getByLabel("Address").fill("Flat 4, Green Park");
   await page.getByLabel("Your name").fill("Asha");
-  await page.getByLabel("Phone number").fill("9876543210");
-  await page.getByRole("button", { name: "Review bill" }).click();
-  await page.getByRole("button", { name: "Place order (cash on delivery)" }).click();
+  await page.getByLabel("Phone").fill("9876543210");
+  await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
 }
 

@@ -22,10 +22,10 @@ test("S1 the hero shows the veg and non-veg thali, the sections hold the other d
   await page.getByRole("button", { name: "Add Dal Makhani" }).click();
   await expect(page.getByRole("button", { name: "Add Dal Makhani" })).toHaveCount(0);
   await page.getByRole("button", { name: "More Dal Makhani" }).click();
-  await expect(page.getByRole("button", { name: /View cart \(2\)/ })).toContainText("₹440");
+  await expect(page.getByRole("button", { name: /View bill \(2\)/ })).toContainText("₹440");
   await page.getByRole("button", { name: "Less Dal Makhani" }).click();
   await page.getByRole("button", { name: "Less Dal Makhani" }).click();
-  await expect(page.getByRole("button", { name: /View cart/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /View bill/ })).toHaveCount(0);
 });
 
 test("S2 a menu with no thali has no hero", async ({ page, context }) => {
@@ -47,7 +47,7 @@ test("S3 tapping a dish photo opens the Dish sheet; Add to bill puts the chosen 
   await expect(sheet.getByRole("button", { name: /Add to bill · ₹640/ })).toBeVisible();
   await sheet.getByRole("button", { name: /Add to bill/ }).click();
   await expect(sheet).toHaveCount(0);
-  await expect(page.getByRole("button", { name: /View cart \(2\)/ })).toContainText("₹640");
+  await expect(page.getByRole("button", { name: /View bill \(2\)/ })).toContainText("₹640");
 });
 
 test("S4 the Filter sheet jumps to a section and closes", async ({ page, context }) => {
@@ -66,8 +66,8 @@ test("S5 a closed kitchen shows its menu with Add switched off and says when it 
   net.state.menu = MENU;
   net.state.kitchens = [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: false, active: true, lat: null, lng: null, opens_at: "10:00:00" }];
   await page.goto("/customer/");
-  await page.getByLabel("Pin code").fill("110016");
-  await page.getByRole("button", { name: "Show kitchen" }).click();
+  await page.getByLabel("Your pin code").fill("110016");
+  await page.getByRole("button", { name: "See the menu" }).click();
   await expect(page.getByText("Hauz Khas Kitchen is closed right now. It opens at 10:00 am.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeDisabled();
 });
@@ -88,9 +88,9 @@ test("S6 while the menu loads the page says it is busy; the saved pin is on the 
 test("S7 a pin code that no kitchen serves marks the field and keeps the button", async ({ page, context }) => {
   await setup(context, page, [], { pin: null });
   await page.goto("/customer/");
-  await page.getByLabel("Pin code").fill("110099");
-  await page.getByRole("button", { name: "Show kitchen" }).click();
-  await expect(page.getByLabel("Pin code")).toHaveAttribute("aria-invalid", "true");
+  await page.getByLabel("Your pin code").fill("110099");
+  await page.getByRole("button", { name: "See the menu" }).click();
+  await expect(page.getByLabel("Your pin code")).toHaveAttribute("aria-invalid", "true");
 });
 
 for (const t of ["day", "night"] as const) {

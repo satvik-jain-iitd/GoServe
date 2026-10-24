@@ -1,7 +1,7 @@
 // Pin code to kitchen (story B2). The customer app asks for a pin code once, finds the open kitchen that serves it and shows that kitchen's menu.
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type AreaKitchen = { id: string; name: string; pin_codes: string[]; lat: number | null; lng: number | null; open: boolean; active: boolean; opens_at?: string | null; closes_at?: string | null };
+export type AreaKitchen = { id: string; name: string; pin_codes: string[]; lat: number | null; lng: number | null; phone?: string | null; open: boolean; active: boolean; opens_at?: string | null; closes_at?: string | null };
 export type Area = { kind: "ok"; kitchen: AreaKitchen } | { kind: "closed"; id: string; name: string; opens_at: string | null } | { kind: "none" };
 
 export const isPin = (text: string): boolean => /^\d{6}$/.test(text);
@@ -43,7 +43,7 @@ export function forgetArea(store: Storage = window.localStorage): void {
 }
 
 export async function fetchKitchens(client: Pick<SupabaseClient, "from">): Promise<AreaKitchen[]> {
-  const { data, error } = await client.from("kitchens").select("id, name, pin_codes, lat, lng, open, active, opens_at, closes_at");
+  const { data, error } = await client.from("kitchens").select("id, name, phone, pin_codes, lat, lng, open, active, opens_at, closes_at");
   if (error) throw error;
   return (data ?? []) as AreaKitchen[];
 }

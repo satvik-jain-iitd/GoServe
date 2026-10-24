@@ -48,15 +48,14 @@ test("S1 order path: add 2 dishes, see the bill, place the order (cash on delive
 
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: "Add Samosa (2 pieces)" }).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
 
-  await expect(page.getByRole("heading", { name: "Your cart" })).toBeVisible();
-  await page.getByLabel("Delivery address").fill("Flat 4, Green Park, Delhi");
-  await page.getByRole("button", { name: "Review bill" }).click();
+  await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
+  await page.getByLabel("Address").fill("Flat 4, Green Park, Delhi");
 
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
   await expect(page.getByTestId("bill-total")).toHaveText("₹380.50");
-  await page.getByRole("button", { name: "Place order (cash on delivery)" }).click();
+  await page.getByRole("button", { name: /Place order/ }).click();
 
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   await expect(page.getByText("₹380.50")).toBeVisible();
@@ -74,20 +73,19 @@ test("S1 the address is required before the bill", async ({ page, context }) => 
   await mockNetwork(context);
   await page.goto("/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
-  await expect(page.getByRole("button", { name: "Review bill" })).toBeDisabled();
-  await page.getByLabel("Delivery address").fill("Flat 4");
-  await expect(page.getByRole("button", { name: "Review bill" })).toBeEnabled();
+  await page.getByRole("button", { name: /View bill/ }).click();
+  await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
+  await page.getByLabel("Address").fill("Flat 4");
+  await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
 });
 
 test("S1 quantity buttons change the bill", async ({ page, context }) => {
   await mockNetwork(context);
   await page.goto("/");
   await page.getByRole("button", { name: "Add Samosa (2 pieces)" }).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
   await page.getByRole("button", { name: "More Samosa (2 pieces)" }).click();
-  await page.getByLabel("Delivery address").fill("x");
-  await page.getByRole("button", { name: "Review bill" }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
+  await page.getByLabel("Address").fill("x");
   await expect(page.getByTestId("bill-total")).toHaveText("₹121");
 });
 
@@ -96,15 +94,14 @@ test("S1 a refused order shows the reason, and the retry sends the same order ke
   net.orderReply = { status: 503, body: { ok: false, error: "kill_switch", message: "Orders are paused. Please try again soon." } };
   await page.goto("/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
-  await page.getByLabel("Delivery address").fill("Flat 4");
-  await page.getByRole("button", { name: "Review bill" }).click();
-  await page.getByRole("button", { name: "Place order (cash on delivery)" }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
+  await page.getByLabel("Address").fill("Flat 4");
+  await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByRole("alert")).toHaveText("Orders are paused. Please try again soon.");
-  await expect(page.getByRole("button", { name: "Place order (cash on delivery)" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
 
   net.orderReply = { status: 200, body: { ok: true, created: false, order: ORDER } };
-  await page.getByRole("button", { name: "Place order (cash on delivery)" }).click();
+  await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   expect(net.orders).toHaveLength(2);
   expect(net.orders[1].body.client_order_key).toBe(net.orders[0].body.client_order_key);
@@ -139,7 +136,7 @@ test("S3 after a refresh the customer lands back on the order that is still open
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   await page.reload();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
-  await expect(page.getByText("Butter Chicken").or(page.getByText("₹380.50"))).toBeVisible();
+  await expect(page.getByText("Butter Chicken").or(page.getByText("₹380.50")).first()).toBeVisible();
   await expect(page.locator("body")).not.toContainText("0f0f0f0f");   // D2: no raw order id on a customer screen
 });
 

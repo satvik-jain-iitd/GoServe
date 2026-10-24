@@ -12,9 +12,9 @@ test("S1 in airplane mode Autopilot plays the whole order story from local data,
   await context.setOffline(true);
   await page.getByRole("button", { name: "Autopilot" }).click();
   await expect(page.getByText("Offline demo")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
-  await expect(tracker(page)).toHaveText("Delivered", { timeout: 8000 });
-  await expect(page.getByText("Your order has been delivered.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^(Order placed|Your order)$/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Delivered" })).toBeVisible({ timeout: 8000 });
+  await expect(page.getByText(/Thank you for eating with GoServe/)).toBeVisible();
   expect(net.calls.status).toHaveLength(0);   // nothing was sent
   expect(net.calls.decide).toHaveLength(0);
   expect(net.calls.orderReads).toHaveLength(readsBefore);   // the live list was not read either
@@ -32,7 +32,7 @@ test("S1 the other screens follow the same local story: kitchen card, rider list
   await expect(page.getByText("AI suggests rider R2 (81%). The rule agrees.")).toBeVisible({ timeout: 8000 });
   await expect(page.getByText("Sample numbers (offline demo).")).toBeVisible();
   await page.getByRole("button", { name: "Customer" }).click();
-  await expect(tracker(page)).toHaveText("Delivered", { timeout: 8000 });
+  await expect(page.getByRole("heading", { name: "Delivered" })).toBeVisible({ timeout: 8000 });
 });
 
 test("S1 tapping Autopilot again leaves the demo and clears the sample order", async ({ page, context }) => {
@@ -89,7 +89,7 @@ test("S1 online but the server cannot be reached and there is no order: Autopilo
   await page.goto("/");
   await page.getByRole("button", { name: "Autopilot" }).click();
   await expect(page.getByText("Offline demo")).toBeVisible({ timeout: 15000 });   // the library retries a dead network for about 7 seconds first
-  await expect(tracker(page)).toHaveText("Delivered", { timeout: 8000 });
+  await expect(page.getByRole("heading", { name: "Delivered" })).toBeVisible({ timeout: 8000 });
 });
 
 test("S1 if the server cannot be reached while Autopilot runs, it falls back to the offline story", async ({ page, context }) => {
@@ -98,7 +98,7 @@ test("S1 if the server cannot be reached while Autopilot runs, it falls back to 
   await page.goto("/");
   await page.getByRole("button", { name: "Autopilot" }).click();
   await expect(page.getByText("Offline demo")).toBeVisible({ timeout: 5000 });
-  await expect(tracker(page)).toHaveText("Delivered", { timeout: 8000 });
+  await expect(page.getByRole("heading", { name: "Delivered" })).toBeVisible({ timeout: 8000 });
 });
 
 test("S2 online, a refused step (kill switch) stops Autopilot after one call and shows the reason", async ({ page, context }) => {

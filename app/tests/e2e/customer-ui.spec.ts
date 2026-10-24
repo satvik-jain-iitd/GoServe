@@ -34,18 +34,18 @@ test("S2 the sticky cart bar shows the count and the total, and opens the cart",
   const net = await setup(context, page);
   net.state.menu = MENU;
   await page.goto("/customer/");
-  await expect(page.getByRole("button", { name: /View cart/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /View bill/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Add Dal Makhani" }).click();
   await page.getByRole("button", { name: "Add Gulab Jamun" }).click();
-  await expect(page.getByRole("button", { name: /View cart \(2\)/ })).toContainText("₹310");
-  await page.getByRole("button", { name: /View cart/ }).click();
-  await expect(page.getByRole("heading", { name: "Your cart" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /View bill \(2\)/ })).toContainText("₹310");
+  await page.getByRole("button", { name: /View bill/ }).click();
+  await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
 });
 
 test("S3 the tracker has a timeline, an estimate and no order id", async ({ page, context }) => {
   await setup(context, page, [order("preparing", "2020-01-01T10:02:00Z")]);
   await page.goto("/customer/");
-  await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your order", exact: true })).toBeVisible();
   await expect(page.getByRole("list", { name: "Order progress" }).locator('[aria-current="step"]')).toHaveText("Cooking");
   await expect(page.getByText("About 20 min")).toBeVisible();
   await expect(page.locator("body")).not.toContainText(ID.slice(0, 8));
@@ -64,7 +64,7 @@ test("S4 once a rider has the order, the card shows the name and a call link", a
 test("S4 with no rider yet there is no rider card", async ({ page, context }) => {
   await setup(context, page, [order("ready", "2020-01-01T10:04:00Z")]);
   await page.goto("/customer/");
-  await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your order", exact: true })).toBeVisible();
   await expect(page.getByTestId("rider-card")).toHaveCount(0);
 });
 
@@ -73,8 +73,8 @@ test("S5 My orders: Order again puts the same dishes in the cart", async ({ page
   await page.goto("/customer/");
   await page.getByRole("button", { name: "My orders" }).click();
   await page.getByRole("button", { name: "Order again" }).click();
-  await expect(page.getByRole("heading", { name: "Your cart" })).toBeVisible();
-  await expect(page.getByLabel("Quantity of Butter Chicken")).toHaveText("2");
+  await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
+  await expect(page.getByText("2 × Butter Chicken")).toBeVisible();
 });
 
 test("S5 an empty My orders says so and points back to the menu", async ({ page, context }) => {
@@ -96,14 +96,13 @@ test("S6 Account shows the saved name, phone and address, and signs out", async 
   await expect(page.getByRole("button", { name: "Change area" })).toBeVisible();
 });
 
-test("S7 the bill says cash on delivery and the delivery is free, in plain words", async ({ page, context }) => {
+test("S7 the bill says cash at the door in plain words", async ({ page, context }) => {
   await setup(context, page);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Your name").fill("Asha");
-  await page.getByLabel("Phone number").fill("9876543210");
-  await page.getByLabel("Delivery address").fill("Flat 4");
-  await page.getByRole("button", { name: "Review bill" }).click();
-  await expect(page.getByText("Delivery is free. You pay when the food arrives.")).toBeVisible();
+  await page.getByLabel("Phone").fill("9876543210");
+  await page.getByLabel("Address").fill("Flat 4");
+  await expect(page.getByText("Pay the rider in cash at the door. No online payment yet.")).toBeVisible();
 });
