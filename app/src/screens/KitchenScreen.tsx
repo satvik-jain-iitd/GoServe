@@ -63,7 +63,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
   const [minute, setMinute] = useState(() => hhmm(new Date().toISOString()));
   useEffect(() => { const t = setInterval(() => setMinute(hhmm(new Date().toISOString())), 60_000); return () => clearInterval(t); }, []);   // the clock line moves on its own
   const pastClose = !!gate && outsideHours(gate.opensAt, gate.closesAt, minute);   // after closing time the customer app shows "closed" whatever the switch says
-  const todayLine = <p className="mono ui-foot">Today · {done.length} done{tab === "kitchen" ? ` · ${formatRupees(onSlips)} on the slips` : ""}</p>;
+  const todayLine = <p className="mono ui-foot">Today · {done.length} done{tab === "kitchen" ? ` · ${formatRupees(onSlips)} cash today` : ""}</p>;
 
   if (opened) {   // K4: one ticket over the tabs
     const [word, cls] = stamp(opened.status);
@@ -79,7 +79,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
         <div className="ui-scroll">
           <section className="ui-slip ui-slip-pad" aria-label={`Order ${shortId(opened.id)}`}>
             <div className="ui-slip-body">
-              <div className="ui-slip-head"><span>Placed {hhmm(opened.created_at)}</span><span>Cash at the door</span></div>
+              <div className="ui-slip-head"><span>Placed {hhmm(opened.created_at)}</span><span>Cash at door</span></div>
               <div className="ui-slip-stamp"><span className={`ui-stamp ${cls}`}>{word}</span></div>
               {lines(opened, true)}
               <div className="ui-slip-rule" />
@@ -88,7 +88,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
               <div className="ui-slip-total"><b>Rider collects</b><span>{formatRupees(opened.total_paise)}</span></div>
             </div>
           </section>
-          <p className="mono ui-foot">Accept, then Start when the pan is on, then Ready. The rider is called at Ready.</p>
+          <p className="mono ui-foot">Accept. Start when cooking. Ready calls the rider.</p>
         </div>
         <div className="ui-bottom">
           {next && <button type="button" className="ui-btn big" aria-label={`${next.label} ${shortId(opened.id)}`} disabled={busyId === opened.id} onClick={() => void step(opened)}>{next.label}</button>}
@@ -138,12 +138,13 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
               ))}
               {handoverError && <p role="alert" className="ui-note error">{handoverError}</p>}
               <DishList kitchenId={gate.kitchenId} />
+              <button type="button" className="ui-row" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}><span>Send feedback</span><span className="go" aria-hidden="true">›</span></button>
               <button type="button" className="ui-row" onClick={gate.signOut}><span>Sign out</span><span className="go" aria-hidden="true">›</span></button>
             </>
           ) : <p className="ui-meta ui-pad">The open switch and the dishes are on the kitchen app, after a Google sign-in.</p>}
         </div>
       )}
-      <Tabs current={tab} tabs={[{ key: "new", label: "New", icon: "new", badge: fresh.length }, { key: "cooking", label: "Cooking", icon: "cooking" }, { key: "kitchen", label: "Kitchen", icon: "kitchen" }]} onPick={setTab} />
+      <Tabs current={tab} tabs={[{ key: "new", label: "New", icon: "new", badge: fresh.length }, { key: "cooking", label: "Cooking", icon: "cooking" }, { key: "kitchen", label: "Today", icon: "kitchen" }]} onPick={setTab} />
     </>
   );
 }

@@ -33,7 +33,7 @@ test("S2 the kitchen confirms the hand-over and both screens show the same cash"
   net.state.kitchen = "k-1";
   net.state.rider = { user_id: SESSION, name: "Amit Kumar", phone: null, online: true, lat: null, lng: null };
   await page.goto("/kitchen/");
-  await tab(page, "Kitchen").click();
+  await tab(page, "Today").click();
   const row = page.locator(".ui-row", { hasText: "Amit Kumar" });
   await expect(row).toContainText("₹640 in hand");
   const rider = await context.newPage();

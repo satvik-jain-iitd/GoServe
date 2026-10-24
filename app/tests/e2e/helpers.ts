@@ -1,5 +1,6 @@
 // Shared by the kitchen, rider and tracker specs (stories #49 and #50). Supabase REST, the live socket and the n8n webhook are answered by the test.
 // The live socket speaks the Phoenix protocol version 2 (arrays), as supabase-js 2.x does.
+import AxeBuilder from "@axe-core/playwright";
 import { type BrowserContext, type Page } from "@playwright/test";
 
 export const SESSION = "7e57ab1e-0000-4000-8000-0000000000a1";
@@ -159,4 +160,12 @@ export async function setup(context: BrowserContext, page: Page, initial: object
     });
   });
   return { calls, state, push };
+}
+
+/** An axe scan after every CSS animation has finished (the stamp fades in from 0.6, which read as low contrast mid-animation). Returns the serious and critical violations as strings. */
+export async function scan(page: Page, tags?: string[]): Promise<string[]> {
+  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
+  const b = new AxeBuilder({ page });
+  const r = await (tags ? b.withTags(tags) : b).analyze();
+  return r.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => `${v.id}: ${v.nodes.slice(0, 2).map((n) => n.target.join(" ")).join(" | ")}`);
 }

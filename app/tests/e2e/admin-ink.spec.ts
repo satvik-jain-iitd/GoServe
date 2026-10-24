@@ -1,7 +1,6 @@
 // Story H12 (#195): the admin app on the Ink v3 boards A1 to A4 and A8 (layer 1). The network is answered by the test (helpers.ts).
 import { test, expect, type Page } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
-import { order, setup } from "./helpers";
+import { order, setup, scan as axeScan } from "./helpers";
 
 const tab = (page: Page, name: string) => page.getByRole("button", { name, exact: true });
 const ORDER = (over: object = {}) => ({ ...order("placed"), kitchen_id: "k-1", customer_name: "Asha", customer_phone: "9876543210", cancel_reason: null, ...over });
@@ -84,10 +83,7 @@ for (const theme of ["day", "night"] as const) {
     net.state.numbers = [{ day: "2026-10-23", kitchen_id: "k-1", kitchen_name: "Hauz Khas Kitchen", orders: 5, delivered: 3, cancelled: 1, cash_paise: 90000 }];
     await page.goto("/admin/");
     await expect(page.getByRole("heading", { name: "Live" })).toBeVisible();
-    const scan = async () => {
-      const r = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
-      expect(r.violations.filter((v) => v.impact === "serious" || v.impact === "critical")).toEqual([]);
-    };
+    const scan = async () => expect(await axeScan(page, ["wcag2a", "wcag2aa"])).toEqual([]);
     await scan();   // A3
     await page.getByRole("button", { name: /^Open order 0f0f0f0f/ }).click();
     await expect(page.getByRole("heading", { name: "Order", exact: true })).toBeVisible();

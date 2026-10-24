@@ -1,7 +1,6 @@
 // Story H11 (#194): the kitchen app on the Ink v3 boards K1 to K6. The network is answered by the test (helpers.ts).
 import { test, expect, type Page } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
-import { ID, SESSION, order, setup } from "./helpers";
+import { ID, SESSION, order, setup, scan as axeScan } from "./helpers";
 
 const NOW = new Date().toISOString();
 const tab = (page: Page, name: string) => page.getByRole("button", { name, exact: true });
@@ -48,7 +47,7 @@ test("S4 the Kitchen tab has the open switch and the dishes by category, with So
   const net = await setup(context, page);
   net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
-  await tab(page, "Kitchen").click();
+  await tab(page, "Today").click();
   await expect(page.getByText("Hauz Khas Kitchen")).toBeVisible();
   await expect(page.getByRole("switch", { name: "Open for orders" })).toBeChecked();
   await page.getByRole("button", { name: "Mark Butter Chicken sold out" }).click();
@@ -82,16 +81,13 @@ for (const theme of ["day", "night"] as const) {
     net.state.kitchen = "k-1";
     await page.goto("/kitchen/");
     await expect(page.getByText("No. 0f0f0f0f")).toBeVisible();
-    const scan = async () => {
-      const r = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
-      expect(r.violations.filter((v) => v.impact === "serious" || v.impact === "critical")).toEqual([]);
-    };
+    const scan = async () => expect(await axeScan(page, ["wcag2a", "wcag2aa"])).toEqual([]);
     await scan();   // K3
     await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
     await expect(page.getByRole("heading", { name: "Ticket" })).toBeVisible();
     await scan();   // K4
     await page.getByRole("button", { name: "Back to new tickets" }).click();
-    for (const name of ["Cooking", "Kitchen"]) { await tab(page, name).click(); await scan(); }   // K3b, K5
+    for (const name of ["Cooking", "Today"]) { await tab(page, name).click(); await scan(); }   // K3b, K5
     net.state.kitchen = null;
     await page.reload();
     await expect(page.getByRole("heading", { name: "Sign in to cook" })).toBeVisible();
@@ -108,7 +104,7 @@ test("S8 when the kitchen row cannot be read, the open switch is disabled and sa
   net.state.kitchen = "k-1";
   net.state.kitchens = [];   // no row for k-1
   await page.goto("/kitchen/");
-  await tab(page, "Kitchen").click();
+  await tab(page, "Today").click();
   await expect(page.getByRole("switch", { name: "Open for orders" })).toHaveCount(0);   // no switch for an unknown state
   await expect(page.getByText("Could not read the kitchen")).toBeVisible();
   net.state.kitchens = [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: true, active: true, opens_at: "10:00:00", closes_at: "22:00:00" }];

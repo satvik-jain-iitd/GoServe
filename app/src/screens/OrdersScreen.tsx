@@ -22,14 +22,14 @@ export function OrdersScreen({ orders, loading, kitchenName, onOpen, onMenu, onY
     <>
       <header className="ui-head">
         <h1>Your orders</h1>
-        <span className="meta">{orders.length} {orders.length === 1 ? "slip" : "slips"}</span>
+        <span className="meta">{orders.length} {orders.length === 1 ? "order" : "orders"}</span>
       </header>
       <div className={empty ? "ui-scroll ui-center" : "ui-scroll ui-orders"}>
         {loading && orders.length === 0 && <div className="ui-pad"><Skeleton lines={3} /></div>}
         {empty && (
           <div className="ui-empty">
-            <h2>No slips yet</h2>
-            <p className="ui-meta">Your orders show here on this phone, newest first. Nothing to sign in to.</p>
+            <h2>No orders yet</h2>
+            <p className="ui-meta">Your orders show here, newest first. No sign-in needed.</p>
             <button type="button" className="ui-btn" onClick={onMenu}>See the menu</button>
           </div>
         )}
@@ -43,7 +43,7 @@ export function OrdersScreen({ orders, loading, kitchenName, onOpen, onMenu, onY
             <span className={`ui-tag ${TAG[o.status] ?? ""}`}>{statusLabel(o.status)}</span>
           </button>
         ))}
-        {orders.length > 0 && <p className="mono ui-foot">Your slips, newest first</p>}
+        {orders.length > 0 && <p className="mono ui-foot">Newest first</p>}
       </div>
       <TabBar current="orders" onMenu={onMenu} onOrders={() => undefined} onYou={onYou} />
     </>

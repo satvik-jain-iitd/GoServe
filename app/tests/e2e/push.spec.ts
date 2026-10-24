@@ -13,7 +13,7 @@ test("S1 Allow a reminder asks permission, subscribes and saves the subscription
   const net = await setup(context, page, [order("placed")]);
   await page.goto("/customer/");
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
-  await page.getByRole("button", { name: "Allow a reminder when your order is ready?" }).click();
+  await page.getByRole("button", { name: "Ping me when it is ready" }).click();
   await expect.poll(() => net.calls.rpc.filter((c) => c.name === "save_push").length).toBe(1);
   expect(net.calls.rpc.find((c) => c.name === "save_push")!.body).toEqual({ p_endpoint: "https://push.example/abc", p_p256dh: "PKEY", p_auth: "AKEY" });
 });

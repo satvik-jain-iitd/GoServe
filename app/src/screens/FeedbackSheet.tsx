@@ -7,6 +7,7 @@ import { readTrail } from "../lib/trail";
 
 type Props = {
   role: string;
+  button?: boolean;   // #242: the floating button is the console's; the apps open the sheet from a Send feedback row (gs-feedback)
   screen: string;
   order: { id: string; status: string } | null;
   getSession: () => Promise<string>;
@@ -17,7 +18,7 @@ type Props = {
 const BUILD = import.meta.env.VITE_BUILD ?? "dev";
 const phoneName = () => (navigator.userAgent.match(/\(([^)]+)\)/)?.[1] ?? "unknown").slice(0, 80);
 
-export function FeedbackSheet({ role, screen, order, getSession, send, preset }: Props) {
+export function FeedbackSheet({ role, screen, order, getSession, send, preset, button = true }: Props) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [doing, setDoing] = useState<Doing>("other");
@@ -76,7 +77,7 @@ export function FeedbackSheet({ role, screen, order, getSession, send, preset }:
 
   return (
     <>
-      <button type="button" className="btn small feedback-btn" onClick={() => { setOpen(true); setMessage(null); setError(null); }}>Feedback</button>
+      {button && <button type="button" className="btn small feedback-btn" onClick={() => { setOpen(true); setMessage(null); setError(null); }}>Feedback</button>}
       {open && (
         <div className="sheet-back">
           <div role="dialog" aria-modal="true" aria-label="Feedback" className="sheet">
