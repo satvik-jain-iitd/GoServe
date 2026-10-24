@@ -191,3 +191,5 @@ short. Say what happened and what to do next time.
 - In one SQL statement the subqueries see the data as it was at the start, even after a function in the same statement wrote rows. A proof check must call the function in one statement and read in the next.
 - The zip the reviewer sends may sit in Downloads and never get unpacked. Look there before you say a file is missing.
 - A report that falls back to "the input item" when the right node failed can show the wrong period as the current one. Read each period by node name, and say "could not read" when it is missing.
+- A commit made while another branch is checked out lands on that branch. After `git checkout`, run `git branch --show-current` before you commit. H10a was committed on the pins branch and the PR looked empty.
+- A CSS comment with `#193` looks like a hex colour to the "no hex" test. Write the story as "story H10b" without the hash in CSS files.
