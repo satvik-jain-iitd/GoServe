@@ -60,7 +60,7 @@ test("S3 cash from an older day that was never handed over shows on the row befo
   net.state.kitchen = "k-1";
   net.state.rider = { user_id: SESSION, name: "Amit Kumar", phone: null, online: true, lat: null, lng: null };
   await page.goto("/kitchen/");
-  await tab(page, "Kitchen").click();
+  await tab(page, "Today").click();
   const row = page.locator(".ui-row", { hasText: "Amit Kumar" });
   await expect(row).toContainText("₹640 in hand · older: ₹640");
   page.on("dialog", (d) => { expect(d.message()).toContain("₹1280 (₹640 from older days)"); void d.dismiss(); });   // a No sends nothing

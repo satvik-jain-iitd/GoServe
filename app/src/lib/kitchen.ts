@@ -4,7 +4,7 @@ export type OrderLine = { menu_item_id: string; name: string; qty: number; price
 export type Order = {
   id: string; session_id: string; status: string; address: string; items: OrderLine[]; total_paise: number; created_at: string; updated_at: string; paid_by?: string | null;
   customer_name?: string | null; customer_phone?: string | null;
-  kitchen_id?: string; rider_id?: string | null; cash_handed_at?: string | null;
+  kitchen_id?: string; rider_id?: string | null; cash_handed_at?: string | null; cancel_reason?: string | null;
 };
 
 export const shortId = (id: string): string => id.slice(0, 8);   // the order number the customer and the kitchen both say
@@ -31,6 +31,9 @@ const oldestFirst = (a: Order, b: Order) => a.created_at.localeCompare(b.created
 export const newTickets = (orders: Order[]): Order[] => orders.filter((o) => o.status === "placed").sort(oldestFirst);
 export const cookingTickets = (orders: Order[]): Order[] => orders.filter((o) => o.status === "accepted" || o.status === "preparing").sort(oldestFirst);
 export const readyTickets = (orders: Order[]): Order[] => orders.filter((o) => o.status === "ready").sort(oldestFirst);
+/** Story #230: a ticket the cook had on Cooking that turned cancelled stays a minute, stamped Cancelled, so the cook knows. `seen` = ids that were on Cooking. */
+export const justCancelled = (orders: Order[], seen: Set<string>, now: Date, ms = 60_000): Order[] =>
+  orders.filter((o) => o.status === "cancelled" && seen.has(o.id) && now.getTime() - Date.parse(o.updated_at) < ms).sort(oldestFirst);
 export type Done = { status: string; updated_at: string; total_paise: number; paid_by?: string | null; cash_handed_at?: string | null; rider_id?: string | null };
 export type Hours = { opens: string | null; closes: string | null };
 /** The cash day a time belongs to (story #229). A kitchen that closes past midnight (closes before opens, "18:00" to "02:00") keeps the night in one day:

@@ -1,6 +1,6 @@
 // The kitchen app on the Ink v3 boards K3 to K6 (story H11, #194): New tickets, Cooking, the Kitchen tab, and one ticket (K4) over the tabs.
-import { useEffect, useState } from "react";
-import { cashByRider, cookingTickets, deliveredToday, hhmm, newTickets, nextStep, outsideHours, readyTickets, shortId, staffLabel, type Order } from "../lib/kitchen";
+import { useEffect, useRef, useState } from "react";
+import { cashByRider, cookingTickets, deliveredToday, hhmm, justCancelled, newTickets, nextStep, outsideHours, readyTickets, shortId, staffLabel, type Order } from "../lib/kitchen";
 import { listRiders, type RiderListRow } from "../lib/admin";
 import { getClient } from "../lib/supabase";
 import { formatRupees } from "../lib/money";
@@ -24,6 +24,8 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
   const fresh = newTickets(orders);
   const cooking = cookingTickets(orders);
   const ready = readyTickets(orders);
+  const seen = useRef(new Set<string>());   // #230: tickets the cook had on Cooking; one that turns cancelled stays a minute with a stamp
+  cooking.forEach((o) => seen.current.add(o.id));
   const done = deliveredToday(orders, new Date(), gate ? { opens: gate.opensAt, closes: gate.closesAt } : null);   // story #229: the day ends at closing time
   const onSlips = done.reduce((n, o) => n + o.total_paise, 0);
   const [riders, setRiders] = useState<RiderListRow[]>([]);
@@ -67,6 +69,13 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
   const [minute, setMinute] = useState(() => hhmm(new Date().toISOString()));
   useEffect(() => { const t = setInterval(() => setMinute(hhmm(new Date().toISOString())), 60_000); return () => clearInterval(t); }, []);   // the clock line moves on its own
   const pastClose = !!gate && outsideHours(gate.opensAt, gate.closesAt, minute);   // after closing time the customer app shows "closed" whatever the switch says
+  const gone = justCancelled(orders, seen.current, new Date());   // recomputed on every render; the minute tick re-renders, so the stamp leaves on its own
+  const cancelledRow = (o: Order) => (
+    <div key={o.id} className="ui-ticket ui-ticket-cancelled">
+      <div className="ui-ticket-open"><span className="ui-ticket-head"><span className="mono">No. {shortId(o.id)} · {hhmm(o.created_at)}</span><span className="ui-tag error">Cancelled</span></span>{lines(o)}</div>
+      <span className="mono ui-ticket-wait">Cancelled · {o.cancel_reason || "by the customer"} · stop cooking</span>
+    </div>
+  );
   const todayLine = <p className="mono ui-foot">Today · {done.length} done{tab === "kitchen" ? ` · ${formatRupees(onSlips)} cash today` : ""}</p>;
 
   if (opened) {   // K4: one ticket over the tabs
@@ -119,7 +128,8 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
       ))}
       {tab === "cooking" && (
         <div className="ui-scroll ui-tickets">
-          {cooking.length === 0 && ready.length === 0 && <div className="ui-empty"><h2>Nothing on the stove</h2><p className="ui-meta">Accepted tickets come here. Start when the pan is on, Ready when it is packed.</p></div>}
+          {gone.map(cancelledRow)}
+          {cooking.length === 0 && ready.length === 0 && gone.length === 0 && <div className="ui-empty"><h2>Nothing on the stove</h2><p className="ui-meta">Accepted tickets come here. Start when the pan is on, Ready when it is packed.</p></div>}
           {cooking.map(row)}
           {ready.length > 0 && <section className="ui-group"><h2>Ready · rider on the way</h2>{ready.map(row)}</section>}
         </div>
