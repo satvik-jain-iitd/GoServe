@@ -4,6 +4,7 @@ export type OrderLine = { menu_item_id: string; name: string; qty: number; price
 export type Order = {
   id: string; session_id: string; status: string; address: string; items: OrderLine[]; total_paise: number; created_at: string; updated_at: string; paid_by?: string | null;
   customer_name?: string | null; customer_phone?: string | null;
+  kitchen_id?: string; rider_id?: string | null;
 };
 
 export const shortId = (id: string): string => id.slice(0, 8);   // the order number the customer and the kitchen both say
@@ -18,9 +19,31 @@ export const nextStep = (status: string) => STEPS[status] ?? null;
 // One label map for the kitchen, the rider and the customer tracker.
 const LABELS: Record<string, string> = { placed: "Placed", accepted: "Accepted", preparing: "Cooking", ready: "Ready", out_for_delivery: "On the way", delivered: "Delivered", cancelled: "Cancelled" };
 export const statusLabel = (status: string): string => LABELS[status] ?? status;
+/** The staff apps (kitchen, admin) say "New" for a placed order; the customer sees "Placed". One place for the difference (H12). */
+export const staffLabel = (status: string): string => (status === "placed" ? "New" : statusLabel(status));
 
 const WITH_RIDER = ["out_for_delivery", "delivered", "cancelled"];   // not the kitchen's any more
 export const kitchenOrders = (orders: Order[]): Order[] => orders.filter((o) => !WITH_RIDER.includes(o.status));
+
+// Story H11 (#194): the Ink boards split the kitchen's work into New (placed), Cooking (accepted, preparing) and Ready (waiting for the rider).
+// Oldest first: the kitchen cooks in the order the tickets came.
+const oldestFirst = (a: Order, b: Order) => a.created_at.localeCompare(b.created_at);
+export const newTickets = (orders: Order[]): Order[] => orders.filter((o) => o.status === "placed").sort(oldestFirst);
+export const cookingTickets = (orders: Order[]): Order[] => orders.filter((o) => o.status === "accepted" || o.status === "preparing").sort(oldestFirst);
+export const readyTickets = (orders: Order[]): Order[] => orders.filter((o) => o.status === "ready").sort(oldestFirst);
+export type Done = { status: string; updated_at: string; total_paise: number; paid_by?: string | null };
+/** The orders delivered today, by the phone's clock, newest first (the rider's Today, the kitchen's done count). */
+export const deliveredToday = <T extends Done>(orders: T[], now = new Date()): T[] =>
+  orders.filter((o) => o.status === "delivered" && new Date(o.updated_at).toDateString() === now.toDateString())
+    .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+export const hhmm = (iso: string): string => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
+/** True when "HH:MM" now lies outside the opening hours; a kitchen open 18:00 to 02:00 crosses midnight. Unknown hours: never outside. */
+export const outsideHours = (opens: string | null, closes: string | null, now: string): boolean => {
+  if (!opens || !closes || opens === closes) return false;
+  return opens < closes ? now < opens || now >= closes : now >= closes && now < opens;
+};
+/** "22:00:00" from the kitchens row to "22:00" for the screen. */
+export const hhmmOf = (t: string | null | undefined): string | null => (t ? t.slice(0, 5) : null);
 
 // A live event and the answer to a tap can arrive in either order: the copy with the later updated_at wins.
 // Moments are compared, not text: the same instant can be written with Z or +00:00.
@@ -37,7 +60,7 @@ export const riderActions = (status: string): RiderAction[] => {
   if (status === "out_for_delivery") return [{ kind: "event", event: "order.arriving", label: "Arriving" }, { kind: "status", to: "delivered", label: "Delivered" }, { kind: "refused", label: "Not delivered" }];
   return [];
 };
-export const riderOrders = (orders: Order[]): Order[] => orders.filter((o) => o.status === "ready" || o.status === "out_for_delivery");
+export const riderOrders = (orders: Order[]): Order[] => orders.filter((o) => o.status === "ready" || o.status === "out_for_delivery").sort((a, b) => a.created_at.localeCompare(b.created_at));   // oldest first: the job in hand is the one waiting longest
 
 const FLOW = ["placed", "accepted", "preparing", "ready", "out_for_delivery", "delivered"];
 export const trackerSteps = (status: string): { status: string; label: string; state: "done" | "current" | "todo" }[] => {

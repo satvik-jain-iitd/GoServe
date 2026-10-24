@@ -21,7 +21,7 @@ type Calls = { riderWrites: { method: string; body: any }[]; customerWrites: { m
 export async function setup(context: BrowserContext, page: Page, initial: object[] = [], { pin = "110016" as string | null } = {}) {
   if (pin) await context.addInitScript((p) => { try { if (!window.localStorage.getItem("gs-pin")) window.localStorage.setItem("gs-pin", p); } catch { /* blocked */ } }, pin);
   const calls: Calls = { riderWrites: [], customerWrites: [], menuReads: [], menuWrites: [], uploads: [], kitchenWrites: [], signups: 0, status: [], decide: [], health: [], feedback: [], confirm: [], rpc: [], orderReads: [], staffReads: [], riderReads: [] };
-  const state = { confirmCfg: { confirm_after_ready_min: 3, confirm_after_place_min: 8 }, confirmDone: false, feedbackDown: false, orders: initial, reply: null as null | { status: number; body: unknown }, menuUp: true, kitchen: null as null | string, staffOther: null as null | string, otherRider: false, rider: { user_id: SESSION, name: "Rider", online: true, lat: null, lng: null } as null | { online: boolean; [k: string]: unknown }, customer: null as null | object, numbers: [] as object[], admin: false, people: [] as object[], kitchens: [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: true, active: true, opens_at: "10:00:00", closes_at: "22:00:00" }] as object[], menu: [{ id: "d1", name: "Butter Chicken", price_paise: 32000, image_url: null, image_credit: null }] as object[], riderCard: null as null | { name: string; phone: string }, decisions: [] as object[], runs: [] as object[], runCount: 0 };
+  const state = { confirmCfg: { confirm_after_ready_min: 3, confirm_after_place_min: 8 }, confirmDone: false, feedbackDown: false, orders: initial, reply: null as null | { status: number; body: unknown }, menuUp: true, kitchen: null as null | string, staffOther: null as null | string, otherRider: false, rider: { user_id: SESSION, name: "Rider", online: true, lat: null, lng: null } as null | { online: boolean; [k: string]: unknown }, customer: null as null | object, numbers: [] as object[], admin: false, people: [] as object[], kitchens: [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: true, active: true, opens_at: "10:00:00", closes_at: "22:00:00" }] as object[], menu: [{ id: "d1", name: "Butter Chicken", price_paise: 32000, image_url: null, image_credit: null }] as object[], riderCard: null as null | { name: string; phone: string }, anonymous: true, riders: null as null | object[], ridersFail: false, decisions: [] as object[], runs: [] as object[], runCount: 0 };
   const json = (route: any, status: number, body: unknown) => route.fulfill({ status, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(body) });
   await context.route("https://test.supabase.co/**", async (route) => {
     const req = route.request();
@@ -29,7 +29,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
     if (req.url().includes("/auth/v1/signup")) {
       calls.signups++;
       return json(route, 200, { access_token: JWT, token_type: "bearer", expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: "r",
-        user: { id: SESSION, aud: "authenticated", role: "authenticated", is_anonymous: true, app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() } });
+        user: { id: SESSION, aud: "authenticated", role: "authenticated", is_anonymous: state.anonymous, app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() } });
     }
     if (req.url().includes("/rest/v1/rpc/")) {
       const name = req.url().split("/rest/v1/rpc/")[1].split("?")[0];
@@ -43,7 +43,8 @@ export async function setup(context: BrowserContext, page: Page, initial: object
     if (req.url().includes("/rest/v1/riders")) {   // A5: the rider's own row (online, location)
       if (req.method() === "GET") {
         calls.riderReads.push(req.url());
-        const rows = [...(state.otherRider ? [{ user_id: "other-rider", name: "Other", online: false }] : []), ...(state.rider ? [state.rider] : [])];
+        if (state.ridersFail) return json(route, 500, { message: "down" });   // H12b: an unreadable riders table
+        const rows = state.riders ?? [...(state.otherRider ? [{ user_id: "other-rider", name: "Other", online: false }] : []), ...(state.rider ? [state.rider] : [])];   // H12b: an admin's list
         const who = new URL(req.url()).searchParams.get("user_id")?.replace("eq.", "");
         return json(route, 200, rows.filter((r: any) => !who || r.user_id === who));
       }
@@ -59,6 +60,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
       return route.fulfill({ status: 201, headers: CORS, body: "" });
     }
     if (req.url().includes("/auth/v1/logout")) return route.fulfill({ status: 204, headers: CORS, body: "" });
+    if (req.url().includes("/auth/v1/user")) return json(route, 200, { id: SESSION, aud: "authenticated", role: "authenticated", is_anonymous: state.anonymous, app_metadata: {}, user_metadata: state.anonymous ? {} : { full_name: "Amit Kumar" }, created_at: new Date().toISOString() });   // H11: who is signed in
     if (req.url().includes("/rest/v1/kitchens")) {   // A2: the admin's kitchen list and writes
       if (req.method() === "GET") return json(route, 200, state.kitchens);
       calls.kitchenWrites.push({ method: req.method(), url: req.url(), body: JSON.parse(req.postData() ?? "{}") });

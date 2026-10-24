@@ -2,27 +2,31 @@
 import { test, expect } from "@playwright/test";
 import { order, setup } from "./helpers";
 
-test("S1 an admin sees the Kitchens and Staff tabs and the kitchens", async ({ page, context }) => {
+test("S1 an admin sees the City with its kitchens and riders", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.admin = true;
   await page.goto("/admin/");
-  await expect(page.getByRole("tab", { name: "Kitchens" })).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Staff" })).toBeVisible();
+  await page.getByRole("button", { name: "City", exact: true }).click();   // H12b: board A5
+  await expect(page.getByRole("region", { name: "Kitchens" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Riders" })).toBeVisible();
   await expect(page.getByText("Hauz Khas Kitchen")).toBeVisible();
   await expect(page).toHaveTitle("GoServe Admin");
 });
 
-test("S2 someone who is not an admin sees 'Not allowed' and no tabs", async ({ page, context }) => {
-  await setup(context, page);
+test("S2 someone who is not an admin sees the gate and no tabs", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.anonymous = false;
   await page.goto("/admin/");
-  await expect(page.getByText("Not allowed")).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Kitchens" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Not an admin account" })).toBeVisible();   // H12: A2
+  await expect(page.getByRole("button", { name: "City", exact: true })).toHaveCount(0);
 });
 
 test("S3 adding a kitchen sends its name and pin codes; a bad pin code is refused before sending", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.admin = true;
   await page.goto("/admin/");
+  await page.getByRole("button", { name: "City", exact: true }).click();
+  await page.getByRole("button", { name: "Add a kitchen" }).click();   // H12b: board A7
   await page.getByLabel("Kitchen name").fill("Lajpat Nagar Kitchen");
   await page.getByLabel("Address").fill("12 Lajpat Nagar, Delhi");
   await page.getByLabel("Phone").fill("9876543210");
@@ -42,14 +46,16 @@ test("S4 adding staff by email with a role, and removing one", async ({ page, co
   net.state.admin = true;
   net.state.people = [{ kind: "rider", user_id: "u-9", email: "rider@example.com", kitchen_id: null, kitchen_name: null }];
   await page.goto("/admin/");
-  await page.getByRole("tab", { name: "Staff" }).click();
-  await expect(page.getByText("rider@example.com")).toBeVisible();
+  await page.getByRole("button", { name: "City", exact: true }).click();
+  await expect(page.getByText("rider@example.com")).toBeVisible();   // H12b: riders on the City board
+  await page.getByRole("button", { name: "Add a person" }).click();
   await page.getByLabel("Email").fill("cook@example.com");
   await page.getByLabel("Role").selectOption("kitchen");
   await page.getByLabel("Kitchen", { exact: true }).selectOption("k-1");
   await page.getByRole("button", { name: "Add person" }).click();
   await expect.poll(() => net.calls.rpc.filter((c) => c.name === "admin_add_person").length).toBe(1);
   expect(net.calls.rpc.find((c) => c.name === "admin_add_person")!.body).toEqual({ p_email: "cook@example.com", p_kind: "kitchen", p_kitchen: "k-1" });
+  page.on("dialog", (d) => void d.accept());   // the remove asks first
   await page.getByRole("button", { name: "Remove rider@example.com" }).click();
   await expect.poll(() => net.calls.rpc.filter((c) => c.name === "admin_remove_person").length).toBe(1);
   expect(net.calls.rpc.find((c) => c.name === "admin_remove_person")!.body).toEqual({ p_kind: "rider", p_user: "u-9", p_kitchen: null });
@@ -61,8 +67,9 @@ test("S5 the Menu tab adds a dish with a photo: the photo is uploaded, then the 
   const net = await setup(context, page);
   net.state.admin = true;
   await page.goto("/admin/");
-  await page.getByRole("tab", { name: "Menu" }).click();
-  await page.getByLabel("Kitchen", { exact: true }).selectOption("k-1");
+  await page.getByRole("button", { name: "City", exact: true }).click();
+  await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();   // H12b: the menu lives on one kitchen (A6)
+  await page.getByRole("button", { name: "Add a dish" }).click();
   await page.getByLabel("Dish name").fill("Dal Makhani");
   await page.getByLabel("Price (₹)").fill("220.50");
   await page.getByLabel("Category").fill("main");
@@ -79,8 +86,9 @@ test("S6 a wrong price or a file that is not a picture is refused before anythin
   const net = await setup(context, page);
   net.state.admin = true;
   await page.goto("/admin/");
-  await page.getByRole("tab", { name: "Menu" }).click();
-  await page.getByLabel("Kitchen", { exact: true }).selectOption("k-1");
+  await page.getByRole("button", { name: "City", exact: true }).click();
+  await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();
+  await page.getByRole("button", { name: "Add a dish" }).click();
   await page.getByLabel("Dish name").fill("Dal");
   await page.getByLabel("Price (₹)").fill("abc");
   await page.getByRole("button", { name: "Add dish" }).click();
@@ -97,8 +105,8 @@ test("S7 a dish can be marked sold out, get a new price, and be deleted", async 
   const net = await setup(context, page);
   net.state.admin = true;
   await page.goto("/admin/");
-  await page.getByRole("tab", { name: "Menu" }).click();
-  await page.getByLabel("Kitchen", { exact: true }).selectOption("k-1");
+  await page.getByRole("button", { name: "City", exact: true }).click();
+  await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();
   await expect(page.getByText("Butter Chicken", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Mark Butter Chicken sold out" }).click();
   await expect.poll(() => net.calls.menuWrites.length).toBe(1);
@@ -107,6 +115,7 @@ test("S7 a dish can be marked sold out, get a new price, and be deleted", async 
   await page.getByRole("button", { name: "Save price of Butter Chicken" }).click();
   await expect.poll(() => net.calls.menuWrites.length).toBe(2);
   expect(net.calls.menuWrites[1]).toMatchObject({ method: "PATCH", body: { price_paise: 35000 } });
+  page.on("dialog", (d) => void d.accept());   // the delete asks first
   await page.getByRole("button", { name: "Delete Butter Chicken" }).click();
   await expect.poll(() => net.calls.menuWrites.length).toBe(3);
   expect(net.calls.menuWrites[2].method).toBe("DELETE");
@@ -114,24 +123,21 @@ test("S7 a dish can be marked sold out, get a new price, and be deleted", async 
 
 const KITCHEN_ORDER = (over: object = {}) => ({ ...order("placed"), kitchen_id: "k-1", customer_name: "Asha", customer_phone: "9876543210", cancel_reason: null, ...over });
 
-test("S8 the Orders tab lists today's orders of all kitchens with who ordered, and filters by status", async ({ page, context }) => {
+test("S8 the Orders tab lists today's orders of all kitchens with who ordered, live first, done below", async ({ page, context }) => {
   const net = await setup(context, page, [KITCHEN_ORDER(), KITCHEN_ORDER({ id: "11111111-1111-4111-8111-111111111111", status: "delivered", customer_name: "Ravi" })]);
   net.state.admin = true;
   await page.goto("/admin/");
-  await page.getByRole("tab", { name: "Orders" }).click();
-  await expect(page.getByText("Asha")).toBeVisible();
-  await expect(page.getByText("Ravi")).toBeVisible();
-  await page.getByLabel("Status").selectOption("delivered");
-  await expect(page.getByText("Ravi")).toBeVisible();
-  await expect(page.getByText("Asha")).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Live" }).getByText("Asha")).toBeVisible();   // H12: Live and Done sections replace the status filter
+  await expect(page.getByRole("region", { name: "Done" }).getByText("Ravi")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Live" }).getByText("Ravi")).toHaveCount(0);
 });
 
 test("S9 an admin cancels a placed order with a reason; the reason is required", async ({ page, context }) => {
   const net = await setup(context, page, [KITCHEN_ORDER()]);
   net.state.admin = true;
   await page.goto("/admin/");
-  await page.getByRole("tab", { name: "Orders" }).click();
-  await page.getByRole("button", { name: /^Cancel order/ }).click();
+  await page.getByRole("button", { name: /^Open order 0f0f0f0f/ }).click();   // H12: the cancel sits on the one-order screen (A4)
+  await page.getByRole("button", { name: "Cancel order" }).click();
   await page.getByRole("button", { name: "Confirm cancel" }).click();
   await expect(page.getByRole("alert")).toContainText("reason");
   expect(net.calls.rpc.filter((c) => c.name === "cancel_order")).toHaveLength(0);
@@ -149,7 +155,7 @@ test("S10 the Numbers tab shows the day total and one line per kitchen", async (
     { day: "2026-10-23", kitchen_id: "k-2", kitchen_name: "Rohini Kitchen", orders: 2, delivered: 2, cancelled: 0, cash_paise: 40000 },
   ];
   await page.goto("/admin/");
-  await page.getByRole("tab", { name: "Numbers" }).click();
+  await page.getByRole("button", { name: "Numbers", exact: true }).click();
   await expect(page.getByTestId("day-total")).toContainText("7 orders");
   await expect(page.getByTestId("day-total")).toContainText("₹1300");
   await expect(page.getByText("Hauz Khas Kitchen")).toBeVisible();

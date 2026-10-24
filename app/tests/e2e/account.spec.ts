@@ -27,17 +27,22 @@ test("S2 You shows the details, and Edit delivery details changes them", async (
   await expect(page.getByTestId("account")).toContainText("Asha Rao");
 });
 
-test("S3 the Look chips pin Day or Night, and By the clock lets go of the pin", async ({ page, context }) => {
-  await page.clock.install({ time: new Date(2026, 9, 24, 12, 0, 0) });
+test("S3 the Look chips pin Night, and Day takes the pin away; no clock chip (#225)", async ({ page, context }) => {
+  await page.clock.install({ time: new Date(2026, 9, 24, 23, 0, 0) });   // 23:00: still Day with no pin
   await setup(context, page);
   await page.goto("/customer/");
+  expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe("day");
   await you(page).click();
+  await expect(page.getByRole("button", { name: /By the clock/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Night", exact: true }).click();
   expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe("night");
   expect(await page.evaluate(() => localStorage.getItem("gs-theme"))).toBe("night");
-  await page.getByRole("button", { name: /By the clock/ }).click();
+  await page.reload();
+  expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe("night");   // the pin survives a reload
+  await you(page).click();
+  await page.getByRole("button", { name: "Day", exact: true }).click();
   expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe("day");
-  expect(await page.evaluate(() => localStorage.getItem("gs-theme"))).toBeNull();
+  expect(await page.evaluate(() => localStorage.getItem("gs-theme"))).toBeNull();   // Day is the default, not a pin
 });
 
 test("S4 with an order open, You shows a strip that opens the tracker", async ({ page, context }) => {
