@@ -3,7 +3,7 @@
 - **Branch:** feat/194-rider-kitchen-ui → dev
 - **Author:** klickbae8yt-star
 - **Story / issue:** #194 "H11 UI rollout: rider and kitchen" (epic E18, #182). Layer 1 of 2. #223 (kitchen) stacks on it.
-- **Status:** OPEN, approved (review 5639179226, APPROVE). Merge waits for Guard green. [VERIFIED]
+- **Status:** MERGED, approved (review 5639179226, APPROVE). Merge waits for Guard green. [VERIFIED]
 - **Files:** 50 (18 png, 11 docs) · **Lines:** +870 / -79 [VERIFIED]
 - **Reviewer:** satvik-jain-iitd · review 5639179226 (APPROVE) [VERIFIED]
 - **Head:** ab5c8e4 [VERIFIED]
@@ -214,87 +214,104 @@ Har comment ek teaching question hai. Status: sab open.
 <!-- gh-comment-id: 4367921133 -->
 - **File:** `app/src/App.tsx` · **Line:** 479 · **Category:** Understanding
 - **Question:** jobKitchenId pehle job ka kitchen_id hai; fetchKitchen fail ho (RLS ya offline) to card "The kitchen" bolta hai, chup-chaap. Rider account kitchens table padh sakta hai, kaunsi policy? Ek test is fallback ka?
-- **Status:** open
+- **Reply (klickbae8yt-star):** The kitchens select policy is `kitchen_read ... using (true)` for anon and authenticated (0002), so a rider reads the row. Fallback tested in 1d0d196 (PR #226): rider-ink S8, no row for the order's kitchen_id, the card still shows with "The kitchen" and Pick up stays enabled.
+- **Status:** fixed 1d0d196 (#226), resolved 24 Oct
 
 <!-- gh-comment-id: 4367921135 -->
 - **File:** `app/src/lib/rider.ts` · **Line:** 33 · **Category:** TOP · Risk
 - **Question:** deliveredToday phone ki local date se ginta hai. 23:30 ki delivery aur 00:10 par hand-over: "Cash in hand" zero dikhega jabki cash haath me hai. "Hand over tonight" ke saath yeh ulta pad sakta hai. Din ko kitchen ke closes_at ya "last hand-over" se baandhein?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Agreed, the phone's date is the pilot shortcut (the kitchen closes at 22:00). F147 (in #226) binds the day to the kitchen's closing time and adds the hand-over flow as a pilot-ops story.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367921141 -->
 - **File:** `app/src/lib/rider.ts` · **Line:** 34 · **Category:** Assumptions
 - **Question:** cashInHand: paid_by khali ya "cash" = cash. Aaj sab cash hai. Kal UPI aaya to paid_by "upi" se yeh line theek rahegi, par "Collect cash" aur "Cash collected" copy nahi. Woh switch kahan lagega?
-- **Status:** open
+- **Reply (klickbae8yt-star):** The switch sits where paid_by is set: the bill. When UPI comes, "Collect cash" and "Cash collected" read paid_by on the order, same as the customer's "Cash paid". Written into F147.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367921144 -->
 - **File:** `app/src/lib/rider.ts` · **Line:** 32 · **Category:** Purpose
 - **Question:** firstName fallback "customer": "Call customer", "Arriving · tell customer". Naam na ho to board kya bolta hai? Pilot me naam hamesha hoga (bill par zaroori)?
-- **Status:** open
+- **Reply (klickbae8yt-star):** The bill validates the details before Place order, so an app order always has a name. The "customer" fallback covers orders made outside the app (admin, simulator). The board shows a name on every rider screen.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367921148 -->
 - **File:** `app/src/screens/RiderGate.tsx` · **Line:** 18 · **Category:** Risk
 - **Question:** getUser fail ho to anonymous true rehta hai → "Sign in to ride", jabki rider asli me signed in ho sakta hai (offline). Gate par phas jayega? Error line alag se dikhti hai ya nahi?
-- **Status:** open
+- **Reply (klickbae8yt-star):** getUser only picks between R1 and R2 when there is no rider row; the row read is the gate. Offline, the row read throws too, so the rider sees R1 with the error line under the slip and reloads when back. A cached rider row is a later story if the pilot hits it.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367921152 -->
 - **File:** `app/src/screens/RiderGate.tsx` · **Line:** 42 · **Category:** Alternatives
 - **Question:** lockup-day.png Night me bhi (F145.7). Customer welcome par Night me kya hai? Agar `lockup-night.png` hai to yahan bhi theme se chuno, ek line.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Already handled: `ui.css` line 198 swaps `.ui-lockup` to `lockup-night.png` under `data-theme="night"`, so the gate shows the night lockup in Night. F145 (7) is withdrawn in #226.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367921156 -->
 - **File:** `app/src/screens/RiderGate.tsx` · **Line:** 79 · **Category:** Understanding
 - **Question:** Gate ab children ko function deta hai (name, phone, online, flip, signOut). Demo console me gate null → online switch aur Sign out gayab (by design). Yeh "gate null" raasta kis test me chalta hai?
-- **Status:** open
+- **Reply (klickbae8yt-star):** The gate-null path runs in rider.spec (console at "/", Rider tab), staff-ui S2 and autopilot S1: no switch, no sign out, the Job tab works.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367921157 -->
 - **File:** `app/src/screens/RiderScreen.tsx` · **Line:** 50 · **Category:** TOP · Assumptions
 - **Question:** done (R7) job se pehle check hota hai: Delivered slip dikhte waqt naya job aaye to rider use "Next delivery" tak nahi dekhega. Reload par doneId gayab, seedha naya job. Dono sahi hain? Board R7 kya kehta hai jab agla job ready ho?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Both as read. Board R7 has only "Next delivery", so a job that lands while the slip shows waits behind it until the tap; a reload shows the job straight away. If the pilot shows riders missing the tap, R7 gets a "1 waiting" line.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367921160 -->
 - **File:** `app/src/screens/RiderScreen.tsx` · **Line:** 99 · **Category:** Risk
 - **Question:** "Not delivered" chhota text button, bina confirm. Galti se tap ho to riderActions ka teesra action kya karta hai (status cancelled, ya sirf event)? Forget me jaisa "Sure?" chahiye?
-- **Status:** open
+- **Reply (klickbae8yt-star):** It asks first: App.act runs `window.confirm("Mark order ... as not delivered? ...")` before the call (H14), and the database ends the order as cancelled with the reason. Kept small so it is not tapped by habit. Noted in F145 (4).
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367921164 -->
 - **File:** `app/src/screens/RiderScreen.tsx` · **Line:** 93 · **Category:** Testability
 - **Question:** "N more waiting": riderOrders ka order kya hai (created_at, ya jaise aaye)? Do ready orders par kaunsa pehle job banta hai, aur kya test hai?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 1d0d196 (PR #226): `riderOrders` sorts oldest first, so the job in hand is the order waiting longest. Unit test plus rider-ink S9 (two ready orders: the older is in hand, "1 more waiting").
+- **Status:** fixed 1d0d196 (#226), resolved 24 Oct
 
 <!-- gh-comment-id: 4367921170 -->
 - **File:** `app/src/screens/RiderScreen.tsx` · **Line:** 108 · **Category:** Future
 - **Question:** "shares your location every 30 seconds" hard copy hai; LOCATION_EVERY_MS se nahi juda. Clock chip wala drift yahan bhi: 9e35759 jaisa ek label function?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 1d0d196 (PR #226): `locationLabel()` in lib/rider builds "every 30 seconds" from LOCATION_EVERY_MS; R3 and R9 use it. Unit test added.
+- **Status:** fixed 1d0d196 (#226), resolved 24 Oct
 
 <!-- gh-comment-id: 4367921176 -->
 - **File:** `app/src/screens/RiderScreen.tsx` · **Line:** 133 · **Category:** Impact
 - **Question:** "Cash in hand · Hand over at the kitchen tonight": kitchen ke Kitchen tab par "₹X on the slips" (#223) alag number ho sakta hai (kitchen sab delivered, rider sirf apna cash). Do screens, do numbers: hisaab milane ka flow kis story me?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Two numbers by design today (rider: own cash; kitchen: all slips). The hand-over flow (kitchen confirms the rider's cash at close) is F147, a pilot-ops story.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367921178 -->
 - **File:** `app/src/ui/index.tsx` · **Line:** 117 · **Category:** Purpose
 - **Question:** Tabs generic (rider, kitchen) aur customer ka TabBar alag. Do tab components kyun? TabBar ko Tabs par le jaana ek line hai, ya "My orders"/"Account" aria-labels tootenge?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 1d0d196 (PR #226): one `Tabs` component with an optional `name` per tab; `TabBar` is a five-line wrapper that keeps "My orders" and "You (Account)". Account and orders specs unchanged and green.
+- **Status:** fixed 1d0d196 (#226), resolved 24 Oct
 
 <!-- gh-comment-id: 4367921179 -->
 - **File:** `app/src/ui/ui.css` · **Line:** 310 · **Category:** Testability
 - **Question:** badge `right: calc(50% - 22px)`: label ki chaudai se bandha. "New" aur "Cooking" par badge alag jagah baithega? Shot me dikha?
-- **Status:** open
+- **Reply (klickbae8yt-star):** The badge is placed from the tab's centre (`right: calc(50% - 22px)`), not from the label width, so it sits the same on every tab. Only New carries a badge. The K-Tickets shot in #223 shows it.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367921183 -->
 - **File:** `app/tests/e2e/rider-ink.spec.ts` · **Line:** 28 · **Category:** Testability
 - **Question:** S2: "₹640" count 2 (total + ek row). Do rows same total → count 3, test fail. Row ko testid ya "Cash in hand" ke paas ka total alag se assert?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 1d0d196 (PR #226): the cash row has `data-testid="cash"`; S2 asserts the total there and the ₹640 inside the row that holds "No. 0f0f0f0f".
+- **Status:** fixed 1d0d196 (#226), resolved 24 Oct
 
 <!-- gh-comment-id: 4367921185 -->
 - **File:** `app/tests/e2e/rider-ink.spec.ts` · **Line:** 74 · **Category:** TOP · Testability
 - **Question:** S6 axe sirf Job (job ke saath), Today, Me. R3 offline, R7 delivered, R1/R2 gate scan ke bahar. Night me gate (lockup-day) ka contrast kahan check hua? Teen states aur jodo?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 1d0d196 (PR #226): S6 scans R5, R7, R8, R9, R3, R1 and R2 in Day and Night, all clean.
+- **Status:** fixed 1d0d196 (#226), resolved 24 Oct
 
 <!-- gh-comment-id: 4367921188 -->
 - **File:** `docs/follow-ups.md` · **Line:** 151 · **Category:** Future
 - **Question:** F145 saat deviations, reviewer ka jawab: (1) pin line nahi, theek; (2) raw phone, theek; (3) Rides for nahi, theek; (4) Not delivered rakho, par confirm ke saath; (5) last ping time baad me; (6) early minutes nahi; (7) Night me night lockup lo agar file hai. Haan ya kuch alag?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Yes to 1, 2, 3, 6. (4) the confirm already exists (H14 window.confirm). (5) stays open in F145. (7) withdrawn: the night lockup is already swapped by ui.css. Row updated in #226.
+- **Status:** answered, resolved 24 Oct
 
 ## 18. Handoff
 

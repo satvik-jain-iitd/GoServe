@@ -35,6 +35,11 @@ export const deliveredToday = <T extends Done>(orders: T[], now = new Date()): T
   orders.filter((o) => o.status === "delivered" && new Date(o.updated_at).toDateString() === now.toDateString())
     .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
 export const hhmm = (iso: string): string => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
+/** True when "HH:MM" now lies outside the opening hours; a kitchen open 18:00 to 02:00 crosses midnight. Unknown hours: never outside. */
+export const outsideHours = (opens: string | null, closes: string | null, now: string): boolean => {
+  if (!opens || !closes || opens === closes) return false;
+  return opens < closes ? now < opens || now >= closes : now >= closes && now < opens;
+};
 /** "22:00:00" from the kitchens row to "22:00" for the screen. */
 export const hhmmOf = (t: string | null | undefined): string | null => (t ? t.slice(0, 5) : null);
 

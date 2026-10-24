@@ -1,6 +1,6 @@
 // Story #49: the kitchen list and its next-step buttons. Pure data in, pure data out.
 import { describe, expect, it } from "vitest";
-import { kitchenOrders, mergeOrder, nextStep, shortId, statusLabel, type Order, newTickets, cookingTickets, readyTickets, deliveredToday } from "../../src/lib/kitchen";
+import { kitchenOrders, mergeOrder, nextStep, shortId, statusLabel, type Order, newTickets, cookingTickets, readyTickets, deliveredToday, outsideHours } from "../../src/lib/kitchen";
 
 const o = (id: string, status: string, created_at: string, updated_at = created_at): Order => ({
   id, status, created_at, updated_at, session_id: "s1", address: "Flat 4", total_paise: 100, items: [{ menu_item_id: "d1", name: "Butter Chicken", qty: 1, price_paise: 100 }],
@@ -115,4 +115,13 @@ describe("H11 kitchen tabs", () => {
 it("the rider's jobs come oldest first: the one waiting longest is in hand", () => {
   const o = (status: string, created_at: string) => ({ id: created_at, session_id: "s", status, address: "", items: [], total_paise: 1, created_at, updated_at: created_at });
   expect(riderOrders([o("ready", "2026-10-24T10:10:00Z"), o("out_for_delivery", "2026-10-24T10:00:00Z"), o("placed", "2026-10-24T09:00:00Z")]).map((r) => r.created_at)).toEqual(["2026-10-24T10:00:00Z", "2026-10-24T10:10:00Z"]);
+});
+
+it("outsideHours handles a kitchen that closes after midnight", () => {
+  expect(outsideHours("10:00", "22:00", "23:00")).toBe(true);
+  expect(outsideHours("10:00", "22:00", "12:00")).toBe(false);
+  expect(outsideHours("18:00", "02:00", "01:00")).toBe(false);   // open across midnight
+  expect(outsideHours("18:00", "02:00", "03:00")).toBe(true);
+  expect(outsideHours("18:00", "02:00", "17:00")).toBe(true);
+  expect(outsideHours(null, "02:00", "03:00")).toBe(false);
 });

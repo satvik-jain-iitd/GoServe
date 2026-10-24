@@ -109,8 +109,11 @@ test("S8 when the kitchen row cannot be read, the open switch is disabled and sa
   net.state.kitchens = [];   // no row for k-1
   await page.goto("/kitchen/");
   await tab(page, "Kitchen").click();
-  await expect(page.getByRole("switch", { name: "Open for orders" })).toBeDisabled();
+  await expect(page.getByRole("switch", { name: "Open for orders" })).toHaveCount(0);   // no switch for an unknown state
   await expect(page.getByText("Could not read the kitchen")).toBeVisible();
+  net.state.kitchens = [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: true, active: true, opens_at: "10:00:00", closes_at: "22:00:00" }];
+  await page.getByRole("button", { name: "Try again" }).click();   // reads the row again, no reload
+  await expect(page.getByRole("switch", { name: "Open for orders" })).toBeChecked();
 });
 
 test("S9 a ticket opened from Cooking goes back to cooking", async ({ page, context }) => {
