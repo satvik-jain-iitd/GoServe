@@ -17,6 +17,11 @@ describe("isPin", () => {
 });
 
 describe("chooseKitchen", () => {
+  it("H5 hides a synthetic kitchen from a real pin code and shows it to a 9000xx simulator pin", () => {   // story #188
+    const sim: AreaKitchen = { id: "s-1", name: "Saket Rasoi", pin_codes: ["110016", "900001"], lat: null, lng: null, open: true, active: true, synthetic: true };
+    expect(chooseKitchen([sim], "110016")).toEqual({ kind: "none" });
+    expect(chooseKitchen([sim], "900001")).toEqual({ kind: "ok", kitchen: sim });
+  });
   it("picks the open kitchen that serves the pin code", () => {
     expect(chooseKitchen([k("a", "A", ["110016"]), k("b", "B", ["110001"])], "110016")).toEqual({ kind: "ok", kitchen: expect.objectContaining({ id: "a" }) });
   });

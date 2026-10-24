@@ -65,7 +65,7 @@ function finish(name, nodes, edges, sections, setts) {
 }
 
 // env 'prod' builds the PROD copy (story #78): a `PROD` name mark and its own webhook path. Everything else, including the canvas, is the same code.
-function build({ ids, token, supabaseUrl, credential, openrouterCredential, n8nApiCredential, uptimerobotKey, vapidCredential, vapidPublicKey, vapidSubject, chatId, driveFolderId, env }) {
+function build({ ids, token, simToken, supabaseUrl, credential, openrouterCredential, n8nApiCredential, uptimerobotKey, vapidCredential, vapidPublicKey, vapidSubject, chatId, driveFolderId, env }) {
   const prod = env === 'prod';
   const settings = ids.alert ? Object.assign({}, baseSettings, { errorWorkflow: ids.alert }) : baseSettings;
   const cred = credential || { id: 'REPLACE_CREDENTIAL_ID', name: 'GoServe Supabase dev' };
@@ -576,6 +576,36 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, n8nA
   ];
   const main93 = finish('GS MAIN 93 Weekly and monthly report', n93m, e93m, s93m, Object.assign({}, settings, { timezone: 'Asia/Kolkata' }));
 
+  // ---- Simulator (story H5, #188, epic E16): the synthetic city. SUB 30 writes through sim_seed or sim_reset; MAIN 30 is its own webhook with its own token. ----
+  const sub30 = sub({ name: 'GS SUB 30 Simulator write', n: 30, callerIds: ids.main30, credential: cred, settings,
+    fields: [['action', 'string'], ['body', 'object'], ['kill_switch', 'boolean'], ['supabase_url', 'string']],
+    guardFile: 'guard_sim.js', rpc: { fn: 'sim_seed or sim_reset', label: 'Seed or reset', dynamic: true },
+    what: 'Seed fills the synthetic kitchens, dishes and riders (same seed, same rows). Reset deletes every synthetic row and nothing else.' });
+  const n30 = [
+    node('gs-main30-01', 'Sim webhook', 'n8n-nodes-base.webhook', 2, { httpMethod: 'POST', path: prod ? 'gs-sim-prod' : 'gs-sim', responseMode: 'responseNode', options: { allowedOrigins: '*' } }, { webhookId: prod ? '3c7a9e52-6d1b-4f08-9a2e-7b5d1c0e8f30' : 'a1e4c830-5b2f-4d7e-8c3a-9f0b6d2e1c30' }),
+    cfgSet('gs-main30-02', [['kill_switch', 'boolean', false], ['sim_token', 'string', simToken || PLACEHOLDER], ['supabase_url', 'string', url], ['env', 'string', prod ? 'prod' : 'dev']]),
+    codeNode('gs-main30-03', 'Check token', code('sim_token.js')),
+    ifNode('gs-main30-04', 'Token ok?', '={{ $json.token_ok }}', 'true'),
+    ifNode('gs-main30-05', 'Kill switch?', '={{ $json.kill_switch }}', 'true'),
+    ifNode('gs-main30-06', 'Action ok?', '={{ $json.action !== "bad" }}', 'true'),
+    callSub('gs-main30-07', 'Call SUB 30 Simulator write', ids.sub30, [['action', '={{ $json.action }}', 'string'], ['body', '={{ $json.body }}', 'object'], ['kill_switch', '={{ $json.kill_switch }}', 'boolean'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
+    node('gs-main30-08', 'Respond result', 'n8n-nodes-base.respondToWebhook', 1.1, { respondWith: 'json', responseBody: '={{ $json }}', options: { responseCode: '={{ $json.status_code || 200 }}' } }),
+    respond('gs-main30-09', 'Respond 401', 401, '{"ok":false,"error":"unauthorized","message":"Missing or wrong simulator token."}'),
+    respond('gs-main30-10', 'Respond 503', 503, '{"ok":false,"error":"kill_switch","message":"The simulator is paused."}'),
+    respond('gs-main30-11', 'Respond 400', 400, '{"ok":false,"error":"bad_action","message":"Action must be seed or reset."}'),
+  ];
+  const e30 = [['Sim webhook', 'Config'], ['Config', 'Check token'], ['Check token', 'Token ok?'], ['Token ok?', 'Kill switch?', 0], ['Token ok?', 'Respond 401', 1],
+    ['Kill switch?', 'Respond 503', 0], ['Kill switch?', 'Action ok?', 1], ['Action ok?', 'Call SUB 30 Simulator write', 0], ['Action ok?', 'Respond 400', 1], ['Call SUB 30 Simulator write', 'Respond result']];
+  const s30 = [
+    { name: 'RECEIVE', what: 'The admin Simulator tab posts here through n8n, never the database. Body field "action" is seed or reset; seed may carry kitchens, riders, dishes_per_kitchen, seed, open_pct, online_pct. The header x-gs-sim-token carries the simulator token.', needs: 'Path gs-sim. Body: action and the seed numbers.', nodes: ['Sim webhook'], color: 4 },
+    { name: 'CONFIG', what: 'The kill switch, the simulator token (its own, not the demo token) and the database address.', needs: 'Config keys: kill_switch, sim_token, supabase_url, env.', nodes: ['Config'], color: 5 },
+    { name: 'GATE', what: 'Wrong token gets 401. Kill switch on gets 503. An action that is not seed or reset gets 400.', needs: 'Config: sim_token, kill_switch. Header x-gs-sim-token. Body: action.', nodes: ['Check token', 'Token ok?', 'Kill switch?', 'Action ok?'], color: 5 },
+    { name: 'WRITE', what: 'Call SUB 30. It clamps the numbers and runs sim_seed or sim_reset. Only rows marked synthetic are ever touched.', needs: 'SUB 30 id. Body: action and the seed numbers.', nodes: ['Call SUB 30 Simulator write'], color: 6 },
+    { name: 'ANSWER', what: 'Send the counts back with the status code.', needs: 'The SUB output: status_code, ok, kitchens, riders, dishes.', nodes: ['Respond result'], color: 4 },
+    { name: 'REFUSE', what: 'Answer the calls that must not go on: 401, 503 and 400.', needs: 'Nothing.', nodes: ['Respond 401', 'Respond 503', 'Respond 400'], color: 1 },
+  ];
+  const main30 = finish('GS MAIN 30 Simulator', n30, e30, s30, settings);
+
   // ---- ERR 00: tells the owner on Telegram when a GoServe workflow fails (rulebook 84) ----
   const aNodes = [
     node('gs-err00-01', 'Error trigger', 'n8n-nodes-base.errorTrigger', 1, {}),
@@ -593,7 +623,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, n8nA
     { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send alert'], color: 6 },
   ];
   const alert = finish('GS ERR 00 Alert', aNodes, aEdges, aSections, baseSettings);
-  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub19, sub20, sub21, sub22, sub91, sub93, sub94, main01, main90, main92, main93, alert };
+  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub19, sub20, sub21, sub22, sub30, main30, sub91, sub93, sub94, main01, main90, main92, main93, alert };
   if (prod) for (const k of Object.keys(all)) if (k !== 'alert') all[k].name += ' PROD';   // the one GS ERR 00 alert is shared (one bot, one chat)
   return { ...all, STATUS_ROLES };
 }
