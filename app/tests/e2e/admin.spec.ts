@@ -55,6 +55,7 @@ test("S4 adding staff by email with a role, and removing one", async ({ page, co
   await page.getByRole("button", { name: "Add person" }).click();
   await expect.poll(() => net.calls.rpc.filter((c) => c.name === "admin_add_person").length).toBe(1);
   expect(net.calls.rpc.find((c) => c.name === "admin_add_person")!.body).toEqual({ p_email: "cook@example.com", p_kind: "kitchen", p_kitchen: "k-1" });
+  page.on("dialog", (d) => void d.accept());   // the remove asks first
   await page.getByRole("button", { name: "Remove rider@example.com" }).click();
   await expect.poll(() => net.calls.rpc.filter((c) => c.name === "admin_remove_person").length).toBe(1);
   expect(net.calls.rpc.find((c) => c.name === "admin_remove_person")!.body).toEqual({ p_kind: "rider", p_user: "u-9", p_kitchen: null });
@@ -114,6 +115,7 @@ test("S7 a dish can be marked sold out, get a new price, and be deleted", async 
   await page.getByRole("button", { name: "Save price of Butter Chicken" }).click();
   await expect.poll(() => net.calls.menuWrites.length).toBe(2);
   expect(net.calls.menuWrites[1]).toMatchObject({ method: "PATCH", body: { price_paise: 35000 } });
+  page.on("dialog", (d) => void d.accept());   // the delete asks first
   await page.getByRole("button", { name: "Delete Butter Chicken" }).click();
   await expect.poll(() => net.calls.menuWrites.length).toBe(3);
   expect(net.calls.menuWrites[2].method).toBe("DELETE");

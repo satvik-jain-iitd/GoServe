@@ -840,3 +840,17 @@ Har naya technical word yahan. Simple Hindi mein. Ek line ka "yeh kya hai", ek l
 - **Kya hai:** Gate ka landing block (lockup, zigzag, kicker, slip, footer) RiderGate, KitchenGate aur AdminScreen mein copy hai. Ek badlao ka matlab teen jagah badlao. [VERIFIED]
 - **Analogy:** Cover page teen baar chhapa; ek galti ka matlab teen reprint.
 - **File:** `app/src/screens/AdminScreen.tsx`; PR #233.
+### Swallowed error
+- **Kya hai:** Read fail ho to code error ko chup karke khali list (`.catch(() => [])`) de deta hai. Screen ko lagta hai data sach mein khali hai. [VERIFIED]
+- **Analogy:** Roll call ka register kisi ne phaad diya; book par likha "0 riders", jabki asal mein register nahi padha gaya.
+- **File:** `app/src/lib/admin.ts` (listRiders), `app/src/screens/AdminScreen.tsx`; PR #235.
+
+### Ek word, do states
+- **Kya hai:** "Closed" tag do alag baatein dikhata hai: kitchen aaj band (open=false) aur system se off (active=false). Owner ko farak nahi dikhta. [VERIFIED]
+- **Analogy:** Shutter par ek hi board: "Band"; par ek din ke liye band hai, ya dukaan ka licence hi gaya, yeh board nahi batata.
+- **File:** `app/src/screens/AdminCity.tsx`; PR #235.
+
+### Radar run pehle
+- **Kya hai:** Naya code likhne se pehle dekhna ki repo mein kya already hai aur kya adopt karne layak hai. Is PR mein result: kuch adopt nahi, house ui se banaya. [VERIFIED]
+- **Analogy:** Naya dhaba kholne se pehle padosi ki dukaan dekhna: kya already chal raha hai, kya copy karna bekar hai.
+- **File:** `docs/research/repo-radar.md`, `CLAUDE.md`; PR #235.

@@ -16,7 +16,7 @@ export function AdminScreen() {
   const [anonymous, setAnonymous] = useState(true);
   const [tab, setTab] = useState<Tab>("orders");
   const [cityView, setCityView] = useState<CityView>({ kind: "list" });
-  const [riders, setRiders] = useState<RiderListRow[]>([]);
+  const [riders, setRiders] = useState<RiderListRow[] | null>([]);   // null: the riders could not be read
   const [openOrder, setOpenOrder] = useState<string | null>(null);
   const [count, setCount] = useState({ live: 0, total: 0 });
   const onCount = useCallback((live: number, total: number) => setCount({ live, total }), []);
@@ -34,7 +34,7 @@ export function AdminScreen() {
       if (!ok) return;
       setKitchens(await listKitchens(c));
       setPeople(await listPeople(c));
-      setRiders(await listRiders(c).catch(() => []));   // the riders table may be empty or unreadable; the list still shows
+      setRiders(await listRiders(c).catch(() => null));   // unreadable stays visible as unreadable, not as "all offline"
     } catch {
       setError("Could not load. Check your connection and try again.");
       setAllowed((a) => a ?? false);

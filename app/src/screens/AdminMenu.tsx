@@ -34,8 +34,9 @@ export function AdminMenu({ kitchenId, onError }: { kitchenId: string; onError: 
     onError(failed);
     if (!failed) await load();
   };
-  const remove = async (id: string) => {
-    const failed = await deleteDish(getClient(), id);
+  const remove = async (d: DishRow) => {
+    if (!window.confirm(`Delete ${d.name} from the menu? Sold out keeps it; delete does not.`)) return;
+    const failed = await deleteDish(getClient(), d.id);
     onError(failed);
     if (!failed) await load();
   };
@@ -57,7 +58,7 @@ export function AdminMenu({ kitchenId, onError }: { kitchenId: string; onError: 
               if (paise === null) return onError("Type the price in rupees, for example 220 or 220.50.");
               void change(d.id, { price_paise: paise });
             }}>Save price</button>
-            <button type="button" className="ui-btn ghost small danger" aria-label={`Delete ${d.name}`} onClick={() => void remove(d.id)}>Delete</button>
+            <button type="button" className="ui-btn ghost small danger" aria-label={`Delete ${d.name}`} onClick={() => void remove(d)}>Delete</button>
           </div>
         </div>
       ))}

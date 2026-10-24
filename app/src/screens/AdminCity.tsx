@@ -6,9 +6,11 @@ import { getClient } from "../lib/supabase";
 import { AdminMenu } from "./AdminMenu";
 
 type View = { kind: "list" } | { kind: "kitchen"; id: string } | { kind: "add" };
-type Props = { kitchens: KitchenRow[]; people: Person[]; riders: RiderListRow[]; onError: (m: string | null) => void; reload: () => Promise<void>; view: View; onView: (v: View) => void };
+type Props = { kitchens: KitchenRow[]; people: Person[]; riders: RiderListRow[] | null; onError: (m: string | null) => void; reload: () => Promise<void>; view: View; onView: (v: View) => void };
 const EMPTY = { name: "", address: "", phone: "", pins: "", opensAt: "", closesAt: "" };
 const hhmm = (t: string | null | undefined) => (t ? t.slice(0, 5) : null);
+/** Open (serving), Closed (the switch is off today), Off (taken out of the system, active false). */
+const stateOf = (k: KitchenRow): [string, string] => (!k.active ? ["Off", "error"] : k.open ? ["Open", "ready"] : ["Closed", "placed"]);
 const BACK = <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>;
 
 export function AdminCity({ kitchens, people, riders, onError, reload, view, onView }: Props) {
@@ -32,6 +34,7 @@ export function AdminCity({ kitchens, people, riders, onError, reload, view, onV
     if (!failed) { setWho({ ...who, email: "" }); setAddingPerson(false); await reload(); }
   };
   const remove = async (p: Person) => {
+    if (!window.confirm(`Remove ${p.email ?? p.user_id}? They lose access at once.`)) return;   // one tap less than a mistake
     const failed = await removePerson(getClient(), p);
     onError(failed);
     if (!failed) await reload();
@@ -67,7 +70,7 @@ export function AdminCity({ kitchens, people, riders, onError, reload, view, onV
       <header className="ui-head">
         <button type="button" className="ui-back" aria-label="Back to city" onClick={() => onView({ kind: "list" })}>{BACK}</button>
         <h1>{k.name}</h1>
-        <span className={`ui-tag ${k.open && k.active ? "ready" : "placed"}`}>{k.open && k.active ? "Open" : "Closed"}</span>
+        <span className={`ui-tag ${stateOf(k)[1]}`}>{stateOf(k)[0]}</span>
       </header>
       <div className="ui-scroll ui-today">
         <div className="ui-row ui-row-static"><span>Pin codes</span><span className="mono ui-row-sub">{k.pin_codes.length ? k.pin_codes.join(" · ") : "none"}</span></div>
@@ -85,10 +88,11 @@ export function AdminCity({ kitchens, people, riders, onError, reload, view, onV
     </>
   );
   const open = kitchens.filter((x) => x.open && x.active).length;
-  const online = riders.filter((r) => r.online).length;
   const riderPeople = people.filter((p) => p.kind === "rider");
-  const riderRows = [...riders.map((r) => ({ key: r.user_id, name: r.name || riderPeople.find((p) => p.user_id === r.user_id)?.email || "Rider", sub: r.phone ?? riderPeople.find((p) => p.user_id === r.user_id)?.email ?? "", online: r.online, person: riderPeople.find((p) => p.user_id === r.user_id) ?? null })),
-    ...riderPeople.filter((p) => !riders.some((r) => r.user_id === p.user_id)).map((p) => ({ key: p.user_id, name: p.email ?? p.user_id, sub: "No rider row yet", online: false, person: p }))];
+  const known = riders ?? [];
+  const online = known.filter((r) => r.online).length;
+  const riderRows = [...known.map((r) => ({ key: r.user_id, name: r.name || riderPeople.find((p) => p.user_id === r.user_id)?.email || "Rider", sub: r.phone ?? riderPeople.find((p) => p.user_id === r.user_id)?.email ?? "", online: r.online, person: riderPeople.find((p) => p.user_id === r.user_id) ?? null })),
+    ...riderPeople.filter((p) => !known.some((r) => r.user_id === p.user_id)).map((p) => ({ key: p.user_id, name: p.email ?? p.user_id, sub: riders ? "No rider row · add the person again" : "", online: false, person: p }))];
   return (   // A5
     <div className="ui-scroll ui-today">
       <section className="ui-group" aria-label="Kitchens">
@@ -96,17 +100,18 @@ export function AdminCity({ kitchens, people, riders, onError, reload, view, onV
         {kitchens.map((x) => (
           <button key={x.id} type="button" className="ui-row" aria-label={`Open kitchen ${x.name}`} onClick={() => onView({ kind: "kitchen", id: x.id })}>
             <span className="ui-row-label"><span>{x.name}</span><span className="ui-row-sub mono">{[...x.pin_codes, ...staffOf(x.id).map(firstName)].join(" · ") || "No pin code yet"}</span></span>
-            <span className={`ui-tag ${x.open && x.active ? "ready" : "placed"}`}>{x.open && x.active ? "Open" : "Closed"}</span>
+            <span className={`ui-tag ${stateOf(x)[1]}`}>{stateOf(x)[0]}</span>
           </button>
         ))}
         <div className="ui-pad-y"><button type="button" className="ui-btn ghost" onClick={() => { onError(null); onView({ kind: "add" }); }}>+ Add a kitchen</button></div>
       </section>
       <section className="ui-group" aria-label="Riders">
-        <h2>Riders <span className="mono">{online} online · {riderRows.length - online} off</span></h2>
+        <h2>Riders {riders && <span className="mono">{online} online · {riderRows.length - online} off</span>}</h2>
+        {!riders && <div className="ui-row ui-row-static"><span className="ui-row-label"><span>Could not read the riders.</span><span className="ui-row-sub mono">Online or offline is unknown</span></span><button type="button" className="ui-btn ghost small" onClick={() => void reload()}>Try again</button></div>}
         {riderRows.map((r) => (
           <div key={r.key} className="ui-row ui-row-static">
             <span className="ui-row-label"><span>{r.name}</span><span className="ui-row-sub mono">{r.sub}</span></span>
-            <span className="ui-row-acts">{r.person && removeButton(r.person)}<span className={`ui-tag ${r.online ? "ready" : "placed"}`}>{r.online ? "Online" : "Offline"}</span></span>
+            <span className="ui-row-acts">{r.person && removeButton(r.person)}{riders && <span className={`ui-tag ${r.online ? "ready" : "placed"}`}>{r.online ? "Online" : "Offline"}</span>}</span>
           </div>
         ))}
         {people.filter((p) => p.kind === "admin").map((p) => <div key={p.user_id} className="ui-row ui-row-static"><span className="ui-row-label"><span>{firstName(p)}</span><span className="ui-row-sub mono">Admin · {p.email ?? p.user_id}</span></span>{removeButton(p)}</div>)}

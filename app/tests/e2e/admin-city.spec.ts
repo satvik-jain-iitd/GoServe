@@ -102,3 +102,30 @@ for (const theme of ["day", "night"] as const) {
     await scan();   // A7
   });
 }
+
+test("S6 when the riders cannot be read the City says so and offers Try again; Delete and Remove ask first", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.admin = true;
+  net.state.ridersFail = true;
+  net.state.people = [{ kind: "rider", user_id: "r-9", email: "rider@example.com", kitchen_id: null, kitchen_name: null }];
+  await city(page);
+  await expect(page.getByText("Could not read the riders.")).toBeVisible();
+  await expect(page.getByText("Offline", { exact: true })).toHaveCount(0);   // unknown is not shown as offline
+  net.state.ridersFail = false;
+  net.state.riders = [{ user_id: "r-9", name: "Amit Kumar", phone: null, online: true }];
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect(page.getByText("Amit Kumar")).toBeVisible();
+  page.on("dialog", (d) => void d.dismiss());   // a No on the confirm sends nothing
+  await page.getByRole("button", { name: "Remove rider@example.com" }).click();
+  await page.waitForTimeout(300);
+  expect(net.calls.rpc.filter((c) => c.name === "admin_remove_person")).toHaveLength(0);
+});
+
+test("S7 a kitchen taken out of the system says Off, not Closed", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.admin = true;
+  net.state.kitchens = [...KITCHENS, { id: "k-3", name: "Old Kitchen", address: null, phone: null, pin_codes: [], open: true, active: false, opens_at: null, closes_at: null }];
+  await city(page);
+  await expect(page.getByRole("button", { name: /^Open kitchen Old Kitchen/ })).toContainText("Off");
+  await expect(page.getByRole("button", { name: /^Open kitchen Rohini Kitchen/ })).toContainText("Closed");
+});

@@ -38,7 +38,7 @@ Rules:
   git commit -m "chore: promote <what> to main"
   ```
 - I never push directly to `main`.
-- **One stack at a time** (owner, 22 Oct 2026, `CLAUDE.md` rule 19): one PR or one `gh stack` chain open in the whole repo. Dependent work is a layer on top, not a loose PR. Review and merge bottom up; GitHub rebases the rest. Review changes are commits on the same layer, then `gh stack sync`. **Merge the bottom layer; the coder then runs `gh pr edit <n> --base dev` on the next layer and tells the owner "base is dev"; only then the owner merges it. A layer merged into a base that was already merged is lost (#228 on 24 Oct, #233 on 25 Oct 2026).**
+- **One stack at a time** (owner, 22 Oct 2026, `CLAUDE.md` rule 19): one PR or one `gh stack` chain open in the whole repo. Dependent work is a layer on top, not a loose PR. Review and merge bottom up; GitHub rebases the rest. Review changes are commits on the same layer, then `gh stack sync`. **Merge the bottom layer; the coder then runs `gh pr edit <n> --base dev` on the next layer and tells the owner "base is dev"; only then the owner merges it. The owner merges a layer only when the PR page shows base dev. A layer merged into a base that was already merged is lost (#228 on 24 Oct, #233 on 25 Oct 2026).**
 - PR template: issue link, what changed, scenarios covered, test output pasted, demo, decisions made (ADR link), ideas noted.
 
 ---

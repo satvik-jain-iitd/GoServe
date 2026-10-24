@@ -3,7 +3,7 @@
 - **Branch:** feat/195-admin-ui → feat/225-day-default-dev (layer 2 on #232) [VERIFIED]
 - **Author:** klickbae8yt-star
 - **Story / issue:** #195 "H12a" (epic E18, #182). [VERIFIED]
-- **Status:** OPEN, approved (review 5639435161, APPROVE). [VERIFIED]
+- **Status:** MERGED into a dead base (lost); rebuilt as #234 (feat/195-admin-ui-dev → dev), APPROVE 5639504559, plus the 13 thread fixes in 8fce86f, approved (review 5639435161, APPROVE). [VERIFIED]
 - **Files:** 27 (10 png) · **Lines:** +361 / -105 [VERIFIED]
 - **Reviewer:** satvik-jain-iitd · review 5639435161 (APPROVE) [VERIFIED]
 - **Head:** 9e79a17 [VERIFIED]
@@ -192,44 +192,53 @@ Har comment ek teaching question hai. Status: sab open.
 <!-- gh-comment-id: 4368077324 -->
 - **File:** `app/src/screens/AdminOrders.tsx` · **Line:** 26 · **Category:** TOP · Risk
 - **Question:** Orders ek baar padhte hain (load par, cancel ke baad). Customer aur kitchen useLiveOrders se live hain; admin ka "Live" section bina tap ke purana reh jata hai. Pilot me owner phone kholke dekhega to stale list. useLiveOrders yahan bhi lagana kitna bada kaam hai, ya 30 s poll?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 8fce86f (PR #234, the rebuild from dev): the admin list reloads every 30 s (`POLL_MS`) and whenever the app comes back to the foreground (visibilitychange). useLiveOrders is scoped to one session, kitchen or rider; the all-kitchens
+- **Status:** fixed 8fce86f (#234), resolved 25 Oct
 
 <!-- gh-comment-id: 4368077326 -->
 - **File:** `app/src/screens/AdminOrders.tsx` · **Line:** 10 · **Category:** Understanding
 - **Question:** WORD: placed = "New" admin par, customer slip par "Placed", kitchen par bhi "New". Ek order, teen naam ek hi state ke. Jaan-boojh kar (har role ki apni bhasha) ya ek jagah se aana chahiye?
-- **Status:** open
+- **Reply (klickbae8yt-star):** On purpose (each role's words), from one place now: `staffLabel(status)` in lib/kitchen gives "New" for placed on the kitchen and admin apps, `statusLabel` gives the customer "Placed". Both screens read it (8fce86f (PR #234, the rebuild fro
+- **Status:** fixed 8fce86f (#234), resolved 25 Oct
 
 <!-- gh-comment-id: 4368077328 -->
 - **File:** `app/src/screens/AdminOrders.tsx` · **Line:** 75 · **Category:** Future
 - **Question:** "Rider assigned · On the job" bina naam ke. #231 rider naam laayega; tab tak owner ko kisko call karna hai pata nahi. Rider ka phone bhi chahiye yahan (F?).
-- **Status:** open
+- **Reply (klickbae8yt-star):** F151: join riders on rider_id (with #231) and add the rider's call row on A4. Until then the Call block has the customer and the kitchen; the kitchen knows who picked up.
+- **Status:** answered, resolved 25 Oct
 
 <!-- gh-comment-id: 4368077332 -->
 - **File:** `app/src/screens/AdminOrders.tsx` · **Line:** 48 · **Category:** Assumptions
 - **Question:** canCancel sirf placed/accepted (B3 rule). Cooking shuru hone ke baad owner cancel nahi kar sakta app se; ab kya karega, kitchen ko call? Board A4 kya kehta hai?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Rule B3 (owner): a cancel is only at New or Accepted; once the pan is on, the owner calls the kitchen from the Call block right above. The board shows Cancel on a Cooking order, so this is F150 (7) for the owner to confirm or change.
+- **Status:** answered, resolved 25 Oct
 
 <!-- gh-comment-id: 4368077335 -->
 - **File:** `app/tests/e2e/admin-ink.spec.ts` · **Line:** 103 · **Category:** Testability
 - **Question:** S6 axe A3, A4, A8, A2 scan karta hai; A1 (Sign in to run the city) nahi. Rider/kitchen me R1/K1 scan hote hain. Ek line aur?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 8fce86f (PR #234, the rebuild from dev): S6 scans A1 too (Sign in to run the city), Day and Night.
+- **Status:** fixed 8fce86f (#234), resolved 25 Oct
 
 <!-- gh-comment-id: 4368077337 -->
 - **File:** `app/src/screens/AdminScreen.tsx` · **Line:** 50 · **Category:** Alternatives
 - **Question:** Gate ka landing block ab teen jagah copy hai (RiderGate, KitchenGate, AdminScreen): lockup, zigzag, kicker, slip, footer. Ek `StaffLanding` component ek line ka kaam hai; H12b me ya abhi?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 8fce86f (PR #234, the rebuild from dev): `StaffLanding` in ui (lockup, zigzag, kicker, slip head, footer); RiderGate, KitchenGate and AdminScreen pass their words and the slip body. Rider and kitchen specs unchanged and green.
+- **Status:** fixed 8fce86f (#234), resolved 25 Oct
 
 <!-- gh-comment-id: 4368077341 -->
 - **File:** `app/src/ui/ui.css` · **Line:** 330 · **Category:** Purpose
 - **Question:** ui-tile-v 28px hard hai, token nahi (--gs-text-staff jaisa). Numbers ke tiles ka size kis token se aana chahiye?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 8fce86f (PR #234, the rebuild from dev): `--gs-number-xl: 28px` in tokens.css drives `.ui-tile-v`.
+- **Status:** fixed 8fce86f (#234), resolved 25 Oct
 
 <!-- gh-comment-id: 4368077344 -->
 - **File:** `app/src/lib/admin.ts` · **Line:** 112 · **Category:** Impact
 - **Question:** Order read ab updated_at aur rider_id bhi lata hai. Ops app bhi yahi read use karta hai? Ek column aur = sab admins ko sab orders ka rider_id; RLS me theek?
-- **Status:** open
+- **Reply (klickbae8yt-star):** The Ops app does not use listTodayOrders (it reads the live list and day_numbers). RLS is row level: `admin_read on orders using (is_admin())` already gives an admin every column of every order, rider_id included, so the extra columns chang
+- **Status:** answered, resolved 25 Oct
 
 <!-- gh-comment-id: 4368077346 -->
 - **File:** `docs/follow-ups.md` · **Line:** 157 · **Category:** Future
 - **Question:** F150 chhe deviations: reviewer ka jawab coder ke list par: sab theek jab tak City purane tools par hai; H12b me A5 to A7 ke saath hi City ko Ink par lao, alag se nahi.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Agreed: City stays on the old tools until H12b brings A5 to A7 together, on top of #234. F150 row says so.
+- **Status:** answered, resolved 25 Oct

@@ -97,21 +97,45 @@ Har comment ek teaching question hai. Status open jab tak coder reply na kare.
 <!-- gh-comment-id: 4368076198 -->
 - **File:** `app/src/lib/kitchen.ts` · **Line:** 39 · **Category:** 2 Understanding
 - **Question:** outsideHours: opens === closes par "never outside" (0022 waise bhi equal rokta hai). Theek. Par "now" string "HH:MM" phone ke local time se aata hai; prod kitchen ka opens_at IST me hai. Admin ka phone IST ke bahar ho to? (Pilot me nahi; ek line assumptions.md me kaafi.)
-- **Status:** open
+- **Reply (klickbae8yt-star):** Yes, one zone for the pilot. Added A58 to assumptions.md: hours are compared in the phone's local time; the pilot runs in IST, so a phone outside IST would see a wrong "Past 22:00" line.
+- **Status:** answered, resolved 25 Oct
 
 <!-- gh-comment-id: 4368076201 -->
 - **File:** `app/src/screens/KitchenScreen.tsx` · **Line:** 51 · **Category:** 4 Risk
 - **Question:** pastClose har render par new Date() se banta hai, par koi timer nahi: 21:59 par khula tab 22:30 tak bhi "Till 22:00" dikhata rahega jab tak kuch re-render na ho (naya order, tap). Cook ke liye theek, ya ek minute ka tick chahiye?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 8fce86f (PR #234, the rebuild from dev): the Kitchen tab keeps a `minute` state refreshed by a 60 s interval, so "Till 22:00" turns into "Past 22:00" on its own.
+- **Status:** fixed 8fce86f (#234), resolved 25 Oct
 
 <!-- gh-comment-id: 4368076203 -->
 - **File:** `app/src/screens/KitchenGate.tsx` · **Line:** 29 · **Category:** 7 Testability
 - **Question:** retry poora effect dobara chalata hai (session, getUser, myKitchen, row). S8 me row wapas aati hai. Ek aur case: retry ke baad bhi row na aaye, to "Try again" rehta hai, koi loop nahi? (tries sirf tap par badhta hai, samajh sahi?)
-- **Status:** open
+- **Reply (klickbae8yt-star):** Right: `tries` only changes on the tap, so the effect runs once per tap and never loops. If the row still does not come back, the Try again button stays and the switch stays hidden.
+- **Status:** answered, resolved 25 Oct
 
 <!-- gh-comment-id: 4368076205 -->
 - **File:** `docs/LEARNINGS.md` · **Line:** 207 · **Category:** 6 Impact
 - **Question:** Stack ka sabak sahi hai, par yeh owner ki process ka hai, agent ki nahi: rule 19 me ek line chahiye: "merge the bottom layer, wait till GitHub retargets the next, then merge it; a layer merged into an already-merged base is lost". PLAN.md rule 19 isi PR me ya agle docs commit me?
+- **Reply (klickbae8yt-star):** Done in 8fce86f (PR #234, the rebuild from dev): PLAN.md rule 19 now says the coder retargets the next layer with `gh pr edit <n> --base dev` after the bottom merge and says "base is dev" before the owner merges; a layer merged into an alre
+- **Status:** fixed 8fce86f (#234), resolved 25 Oct
+
+
+### PR #234 (#233 rebuilt from dev + the 13 thread fixes 8fce86f; APPROVE 5639504559)
+
+#233 bhi dev tak nahi pahuncha (wahi 10 second wali galti). #234 = #233 + 13 fix: staffLabel, 30 s admin poll, minute tick, StaffLanding, --gs-number-xl, A1 axe, A58, F151, F150 (7), PLAN rule 19 (coder retargets, says base is dev).
+
+<!-- gh-comment-id: 4368137130 -->
+- **File:** `app/src/screens/AdminOrders.tsx` · **Line:** 27 · **Category:** 2 Understanding
+- **Question:** 30 s poll + visibilitychange: owner ka phone screen par rahe to har 30 s ek orders read, din bhar. Pilot me theek (ek admin). Numbers tab aur City bhi isi poll se refresh hote hain ya sirf Orders? Admin ke liye ek useLiveOrders "all kitchens" kab (F?)?
+- **Status:** open
+
+<!-- gh-comment-id: 4368137132 -->
+- **File:** `app/src/ui/index.tsx` · **Line:** 142 · **Category:** 5 Alternatives
+- **Question:** StaffLanding ek jagah: sahi. Lockup abhi bhi lockup-day.png hai aur ui.css theme se swap karta hai (F145.7 ka jawab). Customer welcome (AreaScreen) bhi yahi landing shape use karta hai? Nahi to chaar me se teen ek, ek alag.
+- **Status:** open
+
+<!-- gh-comment-id: 4368137136 -->
+- **File:** `docs/PLAN.md` · **Line:** 41 · **Category:** 6 Impact
+- **Question:** Rule 19 ab coder ko retarget karne ko kehta hai: sahi. Ek line owner ke liye bhi: "merge sirf tab jab PR page par base dev dikhe". Do baar kho chuka; dono taraf ka check sasta hai. Isi PR me ya agle docs commit me?
 - **Status:** open
 
 ## Handoff
