@@ -23,3 +23,4 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - ID098 (2026-10-22, open): Founder review message listing who reviews what. Draft in `docs/product/founder-review-message.md`.
 - ID099 (2026-10-22, open): the app must keep its state after a refresh (owner UAT feedback). F102 a.
 - ID100 (2026-10-24, open): owner, during the #220 review: make rules so CI failures stop eating review time; fix it permanently, not per PR. Finding: no git hooks are installed although rule 13 says pre-commit runs; the Guard runs first in CI (subjects over 72 chars failed #66, #71, #220). Proposal: mirror the CI Guard in a commit-msg and pre-push hook plus one `make check`; a CI failure becomes a local check the same day, never only a learning row.
+- ID185 (2026-10-25, taken: story #247): host the roadmap page at a public link so anyone who opens it sees the live roadmap, not a file on the Mac (owner, 02:45, after the night's stack).
