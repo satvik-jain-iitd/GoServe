@@ -5,7 +5,7 @@ import type { RoleApp } from "./lib/roles";
 const base = {
   name: "GoServe",
   short_name: "GoServe",
-  description: "Fresh food at your door in under 15 minutes.",
+  description: "Hot meals at your door in 25 to 35 minutes.",
   display: "standalone" as const,
   theme_color: tokens.color.core.deepGreen,
   background_color: tokens.color.core.cream,
