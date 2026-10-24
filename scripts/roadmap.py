@@ -15,7 +15,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "docs", "roadmap", "index.html")
 REPO = "satvik-jain-iitd/GoServe"
 COLUMNS = ("To do", "Doing", "Review", "Done")
-# Words a stranger does not need. Only the Board cards may use them; everywhere else they are swapped for plain ones.
+# Words a stranger does not need. The Board cards keep the story's own words (raw); every other section gets the plain swap.
 PLAIN = [(re.compile(r"\bCI/CD\b"), "build and deploy"), (re.compile(r"\bPRs?\b"), "change"), (re.compile(r"\bCI\b"), "the checks"), (re.compile(r"\brpc\b", re.I), "server call"),
          (re.compile(r"\bmigrations?\b", re.I), "database change"), (re.compile(r"\be2e\b", re.I), "end-to-end test")]
 ISSUE_QUERY = """query($after: String) { repository(owner: "satvik-jain-iitd", name: "GoServe") {
@@ -58,7 +58,7 @@ def first_sentence(text: str) -> str:
 def epic_of(issue: dict) -> int | None:
     if issue.get("parent"):
         return issue["parent"]["number"]
-    m = re.search(r"Part of (?:epic )?(?:E\d+\s*)?\(?#(\d+)", issue.get("body") or "")
+    m = re.search(r"Part of (?:epic )?(?:E\d+\s*)?\(?#(\d+)", issue.get("body") or "", re.I)
     return int(m.group(1)) if m else None
 
 
@@ -93,7 +93,7 @@ def build(issues: list, prs: list) -> dict:
         pr = pr_for(i, prs)
         sentence = first_sentence(section(i.get("body"), "Business"))
         stories.append({"number": i["number"], "title": i["title"], "epic": epic_of(i), "state": i["state"], "pr": pr, "column": column(i, pr),
-                        "sentence": sentence, "text": plain(sentence or i["title"]), "needs_words": not sentence})
+                        "sentence": sentence, "raw": sentence or i["title"], "text": plain(sentence or i["title"]), "needs_words": not sentence})
     return {"epics": [{"number": e["number"], "title": plain(re.sub(r"^(Epic|Feature):?\s*(E\d+:?)?\s*", "", e["title"])), "state": e["state"],
                        "sentence": plain(first_sentence(section(e.get("body"), "Business"))), "stories": [s for s in stories if s["epic"] == e["number"]]} for e in epics],
             "stories": stories, "prs": prs}
@@ -112,8 +112,8 @@ def render(model: dict, vision: str, now: datetime) -> str:
         for ep in model["epics"] if any(s["column"] == "To do" for s in ep["stories"])) or "<li>Nothing is queued.</li>"
     epic_name = {ep["number"]: ep["title"] for ep in model["epics"]}
     cards = {c: "".join(
-        f'<div class="card" data-story="{s["number"]}"><span class="tag">{e(epic_name.get(s["epic"], "no epic"))}</span><p>{e(s["text"])}</p>'
-        f'<span class="mono">#{s["number"]}{" · change #" + str(s["pr"]["number"]) if s["pr"] else ""}</span></div>'
+        f'<div class="card" data-story="{s["number"]}"><span class="tag">{e(epic_name.get(s["epic"], "no epic"))}</span><p>{e(s["raw"])}</p>'
+        f'<span class="mono">#{s["number"]}{" · PR #" + str(s["pr"]["number"]) if s["pr"] else ""}</span></div>'
         for s in model["stories"] if s["column"] == c) for c in COLUMNS}
     board = "".join(f'<section class="col"><h3>{c} <span class="mono">{sum(1 for s in model["stories"] if s["column"] == c)}</span></h3>{cards[c]}</section>' for c in COLUMNS)
     needs = sum(1 for s in model["stories"] if s["needs_words"])
