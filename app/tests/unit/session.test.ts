@@ -57,13 +57,18 @@ describe("scopeFor (story S-M5)", () => {
   });
 });
 
-describe("myKitchen (story S-M5)", () => {
-  const client = (res: object) => ({ from: () => ({ select: () => ({ limit: async () => res }) }) }) as never;
+describe("myKitchen (story S-M5, H3)", () => {
+  const client = (res: object, asked: string[] = []) => ({ from: () => ({ select: () => ({ eq: (col: string, v: string) => { asked.push(`${col}=${v}`); return { limit: async () => res }; } }) }) }) as never;
   it("answers the kitchen id of the staff row", async () => {
-    expect(await myKitchen(client({ data: [{ kitchen_id: "k-1" }], error: null }))).toBe("k-1");
+    expect(await myKitchen(client({ data: [{ kitchen_id: "k-1" }], error: null }), "u-1")).toBe("k-1");
+  });
+  it("H3 asks for this user's row only: an admin can read every staff row, so a bare limit(1) could pick another kitchen", async () => {
+    const asked: string[] = [];
+    await myKitchen(client({ data: [], error: null }, asked), "u-1");
+    expect(asked).toEqual(["user_id=u-1"]);
   });
   it("answers null when there is no row or the read fails", async () => {
-    expect(await myKitchen(client({ data: [], error: null }))).toBeNull();
-    expect(await myKitchen(client({ data: null, error: { message: "x" } }))).toBeNull();
+    expect(await myKitchen(client({ data: [], error: null }), "u-1")).toBeNull();
+    expect(await myKitchen(client({ data: null, error: { message: "x" } }), "u-1")).toBeNull();
   });
 });

@@ -7,6 +7,20 @@
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <link rel="icon" href="/icons/icon-192.png" />
     <title>GoServe</title>
+    <link rel="preload" href="/fonts/bricolage-grotesque-latin-1.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/anek-latin-latin-0.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- Day 06:00 to 18:00, Night 18:00 to 06:00, or the pin from You > Look. Same rule as src/lib/theme.ts, here so the first paint is right. -->
+    <script>
+      (function () {
+        var p = null;
+        try { p = localStorage.getItem("gs-theme"); } catch (e) {}
+        var h = new Date().getHours();
+        var t = p === "day" || p === "night" ? p : h >= 18 || h < 6 ? "night" : "day";
+        document.documentElement.setAttribute("data-theme", t);
+        var m = document.querySelector('meta[name="theme-color"]');
+        if (m) m.setAttribute("content", t === "night" ? "#0b1220" : "#e4e6d9");
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

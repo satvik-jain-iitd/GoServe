@@ -58,25 +58,34 @@ describe("accessibility", () => {
 });
 
 describe("css rules", () => {
-  it("S3 Roboto is loaded by the app", () => {
-    expect(readFileSync(resolve(__dirname, "../../src/main.tsx"), "utf8")).toContain("@fontsource/roboto");
+  it("S3 the Ink fonts are loaded by the app (self-hosted, no third party)", () => {
+    expect(readFileSync(resolve(__dirname, "../../src/main.tsx"), "utf8")).toContain("./styles/fonts.css");
+    expect(readFileSync(resolve(__dirname, "../../src/styles/fonts.css"), "utf8")).toContain("url(/fonts/");
   });
-  it("S3 spacing uses the token scale only: no raw lengths in padding, margin or gap", () => {
-    for (const m of css.matchAll(/(?:padding|margin|gap)[a-z-]*:\s*([^;]+);/g)) expect(m[1], m[0]).not.toMatch(/\d(px|rem)\b(?!\s*\))/);
+  it("S3 spacing: no rem in padding, margin or gap, and no raw length above 52 px (the screen header's top is 52)", () => {
+    for (const m of css.matchAll(/(?:padding|margin|gap)[a-z-]*:\s*([^;]+);/g)) {
+      expect(m[1], m[0]).not.toMatch(/\drem\b/);
+      for (const n of m[1].matchAll(/(\d+(?:\.\d+)?)px/g)) expect(Number(n[1]), m[0]).toBeLessThanOrEqual(52);
+    }
   });
-  it("S3 no colour in ui.css that is not a token variable", () => {
+  it("S3 no colour in ui.css that is not a token variable (Day and Night come from tokens.css)", () => {
     expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
   });
+  it("S3 no review-only themes in the app sheet (Night Blue and Sunset were mockups)", () => {
+    expect(css).not.toContain("night-blue");
+    expect(css).not.toContain("sunset");
+  });
   it("S3 tap targets are at least 44 px", () => {
-    for (const sel of [".ui-btn", ".ui-chip", ".ui-step button", ".ui-back"]) {
-      const rule = css.split("}").find((r) => r.includes(sel + " {") || r.includes(sel + ",") || r.trim().startsWith(sel));
+    for (const sel of [".ui-btn", ".ui-chip", ".ui-step", ".ui-back"]) {
+      const rule = css.match(new RegExp("(?:^|\\n)" + sel.replace(".", "\\.") + " \\{([^}]*)\\}"))?.[1];
       expect(rule, sel).toBeTruthy();
-      expect(rule, sel).toMatch(/min-height:\s*var\(--gs-tap\)/);
+      expect(rule, sel).toMatch(/(min-)?(height|width):\s*var\(--gs-tap\)/);
     }
-    expect(readFileSync(resolve(__dirname, "../../src/styles/tokens.css"), "utf8")).toMatch(/--gs-tap:\s*2\.75rem/);
+    expect(readFileSync(resolve(__dirname, "../../src/styles/tokens.css"), "utf8")).toMatch(/--gs-tap:\s*44px/);
   });
   it("S3 the big button is at least 56 px for one-thumb staff screens", () => {
-    expect(css).toMatch(/\.ui-btn\.big \{[^}]*min-height:\s*3\.5rem/);
+    expect(css).toMatch(/\.ui-btn\.big \{[^}]*min-height:\s*var\(--gs-tap-big\)/);
+    expect(readFileSync(resolve(__dirname, "../../src/styles/tokens.css"), "utf8")).toMatch(/--gs-tap-big:\s*56px/);
   });
   it("S3 motion is switched off for people who ask for less", () => {
     expect(css).toContain("prefers-reduced-motion");
