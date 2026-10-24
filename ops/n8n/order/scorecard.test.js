@@ -8,7 +8,7 @@ const path = require('path');
 const { build } = require('./build');
 const { checkLayout } = require('../lib/layout_checks');
 
-const IDS = { main01: 'MAIN1', sub11: 'SUB11', sub12: 'SUB12', sub13: 'SUB13', sub14: 'SUB14', sub15: 'SUB15', sub16: 'SUB16', sub91: 'SUB91', sub93: 'SUB93', main90: 'MAIN90', main92: 'MAIN92', main93: 'MAIN93', alert: 'ALERT1' };
+const IDS = { main01: 'MAIN1', sub11: 'SUB11', sub12: 'SUB12', sub13: 'SUB13', sub14: 'SUB14', sub15: 'SUB15', sub16: 'SUB16', sub91: 'SUB91', sub93: 'SUB93', sub94: 'SUB94', main90: 'MAIN90', main92: 'MAIN92', main93: 'MAIN93', alert: 'ALERT1' };
 const wf = build({ ids: IDS, chatId: '42' });
 const src = (f) => fs.readFileSync(path.join(__dirname, 'code', f), 'utf8');
 // Runs a Code node as written. `named` maps a node name to the item that `$('name')` returns.
