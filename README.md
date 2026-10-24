@@ -13,8 +13,8 @@ This repository holds everything: the four apps (one codebase), the order workfl
 **We run the kitchen, so we own the minutes.**
 A marketplace sells other people's food and cannot promise the time. We cook one plate a day per meal slot, in our kitchen, a short way from the door. Short trips keep food hot. The promise stays small enough to be true.
 
-**One codebase. Four apps. No app store needed.**
-Customer, kitchen, rider and admin run on one React codebase as a web app. A new city is a row in a table, not a new build. Native wrappers come when the pilot's numbers ask for them ([when, and why](https://github.com/satvik-jain-iitd/GoServe/blob/dev/docs/research/android-apk-2026-10.md)).
+**One codebase. Four apps. A web link today, an Android app by 2 November.**
+Customer, kitchen, rider and admin run on one React codebase as a web app. A new city is a row in a table, not a new build. The same code ships as an Android APK anyone can download and install, due Sunday 2 November 2026 ([how](https://github.com/satvik-jain-iitd/GoServe/blob/dev/docs/research/android-apk-2026-10.md)).
 
 **The system decides. People cook and ride.**
 Which kitchen, which rider, when to start cooking, which order is about to be late. Small, fast decision models answer in milliseconds for a fraction of a cent ([Jev, the five decisions](https://github.com/satvik-jain-iitd/GoServe/blob/dev/docs/ai/JEV_D1_D5_CONTRACT.md)). Every decision is logged. From those logs we fine-tune [Laya](https://github.com/satvik-jain-iitd/GoServe/blob/dev/docs/ai/LAYA_PLAN.md), an open 395M-parameter decision model, so the cost per decision goes to zero as orders grow.
@@ -61,11 +61,12 @@ Free tiers, one small server, a two-person loop: a founder and AI coding agents,
 
 ## What comes next
 
-1. **Ten kitchens in Delhi.** A synthetic city already proves the dispatch at scale on real infrastructure.
-2. **Maps.** Real distance and ETA, address check, nearest kitchen by the customer's point.
-3. **Payments.** UPI and cards after the food licence. Cash stays.
-4. **Second city.** Same code, same kitchen playbook, a new row in the table.
-5. **Native apps** when the numbers say so: rider first (background location), then the rest.
+1. **An Android app by Sunday 2 November 2026.** One APK anyone can download, install and use, every feature and integration working, tested on a phone. The rider's location keeps flowing with the screen off.
+2. **Zero running cost.** Laya, our own fine-tuned decision model, answers every decision on our own small box; Jev's paid calls go to zero.
+3. **Ten kitchens in Delhi.** A synthetic city already proves the dispatch at scale on real infrastructure.
+4. **Maps.** Real distance and ETA, address check, nearest kitchen by the customer's point.
+5. **Payments.** UPI and cards after the food licence. Cash stays.
+6. **Second city.** Same code, same kitchen playbook, a new row in the table.
 
 The full plan, with root causes, stories and verification: [`docs/mvp25/plan.md`](https://github.com/satvik-jain-iitd/GoServe/blob/dev/docs/mvp25/plan.md).
 
