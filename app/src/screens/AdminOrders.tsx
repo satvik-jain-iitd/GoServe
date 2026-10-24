@@ -1,15 +1,15 @@
 // Orders of the admin app on the Ink v3 boards A3 and A4 (story H12, #195; story A4): today's orders, live then done, and one order with its slip, the calls, the timeline and a cancel with a reason.
 import { useCallback, useEffect, useState } from "react";
 import { cancelOrder, doneOrders, listTodayOrders, liveOrders, type AdminOrder, type KitchenRow } from "../lib/admin";
-import { hhmm, shortId, statusLabel, trackerSteps } from "../lib/kitchen";
+import { hhmm, shortId, staffLabel, trackerSteps } from "../lib/kitchen";
 import { formatRupees } from "../lib/money";
 import { getClient } from "../lib/supabase";
 import { Timeline } from "../ui";
 
 const TAG: Record<string, string> = { placed: "placed", accepted: "placed", preparing: "", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "error" };
-const WORD: Record<string, string> = { placed: "New", accepted: "Accepted", preparing: "Cooking" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "error" };
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up" };
+export const POLL_MS = 30_000;
 const CALL = <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" /></svg>;
 
 type Props = { kitchens: KitchenRow[]; onError: (m: string | null) => void; open: string | null; onOpen: (id: string | null) => void; onCount?: (live: number, total: number) => void };
@@ -22,6 +22,13 @@ export function AdminOrders({ kitchens, onError, open, onOpen, onCount }: Props)
     try { setOrders(await listTodayOrders(getClient())); } catch { onError("Could not load the orders. Try again."); }
   }, [onError]);
   useEffect(() => { void load(); }, [load]);
+  // No live channel for the admin's all-kitchens read: the list reloads every 30 seconds and when the phone comes back to the app.
+  useEffect(() => {
+    const t = setInterval(() => void load(), POLL_MS);
+    const back = () => { if (document.visibilityState === "visible") void load(); };
+    document.addEventListener("visibilitychange", back);
+    return () => { clearInterval(t); document.removeEventListener("visibilitychange", back); };
+  }, [load]);
   const live = liveOrders(orders), done = doneOrders(orders);
   useEffect(() => { onCount?.(live.length, orders.length); }, [live.length, orders.length, onCount]);
   const kitchen = (id: string) => kitchens.find((k) => k.id === id);
@@ -38,7 +45,7 @@ export function AdminOrders({ kitchens, onError, open, onOpen, onCount }: Props)
         <span className="ui-order-items">{o.customer_name ?? "No name"}</span>
         <span className="ui-order-sub">{kitchen(o.kitchen_id)?.name ?? "Kitchen"} · <span className="mono">{formatRupees(o.total_paise)}</span></span>
       </span>
-      <span className={`ui-tag ${TAG[o.status] ?? ""}`}>{WORD[o.status] ?? statusLabel(o.status)}</span>
+      <span className={`ui-tag ${TAG[o.status] ?? ""}`}>{staffLabel(o.status)}</span>
     </button>
   );
   const o = open ? orders.find((x) => x.id === open) ?? null : null;
@@ -57,7 +64,7 @@ export function AdminOrders({ kitchens, onError, open, onOpen, onCount }: Props)
           <section className="ui-slip ui-slip-pad" aria-label={`Order ${shortId(o.id)}`}>
             <div className="ui-slip-body">
               <div className="ui-slip-head"><span>{k?.name ?? "Kitchen"}</span><span>Cash</span></div>
-              <div className="ui-slip-stamp"><span className={`ui-stamp ${STAMP[o.status] ?? ""}`}>{WORD[o.status] ?? statusLabel(o.status)}</span></div>
+              <div className="ui-slip-stamp"><span className={`ui-stamp ${STAMP[o.status] ?? ""}`}>{staffLabel(o.status)}</span></div>
               <div className="ui-slip-lines">{o.items.map((i, n) => <div key={n}><span>{i.qty} × {i.name}</span>{i.price_paise !== undefined && <span>{formatRupees(i.price_paise * i.qty)}</span>}</div>)}</div>
               <div className="ui-slip-rule" />
               <p className="ui-addr mono">{o.address}</p>

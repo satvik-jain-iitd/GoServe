@@ -137,3 +137,24 @@ export function TabBar({ current, onMenu, onOrders, onYou }: { current: "menu" |
     { key: "you", label: "You", icon: "you", name: "You (Account)" },
   ]} />;
 }
+
+// The landing of the staff apps on the Ink boards R1, R2, K1, K2, A1, A2 (story H12): lockup, zigzag, a kicker, one slip, a footer line.
+export function StaffLanding({ kicker, app, right, label, error, children }: { kicker: string; app: string; right: string; label: string; error?: string | null; children: ReactNode }) {
+  return (
+    <section className="ui-landing">
+      <header className="ui-landing-head">
+        <h1><img className="ui-logo ui-lockup" src="/brand/lockup-day.png" alt="GoServe" width="350" height="50" /></h1>
+        <div className="ui-zigzag" aria-hidden="true" />
+        <p className="ui-kicker">{kicker}</p>
+      </header>
+      <div className="ui-slip" role="group" aria-label={label}>
+        <div className="ui-slip-body">
+          <div className="ui-slip-head"><span>{app}</span><span>{right}</span></div>
+          {children}
+          {error && <p role="alert" className="ui-field-error">{error}</p>}
+        </div>
+      </div>
+      <footer className="ui-landing-foot"><p className="ui-kicker">No app to install · works in the browser</p></footer>
+    </section>
+  );
+}

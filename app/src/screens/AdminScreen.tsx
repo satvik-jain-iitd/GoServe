@@ -7,7 +7,7 @@ import { AdminMenu } from "./AdminMenu";
 import { AdminNumbers } from "./AdminNumbers";
 import { AdminOrders } from "./AdminOrders";
 import { SignIn } from "./SignIn";
-import { Button, Tabs } from "../ui";
+import { Button, StaffLanding, Tabs } from "../ui";
 
 type Tab = "orders" | "city" | "numbers";
 type CityTab = "kitchens" | "staff" | "menu";
@@ -45,15 +45,7 @@ export function AdminScreen() {
 
   if (allowed === null) return <><header className="ui-head"><h1>Orders</h1></header><div className="ui-pad"><p className="ui-meta">Loading…</p></div></>;
   if (!allowed) return (   // A1 when there is no Google sign-in yet, A2 when the account is not on the admin list
-    <section className="ui-landing">
-      <header className="ui-landing-head">
-        <h1><img className="ui-logo ui-lockup" src="/brand/lockup-day.png" alt="GoServe" width="350" height="50" /></h1>
-        <div className="ui-zigzag" aria-hidden="true" />
-        <p className="ui-kicker">Admin · the city in one hand</p>
-      </header>
-      <div className="ui-slip" role="group" aria-label={anonymous ? "Sign in" : "Not an admin"}>
-        <div className="ui-slip-body">
-          <div className="ui-slip-head"><span>Admin</span><span>{anonymous ? "Google" : "Signed in"}</span></div>
+    <StaffLanding kicker="Admin · the city in one hand" app="Admin" right={anonymous ? "Google" : "Signed in"} label={anonymous ? "Sign in" : "Not an admin"} error={error}>
           {anonymous ? (
             <>
               <h2 className="ui-slip-title">Sign in to run the city</h2>
@@ -67,11 +59,7 @@ export function AdminScreen() {
               <button type="button" className="ui-btn big" onClick={async () => { try { await getClient().auth.signOut(); } catch { /* offline */ } window.location.reload(); }}>Sign out</button>
             </>
           )}
-          {error && <p role="alert" className="ui-field-error">{error}</p>}
-        </div>
-      </div>
-      <footer className="ui-landing-foot"><p className="ui-kicker">No app to install · works in the browser</p></footer>
-    </section>
+    </StaffLanding>
   );
 
   const submitKitchen = async () => {

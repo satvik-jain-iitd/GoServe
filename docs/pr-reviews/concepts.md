@@ -826,3 +826,17 @@ Har naya technical word yahan. Simple Hindi mein. Ek line ka "yeh kya hai", ek l
 - **Kya hai:** "New tickets ring · accept within 2 min" ek vaada hai. Screen ko woh nibhana chahiye.
 - **Analogy:** "Ghanti bajti hai" likha ho to ghanti honi chahiye.
 - **File:** `app/src/screens/KitchenScreen.tsx`; PR #223.
+### Read-once list vs live list
+- **Kya hai:** List ek baar load hoti hai (aur cancel ke baad phir). Live list apne aap badalti hai. Admin Orders read-once hai; customer aur kitchen useLiveOrders se live hain. [VERIFIED]
+- **Analogy:** Counter book ki subah ki copy vs ghanti wali slip rail.
+- **File:** `app/src/screens/AdminOrders.tsx`; PR #233.
+
+### One role, one vocabulary
+- **Kya hai:** Ek state ko har role ka apna naam milta hai. Placed = "New" admin par, "Placed" customer par, "New" kitchen par. [VERIFIED]
+- **Analogy:** Ek hi slip ko teen staff teen naam se bulate hain.
+- **File:** `app/src/screens/AdminOrders.tsx`; PR #233.
+
+### Gate landing copied three times
+- **Kya hai:** Gate ka landing block (lockup, zigzag, kicker, slip, footer) RiderGate, KitchenGate aur AdminScreen mein copy hai. Ek badlao ka matlab teen jagah badlao. [VERIFIED]
+- **Analogy:** Cover page teen baar chhapa; ek galti ka matlab teen reprint.
+- **File:** `app/src/screens/AdminScreen.tsx`; PR #233.

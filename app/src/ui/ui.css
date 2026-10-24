@@ -327,7 +327,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-tiles { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--gs-space-5); }
 .ui-tile { display: flex; flex-direction: column; gap: 2px; padding: var(--gs-space-3) 0; border-bottom: 1px solid var(--md-outline-variant); }
 .ui-tile-k { font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); text-transform: uppercase; color: var(--gs-text-muted); }
-.ui-tile-v { font-size: 28px; font-weight: 500; line-height: 1.1; }
+.ui-tile-v { font-size: var(--gs-number-xl); font-weight: 500; line-height: 1.1; }
 .ui-tile-s { font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
 .ui-day-total { margin: var(--gs-space-2) 0 0; text-align: left; }
 .ui-btn.icon { width: var(--gs-tap); min-width: var(--gs-tap); padding: 0; display: inline-flex; align-items: center; justify-content: center; }

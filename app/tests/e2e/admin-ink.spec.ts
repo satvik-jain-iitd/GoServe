@@ -101,5 +101,9 @@ for (const theme of ["day", "night"] as const) {
     await page.reload();
     await expect(page.getByRole("heading", { name: "Not an admin account" })).toBeVisible();
     await scan();   // A2
+    net.state.anonymous = true;
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Sign in to run the city" })).toBeVisible();
+    await scan();   // A1
   });
 }

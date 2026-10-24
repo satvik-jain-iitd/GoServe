@@ -1,6 +1,6 @@
 // Story #49: the kitchen list and its next-step buttons. Pure data in, pure data out.
 import { describe, expect, it } from "vitest";
-import { kitchenOrders, mergeOrder, nextStep, shortId, statusLabel, type Order, newTickets, cookingTickets, readyTickets, deliveredToday, outsideHours } from "../../src/lib/kitchen";
+import { kitchenOrders, mergeOrder, nextStep, shortId, statusLabel, type Order, newTickets, cookingTickets, readyTickets, deliveredToday, outsideHours, staffLabel } from "../../src/lib/kitchen";
 
 const o = (id: string, status: string, created_at: string, updated_at = created_at): Order => ({
   id, status, created_at, updated_at, session_id: "s1", address: "Flat 4", total_paise: 100, items: [{ menu_item_id: "d1", name: "Butter Chicken", qty: 1, price_paise: 100 }],
@@ -124,4 +124,9 @@ it("outsideHours handles a kitchen that closes after midnight", () => {
   expect(outsideHours("18:00", "02:00", "03:00")).toBe(true);
   expect(outsideHours("18:00", "02:00", "17:00")).toBe(true);
   expect(outsideHours(null, "02:00", "03:00")).toBe(false);
+});
+
+it("staffLabel says New for a placed order and the usual word otherwise", () => {
+  expect(staffLabel("placed")).toBe("New");
+  expect(staffLabel("preparing")).toBe("Cooking");
 });
