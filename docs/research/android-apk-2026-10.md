@@ -23,3 +23,24 @@
 ## Workaround for today
 
 In Chrome choose Add to Home screen, then **Create shortcut**. It uses the page address. Not tested yet (confidence 0.7).
+
+## 25 Oct 2026: MVP 3 makes the APK the goal (epic E22, story #250)
+
+The owner's goal of 25 Oct 03:45 reverses the priority above: the APK is now first, due 2 Nov 2026. Radar run: `docs/research/repo-radar.md`, section of 25 Oct (Bubblewrap adopted).
+
+| Claim | Evidence | Tier | Confidence | What it changes |
+|---|---|---|---|---|
+| Bubblewrap turns our live manifest into a signed APK with one `init` and one `build`; it downloads JDK 17 and the Android SDK itself on first run (about 1 GB under `~/.bubblewrap`) | Bubblewrap CLI README, 25 Oct | A | 0.85 | The spike needs no Android Studio; it needs the owner's yes for the downloads on this Mac |
+| The live customer manifest already has what a TWA needs: name, start_url and scope `/customer/`, display standalone, icons 192 and 512 (one maskable) | `curl` of goserve-app.pages.dev/manifests/customer.webmanifest, 25 Oct | S | 0.9 | No manifest work before the spike |
+| Without a Digital Asset Links file at `/.well-known/assetlinks.json` the APK still runs but shows Chrome's address bar | TWA quick start | A | 0.85 | Spike first without it; the signed build's fingerprint then goes into `app/public/.well-known/assetlinks.json` and ships with the release |
+| `goserve-app.pages.dev/.well-known/assetlinks.json` answers 200 today because Pages serves the app shell for every path; a real JSON file must win over the fallback | `curl -D -` on 25 Oct (content type below) | S | 0.8 | The file goes in `app/public/.well-known/`; the e2e checks the content type |
+| A TWA shares Chrome's storage: the customer, kitchen, rider and admin apps keep one session, as on the web | Chromium TWA docs | A | 0.8 | One APK with four shortcuts, or four APKs, is a packaging choice, not a session choice (ADR in #250) |
+| Chrome stops a page's geolocation watch when the screen is off; a TWA inherits this | Chromium behaviour; the `twa-location-delegation` demo moves the permission, not the wake | A | 0.7 | Story #252 needs an Android-side service (TWA + foreground service, or Capacitor); measure in the spike with the screen off for 10 minutes |
+
+### The spike (story #250), one step at a time
+
+1. Owner's yes: let Bubblewrap download JDK 17 and the Android SDK under `~/.bubblewrap` on this Mac (about 1 GB, removable by deleting the folder).
+2. `npx @bubblewrap/cli init --manifest https://goserve-app.pages.dev/manifests/customer.webmanifest --directory ops/android/customer` with the answers: package `in.goserve.customer`, name GoServe, the Ink green theme, location delegation on, a new signing key whose keystore goes to the vault (`~/Desktop/Secrets/07_android_keystore/`), never the repo.
+3. `bubblewrap build` → `app-release-signed.apk`; size written here.
+4. Install on the owner's Android phone (`adb install` or the file by Telegram), run the customer app end to end, then the rider app by its address; measure each feature: push, location with the screen on and off, call links, camera for the feedback screenshot, offline.
+5. ADR-020: one APK or four, TWA or Capacitor, what #252 needs.
