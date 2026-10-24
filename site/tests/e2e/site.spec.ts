@@ -226,3 +226,26 @@ test("the three background files answer 200 and no page says Haikei", async ({ p
     expect(await page.locator("body").innerText(), path).not.toContain("Haikei");
   }
 });
+
+// F139: the cards of one row share one height (the Reveal and Tilt wrappers must not shrink the card).
+for (const path of ["/", "/investors"]) {
+  test(`${path} the cards of a row have one height at 1280, and stack without sideways scroll at 390`, async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto(path);
+    await page.waitForTimeout(800);
+    const rows = await page.locator(".cards, .thali").evaluateAll((els) => els.map((el) => [...el.querySelectorAll(".card")].map((c) => Math.round(c.getBoundingClientRect().height))));
+    expect(rows.length).toBeGreaterThan(0);
+    for (const heights of rows) expect(new Set(heights).size, `heights ${heights}`).toBe(1);
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
+}
+
+// F140: the four tile numbers on Investors share one size; the animated number's span must not take the caption size.
+test("/investors the four tile numbers have one font size", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/investors");
+  const sizes = await page.locator(".numbers .n b").evaluateAll((els) => els.map((e) => [...e.querySelectorAll("span")].concat([e as HTMLElement]).map((x) => getComputedStyle(x).fontSize)));
+  expect(sizes).toHaveLength(4);
+  expect(new Set(sizes.flat()), `sizes ${sizes.flat()}`).toEqual(new Set(["44px"]));
+});
