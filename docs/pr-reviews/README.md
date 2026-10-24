@@ -40,6 +40,7 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana â
 | 23 | [#84](pr-84-role-apps.md) | feat(app): role apps as separate installable PWAs on one origin | MERGED (10 answered; docs conflicts resolved) | #83 (slice 1), owner direction 15 Oct |
 | 24 | [#85](pr-85-prod-workflows.md) | feat(ops): prod copy of the order workflows, deployed inactive | MERGED (9 answered) | #78 (slice S3) |
 | 25 | [#86](pr-86-guard-by-path.md) | chore: guard blocks tool caches by path, small review notes | MERGED `31921e3` (fix `c6bdc09`, APPROVE 5528905183 on `75c4df8`) | follow-up to the 15 Oct review round |
+| 26 | [#220](pr-220-orders-you.md) | feat(app): Ink v3 Your orders and You screens (#193) | OPEN, APPROVE 5638912878 on `bf73554`, 20 questions open | H10d closes the customer screens; prod migrations 0022 to 0026 applied |
 
 ## Journals
 - [concepts.md](concepts.md) â€” naye technical words, plain Hindi mein.
@@ -73,6 +74,7 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana â
 | Role apps: one origin several apps, manifest = install identity, lock a shell, count the sign-ins | #84 |
 | Prod copy: environment table, share only what is safe, same build different stamp | #85 |
 | Block by path not only content, a guard proves itself on its own PR, ignore before you add | #86 |
+| Short order number, customer words vs kitchen words, window event as a bell, theme pin, one-way permission switch | #220 |
 
 ## Notes
 - Chapters Romanized Hindi mein hain. Code, file paths, commands English mein.
