@@ -60,7 +60,7 @@ test("S4 the kitchen's own controls use full-size buttons", async ({ page, conte
   net.state.kitchen = "k-1";
   net.state.menu = [{ id: "d1", name: "Butter Chicken", price_paise: 32000, available: true }];
   await page.goto("/kitchen/");
-  await page.getByRole("button", { name: "Kitchen", exact: true }).click();   // H11: the Kitchen tab
+  await page.getByRole("button", { name: "Today", exact: true }).click();   // the kitchen's own tab (#242: Today)
   const open = page.getByRole("switch", { name: "Open for orders" });
   await expect(open).toBeVisible();
   expect((await open.boundingBox())!.height).toBeGreaterThanOrEqual(32);   // the Ink switch is 32 px tall in a 64 px row

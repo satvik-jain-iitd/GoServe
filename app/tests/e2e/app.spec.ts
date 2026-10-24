@@ -1,9 +1,9 @@
 // Story #39, scenario S1: the built app opens, links its manifest and registers a service worker.
 import { test, expect } from "@playwright/test";
 
-test("the app opens and shows the GoServe name", async ({ page }) => {
+test("the app opens and shows the role nav (#242: no title above the screens)", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "GoServe" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Screen" })).toBeVisible();
 });
 
 test("the manifest is linked and served", async ({ page, request }) => {
@@ -29,5 +29,5 @@ test("the app shell loads offline after the first visit", async ({ page, context
   await page.evaluate(() => navigator.serviceWorker.ready);
   await context.setOffline(true);
   await page.reload();
-  await expect(page.getByRole("heading", { name: "GoServe" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Screen" })).toBeVisible();
 });

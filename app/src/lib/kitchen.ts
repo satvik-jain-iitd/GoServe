@@ -4,7 +4,7 @@ export type OrderLine = { menu_item_id: string; name: string; qty: number; price
 export type Order = {
   id: string; session_id: string; status: string; address: string; items: OrderLine[]; total_paise: number; created_at: string; updated_at: string; paid_by?: string | null;
   customer_name?: string | null; customer_phone?: string | null;
-  kitchen_id?: string; rider_id?: string | null;
+  kitchen_id?: string; rider_id?: string | null; cash_handed_at?: string | null; cancel_reason?: string | null;
 };
 
 export const shortId = (id: string): string => id.slice(0, 8);   // the order number the customer and the kitchen both say
@@ -31,10 +31,21 @@ const oldestFirst = (a: Order, b: Order) => a.created_at.localeCompare(b.created
 export const newTickets = (orders: Order[]): Order[] => orders.filter((o) => o.status === "placed").sort(oldestFirst);
 export const cookingTickets = (orders: Order[]): Order[] => orders.filter((o) => o.status === "accepted" || o.status === "preparing").sort(oldestFirst);
 export const readyTickets = (orders: Order[]): Order[] => orders.filter((o) => o.status === "ready").sort(oldestFirst);
-export type Done = { status: string; updated_at: string; total_paise: number; paid_by?: string | null };
+/** Story #230: a ticket the cook had on Cooking that turned cancelled stays a minute, stamped Cancelled, so the cook knows. `seen` = ids that were on Cooking. */
+export const justCancelled = (orders: Order[], seen: Set<string>, now: Date, ms = 60_000): Order[] =>
+  orders.filter((o) => o.status === "cancelled" && seen.has(o.id) && now.getTime() - Date.parse(o.updated_at) < ms).sort(oldestFirst);
+export type Done = { status: string; updated_at: string; total_paise: number; paid_by?: string | null; cash_handed_at?: string | null; rider_id?: string | null };
+export type Hours = { opens: string | null; closes: string | null };
+/** The cash day a time belongs to (story #229). A kitchen that closes past midnight (closes before opens, "18:00" to "02:00") keeps the night in one day:
+ *  the closing hours are rolled back before the date is read. Any other kitchen, or unknown hours, uses the calendar day. */
+export const dayOf = (iso: string | Date, hours?: Hours | null): string => {
+  const d = new Date(iso);
+  if (hours?.opens && hours.closes && hours.closes < hours.opens) { const [h, m] = hours.closes.split(":").map(Number); d.setMinutes(d.getMinutes() - h * 60 - m); }
+  return d.toDateString();
+};
 /** The orders delivered today, by the phone's clock, newest first (the rider's Today, the kitchen's done count). */
-export const deliveredToday = <T extends Done>(orders: T[], now = new Date()): T[] =>
-  orders.filter((o) => o.status === "delivered" && new Date(o.updated_at).toDateString() === now.toDateString())
+export const deliveredToday = <T extends Done>(orders: T[], now = new Date(), hours?: Hours | null): T[] =>
+  orders.filter((o) => o.status === "delivered" && dayOf(o.updated_at, hours) === dayOf(now, hours))
     .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
 export const hhmm = (iso: string): string => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
 /** True when "HH:MM" now lies outside the opening hours; a kitchen open 18:00 to 02:00 crosses midnight. Unknown hours: never outside. */
@@ -67,3 +78,16 @@ export const trackerSteps = (status: string): { status: string; label: string; s
   const at = FLOW.indexOf(status);
   return FLOW.map((s, i) => ({ status: s, label: statusLabel(s), state: at < 0 || i > at ? "todo" : i === at ? "current" : "done" }));
 };
+
+// Story #229: the evening hand-over. The kitchen confirms a rider's cash; the rows are stamped cash_handed_at and leave "in hand" on both screens.
+export const isCash = (o: Done): boolean => !o.paid_by || o.paid_by === "cash";
+export const cashInHand = (today: Done[]): number => today.filter((o) => isCash(o) && !o.cash_handed_at).reduce((n, o) => n + o.total_paise, 0);
+export const handedOver = (today: Done[]): number => today.filter((o) => isCash(o) && !!o.cash_handed_at).reduce((n, o) => n + o.total_paise, 0);
+/** One line per rider with cash: what they hold from today, what they handed over today, and older cash never handed over (the rpc stamps that too, so the row must show it). */
+export const cashByRider = <T extends Done>(today: T[], all: T[]): { rider_id: string; inHand: number; handed: number; older: number }[] => {
+  const held = all.filter((o) => o.status === "delivered" && o.rider_id && isCash(o) && !o.cash_handed_at);
+  return [...new Set([...today, ...held].filter((o) => o.rider_id && isCash(o)).map((o) => o.rider_id as string))]
+    .map((rider_id) => { const own = today.filter((o) => o.rider_id === rider_id); return { rider_id, inHand: cashInHand(own), handed: handedOver(own), older: cashInHand(held.filter((o) => o.rider_id === rider_id && !today.includes(o))) }; });
+};
+export const confirmHandover = async (c: { rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<{ error: { message: string } | null }> }, riderId: string): Promise<string | null> =>
+  (await c.rpc("kitchen_handover", { p_rider: riderId })).error?.message ?? null;

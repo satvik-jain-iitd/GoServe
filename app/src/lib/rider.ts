@@ -1,9 +1,9 @@
 // The rider's own row (story A5): online or offline, and the last shared location. Row level security lets a rider read and change only their own row.
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Done } from "./kitchen";
+import { hhmmOf, type Hours } from "./kitchen";
 
 export type RiderRow = { name: string | null; phone?: string | null; online: boolean };
-export type KitchenCard = { name: string; address: string | null };
+export type KitchenCard = { name: string; address: string | null; opens_at?: string | null; closes_at?: string | null };
 /** What the rider screens get from the gate (story H11): who, online or not, and the two taps. Null in the demo console. */
 export type RiderGateState = { name: string | null; phone: string | null; online: boolean; flip: () => Promise<void>; signOut: () => void };
 export const LOCATION_EVERY_MS = 30_000;
@@ -27,10 +27,12 @@ export async function sendLocation(c: Client, lat: number, lng: number): Promise
 
 // Story H11 (#194): the kitchen to pick up at, by the order's kitchen_id. Null when the row cannot be read.
 export async function fetchKitchen(c: Pick<SupabaseClient, "from">, kitchenId: string): Promise<KitchenCard | null> {
-  const { data, error } = await c.from("kitchens").select("name, address").eq("id", kitchenId).limit(1);
+  const { data, error } = await c.from("kitchens").select("name, address, opens_at, closes_at").eq("id", kitchenId).limit(1);
   if (error) throw error;
   return (data?.[0] as KitchenCard | undefined) ?? null;
 }
 /** The cash the rider holds from today's deliveries: every order is cash at the door (paid_by unset or "cash"). */
-export const cashInHand = (today: Done[]): number => today.filter((o) => !o.paid_by || o.paid_by === "cash").reduce((n, o) => n + o.total_paise, 0);
+export { cashInHand, handedOver } from "./kitchen";   // story #229: one cash rule for both screens
+/** The kitchen's hours as the cash day needs them ("HH:MM" or null). */
+export const hoursOf = (k: KitchenCard | null): Hours | null => (k ? { opens: hhmmOf(k.opens_at), closes: hhmmOf(k.closes_at) } : null);
 export const firstName = (name: string | null | undefined): string => (name ?? "").trim().split(/\s+/)[0] || "customer";

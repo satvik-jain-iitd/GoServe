@@ -1,7 +1,6 @@
 // Story H11 (#194): the rider app on the Ink v3 boards R1 to R9. The network is answered by the test (helpers.ts).
 import { test, expect, type Page } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
-import { ID, SESSION, order, setup } from "./helpers";
+import { ID, SESSION, order, setup, scan as axeScan } from "./helpers";
 
 const NOW = new Date().toISOString();
 const tab = (page: Page, name: string) => page.getByRole("button", { name, exact: true });
@@ -76,10 +75,7 @@ for (const theme of ["day", "night"] as const) {
     const net = await setup(context, page, [{ ...order("ready"), rider_id: SESSION, customer_name: "Rahul Verma", customer_phone: "9876543210" }]);
     await page.goto("/rider/");
     await expect(page.getByText("Collect cash")).toBeVisible();
-    const scan = async () => {
-      const r = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
-      expect(r.violations.filter((v) => v.impact === "serious" || v.impact === "critical")).toEqual([]);
-    };
+    const scan = async () => expect(await axeScan(page, ["wcag2a", "wcag2aa"])).toEqual([]);
     await scan();   // R5 pick up
     await page.getByRole("button", { name: "Pick up 0f0f0f0f" }).click();
     await page.getByRole("button", { name: "Delivered 0f0f0f0f", exact: true }).click();
@@ -88,7 +84,7 @@ for (const theme of ["day", "night"] as const) {
     await page.getByRole("button", { name: "Next delivery" }).click();
     for (const name of ["Today", "Me"]) { await tab(page, name).click(); await scan(); }   // R8, R9
     await page.getByRole("switch", { name: "Online" }).click();
-    await tab(page, "Job").click();
+    await tab(page, "Delivery").click();
     await expect(page.getByRole("heading", { name: "You are offline" })).toBeVisible();
     await scan();   // R3 offline
     net.state.rider = null;

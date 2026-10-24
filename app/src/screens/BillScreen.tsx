@@ -27,12 +27,11 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
       <header className="ui-head">
         <BackChevron label="Back to menu" onClick={onBack} />
         <h1>Your bill</h1>
-        <span className="meta">Cash</span>
       </header>
       <div className="ui-scroll">
         <section className="ui-slip ui-slip-pad" aria-label={empty ? "Empty bill" : "Items"}>
           <div className="ui-slip-body">
-            <div className="ui-slip-head"><span>{head}</span><span>Cash</span></div>
+            <div className="ui-slip-head"><span>{head}</span></div>
             {empty ? (
               <div className="ui-empty ui-empty-slip">
                 <h2>Nothing on it yet</h2>
@@ -59,7 +58,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
               </>
             )}
             <div className="ui-field"><label htmlFor="address">Address{pin ? ` · pin ${pin}` : ""}</label><textarea id="address" rows={2} value={address} maxLength={300} onChange={(e) => onAddress(e.target.value)} /></div>
-            <p className="ui-note">Pay the rider in cash at the door. No online payment yet.</p>
+            <p className="ui-note">Pay the rider cash at the door.</p>
             {error && <p role="alert" className="ui-field-error">{error}</p>}
           </form>
         )}
