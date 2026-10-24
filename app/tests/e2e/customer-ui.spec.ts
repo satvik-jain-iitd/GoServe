@@ -42,13 +42,14 @@ test("S2 the sticky cart bar shows the count and the total, and opens the cart",
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
 });
 
-test("S3 the tracker has a timeline, an estimate and no order id", async ({ page, context }) => {
+test("S3 the tracker has a timeline, an estimate and the short order number", async ({ page, context }) => {
   await setup(context, page, [order("preparing", "2020-01-01T10:02:00Z")]);
   await page.goto("/customer/");
   await expect(page.getByRole("heading", { name: "Your order", exact: true })).toBeVisible();
   await expect(page.getByRole("list", { name: "Order progress" }).locator('[aria-current="step"]')).toHaveText("Cooking");
   await expect(page.getByText("About 20 min")).toBeVisible();
-  await expect(page.locator("body")).not.toContainText(ID.slice(0, 8));
+  await expect(page.getByText(`No. ${ID.slice(0, 8)}`).first()).toBeVisible();   // the short order number is on the slip
+  await expect(page.locator("body")).not.toContainText(ID);   // never the whole id
 });
 
 test("S4 once a rider has the order, the card shows the name and a call link", async ({ page, context }) => {
