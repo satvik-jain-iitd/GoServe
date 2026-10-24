@@ -46,9 +46,9 @@ export async function listKitchens(c: Client): Promise<KitchenRow[]> {
 }
 export const addKitchen = async (c: Client, k: { name: string; address: string; phone: string; pins: string[]; opensAt?: string; closesAt?: string }) =>
   adminMessage((await c.from("kitchens").insert({ name: k.name, address: k.address || null, phone: k.phone || null, pin_codes: k.pins, opens_at: k.opensAt || null, closes_at: k.closesAt || null })).error);
-export type RiderListRow = { user_id: string; name: string | null; phone: string | null; online: boolean };
+export type RiderListRow = { user_id: string; name: string | null; phone: string | null; online: boolean; lat?: number | null; lng?: number | null; updated_at?: string };
 export async function listRiders(c: Client): Promise<RiderListRow[]> {
-  const { data, error } = await c.from("riders").select("user_id, name, phone, online").order("name");
+  const { data, error } = await c.from("riders").select("user_id, name, phone, online, lat, lng, updated_at").order("name");
   if (error) throw error;
   return (data ?? []) as RiderListRow[];
 }
