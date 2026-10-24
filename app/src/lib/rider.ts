@@ -28,12 +28,7 @@ export async function fetchKitchen(c: Pick<SupabaseClient, "from">, kitchenId: s
   if (error) throw error;
   return (data?.[0] as KitchenCard | undefined) ?? null;
 }
-type Done = { status: string; updated_at: string; total_paise: number; paid_by?: string | null };
-/** The orders this rider delivered today, by the phone's clock, newest first. */
-export const deliveredToday = <T extends Done>(orders: T[], now = new Date()): T[] =>
-  orders.filter((o) => o.status === "delivered" && new Date(o.updated_at).toDateString() === now.toDateString())
-    .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+import type { Done } from "./kitchen";
 /** The cash the rider holds from today's deliveries: every order is cash at the door (paid_by unset or "cash"). */
 export const cashInHand = (today: Done[]): number => today.filter((o) => !o.paid_by || o.paid_by === "cash").reduce((n, o) => n + o.total_paise, 0);
-export const hhmm = (iso: string): string => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
 export const firstName = (name: string | null | undefined): string => (name ?? "").trim().split(/\s+/)[0] || "customer";

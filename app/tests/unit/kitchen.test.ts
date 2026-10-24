@@ -1,6 +1,6 @@
 // Story #49: the kitchen list and its next-step buttons. Pure data in, pure data out.
 import { describe, expect, it } from "vitest";
-import { kitchenOrders, mergeOrder, nextStep, shortId, statusLabel, type Order } from "../../src/lib/kitchen";
+import { kitchenOrders, mergeOrder, nextStep, shortId, statusLabel, type Order, newTickets, cookingTickets, readyTickets, deliveredToday } from "../../src/lib/kitchen";
 
 const o = (id: string, status: string, created_at: string, updated_at = created_at): Order => ({
   id, status, created_at, updated_at, session_id: "s1", address: "Flat 4", total_paise: 100, items: [{ menu_item_id: "d1", name: "Butter Chicken", qty: 1, price_paise: 100 }],
@@ -94,5 +94,20 @@ describe("customer tracker", () => {
   });
   it("one label map for the kitchen and the customer", () => {
     expect([statusLabel("placed"), statusLabel("out_for_delivery"), statusLabel("delivered")]).toEqual(["Placed", "On the way", "Delivered"]);
+  });
+});
+
+describe("H11 kitchen tabs", () => {
+  const o = (status: string, created_at: string) => ({ id: created_at, session_id: "s", status, address: "", items: [], total_paise: 100, created_at, updated_at: created_at });
+  it("new, cooking and ready tickets come oldest first", () => {
+    const rows = [o("placed", "2026-10-24T10:05:00Z"), o("placed", "2026-10-24T10:01:00Z"), o("preparing", "2026-10-24T10:02:00Z"), o("accepted", "2026-10-24T10:00:00Z"), o("ready", "2026-10-24T09:59:00Z"), o("delivered", "2026-10-24T09:00:00Z")];
+    expect(newTickets(rows).map((r) => r.created_at)).toEqual(["2026-10-24T10:01:00Z", "2026-10-24T10:05:00Z"]);
+    expect(cookingTickets(rows).map((r) => r.created_at)).toEqual(["2026-10-24T10:00:00Z", "2026-10-24T10:02:00Z"]);
+    expect(readyTickets(rows)).toHaveLength(1);
+  });
+  it("deliveredToday keeps only today's delivered orders, newest first", () => {
+    const now = new Date("2026-10-24T20:00:00");
+    const rows = [{ status: "delivered", updated_at: "2026-10-24T18:00:00", total_paise: 1 }, { status: "delivered", updated_at: "2026-10-24T19:00:00", total_paise: 2 }, { status: "delivered", updated_at: "2026-10-23T19:00:00", total_paise: 3 }, { status: "ready", updated_at: "2026-10-24T19:30:00", total_paise: 4 }];
+    expect(deliveredToday(rows, now).map((r) => r.total_paise)).toEqual([2, 1]);
   });
 });
