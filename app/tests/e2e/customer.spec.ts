@@ -137,7 +137,7 @@ test("S3 after a refresh the customer lands back on the order that is still open
   await page.reload();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   await expect(page.getByText("Butter Chicken").or(page.getByText("₹380.50")).first()).toBeVisible();
-  await expect(page.locator("body")).not.toContainText("0f0f0f0f");   // D2: no raw order id on a customer screen
+  await expect(page.locator("body")).not.toContainText("0f0f0f0f-1111");   // D2: never the whole order id on a customer screen (the short number is allowed)
 });
 
 test("S3 a delivered order does not pull the customer back from the menu", async ({ page, context }) => {

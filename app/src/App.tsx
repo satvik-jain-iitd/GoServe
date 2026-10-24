@@ -1,7 +1,7 @@
 // The customer flow in one place: menu, cart, bill, placed (story #48). No router yet: four steps in state.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MAX_QTY, addDish, cartLines, cartTotal, changeQty, toOrderItems, type Cart } from "./lib/cart";
-import { kitchenOrders, mergeOrder, riderOrders, shortId, type Order, type RiderAction } from "./lib/kitchen";
+import { kitchenOrders, mergeOrder, riderOrders, shortId, statusLabel, type Order, type RiderAction } from "./lib/kitchen";
 import { clientPlatform } from "./lib/platform";
 import { riderRefused, savePlatform, tapCall } from "./lib/signals";
 import { useLiveOrders } from "./lib/useLiveOrders";
@@ -388,6 +388,32 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setStep("bill");
   }
 
+  // A tap on a slip of "Your orders" opens it as the tracker or the delivered screen (story H10d).
+  function openOrder(o: Order) {
+    setPlaced({ id: o.id, status: o.status, total_paise: o.total_paise, updated_at: o.updated_at, paid_by: o.paid_by ?? null });
+    setPlacedAt(o.created_at);
+    setStep("placed");
+  }
+  const openOrderNow = orders.find((o) => !["delivered", "cancelled"].includes(o.status));
+  const openLive = openOrderNow ? { label: statusLabel(openOrderNow.status), no: shortId(openOrderNow.id), onOpen: () => openOrder(openOrderNow) } : null;
+  // "Use on another phone": the link that joins this session, shared or copied.
+  async function shareFromAccount(): Promise<string | null> {
+    try {
+      const link = await shareLink();
+      if (navigator.share) { await navigator.share({ url: link }); return null; }
+      await navigator.clipboard.writeText(link);
+      return "Link copied. Open it on the other phone.";
+    } catch {
+      return "Could not share the link. Try again.";
+    }
+  }
+  // "Forget me on this phone": what this phone remembers is wiped and the session ends.
+  async function forgetMe() {
+    try { await getClient().auth.signOut(); } catch { /* offline: the local wipe still runs */ }
+    try { window.localStorage.clear(); } catch { /* blocked storage: nothing to wipe */ }
+    window.location.reload();
+  }
+
   const lines = useMemo(() => cartLines(cart, menu?.dishes ?? []), [cart, menu]);
   const kitchenName = area?.kind === "ok" ? area.kitchen.name : area?.kind === "closed" ? area.name : "";
   const total = cartTotal(lines);
@@ -469,8 +495,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
             onChangePin={changeArea} onOrders={() => setStep("orders")} onYou={() => setStep("account")} />
         )}
-        {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} onBack={() => setStep("menu")} onAgain={orderAgain} />}
-        {step === "account" && <AccountScreen name={name} phone={phone} address={address} pin={pin} onBack={() => setStep("menu")} onChangeArea={changeArea} />}
+        {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} onYou={() => setStep("account")} />}
+        {step === "account" && (
+          <AccountScreen name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone} onAddress={setAddress}
+            alerts={reminder} onAlerts={allowReminder} live={openLive} onShare={shareFromAccount} onForget={forgetMe}
+            onMenu={() => setStep("menu")} onOrders={() => setStep("orders")} />
+        )}
         {menu && step === "bill" && (
           <BillScreen lines={lines} total={total} kitchenName={kitchenName} pin={pin} address={address} onAddress={setAddress}
             details={lock === "customer" ? { name, phone, onName: setName, onPhone: setPhone } : undefined} sending={sending} error={error}
@@ -483,12 +513,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             address={tracked && "address" in tracked ? tracked.address : address.trim()}
             confirmedAt={tracked && tracked.status === "delivered" ? tracked.updated_at : null}
             asking={asking} busy={confirming} error={confirmError} reminder={reminder}
-            onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} onAgain={() => { setPlaced(null); setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} onCall={() => void tapCall(getClient(), placed.id)} />
+            onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} onBack={() => setStep("menu")} onAgain={() => { const t = tracked && "items" in tracked ? tracked : null; setPlaced(null); if (t) orderAgain(t); else setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} onCall={() => void tapCall(getClient(), placed.id)} />
         )}
     </>
   );
 
-  const framed = lock === "customer" && role === "customer" && (step === "menu" || step === "bill" || step === "placed" || needArea);   // the Ink boards fill the phone; the chrome goes below
+  const framed = lock === "customer" && role === "customer";   // the Ink boards fill the phone; the chrome goes below
   const Shell = framed ? "div" : "main";
   return (
     <>

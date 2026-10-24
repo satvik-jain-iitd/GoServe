@@ -34,7 +34,7 @@ test("S3 the pin screen has a Track an order button that opens the orders", asyn
   await setup(context, page, [], { pin: null });
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Track an order" }).click();
-  await expect(page.getByRole("heading", { name: "My orders" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your orders" })).toBeVisible();
 });
 
 test("S4 a delivered order shows the Delivered stamp, Cash paid and a way to call the kitchen", async ({ page, context }) => {

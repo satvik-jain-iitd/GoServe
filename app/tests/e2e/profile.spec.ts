@@ -64,16 +64,16 @@ test("S5 once the kitchen has accepted, there is no Cancel button", async ({ pag
   await expect(page.getByRole("button", { name: "Cancel order" })).toHaveCount(0);
 });
 
-test("S6 My orders lists past orders by what was ordered, with no order id", async ({ page, context }) => {
+test("S6 Your orders lists past orders by what was ordered, with the short order number", async ({ page, context }) => {
   await setup(context, page, [{ ...order("delivered", "2020-01-01T11:00:00Z"), paid_by: "cash" }]);
   await page.goto("/customer/");
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
   await page.getByRole("button", { name: "My orders" }).click();
-  await expect(page.getByRole("heading", { name: "My orders" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your orders" })).toBeVisible();
   await expect(page.getByText("2 × Butter Chicken")).toBeVisible();
   await expect(page.getByText("Delivered")).toBeVisible();
-  await expect(page.getByText("0f0f0f0f")).toHaveCount(0);
-  await page.getByRole("button", { name: "Back to menu" }).click();
+  await expect(page.getByText(/No\. 0f0f0f0f/)).toBeVisible();   // the short number, never the whole id
+  await page.getByRole("button", { name: "Menu", exact: true }).click();
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
 });
 

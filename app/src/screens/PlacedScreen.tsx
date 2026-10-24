@@ -1,6 +1,6 @@
 // The customer's side after placing, to the Ink v3 boards 05, 06 and 07 (story H10c, #193; stories #48 and S-C): the slip with its stamp, the tracker, the delivery question and the cash line.
 import { formatRupees } from "../lib/money";
-import { statusLabel, trackerSteps } from "../lib/kitchen";
+import { shortId, statusLabel, trackerSteps } from "../lib/kitchen";
 import { etaMinutes } from "../lib/profile";
 import type { PlacedOrder } from "../lib/orders";
 import type { RiderCard } from "../lib/supabase";
@@ -25,7 +25,8 @@ type Props = {
   onYes: () => void;
   onNotYet: () => void;
   onAllowReminder: () => void;
-  onAgain: () => void;
+  onAgain: () => void;          // Order again (a delivered or cancelled order)
+  onBack: () => void;           // the chevron: back to the menu
   onCancel: () => void;         // story B3: allowed only while the order is placed
   cancelling: boolean;
   rider: RiderCard | null;      // story D2: shown once a rider has the order
@@ -34,9 +35,11 @@ type Props = {
 
 const hhmm = (d: Date) => d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
 const clock = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase();
+// The customer says it in his words: the kitchen's "Ready" is "Ready, rider picks up", the last step is "At your door".
+const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "At your door" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "error" };
 
-export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onAgain, onCancel, cancelling, rider, onCall }: Props) {
+export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onAgain, onBack, onCancel, cancelling, rider, onCall }: Props) {
   const steps = trackerSteps(status);
   const eta = etaMinutes();
   const placed = new Date(placedAt);
@@ -48,14 +51,14 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
   return (
     <>
       <header className="ui-head">
-        <BackChevron label="Back to the menu" onClick={onAgain} />
+        <BackChevron label="Back to the menu" onClick={onBack} />
         <h1>{title}</h1>
-        {!delivered && !cancelled && status !== "placed" ? <span className="meta ui-livemark"><span aria-hidden="true" className="ui-live-dot" />Live</span> : <span className="meta">{hhmm(placed)}</span>}
+        {!delivered && !cancelled && status !== "placed" ? <span className="meta ui-livemark"><span aria-hidden="true" className="ui-live-dot" />Live</span> : <span className="meta">No. {shortId(order.id)}</span>}
       </header>
       <div className="ui-scroll">
         <section className="ui-slip ui-slip-pad" aria-label={delivered ? "Order, delivered" : "Order"}>
           <div className="ui-slip-body">
-            <div className="ui-slip-head"><span>{head}</span><span>{hhmm(placed)}</span></div>
+            <div className="ui-slip-head"><span>{head}</span><span>{delivered ? `${placed.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${hhmm(placed)}` : `No. ${shortId(order.id)}`}</span></div>
             <div className="ui-slip-stamp"><span className={`ui-stamp ${STAMP[status] ?? "placed"}`}>{statusLabel(status)}</span></div>
             {!cancelled && !delivered && <p className="ui-clock">About <b>{eta} min</b> · door by {hhmm(door)}</p>}
             {delivered && confirmedAt && <p className="ui-clock">At your door <b>{hhmm(new Date(confirmedAt))}</b></p>}
@@ -70,7 +73,7 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
         </section>
         <div className="ui-after">
           {status === "placed" && <p>The kitchen sees your order now. The slip gets stamped when it is accepted.</p>}
-          {!delivered && !cancelled && <Timeline steps={steps.map((x) => x.label)} current={steps.findIndex((x) => x.state === "current")} label="Order progress" />}
+          {!delivered && !cancelled && <Timeline steps={steps.map((x) => STEP_WORDS[x.status] ?? x.label)} current={steps.findIndex((x) => x.state === "current")} label="Order progress" />}
           {!delivered && !cancelled && address && <p className="mono ui-addr">{address}</p>}
           {rider && (
             <div className="notice" data-testid="rider-card">

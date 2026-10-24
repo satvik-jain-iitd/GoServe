@@ -35,6 +35,13 @@ export function FeedbackSheet({ role, screen, order, getSession, send, preset }:
     setOpen(true);
   }, [preset?.nonce]);
 
+  // The You screen opens the sheet with an event (story H10d).
+  useEffect(() => {
+    const show = () => { setMessage(null); setError(null); setOpen(true); };
+    window.addEventListener("gs-feedback", show);
+    return () => window.removeEventListener("gs-feedback", show);
+  }, []);
+
   // Reports saved while the phone was offline go out when the app opens and when the phone is back online.
   useEffect(() => {
     const flush = () => void flushQueue(window.localStorage, send).catch(() => undefined);

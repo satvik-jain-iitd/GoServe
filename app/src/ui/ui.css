@@ -267,3 +267,26 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-ask-act { display: flex; gap: var(--gs-space-2); }
 .ui-bottom { display: flex; flex-direction: column; gap: var(--gs-space-2); padding: var(--gs-space-3) var(--gs-gutter) var(--gs-space-5); }
 .ui-bottom .ui-btn.big { width: 100%; }
+/* Orders and You (story H10d). Boards 08, 08e and 09. */
+.ui-center { justify-content: center; }
+.ui-orders { padding: 0 var(--gs-gutter) var(--gs-space-4); }
+.ui-order-row { display: grid; grid-template-columns: 1fr auto; gap: var(--gs-space-4); align-items: center; width: 100%; padding: var(--gs-space-4) 0; border: 0; border-bottom: 1px solid var(--md-outline-variant); background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.ui-order-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ui-order-no { font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
+.ui-order-items { font-size: var(--gs-text-lg); font-weight: 600; line-height: 1.2; }
+.ui-order-sub { font-size: var(--gs-text-sm); color: var(--gs-text-muted); }
+.ui-order-sub .mono { color: var(--md-on-background); }
+.ui-foot { margin: var(--gs-space-4) 0 0; text-align: center; font-size: var(--gs-mono-xs); color: var(--gs-text-muted); }
+.ui-account { padding: var(--gs-space-4) var(--gs-gutter); }
+.ui-account .ui-slip { margin-top: var(--gs-space-2); }
+.ui-dl { margin: 0; display: grid; grid-template-columns: 72px 1fr; gap: var(--gs-space-2) var(--gs-space-3); }
+.ui-dl dt { font-size: var(--gs-mono-sm); color: var(--gs-text-muted); align-self: center; }
+.ui-dl dd { margin: 0; }
+.ui-form-flush { padding: 0; }
+.ui-row-static { cursor: default; }
+.ui-row-label { display: flex; flex-direction: column; gap: 2px; padding: var(--gs-space-2) 0; }
+.ui-row-label > span:first-child { font-weight: 600; }
+.ui-row-sub { font-size: var(--gs-text-sm); color: var(--gs-text-muted); }
+.ui-look { display: flex; flex-direction: column; gap: var(--gs-space-2); padding: var(--gs-space-4) 0; border-bottom: 1px solid var(--md-outline-variant); }
+.ui-look h2 { margin: 0; font-size: var(--gs-mono-sm); font-weight: 400; color: var(--gs-text-muted); }
+.ui-look .ui-chips { margin: 0; }

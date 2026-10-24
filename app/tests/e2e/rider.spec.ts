@@ -64,7 +64,7 @@ test("S2 the customer sees every step live, without a refresh, and it ends at De
   await expect(current).toHaveText("Placed");
   await expect(page.getByRole("list", { name: "Order progress" }).getByRole("listitem")).toHaveCount(6);
 
-  const steps: [string, string][] = [["accepted", "Accepted"], ["preparing", "Cooking"], ["ready", "Ready"], ["out_for_delivery", "On the way"], ["delivered", "Delivered"]];
+  const steps: [string, string][] = [["accepted", "Accepted"], ["preparing", "Cooking"], ["ready", "Ready, rider picks up"], ["out_for_delivery", "On the way"], ["delivered", "Delivered"]];
   for (const [i, [status, label]] of steps.entries()) {
     net.push("UPDATE", order(status, `2020-01-01T10:0${i + 1}:00Z`));
     if (label === "Delivered") await expect(page.getByRole("heading", { name: "Delivered" })).toBeVisible({ timeout: 6000 });
