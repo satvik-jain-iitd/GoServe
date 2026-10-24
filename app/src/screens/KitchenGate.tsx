@@ -6,8 +6,8 @@ import { ensureSession, getClient } from "../lib/supabase";
 import { SignIn } from "./SignIn";
 import { Skeleton, StaffLanding } from "../ui";
 
-export type KitchenGateState = { kitchenId: string; name: string; open: boolean | null; opensAt: string | null; closesAt: string | null; flipOpen: () => Promise<void>; retry: () => void; signOut: () => void };   // open null: the row could not be read
-type Row = { name: string; open: boolean | null; opens_at: string | null; closes_at: string | null };
+export type KitchenGateState = { kitchenId: string; name: string; open: boolean | null; opensAt: string | null; closesAt: string | null; lat: number | null; lng: number | null; flipOpen: () => Promise<void>; retry: () => void; signOut: () => void };   // open null: the row could not be read
+type Row = { name: string; open: boolean | null; opens_at: string | null; closes_at: string | null; lat: number | null; lng: number | null };
 
 export function KitchenGate({ children }: { children: (gate: KitchenGateState) => ReactNode }) {
   const [kitchenId, setKitchenId] = useState<string | null | undefined>(undefined);   // undefined: still loading
@@ -20,9 +20,9 @@ export function KitchenGate({ children }: { children: (gate: KitchenGateState) =
       try { const { data } = await getClient().auth.getUser(); setAnonymous(data.user?.is_anonymous !== false); } catch { /* unknown: treat as not signed in */ }
       const k = await myKitchen(getClient(), id);
       if (k) {
-        const { data, error } = await getClient().from("kitchens").select("name, open, opens_at, closes_at").eq("id", k).limit(1);
+        const { data, error } = await getClient().from("kitchens").select("name, open, opens_at, closes_at, lat, lng").eq("id", k).limit(1);
         const r = data?.[0] as Partial<Row> | undefined;
-        setRow({ name: r?.name ?? "Your kitchen", open: error || !r ? null : r.open !== false, opens_at: r?.opens_at ?? null, closes_at: r?.closes_at ?? null });   // unknown stays unknown: the switch is disabled
+        setRow({ name: r?.name ?? "Your kitchen", open: error || !r ? null : r.open !== false, opens_at: r?.opens_at ?? null, closes_at: r?.closes_at ?? null, lat: r?.lat ?? null, lng: r?.lng ?? null });   // unknown stays unknown: the switch is disabled
       }
       setKitchenId(k);
     }, () => setKitchenId(null)).catch(() => { setError("Could not load your kitchen. Check your connection."); setKitchenId(null); });
@@ -57,7 +57,7 @@ export function KitchenGate({ children }: { children: (gate: KitchenGateState) =
   return (
     <>
       {error && <p role="alert" className="ui-note error">{error}</p>}
-      {children({ kitchenId, name: row.name, open: row.open, opensAt: hhmmOf(row.opens_at), closesAt: hhmmOf(row.closes_at), flipOpen, retry: () => setTries((n) => n + 1), signOut })}
+      {children({ kitchenId, name: row.name, open: row.open, opensAt: hhmmOf(row.opens_at), closesAt: hhmmOf(row.closes_at), lat: row.lat, lng: row.lng, flipOpen, retry: () => setTries((n) => n + 1), signOut })}
     </>
   );
 }
