@@ -203,3 +203,4 @@ short. Say what happened and what to do next time.
 - A board row that is a tap and holds a button cannot be one `<button>` (nested buttons are invalid). Split it: one button to open the ticket, one for the step, side by side.
 - Fit-check shots count toward the 50 file cap. Nine boards times two themes times app and board is 36 files. Keep Day shots only; the Night axe check proves Night.
 - `getByRole("heading", { name: "New" })` matches "No new tickets" too. Use `exact: true` on short headings, and a class locator (`.ui-tag`) for a word that is also a heading or a tab.
+- Guard reads every commit on the branch, docs commits too. Twice today a docs subject went over 72 chars and turned CI red after the code passed. Run `python3 scripts/guard.py msg` on each subject before pushing, or make it a pre-push hook.
