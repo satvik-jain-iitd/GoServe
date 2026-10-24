@@ -6,20 +6,21 @@ test("S1 an offline rider goes online, and offline again", async ({ page, contex
   const net = await setup(context, page);
   net.state.rider = { user_id: SESSION, name: "Rider", online: false, lat: null, lng: null };
   await page.goto("/rider/");
-  await expect(page.getByText("You are offline")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "You are offline" })).toBeVisible();
   await page.getByRole("button", { name: "Go online" }).click();
-  await expect(page.getByText("You are online")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Waiting for a delivery" })).toBeVisible();   // H11: R4
   expect(net.calls.riderWrites.find((w) => w.body.online === true)).toBeTruthy();
   await page.getByRole("button", { name: "Go offline" }).click();
-  await expect(page.getByText("You are offline")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "You are offline" })).toBeVisible();
   expect(net.calls.riderWrites.at(-1)!.body.online).toBe(false);
 });
 
 test("S2 an account that is not a rider says so and shows no deliveries", async ({ page, context }) => {
   const net = await setup(context, page, [order("ready")]);
   net.state.rider = null;
+  net.state.anonymous = false;
   await page.goto("/rider/");
-  await expect(page.getByText("This account is not a rider")).toBeVisible();
+  await expect(page.getByText("This Google account is not on the rider list")).toBeVisible();   // H11: R2
   await expect(page.getByRole("button", { name: "Pick up 0f0f0f0f" })).toHaveCount(0);
 });
 
@@ -37,7 +38,7 @@ test("S4 while online the rider's location is sent, first at once", async ({ pag
   await context.setGeolocation({ latitude: 28.5494, longitude: 77.2001 });
   const net = await setup(context, page);
   await page.goto("/rider/");
-  await expect(page.getByText("You are online")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Waiting for a delivery" })).toBeVisible();
   await expect.poll(() => net.calls.rpc.some((c) => c.name === "rider_ping")).toBe(true);   // H14: the history is kept by the rider_ping function
   expect(net.calls.rpc.find((c) => c.name === "rider_ping")!.body).toEqual({ p_lat: 28.5494, p_lng: 77.2001 });
   expect(net.calls.riderWrites.filter((w) => w.body.lat !== undefined)).toHaveLength(0);
@@ -49,7 +50,7 @@ test("S5 an offline rider sends no location", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.rider = { user_id: SESSION, name: "Rider", online: false, lat: null, lng: null };
   await page.goto("/rider/");
-  await expect(page.getByText("You are offline")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "You are offline" })).toBeVisible();
   await page.waitForTimeout(1200);
   expect(net.calls.riderWrites.filter((w) => w.body.lat !== undefined)).toHaveLength(0);
   expect(net.calls.rpc.filter((c) => c.name === "rider_ping")).toHaveLength(0);

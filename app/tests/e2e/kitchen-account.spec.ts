@@ -35,7 +35,7 @@ test("S5 on /rider/ even a kitchen staff user reads only the orders assigned to 
   const net = await setup(context, page, [{ ...order("ready"), session_id: "7e57ab1e-0000-4000-8000-0000000000c3", kitchen_id: "k-1" }]);
   net.state.kitchen = "k-1";
   await page.goto("/rider/");
-  await expect(page.getByText("You are online")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Deliver/ })).toBeVisible();
   expect(net.calls.orderReads.some((u) => u.includes("rider_id=eq."))).toBe(true);
   expect(net.calls.orderReads.some((u) => u.includes("kitchen_id=eq."))).toBe(false);
 });

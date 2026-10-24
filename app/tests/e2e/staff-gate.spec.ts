@@ -24,6 +24,6 @@ test("S3 a rider who can also read other riders' rows (an admin) gets their own 
   const net = await setup(context, page, [order("ready")]);
   net.state.otherRider = true;
   await page.goto("/rider/");
-  await expect(page.getByText("You are offline").or(page.getByText("You are online"))).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Deliver|^You are offline/ })).toBeVisible();   // H11: R3 or R4 to R6
   expect(net.calls.riderReads.every((u) => u.includes(`user_id=eq.${SESSION}`))).toBe(true);
 });

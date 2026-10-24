@@ -18,7 +18,7 @@ test("S2 the rider app, the ops app and the customer app each open on their own 
   const net = await setup(context, page, [order("ready")]);
   net.state.admin = true;   // the Ops app is for admins only (story A4)
   await page.goto("/rider/");
-  await expect(page.getByRole("heading", { name: "Rider", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Delivery", exact: true })).toBeVisible();   // H11: the Job tab with a delivery in hand
   await expect(page.getByRole("button", { name: "Pick up 0f0f0f0f" })).toBeVisible();
   await expect(page).toHaveTitle("GoServe Rider");
   await page.goto("/ops/");
@@ -59,7 +59,7 @@ test("S1 one device: the customer app and the kitchen app share one session, wit
   await expect(kitchen.getByText("Order 0f0f0f0f")).toBeVisible();
   const rider = await context.newPage();
   await rider.goto("/rider/");
-  await expect(rider.getByRole("heading", { name: "Rider", exact: true })).toBeVisible();
+  await expect(rider.getByRole("heading", { name: "Deliveries", exact: true })).toBeVisible();   // H11: no delivery in hand yet
   expect(net.calls.signups).toBe(1);   // the kitchen app and the rider app reused the customer app's session
   expect(net.calls.orderReads.filter((u) => u.includes(`session_id=eq.${SESSION}`)).length).toBeGreaterThanOrEqual(1);   // the customer app reads its session; the kitchen app reads its kitchen
   expect(net.calls.orderReads.some((u) => u.includes("kitchen_id=eq.k-1"))).toBe(true);
