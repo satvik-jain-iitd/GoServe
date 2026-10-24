@@ -778,3 +778,51 @@ Har naya technical word yahan. Simple Hindi mein. Ek line ka "yeh kya hai", ek l
 - **Kya hai:** Browser alerts ki permission de sakta hai, wapas nahi le sakta. Isliye switch sirf on hota hai.
 - **Analogy:** Ek baar doorbell lag gayi, counter se unwire nahi hoti.
 - **File:** `app/src/screens/AccountScreen.tsx`; PR #220.
+### Render-prop gate
+- **Kya hai:** Gate apni state (online, flip, signOut) ek function ke through screen ko deta hai. Screen gate ke andar wrap nahi hoti.
+- **Analogy:** Gatekeeper badge aur chaabi boy ko deta hai, boy andar uska use karta hai.
+- **File:** `app/src/screens/RiderGate.tsx`; PR #222.
+
+### One job in hand
+- **Kya hai:** Screen sirf `riderOrders[0]` dikhata hai. Baaki "N more waiting" hain.
+- **Analogy:** Jeb mein ek slip, baaki hook par.
+- **File:** `app/src/screens/RiderScreen.tsx`; PR #222.
+
+### Sticky done slip
+- **Kya hai:** `doneId` delivered slip ko "Next delivery" tak screen par rakhta hai, naya job aane par bhi. Reload par yeh state jaati hai.
+- **Analogy:** Boy paid slip padhta hai, phir agli slip uthata hai.
+- **File:** `app/src/screens/RiderScreen.tsx`; PR #222.
+
+### Today by the phone's clock
+- **Kya hai:** `deliveredToday` phone ki date se milata hai. Cash in hand midnight par reset hota hai.
+- **Analogy:** Pouch ko deewar ki ghadi se ginte hain, shift se nahi.
+- **File:** `app/src/lib/rider.ts`; PR #222.
+
+### Generic Tabs
+- **Kya hai:** Ek Tabs component sab staff apps ke liye, role ke hisaab se. Badge count dikhata hai.
+- **Analogy:** Teen jeb wala apron, wahi apron cook bhi pehanta hai.
+- **File:** `app/src/ui/index.tsx`; PR #222.
+### Ticket buckets
+- **Kya hai:** Orders ki ek list, aur teen pure filters: new, cooking, ready. Har bucket oldest pehle sort hota hai.
+- **Analogy:** Rail, stove, pass. Sabse purana ticket pehle uthta hai.
+- **File:** `app/src/lib/kitchen.ts`; PR #223.
+
+### Gate holds the switch
+- **Kya hai:** Open/closed state aur uska rpc gate mein hai. Screen sirf use dikhata hai.
+- **Analogy:** Darwaze ka board andar se cook palta hai, bahar wala sirf dekhta hai.
+- **File:** `app/src/screens/KitchenGate.tsx`; PR #223.
+
+### One ticket over the tabs
+- **Kya hai:** K4 poori screen ko ek ticket se badal deta hai, Back ke saath. Router nahi hai.
+- **Analogy:** Cook ek ticket rail se utaar kar paas se padhta hai.
+- **File:** `app/src/screens/KitchenScreen.tsx`; PR #223.
+
+### Bada type aur bada Accept (F146.1)
+- **Kya hai:** Ticket lines 18 px, Accept button 56 px. Story D3 "wet hands" ki wajah se.
+- **Analogy:** Dhaba ka menu board naqse se bada banta hai, kyunki cook do meter door khada hai.
+- **File:** `app/src/ui/ui.css`; PR #223.
+
+### Copy as a promise
+- **Kya hai:** "New tickets ring · accept within 2 min" ek vaada hai. Screen ko woh nibhana chahiye.
+- **Analogy:** "Ghanti bajti hai" likha ho to ghanti honi chahiye.
+- **File:** `app/src/screens/KitchenScreen.tsx`; PR #223.

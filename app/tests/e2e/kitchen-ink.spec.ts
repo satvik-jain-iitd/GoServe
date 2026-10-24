@@ -41,6 +41,7 @@ test("S3 a quiet kitchen sees No new tickets and the day's count", async ({ page
   await page.goto("/kitchen/");
   await expect(page.getByRole("heading", { name: "No new tickets" })).toBeVisible();
   await expect(page.getByText("Today · 1 done")).toBeVisible();
+  await expect(page.getByLabel(/new$/)).toHaveCount(0);   // no badge at zero
 });
 
 test("S4 the Kitchen tab has the open switch and the dishes by category, with Sold out per dish", async ({ page, context }) => {
@@ -81,10 +82,43 @@ for (const theme of ["day", "night"] as const) {
     net.state.kitchen = "k-1";
     await page.goto("/kitchen/");
     await expect(page.getByText("No. 0f0f0f0f")).toBeVisible();
-    for (const name of [null, "Cooking", "Kitchen"]) {
-      if (name) await tab(page, name).click();
+    const scan = async () => {
       const r = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
       expect(r.violations.filter((v) => v.impact === "serious" || v.impact === "critical")).toEqual([]);
-    }
+    };
+    await scan();   // K3
+    await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
+    await expect(page.getByRole("heading", { name: "Ticket" })).toBeVisible();
+    await scan();   // K4
+    await page.getByRole("button", { name: "Back to new tickets" }).click();
+    for (const name of ["Cooking", "Kitchen"]) { await tab(page, name).click(); await scan(); }   // K3b, K5
+    net.state.kitchen = null;
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Sign in to cook" })).toBeVisible();
+    await scan();   // K1
+    net.state.anonymous = false;
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Not kitchen staff yet" })).toBeVisible();
+    await scan();   // K2
   });
 }
+
+test("S8 when the kitchen row cannot be read, the open switch is disabled and says so", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.kitchen = "k-1";
+  net.state.kitchens = [];   // no row for k-1
+  await page.goto("/kitchen/");
+  await tab(page, "Kitchen").click();
+  await expect(page.getByRole("switch", { name: "Open for orders" })).toBeDisabled();
+  await expect(page.getByText("Could not read the kitchen")).toBeVisible();
+});
+
+test("S9 a ticket opened from Cooking goes back to cooking", async ({ page, context }) => {
+  const net = await setup(context, page, [order("accepted")]);
+  net.state.kitchen = "k-1";
+  await page.goto("/kitchen/");
+  await tab(page, "Cooking").click();
+  await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
+  await page.getByRole("button", { name: "Back to cooking tickets" }).click();   // the arrow; the ghost button below says "Back to cooking"
+  await expect(page.getByRole("heading", { name: "Cooking" })).toBeVisible();
+});

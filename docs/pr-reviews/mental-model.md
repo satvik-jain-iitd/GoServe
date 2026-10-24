@@ -271,3 +271,10 @@ _Status: 6 workflows n8n par deployed, sab inactive (ids registry mein; VERIFIED
 - Prod par naya schema hai, lekin main par abhi purana app hai. Jab tak app release PR merge nahi hota, customer prod par purana app dekhta hai. [INFERRED]
 - Agla kadam: app release PR (main par, app/ aur design/ dev se). Uske baad hi prod par naya app dikhega. [VERIFIED brief]
 - Phir story #194 "H11 UI rollout: rider and kitchen" (epic #182) start hogi. Yeh H10 se alag hai, kyunki H11 sirf kitchen aur rider screens chhoota hai. [VERIFIED brief]
+## PR #222 + #223 ke baad (rider aur kitchen ka hissa)
+
+- Rider (#222) aur kitchen (#223) dono apps naye boards par ban gaye. Test ids aur aria-labels same rahe. [VERIFIED]
+- Ek `Tabs` component dono staff apps use karte hain (`app/src/ui/index.tsx`). [VERIFIED]
+- Gates state rakhte hain. Rider gate state function ke through deta hai. Kitchen gate open switch aur uska rpc rakhta hai. [VERIFIED]
+- Do cash numbers hain. Rider ka "Cash in hand" sirf apna cash hai. Kitchen ka "on the slips" sab delivered total hai. Dono ek hi din ki baat karte hain, par alag ginte hain. [INFERRED]
+- Guard red hai (75-char subject). #223 #222 ke upar stack hai. Dono merge hone ke baad #195 "H12 UI rollout: admin" aata hai. [VERIFIED]

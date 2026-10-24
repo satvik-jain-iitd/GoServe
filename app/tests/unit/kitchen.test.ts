@@ -111,3 +111,8 @@ describe("H11 kitchen tabs", () => {
     expect(deliveredToday(rows, now).map((r) => r.total_paise)).toEqual([2, 1]);
   });
 });
+
+it("the rider's jobs come oldest first: the one waiting longest is in hand", () => {
+  const o = (status: string, created_at: string) => ({ id: created_at, session_id: "s", status, address: "", items: [], total_paise: 1, created_at, updated_at: created_at });
+  expect(riderOrders([o("ready", "2026-10-24T10:10:00Z"), o("out_for_delivery", "2026-10-24T10:00:00Z"), o("placed", "2026-10-24T09:00:00Z")]).map((r) => r.created_at)).toEqual(["2026-10-24T10:00:00Z", "2026-10-24T10:10:00Z"]);
+});

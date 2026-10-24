@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { deliveredToday, hhmm, riderActions, riderOrders, shortId, type Order, type RiderAction } from "../lib/kitchen";
 import { formatRupees } from "../lib/money";
-import { cashInHand, firstName, type KitchenCard, type RiderGateState } from "../lib/rider";
+import { cashInHand, firstName, locationLabel, type KitchenCard, type RiderGateState } from "../lib/rider";
 import { Skeleton, Tabs } from "../ui";
 
 type Tab = "job" | "today" | "me";
@@ -105,7 +105,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, ga
     }
     if (gate && !gate.online) return (   // R3
       <>
-        <div className="ui-scroll ui-center"><div className="ui-empty"><h2>You are offline</h2><p className="ui-meta">Go online to get deliveries. While online, this phone shares your location every 30 seconds.</p>{todayLine}</div></div>
+        <div className="ui-scroll ui-center"><div className="ui-empty"><h2>You are offline</h2><p className="ui-meta">Go online to get deliveries. While online, this phone shares your location {locationLabel()}.</p>{todayLine}</div></div>
         <div className="ui-bottom"><button type="button" className="ui-btn big" onClick={() => void gate.flip()}>Go online</button></div>
       </>
     );
@@ -130,7 +130,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, ga
       {tab === "job" && jobView()}
       {tab === "today" && (
         <div className="ui-scroll ui-today">
-          <div className="ui-row ui-row-static ui-row-tall"><span className="ui-row-label"><span>Cash in hand</span><span className="ui-row-sub mono">Hand over at the kitchen tonight</span></span><span className="mono ui-cash">{formatRupees(cash)}</span></div>
+          <div className="ui-row ui-row-static ui-row-tall" data-testid="cash"><span className="ui-row-label"><span>Cash in hand</span><span className="ui-row-sub mono">Hand over at the kitchen tonight</span></span><span className="mono ui-cash">{formatRupees(cash)}</span></div>
           {today.length === 0 && <div className="ui-empty"><h2>No deliveries yet today</h2><p className="ui-meta">Each delivery lands here with its cash.</p></div>}
           {today.map((o) => (
             <div key={o.id} className="ui-row ui-row-static">
@@ -142,7 +142,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, ga
       )}
       {tab === "me" && (
         <div className="ui-scroll ui-today">
-          {gate && <div className="ui-row ui-row-static ui-row-tall"><label htmlFor="online" className="ui-row-label"><span>Online</span><span className="ui-row-sub mono">Location shared every 30 s while online</span></label><input id="online" className="ui-switch" type="checkbox" role="switch" checked={gate.online} onChange={() => void gate.flip()} /></div>}
+          {gate && <div className="ui-row ui-row-static ui-row-tall"><label htmlFor="online" className="ui-row-label"><span>Online</span><span className="ui-row-sub mono">Location shared {locationLabel()} while online</span></label><input id="online" className="ui-switch" type="checkbox" role="switch" checked={gate.online} onChange={() => void gate.flip()} /></div>}
           <div className="ui-row ui-row-static"><span>Today</span><span className="mono ui-row-sub">{today.length} delivered · {formatRupees(cash)} in hand</span></div>
           <div className="ui-row ui-row-static"><span>Phone the kitchen calls</span><span className="mono ui-row-sub">{gate?.phone || "Not saved yet"}</span></div>
           {gate && <button type="button" className="ui-row" onClick={gate.signOut}><span>Sign out</span><span className="go" aria-hidden="true">›</span></button>}

@@ -114,11 +114,11 @@ const TAB_ICONS = {
 };
 export type TabIcon = keyof typeof TAB_ICONS;
 // Bottom tabs of the rider and kitchen apps (story H11, #194): the visible word is the accessible name.
-export function Tabs<K extends string>({ current, tabs, onPick }: { current: K; tabs: { key: K; label: string; icon: TabIcon; badge?: number }[]; onPick: (k: K) => void }) {
+export function Tabs<K extends string>({ current, tabs, onPick }: { current: K; tabs: { key: K; label: string; icon: TabIcon; name?: string; badge?: number }[]; onPick: (k: K) => void }) {
   return (
     <nav className="ui-tabs" aria-label="Main">
       {tabs.map((t) => (
-        <button key={t.key} type="button" className={cx("ui-tab", current === t.key && "on")} aria-current={current === t.key ? "page" : undefined} onClick={() => onPick(t.key)}>
+        <button key={t.key} type="button" className={cx("ui-tab", current === t.key && "on")} aria-label={t.name} aria-current={current === t.key ? "page" : undefined} onClick={() => onPick(t.key)}>
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{TAB_ICONS[t.icon]}</svg>{t.label}
           {t.badge ? <span className="ui-tab-badge" aria-label={`${t.badge} new`}>{t.badge}</span> : null}
         </button>
@@ -126,20 +126,12 @@ export function Tabs<K extends string>({ current, tabs, onPick }: { current: K; 
     </nav>
   );
 }
-// Bottom tabs of the customer app. The aria-labels keep the names the tests already use ("My orders", "Account").
+// Bottom tabs of the customer app: Tabs with the names the tests already use ("My orders", "You (Account)").
 export function TabBar({ current, onMenu, onOrders, onYou }: { current: "menu" | "orders" | "you"; onMenu: () => void; onOrders: () => void; onYou: () => void }) {
-  const tabs = [
-    { key: "menu" as const, label: "Menu", name: "Menu", go: onMenu },
-    { key: "orders" as const, label: "Orders", name: "My orders", go: onOrders },
-    { key: "you" as const, label: "You", name: "You (Account)", go: onYou },
-  ];
-  return (
-    <nav className="ui-tabs" aria-label="Main">
-      {tabs.map((t) => (
-        <button key={t.key} type="button" className={cx("ui-tab", current === t.key && "on")} aria-label={t.name} aria-current={current === t.key ? "page" : undefined} onClick={t.go}>
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{TAB_ICONS[t.key]}</svg>{t.label}
-        </button>
-      ))}
-    </nav>
-  );
+  const go = { menu: onMenu, orders: onOrders, you: onYou };
+  return <Tabs current={current} onPick={(k) => go[k]()} tabs={[
+    { key: "menu", label: "Menu", icon: "menu", name: "Menu" },
+    { key: "orders", label: "Orders", icon: "orders", name: "My orders" },
+    { key: "you", label: "You", icon: "you", name: "You (Account)" },
+  ]} />;
 }
