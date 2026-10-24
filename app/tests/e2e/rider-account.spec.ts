@@ -38,9 +38,9 @@ test("S4 while online the rider's location is sent, first at once", async ({ pag
   const net = await setup(context, page);
   await page.goto("/rider/");
   await expect(page.getByText("You are online")).toBeVisible();
-  await expect.poll(() => net.calls.riderWrites.some((w) => w.body.lat !== undefined)).toBe(true);
-  const w = net.calls.riderWrites.find((x) => x.body.lat !== undefined)!;
-  expect(w.body).toMatchObject({ lat: 28.5494, lng: 77.2001 });
+  await expect.poll(() => net.calls.rpc.some((c) => c.name === "rider_ping")).toBe(true);   // H14: the history is kept by the rider_ping function
+  expect(net.calls.rpc.find((c) => c.name === "rider_ping")!.body).toEqual({ p_lat: 28.5494, p_lng: 77.2001 });
+  expect(net.calls.riderWrites.filter((w) => w.body.lat !== undefined)).toHaveLength(0);
 });
 
 test("S5 an offline rider sends no location", async ({ page, context }) => {
@@ -52,4 +52,5 @@ test("S5 an offline rider sends no location", async ({ page, context }) => {
   await expect(page.getByText("You are offline")).toBeVisible();
   await page.waitForTimeout(1200);
   expect(net.calls.riderWrites.filter((w) => w.body.lat !== undefined)).toHaveLength(0);
+  expect(net.calls.rpc.filter((c) => c.name === "rider_ping")).toHaveLength(0);
 });

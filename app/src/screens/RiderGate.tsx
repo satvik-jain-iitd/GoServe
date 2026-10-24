@@ -23,7 +23,7 @@ export function RiderGate({ children }: { children: ReactNode }) {
     const watch = navigator.geolocation.watchPosition((p) => {
       if (!shouldSendLocation(lastSent.current, Date.now())) return;
       lastSent.current = Date.now();
-      void sendLocation(getClient(), uid, p.coords.latitude, p.coords.longitude);
+      void sendLocation(getClient(), p.coords.latitude, p.coords.longitude);
     }, () => {}, { enableHighAccuracy: true, maximumAge: 10_000 });
     return () => navigator.geolocation.clearWatch(watch);
   }, [online, uid]);
