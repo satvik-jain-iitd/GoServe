@@ -1,28 +1,48 @@
-// "My orders" (story B3, D2): what this customer ordered before, newest first, with Order again. No order ids: a customer says what they ate, not a number.
+// "Your orders" of the Ink v3 boards 08 and 08e (story H10d, #193; stories B3, D2): the slips of this phone, newest first. A tap opens the slip.
 import { formatRupees } from "../lib/money";
-import { statusLabel, type Order } from "../lib/kitchen";
+import { shortId, statusLabel, type Order } from "../lib/kitchen";
 import { orderSummary } from "../lib/profile";
-import { AppBar, Button, Empty, Skeleton } from "../ui";
+import { Skeleton, TabBar } from "../ui";
 
-const when = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true });
+const TAG: Record<string, string> = { placed: "placed", accepted: "placed", preparing: "", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "error" };
+const hhmm = (d: Date) => d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
+const when = (iso: string) => {
+  const d = new Date(iso);
+  return d.toDateString() === new Date().toDateString() ? `today ${hhmm(d)}` : `${d.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${hhmm(d)}`;
+};
 
-export function OrdersScreen({ orders, loading, onBack, onAgain }: { orders: Order[]; loading: boolean; onBack: () => void; onAgain: (o: Order) => void }) {
+type Props = { orders: Order[]; loading: boolean; kitchenName: string; onOpen: (o: Order) => void; onMenu: () => void; onYou: () => void };
+
+export function OrdersScreen({ orders, loading, kitchenName, onOpen, onMenu, onYou }: Props) {
+  const empty = !loading && orders.length === 0;
   return (
-    <section>
-      <AppBar title="My orders" onBack={onBack} />
-      {loading && orders.length === 0 && <Skeleton lines={3} />}
-      {!loading && orders.length === 0 && <Empty title="No orders yet" hint="Your orders will show here." />}
-      <ul className="tickets">
+    <>
+      <header className="ui-head">
+        <h1>Your orders</h1>
+        <span className="meta">{orders.length} {orders.length === 1 ? "slip" : "slips"}</span>
+      </header>
+      <div className={empty ? "ui-scroll ui-center" : "ui-scroll ui-orders"}>
+        {loading && orders.length === 0 && <div className="ui-pad"><Skeleton lines={3} /></div>}
+        {empty && (
+          <div className="ui-empty">
+            <h2>No slips yet</h2>
+            <p className="ui-meta">Your orders show here on this phone, newest first. Nothing to sign in to.</p>
+            <button type="button" className="ui-btn" onClick={onMenu}>See the menu</button>
+          </div>
+        )}
         {orders.map((o) => (
-          <li key={o.id} className="ticket">
-            <div className="ticket-head"><strong>{when(o.created_at)}</strong><span className={`badge ${o.status}`}>{statusLabel(o.status)}</span></div>
-            <p>{orderSummary(o)}</p>
-            <p className="note">{formatRupees(o.total_paise)} · cash on delivery</p>
-            <Button variant="ghost" onClick={() => onAgain(o)}>Order again</Button>
-          </li>
+          <button key={o.id} type="button" className="ui-order-row" onClick={() => onOpen(o)}>
+            <span className="ui-order-main">
+              <span className="mono ui-order-no">No. {shortId(o.id)} · {when(o.created_at)}</span>
+              <span className="ui-order-items">{orderSummary(o)}</span>
+              <span className="ui-order-sub">{kitchenName ? `${kitchenName} · ` : ""}<span className="mono">{formatRupees(o.total_paise)}</span></span>
+            </span>
+            <span className={`ui-tag ${TAG[o.status] ?? ""}`}>{statusLabel(o.status)}</span>
+          </button>
         ))}
-      </ul>
-      <Button variant="ghost" onClick={onBack}>Back to menu</Button>
-    </section>
+        {orders.length > 0 && <p className="mono ui-foot">Your slips, newest first</p>}
+      </div>
+      <TabBar current="orders" onMenu={onMenu} onOrders={() => undefined} onYou={onYou} />
+    </>
   );
 }

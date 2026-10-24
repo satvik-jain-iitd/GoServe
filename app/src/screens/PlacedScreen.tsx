@@ -25,7 +25,8 @@ type Props = {
   onYes: () => void;
   onNotYet: () => void;
   onAllowReminder: () => void;
-  onAgain: () => void;
+  onAgain: () => void;          // Order again (a delivered or cancelled order)
+  onBack: () => void;           // the chevron: back to the menu
   onCancel: () => void;         // story B3: allowed only while the order is placed
   cancelling: boolean;
   rider: RiderCard | null;      // story D2: shown once a rider has the order
@@ -38,7 +39,7 @@ const clock = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { hour:
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "At your door" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "error" };
 
-export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onAgain, onCancel, cancelling, rider, onCall }: Props) {
+export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onAgain, onBack, onCancel, cancelling, rider, onCall }: Props) {
   const steps = trackerSteps(status);
   const eta = etaMinutes();
   const placed = new Date(placedAt);
@@ -50,7 +51,7 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
   return (
     <>
       <header className="ui-head">
-        <BackChevron label="Back to the menu" onClick={onAgain} />
+        <BackChevron label="Back to the menu" onClick={onBack} />
         <h1>{title}</h1>
         {!delivered && !cancelled && status !== "placed" ? <span className="meta ui-livemark"><span aria-hidden="true" className="ui-live-dot" />Live</span> : <span className="meta">No. {shortId(order.id)}</span>}
       </header>
