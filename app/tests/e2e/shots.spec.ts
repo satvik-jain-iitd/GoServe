@@ -228,4 +228,66 @@ for (const theme of ["day", "night"] as const) {
     await page.getByRole("heading", { name: "Not kitchen staff yet" }).waitFor();
     await shot("K-NotStaff");
   });
+  test(`shots admin ${theme}`, async ({ page, context }) => {   // story H12 (#195): boards A1 to A4 and A8
+    await context.addInitScript((v) => localStorage.setItem("gs-theme", v), theme);
+    const shot = (name: string) => page.screenshot({ path: `${OUT}/${theme}/${name}-${theme}.png` });
+    const K = (over: object) => ({ ...order("placed"), kitchen_id: "k", cancel_reason: null, ...over });
+    const net = await setup(context, page, [
+      K({ id: "1044aaaa-0000-0000-0000-000000000000", created_at: "2026-10-24T14:25:00Z", customer_name: "Meera Kapoor", customer_phone: "9876543210", total_paise: 48000, items: [{ menu_item_id: "t2", name: "Non-veg thali", qty: 2, price_paise: 24000 }] }),
+      K({ id: "1043aaaa-0000-0000-0000-000000000000", created_at: "2026-10-24T14:22:00Z", status: "preparing", customer_name: "Rahul Verma", customer_phone: "9876543210", total_paise: 26000, items: [{ menu_item_id: "t1", name: "Veg thali", qty: 1, price_paise: 18000 }, { menu_item_id: "d4", name: "Tandoori Roti", qty: 2, price_paise: 2000 }], address: "B-12, Lajpat Nagar II, near the park gate" }),
+      K({ id: "1042aaaa-0000-0000-0000-000000000000", created_at: "2026-10-24T14:10:00Z", status: "out_for_delivery", customer_name: "Rahul Verma", total_paise: 34000, rider_id: "r1" }),
+      K({ id: "1040aaaa-0000-0000-0000-000000000000", created_at: "2026-10-24T14:06:00Z", status: "delivered", customer_name: "Priya Nair", total_paise: 18000 }),
+      K({ id: "1039aaaa-0000-0000-0000-000000000000", created_at: "2026-10-24T14:00:00Z", status: "cancelled", customer_name: "Karan Mehta", total_paise: 36000, cancel_reason: "customer asked" })]);
+    net.state.admin = true;
+    net.state.kitchens = [{ id: "k", name: "Tau Ka Dhaba", address: "C-4, Lajpat Nagar II", phone: "9876500011", pin_codes: ["110024"], open: true, active: true, opens_at: "11:00:00", closes_at: "22:00:00" }, { id: "k2", name: "Amma's Kitchen", address: null, phone: null, pin_codes: ["110016"], open: false, active: true, opens_at: null, closes_at: null }];
+    net.state.numbers = [{ day: "2026-10-24", kitchen_id: "k", kitchen_name: "Tau Ka Dhaba", orders: 23, delivered: 18, cancelled: 1, cash_paise: 614000 }];
+    await page.goto("/admin/");
+    await page.getByRole("heading", { name: "Live" }).waitFor();
+    await page.evaluate(() => document.fonts.ready);
+    await shot("A-Orders");
+    await page.getByRole("button", { name: /^Open order 1043aaaa/ }).click();
+    await page.getByRole("heading", { name: "Order", exact: true }).waitFor();
+    await shot("A-Order");
+    await page.getByRole("button", { name: "Back to orders" }).click();
+    await page.getByRole("button", { name: "Numbers", exact: true }).click();
+    await page.getByTestId("day-total").waitFor();
+    await shot("A-Numbers");
+    net.state.admin = false;
+    await page.reload();
+    await page.getByRole("heading", { name: "Sign in to run the city" }).waitFor();
+    await shot("A-SignIn");
+    net.state.anonymous = false;
+    await page.reload();
+    await page.getByRole("heading", { name: "Not an admin account" }).waitFor();
+    await shot("A-NotAdmin");
+  });
+  test(`shots admin city ${theme}`, async ({ page, context }) => {   // story H12b (#195): boards A5 to A7
+    await context.addInitScript((v) => localStorage.setItem("gs-theme", v), theme);
+    const shot = (name: string) => page.screenshot({ path: `${OUT}/${theme}/${name}-${theme}.png` });
+    const net = await setup(context, page);
+    net.state.admin = true;
+    net.state.kitchens = [
+      { id: "k", name: "Tau Ka Dhaba", address: "C-4, Lajpat Nagar II, back lane", phone: "9876500011", pin_codes: ["110024", "110025"], open: true, active: true, opens_at: "11:00:00", closes_at: "22:00:00" },
+      { id: "k2", name: "Amma's Kitchen", address: null, phone: null, pin_codes: ["110016", "110017"], open: true, active: true, opens_at: null, closes_at: null },
+      { id: "k3", name: "Punjab Rasoi", address: null, phone: null, pin_codes: ["110048"], open: false, active: true, opens_at: null, closes_at: null }];
+    net.state.people = [{ kind: "kitchen", user_id: "u-1", email: "sunita@example.com", kitchen_id: "k", kitchen_name: "Tau Ka Dhaba" }, { kind: "kitchen", user_id: "u-2", email: "raju@example.com", kitchen_id: "k", kitchen_name: "Tau Ka Dhaba" }, { kind: "kitchen", user_id: "u-3", email: "lakshmi@example.com", kitchen_id: "k2", kitchen_name: "Amma's Kitchen" }];
+    net.state.riders = [{ user_id: "r1", name: "Amit Kumar", phone: "9810011223", online: true }, { user_id: "r2", name: "Ravi Yadav", phone: "9810011224", online: true }, { user_id: "r3", name: "Deepak Singh", phone: null, online: false }];
+    net.state.menu = MENU.map((d, i) => ({ ...d, kitchen_id: "k", available: i !== 3 }));
+    await page.goto("/admin/");
+    await page.getByRole("button", { name: "City", exact: true }).click();
+    await page.getByText("Amit Kumar").waitFor();
+    await page.evaluate(() => document.fonts.ready);
+    await shot("A-City");
+    await page.getByRole("button", { name: /^Open kitchen Tau Ka Dhaba/ }).click();
+    await page.getByText("Paneer Butter Masala").waitFor();
+    await shot("A-Kitchen");
+    await page.getByRole("button", { name: "Back to city" }).click();
+    await page.getByRole("button", { name: "Add a kitchen" }).click();
+    await page.getByRole("heading", { name: "Add a kitchen" }).waitFor();
+    await page.getByLabel("Kitchen name").fill("Punjab Rasoi");
+    await page.getByLabel("Address").fill("A-12, Greater Kailash I");
+    await page.getByLabel("Phone").fill("9810022334");
+    await page.getByLabel("Pin codes").fill("11004");
+    await shot("A-AddKitchen");
+  });
 }

@@ -43,7 +43,9 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana �
 | 26 | [#220](pr-220-orders-you.md) | feat(app): Ink v3 Your orders and You screens (#193) | OPEN, APPROVE 5638912878 on `bf73554`, 20 questions open | H10d closes the customer screens; prod migrations 0022 to 0026 applied |
 | 27 | [#222](pr-222-rider-ink.md) | feat(app): Ink v3 rider app, boards R1 to R9 (#194) | OPEN, APPROVE 5639179226 on `ab5c8e4`, 17 questions open, Guard red until the reword | H11a, layer 1 of the #194 stack |
 | 28 | [#223](pr-223-kitchen-ink.md) | feat(app): Ink v3 kitchen app, boards K1 to K6 (#194) | OPEN, APPROVE 5639174623 on `be32bc1`, 15 questions open | H11b, layer 2, merged into the #222 branch |
-| 29 | [#226, #227, #228](pr-226-228-h11-fixes-day.md) | H11 review fixes · no Google on the customer app (#224) · Day default (#225) | OPEN, APPROVE 5639339438 / 5639342341 / 5639340066, 11 questions open | three small layers, one stack; #222/#223 threads all resolved |
+| 29 | [#226, #227, #228](pr-226-228-h11-fixes-day.md) | H11 review fixes · no Google on the customer app (#224) · Day default (#225) | #226, #227 MERGED; #228 lost (merged into a merged base); #232 rebuilt it, APPROVE 5639433838, 4 questions; 11 earlier threads answered + resolved | three small layers, one stack; #222/#223 threads all resolved |
+| 30 | [#233](pr-233-admin-ink.md) | feat(app): Ink v3 admin app, boards A1 to A4 and A8 (#195) | lost in a dead base; rebuilt as #234 (APPROVE 5639504559, 3 questions); 9 earlier threads answered + resolved, 30 s poll fixed | H12a, layer on #232; City keeps the old tools until H12b |
+| 31 | [#235](pr-235-admin-city.md) | feat(app): Ink v3 admin City, boards A5 to A7 (#195) | OPEN, APPROVE 5639504792 on `eab8b53`, 9 questions open (TOP: listRiders swallows errors) | H12b, layer on #234; radar run first |
 
 ## Journals
 - [concepts.md](concepts.md) — naye technical words, plain Hindi mein.

@@ -4,7 +4,7 @@ import { hhmmOf } from "../lib/kitchen";
 import { myKitchen } from "../lib/session";
 import { ensureSession, getClient } from "../lib/supabase";
 import { SignIn } from "./SignIn";
-import { Skeleton } from "../ui";
+import { Skeleton, StaffLanding } from "../ui";
 
 export type KitchenGateState = { kitchenId: string; name: string; open: boolean | null; opensAt: string | null; closesAt: string | null; flipOpen: () => Promise<void>; retry: () => void; signOut: () => void };   // open null: the row could not be read
 type Row = { name: string; open: boolean | null; opens_at: string | null; closes_at: string | null };
@@ -30,15 +30,7 @@ export function KitchenGate({ children }: { children: (gate: KitchenGateState) =
   const signOut = async () => { try { await getClient().auth.signOut(); } catch { /* offline */ } window.location.reload(); };
   if (kitchenId === undefined) return <><header className="ui-head"><h1>New</h1></header><div className="ui-pad"><Skeleton lines={3} /></div></>;
   if (!kitchenId || !row) return (   // K1 when there is no Google sign-in yet, K2 when the account is not on the staff list
-    <section className="ui-landing">
-      <header className="ui-landing-head">
-        <h1><img className="ui-logo ui-lockup" src="/brand/lockup-day.png" alt="GoServe" width="350" height="50" /></h1>
-        <div className="ui-zigzag" aria-hidden="true" />
-        <p className="ui-kicker">Kitchen app · tickets in, food out</p>
-      </header>
-      <div className="ui-slip" role="group" aria-label={anonymous ? "Sign in" : "Not kitchen staff"}>
-        <div className="ui-slip-body">
-          <div className="ui-slip-head"><span>Kitchen</span><span>{anonymous ? "Google" : "Signed in"}</span></div>
+    <StaffLanding kicker="Kitchen app · tickets in, food out" app="Kitchen" right={anonymous ? "Google" : "Signed in"} label={anonymous ? "Sign in" : "Not kitchen staff"} error={error}>
           {anonymous ? (
             <>
               <h2 className="ui-slip-title">Sign in to cook</h2>
@@ -53,11 +45,7 @@ export function KitchenGate({ children }: { children: (gate: KitchenGateState) =
               <button type="button" className="ui-btn ghost big" onClick={() => void signOut()}>Sign out</button>
             </>
           )}
-          {error && <p role="alert" className="ui-field-error">{error}</p>}
-        </div>
-      </div>
-      <footer className="ui-landing-foot"><p className="ui-kicker">No app to install · works in the browser</p></footer>
-    </section>
+    </StaffLanding>
   );
   const flipOpen = async () => {
     setError(null);

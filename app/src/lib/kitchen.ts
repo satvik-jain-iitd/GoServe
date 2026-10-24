@@ -19,6 +19,8 @@ export const nextStep = (status: string) => STEPS[status] ?? null;
 // One label map for the kitchen, the rider and the customer tracker.
 const LABELS: Record<string, string> = { placed: "Placed", accepted: "Accepted", preparing: "Cooking", ready: "Ready", out_for_delivery: "On the way", delivered: "Delivered", cancelled: "Cancelled" };
 export const statusLabel = (status: string): string => LABELS[status] ?? status;
+/** The staff apps (kitchen, admin) say "New" for a placed order; the customer sees "Placed". One place for the difference (H12). */
+export const staffLabel = (status: string): string => (status === "placed" ? "New" : statusLabel(status));
 
 const WITH_RIDER = ["out_for_delivery", "delivered", "cancelled"];   // not the kitchen's any more
 export const kitchenOrders = (orders: Order[]): Order[] => orders.filter((o) => !WITH_RIDER.includes(o.status));

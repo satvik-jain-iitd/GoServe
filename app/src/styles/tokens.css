@@ -13,3 +13,4 @@
   --md-secondary-container: var(--gs-lime); --md-tertiary-container: var(--gs-lime-soft); }
 /* Story D3: staff read with wet hands, one size up for ticket lines; taps use --gs-tap-big. */
 :root { --gs-text-staff: 18px; }
+:root { --gs-number-xl: 28px; }   /* the big number on a Numbers tile (board A8) */

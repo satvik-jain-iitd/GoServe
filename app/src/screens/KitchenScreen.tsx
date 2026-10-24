@@ -1,6 +1,6 @@
 // The kitchen app on the Ink v3 boards K3 to K6 (story H11, #194): New tickets, Cooking, the Kitchen tab, and one ticket (K4) over the tabs.
-import { useState } from "react";
-import { cookingTickets, deliveredToday, hhmm, newTickets, nextStep, outsideHours, readyTickets, shortId, type Order } from "../lib/kitchen";
+import { useEffect, useState } from "react";
+import { cookingTickets, deliveredToday, hhmm, newTickets, nextStep, outsideHours, readyTickets, shortId, staffLabel, type Order } from "../lib/kitchen";
 import { formatRupees } from "../lib/money";
 import { Skeleton, Tabs } from "../ui";
 import { DishList } from "./KitchenTools";
@@ -12,7 +12,8 @@ type Props = {
   onStep: (order: Order, to: string) => Promise<{ code: string; message: string } | null>;
   gate: KitchenGateState | null;   // null in the demo console: no open switch, no dishes
 };
-const STAMP: Record<string, [string, string]> = { placed: ["New", "placed"], accepted: ["Accepted", "accepted"], preparing: ["Cooking", "cooking"], ready: ["Ready", "ready"] };
+const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready" };
+const stamp = (status: string): [string, string] => [staffLabel(status), STAMP[status] ?? ""];
 
 export function KitchenScreen({ orders, loading, error, busyId, onStep, gate }: Props) {
   const [tab, setTab] = useState<Tab>("new");
@@ -33,7 +34,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, gate }: 
     <div className="ui-slip-lines ui-ticket-big">{o.items.map((i) => <div key={i.menu_item_id}><span>{i.qty} × {i.name}</span>{prices && <span>{formatRupees(i.price_paise * i.qty)}</span>}</div>)}</div>
   );
   const row = (o: Order) => {
-    const [word, cls] = STAMP[o.status] ?? [o.status, ""];
+    const [word, cls] = stamp(o.status);
     const next = nextStep(o.status);
     return (
       <div key={o.id} className="ui-ticket">
@@ -48,11 +49,13 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, gate }: 
   };
   const state = gate ? (gate.open === null ? "Unknown" : gate.open ? "Open" : "Closed") : null;
   const dot = gate && <span className={gate.open ? "ui-state-dot on" : "ui-state-dot"} aria-hidden="true" />;
-  const pastClose = !!gate && outsideHours(gate.opensAt, gate.closesAt, hhmm(new Date().toISOString()));   // after closing time the customer app shows "closed" whatever the switch says
+  const [minute, setMinute] = useState(() => hhmm(new Date().toISOString()));
+  useEffect(() => { const t = setInterval(() => setMinute(hhmm(new Date().toISOString())), 60_000); return () => clearInterval(t); }, []);   // the clock line moves on its own
+  const pastClose = !!gate && outsideHours(gate.opensAt, gate.closesAt, minute);   // after closing time the customer app shows "closed" whatever the switch says
   const todayLine = <p className="mono ui-foot">Today · {done.length} done{tab === "kitchen" ? ` · ${formatRupees(onSlips)} on the slips` : ""}</p>;
 
   if (opened) {   // K4: one ticket over the tabs
-    const [word, cls] = STAMP[opened.status] ?? [opened.status, ""];
+    const [word, cls] = stamp(opened.status);
     const next = nextStep(opened.status);
     return (
       <>
