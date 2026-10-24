@@ -164,7 +164,8 @@ export async function setup(context: BrowserContext, page: Page, initial: object
 
 /** An axe scan after every CSS animation has finished (the stamp fades in from 0.6, which read as low contrast mid-animation). Returns the serious and critical violations as strings. */
 export async function scan(page: Page, tags?: string[]): Promise<string[]> {
-  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
+  // Finite animations only (the ui-pulse skeleton never finishes), and never more than a second: a scan must not hang on a slow CI.
+  await page.evaluate(() => Promise.race([Promise.all(document.getAnimations().filter((a) => a.effect?.getTiming().iterations !== Infinity).map((a) => a.finished.catch(() => undefined))), new Promise((r) => setTimeout(r, 1000))]));
   const b = new AxeBuilder({ page });
   const r = await (tags ? b.withTags(tags) : b).analyze();
   return r.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => `${v.id}: ${v.nodes.slice(0, 2).map((n) => n.target.join(" ")).join(" | ")}`);
