@@ -57,3 +57,13 @@ test("S6 the demo console at / still shows the menu with no pin code question", 
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Where do we deliver?" })).toHaveCount(0);
 });
+
+test("S7 a synthetic kitchen of the simulator is never shown to a real pin code (story #188)", async ({ page, context }) => {
+  const net = await setup(context, page, [], { pin: null });
+  net.state.kitchens = [{ id: "s-1", name: "Saket Rasoi", address: null, phone: null, pin_codes: ["110016"], open: true, active: true, lat: null, lng: null, synthetic: true }];
+  await page.goto("/customer/");
+  await page.getByLabel("Your pin code").fill("110016");
+  await page.getByRole("button", { name: "See the menu" }).click();
+  await expect(page.getByText("Not in 110016 yet. We saved your pin. We will tell you when we come.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Saket Rasoi" })).toHaveCount(0);
+});

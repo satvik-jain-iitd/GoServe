@@ -71,3 +71,14 @@ Runs: `scout.py --need "wrap an existing PWA as an Android APK, Trusted Web Acti
 | ionic-team/capacitor (★17k, MIT, pushed 23 Oct 2026) | A | A native shell with a WebView and plugins (background geolocation plugins exist). | Own storage, so no shared session (login or a join link); a native build per release; heavier. Keep as the fallback for #252 only if a TWA cannot keep location flowing with the screen off. | Hold |
 
 Decision: Bubblewrap TWA, one APK per role first (the customer app), measured on the owner's phone; then decide one APK vs four in the ADR. Confidence 0.8 (Tier A tools, our manifest already passes the TWA fields: name, start_url, scope, display standalone, 192 and 512 icons with a maskable one). Open risk for #252: a TWA runs in Chrome, and Chrome stops geolocation watchers when the screen is off; the fix is Android-side (a foreground service or Capacitor), decided after the spike measures it.
+## 2026-10-25 · need: synthetic city seed and reset for a food-delivery marketplace (story #188, epic E16)
+
+Runs: `scout.py --need "synthetic city seed for a food delivery marketplace: fake kitchens, riders and dishes marked synthetic, deterministic seed and reset functions in Postgres, Supabase"` → no repos found; GitHub `synthetic data seed postgres food delivery simulator stars:>20` → only platforms (supabase, grafana, coolify, metabase, prisma), none a seed; `topic:synthetic-data postgres seed` → nothing on topic. Log: scratchpad `radar-h5.log`.
+
+| Repo | Tier | What it is | Fit for this need | Verdict |
+|---|---|---|---|---|
+| supabase/supabase (★113k) | A | The platform we already run on. | Its `seed.sql` is a one-time file, not a marked, resettable set. | Already in use; borrow nothing new |
+| prisma/orm (★47k) | B | An ORM with a `prisma db seed` hook. | A new runtime for one SQL function. | Skip |
+| Faker-style libraries (not surfaced by the search) | C | Random names. | The names must be stable per seed, so a word list in SQL does the same with no dependency. | Skip |
+
+Decision: two plpgsql functions in one migration (`sim_seed`, `sim_reset`), ids from `md5(seed || index)` so a re-seed updates the same rows, a `synthetic` flag on three tables, service_role only. Nothing found that fits; built from scratch. Confidence 0.9 (a seed is a hundred lines of SQL; a library would cost more than it saves).

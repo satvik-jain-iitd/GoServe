@@ -27,3 +27,4 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - ID188 (2026-10-25, taken → E22): MVP 3: a working Android APK anyone can install by 2 Nov 2026, every feature and integration working. Plan `docs/mvp3/plan.md`.
 - ID189 (2026-10-25, taken → E22): zero running cost: Laya replaces the paid Jev API for every decision; Jev cap 0.
 - ID186 (2026-10-25, taken: epic E22): MVP 3, an Android APK anyone can download and use by 2 Nov 2026, every feature working, zero running cost with Laya in place of Jev (owner, 03:45).
+- ID200 (2026-10-25, taken → E16 #188 #189 #190): a synthetic city before real onboarding: 10 kitchens, 20 riders moving on their own, dishes, switched off when real kitchens join (owner, 05:00).
