@@ -20,8 +20,7 @@
 .hero { position: relative; overflow: hidden; padding: 72px 0 64px; }
 .hero .wrap { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 48px; align-items: center; }
 .hero .copy { display: flex; flex-direction: column; gap: 24px; }
-.hero .blob { position: absolute; right: -120px; top: -80px; width: 640px; height: 640px; border-radius: 48% 52% 40% 60% / 55% 40% 60% 45%; background: var(--gs-sage); opacity: 0.45; z-index: 0; }
-.hero .blob::after { content: "Haikei blob · hero-blob.svg"; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font: 12px 'DM Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gs-text-muted); border: 1px dashed var(--gs-text-muted); padding: 6px 10px; }
+.hero .blob { position: absolute; right: -120px; top: -80px; width: 640px; height: 640px; background: url(/bg/hero-blob.svg) center / cover no-repeat; z-index: 0; }
 .hero .copy, .hero .art { position: relative; z-index: 1; }
 .pinform { display: flex; gap: 12px; max-width: 480px; }
 .pinform input { flex: 1; min-width: 0; height: 56px; padding: 0 16px; border: 1px solid var(--md-outline-variant); border-radius: 6px; background: var(--md-surface); color: var(--md-on-surface); font-family: 'DM Mono', monospace; font-size: 22px; letter-spacing: 0.1em; }
@@ -54,8 +53,7 @@
 .band .ui-btn { background: #c8d888; color: #263528; }
 .band .ui-btn.ghost { background: transparent; color: #e8ecf5; border-color: #5e6b88; }
 .band .phone { border-color: #5e6b88; box-shadow: none; }
-.band .glow { position: absolute; right: 0; top: 0; width: 60%; height: 100%; background: radial-gradient(60% 60% at 80% 30%, rgba(200, 216, 136, 0.18), transparent 70%); pointer-events: none; }
-.band .glow::after { content: "Haikei blurry gradient · invest-glow.svg"; position: absolute; right: 24px; top: 24px; font: 12px 'DM Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; color: #a9b3c9; border: 1px dashed #5e6b88; padding: 6px 10px; }
+.band .glow { position: absolute; right: 0; top: 0; width: 60%; height: 100%; background: url(/bg/invest-glow.svg) center / cover no-repeat; pointer-events: none; }
 .numbers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
 .numbers .n { display: flex; flex-direction: column; gap: 6px; padding: 24px 0; border-top: 2px solid var(--md-on-background); }
 .numbers .n b { font-family: 'DM Mono', monospace; font-size: 44px; font-weight: 500; line-height: 1; }
@@ -72,8 +70,7 @@
 .form label { font-family: 'DM Mono', monospace; font-size: 12px; text-transform: uppercase; color: var(--gs-text-muted); }
 .form input, .form select, .form textarea { width: 100%; min-width: 0; box-sizing: border-box; height: 52px; padding: 0 14px; border: 1px solid var(--md-outline-variant); border-radius: 6px; background: var(--md-surface); color: var(--md-on-surface); font: inherit; }
 .form textarea { height: 120px; padding: 12px 14px; resize: vertical; }
-.waves { height: 72px; background: linear-gradient(180deg, transparent 0, transparent 40%, var(--md-surface) 40%); position: relative; }
-.waves::after { content: "Haikei layered waves · section-waves.svg"; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font: 12px 'DM Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gs-text-muted); border: 1px dashed var(--gs-text-muted); padding: 6px 10px; background: var(--md-background); }
+.waves { height: 72px; background: url(/bg/section-waves.svg) center / cover no-repeat; position: relative; }
 .footer { border-top: 1px solid var(--md-outline-variant); padding: 40px 0; }
 .footer .wrap { display: flex; flex-wrap: wrap; gap: 24px 48px; align-items: flex-start; font-size: 14px; color: var(--gs-text-muted); }
 .footer .wrap > div { display: flex; flex-direction: column; gap: 6px; }
