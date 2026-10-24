@@ -187,8 +187,6 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-seg a.on, .ui-hero:has(#thali-nonveg:target) .ui-seg a.nonveg { background: var(--md-primary); color: var(--md-on-primary); }
 .ui-hero:has(#thali-nonveg:target) .ui-seg a.on { background: transparent; color: var(--md-on-surface); }
 /* The zigzag: GoServe's own mark. Light green, 8 px tall, under the lockup, under the greeting, at the top of every slip. */
-:root, [data-theme="day"] { --gs-zigzag: var(--gs-sage); }
-[data-theme="night"] { --gs-zigzag: var(--gs-sage); }
 .ui-zigzag { height: 8px; background: linear-gradient(-45deg, var(--gs-zigzag) 5.66px, transparent 0), linear-gradient(45deg, var(--gs-zigzag) 5.66px, transparent 0); background-size: 16px 8px; background-repeat: repeat-x; }
 .ui-greet .ui-zigzag { width: 96px; margin-top: 8px; }
 /* A count badge on a tab (new tickets) */
