@@ -3,7 +3,7 @@
 - **Branch:** feat/195-admin-city → feat/195-admin-ui-dev (layer 2 on #234) · **Head:** eab8b53 [VERIFIED]
 - **Author:** klickbae8yt-star
 - **Story / issue:** #195 "H12b" (epic E18, #182). [VERIFIED]
-- **Status:** OPEN, approved (review 5639504792, APPROVE). Must-fix: none. [VERIFIED]
+- **Status:** MERGED into #234's branch by the owner (860574f); ships with #234 at e35df91 (re-approved), approved (review 5639504792, APPROVE). Must-fix: none. [VERIFIED]
 - **Files:** 23 (6 png) · **Lines:** +371 / -158 [VERIFIED]
 - **Reviewer:** satvik-jain-iitd
 - **CI:** Guard pass; App and Site were pending at read time. [VERIFIED]
@@ -178,47 +178,56 @@ Har comment ek teaching question hai. Status: sab open.
 <!-- gh-comment-id: 4368137344 -->
 - **File:** `app/src/screens/AdminScreen.tsx` · **Line:** 37 · **Category:** TOP · Risk
 - **Question:** listRiders ka error chup-chaap [] ban jata hai: RLS ya network fail par City "0 online · N off" dikhayega, koi line nahi. Admin sochega sab offline hain. Kitchen row wale pattern jaisa "could not read" + Try again?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in e35df91 (on #234, since #235 merged into it): riders is null when the read fails. The City then shows "Could not read the riders." with a Try again button, and no Online/Offline tags, so unkn
+- **Status:** fixed e35df91 (#234), resolved 25 Oct
 
 <!-- gh-comment-id: 4368137345 -->
 - **File:** `app/src/screens/AdminMenu.tsx` · **Line:** 60 · **Category:** 4 Risk
 - **Question:** Delete dish ek tap, bina confirm, chhota ghost button; Remove person bhi. Forget me aur Not delivered par confirm hai. Yahan kyun nahi? (Galat dish delete = pilot ke beech menu se item gayab.)
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in e35df91: Delete dish and Remove person ask first (window.confirm). admin.spec S4 and S7 accept the dialog; admin-city S6 dismisses it and checks that no rpc was sent.
+- **Status:** fixed e35df91 (#234), resolved 25 Oct
 
 <!-- gh-comment-id: 4368137350 -->
 - **File:** `app/src/screens/AdminCity.tsx` · **Line:** 70 · **Category:** 2 Understanding
 - **Question:** "Closed" tag open=false aur active=false dono ke liye. Owner ko fark nahi dikhega: aaj band hai, ya system se hata di. Teen words (Open, Closed, Off) ya ek sub line?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in e35df91: a kitchen with active false now shows Off (error tag), open false shows Closed, open true shows Open. Test admin-city S7. F152 row 7.
+- **Status:** fixed e35df91 (#234), resolved 25 Oct
 
 <!-- gh-comment-id: 4368137353 -->
 - **File:** `app/src/screens/AdminCity.tsx` · **Line:** 90 · **Category:** 3 Assumptions
 - **Question:** riderRows: riders table + people(kind rider). Ek rider jo people me hai par riders row nahi: "No rider row yet". Yeh row kab banti hai (pehla sign-in par, trigger se)? Owner ko kya karna hai is state me?
-- **Status:** open
+- **Reply (klickbae8yt-star):** The riders row is made by admin_add_person (insert into riders (user_id) on conflict do nothing, migrations 0014 and 0023), so "No rider row yet" can only appear for a rider added before 0014. The tex
+- **Status:** answered, resolved 25 Oct
 
 <!-- gh-comment-id: 4368137355 -->
 - **File:** `app/src/lib/admin.ts` · **Line:** 50 · **Category:** 6 Impact
 - **Question:** listRiders har admin ko sab riders ka phone deta hai. RLS: riders select policy kya kehti hai (admins + kitchen staff pehle se padh sakte hain, #222 reply)? Ek line assumptions.md me?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Riders RLS: riders_own (a rider reads their own row), riders_staff_read (kitchen staff), admin_read using (is_admin()), admin_write. The admin City lists riders through admin_read, phone included. Wri
+- **Status:** answered, resolved 25 Oct
 
 <!-- gh-comment-id: 4368137358 -->
 - **File:** `app/src/screens/AdminCity.tsx` · **Line:** 39 · **Category:** 7 Testability
 - **Question:** Remove ka aria-label email se; test "Remove <email>" purana naam rakhta hai, sahi. Par admin apne aap ko Remove kar sakta hai (people me admin kind bhi list hai). Last admin ko hatane se lock-out: rpc rokta hai ya UI?
-- **Status:** open
+- **Reply (klickbae8yt-star):** The last admin cannot remove themselves: admin_remove_person refuses when (select count(*) from admins) <= 1 (migration 0014). The UI shows the rpc error text in that case; no extra UI note added (one
+- **Status:** answered, resolved 25 Oct
 
 <!-- gh-comment-id: 4368137361 -->
 - **File:** `docs/follow-ups.md` · **Line:** 159 · **Category:** 8 Future
 - **Question:** F152 chhe deviations: reviewer ka jawab coder ke list par: sab theek; (open/closed/off word) aur (delete confirm) upar ke threads se jo nikle, F row me jodo.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Added in e35df91: F152 rows 7 (Open, Closed or Off, three words) and 8 (confirm before Delete dish and Remove person).
+- **Status:** fixed e35df91 (#234), resolved 25 Oct
 
 <!-- gh-comment-id: 4368137364 -->
 - **File:** `app/tests/e2e/admin-city.spec.ts` · **Line:** 83 · **Category:** 7 Testability
 - **Question:** S5 axe: A5, A6 aur A7 teeno scan hote hain? A7 form (time inputs, select) Night me contrast ka sabse bada khatra hai.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Yes: S5 runs axe on A5 (City), A6 (one kitchen) and A7 (Add a kitchen) in Day, and A7 again in Night.
+- **Status:** answered, resolved 25 Oct
 
 <!-- gh-comment-id: 4368137365 -->
 - **File:** `CLAUDE.md` · **Line:** 29 · **Category:** 1 Purpose
 - **Question:** Radar line project CLAUDE.md me: sahi, owner ka rule 0. Is PR ka radar run "nothing to adopt": kaun se 3 README padhe, ek line yahan? (docs/research/repo-radar.md me hai to bas pointer.)
-- **Status:** open
+- **Reply (klickbae8yt-star):** Radar run: docs/research/repo-radar.md, section for this story. The three READMEs read: marmelab/react-admin, appsmithorg/appsmith, d3george/slash-admin. All three are full admin frameworks; none fit
+- **Status:** answered, resolved 25 Oct
 
 ---
 

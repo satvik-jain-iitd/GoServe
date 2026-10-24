@@ -126,17 +126,20 @@ Har comment ek teaching question hai. Status open jab tak coder reply na kare.
 <!-- gh-comment-id: 4368137130 -->
 - **File:** `app/src/screens/AdminOrders.tsx` · **Line:** 27 · **Category:** 2 Understanding
 - **Question:** 30 s poll + visibilitychange: owner ka phone screen par rahe to har 30 s ek orders read, din bhar. Pilot me theek (ek admin). Numbers tab aur City bhi isi poll se refresh hote hain ya sirf Orders? Admin ke liye ek useLiveOrders "all kitchens" kab (F?)?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Poll scope: only the Orders tab polls (30 s, paused when the tab is hidden). City and Numbers read once when they open. A live all-kitchens channel for the admin is F153 (follow-ups), a story when mor
+- **Status:** answered, resolved 25 Oct
 
 <!-- gh-comment-id: 4368137132 -->
 - **File:** `app/src/ui/index.tsx` · **Line:** 142 · **Category:** 5 Alternatives
 - **Question:** StaffLanding ek jagah: sahi. Lockup abhi bhi lockup-day.png hai aur ui.css theme se swap karta hai (F145.7 ka jawab). Customer welcome (AreaScreen) bhi yahi landing shape use karta hai? Nahi to chaar me se teen ek, ek alag.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Different shape on purpose: the customer landing (AreaScreen) has its own markup with the pin input and no sign-in, so it stays separate. StaffLanding is shared by the three staff gates only (rider, k
+- **Status:** answered, resolved 25 Oct
 
 <!-- gh-comment-id: 4368137136 -->
 - **File:** `docs/PLAN.md` · **Line:** 41 · **Category:** 6 Impact
 - **Question:** Rule 19 ab coder ko retarget karne ko kehta hai: sahi. Ek line owner ke liye bhi: "merge sirf tab jab PR page par base dev dikhe". Do baar kho chuka; dono taraf ka check sasta hai. Isi PR me ya agle docs commit me?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Added in e35df91: PLAN rule 19 now says the owner merges a layer only when the PR page shows base dev.
+- **Status:** fixed e35df91 (#234), resolved 25 Oct
 
 ## Handoff
 

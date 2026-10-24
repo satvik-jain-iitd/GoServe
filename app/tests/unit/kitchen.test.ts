@@ -130,3 +130,24 @@ it("staffLabel says New for a placed order and the usual word otherwise", () => 
   expect(staffLabel("placed")).toBe("New");
   expect(staffLabel("preparing")).toBe("Cooking");
 });
+
+// Story #229: the cash day ends at the kitchen's closing time, not at midnight.
+import { dayOf } from "../../src/lib/kitchen";
+describe("dayOf and deliveredToday across closing time", () => {
+  const night = { opens: "18:00", closes: "02:00" };
+  const t = (d: number, h: number, m = 0) => new Date(2026, 9, d, h, m).toISOString();
+  it("a kitchen that closes past midnight keeps 23:30 and 00:10 in one day", () => {
+    expect(dayOf(t(23, 23, 30), night)).toBe(dayOf(t(24, 0, 10), night));
+    expect(dayOf(t(24, 1, 59), night)).toBe(dayOf(t(23, 19), night));
+    expect(dayOf(t(24, 2, 0), night)).not.toBe(dayOf(t(23, 19), night));   // 02:00 starts the next day
+  });
+  it("a kitchen that closes before midnight, or with no hours, uses the calendar day", () => {
+    expect(dayOf(t(23, 23, 30), { opens: "10:00", closes: "23:00" })).not.toBe(dayOf(t(24, 0, 10), { opens: "10:00", closes: "23:00" }));
+    expect(dayOf(t(23, 23, 30), null)).not.toBe(dayOf(t(24, 0, 10), null));
+  });
+  it("deliveredToday follows the kitchen's day", () => {
+    const o = { status: "delivered", updated_at: t(23, 23, 30), total_paise: 100 };
+    expect(deliveredToday([o], new Date(t(24, 0, 10)), night)).toHaveLength(1);
+    expect(deliveredToday([o], new Date(t(24, 0, 10)))).toHaveLength(0);
+  });
+});
