@@ -133,4 +133,8 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F129 | The two thali photos now carry the full CC BY-SA 4.0 credit in the footer and in PHOTOS.md. The pilot kitchen\'s real plates still replace them before launch. | Owner | Credit done |
 | F130 | Site v2 is Day only. The canvas has a Night theme; wire it to the clock or a toggle if the owner wants it. Privacy and Terms links are removed from the footer until the text exists. | Reviewer | Open |
 | F131 | Watermelon and Motion Primitives blocks are now installed from their registries (J3 review fixes). | Reviewer | Done |
-| F132 | Home keeps a total blocking time of about 300 ms (React and motion start-up). Owner wants Lighthouse performance kept high: next, cut island count and load motion later. Also one accessibility audit at 98 on Pre-register. | Coder | Open |
+| F132 | Home keeps a total blocking time of about 300 ms (React and motion start-up). Owner wants Lighthouse performance kept high: next, cut island count and load motion later. Also one accessibility audit at 98 on Pre-register. | Coder | Done: reviewer measured 97 on the local build after the eager hero image (24 Oct). |
+
+| F133 | The live pre-register workflow keeps only the old fields, so the form sends the pin code inside `city` and also as `pin`. `ops/n8n/build_goserve_workflows.py` now lifts `pin` and shows it in the Telegram alert. After the owner's yes to redeploy that workflow, send a plain `city`. | Coder | Open |
+| F134 | Not measured yet in the pilot numbers: radius (needs Ola Maps, H8), customers who lost their list (no source), realtime connections (H15 reads connections). The kitchen-silent watch (no staff read for 30 minutes) has no data source either. | Coder | Open |
+| F135 | MAIN 93 has no health and cost block yet: SUB 94 and its call arrive with H15, so no empty workflow is deployed now. | Coder | Open |
