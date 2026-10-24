@@ -331,7 +331,8 @@ HEALTH_NAMES = ["health_numbers: database size and open connections", "health_nu
 
 # Story H5 (#188): the synthetic city never mixes with the real one. A synthetic rider is no candidate for a real kitchen and cannot be assigned;
 # a synthetic kitchen's order sees synthetic riders only. Run as the database owner (the functions are service_role only).
-SIMR, SIMK, SIMO = "00000000-0000-4000-8000-00000000005a", "00000000-0000-4000-8000-0000000001a5", "00000000-0000-4000-8000-0000000002e5"
+SIMR2 = "00000000-0000-4000-8000-00000000005b"
+SIMR, SIMK, SIMO, SIMD = "00000000-0000-4000-8000-00000000005a", "00000000-0000-4000-8000-0000000001a5", "00000000-0000-4000-8000-0000000002e5", "00000000-0000-4000-8000-0000000003a5"
 SIM = f"""
 insert into riders (user_id, name, online, lat, lng, synthetic) values ('{SIMR}', 'Sim Rider', true, 28.55, 77.20, true);
 insert into kitchens (id, name, pin_codes, open, active, lat, lng, synthetic) values ('{SIMK}', 'Sim Rasoi', '{{900001}}', true, true, 28.55, 77.20, true);
@@ -341,9 +342,26 @@ do $$ begin begin perform assign_rider('{O['prep']}', '{SIMR}'); create temp tab
 create temp table dm2 as select (select jsonb_agg(r ->> 'id') from jsonb_array_elements(dispatch_candidates('{SIMO}') -> 'riders') r) = '["{SIMR}"]'::jsonb as v;
 do $$ begin perform assign_rider('{SIMO}', '{SIMR}'); end $$;
 create temp table dm3 as select (select rider_id from orders where id = '{SIMO}') = '{SIMR}' as v;
+insert into menu_items (id, kitchen_id, name, price_paise, category, veg, sort, available, synthetic) values ('{SIMD}', '{SIMK}', 'sim dish', 1000, 'main', true, 1, true, true);
+create temp table dm4 as select (sim_tick('{{"kitchen_flip_pct":100}}') ->> 'skipped') = 'sim_disabled' and (select lat from riders where user_id = '{SIMR}') = 28.55 and (select open from kitchens where id = '{SIMK}') as v;
+do $$ begin perform sim_enable('{{"enabled":true}}'); end $$;
+create temp table dm_t as select sim_tick('{{"kitchen_flip_pct":100,"dish_flip_pct":100}}') as t;
+create temp table dm5 as select ((t ->> 'riders_moved')::int = 1 and (t ->> 'kitchens_flipped')::int = 1 and (t ->> 'dishes_flipped')::int = 1) as v from dm_t;
+create temp table dm6 as select (select round(distance_m(28.55, 77.20, lat, lng)) between 100 and 300 and updated_at > now() - interval '5 seconds' from riders where user_id = '{SIMR}') as v;
+create temp table dm7 as select (select lat = 28.90 and lng = 77.60 from riders where user_id = '{U['rider2']}') and (select open from kitchens where id = '{K1}') and (select available from menu_items where id = '{DISH}') as v;
+create temp table dm8 as select (select not open from kitchens where id = '{SIMK}') and (select not available from menu_items where id = '{SIMD}') as v;
+insert into riders (user_id, name, online, lat, lng, synthetic) values ('{SIMR2}', 'Far Sim Rider', true, 28.58, 77.20, true);   -- 3.3 km north of Sim Rasoi
+create temp table dm_t2 as select sim_tick('{{"kitchen_flip_pct":0,"dish_flip_pct":0}}') as t;
+create temp table dm9 as select (select round(distance_m(lat, lng, 28.55, 77.20)) between 3000 and 3250 from riders where user_id = '{SIMR2}') as v;
+do $$ begin perform sim_enable('{{"enabled":false}}'); end $$;
+create temp table dm10 as select (select (value ->> 'enabled')::boolean from params where session_id = 'global' and key = 'sim_enabled' order by version desc limit 1) is false and (sim_tick() ->> 'skipped') = 'sim_disabled' as v;
 """
 SIM_NAMES = ["H5: a synthetic online rider is no candidate for a real kitchen's order", "H5: assign_rider refuses a synthetic rider on a real order (rider_not_available)",
-             "H5: a synthetic kitchen's order sees synthetic riders only", "H5: a synthetic rider takes a synthetic order"]
+             "H5: a synthetic kitchen's order sees synthetic riders only", "H5: a synthetic rider takes a synthetic order",
+             "H6: sim_tick does nothing while sim_enabled is off", "H6: an enabled tick moves one rider, flips one kitchen and one dish (100%)",
+             "H6: the synthetic rider moved 100 to 300 m and was stamped", "H6: the real rider, kitchen and dish did not change",
+             "H6: the synthetic kitchen and dish flipped", "H6: a rider more than 1 km from every synthetic kitchen walks toward the nearest one",
+             "H6: sim_enable off writes a new params version and the tick skips again"]
 
 
 def run(ref: str, query: str):
