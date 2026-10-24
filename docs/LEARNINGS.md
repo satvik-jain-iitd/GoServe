@@ -188,3 +188,5 @@ short. Say what happened and what to do next time.
 - Lighthouse on a laptop with a load average near 20 gave scores from 29 to 99 for the same build. Check `uptime` and run twice before you trust a score.
 - A web font that loads after the first paint moved the hero and gave a layout shift of 0.26. Self-hosted Latin subsets with preload took it to 0.
 - Never run `git checkout -- .` to "check" state. It discards all uncommitted work.
+- In one SQL statement the subqueries see the data as it was at the start, even after a function in the same statement wrote rows. A proof check must call the function in one statement and read in the next.
+- The zip the reviewer sends may sit in Downloads and never get unpacked. Look there before you say a file is missing.

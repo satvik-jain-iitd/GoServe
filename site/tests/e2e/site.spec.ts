@@ -88,7 +88,7 @@ test.describe("pre-registration form", () => {
     await page.getByRole("button", { name: /join the list/i }).click();
 
     await expect(page.locator("#preregister-status")).toContainText(/thank you/i);
-    expect(body).toMatchObject({ name: "Satvik Jain", email: "satvik@example.com", city: "Delhi 110024", role: "investor" });   // the webhook keeps only today's fields, so the pin rides in city
+    expect(body).toMatchObject({ name: "Satvik Jain", email: "satvik@example.com", city: "Delhi 110024", pin: "110024", role: "investor" });   // the live webhook keeps only the old fields until it is redeployed (F133), so the pin also rides in city
   });
 });
 

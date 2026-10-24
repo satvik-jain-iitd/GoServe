@@ -1,7 +1,9 @@
 // The customer flow in one place: menu, cart, bill, placed (story #48). No router yet: four steps in state.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MAX_QTY, addDish, cartLines, cartTotal, changeQty, toOrderItems, type Cart } from "./lib/cart";
-import { kitchenOrders, mergeOrder, riderOrders, type Order, type RiderAction } from "./lib/kitchen";
+import { kitchenOrders, mergeOrder, riderOrders, shortId, type Order, type RiderAction } from "./lib/kitchen";
+import { clientPlatform } from "./lib/platform";
+import { riderRefused, savePlatform, tapCall } from "./lib/signals";
 import { useLiveOrders } from "./lib/useLiveOrders";
 import { loadMenu, MENU_KEY, type Dish } from "./lib/menu";
 import { fetchKitchens, forgetArea, loadPin, resolveArea, savePin, type Area } from "./lib/area";
@@ -256,14 +258,20 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // Returns null when it worked, or the error code. The offline demo changes the local copy only and sends nothing.
   async function act(order: Order, action: { kind: "status"; to: string } | RiderAction, actor: "kitchen" | "rider"): Promise<{ code: string; message: string } | null> {
     if (demo) {
-      setOrders((cur) => mergeOrder(cur, { ...order, status: action.kind === "status" ? action.to : order.status, updated_at: new Date().toISOString() }));
+      setOrders((cur) => mergeOrder(cur, { ...order, status: action.kind === "status" ? action.to : action.kind === "refused" ? "cancelled" : order.status, updated_at: new Date().toISOString() }));
       if (action.kind === "event") setArrived((cur) => new Set(cur).add(order.id));
       return null;
     }
     setBusyId(order.id);
     live.setError(null);
-    pushTrail(`${actor}: ${action.kind === "status" ? action.to : action.event}`);
+    pushTrail(`${actor}: ${action.kind === "status" ? action.to : action.kind === "refused" ? "not delivered" : action.event}`);
     try {
+      if (action.kind === "refused") {   // story H14: the customer refused or was not there; the database ends the order
+        if (!window.confirm(`Mark order ${shortId(order.id)} as not delivered? The customer refused it or was not there.`)) return null;
+        if (!(await riderRefused(getClient(), order.id))) throw new Error("Could not mark it. Try again.");
+        setOrders((cur) => mergeOrder(cur, { ...order, status: "cancelled", updated_at: new Date().toISOString() }));
+        return null;
+      }
       const deps = { sessionId: order.session_id, orderId: order.id, actor };
       const { order: saved } = action.kind === "status" ? await changeStatus({ ...deps, to: action.to }, api()) : await addEvent({ ...deps, event: action.event }, api());
       setOrders((cur) => mergeOrder(cur, { ...order, status: saved.status, updated_at: saved.updated_at }));
@@ -415,6 +423,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         api(),
       );
       setPlaced(order);
+      if (!demo) void savePlatform(getClient(), order.id, clientPlatform(navigator.userAgent));   // story H14: the iPhone share of orders
       setConfirmCfg(confirm);
       setPlacedAt(new Date().toISOString());
       setAsking(false);
@@ -476,7 +485,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
           <PlacedScreen order={placed} status={tracked?.status ?? placed.status} paidBy={tracked?.paid_by ?? null}
             confirmedAt={tracked && tracked.status === "delivered" ? tracked.updated_at : null}
             asking={asking} busy={confirming} error={confirmError} reminder={reminder}
-            onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} onAgain={() => { setPlaced(null); setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} />
+            onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} onAgain={() => { setPlaced(null); setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} onCall={() => void tapCall(getClient(), placed.id)} />
         )}
     </>
   );
