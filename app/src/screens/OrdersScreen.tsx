@@ -6,9 +6,12 @@ import { Skeleton, TabBar } from "../ui";
 
 const TAG: Record<string, string> = { placed: "placed", accepted: "placed", preparing: "", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "error" };
 const hhmm = (d: Date) => d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
-const when = (iso: string) => {
+const when = (iso: string, now = new Date()) => {
   const d = new Date(iso);
-  return d.toDateString() === new Date().toDateString() ? `today ${hhmm(d)}` : `${d.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${hhmm(d)}`;
+  const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+  if (d.toDateString() === now.toDateString()) return `today ${hhmm(d)}`;
+  if (d.toDateString() === yesterday.toDateString()) return `yesterday ${hhmm(d)}`;   // a 23:50 order seen at 00:10
+  return `${d.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${hhmm(d)}`;
 };
 
 type Props = { orders: Order[]; loading: boolean; kitchenName: string; onOpen: (o: Order) => void; onMenu: () => void; onYou: () => void };
