@@ -31,10 +31,10 @@ export const mergeOrder = (orders: Order[], incoming: Order): Order[] => {
 };
 
 // ---- Story #50: the rider's buttons and the customer's progress list ----
-export type RiderAction = { kind: "status"; to: string; label: string } | { kind: "event"; event: "order.arriving"; label: string } | { kind: "refused"; label: string };
+export type RiderAction = { kind: "status"; to: string; label: string } | { kind: "event"; event: "order.arriving"; label: string };
 export const riderActions = (status: string): RiderAction[] => {
   if (status === "ready") return [{ kind: "status", to: "out_for_delivery", label: "Pick up" }];
-  if (status === "out_for_delivery") return [{ kind: "event", event: "order.arriving", label: "Arriving" }, { kind: "status", to: "delivered", label: "Delivered" }, { kind: "refused", label: "Not delivered" }];
+  if (status === "out_for_delivery") return [{ kind: "event", event: "order.arriving", label: "Arriving" }, { kind: "status", to: "delivered", label: "Delivered" }];
   return [];
 };
 export const riderOrders = (orders: Order[]): Order[] => orders.filter((o) => o.status === "ready" || o.status === "out_for_delivery");

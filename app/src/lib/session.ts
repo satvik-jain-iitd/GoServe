@@ -52,8 +52,8 @@ export const scopeFor = (kitchenId: string | null, session: string): Scope =>
 // A rider (story A5) reads the orders assigned to them, wherever the kitchen is.
 export const riderScope = (userId: string): Scope => ({ column: "rider_id", value: userId });
 
-// An admin can read every staff row (RLS), so the query must ask for this user's row. A failed read counts as "not staff". One kitchen per user (migration 0023).
-export async function myKitchen(client: Pick<SupabaseClient, "from">, userId: string): Promise<string | null> {
-  const { data, error } = await client.from("kitchen_staff").select("kitchen_id").eq("user_id", userId).limit(1);
+// The user can read only their own staff row (RLS), so no filter is needed. A failed read counts as "not staff".
+export async function myKitchen(client: Pick<SupabaseClient, "from">): Promise<string | null> {
+  const { data, error } = await client.from("kitchen_staff").select("kitchen_id").limit(1);
   return error ? null : ((data?.[0] as { kitchen_id?: string } | undefined)?.kitchen_id ?? null);
 }

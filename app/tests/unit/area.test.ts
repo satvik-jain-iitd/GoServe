@@ -24,7 +24,7 @@ describe("chooseKitchen", () => {
     expect(chooseKitchen([k("a", "A", ["110016"])], "110099")).toEqual({ kind: "none" });
   });
   it("says closed, with the name, when every kitchen that serves it is closed or inactive", () => {
-    expect(chooseKitchen([k("a", "A", ["110016"], { open: false }), k("b", "B", ["110016"], { active: false })], "110016")).toEqual({ kind: "closed", id: "a", name: "A", opens_at: null });
+    expect(chooseKitchen([k("a", "A", ["110016"], { open: false }), k("b", "B", ["110016"], { active: false })], "110016")).toEqual({ kind: "closed", name: "A", opens_at: null });
   });
   it("with several open kitchens takes the nearest to a place, else the first by name", () => {
     const list = [k("far", "Zed", ["110016"], { lat: 28.9, lng: 77.5 }), k("near", "Beta", ["110016"], { lat: 28.55, lng: 77.2 }), k("noco", "Alpha", ["110016"])];
@@ -68,6 +68,6 @@ describe("openingText (story A6)", () => {
     expect(openingText("Rohini Kitchen", null)).toBe("Rohini Kitchen is closed right now. Please try again later.");
   });
   it("chooseKitchen carries the opening time of a closed kitchen", () => {
-    expect(chooseKitchen([k("a", "A", ["110016"], { open: false, opens_at: "10:00:00" })], "110016")).toEqual({ kind: "closed", id: "a", name: "A", opens_at: "10:00:00" });
+    expect(chooseKitchen([k("a", "A", ["110016"], { open: false, opens_at: "10:00:00" })], "110016")).toEqual({ kind: "closed", name: "A", opens_at: "10:00:00" });
   });
 });

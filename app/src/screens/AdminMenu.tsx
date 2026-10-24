@@ -1,7 +1,6 @@
 // The Menu tab of the admin app (story A3): dishes of one kitchen, with a photo from the phone.
 import { useCallback, useEffect, useState } from "react";
 import { addDish, deleteDish, listDishes, photoProblem, rupeesToPaise, setDish, type DishRow, type KitchenRow } from "../lib/admin";
-import { dishProblem } from "../lib/validate";
 import { formatRupees } from "../lib/money";
 import { getClient } from "../lib/supabase";
 import { Button } from "../ui";
@@ -27,8 +26,8 @@ export function AdminMenu({ kitchens, onError }: { kitchens: KitchenRow[]; onErr
   const submit = async () => {
     const paise = rupeesToPaise(form.price);
     if (!kitchen) return onError("Pick a kitchen first.");
-    const rule = dishProblem(form);
-    if (rule || paise === null) return onError(rule ?? "Type the price in rupees, for example 220 or 220.50.");
+    if (!form.name.trim()) return onError("Give the dish a name.");
+    if (paise === null) return onError("Type the price in rupees, for example 220 or 220.50.");
     const problem = photo ? photoProblem(photo) : null;
     if (problem) return onError(problem);
     const failed = await addDish(getClient(), { kitchenId: kitchen, name: form.name.trim(), paise, veg: form.veg, category: form.category.trim(), photo });

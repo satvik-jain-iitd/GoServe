@@ -24,8 +24,6 @@ test("S3 adding a kitchen sends its name and pin codes; a bad pin code is refuse
   net.state.admin = true;
   await page.goto("/admin/");
   await page.getByLabel("Kitchen name").fill("Lajpat Nagar Kitchen");
-  await page.getByLabel("Address").fill("12 Lajpat Nagar, Delhi");
-  await page.getByLabel("Phone").fill("9876543210");
   await page.getByLabel("Pin codes").fill("1100");
   await page.getByRole("button", { name: "Add kitchen" }).click();
   await expect(page.getByRole("alert")).toContainText("1100");

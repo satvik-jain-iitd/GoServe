@@ -84,9 +84,3 @@ select { font: inherit; padding: var(--gs-space-3); border: 1px solid var(--md-o
 .legal { padding: var(--gs-space-4); padding-bottom: var(--gs-space-6); font-size: var(--gs-text-sm); }
 .legal p { margin: var(--gs-space-1) 0; }
 .legal a { color: inherit; }
-
-/* The Ink customer screens fill the phone: header, scrolling body, tabs (story H10b, #193). The chrome (sign-in, feedback, legal) sits below the fold. */
-.frame { display: flex; flex-direction: column; height: 100dvh; max-width: 28rem; margin: 0 auto; box-sizing: border-box; background: var(--md-background); }
-.below { max-width: 28rem; margin: 0 auto; padding: var(--gs-space-4); }
-.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.below .feedback-btn { position: static; box-shadow: none; }   /* on the Ink screens Feedback waits below the phone frame until You (H10d) holds it */

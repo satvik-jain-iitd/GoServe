@@ -89,37 +89,3 @@ export function Skeleton({ lines = 3 }: { lines?: number }) {
     </div>
   );
 }
-
-// The veg / non-veg mark of the Ink boards (story H10b, #193). Colour comes from the tokens.
-export function VegMark({ veg, size = 12 }: { veg: boolean; size?: number }) {
-  const c = veg ? "var(--gs-veg)" : "var(--gs-nonveg)";
-  return (
-    <svg className="ui-mark" role="img" aria-label={veg ? "Veg" : "Non-veg"} width={size} height={size} viewBox="0 0 12 12">
-      <rect x="0.75" y="0.75" width="10.5" height="10.5" fill="none" stroke={c} strokeWidth="1.5" />
-      {veg ? <circle cx="6" cy="6" r="3" fill={c} /> : <path d="M6 2.5 9.5 9h-7z" fill={c} />}
-    </svg>
-  );
-}
-
-const TAB_ICONS = {
-  menu: <><path d="M5 3h14v18l-2-1.5L15 21l-2-1.5L11 21l-2-1.5L7 21l-2-1.5z" /><path d="M8 8h8M8 12h8M8 16h5" /></>,
-  orders: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
-  you: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" /></>,
-};
-// Bottom tabs of the customer app. The aria-labels keep the names the tests already use ("My orders", "Account").
-export function TabBar({ current, onMenu, onOrders, onYou }: { current: "menu" | "orders" | "you"; onMenu: () => void; onOrders: () => void; onYou: () => void }) {
-  const tabs = [
-    { key: "menu" as const, label: "Menu", name: "Menu", go: onMenu },
-    { key: "orders" as const, label: "Orders", name: "My orders", go: onOrders },
-    { key: "you" as const, label: "You", name: "You (Account)", go: onYou },
-  ];
-  return (
-    <nav className="ui-tabs" aria-label="Main">
-      {tabs.map((t) => (
-        <button key={t.key} type="button" className={cx("ui-tab", current === t.key && "on")} aria-label={t.name} aria-current={current === t.key ? "page" : undefined} onClick={t.go}>
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{TAB_ICONS[t.key]}</svg>{t.label}
-        </button>
-      ))}
-    </nav>
-  );
-}

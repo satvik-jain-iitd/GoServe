@@ -12,6 +12,14 @@ test("S1 a staff user on /kitchen/ reads the orders of the kitchen, not of one s
   expect(net.calls.orderReads.some((u) => u.includes("session_id=eq."))).toBe(false);
 });
 
+test("S2 a user who is not staff keeps the session view", async ({ page, context }) => {
+  const net = await setup(context, page, []);
+  await page.goto("/kitchen/");
+  await expect(page.getByText("No orders yet.")).toBeVisible();
+  expect(net.calls.orderReads.some((u) => u.includes("session_id=eq."))).toBe(true);
+  expect(net.calls.orderReads.some((u) => u.includes("kitchen_id=eq."))).toBe(false);
+});
+
 test("S3 the customer app never switches to the kitchen view, even for a staff user", async ({ page, context }) => {
   const net = await setup(context, page, []);
   net.state.kitchen = "k-1";

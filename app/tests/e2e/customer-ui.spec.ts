@@ -8,25 +8,24 @@ const MENU = [
   { id: "d3", name: "Gulab Jamun", price_paise: 9000, image_url: null, image_credit: null, veg: true, category: "Sweet" },
 ];
 
-test("S1 the menu shows the kitchen with its closing time, sections, a veg toggle and a search box in the Filter sheet", async ({ page, context }) => {
+test("S1 the menu shows the kitchen with its closing time, category chips, a veg toggle and a search box", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.menu = MENU;
   await page.goto("/customer/");
-  await expect(page.getByRole("heading", { name: /Hauz Khas Kitchen/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Hauz Khas Kitchen" })).toBeVisible();
   await expect(page.getByText("Open till 10:00 pm")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Sweet" })).toBeVisible();
+  await page.getByRole("button", { name: "Sweet", exact: true }).click();
+  await expect(page.getByText("Gulab Jamun")).toBeVisible();
+  await expect(page.getByText("Dal Makhani")).toHaveCount(0);
+  await page.getByRole("button", { name: "All", exact: true }).click();
   await page.getByRole("button", { name: "Veg only" }).click();
   await expect(page.getByText("Butter Chicken")).toHaveCount(0);
   await expect(page.getByText("Dal Makhani")).toBeVisible();
   await page.getByRole("button", { name: "Veg only" }).click();
-  await page.getByRole("button", { name: "Filter" }).click();
   await page.getByLabel("Search dishes").fill("butter");
-  await page.getByRole("button", { name: "Close", exact: true }).click();
   await expect(page.getByText("Butter Chicken")).toBeVisible();
   await expect(page.getByText("Dal Makhani")).toHaveCount(0);
-  await page.getByRole("button", { name: "Filter" }).click();
   await page.getByLabel("Search dishes").fill("zzz");
-  await page.getByRole("button", { name: "Close", exact: true }).click();
   await expect(page.getByText("Nothing matches")).toBeVisible();
 });
 

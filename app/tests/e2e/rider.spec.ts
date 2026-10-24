@@ -16,7 +16,7 @@ test("S1 rider steps: pick up, arriving, delivered each send their step as the r
   await expect(page.getByText("On the way", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Arriving 0f0f0f0f" }).click();
   await expect(page.getByRole("button", { name: "Arriving 0f0f0f0f" })).toBeDisabled();   // done once; the server refuses a repeat
-  await page.getByRole("button", { name: "Delivered 0f0f0f0f", exact: true }).click();
+  await page.getByRole("button", { name: "Delivered 0f0f0f0f" }).click();
   await expect(page.getByText("Order 0f0f0f0f")).toHaveCount(0);   // delivered orders leave the rider list
   expect(net.calls.status.map((c) => c.body)).toEqual([
     { action: "status", session_id: SESSION, order_id: ID, to_status: "out_for_delivery", actor: "rider" },

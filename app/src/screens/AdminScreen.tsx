@@ -1,7 +1,6 @@
 // The founder's screen (story A2): who may use the system, and which kitchens exist. Only an admin sees it; row level security enforces that too.
 import { useCallback, useEffect, useState } from "react";
 import { addKitchen, addPerson, isAdmin, listKitchens, listPeople, parsePins, removePerson, type KitchenRow, type Person, type PersonKind } from "../lib/admin";
-import { kitchenProblem } from "../lib/validate";
 import { ensureSession, getClient } from "../lib/supabase";
 import { AdminMenu } from "./AdminMenu";
 import { AdminNumbers } from "./AdminNumbers";
@@ -39,9 +38,9 @@ export function AdminScreen() {
   if (!allowed) return <section><h2>Admin</h2><p role="status">Not allowed. Sign in with an admin Google account.</p>{error && <p role="alert" className="error">{error}</p>}</section>;
 
   const submitKitchen = async () => {
-    const problem = kitchenProblem(form);
-    if (problem) return setError(problem);
-    const { pins } = parsePins(form.pins);
+    const { pins, bad } = parsePins(form.pins);
+    if (!form.name.trim()) return setError("Give the kitchen a name.");
+    if (bad.length) return setError(`Pin codes are six digits. Check: ${bad.join(", ")}`);
     const failed = await addKitchen(getClient(), { name: form.name.trim(), address: form.address.trim(), phone: form.phone.trim(), pins, opensAt: form.opensAt, closesAt: form.closesAt });
     setError(failed);
     if (!failed) { setForm({ name: "", address: "", phone: "", pins: "", opensAt: "", closesAt: "" }); await load(); }
