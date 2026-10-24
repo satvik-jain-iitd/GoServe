@@ -151,3 +151,19 @@ describe("dayOf and deliveredToday across closing time", () => {
     expect(deliveredToday([o], new Date(t(24, 0, 10)))).toHaveLength(0);
   });
 });
+
+// Story #230: a ticket the cook had on Cooking that turns cancelled stays a minute with a Cancelled stamp.
+import { justCancelled } from "../../src/lib/kitchen";
+describe("justCancelled", () => {
+  const at = (s: number) => new Date(2026, 9, 24, 20, 0, s);
+  const o = (status: string, updated: Date, id = "a"): Order => ({ id, session_id: "s", status, address: "", items: [], total_paise: 1, created_at: updated.toISOString(), updated_at: updated.toISOString() });
+  it("keeps a seen ticket that was cancelled under a minute ago, drops it after", () => {
+    const seen = new Set(["a"]);
+    expect(justCancelled([o("cancelled", at(5))], seen, at(30)).map((x) => x.id)).toEqual(["a"]);
+    expect(justCancelled([o("cancelled", at(5))], seen, at(66))).toEqual([]);
+  });
+  it("ignores a cancelled order the cook never had on Cooking, and orders that are not cancelled", () => {
+    expect(justCancelled([o("cancelled", at(5), "b")], new Set(["a"]), at(30))).toEqual([]);
+    expect(justCancelled([o("preparing", at(5))], new Set(["a"]), at(30))).toEqual([]);
+  });
+});
