@@ -43,6 +43,7 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana �
 | 26 | [#220](pr-220-orders-you.md) | feat(app): Ink v3 Your orders and You screens (#193) | OPEN, APPROVE 5638912878 on `bf73554`, 20 questions open | H10d closes the customer screens; prod migrations 0022 to 0026 applied |
 | 27 | [#222](pr-222-rider-ink.md) | feat(app): Ink v3 rider app, boards R1 to R9 (#194) | OPEN, APPROVE 5639179226 on `ab5c8e4`, 17 questions open, Guard red until the reword | H11a, layer 1 of the #194 stack |
 | 28 | [#223](pr-223-kitchen-ink.md) | feat(app): Ink v3 kitchen app, boards K1 to K6 (#194) | OPEN, APPROVE 5639174623 on `be32bc1`, 15 questions open | H11b, layer 2, merged into the #222 branch |
+| 29 | [#226, #227, #228](pr-226-228-h11-fixes-day.md) | H11 review fixes · no Google on the customer app (#224) · Day default (#225) | OPEN, APPROVE 5639339438 / 5639342341 / 5639340066, 11 questions open | three small layers, one stack; #222/#223 threads all resolved |
 
 ## Journals
 - [concepts.md](concepts.md) — naye technical words, plain Hindi mein.

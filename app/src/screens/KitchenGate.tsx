@@ -6,26 +6,27 @@ import { ensureSession, getClient } from "../lib/supabase";
 import { SignIn } from "./SignIn";
 import { Skeleton } from "../ui";
 
-export type KitchenGateState = { kitchenId: string; name: string; open: boolean | null; closesAt: string | null; flipOpen: () => Promise<void>; signOut: () => void };   // open null: the row could not be read
-type Row = { name: string; open: boolean | null; closes_at: string | null };
+export type KitchenGateState = { kitchenId: string; name: string; open: boolean | null; opensAt: string | null; closesAt: string | null; flipOpen: () => Promise<void>; retry: () => void; signOut: () => void };   // open null: the row could not be read
+type Row = { name: string; open: boolean | null; opens_at: string | null; closes_at: string | null };
 
 export function KitchenGate({ children }: { children: (gate: KitchenGateState) => ReactNode }) {
   const [kitchenId, setKitchenId] = useState<string | null | undefined>(undefined);   // undefined: still loading
   const [row, setRow] = useState<Row | null>(null);
   const [anonymous, setAnonymous] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [tries, setTries] = useState(0);
   useEffect(() => {
     ensureSession().then(async (id) => {
       try { const { data } = await getClient().auth.getUser(); setAnonymous(data.user?.is_anonymous !== false); } catch { /* unknown: treat as not signed in */ }
       const k = await myKitchen(getClient(), id);
       if (k) {
-        const { data, error } = await getClient().from("kitchens").select("name, open, closes_at").eq("id", k).limit(1);
+        const { data, error } = await getClient().from("kitchens").select("name, open, opens_at, closes_at").eq("id", k).limit(1);
         const r = data?.[0] as Partial<Row> | undefined;
-        setRow({ name: r?.name ?? "Your kitchen", open: error || !r ? null : r.open !== false, closes_at: r?.closes_at ?? null });   // unknown stays unknown: the switch is disabled
+        setRow({ name: r?.name ?? "Your kitchen", open: error || !r ? null : r.open !== false, opens_at: r?.opens_at ?? null, closes_at: r?.closes_at ?? null });   // unknown stays unknown: the switch is disabled
       }
       setKitchenId(k);
     }, () => setKitchenId(null)).catch(() => { setError("Could not load your kitchen. Check your connection."); setKitchenId(null); });
-  }, []);
+  }, [tries]);
   const signOut = async () => { try { await getClient().auth.signOut(); } catch { /* offline */ } window.location.reload(); };
   if (kitchenId === undefined) return <><header className="ui-head"><h1>New</h1></header><div className="ui-pad"><Skeleton lines={3} /></div></>;
   if (!kitchenId || !row) return (   // K1 when there is no Google sign-in yet, K2 when the account is not on the staff list
@@ -68,7 +69,7 @@ export function KitchenGate({ children }: { children: (gate: KitchenGateState) =
   return (
     <>
       {error && <p role="alert" className="ui-note error">{error}</p>}
-      {children({ kitchenId, name: row.name, open: row.open, closesAt: hhmmOf(row.closes_at), flipOpen, signOut })}
+      {children({ kitchenId, name: row.name, open: row.open, opensAt: hhmmOf(row.opens_at), closesAt: hhmmOf(row.closes_at), flipOpen, retry: () => setTries((n) => n + 1), signOut })}
     </>
   );
 }

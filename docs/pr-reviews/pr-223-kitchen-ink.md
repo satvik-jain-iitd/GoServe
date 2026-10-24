@@ -3,7 +3,7 @@
 - **Branch:** feat/194-kitchen-ui → feat/194-rider-kitchen-ui (layer 2 on #222)
 - **Author:** klickbae8yt-star
 - **Story / issue:** #194 "H11 UI rollout: rider and kitchen" (epic E18, #182). Layer 2 of 2.
-- **Status:** OPEN, approved (review 5639174623, APPROVE). Merge right after #222. [VERIFIED]
+- **Status:** MERGED, approved (review 5639174623, APPROVE). Merge right after #222. [VERIFIED]
 - **Files:** 38 (14 png) · **Lines:** +471 / -148 [VERIFIED]
 - **Reviewer:** satvik-jain-iitd · review 5639174623 (APPROVE) [VERIFIED]
 - **Head:** be32bc1 [VERIFIED]
@@ -206,77 +206,92 @@ Har comment ek teaching question hai. Status: sab open.
 <!-- gh-comment-id: 4367917074 -->
 - **File:** `app/src/lib/kitchen.ts` · **Line:** 29 · **Category:** Understanding
 - **Question:** newTickets sirf placed; accepted + preparing Cooking; ready alag; cancelled kahin nahi (WITH_RIDER, pehle jaisa). Cook ne Start kar diya aur customer ne cancel kiya to ticket chup-chaap gayab: cook ko batana nahi chahiye?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Agreed. Today a cancel after Accept is the admin's (the customer cancels only at Placed), and the ticket just leaves. F148 (in #226): a "Cancelled" stamp on the ticket for a minute, or a one-line notice, before it goes.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367917077 -->
 - **File:** `app/src/lib/rider.ts` · **Line:** 31 · **Category:** Alternatives
 - **Question:** `import type { Done }` file ke beech me, code ke baad. Lint nahi rokta? Upar le jao, ek line.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 1d0d196 (PR #226): the `import type { Done }` sits at the top of lib/rider.ts.
+- **Status:** fixed 1d0d196 (#226), resolved 24 Oct
 
 <!-- gh-comment-id: 4367917078 -->
 - **File:** `app/src/screens/KitchenGate.tsx` · **Line:** 24 · **Category:** TOP · Risk
 - **Question:** kitchens row na padh paye to open = true default. Switch "Open" dikhayega jabki asli state pata nahi; cook sochega sab theek hai. Unknown ko unknown dikhao (switch disabled + "could not read the kitchen")?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 1d0d196 (PR #226): `open` is null when the row cannot be read; the switch is disabled with "Could not read the kitchen. Reload to try again." and the header says Unknown. kitchen-ink S8 covers it.
+- **Status:** fixed 1d0d196 (#226), resolved 24 Oct
 
 <!-- gh-comment-id: 4367917082 -->
 - **File:** `app/src/screens/KitchenGate.tsx` · **Line:** 61 · **Category:** Understanding
 - **Question:** flipOpen rpc ke baad local row badalta hai. Customer side "closed" realtime se dekhta hai ya agle menu read par? Copy "the moment you switch off" kehti hai: kaunsa test yeh proof deta hai?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Next read, not realtime: kitchens has no live channel; the customer sees "closed" on the next pin check or menu load. The copy now says "customers see closed on their next look" (1d0d196 (PR #226)). The customer side is area.spec (closed board).
+- **Status:** fixed 1d0d196 (#226), resolved 24 Oct
 
 <!-- gh-comment-id: 4367917086 -->
 - **File:** `app/src/screens/KitchenScreen.tsx` · **Line:** 99 · **Category:** TOP · Assumptions
 - **Question:** "New tickets ring · accept within 2 min": ring hai kya? Is diff me audio nahi, push hai (enablePush). Copy ek vaada hai jo screen nahi nibhati. Ring kis story me, ya copy badlo?
-- **Status:** open
+- **Reply (klickbae8yt-star):** No ring in this diff; the kitchen's alert is push where the phone allows it. Copy changed to "New tickets land here · accept within 2 min" (1d0d196 (PR #226)). A ring is a story if the owner wants one.
+- **Status:** fixed 1d0d196 (#226), resolved 24 Oct
 
 <!-- gh-comment-id: 4367917089 -->
 - **File:** `app/src/screens/KitchenScreen.tsx` · **Line:** 30 · **Category:** Risk
 - **Question:** Accept list se → ticket New se gayab, tab New hi rehta hai (cook khud Cooking khole). K4 se Accept → Cooking tab. Ek tap, do behaviour. Board kya kehta hai? Dono me Cooking par jaana saaf hota?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Kept on purpose: three new tickets take three Accept taps on New; a jump to Cooking after each would cost a tap back. From K4 the ticket is full screen and the next step lives on Cooking, so it lands there. The board links K3 rows to K4 and K4's Accept to K-Cooking.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367917092 -->
 - **File:** `app/src/screens/KitchenScreen.tsx` · **Line:** 59 · **Category:** Testability
 - **Question:** aria-label "Back to new tickets" Cooking se khole ticket par bhi; neeche ka button sahi bolta hai ("Back to cooking"). Label ko bhi tab se baandho.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 1d0d196 (PR #226): the arrow says "Back to cooking tickets" or "Back to new tickets" by the tab, the ghost button "Back to cooking" or "Back to new". kitchen-ink S9.
+- **Status:** fixed 1d0d196 (#226), resolved 24 Oct
 
 <!-- gh-comment-id: 4367917094 -->
 - **File:** `app/src/screens/KitchenScreen.tsx` · **Line:** 24 · **Category:** Impact
 - **Question:** onSlips = aaj ke sab delivered ka total; rider ka "Cash in hand" sirf apna cash. Do screens, do numbers. Raat ko hisaab milane ka flow (kitchen vs rider) kis story me? Ek line F me likho.
-- **Status:** open
+- **Reply (klickbae8yt-star):** F147 (in #226): the hand-over flow, kitchen confirms the rider's cash at close, as a pilot-ops story.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367917097 -->
 - **File:** `app/src/screens/KitchenScreen.tsx` · **Line:** 114 · **Category:** Future
 - **Question:** "Till 22:00 · customers see closed the moment you switch off": 22:01 par switch ON ho to customer ko closed dikhta hai (0022 rule) ya sirf text? Cook ko "auto-closed" batana chahiye?
-- **Status:** open
+- **Reply (klickbae8yt-star):** The customer side closes by hours in area.ts whatever the switch says. The sub line now says so after closing time: "Past 22:00 · customers see closed till opening time" (1d0d196 (PR #226)).
+- **Status:** fixed 1d0d196 (#226), resolved 24 Oct
 
 <!-- gh-comment-id: 4367917101 -->
 - **File:** `app/src/screens/KitchenTools.tsx` · **Line:** 29 · **Category:** TOP · Risk
 - **Question:** VegMark veg = d.veg !== false: listDishes ke select me `veg` nahi hai to sab dish hari dikhegi (non-veg bhi). Select me veg hai? Ek unit test non-veg ka?
-- **Status:** open
+- **Reply (klickbae8yt-star):** `listDishes` selects `veg` (admin.ts line 75), so a non-veg dish gets the red mark; the K-YourKitchen shot shows Chicken Curry red. VegMark itself has its unit test from H10b.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367917104 -->
 - **File:** `app/src/screens/KitchenTools.tsx` · **Line:** 20 · **Category:** Purpose
 - **Question:** Category groups ka order = jis order me dishes aaye. Customer menu ka category order yahi hai? Cook aur customer alag order dekhein to "Thali" dhoondhna mushkil.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Same order on both: the dishes come sorted by `sort` then `name`, the kitchen groups them first-seen, and the customer's `categoriesOf` keeps first-seen order on the same list.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367917105 -->
 - **File:** `app/src/ui/ui.css` · **Line:** 318 · **Category:** Alternatives
 - **Question:** 18 px lines aur 56 px Accept (F146.1, D3 wet hands): haan, D3 board se jeet-ta hai. Token banao (`--gs-text-kitchen`, `--gs-tap-kitchen`) taaki rider ka Picked up bhi wahi le?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 1d0d196 (PR #226): `--gs-text-staff: 18px` in tokens.css drives the ticket lines; taps already use `--gs-tap-big` (the rider's Picked up is the same big class).
+- **Status:** fixed 1d0d196 (#226), resolved 24 Oct
 
 <!-- gh-comment-id: 4367917110 -->
 - **File:** `app/tests/e2e/kitchen-ink.spec.ts` · **Line:** 9 · **Category:** Testability
 - **Question:** S1 badge "1 new" getByLabel. Zero par badge nahi (falsy). S3 quiet state me badge absent assert karo, warna "0 new" kabhi aa jaye to pata nahi chalega.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 1d0d196 (PR #226): S3 asserts no element labelled "... new" in the quiet state.
+- **Status:** fixed 1d0d196 (#226), resolved 24 Oct
 
 <!-- gh-comment-id: 4367917118 -->
 - **File:** `app/tests/e2e/kitchen-ink.spec.ts` · **Line:** 78 · **Category:** Testability
 - **Question:** S7 axe New, Cooking, Kitchen; K4 ticket aur K1/K2 gate bahar. #222 wala hi sawaal: Night me gate (lockup-day) ka contrast kahan check hua?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 1d0d196 (PR #226): S7 scans K3, K4, K3b, K5, K1 and K2 in Day and Night, all clean.
+- **Status:** fixed 1d0d196 (#226), resolved 24 Oct
 
 <!-- gh-comment-id: 4367917125 -->
 - **File:** `docs/follow-ups.md` · **Line:** 152 · **Category:** Future
 - **Question:** F146 chhe deviations, reviewer ka jawab: (1) bada type aur button, haan (D3); (2) note nahi, theek; (3) ready par rider naam nahi: F jab rider assign dikhe; (4) cash line theek; (5) sign out row theek; (6) console bina controls theek. Haan ya kuch alag?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Yes to 1, 2, 4, 5, 6. (3) points at F149: the rider's name on the ready ticket once the order read carries it. Row updated in #226.
+- **Status:** answered, resolved 24 Oct
 
 ## 18. Handoff
 
