@@ -5,19 +5,20 @@ import { ID, SESSION, order, setup } from "./helpers";
 const openRider = async (page: Page) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Rider" }).click();
-  await expect(page.getByRole("heading", { name: "Rider" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Deliver/ })).toBeVisible();   // H11: "Delivery" with a job in hand, "Deliveries" without
 };
 
 test("S1 rider steps: pick up, arriving, delivered each send their step as the rider", async ({ page, context }) => {
   const net = await setup(context, page, [order("ready")]);
   await openRider(page);
-  await expect(page.getByText("Order 0f0f0f0f")).toBeVisible();
+  await expect(page.getByText("No. 0f0f0f0f")).toBeVisible();
   await page.getByRole("button", { name: "Pick up 0f0f0f0f" }).click();
   await expect(page.getByText("On the way", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Arriving 0f0f0f0f" }).click();
   await expect(page.getByRole("button", { name: "Arriving 0f0f0f0f" })).toBeDisabled();   // done once; the server refuses a repeat
   await page.getByRole("button", { name: "Delivered 0f0f0f0f", exact: true }).click();
-  await expect(page.getByText("Order 0f0f0f0f")).toHaveCount(0);   // delivered orders leave the rider list
+  await page.getByRole("button", { name: "Next delivery" }).click();   // H11: the delivered slip stays until the rider lets it go
+  await expect(page.getByText("No. 0f0f0f0f")).toHaveCount(0);   // delivered orders leave the Job tab
   expect(net.calls.status.map((c) => c.body)).toEqual([
     { action: "status", session_id: SESSION, order_id: ID, to_status: "out_for_delivery", actor: "rider" },
     { action: "event", session_id: SESSION, order_id: ID, event: "order.arriving", actor: "rider" },

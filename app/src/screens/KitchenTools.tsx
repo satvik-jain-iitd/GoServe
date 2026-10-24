@@ -1,61 +1,39 @@
-// The kitchen's own controls (story A6): open or close the kitchen, and mark a dish sold out. Shown only to a user listed as this kitchen's staff.
+// The kitchen's dishes on the Kitchen tab of board K5 (story H11, #194; story A6): sold out per dish, grouped by category.
 import { useCallback, useEffect, useState } from "react";
 import { listDishes, setDish, type DishRow } from "../lib/admin";
-import { formatRupees } from "../lib/money";
-import { Button } from "../ui";
-import { myKitchen } from "../lib/session";
-import { ensureSession, getClient } from "../lib/supabase";
+import { getClient } from "../lib/supabase";
+import { VegMark } from "../ui";
 
-export function KitchenTools() {
-  const [kitchen, setKitchen] = useState<{ id: string; open: boolean } | null>(null);
+export function DishList({ kitchenId }: { kitchenId: string }) {
   const [dishes, setDishes] = useState<DishRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const load = useCallback(async () => {
-    try {
-      const uid = await ensureSession();
-      const c = getClient();
-      const id = await myKitchen(c, uid);
-      if (!id) return setKitchen(null);
-      const { data } = await c.from("kitchens").select("open").eq("id", id).limit(1);
-      setKitchen({ id, open: (data?.[0] as { open?: boolean } | undefined)?.open !== false });
-      setDishes(await listDishes(c, id));
-    } catch {
-      setError("Could not load your kitchen controls. Check your connection.");
-    }
-  }, []);
+    try { setDishes(await listDishes(getClient(), kitchenId)); } catch { setError("Could not load the dishes. Check your connection."); }
+  }, [kitchenId]);
   useEffect(() => { void load(); }, [load]);
-  if (!kitchen) return error ? <p role="alert" className="error">{error}</p> : null;
-
-  const flip = async () => {
-    setError(null);
-    const { error: failed } = await getClient().rpc("set_kitchen_open", { p_kitchen: kitchen.id, p_open: !kitchen.open });
-    if (failed) setError("Could not change the kitchen. Try again.");
-    else setKitchen({ ...kitchen, open: !kitchen.open });
-  };
   const stock = async (d: DishRow) => {
     setError(null);
     const failed = await setDish(getClient(), d.id, { available: d.available === false });
     if (failed) setError(failed);
-    else setDishes(await listDishes(getClient(), kitchen.id));
+    else await load();
   };
+  const groups = dishes.reduce<Record<string, DishRow[]>>((g, d) => { const k = d.category || "Dishes"; (g[k] ??= []).push(d); return g; }, {});
   return (
-    <section>
-      <h2>Your kitchen</h2>
-      <p role="status" className="notice">{kitchen.open ? "Kitchen is open" : "Kitchen is closed"}{" "}
-        <Button onClick={() => void flip()}>{kitchen.open ? "Close kitchen" : "Open kitchen"}</Button>
-      </p>
-      {error && <p role="alert" className="error">{error}</p>}
-      <ul className="tickets">
-        {dishes.map((d) => (
-          <li key={d.id} className="ticket">
-            <strong>{d.name}</strong> {d.available === false ? <span className="badge">Sold out</span> : null}
-            <p className="note">{formatRupees(d.price_paise)}</p>
-            <Button variant="ghost" aria-label={d.available === false ? `Put ${d.name} back in stock` : `Mark ${d.name} sold out`} onClick={() => void stock(d)}>
-              {d.available === false ? "Back in stock" : "Sold out"}
-            </Button>
-          </li>
-        ))}
-      </ul>
-    </section>
+    <>
+      {error && <p role="alert" className="ui-note error">{error}</p>}
+      {Object.entries(groups).map(([cat, rows]) => (
+        <section key={cat} className="ui-group" aria-label={cat}>
+          <h2>{cat}</h2>
+          {rows.map((d) => (
+            <div key={d.id} className="ui-row ui-row-static">
+              <span className="ui-dish-name"><VegMark veg={d.veg !== false} />{d.name}{d.available === false && <span className="ui-tag error">Sold out</span>}</span>
+              <button type="button" className="ui-btn ghost small" aria-label={d.available === false ? `Put ${d.name} back in stock` : `Mark ${d.name} sold out`} onClick={() => void stock(d)}>
+                {d.available === false ? "Back in stock" : "Sold out"}
+              </button>
+            </div>
+          ))}
+        </section>
+      ))}
+    </>
   );
 }

@@ -6,8 +6,8 @@ test("S2 the kitchen app shows only the kitchen: no role tabs, no demo tools, it
   const net = await setup(context, page, [order("placed")]);
   net.state.kitchen = "k-1";   // H3: the kitchen app is for kitchen staff
   await page.goto("/kitchen/");
-  await expect(page.getByRole("heading", { name: "Kitchen", exact: true })).toBeVisible();
-  await expect(page.getByText("Order 0f0f0f0f")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "New", exact: true })).toBeVisible();   // H11: the New tab
+  await expect(page.getByText("No. 0f0f0f0f")).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Screen" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Reset demo" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Autopilot" })).toHaveCount(0);
@@ -18,7 +18,7 @@ test("S2 the rider app, the ops app and the customer app each open on their own 
   const net = await setup(context, page, [order("ready")]);
   net.state.admin = true;   // the Ops app is for admins only (story A4)
   await page.goto("/rider/");
-  await expect(page.getByRole("heading", { name: "Rider", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Delivery", exact: true })).toBeVisible();   // H11: the Job tab with a delivery in hand
   await expect(page.getByRole("button", { name: "Pick up 0f0f0f0f" })).toBeVisible();
   await expect(page).toHaveTitle("GoServe Rider");
   await page.goto("/ops/");
@@ -56,10 +56,10 @@ test("S1 one device: the customer app and the kitchen app share one session, wit
   expect(net.calls.signups).toBe(1);
   const kitchen = await context.newPage();   // a second app window on the same device (same browser profile)
   await kitchen.goto("/kitchen/");
-  await expect(kitchen.getByText("Order 0f0f0f0f")).toBeVisible();
+  await expect(kitchen.getByText("No. 0f0f0f0f")).toBeVisible();
   const rider = await context.newPage();
   await rider.goto("/rider/");
-  await expect(rider.getByRole("heading", { name: "Rider", exact: true })).toBeVisible();
+  await expect(rider.getByRole("heading", { name: "Deliveries", exact: true })).toBeVisible();   // H11: no delivery in hand yet
   expect(net.calls.signups).toBe(1);   // the kitchen app and the rider app reused the customer app's session
   expect(net.calls.orderReads.filter((u) => u.includes(`session_id=eq.${SESSION}`)).length).toBeGreaterThanOrEqual(1);   // the customer app reads its session; the kitchen app reads its kitchen
   expect(net.calls.orderReads.some((u) => u.includes("kitchen_id=eq.k-1"))).toBe(true);
@@ -70,6 +70,7 @@ test("S1 one device: a tap in the kitchen app reaches the order the customer app
   net.state.kitchen = "k-1";   // H3: the kitchen app is for kitchen staff
   await page.goto("/kitchen/");
   await page.getByRole("button", { name: "Accept 0f0f0f0f" }).click();
+  await page.getByRole("button", { name: "Cooking", exact: true }).click();   // H11: an accepted ticket moves to the Cooking tab
   await expect(page.getByText("Accepted", { exact: true })).toBeVisible();
   expect(net.calls.status[0].body).toMatchObject({ order_id: ID, session_id: SESSION, to_status: "accepted", actor: "kitchen" });
 });
@@ -77,9 +78,10 @@ test("S1 one device: a tap in the kitchen app reaches the order the customer app
 test("S3 a link on the kitchen address still joins the session, but gives a non-staff account no kitchen access (H3)", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
   const OTHER = "7e57ab1e-0000-4000-8000-0000000000b2";
+  net.state.anonymous = false;
   await page.goto(`/kitchen/?join=${OTHER}`);
-  await expect(page.getByText("This account is not kitchen staff. Ask the admin.")).toBeVisible();
-  await expect(page.getByText("Order 0f0f0f0f")).toHaveCount(0);
+  await expect(page.getByText("This account is not kitchen staff. Ask the admin to add it")).toBeVisible();   // H11: K2
+  await expect(page.getByText("No. 0f0f0f0f")).toHaveCount(0);
   expect(net.calls.rpc).toContainEqual({ name: "join_session", body: { p_session: OTHER } });
   expect(page.url()).not.toContain("join=");   // the link is tidied away, and the address stays on the kitchen app
   expect(new URL(page.url()).pathname).toBe("/kitchen/");

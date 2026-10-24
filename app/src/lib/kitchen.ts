@@ -4,6 +4,7 @@ export type OrderLine = { menu_item_id: string; name: string; qty: number; price
 export type Order = {
   id: string; session_id: string; status: string; address: string; items: OrderLine[]; total_paise: number; created_at: string; updated_at: string; paid_by?: string | null;
   customer_name?: string | null; customer_phone?: string | null;
+  kitchen_id?: string; rider_id?: string | null;
 };
 
 export const shortId = (id: string): string => id.slice(0, 8);   // the order number the customer and the kitchen both say
@@ -21,6 +22,21 @@ export const statusLabel = (status: string): string => LABELS[status] ?? status;
 
 const WITH_RIDER = ["out_for_delivery", "delivered", "cancelled"];   // not the kitchen's any more
 export const kitchenOrders = (orders: Order[]): Order[] => orders.filter((o) => !WITH_RIDER.includes(o.status));
+
+// Story H11 (#194): the Ink boards split the kitchen's work into New (placed), Cooking (accepted, preparing) and Ready (waiting for the rider).
+// Oldest first: the kitchen cooks in the order the tickets came.
+const oldestFirst = (a: Order, b: Order) => a.created_at.localeCompare(b.created_at);
+export const newTickets = (orders: Order[]): Order[] => orders.filter((o) => o.status === "placed").sort(oldestFirst);
+export const cookingTickets = (orders: Order[]): Order[] => orders.filter((o) => o.status === "accepted" || o.status === "preparing").sort(oldestFirst);
+export const readyTickets = (orders: Order[]): Order[] => orders.filter((o) => o.status === "ready").sort(oldestFirst);
+export type Done = { status: string; updated_at: string; total_paise: number; paid_by?: string | null };
+/** The orders delivered today, by the phone's clock, newest first (the rider's Today, the kitchen's done count). */
+export const deliveredToday = <T extends Done>(orders: T[], now = new Date()): T[] =>
+  orders.filter((o) => o.status === "delivered" && new Date(o.updated_at).toDateString() === now.toDateString())
+    .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+export const hhmm = (iso: string): string => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
+/** "22:00:00" from the kitchens row to "22:00" for the screen. */
+export const hhmmOf = (t: string | null | undefined): string | null => (t ? t.slice(0, 5) : null);
 
 // A live event and the answer to a tap can arrive in either order: the copy with the later updated_at wins.
 // Moments are compared, not text: the same instant can be written with Z or +00:00.

@@ -7,7 +7,8 @@ const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
 
 const openFeedback = async (page: Page) => {
   await page.goto("/kitchen/");
-  await expect(page.getByText("Order 0f0f0f0f")).toBeVisible();
+  await page.getByRole("button", { name: "Cooking", exact: true }).click();   // H11: an accepted ticket is on the Cooking tab
+  await expect(page.getByText("No. 0f0f0f0f")).toBeVisible();
   await page.getByRole("button", { name: "Start 0f0f0f0f" }).click();   // one tap so the trail has something in it
   await page.getByRole("button", { name: "Feedback" }).click();
   await expect(page.getByRole("dialog", { name: "Feedback" })).toBeVisible();

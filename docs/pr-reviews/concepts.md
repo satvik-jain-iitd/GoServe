@@ -754,3 +754,27 @@ Har naya technical word yahan. Simple Hindi mein. Ek line ka "yeh kya hai", ek l
 - **Kya hai:** `.gitignore` sirf naye add par kaam karta hai. Jo file pehle se add ho chuki, usse nahi rokta. Jo branch dev se pehle kati gayi, use rebase chahiye.
 - **Analogy:** Lobby mat late bichhi. Purana corridor is mat ko nahi jaanta, woh purana badge phir le aata hai.
 - **File:** `docs/LEARNINGS.md` (line 139); PR #86.
+### Short order number
+- **Kya hai:** Order ki uuid ke pehle 8 characters "No. 0f0f0f0f" ki tarah dikhte hain. Pura id kabhi nahi dikhta.
+- **Analogy:** Slip par chhota number, ledger page nahi.
+- **File:** `app/src/screens/PlacedScreen.tsx`; PR #220.
+
+### Customer words vs kitchen words
+- **Kya hai:** Ek hi status ke do label hain. Kitchen "Ready" bolta hai, customer "Ready, rider picks up" dekhta hai.
+- **Analogy:** Cook "ready" bolta hai, waiter "table par aa raha hai" bolta hai.
+- **File:** `app/src/screens/PlacedScreen.tsx` (STEP_WORDS); PR #220.
+
+### Window event as a bell
+- **Kya hai:** Ek screen `gs-feedback` event bajati hai, doosri screen use sunkar apna sheet kholti hai. Props ki chain nahi.
+- **Analogy:** Counter ki ghanti. Kisi ne bajayi, suggestion box khul gaya.
+- **File:** `app/src/screens/AccountScreen.tsx`, `app/src/screens/FeedbackSheet.tsx`; PR #220.
+
+### Theme pin
+- **Kya hai:** Customer ki chuni hui theme (`gs-theme`) clock ko rok deti hai. "By the clock" pin hata deta hai.
+- **Analogy:** Shutter lamp ka manual switch, ya timer. Manual chuna to timer ruk jata hai.
+- **File:** `app/src/screens/AccountScreen.tsx`, lib/theme; PR #220.
+
+### One-way permission switch
+- **Kya hai:** Browser alerts ki permission de sakta hai, wapas nahi le sakta. Isliye switch sirf on hota hai.
+- **Analogy:** Ek baar doorbell lag gayi, counter se unwire nahi hoti.
+- **File:** `app/src/screens/AccountScreen.tsx`; PR #220.

@@ -58,16 +58,18 @@ test("S5 Send feedback opens the Feedback sheet", async ({ page, context }) => {
 });
 
 test("S6 Forget me asks first, then wipes what the phone remembers", async ({ page, context }) => {
-  await context.addInitScript(() => { const clear = Storage.prototype.clear; Storage.prototype.clear = function () { sessionStorage.setItem("__cleared", "1"); return clear.call(this); }; });   // the test seeds the pin on every load, so watch the wipe itself
-  await setup(context, page);
+  await setup(context, page, [], { pin: null });   // seed the pin once by hand, so the reload after the wipe shows what the phone really kept
   await page.goto("/customer/");
+  await page.evaluate(() => localStorage.setItem("gs-pin", "110016"));
+  await page.reload();
   await you(page).click();
   await page.getByRole("button", { name: "Forget me on this phone" }).click();
   await page.getByRole("button", { name: "No", exact: true }).click();
   expect(await page.evaluate(() => localStorage.getItem("gs-pin"))).toBe("110016");
   await page.getByRole("button", { name: "Forget me on this phone" }).click();
   await page.getByRole("button", { name: "Yes, forget" }).click();
-  await expect.poll(async () => page.evaluate(() => sessionStorage.getItem("__cleared")).catch(() => null)).toBe("1");
+  await expect(page.getByRole("heading", { name: "Where do we deliver?" })).toBeVisible();   // after the reload the phone asks for the pin again
+  expect(await page.evaluate(() => localStorage.getItem("gs-pin"))).toBeNull();
 });
 
 test("S7 Use on another phone copies the link", async ({ page, context }) => {
