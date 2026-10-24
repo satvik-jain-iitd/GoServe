@@ -335,3 +335,16 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-btn.danger:not(.ghost) { background: var(--md-error); color: var(--md-on-error); }
 .ui-city .ui-chips { padding-top: var(--gs-space-2); }
 .ui-group h2 .mono { margin-left: 8px; }
+
+/* Admin City, boards A5 to A7 (story H12b) */
+.ui-pad-y { padding: var(--gs-space-3) 0; }
+.ui-two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gs-space-3); }
+.ui-right { text-align: right; max-width: 60%; }
+.ui-row-acts { display: inline-flex; align-items: center; gap: var(--gs-space-2); }
+.ui-dish-row { border-bottom: 1px solid var(--md-outline-variant); }
+.ui-dish-row .ui-row { border-bottom: 0; }
+.ui-dish-thumb { width: 40px; height: 40px; object-fit: cover; border-radius: var(--gs-radius, 6px); border: 1px solid var(--md-outline-variant); }
+.ui-dish-acts { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gs-space-2); padding: 0 0 var(--gs-space-3); }
+.ui-dish-price { width: 72px; min-height: var(--gs-tap); padding: 0 10px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius, 6px); background: var(--md-surface); color: var(--md-on-surface); font-family: var(--gs-font-mono); }
+.ui-form-acts { display: flex; flex-direction: column; gap: var(--gs-space-2); padding-top: var(--gs-space-2); }
+.ui-field select { min-height: var(--gs-tap); padding: 0 12px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius, 6px); background: var(--md-surface); color: var(--md-on-surface); font: inherit; }

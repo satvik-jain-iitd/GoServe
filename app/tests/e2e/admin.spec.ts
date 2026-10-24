@@ -2,13 +2,13 @@
 import { test, expect } from "@playwright/test";
 import { order, setup } from "./helpers";
 
-test("S1 an admin sees the Kitchens and Staff tabs and the kitchens", async ({ page, context }) => {
+test("S1 an admin sees the City with its kitchens and riders", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.admin = true;
   await page.goto("/admin/");
-  await page.getByRole("button", { name: "City", exact: true }).click();   // H12: the tools live on the City tab
-  await expect(page.getByRole("tab", { name: "Kitchens" })).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Staff" })).toBeVisible();
+  await page.getByRole("button", { name: "City", exact: true }).click();   // H12b: board A5
+  await expect(page.getByRole("region", { name: "Kitchens" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Riders" })).toBeVisible();
   await expect(page.getByText("Hauz Khas Kitchen")).toBeVisible();
   await expect(page).toHaveTitle("GoServe Admin");
 });
@@ -18,7 +18,7 @@ test("S2 someone who is not an admin sees the gate and no tabs", async ({ page, 
   net.state.anonymous = false;
   await page.goto("/admin/");
   await expect(page.getByRole("heading", { name: "Not an admin account" })).toBeVisible();   // H12: A2
-  await expect(page.getByRole("tab", { name: "Kitchens" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "City", exact: true })).toHaveCount(0);
 });
 
 test("S3 adding a kitchen sends its name and pin codes; a bad pin code is refused before sending", async ({ page, context }) => {
@@ -26,6 +26,7 @@ test("S3 adding a kitchen sends its name and pin codes; a bad pin code is refuse
   net.state.admin = true;
   await page.goto("/admin/");
   await page.getByRole("button", { name: "City", exact: true }).click();
+  await page.getByRole("button", { name: "Add a kitchen" }).click();   // H12b: board A7
   await page.getByLabel("Kitchen name").fill("Lajpat Nagar Kitchen");
   await page.getByLabel("Address").fill("12 Lajpat Nagar, Delhi");
   await page.getByLabel("Phone").fill("9876543210");
@@ -46,8 +47,8 @@ test("S4 adding staff by email with a role, and removing one", async ({ page, co
   net.state.people = [{ kind: "rider", user_id: "u-9", email: "rider@example.com", kitchen_id: null, kitchen_name: null }];
   await page.goto("/admin/");
   await page.getByRole("button", { name: "City", exact: true }).click();
-  await page.getByRole("tab", { name: "Staff" }).click();
-  await expect(page.getByText("rider@example.com")).toBeVisible();
+  await expect(page.getByText("rider@example.com")).toBeVisible();   // H12b: riders on the City board
+  await page.getByRole("button", { name: "Add a person" }).click();
   await page.getByLabel("Email").fill("cook@example.com");
   await page.getByLabel("Role").selectOption("kitchen");
   await page.getByLabel("Kitchen", { exact: true }).selectOption("k-1");
@@ -66,8 +67,8 @@ test("S5 the Menu tab adds a dish with a photo: the photo is uploaded, then the 
   net.state.admin = true;
   await page.goto("/admin/");
   await page.getByRole("button", { name: "City", exact: true }).click();
-  await page.getByRole("tab", { name: "Menu" }).click();
-  await page.getByLabel("Kitchen", { exact: true }).selectOption("k-1");
+  await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();   // H12b: the menu lives on one kitchen (A6)
+  await page.getByRole("button", { name: "Add a dish" }).click();
   await page.getByLabel("Dish name").fill("Dal Makhani");
   await page.getByLabel("Price (₹)").fill("220.50");
   await page.getByLabel("Category").fill("main");
@@ -85,8 +86,8 @@ test("S6 a wrong price or a file that is not a picture is refused before anythin
   net.state.admin = true;
   await page.goto("/admin/");
   await page.getByRole("button", { name: "City", exact: true }).click();
-  await page.getByRole("tab", { name: "Menu" }).click();
-  await page.getByLabel("Kitchen", { exact: true }).selectOption("k-1");
+  await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();
+  await page.getByRole("button", { name: "Add a dish" }).click();
   await page.getByLabel("Dish name").fill("Dal");
   await page.getByLabel("Price (₹)").fill("abc");
   await page.getByRole("button", { name: "Add dish" }).click();
@@ -104,8 +105,7 @@ test("S7 a dish can be marked sold out, get a new price, and be deleted", async 
   net.state.admin = true;
   await page.goto("/admin/");
   await page.getByRole("button", { name: "City", exact: true }).click();
-  await page.getByRole("tab", { name: "Menu" }).click();
-  await page.getByLabel("Kitchen", { exact: true }).selectOption("k-1");
+  await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();
   await expect(page.getByText("Butter Chicken", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Mark Butter Chicken sold out" }).click();
   await expect.poll(() => net.calls.menuWrites.length).toBe(1);
