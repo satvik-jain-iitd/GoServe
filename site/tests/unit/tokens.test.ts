@@ -1,5 +1,5 @@
 // Story #18, scenario S2: design/tokens.json is the one source of truth for colours.
-// palette.ts, tokens.css and the diagram theme must match it.
+// palette.ts, ink.css and the diagram theme must match it.
 import { describe, it, expect } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -7,7 +7,7 @@ import { CORE, SUPPORTING, STATUS } from "../../src/data/palette";
 
 const root = resolve(__dirname, "../../..");
 const tokens = JSON.parse(readFileSync(resolve(root, "design/tokens.json"), "utf8"));
-const css = readFileSync(resolve(root, "site/src/styles/tokens.css"), "utf8").toUpperCase();
+const css = readFileSync(resolve(root, "site/src/styles/ink.css"), "utf8").toUpperCase();
 // The diagram theme lives with the docs on `dev`; `main` carries code only, so it may be absent there.
 const themePath = resolve(root, "docs/architecture/diagrams/theme.json");
 const theme = existsSync(themePath) ? JSON.parse(readFileSync(themePath, "utf8")) : { allowed: [] };
@@ -25,8 +25,10 @@ describe("design tokens: one source of truth", () => {
     expect(STATUS.map((s) => up(s.hex)).sort()).toEqual(fromJson(tokens.color.status));
   });
 
-  it("tokens.css defines every core and supporting colour", () => {
-    for (const hex of [...Object.values(tokens.color.core), ...Object.values(tokens.color.supporting)]) {
+  it("ink.css (Day) defines every core and supporting colour", () => {
+    // Ink v3 (J3) retired olive-soft; every other colour stays.
+    const supporting = Object.entries(tokens.color.supporting).filter(([k]) => k !== "oliveSoft").map(([, v]) => v);
+    for (const hex of [...Object.values(tokens.color.core), ...supporting]) {
       expect(css).toContain(up(hex as string));
     }
   });

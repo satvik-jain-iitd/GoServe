@@ -240,6 +240,80 @@ STAFF_NAMES = ["an admin who is also staff reads every staff row but the query f
                "adding that person to a second kitchen is refused with already_staff", "the person stays in one kitchen"]
 
 
+# Story H14 (#204): pilot numbers, watch, rider pings, platform, call and refused at the door (migration 0024).
+# Fixtures sit 36 hours back, on kitchen K1 only, so the window (and p_kitchen) keeps real dev rows out of the numbers.
+P = {n: f"00000000-0000-4000-8000-0000000004{i:02x}" for i, n in enumerate(["ontime", "late", "refused", "unseen", "norider", "outnow"], start=1)}
+BASE = "(date_trunc('hour', now() - interval '36 hours') + interval '10 minutes')"
+WIN = f"({BASE} - interval '10 minutes'), ({BASE} + interval '50 minutes'), '{K1}'"
+def _p(uid: str, i: int, expr: str) -> str:
+    return f"set local role authenticated; select set_config('request.jwt.claim.sub', '{uid}', true); create temp table dp{i} as select ({expr}) as v; reset role;"
+def _pn(i: int, expr: str) -> str:   # as the database owner (the service role has no user id)
+    return f"select set_config('request.jwt.claim.sub', '', true); create temp table dp{i} as select ({expr}) as v;"
+def _ev(o: str, ev: str, mins: int, actor: str = "system") -> str:
+    return f"insert into order_events (order_id, kitchen_id, session_id, event, actor, created_at) select id, kitchen_id, session_id, '{ev}', '{actor}', {BASE} + interval '{mins} minutes' from orders where id = '{o}';"
+def _call(uid: str, stmt: str) -> str:   # a volatile call in its own statement, so the next statement sees what it wrote
+    return f"set local role authenticated; select set_config('request.jwt.claim.sub', '{uid}', true); do $$ begin perform {stmt}; end $$; reset role;"
+NUM = f"pilot_numbers({WIN})->'numbers'"
+PILOT = f"""
+insert into orders (id, kitchen_id, session_id, client_order_key, status, items, total_paise, address, rider_id, created_at, updated_at, paid_by, client_platform, cancel_reason) values
+  ('{P['ontime']}', '{K1}', '{U['cust']}', 'p-on', 'delivered', '[]', 20000, 'x', '{U['rider']}', {BASE}, {BASE}, 'cash', 'ios', null),
+  ('{P['late']}', '{K1}', '{U['other']}', 'p-late', 'delivered', '[]', 10000, 'x', '{U['rider']}', {BASE} + interval '5 minutes', {BASE}, 'cash', 'ios', null),
+  ('{P['refused']}', '{K1}', '{U['cust']}', 'p-ref', 'cancelled', '[]', 5000, 'x', '{U['rider']}', {BASE} + interval '6 minutes', {BASE}, null, 'android', 'refused_at_door');
+{_ev(P['ontime'], 'order.accepted', 1)}{_ev(P['ontime'], 'order.picked_up', 12)}{_ev(P['ontime'], 'order.delivered', 30)}{_ev(P['ontime'], 'customer.call', 15, 'customer')}
+{_ev(P['late'], 'order.accepted', 9)}{_ev(P['late'], 'order.picked_up', 25)}{_ev(P['late'], 'order.delivered', 45)}
+{_ev(P['refused'], 'order.accepted', 7)}{_ev(P['refused'], 'order.picked_up', 20)}
+insert into rider_pings (user_id, at, lat, lng) values
+  ('{U['rider']}', {BASE} + interval '13 minutes', 28.6, 77.2), ('{U['rider']}', {BASE} + interval '28 minutes', 28.6, 77.2),
+  ('{U['rider']}', {BASE} + interval '26 minutes', 28.6, 77.2), ('{U['rider']}', {BASE} + interval '30 minutes', 28.6, 77.2), ('{U['rider']}', {BASE} + interval '36 minutes', 28.6, 77.2),
+  ('{U['rider']}', {BASE} + interval '33 minutes', 28.6, 77.2), ('{U['rider']}', {BASE} + interval '41 minutes', 28.6, 77.2), ('{U['rider']}', {BASE} + interval '44 minutes', 28.6, 77.2),
+  ('{U['rider']}', now() - interval '31 days', 28.6, 77.2);
+insert into orders (id, kitchen_id, session_id, client_order_key, status, items, total_paise, address, rider_id, created_at, updated_at) values
+  ('{P['unseen']}', '{K1}', '{U['cust']}', 'p-unseen', 'placed', '[]', 100, 'x', null, now() - interval '10 minutes', now() - interval '10 minutes'),
+  ('{P['norider']}', '{K1}', '{U['cust']}', 'p-norider', 'ready', '[]', 100, 'x', null, now() - interval '30 minutes', now() - interval '10 minutes'),
+  ('{P['outnow']}', '{K1}', '{U['cust']}', 'p-now', 'out_for_delivery', '[]', 100, 'x', '{U['rider']}', now() - interval '20 minutes', now() - interval '5 minutes');
+{_call(U['rider'], "rider_ping(28.61, 77.21)")}
+{_p(U['rider'], 0, "(select lat from riders where user_id = auth.uid()) = 28.61")}
+do $$ begin begin set local role authenticated; perform set_config('request.jwt.claim.sub', '{U['stranger']}', true); perform rider_ping(28.6, 77.2); reset role; create temp table dp1 as select false as v; exception when others then reset role; create temp table dp1 as select (sqlerrm like '%not_allowed%') as v; end; end $$;
+do $$ begin begin set local role authenticated; perform set_config('request.jwt.claim.sub', '{U['rider']}', true); perform rider_ping(95, 77.2); reset role; create temp table dp2 as select false as v; exception when others then reset role; create temp table dp2 as select (sqlerrm like '%invalid_location%') as v; end; end $$;
+{_call(U['cust'], f"order_platform('{P['unseen']}', 'ios')")}
+{_p(U['cust'], 3, f"(select client_platform from orders where id = '{P['unseen']}') = 'ios'")}
+do $$ begin begin set local role authenticated; perform set_config('request.jwt.claim.sub', '{U['cust']}', true); perform order_platform('{P['norider']}', 'toaster'); reset role; create temp table dp4 as select false as v; exception when others then reset role; create temp table dp4 as select (sqlerrm like '%invalid_platform%') as v; end; end $$;
+do $$ begin begin set local role authenticated; perform set_config('request.jwt.claim.sub', '{U['other']}', true); perform order_platform('{P['norider']}', 'ios'); reset role; create temp table dp5 as select false as v; exception when others then reset role; create temp table dp5 as select (sqlerrm like '%order_not_found%') as v; end; end $$;
+{_call(U['cust'], f"customer_call('{P['outnow']}')")}
+{_pn(6, f"(select count(*) from order_events where order_id = '{P['outnow']}' and event = 'customer.call' and actor = 'customer') = 1")}
+do $$ begin begin set local role authenticated; perform set_config('request.jwt.claim.sub', '{U['stranger']}', true); perform customer_call('{P['outnow']}'); reset role; create temp table dp7 as select false as v; exception when others then reset role; create temp table dp7 as select (sqlerrm like '%order_not_found%') as v; end; end $$;
+do $$ begin begin set local role authenticated; perform set_config('request.jwt.claim.sub', '{U['rider2']}', true); perform rider_refused('{P['outnow']}'); reset role; create temp table dp8 as select false as v; exception when others then reset role; create temp table dp8 as select (sqlerrm like '%order_not_found%') as v; end; end $$;
+do $$ begin begin set local role authenticated; perform set_config('request.jwt.claim.sub', '{U['rider']}', true); perform rider_refused('{P['norider']}'); reset role; create temp table dp9 as select false as v; exception when others then reset role; create temp table dp9 as select (sqlerrm like '%order_not_found%') as v; end; end $$;
+{_call(U['rider'], f"rider_refused('{P['outnow']}')")}
+{_pn(10, f"(select status = 'cancelled' and cancel_reason = 'refused_at_door' from orders where id = '{P['outnow']}') and (select count(*) from order_events where order_id = '{P['outnow']}' and event = 'order.cancelled' and actor = 'rider') = 1")}
+{_pn(11, f"(select (value->>'orders_day')::int = 30 and (value->>'on_time_pct')::int = 80 and (value->>'ios_share')::numeric = 0.33 from params where session_id = 'global' and key = 'pilot_breakpoints' and version = 1)")}
+{_pn(12, f"({NUM}->>'orders_day')::int = 3 and ({NUM}->>'tickets_hour')::int = 3 and ({NUM}->>'missed_day')::int = 1")}
+{_pn(13, f"({NUM}->>'on_time_pct')::numeric = 50 and ({NUM}->>'deliveries_rider_hour')::int = 2 and ({NUM}->>'cash_rider')::numeric = 300")}
+{_pn(14, f"({NUM}->>'refused_pct')::numeric = 33.3 and ({NUM}->>'ios_share')::numeric = 0.67 and ({NUM}->>'calls_share')::numeric = 0.33")}
+{_pn(15, f"({NUM}->>'gap_share')::numeric = 0.5 and ({NUM}->>'pins')::int = 2 and {NUM}->'radius_km' = 'null'::jsonb and {NUM}->'realtime' = 'null'::jsonb")}
+{_pn(16, f"pilot_numbers(now() - interval '5 days', now() - interval '4 days', '{K2}')->'numbers'->>'on_time_pct' is null and (pilot_numbers(now() - interval '5 days', now() - interval '4 days', '{K2}')->'numbers'->>'orders_day')::int = 0")}
+{_p(U['cust'], 17, "(select count(*) from rider_pings) = 0")}
+{_p(U['admin'], 18, f"pilot_numbers({WIN})->'numbers'->>'orders_day' = '3'")}
+do $$ begin begin set local role authenticated; perform set_config('request.jwt.claim.sub', '{U['cust']}', true); perform pilot_numbers(now() - interval '1 day', now(), null); reset role; create temp table dp19 as select false as v; exception when others then reset role; create temp table dp19 as select (sqlerrm like '%not_allowed%') as v; end; end $$;
+{_pn(20, f"(select count(*) from pilot_watch(3, 5) where order_id = '{P['unseen']}' and kind = 'accept_late') = 1 and (select count(*) from pilot_watch(3, 5) where order_id = '{P['norider']}' and kind = 'rider_late') = 1")}
+{_pn(21, f"(select count(*) from pilot_watch(3, 5) where order_id in ('{P['ontime']}', '{P['late']}', '{P['refused']}', '{P['outnow']}')) = 0")}
+{_pn(22, f"pilot_watch_mark(jsonb_build_array(jsonb_build_object('order_id', '{P['unseen']}', 'kind', 'accept_late'), jsonb_build_object('order_id', '{P['norider']}', 'kind', 'rider_late'))) = 2")}
+{_pn(23, f"(select count(*) from pilot_watch(3, 5) where order_id in ('{P['unseen']}', '{P['norider']}')) = 0 and (select count(*) from order_events where order_id = '{P['unseen']}' and event = 'watch.accept_late') = 1")}
+{_pn(24, f"pilot_watch_mark(jsonb_build_array(jsonb_build_object('order_id', '{P['unseen']}', 'kind', 'accept_late'))) = 0")}
+create temp table dpn as select pilot_prune() as n;
+{_pn(25, f"(select n from dpn) >= 1 and (select count(*) from rider_pings where at < now() - interval '30 days') = 0 and (select count(*) from rider_pings where user_id = '{U['rider']}' and lat = 28.61) = 1 and (select count(*) from rider_pings where user_id = '{U['rider']}') >= 9")}
+"""
+PILOT_NAMES = ["rider_ping updates the rider's last place (the history row is counted in the prune check)", "rider_ping refuses someone who is not a rider", "rider_ping refuses a place outside the earth",
+               "the owner of an order saves the phone platform", "an unknown platform is refused", "another customer cannot set the platform", "the owner's Call tap writes one customer.call event",
+               "a stranger's Call tap is refused", "another rider cannot mark the order refused", "an order that is not on the way cannot be marked refused",
+               "the assigned rider marks an order refused at the door: cancelled, reason, one event by the rider", "params holds pilot_breakpoints version 1 with the table's numbers",
+               "pilot_numbers: orders, busiest hour and missed tickets", "pilot_numbers: on time share, deliveries per rider hour, cash per rider", "pilot_numbers: refused share, iPhone share, call share",
+               "pilot_numbers: location gap share, pin codes, and unmeasured numbers are null", "pilot_numbers: a quiet kitchen gives zero orders and no shares", "nobody reads the ping history directly (only the functions do)",
+               "pilot_numbers: an admin may read", "pilot_numbers: a customer is refused", "pilot_watch: an unseen placed order and a ready order with no rider are listed",
+               "pilot_watch: finished and on-the-way orders are not listed", "pilot_watch_mark writes one event per order", "pilot_watch: marked orders are not listed again and the event is stored",
+               "pilot_watch_mark: a second mark writes nothing", "pilot_prune deletes pings older than 30 days and keeps the rest"]
+
+
 def run(ref: str, query: str):
     req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/database/query", data=json.dumps({"query": query}).encode(),
                                  headers={"Authorization": f"Bearer {os.environ['SUPABASE_ACCESS_TOKEN']}", "Content-Type": "application/json", "User-Agent": "goserve-check"})
@@ -247,16 +321,16 @@ def run(ref: str, query: str):
 
 
 def build() -> str:
-    selects = [f"select 'c{i}' as k, v from c{i}" for i in range(len(checks))] + [f"select 'cx{j}' as k, v from cx{j}" for j in range(len(EXTRA_NAMES))] + [f"select 'dx{j}' as k, v from dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"select 'dr{j}' as k, v from dr{j}" for j in range(len(RIDER_NAMES))] + [f"select 'ds{j}' as k, v from ds{j}" for j in range(len(STAFF_NAMES))]
-    return "\n".join(["begin;", SETUP, *[sql for _, sql in checks], FINAL_EXTRA, DISPATCH, RIDER_CARD, STAFF, " union all ".join(selects) + ";", "rollback;"])
+    selects = [f"select 'c{i}' as k, v from c{i}" for i in range(len(checks))] + [f"select 'cx{j}' as k, v from cx{j}" for j in range(len(EXTRA_NAMES))] + [f"select 'dx{j}' as k, v from dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"select 'dr{j}' as k, v from dr{j}" for j in range(len(RIDER_NAMES))] + [f"select 'ds{j}' as k, v from ds{j}" for j in range(len(STAFF_NAMES))] + [f"select 'dp{j}' as k, v from dp{j}" for j in range(len(PILOT_NAMES))]
+    return "\n".join(["begin;", SETUP, *[sql for _, sql in checks], FINAL_EXTRA, DISPATCH, RIDER_CARD, STAFF, PILOT, " union all ".join(selects) + ";", "rollback;"])
 
 
 if __name__ == "__main__":
     if sys.argv[1:] != ["dev"]:
         sys.exit("Usage: check_city_model.py dev (prod is never allowed)")
     rows = {r["k"]: r["v"] for r in run(DEV_REF, build())}
-    names = [n for n, _ in checks] + EXTRA_NAMES + DISPATCH_NAMES + RIDER_NAMES + STAFF_NAMES
-    keys = [f"c{i}" for i in range(len(checks))] + [f"cx{j}" for j in range(len(EXTRA_NAMES))] + [f"dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"dr{j}" for j in range(len(RIDER_NAMES))] + [f"ds{j}" for j in range(len(STAFF_NAMES))]
+    names = [n for n, _ in checks] + EXTRA_NAMES + DISPATCH_NAMES + RIDER_NAMES + STAFF_NAMES + PILOT_NAMES
+    keys = [f"c{i}" for i in range(len(checks))] + [f"cx{j}" for j in range(len(EXTRA_NAMES))] + [f"dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"dr{j}" for j in range(len(RIDER_NAMES))] + [f"ds{j}" for j in range(len(STAFF_NAMES))] + [f"dp{j}" for j in range(len(PILOT_NAMES))]
     bad = 0
     for n, k in zip(names, keys):
         ok = rows.get(k) is True

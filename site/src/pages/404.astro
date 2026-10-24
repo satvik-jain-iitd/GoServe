@@ -3,37 +3,11 @@ import Base from "../layouts/Base.astro";
 ---
 <Base title="Page not found">
   <section class="section">
-    <div class="container container-narrow notfound">
-      <span class="code">404</span>
-      <h1 class="h1">This page went out for delivery.</h1>
-      <p class="lead">
-        It is not here. But everything else is. Let us take you back to the start.
-      </p>
-      <div class="actions">
-        <a class="btn btn--primary" href="/">Back to home</a>
-        <a class="btn btn--ghost" href="/palette">See the palette</a>
-      </div>
+    <div class="wrap notfound">
+      <span class="eyebrow">404</span>
+      <h1 class="display xl">This page went out for delivery.</h1>
+      <p class="lead">It is not here. But everything else is. Let us take you back to the start.</p>
+      <a class="ui-btn big" style="width: auto; padding: 0 28px;" href="/">Back to home</a>
     </div>
   </section>
 </Base>
-
-<style>
-  .notfound {
-    text-align: center;
-  }
-  .code {
-    display: block;
-    font-size: clamp(5rem, 18vw, 10rem);
-    font-weight: 900;
-    line-height: 0.9;
-    color: var(--gs-sage);
-    letter-spacing: -0.04em;
-  }
-  .actions {
-    display: flex;
-    gap: var(--gs-space-4);
-    justify-content: center;
-    margin-top: var(--gs-space-6);
-    flex-wrap: wrap;
-  }
-</style>

@@ -182,3 +182,11 @@ short. Say what happened and what to do next time.
 - macOS `sed -i` needs an empty string (`sed -i ''`). In a `&&` chain, one failed step hides the next ones; look at every exit code.
 - When you swap many buttons for one component, pair each open tag with the next close tag, then run lint and all e2e. Timing tests can fail under load; run the failing one alone before you call it a break.
 - A production database that already has tables is refused by `release_db.py`. A later release needs a `--from` option, or the migrations go one at a time through the Management API.
+- An animated heading must keep the same markup on the server and in the browser. Swapping a plain heading for animated spans after the page loads made the last paint late: Lighthouse mobile LCP fell from 1.8 s to 3.6 s and the score from 99 to 86.
+- Run axe after the animations end or under reduced motion. Half-faded words fail the contrast check although the finished page passes.
+- A nav rule `a { color: inherit }` beats a button class on a link. The canvas had it too: the Pre-register button was dark text on green, 1.98 to 1.
+- Lighthouse on a laptop with a load average near 20 gave scores from 29 to 99 for the same build. Check `uptime` and run twice before you trust a score.
+- A web font that loads after the first paint moved the hero and gave a layout shift of 0.26. Self-hosted Latin subsets with preload took it to 0.
+- Never run `git checkout -- .` to "check" state. It discards all uncommitted work.
+- In one SQL statement the subqueries see the data as it was at the start, even after a function in the same statement wrote rows. A proof check must call the function in one statement and read in the next.
+- The zip the reviewer sends may sit in Downloads and never get unpacked. Look there before you say a file is missing.

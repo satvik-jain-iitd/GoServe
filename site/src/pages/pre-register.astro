@@ -1,76 +1,18 @@
 ---
 import Base from "../layouts/Base.astro";
 import PreRegisterForm from "../components/PreRegisterForm.astro";
-
-const benefits = [
-  { t: "First invite", d: "You hear first when orders open in your area." },
-  { t: "Founder pricing", d: "Early members get the best offers, locked in." },
-  { t: "Shape the product", d: "Your feedback reaches the people building it." },
-];
 ---
-<Base title="Pre-register" description="Pre-register your interest in GoServe. Customers, riders, kitchen partners, and investors all welcome.">
-  <section class="section">
-    <div class="container split">
-      <div>
+<Base title="Pre-register" description="Tell GoServe your pin code and who you are. Customers hear first when the kitchen reaches them. Cooks and riders hear when we hire near them.">
+  <section class="section" aria-label="Pre-register">
+    <div class="wrap split">
+      <div style="display: flex; flex-direction: column; gap: 20px;">
         <span class="eyebrow">Pre-register</span>
-        <h1 class="h1">Get in before the first order.</h1>
-        <p class="lead">
-          We are opening in Delhi first. Pre-register and you will be first to
-          know, first to order, and first to shape it. It takes twenty seconds.
-        </p>
-        <ul class="benefits">
-          {
-            benefits.map((b) => (
-              <li>
-                <strong>{b.t}</strong>
-                <span>{b.d}</span>
-              </li>
-            ))
-          }
-        </ul>
+        <h1 class="display xl">Get in before the first order in your lane.</h1>
+        <p class="lead">We add pin codes every week. Tell us yours and who you are. Customers hear first when the kitchen reaches them. Cooks and riders hear when we hire near them.</p>
+        <div class="ui-zigzag" aria-hidden="true" style="width: 96px;"></div>
+        <span class="mono" style="font-size: 12px; color: var(--gs-text-muted); text-transform: uppercase;">No spam. One message when it matters.</span>
       </div>
-      <div class="card">
-        <h2 class="h3">Join the list</h2>
-        <PreRegisterForm />
-      </div>
+      <PreRegisterForm />
     </div>
   </section>
 </Base>
-
-<style>
-  .split {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--gs-space-8);
-    align-items: start;
-  }
-  .h3 {
-    font-size: var(--gs-text-xl);
-    margin-bottom: var(--gs-space-5);
-  }
-  .benefits {
-    list-style: none;
-    margin: var(--gs-space-6) 0 0;
-    padding: 0;
-    display: grid;
-    gap: var(--gs-space-4);
-  }
-  .benefits li {
-    display: grid;
-    gap: 2px;
-    border-left: 4px solid var(--gs-lime);
-    padding-left: var(--gs-space-4);
-  }
-  .benefits strong {
-    color: var(--gs-ink-green);
-  }
-  .benefits span {
-    color: var(--gs-deep-green);
-    font-size: var(--gs-text-sm);
-  }
-  @media (max-width: 860px) {
-    .split {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>

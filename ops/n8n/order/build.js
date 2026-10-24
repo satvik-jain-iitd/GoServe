@@ -409,53 +409,141 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, vapi
   ];
   const main01 = finish('GS MAIN 01 Order API', nodes, edges, sections, settings);
 
-  // ---- SUB 91 Scorecard numbers: read today's rows, no writes (story #47) ----
-  const f91 = [['since', 'string'], ['supabase_url', 'string']];
+  // ---- SUB 91 Scorecard numbers: read the window's rows, no writes (story #47; H14 adds the pilot numbers and an `until`) ----
+  const f91 = [['since', 'string'], ['until', 'string'], ['supabase_url', 'string']];
   const read = (id, name, table, select) => node(id, name, 'n8n-nodes-base.httpRequest', 4.2, {
-    method: 'GET', url: `={{ $('Start').first().json.supabase_url }}/rest/v1/${table}?select=${select}&created_at=gte.{{ $('Start').first().json.since }}&order=created_at.desc&limit=1000`,
+    method: 'GET', url: `={{ $('Start').first().json.supabase_url }}/rest/v1/${table}?select=${select}&created_at=gte.{{ $('Start').first().json.since }}&created_at=lt.{{ $('Start').first().json.until }}&order=created_at.desc&limit=1000`,
     authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
+    options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 } }, { credentials: { httpCustomAuth: cred } });
+  const rpcRead = (id, name, fn, bodyExpr, urlFrom) => node(id, name, 'n8n-nodes-base.httpRequest', 4.2, {
+    method: 'POST', url: `={{ ${urlFrom} }}/rest/v1/rpc/${fn}`, authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
+    sendBody: true, specifyBody: 'json', jsonBody: bodyExpr,
     options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 } }, { credentials: { httpCustomAuth: cred } });
   const n91 = [
     node('gs-sub91-01', 'Start', 'n8n-nodes-base.executeWorkflowTrigger', 1.1, inputs(f91)),
     read('gs-sub91-02', 'Read runs', 'run_log', 'workflow,duration_ms,cost,error'),
     read('gs-sub91-03', 'Read decisions', 'decision_log', 'decision'),
+    rpcRead('gs-sub91-05', 'Read pilot numbers', 'pilot_numbers', "={{ JSON.stringify({ p_since: $('Start').first().json.since, p_until: $('Start').first().json.until }) }}", "$('Start').first().json.supabase_url"),
     codeNode('gs-sub91-04', 'Summarise', code('score_summary.js')),
   ];
-  const e91 = [['Start', 'Read runs'], ['Read runs', 'Read decisions'], ['Read decisions', 'Summarise']];
+  const e91 = [['Start', 'Read runs'], ['Read runs', 'Read decisions'], ['Read decisions', 'Read pilot numbers'], ['Read pilot numbers', 'Summarise']];
   const s91 = [
-    { name: 'RECEIVE', what: 'The scorecard workflow calls this with the start of the last 24 hours.', needs: 'Input: ' + f91.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
-    { name: 'READ', what: 'Read the run rows and decision rows of the last 24 hours (the newest 1000 of each). This workflow only reads.', needs: 'Credential "GoServe Supabase dev". Tables: run_log, decision_log.', nodes: ['Read runs', 'Read decisions'], color: 6 },
-    { name: 'SUMMARISE', what: 'Count runs, errors, time, decisions, Jev use and cost. Health checks are counted apart.', needs: 'The two reads.', nodes: ['Summarise'], color: 5 },
+    { name: 'RECEIVE', what: 'The report workflows call this with the start and end of the window.', needs: 'Input: ' + f91.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
+    { name: 'READ', what: 'Read the run rows and decision rows of the window (the newest 1000 of each), and ask the database for the pilot numbers. This workflow only reads.', needs: 'Credential "GoServe Supabase dev". Tables: run_log, decision_log. Function: pilot_numbers (read only).', nodes: ['Read runs', 'Read decisions', 'Read pilot numbers'], color: 6 },
+    { name: 'SUMMARISE', what: 'Count runs, errors, time, decisions, Jev use and cost. Keep the pilot numbers. Health checks are counted apart. A failed pilot read does not stop the rest.', needs: 'The three reads.', nodes: ['Summarise'], color: 5 },
   ];
-  const sub91 = finish('GS SUB 91 Scorecard numbers', n91, e91, s91, Object.assign({}, settings, { callerPolicy: 'workflowsFromAList', callerIds: ids.main90 }));
+  const sub91 = finish('GS SUB 91 Scorecard numbers', n91, e91, s91, Object.assign({}, settings, { callerPolicy: 'workflowsFromAList', callerIds: [ids.main90, ids.main93].filter(Boolean).join(',') }));
 
-  // ---- MAIN 90 Daily scorecard: one schedule, one Telegram message (story #47) ----
+  // ---- SUB 93 Watch numbers: the orders over a line right now (story H14) ----
+  const f93 = [['accept_min', 'number'], ['rider_min', 'number'], ['supabase_url', 'string']];
+  const n93 = [
+    node('gs-sub93-01', 'Start', 'n8n-nodes-base.executeWorkflowTrigger', 1.1, inputs(f93)),
+    rpcRead('gs-sub93-02', 'Read watch', 'pilot_watch', "={{ JSON.stringify({ p_accept_min: $('Start').first().json.accept_min, p_rider_min: $('Start').first().json.rider_min }) }}", "$('Start').first().json.supabase_url"),
+    codeNode('gs-sub93-03', 'Shape rows', code('watch_shape.js')),
+  ];
+  const e93 = [['Start', 'Read watch'], ['Read watch', 'Shape rows']];
+  const s93 = [
+    { name: 'RECEIVE', what: 'MAIN 92 calls this every five minutes with the two time lines.', needs: 'Input: ' + f93.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
+    { name: 'READ', what: 'Ask the database for orders over a line that nobody was told about yet. This workflow only reads.', needs: 'Credential "GoServe Supabase dev". Function: pilot_watch (read only).', nodes: ['Read watch'], color: 6 },
+    { name: 'ANSWER', what: 'Hand back the rows, or a short error. Raw database text is never returned.', needs: 'The database answer.', nodes: ['Shape rows'], color: 5 },
+  ];
+  const sub93 = finish('GS SUB 93 Watch numbers', n93, e93, s93, Object.assign({}, settings, { callerPolicy: 'workflowsFromAList', callerIds: ids.main92 }));
+
+  const telegram = (id, name) => node(id, name, 'n8n-nodes-base.telegram', 1.2, { resource: 'message', operation: 'sendMessage', chatId: '={{ $json.chat_id }}', text: '={{ $json.text }}',
+    additionalFields: { appendAttribution: false } }, { credentials: { telegramApi: { id: 'bBVpWzhaY0MCpoQ5', name: 'GoServeBot' } } });
+  const cfgSet = (id, list) => node(id, 'Config', 'n8n-nodes-base.set', 3.4, { mode: 'manual', includeOtherFields: true, assignments: { assignments: list.map(([name, type, value], i) => ({ id: 'cfg-' + (i + 1), name, type, value })) }, options: {} });
+  const schedule = (id, name, expression) => node(id, name, 'n8n-nodes-base.scheduleTrigger', 1.2, { rule: { interval: [{ field: 'cronExpression', expression }] } });
+
+  // ---- MAIN 90 Daily pilot card: one schedule, one Telegram message (story #47; H14 moves it to 22:15 and adds the pilot block) ----
   const n90 = [
-    node('gs-main90-01', 'Every day 21:00', 'n8n-nodes-base.scheduleTrigger', 1.2, { rule: { interval: [{ field: 'cronExpression', expression: '0 21 * * *' }] } }),
-    node('gs-main90-02', 'Config', 'n8n-nodes-base.set', 3.4, { mode: 'manual', includeOtherFields: true, assignments: { assignments: [
-      { id: 'cfg-1', name: 'kill_switch', type: 'boolean', value: false },
-      { id: 'cfg-2', name: 'chat_id', type: 'string', value: chatId || PLACEHOLDER },
-      { id: 'cfg-3', name: 'supabase_url', type: 'string', value: url }] }, options: {} }),
+    schedule('gs-main90-01', 'Every day 22:15', '15 22 * * *'),
+    cfgSet('gs-main90-02', [['kill_switch', 'boolean', false], ['chat_id', 'string', chatId || PLACEHOLDER], ['supabase_url', 'string', url], ['prune_pings', 'boolean', true]]),
     ifNode('gs-main90-03', 'Kill switch?', '={{ $json.kill_switch }}', 'true'),
     node('gs-main90-04', 'Paused', 'n8n-nodes-base.noOp', 1, {}),
     codeNode('gs-main90-05', 'Prepare window', code('score_window.js')),
-    callSub('gs-main90-06', 'Call SUB 91 Scorecard numbers', ids.sub91, [['since', '={{ $json.since }}', 'string'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
+    callSub('gs-main90-06', 'Call SUB 91 Scorecard numbers', ids.sub91, [['since', '={{ $json.since }}', 'string'], ['until', '={{ $json.until }}', 'string'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
     codeNode('gs-main90-07', 'Format message', code('score_message.js')),
-    node('gs-main90-08', 'Send scorecard', 'n8n-nodes-base.telegram', 1.2, { resource: 'message', operation: 'sendMessage', chatId: '={{ $json.chat_id }}', text: '={{ $json.text }}',
-      additionalFields: { appendAttribution: false } }, { credentials: { telegramApi: { id: 'bBVpWzhaY0MCpoQ5', name: 'GoServeBot' } } }),
+    telegram('gs-main90-08', 'Send scorecard'),
+    node('gs-main90-09', 'Prune ping history', 'n8n-nodes-base.httpRequest', 4.2, {
+      method: 'POST', url: "={{ $('Config').first().json.supabase_url }}/rest/v1/rpc/pilot_prune", authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
+      sendBody: true, specifyBody: 'json', jsonBody: '={{ {} }}',
+      options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 } }, { credentials: { httpCustomAuth: cred } }),
   ];
-  const e90 = [['Every day 21:00', 'Config'], ['Config', 'Kill switch?'], ['Kill switch?', 'Paused', 0], ['Kill switch?', 'Prepare window', 1], ['Prepare window', 'Call SUB 91 Scorecard numbers'],
-    ['Call SUB 91 Scorecard numbers', 'Format message'], ['Format message', 'Send scorecard']];
+  const e90 = [['Every day 22:15', 'Config'], ['Config', 'Kill switch?'], ['Kill switch?', 'Paused', 0], ['Kill switch?', 'Prepare window', 1], ['Prepare window', 'Call SUB 91 Scorecard numbers'],
+    ['Call SUB 91 Scorecard numbers', 'Format message'], ['Format message', 'Send scorecard'], ['Send scorecard', 'Prune ping history']];
   const s90 = [
-    { name: 'SCHEDULE', what: 'Once a day at 21:00 India time.', needs: 'Workflow timezone: Asia/Kolkata.', nodes: ['Every day 21:00'], color: 4 },
-    { name: 'CONFIG', what: 'The kill switch, the owner chat and the database address live here.', needs: 'Config keys: kill_switch, chat_id, supabase_url.', nodes: ['Config'], color: 5 },
+    { name: 'SCHEDULE', what: 'Once a day at 22:15 India time, after the kitchen closes.', needs: 'Workflow timezone: Asia/Kolkata.', nodes: ['Every day 22:15'], color: 4 },
+    { name: 'CONFIG', what: 'The kill switch, the owner chat and the database address live here.', needs: 'Config keys: kill_switch, chat_id, supabase_url, prune_pings.', nodes: ['Config'], color: 5 },
     { name: 'GATE', what: 'If the kill switch is on, send nothing.', needs: 'Config: kill_switch.', nodes: ['Kill switch?', 'Paused'], color: 1 },
     { name: 'WINDOW', what: 'Work out the last 24 hours, and the India time the card is for.', needs: 'Nothing.', nodes: ['Prepare window'], color: 5 },
-    { name: 'COLLECT', what: 'Call SUB 91. It reads the rows of the last 24 hours and counts them.', needs: 'SUB 91 id. Config: supabase_url.', nodes: ['Call SUB 91 Scorecard numbers'], color: 6 },
-    { name: 'FORMAT', what: 'Make one short message: runs with errors, time, decisions, cost.', needs: 'The SUB 91 numbers.', nodes: ['Format message'], color: 5 },
+    { name: 'COLLECT', what: 'Call SUB 91. It reads the rows of the last 24 hours and the pilot numbers.', needs: 'SUB 91 id. Config: supabase_url.', nodes: ['Call SUB 91 Scorecard numbers'], color: 6 },
+    { name: 'FORMAT', what: 'Make one short message: the pilot numbers against their lines first, then runs, time, decisions, cost.', needs: 'The SUB 91 numbers.', nodes: ['Format message'], color: 5 },
     { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send scorecard'], color: 6 },
+    { name: 'TIDY', what: 'Delete rider location pings older than 30 days.', needs: 'Credential "GoServe Supabase dev". Function: pilot_prune.', nodes: ['Prune ping history'], color: 6 },
   ];
   const main90 = finish('GS MAIN 90 Daily scorecard', n90, e90, s90, Object.assign({}, settings, { timezone: 'Asia/Kolkata' }));
+
+  // ---- MAIN 92 Pilot watch: every five minutes in open hours, the second bell (story H14) ----
+  const n92 = [
+    schedule('gs-main92-01', 'Every 5 minutes', '*/5 * * * *'),
+    cfgSet('gs-main92-02', [['kill_switch', 'boolean', false], ['chat_id', 'string', chatId || PLACEHOLDER], ['kitchen_chat_id', 'string', ''], ['supabase_url', 'string', url],
+      ['accept_min', 'number', 3], ['rider_min', 'number', 5], ['open_from', 'string', '11:00'], ['open_to', 'string', '22:30']]),
+    ifNode('gs-main92-03', 'Kill switch?', '={{ $json.kill_switch }}', 'true'),
+    node('gs-main92-04', 'Paused', 'n8n-nodes-base.noOp', 1, {}),
+    codeNode('gs-main92-05', 'Open now?', code('watch_open.js')),
+    ifNode('gs-main92-06', 'Open hours?', '={{ $json.open }}', 'true'),
+    node('gs-main92-07', 'Closed', 'n8n-nodes-base.noOp', 1, {}),
+    callSub('gs-main92-08', 'Call SUB 93 Watch numbers', ids.sub93, [['accept_min', '={{ $json.accept_min }}', 'number'], ['rider_min', '={{ $json.rider_min }}', 'number'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
+    codeNode('gs-main92-09', 'Format message', code('watch_format.js')),
+    telegram('gs-main92-10', 'Send alert'),
+    codeNode('gs-main92-11', 'Prepare marks', code('watch_marks.js')),
+    node('gs-main92-12', 'Mark told', 'n8n-nodes-base.httpRequest', 4.2, {
+      method: 'POST', url: '={{ $json.supabase_url }}/rest/v1/rpc/pilot_watch_mark', authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
+      sendBody: true, specifyBody: 'json', jsonBody: '={{ $json.rpc_body }}',
+      options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 } }, { credentials: { httpCustomAuth: cred } }),
+  ];
+  const e92 = [['Every 5 minutes', 'Config'], ['Config', 'Kill switch?'], ['Kill switch?', 'Paused', 0], ['Kill switch?', 'Open now?', 1], ['Open now?', 'Open hours?'],
+    ['Open hours?', 'Call SUB 93 Watch numbers', 0], ['Open hours?', 'Closed', 1], ['Call SUB 93 Watch numbers', 'Format message'], ['Format message', 'Send alert'],
+    ['Send alert', 'Prepare marks'], ['Prepare marks', 'Mark told']];
+  const s92 = [
+    { name: 'SCHEDULE', what: 'Every five minutes. The workflow itself stays quiet outside open hours.', needs: 'Workflow timezone: Asia/Kolkata.', nodes: ['Every 5 minutes'], color: 4 },
+    { name: 'CONFIG', what: 'Kill switch, chats, the two time lines and the open hours live here.', needs: 'Config keys: kill_switch, chat_id, kitchen_chat_id, supabase_url, accept_min, rider_min, open_from, open_to.', nodes: ['Config'], color: 5 },
+    { name: 'GATE', what: 'If the kill switch is on, do nothing.', needs: 'Config: kill_switch.', nodes: ['Kill switch?', 'Paused'], color: 1 },
+    { name: 'HOURS', what: 'Check the India time against the open hours.', needs: 'Config: open_from, open_to.', nodes: ['Open now?', 'Open hours?', 'Closed'], color: 5 },
+    { name: 'LOOK', what: 'Call SUB 93. It lists orders over a line that nobody was told about.', needs: 'SUB 93 id. Config: accept_min, rider_min, supabase_url.', nodes: ['Call SUB 93 Watch numbers'], color: 6 },
+    { name: 'TELL', what: 'One short message per order. A late ticket also goes to the kitchen chat when it is set.', needs: 'Credential "GoServeBot". Config: chat_id, kitchen_chat_id.', nodes: ['Format message', 'Send alert'], color: 6 },
+    { name: 'MARK', what: 'After the messages are sent, mark each order as told, so it is never sent twice. If a send fails, nothing is marked and the next run tries again.', needs: 'Credential "GoServe Supabase dev". Function: pilot_watch_mark.', nodes: ['Prepare marks', 'Mark told'], color: 6 },
+  ];
+  const main92 = finish('GS MAIN 92 Pilot watch', n92, e92, s92, Object.assign({}, settings, { timezone: 'Asia/Kolkata' }));
+
+  // ---- MAIN 93 Weekly and monthly report: the table for the last 7 or 30 days beside the period before (story H14) ----
+  const n93m = [
+    schedule('gs-main93-01', 'Monday 09:00', '0 9 * * 1'),
+    schedule('gs-main93-02', '1st of the month 09:00', '0 9 1 * *'),
+    node('gs-main93-03', 'Week', 'n8n-nodes-base.set', 3.4, { mode: 'manual', includeOtherFields: true, assignments: { assignments: [{ id: 'w-1', name: 'days', type: 'number', value: 7 }] }, options: {} }),
+    node('gs-main93-04', 'Month', 'n8n-nodes-base.set', 3.4, { mode: 'manual', includeOtherFields: true, assignments: { assignments: [{ id: 'm-1', name: 'days', type: 'number', value: 30 }] }, options: {} }),
+    cfgSet('gs-main93-05', [['kill_switch', 'boolean', false], ['chat_id', 'string', chatId || PLACEHOLDER], ['supabase_url', 'string', url]]),
+    ifNode('gs-main93-06', 'Kill switch?', '={{ $json.kill_switch }}', 'true'),
+    node('gs-main93-07', 'Paused', 'n8n-nodes-base.noOp', 1, {}),
+    codeNode('gs-main93-08', 'Prepare window', code('score_window.js')),
+    callSub('gs-main93-09', 'Call SUB 91 Scorecard numbers', ids.sub91, [['since', "={{ $json.since }}", 'string'], ['until', '={{ $json.until }}', 'string'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
+    callSub('gs-main93-10', 'Call SUB 91 before', ids.sub91, [['since', "={{ $('Prepare window').first().json.prev_since }}", 'string'], ['until', "={{ $('Prepare window').first().json.prev_until }}", 'string'], ['supabase_url', "={{ $('Prepare window').first().json.supabase_url }}", 'string']]),
+    codeNode('gs-main93-11', 'Format message', code('score_message.js')),
+    telegram('gs-main93-12', 'Send report'),
+  ];
+  const e93m = [['Monday 09:00', 'Week'], ['1st of the month 09:00', 'Month'], ['Week', 'Config'], ['Month', 'Config'], ['Config', 'Kill switch?'], ['Kill switch?', 'Paused', 0], ['Kill switch?', 'Prepare window', 1],
+    ['Prepare window', 'Call SUB 91 Scorecard numbers'], ['Call SUB 91 Scorecard numbers', 'Call SUB 91 before'], ['Call SUB 91 before', 'Format message'], ['Format message', 'Send report']];
+  const s93m = [
+    { name: 'SCHEDULE', what: 'Monday 09:00 for the last 7 days. The 1st of the month 09:00 for the last 30 days.', needs: 'Workflow timezone: Asia/Kolkata.', nodes: ['Monday 09:00', '1st of the month 09:00'], color: 4 },
+    { name: 'PERIOD', what: 'Set how many days the report covers.', needs: 'Nothing.', nodes: ['Week', 'Month'], color: 5 },
+    { name: 'CONFIG', what: 'The kill switch, the owner chat and the database address live here.', needs: 'Config keys: kill_switch, chat_id, supabase_url.', nodes: ['Config'], color: 5 },
+    { name: 'GATE', what: 'If the kill switch is on, send nothing.', needs: 'Config: kill_switch.', nodes: ['Kill switch?', 'Paused'], color: 1 },
+    { name: 'WINDOW', what: 'Work out this period and the same length just before it.', needs: 'Nothing.', nodes: ['Prepare window'], color: 5 },
+    { name: 'COLLECT', what: 'Call SUB 91 twice: for this period, and for the one before.', needs: 'SUB 91 id.', nodes: ['Call SUB 91 Scorecard numbers', 'Call SUB 91 before'], color: 6 },
+    { name: 'FORMAT', what: 'Make one message: the table against its lines, each number with the one before it.', needs: 'The two SUB 91 answers.', nodes: ['Format message'], color: 5 },
+    { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send report'], color: 6 },
+  ];
+  const main93 = finish('GS MAIN 93 Weekly and monthly report', n93m, e93m, s93m, Object.assign({}, settings, { timezone: 'Asia/Kolkata' }));
 
   // ---- ERR 00: tells the owner on Telegram when a GoServe workflow fails (rulebook 84) ----
   const aNodes = [
@@ -474,7 +562,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, vapi
     { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send alert'], color: 6 },
   ];
   const alert = finish('GS ERR 00 Alert', aNodes, aEdges, aSections, baseSettings);
-  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub19, sub20, sub21, sub22, sub91, main01, main90, alert };
+  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub19, sub20, sub21, sub22, sub91, sub93, main01, main90, main92, main93, alert };
   if (prod) for (const k of Object.keys(all)) if (k !== 'alert') all[k].name += ' PROD';   // the one GS ERR 00 alert is shared (one bot, one chat)
   return { ...all, STATUS_ROLES };
 }

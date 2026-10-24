@@ -17,13 +17,28 @@
     "verify": "npm run lint && npm run test:unit && npm run build"
   },
   "dependencies": {
+    "@astrojs/react": "^7.1.0",
     "@astrojs/sitemap": "^3.2.1",
-    "astro": "^5.0.0"
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^5.0.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.61.0",
+    "motion": "^14.6.0",
+    "radix-ui": "^1.8.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-icons": "^5.7.0",
+    "react-use-measure": "^2.1.7",
+    "tailwind-merge": "^3.7.0",
+    "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "@axe-core/playwright": "^4.10.0",
     "@playwright/test": "^1.48.0",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
     "typescript": "^5.6.0",
     "vitest": "^2.1.0"
   }
