@@ -11,6 +11,7 @@ import { AreaScreen } from "./screens/AreaScreen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { AdminGate } from "./screens/AdminGate";
 import { RiderGate } from "./screens/RiderGate";
+import { fetchKitchen, type KitchenCard, type RiderGateState } from "./lib/rider";
 import { KitchenGate } from "./screens/KitchenGate";
 import { KitchenTools } from "./screens/KitchenTools";
 import { enablePush } from "./lib/push";
@@ -474,10 +475,20 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <OpsScreen orders={orders} decisions={demo ? (orders.some((o) => ["ready", "out_for_delivery", "delivered"].includes(o.status)) ? demoDecisions() : []) : ops.decisions} lags={demo ? [800] : live.lags}
         stats={demo ? { runsToday: 6, lastDecideMs: 310 } : ops.stats} error={demo ? null : ops.error ?? live.error} failed={ops.failed} sample={demo} />
   );
-  const riderView = (
-    <RiderScreen orders={riderOrders(orders)} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
-      onAct={(o, a) => act(o, a, "rider")} />
+  // The kitchen of the delivery in hand, for "Pick up at" (story H11). Read once per kitchen; nothing in the offline demo.
+  const jobKitchenId = role === "rider" && !demo ? riderOrders(orders)[0]?.kitchen_id ?? null : null;
+  const [jobKitchen, setJobKitchen] = useState<KitchenCard | null>(null);
+  useEffect(() => {
+    if (!jobKitchenId) return;
+    let alive = true;
+    fetchKitchen(getClient(), jobKitchenId).then((k) => { if (alive) setJobKitchen(k); }).catch(() => undefined);
+    return () => { alive = false; };
+  }, [jobKitchenId]);
+  const riderScreen = (gate: RiderGateState | null) => (
+    <RiderScreen orders={orders} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
+      onAct={(o, a) => act(o, a, "rider")} gate={gate} kitchen={jobKitchen} />
   );
+  const riderView = lock === "rider" ? <RiderGate>{riderScreen}</RiderGate> : riderScreen(null);
   const kitchenView = (
     <KitchenScreen orders={kitchenOrders(orders)} loading={live.loading} error={live.error} busyId={busyId}
       onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} />
@@ -519,14 +530,14 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     </>
   );
 
-  const framed = lock === "customer" && role === "customer";   // the Ink boards fill the phone; the chrome goes below
+  const framed = (lock === "customer" && role === "customer") || (lock === "rider" && role === "rider");   // the Ink boards fill the phone; the chrome goes below
   const Shell = framed ? "div" : "main";
   return (
     <>
-    {framed && <main className="frame">{customerView}</main>}
+    {framed && <main className="frame">{role === "rider" ? riderView : customerView}</main>}
     <Shell className={framed ? "shell below" : role === "split" ? "shell split" : "shell"}>
       <h1>{lock && lock !== "customer" ? `GoServe ${lock[0].toUpperCase()}${lock.slice(1)}` : "GoServe"}</h1>
-      {!demo && <SignIn mode={lock && lock !== "customer" ? "signin" : "link"} />}
+      {!demo && !(framed && role === "rider") && <SignIn mode={lock && lock !== "customer" ? "signin" : "link"} />}
       {!lock && <nav className="roles" aria-label="Screen">
         {(["customer", "kitchen", "rider", "split", "ops"] as const).map((r) => (
           <button key={r} type="button" className={role === r ? "btn" : "btn ghost"} aria-pressed={role === r} onClick={() => { pushTrail(`open ${r} tab`); setRole(r); }}>
@@ -537,7 +548,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       {demo && <p role="status" className="notice"><strong>Offline demo</strong></p>}
       {!lock && <DemoBar onReset={reset} getLink={shareLink} autoOn={auto || demo} autoNote={autoNote} onAuto={toggleAuto} />}
       {role === "kitchen" && (lock === "kitchen" ? <KitchenGate>{kitchenView}<KitchenTools /></KitchenGate> : kitchenView)}
-      {role === "rider" && (lock === "rider" ? <RiderGate>{riderView}</RiderGate> : riderView)}
+      {role === "rider" && !framed && riderView}
       {role === "ops" && (lock === "ops" ? <AdminGate>{opsView}</AdminGate> : opsView)}
       {role === "customer" && !framed && customerView}
       {role === "admin" && <AdminScreen />}

@@ -290,3 +290,22 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-look { display: flex; flex-direction: column; gap: var(--gs-space-2); padding: var(--gs-space-4) 0; border-bottom: 1px solid var(--md-outline-variant); }
 .ui-look h2 { margin: 0; font-size: var(--gs-mono-sm); font-weight: 400; color: var(--gs-text-muted); }
 .ui-look .ui-chips { margin: 0; }
+
+/* Rider app, boards R3 to R9 (story H11) */
+.ui-slip-pad { margin: var(--gs-space-4) var(--gs-gutter) 0; }
+.ui-deliver { display: flex; flex-direction: column; gap: 2px; }
+.ui-deliver b { font-size: 17px; }
+.ui-deliver .ui-kicker { font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
+.ui-call { text-decoration: none; color: inherit; border-top: 1px solid var(--md-outline-variant); }
+.ui-call-name { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; color: var(--md-primary); }
+.ui-call-no { font-size: var(--gs-mono-sm); }
+.ui-bottom { margin-top: auto; }
+.ui-btn.text { background: none; border: 0; color: var(--gs-text-muted); min-height: var(--gs-tap); }
+.ui-today { padding: 0 var(--gs-gutter) var(--gs-space-4); }
+.ui-row-tall { min-height: 64px; }
+.ui-cash { font-size: 22px; font-weight: 500; }
+.ui-state-dot { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 999px; background: var(--gs-text-muted); vertical-align: middle; }
+.ui-state-dot.on { background: var(--md-primary); }
+.ui-note.error { color: var(--md-error); }
+.ui-tab-badge { position: absolute; top: 6px; right: calc(50% - 22px); min-width: 18px; padding: 0 5px; border-radius: 999px; background: var(--md-primary); color: var(--md-on-primary); font-family: var(--gs-font-mono); font-size: 11px; line-height: 18px; }
+.ui-tab { position: relative; }

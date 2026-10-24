@@ -5,7 +5,7 @@ import { order, setup } from "./helpers";
 const open = async (page: Page, role: "Kitchen" | "Rider") => {
   await page.goto("/");
   await page.getByRole("button", { name: role }).click();
-  await expect(page.getByRole("heading", { name: role })).toBeVisible();
+  await expect(page.getByRole("heading", { name: role === "Rider" ? /^Deliver/ : role })).toBeVisible();   // H11: the rider's Job tab
 };
 
 test("S1 a kitchen ticket has big type and a big main button", async ({ page, context }) => {
@@ -23,7 +23,7 @@ test("S2 the rider's main buttons are big and as wide as the ticket", async ({ p
   const button = page.getByRole("button", { name: "Pick up 0f0f0f0f" });
   const box = (await button.boundingBox())!;
   expect(box.height).toBeGreaterThanOrEqual(56);
-  const ticket = (await page.locator(".ticket").boundingBox())!;
+  const ticket = (await page.locator(".ui-slip").boundingBox())!;   // H11: the delivery slip
   expect(box.width).toBeGreaterThan(ticket.width * 0.8);
 });
 
