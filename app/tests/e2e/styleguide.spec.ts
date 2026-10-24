@@ -17,7 +17,7 @@ test("S3 buttons, chips and steppers are at least 44 px tall on the styleguide",
   for (const sel of [".ui-btn", ".ui-chip", ".ui-step button", ".ui-back"]) {
     for (const el of await page.locator(sel).all()) expect((await el.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   }
-  expect(await page.evaluate(() => getComputedStyle(document.body).fontFamily)).toContain("Roboto");
+  expect(await page.evaluate(() => getComputedStyle(document.body).fontFamily)).toContain("Anek Latin");
 });
 
 test("S4 the Sheet opens and closes, the Stepper counts", async ({ page, context }) => {
