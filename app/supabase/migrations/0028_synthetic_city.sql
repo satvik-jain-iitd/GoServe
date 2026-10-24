@@ -73,17 +73,77 @@ begin
     'dishes', (select count(*) from menu_items where synthetic));
 end $$;
 
--- Reset: every synthetic row goes, and nothing else. Orders on a synthetic kitchen (there should be none) go first so the keys hold.
+-- Reset: every synthetic row goes, and nothing else. Orders on a synthetic kitchen (there should be none) go first with their events and
+-- decisions, so the keys hold; the frozen order_events trigger lets the delete through only while goserve.reset is on (migration 0006).
 create or replace function sim_reset()
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare v_orders integer; v_dishes integer; v_riders integer; v_kitchens integer;
 begin
+  perform set_config('goserve.reset', 'on', true);   -- this transaction only
+  delete from order_events where kitchen_id in (select id from kitchens where synthetic);
+  delete from decision_log where kitchen_id in (select id from kitchens where synthetic);
+  delete from run_log where kitchen_id in (select id from kitchens where synthetic);
+  delete from feedback where kitchen_id in (select id from kitchens where synthetic);
+  delete from params where kitchen_id in (select id from kitchens where synthetic);
   with gone as (delete from orders where kitchen_id in (select id from kitchens where synthetic) returning 1) select count(*) into v_orders from gone;
+  update orders set rider_id = null where rider_id in (select user_id from riders where synthetic);   -- a real order never has one; belt and braces
   with gone as (delete from menu_items where synthetic or kitchen_id in (select id from kitchens where synthetic) returning 1) select count(*) into v_dishes from gone;
   delete from kitchen_staff where kitchen_id in (select id from kitchens where synthetic);
   with gone as (delete from riders where synthetic returning 1) select count(*) into v_riders from gone;
   with gone as (delete from kitchens where synthetic returning 1) select count(*) into v_kitchens from gone;
   return jsonb_build_object('ok', true, 'kitchens', v_kitchens, 'riders', v_riders, 'dishes', v_dishes, 'orders', v_orders);
+end $$;
+
+-- The two cities never mix (review of #258): a rider is a candidate only for a kitchen of the same kind, and assign_rider refuses a mismatch
+-- with the same rider_not_available the n8n SUB 19 already handles. Same bodies as migration 0018 plus the one match on `synthetic`.
+create or replace function dispatch_candidates(p_order uuid) returns jsonb
+language plpgsql stable as $$
+declare
+  v_order orders;
+  v_kitchen kitchens;
+begin
+  select * into v_order from orders where id = p_order;
+  if v_order.id is null then
+    raise exception 'order_not_found';
+  end if;
+  select * into v_kitchen from kitchens where id = v_order.kitchen_id;
+  return jsonb_build_object('riders', coalesce((
+    select jsonb_agg(jsonb_build_object('id', c.id, 'free', c.free, 'distance_m', c.distance_m, 'trips_done', c.trips_done) order by c.distance_m, c.trips_done)
+    from (
+      select r.user_id::text as id,
+             not exists (select 1 from orders o where o.rider_id = r.user_id and o.status in ('ready', 'out_for_delivery')) as free,
+             case when r.lat is null or v_kitchen.lat is null then 0 else round(distance_m(v_kitchen.lat, v_kitchen.lng, r.lat, r.lng))::integer end as distance_m,
+             (select count(*) from orders o where o.rider_id = r.user_id and o.status in ('out_for_delivery', 'delivered')
+                and (o.created_at at time zone 'Asia/Kolkata')::date = (now() at time zone 'Asia/Kolkata')::date)::integer as trips_done
+      from riders r where r.online and r.synthetic = v_kitchen.synthetic
+      order by 3, 4
+      limit 10
+    ) c), '[]'::jsonb));
+end $$;
+
+create or replace function assign_rider(p_order uuid, p_rider uuid) returns jsonb
+language plpgsql as $$
+declare
+  v_order orders;
+begin
+  select * into v_order from orders where id = p_order for update;
+  if v_order.id is null then
+    raise exception 'order_not_found';
+  end if;
+  if v_order.rider_id = p_rider then
+    return jsonb_build_object('order', to_jsonb(v_order));
+  end if;
+  if v_order.status <> 'ready' or v_order.rider_id is not null then
+    raise exception 'not_ready';
+  end if;
+  if not exists (select 1 from riders r join kitchens k on k.id = v_order.kitchen_id
+                 where r.user_id = p_rider and r.online and r.synthetic = k.synthetic) then
+    raise exception 'rider_not_available';
+  end if;
+  update orders set rider_id = p_rider where id = v_order.id returning * into v_order;
+  insert into order_events (order_id, kitchen_id, session_id, event, actor)
+  values (v_order.id, v_order.kitchen_id, v_order.session_id, 'order.assigned', 'dispatch');
+  return jsonb_build_object('order', to_jsonb(v_order));
 end $$;
 
 revoke all on function sim_seed(jsonb) from public, anon, authenticated;

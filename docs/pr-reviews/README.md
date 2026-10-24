@@ -46,6 +46,7 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana �
 | 29 | [#226, #227, #228](pr-226-228-h11-fixes-day.md) | H11 review fixes · no Google on the customer app (#224) · Day default (#225) | #226, #227 MERGED; #228 lost (merged into a merged base); #232 rebuilt it, APPROVE 5639433838, 4 questions; 11 earlier threads answered + resolved | three small layers, one stack; #222/#223 threads all resolved |
 | 30 | [#233](pr-233-admin-ink.md) | feat(app): Ink v3 admin app, boards A1 to A4 and A8 (#195) | lost in a dead base; rebuilt as #234 (APPROVE 5639504559, 3 questions); 9 earlier threads answered + resolved, 30 s poll fixed | H12a, layer on #232; City keeps the old tools until H12b |
 | 31 | [#235](pr-235-admin-city.md) | feat(app): Ink v3 admin City, boards A5 to A7 (#195) | OPEN, APPROVE 5639504792 on `eab8b53`, 9 questions open (TOP: listRiders swallows errors) | H12b, layer on #234; radar run first |
+| 32 | [#240 to #257](pr-240-257-night-of-25-oct.md) | Raat 25 Oct: roadmap page, UX pass, releases, rider name, README v3, mobile stack ADR-020 | MERGED (7 PRs) | #239 #242 #231 #246 #250 |
 
 ## Journals
 - [concepts.md](concepts.md) — naye technical words, plain Hindi mein.
