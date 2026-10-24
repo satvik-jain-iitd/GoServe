@@ -3,7 +3,7 @@
 - **Branch:** `feat/193-customer-account` → `dev`
 - **Author:** klickbae8yt-star
 - **Story / issue:** #193 "H10 UI rollout: customer" (epic E18, #182)
-- **Status:** OPEN, approved (review 5638912878, APPROVE). Waiting for the owner's merge. [VERIFIED]
+- **Status:** MERGED `25efc9e`, approved (review 5638912878, APPROVE). Waiting for the owner's merge. [VERIFIED]
 - **Files:** 30 (12 are png shots) · **Lines:** +334 / -60 [VERIFIED]
 - **Reviewer:** satvik-jain-iitd · review 5638912878 (APPROVE) [VERIFIED]
 - **Head:** bf73554 [VERIFIED]
@@ -204,107 +204,127 @@ Chhote badlaav: bill.spec, customer-ui.spec, customer.spec, profile.spec, rider.
 
 ## Inline comments
 
-Har comment ek teaching question hai. Status `open` hai jab tak coder reply na kare.
+Har comment ek teaching question hai. Sync 24 Oct: sab 20 answered, 6 fixed (9e35759), sab resolved.
 
 <!-- gh-comment-id: 4367692115 -->
 - **File:** `app/src/App.tsx` · **Line:** 411 · **Category:** TOP · Risk
 - **Question:** forgetMe `localStorage.clear()` sab mitata hai: theme pin aur offline feedback queue bhi (FeedbackSheet usi localStorage se flush karta hai). Phone offline tha aur ek feedback pending tha, to woh chala jayega. Theek hai, ya pehle flush, phir wipe?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Accepted as is: Forget me means forget, so an unsent offline report goes with the rest. It is one tap away from a confirm, and the report can be sent again. Noted as follow-up F144 (flush the queue before the wipe) on feat/194.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367692121 -->
 - **File:** `app/src/App.tsx` · **Line:** 392 · **Category:** Understanding
 - **Question:** openOrder purane order se placed state banata hai (snapshot). Agar us order ka live update aaye, kya `tracked` use pakad leta hai, ya tracker purana reh jata hai jab tak refresh na ho?
-- **Status:** open
+- **Reply (klickbae8yt-star):** It picks the live update. `tracked` is `orders.find(id)` on the live list, and `placed` is only the fallback when the list has not loaded. The snapshot lasts until the next poll, same as after a page load.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367692124 -->
 - **File:** `app/src/App.tsx` · **Line:** 397 · **Category:** Assumptions
 - **Question:** openOrderNow = pehla open order. Ek customer ke do open orders ho to strip sirf pehla dikhayegi. Pilot mein ek phone se do orders ek saath ho sakte hain?
-- **Status:** open
+- **Reply (klickbae8yt-star):** The strip shows the newest open order (the list is newest first); a second open order stays visible in Your orders. The pilot phone can place two orders, so this is a choice, not a cap. If it bites in the pilot, the strip becomes a count.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367692128 -->
 - **File:** `app/src/App.tsx` · **Line:** 400 · **Category:** Alternatives
 - **Question:** share nahi to clipboard, clipboard bhi blocked (iPhone private mode) to "Could not share". Link ko text mein dikha dena sasta fallback hota, taaki customer khud copy kare?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 9e35759 on release/app-ink-v3 (PR #221): when share and clipboard both fail, the note shows the link itself ("Copy this link by hand: ..."). Only when the link cannot be made does it say "Try again".
+- **Status:** fixed 9e35759 (release #221), resolved 24 Oct
 
 <!-- gh-comment-id: 4367692131 -->
 - **File:** `app/src/App.tsx` · **Line:** 521 · **Category:** Impact
 - **Question:** framed ab har customer screen par true hai, pehle sirf menu, bill, placed. Kitchen aur rider lock par kuch badla? (lock customer nahi to false, samajh sahi?)
-- **Status:** open
+- **Reply (klickbae8yt-star):** Right: `framed` is `lock === "customer" && role === "customer"`, so kitchen, rider, ops and split stay as they were. Every customer screen is now an Ink board, so the frame covers the whole customer flow.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367692136 -->
 - **File:** `app/src/screens/AccountScreen.tsx` · **Line:** 62 · **Category:** Alternatives
 - **Question:** Send feedback ek window event `gs-feedback` se sheet kholta hai: counter ki ghanti. Prop ya context ke bajaye event kyun? Teen aur screens yahi karein to kaun track karega kaun kise bula raha hai?
-- **Status:** open
+- **Reply (klickbae8yt-star):** FeedbackSheet is mounted once in App, outside the customer tree, and already owns its open state. The event keeps the sheet decoupled from the screens, as the demo bar does. If a third caller comes, it becomes an `open` prop on the sheet, not a second event.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367692141 -->
 - **File:** `app/src/screens/AccountScreen.tsx` · **Line:** 38 · **Category:** Risk
 - **Question:** Phone edit sirf digits aur 10 max rakhta hai; 6 se 9 se shuru hona yahan nahi check hota. Bill par check hai? Galat phone next order tak chup baitha rahega?
-- **Status:** open
+- **Reply (klickbae8yt-star):** The bill checks it (`lib/validate.ts`: ten digits, first 6 to 9) before an order can be placed, so a wrong phone never reaches the kitchen. The You screen is a draft of the bill, so it stays lenient. Same check on You can come with H9 feedback.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367692143 -->
 - **File:** `app/src/screens/AccountScreen.tsx` · **Line:** 51 · **Category:** Understanding
 - **Question:** Alerts switch sirf on karta hai, off nahi (F142.3). Customer ko yeh toota switch lagega? "Blocked in your phone settings" line kaafi hai, ya switch ki jagah ek button "Turn on" saaf hota?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Known, F142.3: a browser lets a page subscribe but not revoke the permission, so off is in the phone settings. The switch is disabled once on and the sub line says why. A "Turn on" button instead of a switch is a board change; it goes to the H9 blind test list
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367692145 -->
 - **File:** `app/src/screens/AccountScreen.tsx` · **Line:** 58 · **Category:** Future
 - **Question:** "By the clock · 6 pm to 6 am" chip par hard text hai. lib/theme ka ghanta badla to yeh label purana reh jayega. Ghanta ek jagah se aana chahiye?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 9e35759 on release/app-ink-v3 (PR #221): `lib/theme.ts` exports `NIGHT = { from: 18, to: 6 }` and `clockLabel()`; the chip reads it. Unit test added. `index.html` still repeats the two numbers for the first paint, said in the comment there.
+- **Status:** fixed 9e35759 (release #221), resolved 24 Oct
 
 <!-- gh-comment-id: 4367692148 -->
 - **File:** `app/src/screens/AccountScreen.tsx` · **Line:** 64 · **Category:** Testability
 - **Question:** "Yes, forget" se signOut fail ho (offline) to bhi local wipe chalta hai. Test S6 sirf clear() dekhta hai; reload ke baad pin screen aana check nahi hota. Ek assertion aur chahiye?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 9e35759 on release/app-ink-v3 (PR #221): S6 now seeds the pin once by hand (not on every load), taps Yes, forget, and asserts the pin screen "Where do we deliver?" after the reload and `gs-pin` null. The signOut catch is unchanged: offline, the local
+- **Status:** fixed 9e35759 (release #221), resolved 24 Oct
 
 <!-- gh-comment-id: 4367692150 -->
 - **File:** `app/src/screens/AccountScreen.tsx` · **Line:** 19 · **Category:** Purpose
 - **Question:** look state readPin se shuru hota hai aur pick() pinTheme likhta hai. Agar kal menu par bhi theme badalne ki jagah aayi to do jagah ka state sync kaise rahega?
-- **Status:** open
+- **Reply (klickbae8yt-star):** The theme has one source: the `gs-theme` key plus `data-theme` on the document, both written by `pinTheme`. `look` is only this screen's mirror for the chips. A second control would call the same `pinTheme` and read `readPin` on mount, so they cannot drift.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367692152 -->
 - **File:** `app/src/screens/OrdersScreen.tsx` · **Line:** 38 · **Category:** TOP · Assumptions
 - **Question:** Har slip par current area ka kitchenName dikhta hai (F142.6). Customer area badle to purani slips galat kitchen dikhayengi. Pilot ek kitchen hai to abhi theek; order row mein kitchen naam kab aayega, aur tab tak yeh line hatana safe nahi?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Known, F142.6. The order row has `kitchen_id` but no name, and the pilot is one kitchen, so the line is right today. The kitchen name joins the order read in H12 (admin, more than one kitchen); until then the line stays because an empty slip reads worse.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367692153 -->
 - **File:** `app/src/screens/OrdersScreen.tsx` · **Line:** 11 · **Category:** Understanding
 - **Question:** "today HH:MM" phone ki local date se tay hota hai. Raat 23:50 ka order 00:10 par "24 Oct 23:50" ban jayega. Theek hai, ya "yesterday" chahiye?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 9e35759 on release/app-ink-v3 (PR #221): a slip from the day before says "yesterday 23:50". Older ones keep the date.
+- **Status:** fixed 9e35759 (release #221), resolved 24 Oct
 
 <!-- gh-comment-id: 4367692155 -->
 - **File:** `app/src/screens/PlacedScreen.tsx` · **Line:** 39 · **Category:** Purpose
 - **Question:** STEP_WORDS sirf ready aur delivered badalta hai; baaki kitchen ke labels (Accepted, Cooking). Customer "Accepted" samjhega? Boards par in steps ke liye kya likha hai?
-- **Status:** open
+- **Reply (klickbae8yt-star):** The boards (journey canvas, Tracker artboard) show Placed, Accepted, Cooking, Ready, At your door as stamps, so Accepted and Cooking are board words. Only Ready and Delivered got longer customer lines because the board wrote them that way.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367692157 -->
 - **File:** `app/src/screens/PlacedScreen.tsx` · **Line:** 76 · **Category:** Impact
 - **Question:** Timeline ab customer words dikhata hai aur rider.spec bhi "Ready, rider picks up" expect karta hai. Kitchen aur rider screens ka timeline yahi component hai? Unhe bhi customer words mil gaye?
-- **Status:** open
+- **Reply (klickbae8yt-star):** No: `Timeline` is used only by PlacedScreen (the customer tracker). Kitchen and rider keep their own lists with the kitchen labels. rider.spec expects the customer words because that test reads the customer's tracker after the rider's step.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367692159 -->
 - **File:** `app/src/screens/FeedbackSheet.tsx` · **Line:** 41 · **Category:** Risk
 - **Question:** Listener mount par lagta hai. Agar FeedbackSheet kabhi do baar mount ho (do roles ek page, split mode) to ek ghanti se do sheets khulenge. Ho sakta hai?
-- **Status:** open
+- **Reply (klickbae8yt-star):** It cannot: FeedbackSheet is mounted once in App (line 543), outside the role views. Split mode is one App with one sheet.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367692163 -->
 - **File:** `app/tests/e2e/account.spec.ts` · **Line:** 1 · **Category:** TOP · Testability
 - **Question:** Rule 5: red test pehle, failure PR mein paste. PR body mein red paste nahi hai, sirf "9 tests". Pehla red run kahan hai? Agla PR body mein paste karo.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Right, the red run was not pasted. The next PR body (feat/194, H11) carries the first red run of each new test.
+- **Status:** answered, resolved 24 Oct
 
 <!-- gh-comment-id: 4367692166 -->
 - **File:** `app/tests/e2e/account.spec.ts` · **Line:** 61 · **Category:** Testability
 - **Question:** S6 Storage.prototype.clear patch karta hai kyunki test har load par pin seed karta hai. Chalaak, par asli wipe ka proof nahi (reload ke baad kya dikhta hai). Seed ko ek baar lagana aur reload ke baad pin screen assert karna behtar?
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 9e35759 on release/app-ink-v3 (PR #221): the `Storage.prototype.clear` patch is gone. S6 seeds once, wipes, and asserts the pin screen after the reload. See the other S6 thread.
+- **Status:** fixed 9e35759 (release #221), resolved 24 Oct
 
 <!-- gh-comment-id: 4367692167 -->
 - **File:** `app/tests/e2e/shots.spec.ts` · **Line:** 125 · **Category:** Risk
 - **Question:** waitForTimeout(400) shot se pehle: is file ka paanchva sleep. Font ya animation ka wait hai? `document.fonts.ready` ya ek visible assertion sasta aur sthir hota.
-- **Status:** open
+- **Reply (klickbae8yt-star):** Fixed in 9e35759 on release/app-ink-v3 (PR #221): this sleep is now `await page.evaluate(() => document.fonts.ready)`. The other four waits in the file cover transitions on earlier screens; they go when the shots spec moves to visible assertions, one PR.
+- **Status:** fixed 9e35759 (release #221), resolved 24 Oct
 
 <!-- gh-comment-id: 4367692169 -->
 - **File:** `docs/follow-ups.md` · **Line:** 149 · **Category:** Future
 - **Question:** F143: prod par 0022 se 0026 lag gaye, par main par purana app hai jab tak release PR nahi. Beech ke ghanton mein purana app + naya schema: kuch tootega? (data rules, functions, indexes; reads same, samajh sahi?)
-- **Status:** open
+- **Reply (klickbae8yt-star):** Nothing breaks. The old app writes only orders and order_events; 0022 constrains kitchens and menu_items, 0023 kitchen_staff, 0024 to 0026 add functions the old app never calls. Reads are the same tables. The customer flow on prod (menu, order) was exercised a | Correction to my last line: no order was placed on prod and I did not run the old app against it. What I checked after the apply, read-only through the anon key: kitchens (both active, each with a pin) and menu_items both read 200. The rest of the reasoning st
+- **Status:** answered, resolved 24 Oct
 
 ---
 
@@ -337,6 +357,6 @@ Need from you: the merge sha.
 
 ## What happened after review
 - Review comments post hue: review 5638912878 (APPROVE) ke saath 20 inline questions. [VERIFIED brief]
-- Replies: 0 answered, 20 open. [INFERRED: replies abhi nahi aaye]
-- Merge: pending. Owner ka merge abhi baaki hai.
+- Replies (sync 24 Oct): 20 answered, 6 fixed in 9e35759 on release/app-ink-v3 (PR #221), 0 open. Sab 20 threads GitHub par resolved. [VERIFIED]
+- Merge: MERGED 25efc9e (24 Oct). Release PR #221 (app/ + design/ to main) APPROVE 5638997327 by satvik-jain-iitd. Fix commit 9e35759 is on the release branch and cherry-picked on feat/194 (98b053a); dev matches main after #194 merges. [VERIFIED]
 - Is chapter ka bada sabak: approve ka matlab "kuch badlo nahi" hai, lekin sawaal phir bhi poochne hain. Forget me jaise ek line wale code mein sabse bada asar chhupa ho sakta hai.
