@@ -27,7 +27,7 @@ test("S1 the other screens follow the same local story: kitchen card, rider list
   await context.setOffline(true);
   await page.getByRole("button", { name: "Autopilot" }).click();
   await page.getByRole("button", { name: "Kitchen" }).click();
-  await expect(page.getByText(/Order [0-9a-f]{8}/)).toBeVisible();
+  await expect(page.getByText(/No\. [0-9a-f]{8}/)).toBeVisible();   // H11: the ticket number
   await page.getByRole("button", { name: "Ops" }).click();
   await expect(page.getByText("AI suggests rider R2 (81%). The rule agrees.")).toBeVisible({ timeout: 8000 });
   await expect(page.getByText("Sample numbers (offline demo).")).toBeVisible();

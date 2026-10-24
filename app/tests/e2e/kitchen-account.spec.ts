@@ -7,7 +7,7 @@ test("S1 a staff user on /kitchen/ reads the orders of the kitchen, not of one s
   const net = await setup(context, page, [{ ...order("placed"), session_id: "7e57ab1e-0000-4000-8000-0000000000c3", kitchen_id: "k-1" }]);
   net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
-  await expect(page.getByText("Order 0f0f0f0f")).toBeVisible();   // another customer's session, no join link
+  await expect(page.getByText("No. 0f0f0f0f")).toBeVisible();   // another customer's session, no join link
   expect(net.calls.orderReads.some((u) => u.includes("kitchen_id=eq.k-1"))).toBe(true);
   expect(net.calls.orderReads.some((u) => u.includes("session_id=eq."))).toBe(false);
 });
@@ -36,6 +36,6 @@ test("S5 on /rider/ even a kitchen staff user reads only the orders assigned to 
   net.state.kitchen = "k-1";
   await page.goto("/rider/");
   await expect(page.getByRole("heading", { name: /^Deliver/ })).toBeVisible();
-  expect(net.calls.orderReads.some((u) => u.includes("rider_id=eq."))).toBe(true);
+  await expect.poll(() => net.calls.orderReads.some((u) => u.includes("rider_id=eq."))).toBe(true);
   expect(net.calls.orderReads.some((u) => u.includes("kitchen_id=eq."))).toBe(false);
 });
