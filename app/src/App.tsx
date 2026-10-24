@@ -1,7 +1,7 @@
 // The customer flow in one place: menu, cart, bill, placed (story #48). No router yet: four steps in state.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MAX_QTY, addDish, cartLines, cartTotal, changeQty, toOrderItems, type Cart } from "./lib/cart";
-import { mergeOrder, riderOrders, shortId, statusLabel, type Order, type RiderAction } from "./lib/kitchen";
+import { mergeOrder, riderOrders, shortId, statusLabel, type Order, type RiderAction, confirmHandover, isCash } from "./lib/kitchen";
 import { clientPlatform } from "./lib/platform";
 import { riderRefused, savePlatform, tapCall } from "./lib/signals";
 import { useLiveOrders } from "./lib/useLiveOrders";
@@ -475,7 +475,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         stats={demo ? { runsToday: 6, lastDecideMs: 310 } : ops.stats} error={demo ? null : ops.error ?? live.error} failed={ops.failed} sample={demo} />
   );
   // The kitchen of the delivery in hand, for "Pick up at" (story H11). Read once per kitchen; nothing in the offline demo.
-  const jobKitchenId = role === "rider" && !demo ? riderOrders(orders)[0]?.kitchen_id ?? null : null;
+  const jobKitchenId = role === "rider" && !demo ? riderOrders(orders)[0]?.kitchen_id ?? orders[0]?.kitchen_id ?? null : null;   // #229: the hours set the cash day even with no job in hand
   const [jobKitchen, setJobKitchen] = useState<KitchenCard | null>(null);
   useEffect(() => {
     if (!jobKitchenId) return;
@@ -488,9 +488,15 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       onAct={(o, a) => act(o, a, "rider")} gate={gate} kitchen={jobKitchen} />
   );
   const riderView = lock === "rider" ? <RiderGate>{riderScreen}</RiderGate> : riderScreen(null);
+  // Story #229: the kitchen confirms a rider's cash. The rows are stamped here too, so the screen does not wait for the next read.
+  async function handover(riderId: string): Promise<string | null> {
+    const failed = await confirmHandover(getClient(), riderId);
+    if (!failed) setOrders((cur) => cur.map((o) => o.rider_id === riderId && o.status === "delivered" && isCash(o) && !o.cash_handed_at ? { ...o, cash_handed_at: new Date().toISOString() } : o));
+    return failed;
+  }
   const kitchenScreen = (gate: KitchenGateState | null) => (
     <KitchenScreen orders={orders} loading={live.loading} error={live.error} busyId={busyId}
-      onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} gate={gate} />
+      onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} onHandover={handover} gate={gate} />
   );
   const kitchenView = lock === "kitchen" ? <KitchenGate>{kitchenScreen}</KitchenGate> : kitchenScreen(null);
   const needArea = lock === "customer" && step !== "placed" && step !== "orders" && !(pin && (area?.kind === "ok" || area?.kind === "closed"));
