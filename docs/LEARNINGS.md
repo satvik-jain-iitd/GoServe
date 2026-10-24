@@ -193,3 +193,5 @@ short. Say what happened and what to do next time.
 - A report that falls back to "the input item" when the right node failed can show the wrong period as the current one. Read each period by node name, and say "could not read" when it is missing.
 - A commit made while another branch is checked out lands on that branch. After `git checkout`, run `git branch --show-current` before you commit. H10a was committed on the pins branch and the PR looked empty.
 - A CSS comment with `#193` looks like a hex colour to the "no hex" test. Write the story as "story H10b" without the hash in CSS files.
+- Guard checks every commit subject on the branch, not just the last one. A 74 char subject failed CI after the second commit passed locally. Run `python3 scripts/guard.py msg "<subject>"` before each commit, and keep subjects under 72 chars including the `(#issue)` tail.
+- A migration that adds a check constraint fails on old rows. Run a read-only count of rows that break the rule on prod first, fix the data with the owner, then apply. The owner's data fix (a pin code) came in one line once the question was concrete.
