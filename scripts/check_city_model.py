@@ -222,6 +222,24 @@ raises("a dish name is unique in its kitchen, ignoring case", "admin", f"insert 
 raises("the same dish name in another kitchen is fine", "admin", f"insert into menu_items (kitchen_id, name, price_paise) values ('{K2}', 'check dish', 500)", expect_ok=True)
 
 
+# Story H3 (#186): one kitchen per staff account. Run as the database owner, then read as the users.
+def _ask(uid: str, i: int, expr: str) -> str:
+    return f"set local role authenticated; select set_config('request.jwt.claim.sub', '{uid}', true); create temp table ds{i} as select ({expr}) as v; reset role;"
+STAFF = f"""
+insert into kitchen_staff (kitchen_id, user_id) values ('{K2}', '{U['admin']}');
+{_ask(U['admin'], 0, f"(select count(*) from kitchen_staff) = 2 and (select count(*) from kitchen_staff where user_id = auth.uid()) = 1 and (select kitchen_id from kitchen_staff where user_id = auth.uid()) = '{K2}'")}
+{_ask(U['staff'], 1, "(select count(*) from kitchen_staff) = 1")}
+do $$ begin begin insert into kitchen_staff (kitchen_id, user_id) values ('{K2}', '{U['staff']}'); create temp table ds2 as select false as v; exception when unique_violation then create temp table ds2 as select true as v; end; end $$;
+do $$ begin perform set_config('request.jwt.claim.sub', '{U['admin']}', true); end $$;
+{_ask(U['admin'], 3, f"(select count(*) from (select admin_add_person('cook@check.test', 'kitchen', '{K1}')) x) = 1")}
+do $$ begin begin set local role authenticated; perform set_config('request.jwt.claim.sub', '{U['admin']}', true); perform admin_add_person('cook@check.test', 'kitchen', '{K2}'); reset role; create temp table ds4 as select false as v; exception when others then reset role; create temp table ds4 as select (sqlerrm like '%already_staff%') as v; end; end $$;
+{_ask(U['admin'], 5, f"(select count(*) from kitchen_staff where user_id = '{U['cook']}') = 1")}
+"""
+STAFF_NAMES = ["an admin who is also staff reads every staff row but the query for their own user returns only their kitchen", "kitchen staff read only their own row",
+               "a second kitchen for the same staff account is refused by the database", "an admin adds a person to a kitchen",
+               "adding that person to a second kitchen is refused with already_staff", "the person stays in one kitchen"]
+
+
 def run(ref: str, query: str):
     req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/database/query", data=json.dumps({"query": query}).encode(),
                                  headers={"Authorization": f"Bearer {os.environ['SUPABASE_ACCESS_TOKEN']}", "Content-Type": "application/json", "User-Agent": "goserve-check"})
@@ -229,16 +247,16 @@ def run(ref: str, query: str):
 
 
 def build() -> str:
-    selects = [f"select 'c{i}' as k, v from c{i}" for i in range(len(checks))] + [f"select 'cx{j}' as k, v from cx{j}" for j in range(len(EXTRA_NAMES))] + [f"select 'dx{j}' as k, v from dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"select 'dr{j}' as k, v from dr{j}" for j in range(len(RIDER_NAMES))]
-    return "\n".join(["begin;", SETUP, *[sql for _, sql in checks], FINAL_EXTRA, DISPATCH, RIDER_CARD, " union all ".join(selects) + ";", "rollback;"])
+    selects = [f"select 'c{i}' as k, v from c{i}" for i in range(len(checks))] + [f"select 'cx{j}' as k, v from cx{j}" for j in range(len(EXTRA_NAMES))] + [f"select 'dx{j}' as k, v from dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"select 'dr{j}' as k, v from dr{j}" for j in range(len(RIDER_NAMES))] + [f"select 'ds{j}' as k, v from ds{j}" for j in range(len(STAFF_NAMES))]
+    return "\n".join(["begin;", SETUP, *[sql for _, sql in checks], FINAL_EXTRA, DISPATCH, RIDER_CARD, STAFF, " union all ".join(selects) + ";", "rollback;"])
 
 
 if __name__ == "__main__":
     if sys.argv[1:] != ["dev"]:
         sys.exit("Usage: check_city_model.py dev (prod is never allowed)")
     rows = {r["k"]: r["v"] for r in run(DEV_REF, build())}
-    names = [n for n, _ in checks] + EXTRA_NAMES + DISPATCH_NAMES + RIDER_NAMES
-    keys = [f"c{i}" for i in range(len(checks))] + [f"cx{j}" for j in range(len(EXTRA_NAMES))] + [f"dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"dr{j}" for j in range(len(RIDER_NAMES))]
+    names = [n for n, _ in checks] + EXTRA_NAMES + DISPATCH_NAMES + RIDER_NAMES + STAFF_NAMES
+    keys = [f"c{i}" for i in range(len(checks))] + [f"cx{j}" for j in range(len(EXTRA_NAMES))] + [f"dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"dr{j}" for j in range(len(RIDER_NAMES))] + [f"ds{j}" for j in range(len(STAFF_NAMES))]
     bad = 0
     for n, k in zip(names, keys):
         ok = rows.get(k) is True

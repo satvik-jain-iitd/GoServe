@@ -103,6 +103,7 @@ test("a reminder: when the tester allowed notifications the phone shows one when
 
 test("S6 a double tap on a kitchen step: the second answer already_done is not shown as an error", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
+  net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
   net.state.reply = { status: 409, body: { ok: false, error: "already_done", message: "Already done." } };
   await page.getByRole("button", { name: "Accept 0f0f0f0f" }).click();
