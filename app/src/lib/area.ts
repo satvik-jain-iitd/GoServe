@@ -2,7 +2,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type AreaKitchen = { id: string; name: string; pin_codes: string[]; lat: number | null; lng: number | null; open: boolean; active: boolean; opens_at?: string | null; closes_at?: string | null };
-export type Area = { kind: "ok"; kitchen: AreaKitchen } | { kind: "closed"; name: string; opens_at: string | null } | { kind: "none" };
+export type Area = { kind: "ok"; kitchen: AreaKitchen } | { kind: "closed"; id: string; name: string; opens_at: string | null } | { kind: "none" };
 
 export const isPin = (text: string): boolean => /^\d{6}$/.test(text);
 
@@ -12,7 +12,7 @@ export function chooseKitchen(kitchens: AreaKitchen[], pin: string, from?: { lat
   const serving = kitchens.filter((k) => k.pin_codes.includes(pin)).sort((a, b) => a.name.localeCompare(b.name));
   if (serving.length === 0) return { kind: "none" };
   const open = serving.filter((k) => k.open && k.active);
-  if (open.length === 0) return { kind: "closed", name: serving[0].name, opens_at: serving[0].opens_at ?? null };
+  if (open.length === 0) return { kind: "closed", id: serving[0].id, name: serving[0].name, opens_at: serving[0].opens_at ?? null };
   const d = (k: AreaKitchen) => (from && k.lat !== null && k.lng !== null ? (k.lat - from.lat) ** 2 + (k.lng - from.lng) ** 2 : Infinity);
   return { kind: "ok", kitchen: [...open].sort((a, b) => d(a) - d(b))[0] };
 }
