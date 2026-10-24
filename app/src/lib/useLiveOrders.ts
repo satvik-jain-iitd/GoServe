@@ -26,7 +26,12 @@ export function useLiveOrders(active: boolean, appRole?: "kitchen" | "rider") {
       try {
         const sessionId = await currentSession();
         const client = getClient();
-        const scope = appRole === "rider" ? riderScope(await ensureSession()) : scopeFor(appRole === "kitchen" ? await myKitchen(client) : null, sessionId);
+        const kitchen = appRole === "kitchen" ? await myKitchen(client, await ensureSession()) : null;
+        if (appRole === "kitchen" && !kitchen) {   // story H3: a kitchen app account that is not staff reads nothing; the screen says so
+          if (alive) setLoading(false);
+          return;
+        }
+        const scope = appRole === "rider" ? riderScope(await ensureSession()) : scopeFor(kitchen, sessionId);
         const reload = async () => {
           const rows = await fetchOrders(client, scope);
           if (alive) setOrders((cur) => rows.reduce(mergeOrder, cur));

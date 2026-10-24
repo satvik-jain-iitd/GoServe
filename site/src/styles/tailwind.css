@@ -1,0 +1,37 @@
+/* Tailwind 4 without its reset: the Ink sheets own the base styles. The registry blocks (Watermelon UI, Motion Primitives)
+   use shadcn colour names; they are mapped to the Ink tokens here, so Day and Night follow ink.css. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--md-background);
+  --color-foreground: var(--md-on-background);
+  --color-card: var(--md-surface);
+  --color-card-foreground: var(--md-on-surface);
+  --color-popover: var(--md-surface);
+  --color-popover-foreground: var(--md-on-surface);
+  --color-primary: var(--md-primary);
+  --color-primary-foreground: var(--md-on-primary);
+  --color-secondary: var(--gs-sage);
+  --color-secondary-foreground: var(--gs-ink-green);
+  --color-muted: var(--md-surface);
+  --color-muted-foreground: var(--gs-text-muted);
+  --color-accent: var(--gs-lime);
+  --color-accent-foreground: var(--gs-ink-green);
+  --color-destructive: var(--md-error);
+  --color-border: var(--md-outline-variant);
+  --color-input: var(--md-outline-variant);
+  --color-ring: var(--md-primary);
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 6px;
+  --radius-xl: 6px;
+}
+
+@layer base {
+  /* Tailwind's reset is not loaded, so the blocks need border-box here (footer-3 is w-full with padding). */
+  *, ::before, ::after { box-sizing: border-box; border-color: var(--md-outline-variant); }
+}

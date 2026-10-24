@@ -85,7 +85,7 @@ def build_preregister():
              "n8n-nodes-base.webhook", 2, [-40, 0],
              webhook_params("goserve-preregister", ""),
              "Public POST endpoint. URL: /webhook/goserve-preregister. "
-             "The website form sends name, email, phone, city, role, source, submittedAt. "
+             "The website form sends name, email, phone, pin, city, role, source, submittedAt. "
              "Responds only AFTER the nodes below run (responseMode = respondToWebhook)."),
         node("norm-prereg", "2 · Normalise — keep the fields we need",
              "n8n-nodes-base.set", 3.4, [180, 0],
@@ -98,6 +98,7 @@ def build_preregister():
                   {"id": "n5", "name": "role", "value": "={{ $json.body.role }}", "type": "string"},
                   {"id": "n6", "name": "source", "value": "={{ $json.body.source }}", "type": "string"},
                   {"id": "n7", "name": "submittedAt", "value": "={{ $json.body.submittedAt }}", "type": "string"},
+                  {"id": "n9", "name": "pin", "value": "={{ $json.body.pin || '' }}", "type": "string"},
                   {"id": "n8", "name": "receivedAt", "value": "={{ $now.setZone('Asia/Kolkata').toISO() }}", "type": "string"}]},
               "options": {}},
              "The webhook puts the payload under json.body. This step lifts each form field "
@@ -117,6 +118,7 @@ def build_preregister():
                        "Email: {{ $('2 · Normalise — keep the fields we need').item.json.email }}\n"
                        "Phone: {{ $('2 · Normalise — keep the fields we need').item.json.phone || '—' }}\n"
                        "City: {{ $('2 · Normalise — keep the fields we need').item.json.city }}\n"
+                       "Pin code: {{ $('2 · Normalise — keep the fields we need').item.json.pin || '—' }}\n"
                        "Role: {{ $('2 · Normalise — keep the fields we need').item.json.role }}\n"
                        "Source: {{ $('2 · Normalise — keep the fields we need').item.json.source }}\n"
                        "Received: {{ $('2 · Normalise — keep the fields we need').item.json.receivedAt }}"),

@@ -22,11 +22,12 @@ type Props = {
   onCancel: () => void;         // story B3: allowed only while the order is placed
   cancelling: boolean;
   rider: RiderCard | null;      // story D2: shown once a rider has the order
+  onCall?: () => void;          // story H14: the Call tap is counted ("where is my food" calls)
 };
 
 const clock = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase();
 
-export function PlacedScreen({ order, status, paidBy, confirmedAt, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onAgain, onCancel, cancelling, rider }: Props) {
+export function PlacedScreen({ order, status, paidBy, confirmedAt, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onAgain, onCancel, cancelling, rider, onCall }: Props) {
   const steps = trackerSteps(status);
   return (
     <section>
@@ -37,7 +38,7 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, asking, busy,
       {rider && (
         <div className="notice" data-testid="rider-card">
           <strong>{rider.name}</strong> is bringing your order.{" "}
-          <a className="ui-btn" href={`tel:${rider.phone}`}>Call {rider.name}</a>
+          <a className="ui-btn" href={`tel:${rider.phone}`} onClick={onCall}>Call {rider.name}</a>
         </div>
       )}
       {status === "cancelled" && <p role="status"><strong>Your order was cancelled.</strong></p>}

@@ -23,6 +23,13 @@ const MESSAGES: Record<string, string> = {
   invalid_kind: "Pick a role, and a kitchen for kitchen staff.",
   reason_required: "Give a reason for the cancel.",
   cannot_cancel: "This order can no longer be cancelled.",
+  already_staff: "This person already works for another kitchen. Remove them there first.",
+  kitchens_pin_required: "Give the kitchen at least one pin code.",
+  kitchens_phone_format: "The phone must be ten digits and start with 6, 7, 8 or 9.",
+  kitchens_hours_differ: "The opening time and the closing time must be different.",
+  kitchens_name_unique: "A kitchen with this name already exists.",
+  menu_items_price_positive: "The price must be more than zero.",
+  menu_items_name_unique: "This kitchen already has a dish with this name.",
 };
 export const adminMessage = (error: { message?: string } | null): string | null =>
   !error ? null : Object.entries(MESSAGES).find(([code]) => error.message?.includes(code))?.[1] ?? "That did not work. Try again.";

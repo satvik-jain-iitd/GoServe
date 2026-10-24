@@ -68,6 +68,7 @@ describe("rider steps", () => {
     expect(riderActions("out_for_delivery")).toEqual([
       { kind: "event", event: "order.arriving", label: "Arriving" },
       { kind: "status", to: "delivered", label: "Delivered" },
+      { kind: "refused", label: "Not delivered" },   // story H14
     ]);
   });
   it("the rider has no button before Ready or after Delivered", () => {
