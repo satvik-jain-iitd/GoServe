@@ -314,6 +314,21 @@ PILOT_NAMES = ["rider_ping updates the rider's last place (the history row is co
                "pilot_watch_mark: a second mark writes nothing", "pilot_prune deletes pings older than 30 days and keeps the rest"]
 
 
+# Story H15 (#205): platform health numbers and the cost caps (migration 0025). Read as the database owner, like the service role.
+def _hn(i: int, expr: str) -> str:
+    return f"select set_config('request.jwt.claim.sub', '', true); create temp table dh{i} as select ({expr}) as v;"
+HEALTH = f"""
+{_hn(0, "(health_numbers()->>'db_mb')::numeric > 0 and (health_numbers()->>'connections')::int >= 1")}
+{_hn(1, "(health_numbers()->'rows'->>'orders')::int >= 4 and (health_numbers()->'rows') ?& array['orders', 'run_log', 'rider_pings', 'order_events']")}
+{_hn(2, "health_numbers()->'oldest' ?& array['orders', 'run_log', 'rider_pings', 'order_events']")}
+{_hn(3, "(health_numbers()->'caps'->>'openrouter_usd')::numeric = 2 and (health_numbers()->'caps'->>'supabase_mb')::int = 500 and (health_numbers()->'caps'->>'n8n_errors_day')::int = 5")}
+{_hn(4, "(select count(*) from params where session_id = 'global' and key = 'cost_caps' and version = 1) = 1")}
+do $$ begin begin set local role authenticated; perform set_config('request.jwt.claim.sub', '{U['cust']}', true); perform health_numbers(); reset role; create temp table dh5 as select false as v; exception when others then reset role; create temp table dh5 as select (sqlerrm like '%permission denied%') as v; end; end $$;
+"""
+HEALTH_NAMES = ["health_numbers: database size and open connections", "health_numbers: row counts of the four growing tables", "health_numbers: the oldest row of each", "health_numbers: the cost caps come from params (cost_caps v1)",
+                "params holds cost_caps version 1", "a signed-in customer cannot call health_numbers"]
+
+
 def run(ref: str, query: str):
     req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/database/query", data=json.dumps({"query": query}).encode(),
                                  headers={"Authorization": f"Bearer {os.environ['SUPABASE_ACCESS_TOKEN']}", "Content-Type": "application/json", "User-Agent": "goserve-check"})
@@ -321,16 +336,16 @@ def run(ref: str, query: str):
 
 
 def build() -> str:
-    selects = [f"select 'c{i}' as k, v from c{i}" for i in range(len(checks))] + [f"select 'cx{j}' as k, v from cx{j}" for j in range(len(EXTRA_NAMES))] + [f"select 'dx{j}' as k, v from dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"select 'dr{j}' as k, v from dr{j}" for j in range(len(RIDER_NAMES))] + [f"select 'ds{j}' as k, v from ds{j}" for j in range(len(STAFF_NAMES))] + [f"select 'dp{j}' as k, v from dp{j}" for j in range(len(PILOT_NAMES))]
-    return "\n".join(["begin;", SETUP, *[sql for _, sql in checks], FINAL_EXTRA, DISPATCH, RIDER_CARD, STAFF, PILOT, " union all ".join(selects) + ";", "rollback;"])
+    selects = [f"select 'c{i}' as k, v from c{i}" for i in range(len(checks))] + [f"select 'cx{j}' as k, v from cx{j}" for j in range(len(EXTRA_NAMES))] + [f"select 'dx{j}' as k, v from dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"select 'dr{j}' as k, v from dr{j}" for j in range(len(RIDER_NAMES))] + [f"select 'ds{j}' as k, v from ds{j}" for j in range(len(STAFF_NAMES))] + [f"select 'dp{j}' as k, v from dp{j}" for j in range(len(PILOT_NAMES))] + [f"select 'dh{j}' as k, v from dh{j}" for j in range(len(HEALTH_NAMES))]
+    return "\n".join(["begin;", SETUP, *[sql for _, sql in checks], FINAL_EXTRA, DISPATCH, RIDER_CARD, STAFF, PILOT, HEALTH, " union all ".join(selects) + ";", "rollback;"])
 
 
 if __name__ == "__main__":
     if sys.argv[1:] != ["dev"]:
         sys.exit("Usage: check_city_model.py dev (prod is never allowed)")
     rows = {r["k"]: r["v"] for r in run(DEV_REF, build())}
-    names = [n for n, _ in checks] + EXTRA_NAMES + DISPATCH_NAMES + RIDER_NAMES + STAFF_NAMES + PILOT_NAMES
-    keys = [f"c{i}" for i in range(len(checks))] + [f"cx{j}" for j in range(len(EXTRA_NAMES))] + [f"dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"dr{j}" for j in range(len(RIDER_NAMES))] + [f"ds{j}" for j in range(len(STAFF_NAMES))] + [f"dp{j}" for j in range(len(PILOT_NAMES))]
+    names = [n for n, _ in checks] + EXTRA_NAMES + DISPATCH_NAMES + RIDER_NAMES + STAFF_NAMES + PILOT_NAMES + HEALTH_NAMES
+    keys = [f"c{i}" for i in range(len(checks))] + [f"cx{j}" for j in range(len(EXTRA_NAMES))] + [f"dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"dr{j}" for j in range(len(RIDER_NAMES))] + [f"ds{j}" for j in range(len(STAFF_NAMES))] + [f"dp{j}" for j in range(len(PILOT_NAMES))] + [f"dh{j}" for j in range(len(HEALTH_NAMES))]
     bad = 0
     for n, k in zip(names, keys):
         ok = rows.get(k) is True

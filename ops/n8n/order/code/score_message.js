@@ -4,10 +4,14 @@
 const tryNode = (n) => { try { return $(n).first().json; } catch (e) { return null; } };
 const before = tryNode('Call SUB 91 before');   // only MAIN 93 has it
 const cur = tryNode('Call SUB 91 Scorecard numbers');
-const r = before && cur && cur.summary ? cur : $input.first().json;
+const wnd = $('Prepare window').first().json;
+const reportMode = wnd.period_label !== 'last 24 hours';
+// A report reads its two periods by node name. If the current one failed it says so; it never shows the period before as the current one.
+const r = reportMode ? (cur || { ok: false, error: 'no_answer' }) : $input.first().json;
 const chat_id = $('Config').first().json.chat_id;
-const w = $('Prepare window').first().json;
-const report = w.period_label !== 'last 24 hours';
+const w = wnd;
+const report = reportMode;
+const health = report ? tryNode('Call SUB 94 Health and cost numbers') : null;
 const head = 'GoServe pilot ' + (report ? 'report' : 'day card') + ', ' + w.period_label + ' (to ' + w.until_label + ' India time)';
 if (!r.ok) return [{ json: { chat_id, text: head + '\nI could not read the numbers (' + (r.error || 'error') + '). Please check the database.' } }];
 const s = r.summary;
@@ -49,5 +53,6 @@ else {
 lines.push('Decisions: ' + s.decisions + '. Jev advice used: ' + s.jev_used + ', agreed with the rule: ' + s.jev_agreed);
 lines.push('Cost of all calls: $' + s.cost.toFixed(5) + (s.decisions ? ' (about $' + (s.decide_cost / s.decisions).toFixed(5) + ' per decision)' : ''));
 lines.push('Health checks: ' + s.health_checks);
+if (health && health.ok && Array.isArray(health.lines) && health.lines.length) lines.push('', 'Platform health and cost:', ...health.lines);
 if (s.truncated) lines.push('Note: latest 1000 runs only; there were more.');
 return [{ json: { chat_id, text: lines.join('\n') } }];

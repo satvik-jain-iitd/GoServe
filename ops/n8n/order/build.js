@@ -65,7 +65,7 @@ function finish(name, nodes, edges, sections, setts) {
 }
 
 // env 'prod' builds the PROD copy (story #78): a `PROD` name mark and its own webhook path. Everything else, including the canvas, is the same code.
-function build({ ids, token, supabaseUrl, credential, openrouterCredential, vapidCredential, vapidPublicKey, vapidSubject, chatId, driveFolderId, env }) {
+function build({ ids, token, supabaseUrl, credential, openrouterCredential, n8nApiCredential, uptimerobotKey, vapidCredential, vapidPublicKey, vapidSubject, chatId, driveFolderId, env }) {
   const prod = env === 'prod';
   const settings = ids.alert ? Object.assign({}, baseSettings, { errorWorkflow: ids.alert }) : baseSettings;
   const cred = credential || { id: 'REPLACE_CREDENTIAL_ID', name: 'GoServe Supabase dev' };
@@ -449,6 +449,35 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, vapi
   ];
   const sub93 = finish('GS SUB 93 Watch numbers', n93, e93, s93, Object.assign({}, settings, { callerPolicy: 'workflowsFromAList', callerIds: ids.main92 }));
 
+  // ---- SUB 94 Health and cost numbers: the platform and cost lines of the weekly and monthly report (story H15) ----
+  const f94 = [['since', 'string'], ['days', 'number'], ['supabase_url', 'string'], ['uptimerobot_key', 'string']];
+  const soft = { onError: 'continueRegularOutput' };
+  const readOpts = { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 };
+  const n94 = [
+    node('gs-sub94-01', 'Start', 'n8n-nodes-base.executeWorkflowTrigger', 1.1, inputs(f94)),
+    node('gs-sub94-02', 'Read OpenRouter', 'n8n-nodes-base.httpRequest', 4.2, { method: 'GET', url: 'https://openrouter.ai/api/v1/auth/key',
+      authentication: 'genericCredentialType', genericAuthType: 'httpHeaderAuth', options: readOpts }, Object.assign({ credentials: { httpHeaderAuth: jevCred } }, soft)),
+    node('gs-sub94-03', 'Read database numbers', 'n8n-nodes-base.httpRequest', 4.2, { method: 'POST', url: "={{ $('Start').first().json.supabase_url }}/rest/v1/rpc/health_numbers",
+      authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth', sendBody: true, specifyBody: 'json', jsonBody: '={{ {} }}', options: readOpts },
+      Object.assign({ credentials: { httpCustomAuth: cred } }, soft)),
+    node('gs-sub94-04', 'Read n8n errors', 'n8n-nodes-base.httpRequest', 4.2, { method: 'GET', url: 'https://n8n.linkright.in/api/v1/executions?status=error&limit=100',
+      authentication: 'predefinedCredentialType', nodeCredentialType: 'n8nApi', options: readOpts },
+      Object.assign({ credentials: { n8nApi: n8nApiCredential || { id: 'REPLACE_N8N_API_CRED_ID', name: 'GoServe n8n API' } } }, soft)),
+    node('gs-sub94-05', 'Read uptime', 'n8n-nodes-base.httpRequest', 4.2, { method: 'POST', url: 'https://api.uptimerobot.com/v2/getMonitors', sendBody: true, specifyBody: 'json',
+      jsonBody: "={{ JSON.stringify({ api_key: $('Start').first().json.uptimerobot_key, format: 'json', custom_uptime_ratios: '7' }) }}", options: readOpts }, soft),
+    codeNode('gs-sub94-06', 'Health lines', code('health_lines.js')),
+  ];
+  const e94 = [['Start', 'Read OpenRouter'], ['Read OpenRouter', 'Read database numbers'], ['Read database numbers', 'Read n8n errors'], ['Read n8n errors', 'Read uptime'], ['Read uptime', 'Health lines']];
+  const s94 = [
+    { name: 'RECEIVE', what: 'MAIN 93 calls this once a week and once a month.', needs: 'Input: ' + f94.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
+    { name: 'SPEND', what: 'Ask OpenRouter how much of the $2 cap is used.', needs: 'Credential "GoServe OpenRouter".', nodes: ['Read OpenRouter'], color: 6 },
+    { name: 'DATABASE', what: 'Ask the database for its size, open connections, row counts, oldest rows and the cost caps.', needs: 'Credential "GoServe Supabase dev". Function: health_numbers (read only).', nodes: ['Read database numbers'], color: 6 },
+    { name: 'ERRORS', what: 'Read the newest failed n8n runs and count the ones inside the window.', needs: 'Credential "GoServe n8n API" (the owner makes it).', nodes: ['Read n8n errors'], color: 6 },
+    { name: 'UPTIME', what: 'Ask UptimeRobot for each monitor and its 7-day uptime.', needs: 'Input: uptimerobot_key.', nodes: ['Read uptime'], color: 6 },
+    { name: 'LINES', what: 'Write one line per number, with OK, WATCH or OVER against the cap. A failed read prints "could not read" and the rest go on.', needs: 'The four reads.', nodes: ['Health lines'], color: 5 },
+  ];
+  const sub94 = finish('GS SUB 94 Health and cost numbers', n94, e94, s94, Object.assign({}, settings, { callerPolicy: 'workflowsFromAList', callerIds: ids.main93 }));
+
   const telegram = (id, name) => node(id, name, 'n8n-nodes-base.telegram', 1.2, { resource: 'message', operation: 'sendMessage', chatId: '={{ $json.chat_id }}', text: '={{ $json.text }}',
     additionalFields: { appendAttribution: false } }, { credentials: { telegramApi: { id: 'bBVpWzhaY0MCpoQ5', name: 'GoServeBot' } } });
   const cfgSet = (id, list) => node(id, 'Config', 'n8n-nodes-base.set', 3.4, { mode: 'manual', includeOtherFields: true, assignments: { assignments: list.map(([name, type, value], i) => ({ id: 'cfg-' + (i + 1), name, type, value })) }, options: {} });
@@ -522,17 +551,18 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, vapi
     schedule('gs-main93-02', '1st of the month 09:00', '0 9 1 * *'),
     node('gs-main93-03', 'Week', 'n8n-nodes-base.set', 3.4, { mode: 'manual', includeOtherFields: true, assignments: { assignments: [{ id: 'w-1', name: 'days', type: 'number', value: 7 }] }, options: {} }),
     node('gs-main93-04', 'Month', 'n8n-nodes-base.set', 3.4, { mode: 'manual', includeOtherFields: true, assignments: { assignments: [{ id: 'm-1', name: 'days', type: 'number', value: 30 }] }, options: {} }),
-    cfgSet('gs-main93-05', [['kill_switch', 'boolean', false], ['chat_id', 'string', chatId || PLACEHOLDER], ['supabase_url', 'string', url]]),
+    cfgSet('gs-main93-05', [['kill_switch', 'boolean', false], ['chat_id', 'string', chatId || PLACEHOLDER], ['supabase_url', 'string', url], ['uptimerobot_key', 'string', uptimerobotKey || PLACEHOLDER]]),
     ifNode('gs-main93-06', 'Kill switch?', '={{ $json.kill_switch }}', 'true'),
     node('gs-main93-07', 'Paused', 'n8n-nodes-base.noOp', 1, {}),
     codeNode('gs-main93-08', 'Prepare window', code('score_window.js')),
     callSub('gs-main93-09', 'Call SUB 91 Scorecard numbers', ids.sub91, [['since', "={{ $json.since }}", 'string'], ['until', '={{ $json.until }}', 'string'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
     callSub('gs-main93-10', 'Call SUB 91 before', ids.sub91, [['since', "={{ $('Prepare window').first().json.prev_since }}", 'string'], ['until', "={{ $('Prepare window').first().json.prev_until }}", 'string'], ['supabase_url', "={{ $('Prepare window').first().json.supabase_url }}", 'string']]),
+    callSub('gs-main93-13', 'Call SUB 94 Health and cost numbers', ids.sub94, [['since', "={{ $('Prepare window').first().json.since }}", 'string'], ['days', "={{ $('Prepare window').first().json.days }}", 'number'], ['supabase_url', "={{ $('Prepare window').first().json.supabase_url }}", 'string'], ['uptimerobot_key', "={{ $('Prepare window').first().json.uptimerobot_key }}", 'string']]),
     codeNode('gs-main93-11', 'Format message', code('score_message.js')),
     telegram('gs-main93-12', 'Send report'),
   ];
   const e93m = [['Monday 09:00', 'Week'], ['1st of the month 09:00', 'Month'], ['Week', 'Config'], ['Month', 'Config'], ['Config', 'Kill switch?'], ['Kill switch?', 'Paused', 0], ['Kill switch?', 'Prepare window', 1],
-    ['Prepare window', 'Call SUB 91 Scorecard numbers'], ['Call SUB 91 Scorecard numbers', 'Call SUB 91 before'], ['Call SUB 91 before', 'Format message'], ['Format message', 'Send report']];
+    ['Prepare window', 'Call SUB 91 Scorecard numbers'], ['Call SUB 91 Scorecard numbers', 'Call SUB 91 before'], ['Call SUB 91 before', 'Call SUB 94 Health and cost numbers'], ['Call SUB 94 Health and cost numbers', 'Format message'], ['Format message', 'Send report']];
   const s93m = [
     { name: 'SCHEDULE', what: 'Monday 09:00 for the last 7 days. The 1st of the month 09:00 for the last 30 days.', needs: 'Workflow timezone: Asia/Kolkata.', nodes: ['Monday 09:00', '1st of the month 09:00'], color: 4 },
     { name: 'PERIOD', what: 'Set how many days the report covers.', needs: 'Nothing.', nodes: ['Week', 'Month'], color: 5 },
@@ -540,7 +570,8 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, vapi
     { name: 'GATE', what: 'If the kill switch is on, send nothing.', needs: 'Config: kill_switch.', nodes: ['Kill switch?', 'Paused'], color: 1 },
     { name: 'WINDOW', what: 'Work out this period and the same length just before it.', needs: 'Nothing.', nodes: ['Prepare window'], color: 5 },
     { name: 'COLLECT', what: 'Call SUB 91 twice: for this period, and for the one before.', needs: 'SUB 91 id.', nodes: ['Call SUB 91 Scorecard numbers', 'Call SUB 91 before'], color: 6 },
-    { name: 'FORMAT', what: 'Make one message: the table against its lines, each number with the one before it.', needs: 'The two SUB 91 answers.', nodes: ['Format message'], color: 5 },
+    { name: 'HEALTH', what: 'Call SUB 94. It reads the platform and cost numbers: OpenRouter spend, database size, failed n8n runs, uptime.', needs: 'SUB 94 id. Config: uptimerobot_key.', nodes: ['Call SUB 94 Health and cost numbers'], color: 6 },
+    { name: 'FORMAT', what: 'Make one message: the table against its lines, each number with the one before it, then the platform and cost lines.', needs: 'The two SUB 91 answers and the SUB 94 lines.', nodes: ['Format message'], color: 5 },
     { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send report'], color: 6 },
   ];
   const main93 = finish('GS MAIN 93 Weekly and monthly report', n93m, e93m, s93m, Object.assign({}, settings, { timezone: 'Asia/Kolkata' }));
@@ -562,7 +593,7 @@ function build({ ids, token, supabaseUrl, credential, openrouterCredential, vapi
     { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send alert'], color: 6 },
   ];
   const alert = finish('GS ERR 00 Alert', aNodes, aEdges, aSections, baseSettings);
-  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub19, sub20, sub21, sub22, sub91, sub93, main01, main90, main92, main93, alert };
+  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub19, sub20, sub21, sub22, sub91, sub93, sub94, main01, main90, main92, main93, alert };
   if (prod) for (const k of Object.keys(all)) if (k !== 'alert') all[k].name += ' PROD';   // the one GS ERR 00 alert is shared (one bot, one chat)
   return { ...all, STATUS_ROLES };
 }

@@ -284,3 +284,9 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Weekly and monthly report: schedules, this period beside the one before, wiring of MAIN 93 | #204 | S3 | Automatic | `ops/n8n/order/pilot.test.js` | Pass |
 | App signals: platform at place, Call tap event, rider ping through rider_ping, Not delivered asks first and sends rider_refused | #204 | S4 | Automatic | `app/tests/e2e/pilot-signals.spec.ts`, `app/tests/e2e/rider-account.spec.ts`, `app/tests/unit/signals.test.ts` | Pass |
 | Live row: seed six dev orders, read the 22:15 card on Telegram, the watch fires once for the late order and not again | #204 | S1 | Manual | owner, on dev | Open |
+| Database (migration 0025): health_numbers (size, connections, rows, oldest rows, caps), cost_caps v1, a customer is refused | #205 | S1 | Check | `scripts/check_city_model.py dev` | Pass on dev, 134 of 134 (red first: function health_numbers does not exist) |
+| Platform lines: spend against the cap, database size, rows, n8n errors in the window, uptime; WATCH at half the cap, OVER at 80%; a failed read says "could not read" and the rest print | #205 | S2 | Automatic | `ops/n8n/order/cost.test.js` | Pass |
+| Report: platform block at the end, and a report whose current period failed never shows the period before as current | #205 | S2 | Automatic | `ops/n8n/order/cost.test.js` | Pass |
+| SUB 94 wiring, MAIN 93 calls it, the UptimeRobot key comes in at deploy time, canvas layout | #205 | S2 | Automatic | `ops/n8n/order/cost.test.js` | Pass |
+| UptimeRobot plan: six monitors, only the missing ones, no delete or edit call | #205 | S3 | Automatic | `scripts/test_uptimerobot.py` | Pass |
+| Live row: `ops/health/uptimerobot.py` plan, `--apply` after the owner's yes, then `getMonitors` lists six more | #205 | S3 | Manual | owner | Open (plan read on 24 Oct: 1 monitor today, 6 missing) |
