@@ -284,3 +284,4 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Weekly and monthly report: schedules, this period beside the one before, wiring of MAIN 93 | #204 | S3 | Automatic | `ops/n8n/order/pilot.test.js` | Pass |
 | App signals: platform at place, Call tap event, rider ping through rider_ping, Not delivered asks first and sends rider_refused | #204 | S4 | Automatic | `app/tests/e2e/pilot-signals.spec.ts`, `app/tests/e2e/rider-account.spec.ts`, `app/tests/unit/signals.test.ts` | Pass |
 | Live row: seed six dev orders, read the 22:15 card on Telegram, the watch fires once for the late order and not again | #204 | S1 | Manual | owner, on dev | Open |
+| README v2 reads at grade 5.6 (limit 7.0) and all 39 links answer 200 (one fixed: native-later pointed to a file that does not exist) | #206 | S1 | Check | `grade.py README.md`, a link check in the PR | Pass |
