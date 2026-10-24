@@ -1,7 +1,6 @@
 // Story H10 (#193) and #225: Day at any hour, the pin wins, and both themes pass the contrast check on the customer app. The network is answered by the test.
 import { test, expect, type Page } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
-import { setup } from "./helpers";
+import { setup, scan as axeScan } from "./helpers";
 
 const at = (hour: number) => new Date(2026, 9, 24, hour, 0, 0);
 const theme = (page: Page) => page.evaluate(() => document.documentElement.dataset.theme);
@@ -41,7 +40,6 @@ for (const t of ["day", "night"] as const) {
     await setup(context, page);
     await page.goto("/customer/");
     await expect(page.locator("#root h2").first()).toBeVisible();
-    const bad = (await new AxeBuilder({ page }).analyze()).violations.filter((v) => v.impact === "serious" || v.impact === "critical");
-    expect(bad.map((v) => `${v.id}: ${v.nodes.slice(0, 2).map((n) => n.target.join(" ")).join(" | ")}`)).toEqual([]);
+    expect(await axeScan(page)).toEqual([]);
   });
 }

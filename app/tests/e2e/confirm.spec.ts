@@ -33,7 +33,6 @@ test("S1 the prompt comes after the kitchen taps Ready, not before", async ({ pa
   await page.waitForTimeout(1500);
   await expect(prompt(page)).toHaveCount(0);
   net.push("UPDATE", order("ready", now(), now()));
-  await expect(page.getByText("Tap Yes when you have it")).toBeVisible({ timeout: 5000 });
   await expect(prompt(page)).toBeVisible({ timeout: 5000 });
 });
 
@@ -94,7 +93,7 @@ test("a reminder: when the tester allowed notifications the phone shows one when
   const net = await setup(context, page);
   net.state.confirmCfg = { confirm_after_ready_min: 3, confirm_after_place_min: 0.03 };
   await placeOrder(page);
-  await page.getByRole("button", { name: "Allow a reminder when your order is ready" }).click();
+  await page.getByRole("button", { name: "Ping me when it is ready" }).click();
   net.push("INSERT", order("ready", now(), now()));
   await expect(prompt(page)).toBeVisible({ timeout: 8000 });
   expect(await page.evaluate(() => (window as any).__notes)).toEqual(["Was your order delivered?"]);

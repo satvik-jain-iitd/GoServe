@@ -51,7 +51,7 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
   return (
     <>
       <header className="ui-head">
-        <BackChevron label="Back to the menu" onClick={onBack} />
+        <BackChevron label="Back to menu" onClick={onBack} />
         <h1>{title}</h1>
         {!delivered && !cancelled && status !== "placed" ? <span className="meta ui-livemark"><span aria-hidden="true" className="ui-live-dot" />Live</span> : <span className="meta">No. {shortId(order.id)}</span>}
       </header>
@@ -72,7 +72,7 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
           </div>
         </section>
         <div className="ui-after">
-          {status === "placed" && <p>The kitchen sees your order now. The slip gets stamped when it is accepted.</p>}
+          {status === "placed" && <p>The kitchen has your order. This page updates on its own.</p>}
           {!delivered && !cancelled && <Timeline steps={steps.map((x) => STEP_WORDS[x.status] ?? x.label)} current={steps.findIndex((x) => x.state === "current")} label="Order progress" />}
           {!delivered && !cancelled && address && <p className="mono ui-addr">{address}</p>}
           {rider && (
@@ -82,7 +82,6 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
             </div>
           )}
           {cancelled && <p role="status"><strong>Your order was cancelled.</strong></p>}
-          {status === "ready" && !asking && <p role="status">Tap Yes when you have it</p>}
           {asking && (
             <div role="group" aria-label="Delivery check" className="ui-closed ui-ask">
               <h3>Was your order delivered?</h3>
@@ -96,11 +95,10 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
           {delivered && (
             <>
               <p>Delivered. Thank you for eating with GoServe.{paidBy === "cash" && confirmedAt ? <> Paid: cash · confirmed {clock(confirmedAt)}</> : null}</p>
-              <p className="ui-note">Something wrong with the food or the change? Call the kitchen.</p>
             </>
           )}
           {reminder === "ask" && !delivered && !cancelled && (
-            <button type="button" className="ui-btn ghost" onClick={onAllowReminder}>Allow a reminder when your order is ready?</button>
+            <button type="button" className="ui-btn ghost" onClick={onAllowReminder}>Ping me when it is ready</button>
           )}
         </div>
       </div>

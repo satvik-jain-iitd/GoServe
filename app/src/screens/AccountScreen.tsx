@@ -31,7 +31,7 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
       <div className="ui-scroll ui-account">
         <section className="ui-slip" aria-label="Delivery details">
           <div className="ui-slip-body">
-            <div className="ui-slip-head"><span>Delivery details</span><span>Fills the bill</span></div>
+            <div className="ui-slip-head"><span>Delivery details</span><span>Used on your bill</span></div>
             {editing ? (
               <div className="ui-form ui-form-flush">
                 <div className="ui-field"><label htmlFor="acc-name">Your name</label><input id="acc-name" type="text" value={name} maxLength={80} onChange={(e) => onName(e.target.value)} /></div>
@@ -65,6 +65,7 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
           <button type="button" className="ui-row" onClick={() => setSure(true)}><span>Forget me on this phone</span><span className="go" aria-hidden="true">›</span></button>
         )}
         {note && <p role="status" className="ui-note">{note}</p>}
+        <p className="mono ui-legal"><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
       </div>
       <TabBar current="you" onMenu={onMenu} onOrders={onOrders} onYou={() => undefined} />
     </>

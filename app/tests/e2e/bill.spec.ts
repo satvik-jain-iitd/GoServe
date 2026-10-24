@@ -1,7 +1,6 @@
 // Story H10c (#193): the Ink v3 bill, placed, tracker and delivered screens (boards 04, 04e, 05, 06, 07) and the Track an order button of board 01.
 import { test, expect } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
-import { order, setup } from "./helpers";
+import { order, setup, scan as axeScan } from "./helpers";
 
 const KITCHEN = { id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: "9876543210", pin_codes: ["110016"], open: true, active: true, lat: null, lng: null, opens_at: "10:00:00", closes_at: "22:00:00" };
 
@@ -28,13 +27,6 @@ test("S2 Place order stays off until the name, a ten digit phone and the address
   await page.getByLabel("Phone").fill("9876543210");
   await page.getByLabel("Address").fill("Flat 4");
   await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
-});
-
-test("S3 the pin screen has a Track an order button that opens the orders", async ({ page, context }) => {
-  await setup(context, page, [], { pin: null });
-  await page.goto("/customer/");
-  await page.getByRole("button", { name: "Track an order" }).click();
-  await expect(page.getByRole("heading", { name: "Your orders" })).toBeVisible();
 });
 
 test("S4 a delivered order shows the Delivered stamp, Cash paid and a way to call the kitchen", async ({ page, context }) => {
@@ -71,7 +63,7 @@ for (const t of ["day", "night"] as const) {
     await page.getByRole("button", { name: "Add Butter Chicken" }).click();
     await page.getByRole("button", { name: /View bill/ }).click();
     await page.getByLabel("Your name").fill("Asha");
-    const check = async () => (await new AxeBuilder({ page }).analyze()).violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => `${v.id}: ${v.nodes.slice(0, 2).map((n) => n.target.join(" ")).join(" | ")}`);
+    const check = () => axeScan(page);
     expect(await check()).toEqual([]);
   });
   test(`S6 the placed screen has no serious violation in ${t}`, async ({ page, context }) => {
@@ -80,7 +72,6 @@ for (const t of ["day", "night"] as const) {
     net.state.kitchens = [KITCHEN];
     await page.goto("/customer/");
     await expect(page.getByRole("heading", { name: "Your order", exact: true })).toBeVisible();
-    const bad = (await new AxeBuilder({ page }).analyze()).violations.filter((v) => v.impact === "serious" || v.impact === "critical");
-    expect(bad.map((v) => `${v.id}: ${v.nodes.slice(0, 2).map((n) => n.target.join(" ")).join(" | ")}`)).toEqual([]);
+    expect(await axeScan(page)).toEqual([]);
   });
 }

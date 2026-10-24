@@ -92,7 +92,7 @@ export function AdminCity({ kitchens, people, riders, onError, reload, view, onV
   const known = riders ?? [];
   const online = known.filter((r) => r.online).length;
   const riderRows = [...known.map((r) => ({ key: r.user_id, name: r.name || riderPeople.find((p) => p.user_id === r.user_id)?.email || "Rider", sub: r.phone ?? riderPeople.find((p) => p.user_id === r.user_id)?.email ?? "", online: r.online, person: riderPeople.find((p) => p.user_id === r.user_id) ?? null })),
-    ...riderPeople.filter((p) => !known.some((r) => r.user_id === p.user_id)).map((p) => ({ key: p.user_id, name: p.email ?? p.user_id, sub: riders ? "No rider row · add the person again" : "", online: false, person: p }))];
+    ...riderPeople.filter((p) => !known.some((r) => r.user_id === p.user_id)).map((p) => ({ key: p.user_id, name: p.email ?? p.user_id, sub: riders ? "Not set up as a rider yet · add them again" : "", online: false, person: p }))];
   return (   // A5
     <div className="ui-scroll ui-today">
       <section className="ui-group" aria-label="Kitchens">

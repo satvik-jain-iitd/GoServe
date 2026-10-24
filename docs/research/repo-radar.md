@@ -35,3 +35,15 @@ Runs: `scout.py --need "roadmap page generated from GitHub issues, static HTML, 
 | GitHub Projects (the platform's own board) | A | A kanban and roadmap view over issues. | Needs a login, shows titles not the Business sentences, no Vision or Delivered sections, cannot be opened as one local file. | Skip |
 
 Decision: one stdlib script over `gh` (GraphQL for issues with parent links, `gh pr list` for checks). Confidence 0.8: the shape (plain sentence per story, jargon swap, delivered accordion) is this project's own; nothing found renders it.
+
+## 2026-10-25 · need: kitchen display system, a cancelled order notice that shows for a minute then leaves, React (story #230)
+
+Runs: `scout.py --need "kitchen display system cancelled order notice, ticket shows cancelled for a minute then leaves, React"` → no repos found; GitHub `topic:kitchen-display-system`, `kitchen display system react in:readme stars:>20`.
+
+| Repo | Tier | What it is | Fit for this need | Verdict |
+|---|---|---|---|---|
+| FreeOpenSourcePOS/FloCafe (★150, MIT, pushed 23 Oct) | C | Offline-first cafe POS. | A POS, not a KDS rule; README has no cancel handling. | Skip |
+| ury-erp/mosaic (★47, AGPL, pushed Nov 2025) | C | KDS for ERPNext with KOT printing. | AGPL, ERPNext-bound; no cancel notice in the README. | Skip |
+| ahmedali5530/restaurant-pos (★71, pushed 23 Oct) | C | React + SurrealDB POS with void reports. | Voids live in reports, not on the cook's screen. | Skip |
+
+Decision: one pure function (`justCancelled`) and a set of seen ids in the kitchen screen; 20 lines. Confidence 0.8 (a KDS "void flash" is a common feature in paid systems; nothing open and small to borrow).

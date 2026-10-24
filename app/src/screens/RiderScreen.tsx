@@ -12,7 +12,7 @@ type Props = {
   gate: RiderGateState | null;   // null in the demo console: no online switch, no sign out
   kitchen: KitchenCard | null;   // the kitchen of the delivery in hand
 };
-const TABS: { key: Tab; label: string; icon: Tab }[] = [{ key: "job", label: "Job", icon: "job" }, { key: "today", label: "Today", icon: "today" }, { key: "me", label: "Me", icon: "me" }];
+const TABS: { key: Tab; label: string; icon: Tab }[] = [{ key: "job", label: "Delivery", icon: "job" }, { key: "today", label: "Today", icon: "today" }, { key: "me", label: "Me", icon: "me" }];
 
 export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, gate, kitchen }: Props) {
   const [tab, setTab] = useState<Tab>("job");
@@ -131,7 +131,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, ga
       {tab === "job" && jobView()}
       {tab === "today" && (
         <div className="ui-scroll ui-today">
-          <div className="ui-row ui-row-static ui-row-tall" data-testid="cash"><span className="ui-row-label"><span>Cash in hand</span><span className="ui-row-sub mono">Hand over at the kitchen tonight</span></span><span className="mono ui-cash">{formatRupees(cash)}</span></div>
+          <div className="ui-row ui-row-static ui-row-tall" data-testid="cash"><span className="ui-row-label"><span>Cash in hand</span><span className="ui-row-sub mono">Hand over at the kitchen tonight{hoursOf(kitchen)?.closes ? ` · day ends at ${hoursOf(kitchen)!.closes}` : ""}</span></span><span className="mono ui-cash">{formatRupees(cash)}</span></div>
           {handed > 0 && <div className="ui-row ui-row-static"><span className="ui-row-label"><span>Handed over</span><span className="ui-row-sub mono">The kitchen confirmed it</span></span><span className="mono">{formatRupees(handed)} handed over</span></div>}
           {today.length === 0 && <div className="ui-empty"><h2>No deliveries yet today</h2><p className="ui-meta">Each delivery lands here with its cash.</p></div>}
           {today.map((o) => (
@@ -146,7 +146,8 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, ga
         <div className="ui-scroll ui-today">
           {gate && <div className="ui-row ui-row-static ui-row-tall"><label htmlFor="online" className="ui-row-label"><span>Online</span><span className="ui-row-sub mono">Location shared {locationLabel()} while online</span></label><input id="online" className="ui-switch" type="checkbox" role="switch" checked={gate.online} onChange={() => void gate.flip()} /></div>}
           <div className="ui-row ui-row-static"><span>Today</span><span className="mono ui-row-sub">{today.length} delivered · {formatRupees(cash)} in hand</span></div>
-          <div className="ui-row ui-row-static"><span>Phone the kitchen calls</span><span className="mono ui-row-sub">{gate?.phone || "Not saved yet"}</span></div>
+          <div className="ui-row ui-row-static"><span>Your phone</span><span className="mono ui-row-sub">{gate?.phone || "Not saved yet"}</span></div>
+          <button type="button" className="ui-row" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}><span>Send feedback</span><span className="go" aria-hidden="true">›</span></button>
           {gate && <button type="button" className="ui-row" onClick={gate.signOut}><span>Sign out</span><span className="go" aria-hidden="true">›</span></button>}
         </div>
       )}

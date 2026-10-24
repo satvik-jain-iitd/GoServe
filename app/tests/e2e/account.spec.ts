@@ -1,7 +1,6 @@
 // Story H10d (#193): Your orders (08, 08e) and You (09) of the Ink v3 boards. The network is answered by the test.
 import { test, expect, type Page } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
-import { order, setup } from "./helpers";
+import { order, setup, scan as axeScan } from "./helpers";
 
 const you = (page: Page) => page.getByRole("button", { name: "You (Account)" });
 const KITCHEN = { id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: "9876543210", pin_codes: ["110016"], open: true, active: true, lat: null, lng: null, opens_at: "10:00:00", closes_at: "22:00:00" };
@@ -10,7 +9,7 @@ test("S1 a tap on a slip opens it, a delivered one offers Order again", async ({
   await setup(context, page, [{ ...order("delivered", "2020-01-01T11:00:00Z"), paid_by: "cash" }]);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "My orders" }).click();
-  await expect(page.getByText("1 slip", { exact: true })).toBeVisible();
+  await expect(page.getByText("1 order", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: /Butter Chicken/ }).click();
   await expect(page.getByRole("heading", { name: "Delivered", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Order again" })).toBeVisible();
@@ -48,7 +47,7 @@ test("S3 the Look chips pin Night, and Day takes the pin away; no clock chip (#2
 test("S4 with an order open, You shows a strip that opens the tracker", async ({ page, context }) => {
   await setup(context, page, [order("preparing", "2020-01-01T10:02:00Z")]);
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "Back to the menu" }).click();   // an open order lands on its tracker first
+  await page.getByRole("button", { name: "Back to menu" }).click();   // an open order lands on its tracker first
   await you(page).click();
   await page.getByRole("button", { name: /No\. 0f0f0f0f/ }).click();
   await expect(page.getByRole("heading", { name: "Your order", exact: true })).toBeVisible();
@@ -93,10 +92,10 @@ for (const t of ["day", "night"] as const) {
     const net = await setup(context, page, [order("preparing", "2020-01-01T10:02:00Z")]);
     net.state.kitchens = [KITCHEN];
     await page.goto("/customer/");
-    await page.getByRole("button", { name: "Back to the menu" }).click();
+    await page.getByRole("button", { name: "Back to menu" }).click();
     await you(page).click();
     await expect(page.getByRole("heading", { name: "You", exact: true })).toBeVisible();
-    const scan = async () => (await new AxeBuilder({ page }).analyze()).violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => `${v.id}: ${v.nodes.slice(0, 2).map((n) => n.target.join(" ")).join(" | ")}`);
+    const scan = () => axeScan(page);
     expect(await scan()).toEqual([]);
     await page.getByRole("button", { name: "My orders" }).click();
     await expect(page.getByRole("heading", { name: "Your orders" })).toBeVisible();

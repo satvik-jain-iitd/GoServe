@@ -83,7 +83,7 @@ test("S5 an empty My orders says so and points back to the menu", async ({ page,
   await setup(context, page);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "My orders" }).click();
-  await expect(page.getByText("No slips yet")).toBeVisible();
+  await expect(page.getByText("No orders yet")).toBeVisible();
 });
 
 test("S6 Account shows the saved name, phone and address, and signs out", async ({ page, context }) => {
@@ -105,5 +105,5 @@ test("S7 the bill says cash at the door in plain words", async ({ page, context 
   await page.getByLabel("Your name").fill("Asha");
   await page.getByLabel("Phone").fill("9876543210");
   await page.getByLabel("Address").fill("Flat 4");
-  await expect(page.getByText("Pay the rider in cash at the door. No online payment yet.")).toBeVisible();
+  await expect(page.getByText("Pay the rider cash at the door.")).toBeVisible();
 });

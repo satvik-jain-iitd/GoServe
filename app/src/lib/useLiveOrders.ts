@@ -45,6 +45,10 @@ export function useLiveOrders(active: boolean, appRole?: "kitchen" | "rider") {
           setOrders((cur) => cur.filter((o) => o.id !== id));
           setLags([]);   // after a reset the old timings no longer describe this demo
         });
+        const onWake = () => { if (document.visibilityState === "visible") void reload().catch(() => {}); };   // #230: the phone wakes, the list reads again
+        document.addEventListener("visibilitychange", onWake);
+        const stopWatch = stop;
+        stop = () => { stopWatch(); document.removeEventListener("visibilitychange", onWake); };
         await reload();
       } catch {
         if (alive) setError("Could not load orders. Check your connection and try again.");

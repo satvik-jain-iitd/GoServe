@@ -4,9 +4,9 @@ import { useState } from "react";
 import { isPin, openingText } from "../lib/area";
 import type { Area } from "../lib/area";
 
-type Props = { pin: string | null; area: Area | null; busy: boolean; error: string | null; onPin: (pin: string) => void; onTrack: () => void };
+type Props = { pin: string | null; area: Area | null; busy: boolean; error: string | null; onPin: (pin: string) => void };
 
-export function AreaScreen({ pin, area, busy, error, onPin, onTrack }: Props) {
+export function AreaScreen({ pin, area, busy, error, onPin }: Props) {
   const [text, setText] = useState(pin ?? "");
   const [problem, setProblem] = useState<string | null>(null);
   const none = area?.kind === "none";
@@ -20,7 +20,7 @@ export function AreaScreen({ pin, area, busy, error, onPin, onTrack }: Props) {
       </header>
       <div className="ui-slip" role="group" aria-label="Delivery place">
         <div className="ui-slip-body">
-          <div className="ui-slip-head"><span>Pin code</span><span>Cash only</span></div>
+          <div className="ui-slip-head"><span>Pin code</span></div>
           <h2 className="ui-slip-title">Where do we deliver?</h2>
           <div className="ui-field">
             <label htmlFor="pin">Your pin code</label>
@@ -28,16 +28,15 @@ export function AreaScreen({ pin, area, busy, error, onPin, onTrack }: Props) {
               aria-invalid={!!(shown || none) || undefined} aria-describedby={shown || none ? "pin-help" : undefined}
               onChange={(e) => setText(e.target.value.trim())} />
             {shown && <p id="pin-help" role="alert" className="ui-field-error">{shown}</p>}
-            {!shown && none && <p id="pin-help" role="status" className="ui-field-error">We are not in {pin} yet. We saved your pin code and will tell you when we arrive.</p>}
+            {!shown && none && <p id="pin-help" role="status" className="ui-field-error">Not in {pin} yet. We saved your pin. We will tell you when we come.</p>}
           </div>
-          <p className="ui-note">{none ? "We add pin codes every week. A pin next to yours may work." : "We serve a few pin codes for now."}</p>
+          {none && <p className="ui-note">We add pin codes every week. A pin next to yours may work.</p>}
           {busy && <p role="status" className="ui-note">Finding your kitchen…</p>}
           {area?.kind === "closed" && <p role="status" className="ui-note">{openingText(area.name, area.opens_at)}</p>}
           <button type="button" className="ui-btn big" disabled={busy} onClick={() => (isPin(text) ? (setProblem(null), onPin(text)) : setProblem("A pin code is six digits."))}>See the menu</button>
         </div>
       </div>
       <div className="ui-landing-foot">
-        <button type="button" className="ui-btn ghost big" onClick={onTrack}>Track an order</button>
         <p className="ui-kicker">No app to install · no card needed</p>
       </div>
     </section>
