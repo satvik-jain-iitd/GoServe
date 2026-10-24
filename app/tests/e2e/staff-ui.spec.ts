@@ -40,7 +40,7 @@ test("S2 no phone, no call link", async ({ page, context }) => {
   await expect(page.getByRole("link", { name: /^Call/ })).toHaveCount(0);
 });
 
-test("S3 the admin Numbers tab is a table with a header row and one row per kitchen", async ({ page, context }) => {
+test("S3 the admin Numbers tab has the day tiles and one row per kitchen", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.admin = true;
   net.state.numbers = [
@@ -48,10 +48,11 @@ test("S3 the admin Numbers tab is a table with a header row and one row per kitc
     { day: "2026-10-23", kitchen_id: "k-2", kitchen_name: "Rohini Kitchen", orders: 2, delivered: 2, cancelled: 0, cash_paise: 40000 },
   ];
   await page.goto("/admin/");
-  await page.getByRole("tab", { name: "Numbers" }).click();
-  for (const h of ["Kitchen", "Orders", "Delivered", "Cancelled", "Cash"]) await expect(page.getByRole("columnheader", { name: h })).toBeVisible();
-  await expect(page.getByRole("row")).toHaveCount(3);
-  await expect(page.getByRole("cell", { name: "₹900" })).toBeVisible();
+  await page.getByRole("button", { name: "Numbers", exact: true }).click();   // H12: board A8, tiles then rows
+  for (const id of ["tile-orders", "tile-delivered", "tile-cash", "tile-kitchens"]) await expect(page.getByTestId(id)).toBeVisible();
+  const rows = page.getByRole("region", { name: "Per kitchen" }).locator(".ui-row");
+  await expect(rows).toHaveCount(2);
+  await expect(rows.first()).toContainText("₹900");
 });
 
 test("S4 the kitchen's own controls use full-size buttons", async ({ page, context }) => {
