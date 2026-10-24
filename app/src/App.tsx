@@ -530,11 +530,11 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     </>
   );
 
-  const framed = (lock === "customer" && role === "customer") || (lock === "rider" && role === "rider") || (lock === "kitchen" && role === "kitchen");   // the Ink boards fill the phone; the chrome goes below
+  const framed = (lock === "customer" && role === "customer") || (lock === "rider" && role === "rider") || (lock === "kitchen" && role === "kitchen") || (lock === "admin" && role === "admin");   // the Ink boards fill the phone; the chrome goes below
   const Shell = framed ? "div" : "main";
   return (
     <>
-    {framed && <main className="frame">{role === "rider" ? riderView : role === "kitchen" ? kitchenView : customerView}</main>}
+    {framed && <main className="frame">{role === "rider" ? riderView : role === "kitchen" ? kitchenView : role === "admin" ? <AdminScreen /> : customerView}</main>}
     <Shell className={framed ? "shell below" : role === "split" ? "shell split" : "shell"}>
       <h1>{lock && lock !== "customer" ? `GoServe ${lock[0].toUpperCase()}${lock.slice(1)}` : "GoServe"}</h1>
       {!demo && !framed && <SignIn mode={lock && lock !== "customer" ? "signin" : "link"} />}   {/* story #224: a customer never signs in; the staff gates carry their own Google button */}
@@ -551,7 +551,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       {role === "rider" && !framed && riderView}
       {role === "ops" && (lock === "ops" ? <AdminGate>{opsView}</AdminGate> : opsView)}
       {role === "customer" && !framed && customerView}
-      {role === "admin" && <AdminScreen />}
+      {role === "admin" && !framed && <AdminScreen />}
       <FeedbackSheet role={lock ?? "console"} screen={`${window.location.pathname}${lock ? "" : ` (${role} tab)`}`}
         order={placed ? { id: placed.id, status: orders.find((o) => o.id === placed.id)?.status ?? placed.status } : orders[0] ? { id: orders[0].id, status: orders[0].status } : null}
         getSession={currentSession} send={(r) => sendFeedback(r, api())} preset={preset} />

@@ -11,6 +11,7 @@ test("S1 a kitchen with no pin code is refused before any call", async ({ page, 
   const net = await setup(context, page);
   net.state.admin = true;
   await page.goto("/admin/");
+  await page.getByRole("button", { name: "City", exact: true }).click();   // H12: the forms live on the City tab
   await fill(page, { "Pin codes": "" });
   await page.getByRole("button", { name: "Add kitchen" }).click();
   await expect(page.getByRole("alert")).toContainText("pin code");
@@ -21,6 +22,7 @@ test("S1 a bad phone and the same opening and closing time are refused", async (
   const net = await setup(context, page);
   net.state.admin = true;
   await page.goto("/admin/");
+  await page.getByRole("button", { name: "City", exact: true }).click();   // H12: the forms live on the City tab
   await fill(page, { Phone: "12345" });
   await page.getByRole("button", { name: "Add kitchen" }).click();
   await expect(page.getByRole("alert")).toContainText("phone");
@@ -36,6 +38,7 @@ test("S1 a complete kitchen is sent", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.admin = true;
   await page.goto("/admin/");
+  await page.getByRole("button", { name: "City", exact: true }).click();   // H12: the forms live on the City tab
   await fill(page);
   await page.getByRole("button", { name: "Add kitchen" }).click();
   await expect.poll(() => net.calls.kitchenWrites.length).toBe(1);
@@ -46,6 +49,7 @@ test("S2 a price of zero or above 5000 rupees is refused before any call", async
   const net = await setup(context, page);
   net.state.admin = true;
   await page.goto("/admin/");
+  await page.getByRole("button", { name: "City", exact: true }).click();
   await page.getByRole("tab", { name: "Menu" }).click();
   await page.getByLabel("Kitchen", { exact: true }).selectOption("k-1");
   await page.getByLabel("Dish name").fill("Dal Makhani");
