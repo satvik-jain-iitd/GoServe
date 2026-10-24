@@ -16,7 +16,7 @@ OUT = os.path.join(ROOT, "docs", "roadmap", "index.html")
 REPO = "satvik-jain-iitd/GoServe"
 COLUMNS = ("To do", "Doing", "Review", "Done")
 # Words a stranger does not need. Only the Board cards may use them; everywhere else they are swapped for plain ones.
-PLAIN = [(re.compile(r"\bPRs?\b"), "change"), (re.compile(r"\bCI\b"), "the checks"), (re.compile(r"\brpc\b", re.I), "server call"),
+PLAIN = [(re.compile(r"\bCI/CD\b"), "build and deploy"), (re.compile(r"\bPRs?\b"), "change"), (re.compile(r"\bCI\b"), "the checks"), (re.compile(r"\brpc\b", re.I), "server call"),
          (re.compile(r"\bmigrations?\b", re.I), "database change"), (re.compile(r"\be2e\b", re.I), "end-to-end test")]
 ISSUE_QUERY = """query($after: String) { repository(owner: "satvik-jain-iitd", name: "GoServe") {
   issues(first: 100, after: $after, orderBy: {field: CREATED_AT, direction: ASC}) { pageInfo { hasNextPage endCursor }
@@ -94,7 +94,7 @@ def build(issues: list, prs: list) -> dict:
         sentence = first_sentence(section(i.get("body"), "Business"))
         stories.append({"number": i["number"], "title": i["title"], "epic": epic_of(i), "state": i["state"], "pr": pr, "column": column(i, pr),
                         "sentence": sentence, "text": plain(sentence or i["title"]), "needs_words": not sentence})
-    return {"epics": [{"number": e["number"], "title": plain(re.sub(r"^Epic:?\s*E\d+:?\s*", "", e["title"])), "state": e["state"],
+    return {"epics": [{"number": e["number"], "title": plain(re.sub(r"^(Epic|Feature):?\s*(E\d+:?)?\s*", "", e["title"])), "state": e["state"],
                        "sentence": plain(first_sentence(section(e.get("body"), "Business"))), "stories": [s for s in stories if s["epic"] == e["number"]]} for e in epics],
             "stories": stories, "prs": prs}
 
