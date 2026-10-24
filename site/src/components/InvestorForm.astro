@@ -1,36 +1,38 @@
 ---
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 // Posts to the n8n webhook "GoServe — Investor Contact".
 const endpoint =
   import.meta.env.PUBLIC_INVESTOR_WEBHOOK ??
   "https://n8n.LinkRight.in/webhook/goserve-investor";
 ---
-<form class="form" id="investor-form" data-endpoint={endpoint} novalidate>
-  <div class="field">
-    <label for="inv-name">Your name</label>
-    <input id="inv-name" name="name" type="text" autocomplete="name" required />
+<form class="form" id="investor-form" style="max-width: none;" data-endpoint={endpoint} novalidate>
+  <div class="f">
+    <label for="inv-name">Name</label>
+    <Input id="inv-name" name="name" type="text" autoComplete="name" required />
     <p class="error" data-error-for="name" hidden></p>
   </div>
 
-  <div class="field">
+  <div class="f">
     <label for="inv-firm">Firm</label>
-    <input id="inv-firm" name="firm" type="text" autocomplete="organization" required />
+    <Input id="inv-firm" name="firm" type="text" autoComplete="organization" required />
     <p class="error" data-error-for="firm" hidden></p>
   </div>
 
-  <div class="field">
+  <div class="f full">
     <label for="inv-email">Email</label>
-    <input id="inv-email" name="email" type="email" autocomplete="email" required />
+    <Input id="inv-email" name="email" type="email" autoComplete="email" required />
     <p class="error" data-error-for="email" hidden></p>
   </div>
 
-  <div class="field">
+  <div class="f full">
     <label for="inv-message">Message</label>
-    <textarea id="inv-message" name="message" rows="5" required></textarea>
+    <Textarea id="inv-message" name="message" rows={5} required />
     <p class="error" data-error-for="message" hidden></p>
   </div>
 
-  <button class="btn btn--primary" type="submit">Send message</button>
-  <p class="form-status" id="investor-status" role="status" hidden></p>
+  <div class="f full"><button class="ui-btn big" type="submit">Send</button>
+  <p class="form-status" id="investor-status" role="status" hidden></p></div>
 </form>
 
 <script>
@@ -38,7 +40,7 @@ const endpoint =
 
   function showError(name: string, message: string) {
     const p = document.querySelector(`[data-error-for="${name}"]`) as HTMLElement | null;
-    const field = document.getElementById(`inv-${name}`)?.closest(".field") as HTMLElement | null;
+    const field = document.getElementById(`inv-${name}`)?.closest(".f") as HTMLElement | null;
     if (p) {
       p.textContent = message;
       p.hidden = !message;
