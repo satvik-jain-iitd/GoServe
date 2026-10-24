@@ -57,7 +57,8 @@
 .numbers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
 .numbers .n { display: flex; flex-direction: column; gap: 6px; padding: 24px 0; border-top: 2px solid var(--md-on-background); }
 .numbers .n b { font-family: 'DM Mono', monospace; font-size: 44px; font-weight: 500; line-height: 1; }
-.numbers .n span { color: var(--gs-text-muted); font-size: 15px; }
+.numbers .n > span { color: var(--gs-text-muted); font-size: 15px; }
+.numbers .n b span { font-size: inherit; color: inherit; }
 .steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; }
 .steps .s { display: flex; flex-direction: column; gap: 8px; padding-top: 16px; border-top: 2px solid var(--md-outline-variant); }
 .steps .s.now { border-top-color: var(--md-primary); }
@@ -103,6 +104,7 @@
 .band .form label { color: #a9b3c9; }
 .band .form input, .band .form textarea { background: #141c2e; color: #e8ecf5; border-color: #5e6b88; }
 .notfound { text-align: center; display: flex; flex-direction: column; gap: 20px; align-items: center; }
-.thali > div, .cards > div { display: flex; }
-.thali > div > .card, .cards > div > .card { flex: 1; }
+.cards .mo, .thali .mo { display: flex; }   /* the Reveal and Tilt wrappers: the card must stretch through them (F139) */
+.cards .mo > div, .thali .mo > div { display: flex; flex: 1; min-width: 0; }
+.cards .card, .thali .card { flex: 1; width: 100%; }
 @media (prefers-reduced-motion: reduce) { .mo, .mo * { transform: none !important; animation: none !important; transition: none !important; } .progress, .mo.pointer-events-none { display: none !important; } .ui-btn { transition: none; } }
