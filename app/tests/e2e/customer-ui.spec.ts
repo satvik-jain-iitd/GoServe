@@ -73,6 +73,7 @@ test("S5 My orders: Order again puts the same dishes in the cart", async ({ page
   await setup(context, page, [{ ...order("delivered", "2020-01-01T11:00:00Z"), paid_by: "cash" }]);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "My orders" }).click();
+  await page.getByRole("button", { name: /Butter Chicken/ }).click();   // the slip opens as the delivered screen
   await page.getByRole("button", { name: "Order again" }).click();
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
   await expect(page.getByText("2 × Butter Chicken")).toBeVisible();
@@ -82,7 +83,7 @@ test("S5 an empty My orders says so and points back to the menu", async ({ page,
   await setup(context, page);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "My orders" }).click();
-  await expect(page.getByText("No orders yet")).toBeVisible();
+  await expect(page.getByText("No slips yet")).toBeVisible();
 });
 
 test("S6 Account shows the saved name, phone and address, and signs out", async ({ page, context }) => {
@@ -90,11 +91,10 @@ test("S6 Account shows the saved name, phone and address, and signs out", async 
   net.state.customer = { user_id: "u", name: "Asha", phone: "9876543210", address: "Flat 4, Green Park", pin_code: "110016" };
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Account" }).click();
-  await expect(page.getByRole("heading", { name: "Account" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "You", exact: true })).toBeVisible();
   await expect(page.getByTestId("account")).toContainText("Asha");
   await expect(page.getByTestId("account")).toContainText("9876543210");
   await expect(page.getByTestId("account")).toContainText("Flat 4, Green Park");
-  await expect(page.getByRole("button", { name: "Change area" })).toBeVisible();
 });
 
 test("S7 the bill says cash at the door in plain words", async ({ page, context }) => {

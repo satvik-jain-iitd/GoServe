@@ -104,3 +104,33 @@ for (const theme of ["day", "night"] as const) {
     await page.screenshot({ path: `${OUT}/${theme}/S-EmptyBill-${theme}.png` });
   });
 }
+
+for (const theme of ["day", "night"] as const) {
+  test(`shots orders and you ${theme}`, async ({ page, context }) => {
+    await context.addInitScript((v) => localStorage.setItem("gs-theme", v), theme);
+    const shot = (name: string) => page.screenshot({ path: `${OUT}/${theme}/${name}-${theme}.png` });
+    const mk = (id: string, status: string, at: string, qty: number) => ({ ...order(status, at), id, created_at: at, items: [{ menu_item_id: "d1", name: "Dal Makhani", qty, price_paise: 22000 }], total_paise: 22000 * qty });
+    const day = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString();
+    const net = await setup(context, page, [mk("1042aaaa-1111-4222-8333-444444444444", "preparing", new Date().toISOString(), 1), mk("1031aaaa-1111-4222-8333-444444444444", "delivered", day(3), 3), mk("1018aaaa-1111-4222-8333-444444444444", "delivered", day(6), 2), mk("1004aaaa-1111-4222-8333-444444444444", "cancelled", day(10), 2)]);
+    net.state.menu = MENU;
+    net.state.kitchens = [KITCHEN];
+    net.state.customer = { user_id: "u", name: "Rahul Verma", phone: "9876543210", address: "B-12, Lajpat Nagar II, near the park gate", pin_code: "110016" };
+    await page.goto("/customer/");
+    await page.getByRole("button", { name: "Back to the menu" }).click();
+    await page.getByRole("button", { name: "My orders" }).click();
+    await page.getByRole("heading", { name: "Your orders" }).waitFor();
+    await shot("Orders");
+    await page.getByRole("button", { name: "You (Account)" }).click();
+    await page.getByRole("heading", { name: "You", exact: true }).waitFor();
+    await page.waitForTimeout(400);
+    await shot("Account");
+  });
+  test(`shots empty orders ${theme}`, async ({ page, context }) => {
+    await context.addInitScript((v) => localStorage.setItem("gs-theme", v), theme);
+    await setup(context, page);
+    await page.goto("/customer/");
+    await page.getByRole("button", { name: "My orders" }).click();
+    await page.getByText("No slips yet").waitFor();
+    await page.screenshot({ path: `${OUT}/${theme}/S-EmptyOrders-${theme}.png` });
+  });
+}
