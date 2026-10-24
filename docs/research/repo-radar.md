@@ -58,3 +58,16 @@ Runs: `scout.py --need "kitchen display system shows the assigned delivery rider
 | TianLeTL/CloudKitchen (★0, Oct 2026) | C | A cloud-kitchen demo. | Same. | Skip |
 
 Decision: one pure function (`minutesAway`: haversine over a scooter speed, null when the location is older than ten minutes) and the riders read the Kitchen screen already has; ten lines. Confidence 0.9 (an ETA from a last location is textbook; nothing to adopt).
+
+## 2026-10-25 · need: wrap the existing PWA as an Android APK anyone can install, signed in CI, with the rider's location working (story #250, epic E22)
+
+Runs: `scout.py --need "wrap an existing PWA as an Android APK, Trusted Web Activity, Bubblewrap, signed APK in CI, background location"` → no repos found; GitHub `topic:trusted-web-activity stars:>20`; the four known wrappers read by hand (READMEs, 25 Oct 2026).
+
+| Repo | Tier | What it is | Fit for this need | Verdict |
+|---|---|---|---|---|
+| GoogleChromeLabs/bubblewrap (★3.1k, Apache-2.0, pushed 12 Oct 2026) | A (Google, the TWA authors) | CLI: `init --manifest <url>` reads our web manifest, makes an Android project, `build` signs an APK and an AAB; `fingerprint` makes the Digital Asset Links file; keystore passwords by env vars for CI; offers to download JDK 17 and the Android SDK itself on first run (Node 18+). | Exactly our shape: one web app, four manifests, no native code. Shares Chrome's storage, so the four apps share one session (ADR-016 holds). | **Adopt** |
+| GoogleChrome/android-browser-helper (★834, Apache-2.0, pushed 12 Oct 2026) | A | The Android library under Bubblewrap; demos: `twa-location-delegation` (the APK asks Android's location permission instead of Chrome's). | Needed for story #252: location through the app's own permission. Bubblewrap can enable it (`enableLocationDelegation`). | **Adopt** (via Bubblewrap) |
+| pwa-builder/PWABuilder (★3.8k, pushed 23 Oct 2026) + pwa-builder/CloudAPK (★164, pushed Oct 2025) | B (Microsoft) | A web UI and a cloud service that run Bubblewrap for you (Docker + Azure). | Same engine, one more vendor in the path, and a Docker box we do not need. | Skip (use Bubblewrap directly) |
+| ionic-team/capacitor (★17k, MIT, pushed 23 Oct 2026) | A | A native shell with a WebView and plugins (background geolocation plugins exist). | Own storage, so no shared session (login or a join link); a native build per release; heavier. Keep as the fallback for #252 only if a TWA cannot keep location flowing with the screen off. | Hold |
+
+Decision: Bubblewrap TWA, one APK per role first (the customer app), measured on the owner's phone; then decide one APK vs four in the ADR. Confidence 0.8 (Tier A tools, our manifest already passes the TWA fields: name, start_url, scope, display standalone, 192 and 512 icons with a maskable one). Open risk for #252: a TWA runs in Chrome, and Chrome stops geolocation watchers when the screen is off; the fix is Android-side (a foreground service or Capacitor), decided after the spike measures it.
