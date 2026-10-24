@@ -131,7 +131,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, ga
       {tab === "job" && jobView()}
       {tab === "today" && (
         <div className="ui-scroll ui-today">
-          <div className="ui-row ui-row-static ui-row-tall" data-testid="cash"><span className="ui-row-label"><span>Cash in hand</span><span className="ui-row-sub mono">Hand over at the kitchen tonight</span></span><span className="mono ui-cash">{formatRupees(cash)}</span></div>
+          <div className="ui-row ui-row-static ui-row-tall" data-testid="cash"><span className="ui-row-label"><span>Cash in hand</span><span className="ui-row-sub mono">Hand over at the kitchen tonight{hoursOf(kitchen)?.closes ? ` · day ends at ${hoursOf(kitchen)!.closes}` : ""}</span></span><span className="mono ui-cash">{formatRupees(cash)}</span></div>
           {handed > 0 && <div className="ui-row ui-row-static"><span className="ui-row-label"><span>Handed over</span><span className="ui-row-sub mono">The kitchen confirmed it</span></span><span className="mono">{formatRupees(handed)} handed over</span></div>}
           {today.length === 0 && <div className="ui-empty"><h2>No deliveries yet today</h2><p className="ui-meta">Each delivery lands here with its cash.</p></div>}
           {today.map((o) => (

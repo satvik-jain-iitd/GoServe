@@ -33,7 +33,11 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
     listRiders(getClient()).then(setRiders).catch(() => setRiders([]));
   }, [tab, gate]);
   const riderName = (id: string) => riders.find((r) => r.user_id === id)?.name || `Rider ${shortId(id)}`;
-  const handover = async (riderId: string) => setHandoverError(await onHandover(riderId));
+  const handover = async (r: { rider_id: string; inHand: number; older: number }) => {
+    const sum = formatRupees(r.inHand + r.older) + (r.older > 0 ? ` (${formatRupees(r.older)} from older days)` : "");
+    if (!window.confirm(`Confirm ${sum} handed over by ${riderName(r.rider_id)}? This cannot be undone.`)) return;
+    setHandoverError(await onHandover(r.rider_id));
+  };
   const opened = openId ? orders.find((o) => o.id === openId) ?? null : null;
   const step = async (o: Order) => {
     const next = nextStep(o.status);
@@ -130,10 +134,10 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
                 {gate.open === null ? <button type="button" className="ui-btn ghost small" onClick={gate.retry}>Try again</button>
                   : <input id="open" className="ui-switch" type="checkbox" role="switch" checked={gate.open} onChange={() => void gate.flipOpen()} />}
               </div>
-              {cashByRider(done).map((r) => (
+              {cashByRider(done, orders).map((r) => (
                 <div key={r.rider_id} className="ui-row ui-row-static">
-                  <span className="ui-row-label"><span>{riderName(r.rider_id)}</span><span className="ui-row-sub mono">{formatRupees(r.inHand)} in hand{r.handed > 0 ? ` · ${formatRupees(r.handed)} handed over` : ""}</span></span>
-                  <button type="button" className="ui-btn ghost small" aria-label={`Confirm hand-over ${riderName(r.rider_id)}`} disabled={r.inHand === 0} onClick={() => void handover(r.rider_id)}>Confirm hand-over</button>
+                  <span className="ui-row-label"><span>{riderName(r.rider_id)}</span><span className="ui-row-sub mono">{formatRupees(r.inHand)} in hand{r.handed > 0 ? ` · ${formatRupees(r.handed)} handed over` : ""}{r.older > 0 ? ` · older: ${formatRupees(r.older)}` : ""}</span></span>
+                  <button type="button" className="ui-btn ghost small" aria-label={`Confirm hand-over ${riderName(r.rider_id)}`} disabled={r.inHand + r.older === 0} onClick={() => void handover(r)}>Confirm hand-over</button>
                 </div>
               ))}
               {handoverError && <p role="alert" className="ui-note error">{handoverError}</p>}

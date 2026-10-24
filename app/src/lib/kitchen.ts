@@ -80,9 +80,11 @@ export const trackerSteps = (status: string): { status: string; label: string; s
 export const isCash = (o: Done): boolean => !o.paid_by || o.paid_by === "cash";
 export const cashInHand = (today: Done[]): number => today.filter((o) => isCash(o) && !o.cash_handed_at).reduce((n, o) => n + o.total_paise, 0);
 export const handedOver = (today: Done[]): number => today.filter((o) => isCash(o) && !!o.cash_handed_at).reduce((n, o) => n + o.total_paise, 0);
-/** One line per rider with cash today: who, what they still hold, what they handed over. */
-export const cashByRider = <T extends Done>(today: T[]): { rider_id: string; inHand: number; handed: number }[] =>
-  [...new Set(today.filter((o) => o.rider_id && isCash(o)).map((o) => o.rider_id as string))]
-    .map((rider_id) => { const own = today.filter((o) => o.rider_id === rider_id); return { rider_id, inHand: cashInHand(own), handed: handedOver(own) }; });
+/** One line per rider with cash: what they hold from today, what they handed over today, and older cash never handed over (the rpc stamps that too, so the row must show it). */
+export const cashByRider = <T extends Done>(today: T[], all: T[]): { rider_id: string; inHand: number; handed: number; older: number }[] => {
+  const held = all.filter((o) => o.status === "delivered" && o.rider_id && isCash(o) && !o.cash_handed_at);
+  return [...new Set([...today, ...held].filter((o) => o.rider_id && isCash(o)).map((o) => o.rider_id as string))]
+    .map((rider_id) => { const own = today.filter((o) => o.rider_id === rider_id); return { rider_id, inHand: cashInHand(own), handed: handedOver(own), older: cashInHand(held.filter((o) => o.rider_id === rider_id && !today.includes(o))) }; });
+};
 export const confirmHandover = async (c: { rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<{ error: { message: string } | null }> }, riderId: string): Promise<string | null> =>
   (await c.rpc("kitchen_handover", { p_rider: riderId })).error?.message ?? null;
