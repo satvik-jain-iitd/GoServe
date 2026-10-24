@@ -1,6 +1,6 @@
 // "You" of the Ink v3 board 09 (story H10d, #193; story D2): the details this phone remembers, order alerts, Day and Night, another phone, forget me, feedback.
 import { useState } from "react";
-import { clockLabel, readPin, pinTheme, type Theme } from "../lib/theme";
+import { DEFAULT_THEME, readPin, pinTheme, type Theme } from "../lib/theme";
 import { TabBar } from "../ui";
 
 type Props = {
@@ -16,10 +16,10 @@ const store = (): Storage | null => { try { return window.localStorage; } catch 
 
 export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAddress, alerts, onAlerts, live, onShare, onForget, onMenu, onOrders }: Props) {
   const [editing, setEditing] = useState(false);
-  const [look, setLook] = useState<Theme | null>(() => readPin(store()));
+  const [look, setLook] = useState<Theme>(() => readPin(store()) ?? DEFAULT_THEME);
   const [note, setNote] = useState<string | null>(null);
   const [sure, setSure] = useState(false);
-  const pick = (t: Theme | null) => { pinTheme(store(), document, t); setLook(t); };
+  const pick = (t: Theme) => { pinTheme(store(), document, t === DEFAULT_THEME ? null : t); setLook(t); };   // Day is the default, not a pin (#225)
   const row = (label: string, value: string, mono = false) => (<><dt className="mono">{label}</dt><dd className={mono ? "mono" : undefined}>{value || "Not saved yet"}</dd></>);
   return (
     <>
@@ -55,7 +55,6 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
           <div className="ui-chips">
             <button type="button" className={look === "day" ? "ui-chip on" : "ui-chip"} aria-pressed={look === "day"} onClick={() => pick("day")}>Day</button>
             <button type="button" className={look === "night" ? "ui-chip on" : "ui-chip"} aria-pressed={look === "night"} onClick={() => pick("night")}>Night</button>
-            <button type="button" className={look === null ? "ui-chip on" : "ui-chip"} aria-pressed={look === null} onClick={() => pick(null)}>By the clock · {clockLabel()}</button>
           </div>
         </section>
         <button type="button" className="ui-row" onClick={async () => setNote(await onShare())}><span>Use on another phone</span><span className="go" aria-hidden="true">›</span></button>
