@@ -4,9 +4,10 @@ import { order, SESSION, setup } from "./helpers";
 
 test("S1 an account that is not kitchen staff is told so, and sees no orders", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
+  net.state.anonymous = false;
   await page.goto("/kitchen/");
-  await expect(page.getByText("This account is not kitchen staff. Ask the admin.")).toBeVisible();
-  await expect(page.getByText("Order 0f0f0f0f")).toHaveCount(0);
+  await expect(page.getByText("This account is not kitchen staff. Ask the admin to add it")).toBeVisible();   // H11: K2
+  await expect(page.getByText("No. 0f0f0f0f")).toHaveCount(0);
   expect(net.calls.orderReads.some((u) => u.includes("session_id=eq."))).toBe(false);
 });
 
@@ -15,7 +16,7 @@ test("S2 an admin who is also staff sees the orders of their own kitchen, not th
   net.state.kitchen = "k-2";
   net.state.staffOther = "k-1";   // another person's row, which an admin can read
   await page.goto("/kitchen/");
-  await expect(page.getByText("Order 0f0f0f0f")).toBeVisible();
+  await expect(page.getByText("No. 0f0f0f0f")).toBeVisible();
   expect(net.calls.staffReads.every((u) => u.includes(`user_id=eq.${SESSION}`))).toBe(true);
   expect(net.calls.orderReads.some((u) => u.includes("kitchen_id=eq.k-2"))).toBe(true);
 });
