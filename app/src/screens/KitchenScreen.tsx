@@ -1,6 +1,6 @@
 // The kitchen app on the Ink v3 boards K3 to K6 (story H11, #194): New tickets, Cooking, the Kitchen tab, and one ticket (K4) over the tabs.
 import { useEffect, useRef, useState } from "react";
-import { cashByRider, cookingTickets, deliveredToday, hhmm, justCancelled, newTickets, nextStep, outsideHours, readyTickets, shortId, staffLabel, type Order } from "../lib/kitchen";
+import { cashByRider, cookingTickets, deliveredToday, hhmm, justCancelled, minutesAway, newTickets, nextStep, outsideHours, readyTickets, shortId, staffLabel, type Order } from "../lib/kitchen";
 import { listRiders, type RiderListRow } from "../lib/admin";
 import { getClient } from "../lib/supabase";
 import { formatRupees } from "../lib/money";
@@ -30,11 +30,19 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
   const onSlips = done.reduce((n, o) => n + o.total_paise, 0);
   const [riders, setRiders] = useState<RiderListRow[]>([]);
   const [handoverError, setHandoverError] = useState<string | null>(null);
-  useEffect(() => {   // the riders' names for the hand-over rows; kitchen staff may read the riders table (A59)
-    if (tab !== "kitchen" || !gate) return;
+  const [minute, setMinute] = useState(() => hhmm(new Date().toISOString()));
+  useEffect(() => { const t = setInterval(() => setMinute(hhmm(new Date().toISOString())), 60_000); return () => clearInterval(t); }, []);   // the clock line moves on its own
+  useEffect(() => {   // the riders' names and locations for the ready tickets (#231) and the hand-over rows; read again each minute so "N min" moves (A59)
+    if ((tab !== "kitchen" && tab !== "cooking") || !gate) return;
     listRiders(getClient()).then(setRiders).catch(() => setRiders([]));
-  }, [tab, gate]);
+  }, [tab, gate, minute]);
   const riderName = (id: string) => riders.find((r) => r.user_id === id)?.name || `Rider ${shortId(id)}`;
+  const riderLine = (o: Order) => {   // #231: who is coming for a ready order, and how far, when the location is fresh
+    if (!o.rider_id) return "Rider on the way";
+    const r = riders.find((x) => x.user_id === o.rider_id);
+    const min = r && gate && r.updated_at ? minutesAway({ lat: r.lat ?? null, lng: r.lng ?? null, updated_at: r.updated_at }, gate) : null;
+    return `${riderName(o.rider_id)}${min ? ` · ${min} min` : ""}`;
+  };
   const handover = async (r: { rider_id: string; inHand: number; older: number }) => {
     const sum = formatRupees(r.inHand + r.older) + (r.older > 0 ? ` (${formatRupees(r.older)} from older days)` : "");
     if (!window.confirm(`Confirm ${sum} handed over by ${riderName(r.rider_id)}? This cannot be undone.`)) return;
@@ -60,14 +68,12 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
           {lines(o)}
         </button>
         {next ? <button type="button" className="ui-btn big" aria-label={`${next.label} ${shortId(o.id)}`} disabled={busyId === o.id} onClick={() => void step(o)}>{next.label}</button>
-          : <span className="mono ui-ticket-wait">Rider on the way</span>}
+          : <span className="mono ui-ticket-wait">{riderLine(o)}</span>}
       </div>
     );
   };
   const state = gate ? (gate.open === null ? "Unknown" : gate.open ? "Open" : "Closed") : null;
   const dot = gate && <span className={gate.open ? "ui-state-dot on" : "ui-state-dot"} aria-hidden="true" />;
-  const [minute, setMinute] = useState(() => hhmm(new Date().toISOString()));
-  useEffect(() => { const t = setInterval(() => setMinute(hhmm(new Date().toISOString())), 60_000); return () => clearInterval(t); }, []);   // the clock line moves on its own
   const pastClose = !!gate && outsideHours(gate.opensAt, gate.closesAt, minute);   // after closing time the customer app shows "closed" whatever the switch says
   const gone = justCancelled(orders, seen.current, new Date());   // recomputed on every render; the minute tick re-renders, so the stamp leaves on its own
   const cancelledRow = (o: Order) => (

@@ -91,3 +91,16 @@ export const cashByRider = <T extends Done>(today: T[], all: T[]): { rider_id: s
 };
 export const confirmHandover = async (c: { rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<{ error: { message: string } | null }> }, riderId: string): Promise<string | null> =>
   (await c.rpc("kitchen_handover", { p_rider: riderId })).error?.message ?? null;
+
+// Story #231: how far the rider is, from their last location. Null when the location is older than ten minutes or either point is unknown.
+type Point = { lat: number | null; lng: number | null };
+const kmBetween = (a: Point, b: Point): number => {   // haversine
+  const r = Math.PI / 180, dLat = (b.lat! - a.lat!) * r, dLng = (b.lng! - a.lng!) * r;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat! * r) * Math.cos(b.lat! * r) * Math.sin(dLng / 2) ** 2;
+  return 2 * 6371 * Math.asin(Math.sqrt(h));
+};
+export const minutesAway = (rider: Point & { updated_at: string }, kitchen: Point, now = new Date(), speedKmh = 18, freshMs = 10 * 60_000): number | null => {
+  if (rider.lat == null || rider.lng == null || kitchen.lat == null || kitchen.lng == null) return null;
+  if (now.getTime() - Date.parse(rider.updated_at) > freshMs) return null;
+  return Math.max(1, Math.round((kmBetween(rider, kitchen) / speedKmh) * 60));   // ponytail: one Delhi scooter speed (A64); a real ETA needs the road, not the crow
+};
