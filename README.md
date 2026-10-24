@@ -68,7 +68,7 @@ Free tiers, one small server, a two-person loop: a founder and AI coding agents,
 5. **Payments.** UPI and cards after the food licence. Cash stays.
 6. **Second city.** Same code, same kitchen playbook, a new row in the table.
 
-The full plan, with root causes, stories and verification: [`docs/mvp25/plan.md`](https://github.com/satvik-jain-iitd/GoServe/blob/dev/docs/mvp25/plan.md).
+The plan for the Android app and zero running cost: [`docs/mvp3/plan.md`](https://github.com/satvik-jain-iitd/GoServe/blob/dev/docs/mvp3/plan.md). The earlier plan, with root causes, stories and verification: [`docs/mvp25/plan.md`](https://github.com/satvik-jain-iitd/GoServe/blob/dev/docs/mvp25/plan.md).
 
 ---
 
