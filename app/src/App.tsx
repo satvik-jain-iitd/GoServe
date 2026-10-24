@@ -1,12 +1,12 @@
 // The customer flow in one place: menu, cart, bill, placed (story #48). No router yet: four steps in state.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MAX_QTY, addDish, cartLines, cartTotal, changeQty, toOrderItems, type Cart } from "./lib/cart";
-import { mergeOrder, riderOrders, shortId, statusLabel, type Order, type RiderAction } from "./lib/kitchen";
+import { mergeOrder, riderOrders, shortId, statusLabel, type Order, type RiderAction, confirmHandover, isCash } from "./lib/kitchen";
 import { clientPlatform } from "./lib/platform";
 import { riderRefused, savePlatform, tapCall } from "./lib/signals";
 import { useLiveOrders } from "./lib/useLiveOrders";
 import { loadMenu, MENU_KEY, type Dish } from "./lib/menu";
-import { fetchKitchens, forgetArea, loadPin, openingText, resolveArea, savePin, type Area } from "./lib/area";
+import { fetchKitchens, forgetArea, loadArea, loadPin, openingText, resolveArea, savePin, type Area } from "./lib/area";
 import { AreaScreen } from "./screens/AreaScreen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { AdminGate } from "./screens/AdminGate";
@@ -47,7 +47,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [menu, setMenu] = useState<{ dishes: Dish[]; fromCache: boolean } | null>(null);
   // The customer app asks for a pin code and shows the menu of the kitchen that serves it (story B2). The demo console and the other apps keep the plain menu.
   const [pin, setPin] = useState<string | null>(() => (lock === "customer" ? loadPin() : null));
-  const [area, setArea] = useState<Area | null>(null);
+  const [area, setArea] = useState<Area | null>(() => (lock === "customer" ? loadArea() : null));   // #242 D15: a saved kitchen opens the menu before the network answers
   const [areaError, setAreaError] = useState<string | null>(null);
   const [looking, setLooking] = useState(false);
   const [menuError, setMenuError] = useState<string | null>(null);
@@ -223,21 +223,20 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setLooking(true);
     setAreaError(null);
     resolveArea(pin, () => fetchKitchens(getClient()), window.localStorage)
-      .then(async (found) => {
-        if (!alive) return;
-        setArea(found);
-        if (found.kind === "none") return;
-        const kitchenId = found.kind === "ok" ? found.kitchen.id : found.id;   // a closed kitchen still shows its menu (board 02c)
-        try {
-          const loaded = await loadMenu(() => fetchMenuRows(kitchenId), window.localStorage, `${MENU_KEY}.${kitchenId}`);
-          if (alive) setMenu(loaded);
-        } catch (e) {
-          if (alive) setMenuError((e as Error).message);
-        }
-      }, () => { if (alive) setAreaError("Could not look up kitchens. Connect and try again."); })
+      .then((found) => { if (alive) setArea(found); }, () => { if (alive) setAreaError("Could not look up kitchens. Connect and try again."); })
       .finally(() => { if (alive) setLooking(false); });
     return () => { alive = false; };
   }, [lock, pin]);
+  // The menu of the kitchen that serves the pin; a closed kitchen still shows its menu (board 02c). Reads as soon as the kitchen is known,
+  // so a saved kitchen (D15, #242) shows its menu before the kitchens read answers.
+  const areaKitchenId = area?.kind === "ok" ? area.kitchen.id : area?.kind === "closed" ? area.id : null;
+  useEffect(() => {
+    if (lock !== "customer" || !areaKitchenId) return;
+    let alive = true;
+    loadMenu(() => fetchMenuRows(areaKitchenId), window.localStorage, `${MENU_KEY}.${areaKitchenId}`)
+      .then((loaded) => { if (alive) setMenu(loaded); }, (e: Error) => { if (alive) setMenuError(e.message); });
+    return () => { alive = false; };
+  }, [lock, areaKitchenId]);
   function choosePin(p: string) {
     savePin(p);
     setArea(null);
@@ -475,7 +474,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         stats={demo ? { runsToday: 6, lastDecideMs: 310 } : ops.stats} error={demo ? null : ops.error ?? live.error} failed={ops.failed} sample={demo} />
   );
   // The kitchen of the delivery in hand, for "Pick up at" (story H11). Read once per kitchen; nothing in the offline demo.
-  const jobKitchenId = role === "rider" && !demo ? riderOrders(orders)[0]?.kitchen_id ?? null : null;
+  const jobKitchenId = role === "rider" && !demo ? riderOrders(orders)[0]?.kitchen_id ?? orders[0]?.kitchen_id ?? null : null;   // #229: the hours set the cash day even with no job in hand
   const [jobKitchen, setJobKitchen] = useState<KitchenCard | null>(null);
   useEffect(() => {
     if (!jobKitchenId) return;
@@ -488,14 +487,20 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       onAct={(o, a) => act(o, a, "rider")} gate={gate} kitchen={jobKitchen} />
   );
   const riderView = lock === "rider" ? <RiderGate>{riderScreen}</RiderGate> : riderScreen(null);
+  // Story #229: the kitchen confirms a rider's cash. The rows are stamped here too, so the screen does not wait for the next read.
+  async function handover(riderId: string): Promise<string | null> {
+    const failed = await confirmHandover(getClient(), riderId);
+    if (!failed) setOrders((cur) => cur.map((o) => o.rider_id === riderId && o.status === "delivered" && isCash(o) && !o.cash_handed_at ? { ...o, cash_handed_at: new Date().toISOString() } : o));
+    return failed;
+  }
   const kitchenScreen = (gate: KitchenGateState | null) => (
     <KitchenScreen orders={orders} loading={live.loading} error={live.error} busyId={busyId}
-      onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} gate={gate} />
+      onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} onHandover={handover} gate={gate} />
   );
   const kitchenView = lock === "kitchen" ? <KitchenGate>{kitchenScreen}</KitchenGate> : kitchenScreen(null);
   const needArea = lock === "customer" && step !== "placed" && step !== "orders" && !(pin && (area?.kind === "ok" || area?.kind === "closed"));
   const customerView = needArea ? (
-    <AreaScreen pin={pin} area={area} busy={looking} error={areaError} onPin={choosePin} onTrack={() => setStep("orders")} />
+    <AreaScreen pin={pin} area={area} busy={looking} error={areaError} onPin={choosePin} />
   ) : (
     <>
         {step === "menu" && (
@@ -536,7 +541,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <>
     {framed && <main className="frame">{role === "rider" ? riderView : role === "kitchen" ? kitchenView : role === "admin" ? <AdminScreen /> : customerView}</main>}
     <Shell className={framed ? "shell below" : role === "split" ? "shell split" : "shell"}>
-      <h1>{lock && lock !== "customer" ? `GoServe ${lock[0].toUpperCase()}${lock.slice(1)}` : "GoServe"}</h1>
       {!demo && !framed && <SignIn mode={lock && lock !== "customer" ? "signin" : "link"} />}   {/* story #224: a customer never signs in; the staff gates carry their own Google button */}
       {!lock && <nav className="roles" aria-label="Screen">
         {(["customer", "kitchen", "rider", "split", "ops"] as const).map((r) => (
@@ -552,7 +556,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       {role === "ops" && (lock === "ops" ? <AdminGate>{opsView}</AdminGate> : opsView)}
       {role === "customer" && !framed && customerView}
       {role === "admin" && !framed && <AdminScreen />}
-      <FeedbackSheet role={lock ?? "console"} screen={`${window.location.pathname}${lock ? "" : ` (${role} tab)`}`}
+      <FeedbackSheet role={lock ?? "console"} button={!lock} screen={`${window.location.pathname}${lock ? "" : ` (${role} tab)`}`}
         order={placed ? { id: placed.id, status: orders.find((o) => o.id === placed.id)?.status ?? placed.status } : orders[0] ? { id: orders[0].id, status: orders[0].status } : null}
         getSession={currentSession} send={(r) => sendFeedback(r, api())} preset={preset} />
       {role === "split" && (
@@ -562,10 +566,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         </div>
       )}
     </Shell>
-      <footer className="legal">
-        <p>GoServe: order food, the kitchen cooks, a rider brings it</p>
-        <p><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
-      </footer>
     </>
   );
 }

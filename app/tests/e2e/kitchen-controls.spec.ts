@@ -6,7 +6,7 @@ test("S1 a kitchen staff user sees their dishes and the open switch", async ({ p
   const net = await setup(context, page);
   net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
-  await page.getByRole("button", { name: "Kitchen", exact: true }).click();   // H11: the Kitchen tab
+  await page.getByRole("button", { name: "Today", exact: true }).click();   // the kitchen's own tab (#242: Today)
   await expect(page.getByText("Butter Chicken", { exact: true })).toBeVisible();
   await expect(page.getByRole("switch", { name: "Open for orders" })).toBeChecked();
 });
@@ -15,7 +15,7 @@ test("S2 Sold out sends available false for that dish; Back in stock sends true"
   const net = await setup(context, page);
   net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
-  await page.getByRole("button", { name: "Kitchen", exact: true }).click();
+  await page.getByRole("button", { name: "Today", exact: true }).click();
   await page.getByRole("button", { name: "Mark Butter Chicken sold out" }).click();
   await expect.poll(() => net.calls.menuWrites.length).toBe(1);
   expect(net.calls.menuWrites[0]).toMatchObject({ method: "PATCH", body: { available: false } });
@@ -25,7 +25,7 @@ test("S3 Close kitchen calls set_kitchen_open with false and the screen says the
   const net = await setup(context, page);
   net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
-  await page.getByRole("button", { name: "Kitchen", exact: true }).click();
+  await page.getByRole("button", { name: "Today", exact: true }).click();
   await page.getByRole("switch", { name: "Open for orders" }).click();
   await expect.poll(() => net.calls.rpc.filter((c) => c.name === "set_kitchen_open").length).toBe(1);
   expect(net.calls.rpc.find((c) => c.name === "set_kitchen_open")!.body).toEqual({ p_kitchen: "k-1", p_open: false });

@@ -30,15 +30,13 @@ for (const [path, heading] of [["/privacy/", "Privacy policy"], ["/terms/", "Ter
 }
 
 // Google brand check: the home page names what GoServe does and links the policy pages; the domain file proves we own the site.
-test("S4 every page of the app has a footer with what GoServe does and links to Privacy and Terms", async ({ page, context }) => {
+test("S4 the customer app links Privacy and Terms from the You tab (story #242 took the footer off every board)", async ({ page, context }) => {
   await setup(context, page, []);
   await page.goto("/customer/");
-  const footer = page.getByRole("contentinfo");
-  await expect(footer).toContainText("GoServe: order food, the kitchen cooks, a rider brings it");
-  await expect(footer.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy/");
-  await expect(footer.getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/terms/");
-  await page.goto("/kitchen/");
-  await expect(page.getByRole("contentinfo").getByRole("link", { name: "Privacy" })).toBeVisible();
+  await expect(page.getByRole("contentinfo")).toHaveCount(0);
+  await page.getByRole("button", { name: "You (Account)", exact: true }).click();
+  await expect(page.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy/");
+  await expect(page.getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/terms/");
 });
 
 test("S5 the privacy page has a Google sign-in data block", async ({ request }) => {

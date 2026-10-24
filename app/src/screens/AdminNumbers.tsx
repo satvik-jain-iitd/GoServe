@@ -19,7 +19,7 @@ export function AdminNumbers({ live, kitchens }: { live?: number; kitchens?: Kit
       <div className="ui-tiles">
         <div className="ui-tile" data-testid="tile-orders"><span className="ui-tile-k">Orders</span><span className="ui-tile-v mono">{t.orders}</span>{live !== undefined && <span className="ui-tile-s mono">{live} live</span>}</div>
         <div className="ui-tile" data-testid="tile-delivered"><span className="ui-tile-k">Delivered</span><span className="ui-tile-v mono">{t.delivered}</span><span className="ui-tile-s mono">{t.cancelled} cancelled</span></div>
-        <div className="ui-tile" data-testid="tile-cash"><span className="ui-tile-k">Cash on slips</span><span className="ui-tile-v mono">{formatRupees(t.cash_paise)}</span></div>
+        <div className="ui-tile" data-testid="tile-cash"><span className="ui-tile-k">Cash today</span><span className="ui-tile-v mono">{formatRupees(t.cash_paise)}</span></div>
         {open !== null && <div className="ui-tile" data-testid="tile-kitchens"><span className="ui-tile-k">Kitchens open</span><span className="ui-tile-v mono">{open} of {kitchens!.length}</span></div>}
       </div>
       <section className="ui-group" aria-label="Per kitchen">
@@ -31,6 +31,7 @@ export function AdminNumbers({ live, kitchens }: { live?: number; kitchens?: Kit
           </div>
         ))}
       </section>
+      <button type="button" className="ui-row" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}><span>Send feedback</span><span className="go" aria-hidden="true">›</span></button>
     </div>
   );
 }

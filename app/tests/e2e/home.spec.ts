@@ -1,7 +1,6 @@
 // Story H10b (#193): the Ink v3 pin screen, menu, thali hero, Filter sheet, Dish sheet and the closed and loading states (boards 01, 01e, 02, 02a, 02b, 02c, 03).
 import { test, expect } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
-import { setup } from "./helpers";
+import { setup, scan as axeScan } from "./helpers";
 
 const MENU = [
   { id: "t1", name: "Veg Thali", price_paise: 18000, image_url: null, image_credit: null, veg: true, category: "Thali" },
@@ -100,7 +99,6 @@ for (const t of ["day", "night"] as const) {
     net.state.menu = MENU;
     await page.goto("/customer/");
     await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
-    const bad = (await new AxeBuilder({ page }).analyze()).violations.filter((v) => v.impact === "serious" || v.impact === "critical");
-    expect(bad.map((v) => `${v.id}: ${v.nodes.slice(0, 2).map((n) => n.target.join(" ")).join(" | ")}`)).toEqual([]);
+    expect(await axeScan(page)).toEqual([]);
   });
 }

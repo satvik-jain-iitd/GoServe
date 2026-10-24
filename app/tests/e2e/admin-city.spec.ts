@@ -1,7 +1,6 @@
 // Story H12 (#195), layer 2: the City boards A5 (city), A6 (one kitchen) and A7 (add a kitchen). The network is answered by the test (helpers.ts).
 import { test, expect, type Page } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
-import { setup } from "./helpers";
+import { setup, scan as axeScan } from "./helpers";
 
 const city = async (page: Page) => { await page.goto("/admin/"); await page.getByRole("button", { name: "City", exact: true }).click(); };
 const KITCHENS = [
@@ -87,10 +86,7 @@ for (const theme of ["day", "night"] as const) {
     net.state.kitchens = KITCHENS;
     net.state.riders = [{ user_id: "r-1", name: "Amit Kumar", phone: "9810011223", online: true }];
     await city(page);
-    const scan = async () => {
-      const r = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
-      expect(r.violations.filter((v) => v.impact === "serious" || v.impact === "critical")).toEqual([]);
-    };
+    const scan = async () => expect(await axeScan(page, ["wcag2a", "wcag2aa"])).toEqual([]);
     await expect(page.getByText("Amit Kumar")).toBeVisible();
     await scan();   // A5
     await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();

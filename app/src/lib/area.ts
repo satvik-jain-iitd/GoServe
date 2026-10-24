@@ -35,6 +35,13 @@ export function loadPin(store: Storage = window.localStorage): string | null {
     return null;
   }
 }
+/** Story #242 (D15): the kitchen saved for the saved pin, read at start so the menu shows at once; the network refreshes it after. */
+export function loadArea(store: Storage = window.localStorage): Area | null {
+  try {
+    const saved = JSON.parse(store.getItem(KITCHEN_KEY) ?? "null");
+    return saved?.pin && saved.pin === loadPin(store) && saved.kitchen?.id ? { kind: "ok", kitchen: saved.kitchen } : null;
+  } catch { return null; }
+}
 export function savePin(pin: string, store: Storage = window.localStorage): void {
   try { store.setItem(PIN_KEY, pin); } catch { /* storage blocked: asked again next time */ }
 }

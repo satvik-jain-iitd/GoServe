@@ -42,7 +42,7 @@ async function mockNetwork(context: BrowserContext): Promise<Net> {
 test("S1 order path: add 2 dishes, see the bill, place the order (cash on delivery)", async ({ page, context }) => {
   const net = await mockNetwork(context);
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "GoServe" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Screen" })).toBeVisible();
   await expect(page.getByText("Butter Chicken")).toBeVisible();
   await expect(page.getByText("₹320", { exact: true })).toBeVisible();
 

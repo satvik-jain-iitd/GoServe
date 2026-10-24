@@ -116,7 +116,7 @@ for (const theme of ["day", "night"] as const) {
     net.state.kitchens = [KITCHEN];
     net.state.customer = { user_id: "u", name: "Rahul Verma", phone: "9876543210", address: "B-12, Lajpat Nagar II, near the park gate", pin_code: "110016" };
     await page.goto("/customer/");
-    await page.getByRole("button", { name: "Back to the menu" }).click();
+    await page.getByRole("button", { name: "Back to menu" }).click();
     await page.getByRole("button", { name: "My orders" }).click();
     await page.getByRole("heading", { name: "Your orders" }).waitFor();
     await shot("Orders");
@@ -130,7 +130,7 @@ for (const theme of ["day", "night"] as const) {
     await setup(context, page);
     await page.goto("/customer/");
     await page.getByRole("button", { name: "My orders" }).click();
-    await page.getByText("No slips yet").waitFor();
+    await page.getByText("No orders yet").waitFor();
     await page.screenshot({ path: `${OUT}/${theme}/S-EmptyOrders-${theme}.png` });
   });
   test(`shots rider ${theme}`, async ({ page, context }) => {   // story H11 (#194): boards R1 to R9
