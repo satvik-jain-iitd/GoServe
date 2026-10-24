@@ -537,7 +537,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     {framed && <main className="frame">{role === "rider" ? riderView : role === "kitchen" ? kitchenView : customerView}</main>}
     <Shell className={framed ? "shell below" : role === "split" ? "shell split" : "shell"}>
       <h1>{lock && lock !== "customer" ? `GoServe ${lock[0].toUpperCase()}${lock.slice(1)}` : "GoServe"}</h1>
-      {!demo && !(framed && role !== "customer") && <SignIn mode={lock && lock !== "customer" ? "signin" : "link"} />}
+      {!demo && !framed && <SignIn mode={lock && lock !== "customer" ? "signin" : "link"} />}   {/* story #224: a customer never signs in; the staff gates carry their own Google button */}
       {!lock && <nav className="roles" aria-label="Screen">
         {(["customer", "kitchen", "rider", "split", "ops"] as const).map((r) => (
           <button key={r} type="button" className={role === r ? "btn" : "btn ghost"} aria-pressed={role === r} onClick={() => { pushTrail(`open ${r} tab`); setRole(r); }}>

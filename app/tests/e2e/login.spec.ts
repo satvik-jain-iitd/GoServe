@@ -1,4 +1,4 @@
-// Story S-M1 (#117): Continue with Google links to the anonymous user; after sign-in the name shows. Supabase and Google are answered by the test.
+// Story S-M1 (#117), moved to the demo console by #224 (the customer app never shows the button): Continue with Google links to the anonymous user; after sign-in the name shows. Supabase and Google are answered by the test.
 import { test, expect } from "@playwright/test";
 import { setup, SESSION } from "./helpers";
 
@@ -15,34 +15,34 @@ test("S1 Continue with Google asks Supabase to link Google to the current user a
     return r.fulfill({ status: 200, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify({ url: "https://accounts.google.test/auth" }) });
   });
   await context.route("https://accounts.google.test/**", (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<h1>Google</h1>" }));
-  await page.goto("/customer/");
+  await page.goto("/");
   await page.getByTestId("google-signin").click();
   await expect(page).toHaveURL("https://accounts.google.test/auth");
   expect(asked).toHaveLength(1);
   const u = new URL(asked[0]);
   expect(u.searchParams.get("provider")).toBe("google");
-  expect(u.searchParams.get("redirect_to")).toMatch(/\/customer\/$/);
+  expect(u.searchParams.get("redirect_to")).toMatch(/\/$/);   // the console root since #224
 });
 
 test("S2 a signed-in user sees the name and no button", async ({ page, context }) => {
   await setup(context, page, []);
   await context.route("https://test.supabase.co/auth/v1/user", (r) => r.request().method() === "OPTIONS" ? r.fulfill({ status: 204, headers: CORS }) : r.fulfill({ status: 200, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(user({ is_anonymous: false, email: "asha@example.com", user_metadata: { full_name: "Asha Rao" } })) }));
-  await page.goto("/customer/");
+  await page.goto("/");
   await expect(page.getByTestId("signed-in")).toHaveText("Signed in as Asha Rao");
   await expect(page.getByTestId("google-signin")).toHaveCount(0);
 });
 
 test("S3 an anonymous user keeps the same session and sees the button", async ({ page, context }) => {
   await setup(context, page, []);
-  await page.goto("/customer/");
+  await page.goto("/");
   await expect(page.getByTestId("google-signin")).toBeVisible();
   await expect(page.getByTestId("signed-in")).toHaveCount(0);
 });
 
 test("S4 a failed link shows the reason once and clears it from the address", async ({ page, context }) => {
   await setup(context, page, []);
-  await page.goto("/customer/?error=server_error&error_description=Identity+is+already+linked");
+  await page.goto("/?error=server_error&error_description=Identity+is+already+linked");
   await expect(page.getByRole("alert")).toHaveText("Identity is already linked");
-  await expect(page).toHaveURL(/\/customer\/$/);
+  await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId("google-signin")).toBeVisible();
 });
