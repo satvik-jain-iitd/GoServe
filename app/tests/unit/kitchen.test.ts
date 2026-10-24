@@ -167,3 +167,23 @@ describe("justCancelled", () => {
     expect(justCancelled([o("preparing", at(5))], new Set(["a"]), at(30))).toEqual([]);
   });
 });
+
+// Story #231: minutes away from the rider's last fresh location to the kitchen.
+import { minutesAway } from "../../src/lib/kitchen";
+describe("minutesAway", () => {
+  const now = new Date("2026-10-25T12:00:00Z");
+  const kitchen = { lat: 28.5535, lng: 77.1935 };
+  it("about 1.1 km at scooter speed is 3 to 4 minutes", () => {
+    const m = minutesAway({ lat: 28.5494, lng: 77.2001, updated_at: "2026-10-25T11:58:00Z" }, kitchen, now);
+    expect(m).toBeGreaterThanOrEqual(3);
+    expect(m).toBeLessThanOrEqual(4);
+  });
+  it("a location older than ten minutes, or missing, gives null", () => {
+    expect(minutesAway({ lat: 28.5494, lng: 77.2001, updated_at: "2026-10-25T11:40:00Z" }, kitchen, now)).toBeNull();
+    expect(minutesAway({ lat: null, lng: null, updated_at: "2026-10-25T11:59:00Z" }, kitchen, now)).toBeNull();
+    expect(minutesAway({ lat: 28.5494, lng: 77.2001, updated_at: "2026-10-25T11:59:00Z" }, { lat: null, lng: null }, now)).toBeNull();
+  });
+  it("never says 0: the rider at the door is 1 minute", () => {
+    expect(minutesAway({ lat: 28.5535, lng: 77.1935, updated_at: "2026-10-25T11:59:00Z" }, kitchen, now)).toBe(1);
+  });
+});

@@ -47,3 +47,14 @@ Runs: `scout.py --need "kitchen display system cancelled order notice, ticket sh
 | ahmedali5530/restaurant-pos (★71, pushed 23 Oct) | C | React + SurrealDB POS with void reports. | Voids live in reports, not on the cook's screen. | Skip |
 
 Decision: one pure function (`justCancelled`) and a set of seen ids in the kitchen screen; 20 lines. Confidence 0.8 (a KDS "void flash" is a common feature in paid systems; nothing open and small to borrow).
+
+## 2026-10-25 · need: kitchen display shows the assigned rider's name and minutes away on a ready order (story #231)
+
+Runs: `scout.py --need "kitchen display system shows the assigned delivery rider name and minutes away on a ready order"` → no repos found; GitHub `kitchen display rider assigned in:readme stars:>20` → four student projects (★0 to ★2), none with a rider ETA on the cook's screen.
+
+| Repo | Tier | What it is | Fit for this need | Verdict |
+|---|---|---|---|---|
+| Arjun-Chandra-7/Byte-Eats (★2) | C | A student food-delivery app. | No KDS, no rider ETA. | Skip |
+| TianLeTL/CloudKitchen (★0, Oct 2026) | C | A cloud-kitchen demo. | Same. | Skip |
+
+Decision: one pure function (`minutesAway`: haversine over a scooter speed, null when the location is older than ten minutes) and the riders read the Kitchen screen already has; ten lines. Confidence 0.9 (an ETA from a last location is textbook; nothing to adopt).
