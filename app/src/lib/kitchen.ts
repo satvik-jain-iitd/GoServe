@@ -53,7 +53,7 @@ export const riderActions = (status: string): RiderAction[] => {
   if (status === "out_for_delivery") return [{ kind: "event", event: "order.arriving", label: "Arriving" }, { kind: "status", to: "delivered", label: "Delivered" }, { kind: "refused", label: "Not delivered" }];
   return [];
 };
-export const riderOrders = (orders: Order[]): Order[] => orders.filter((o) => o.status === "ready" || o.status === "out_for_delivery");
+export const riderOrders = (orders: Order[]): Order[] => orders.filter((o) => o.status === "ready" || o.status === "out_for_delivery").sort((a, b) => a.created_at.localeCompare(b.created_at));   // oldest first: the job in hand is the one waiting longest
 
 const FLOW = ["placed", "accepted", "preparing", "ready", "out_for_delivery", "delivered"];
 export const trackerSteps = (status: string): { status: string; label: string; state: "done" | "current" | "todo" }[] => {

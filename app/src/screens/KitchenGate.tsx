@@ -6,8 +6,8 @@ import { ensureSession, getClient } from "../lib/supabase";
 import { SignIn } from "./SignIn";
 import { Skeleton } from "../ui";
 
-export type KitchenGateState = { kitchenId: string; name: string; open: boolean; closesAt: string | null; flipOpen: () => Promise<void>; signOut: () => void };
-type Row = { name: string; open: boolean; closes_at: string | null };
+export type KitchenGateState = { kitchenId: string; name: string; open: boolean | null; closesAt: string | null; flipOpen: () => Promise<void>; signOut: () => void };   // open null: the row could not be read
+type Row = { name: string; open: boolean | null; closes_at: string | null };
 
 export function KitchenGate({ children }: { children: (gate: KitchenGateState) => ReactNode }) {
   const [kitchenId, setKitchenId] = useState<string | null | undefined>(undefined);   // undefined: still loading
@@ -19,9 +19,9 @@ export function KitchenGate({ children }: { children: (gate: KitchenGateState) =
       try { const { data } = await getClient().auth.getUser(); setAnonymous(data.user?.is_anonymous !== false); } catch { /* unknown: treat as not signed in */ }
       const k = await myKitchen(getClient(), id);
       if (k) {
-        const { data } = await getClient().from("kitchens").select("name, open, closes_at").eq("id", k).limit(1);
+        const { data, error } = await getClient().from("kitchens").select("name, open, closes_at").eq("id", k).limit(1);
         const r = data?.[0] as Partial<Row> | undefined;
-        setRow({ name: r?.name ?? "Your kitchen", open: r?.open !== false, closes_at: r?.closes_at ?? null });
+        setRow({ name: r?.name ?? "Your kitchen", open: error || !r ? null : r.open !== false, closes_at: r?.closes_at ?? null });   // unknown stays unknown: the switch is disabled
       }
       setKitchenId(k);
     }, () => setKitchenId(null)).catch(() => { setError("Could not load your kitchen. Check your connection."); setKitchenId(null); });
@@ -60,6 +60,7 @@ export function KitchenGate({ children }: { children: (gate: KitchenGateState) =
   );
   const flipOpen = async () => {
     setError(null);
+    if (row.open === null) return;
     const { error: failed } = await getClient().rpc("set_kitchen_open", { p_kitchen: kitchenId, p_open: !row.open });
     if (failed) setError("Could not change the kitchen. Try again.");
     else setRow({ ...row, open: !row.open });

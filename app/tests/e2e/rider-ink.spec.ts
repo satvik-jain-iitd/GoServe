@@ -30,8 +30,8 @@ test("S2 Today lists the deliveries so far and the cash in hand", async ({ page,
   await page.goto("/rider/");
   await tab(page, "Today").click();
   await expect(page.getByText("1 delivered")).toBeVisible();
-  await expect(page.getByText("Cash in hand")).toBeVisible();
-  await expect(page.getByText("₹640", { exact: true })).toHaveCount(2);   // the total and the one row
+  await expect(page.getByTestId("cash")).toContainText("₹640");   // the total
+  await expect(page.locator(".ui-row", { hasText: "No. 0f0f0f0f" })).toContainText("₹640");   // the one row
   await expect(page.getByText(/No\. 0f0f0f0f/)).toBeVisible();
   await expect(page.getByText(/No\. 0a0a0a0a/)).toHaveCount(0);   // yesterday's is not today's
   void ID;
@@ -73,14 +73,32 @@ test("S5 an account that is not a rider sees the gate with Check again and Sign 
 for (const theme of ["day", "night"] as const) {
   test(`S6 the rider screens have no serious contrast or role violation in ${theme}`, async ({ page, context }) => {
     await context.addInitScript((v) => localStorage.setItem("gs-theme", v), theme);
-    await setup(context, page, [{ ...order("ready"), rider_id: SESSION, customer_name: "Rahul Verma", customer_phone: "9876543210" }]);
+    const net = await setup(context, page, [{ ...order("ready"), rider_id: SESSION, customer_name: "Rahul Verma", customer_phone: "9876543210" }]);
     await page.goto("/rider/");
     await expect(page.getByText("Collect cash")).toBeVisible();
-    for (const name of [null, "Today", "Me"]) {
-      if (name) await tab(page, name).click();
+    const scan = async () => {
       const r = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
       expect(r.violations.filter((v) => v.impact === "serious" || v.impact === "critical")).toEqual([]);
-    }
+    };
+    await scan();   // R5 pick up
+    await page.getByRole("button", { name: "Pick up 0f0f0f0f" }).click();
+    await page.getByRole("button", { name: "Delivered 0f0f0f0f", exact: true }).click();
+    await expect(page.getByText("Cash collected")).toBeVisible();
+    await scan();   // R7 delivered
+    await page.getByRole("button", { name: "Next delivery" }).click();
+    for (const name of ["Today", "Me"]) { await tab(page, name).click(); await scan(); }   // R8, R9
+    await page.getByRole("switch", { name: "Online" }).click();
+    await tab(page, "Job").click();
+    await expect(page.getByRole("heading", { name: "You are offline" })).toBeVisible();
+    await scan();   // R3 offline
+    net.state.rider = null;
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Sign in to ride" })).toBeVisible();
+    await scan();   // R1 gate
+    net.state.anonymous = false;
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Not a rider yet" })).toBeVisible();
+    await scan();   // R2 gate
   });
 }
 
@@ -90,4 +108,19 @@ test("S7 a phone with no Google sign-in sees Sign in to ride", async ({ page, co
   await page.goto("/rider/");
   await expect(page.getByRole("heading", { name: "Sign in to ride" })).toBeVisible();
   await expect(page.getByTestId("google-signin")).toBeVisible();
+});
+
+test("S8 when the kitchen row cannot be read, the pick-up card still shows and says The kitchen", async ({ page, context }) => {
+  const net = await setup(context, page, [{ ...order("ready"), rider_id: SESSION }]);
+  net.state.kitchens = [];   // no row comes back for the order's kitchen_id
+  await page.goto("/rider/");
+  await expect(page.getByText("The kitchen", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Pick up 0f0f0f0f" })).toBeEnabled();
+});
+
+test("S9 two ready orders: the one waiting longest is the job in hand, the other waits", async ({ page, context }) => {
+  await setup(context, page, [{ ...order("ready", "2020-01-01T10:10:00Z", "2020-01-01T10:10:00Z"), rider_id: SESSION }, { ...order("ready", "2020-01-01T10:00:00Z", "2020-01-01T10:00:00Z"), id: "0a0a0a0a-0000-0000-0000-000000000000", rider_id: SESSION }]);
+  await page.goto("/rider/");
+  await expect(page.getByText("No. 0a0a0a0a")).toBeVisible();
+  await expect(page.getByText("1 more waiting")).toBeVisible();
 });

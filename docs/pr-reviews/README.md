@@ -41,6 +41,8 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana â
 | 24 | [#85](pr-85-prod-workflows.md) | feat(ops): prod copy of the order workflows, deployed inactive | MERGED (9 answered) | #78 (slice S3) |
 | 25 | [#86](pr-86-guard-by-path.md) | chore: guard blocks tool caches by path, small review notes | MERGED `31921e3` (fix `c6bdc09`, APPROVE 5528905183 on `75c4df8`) | follow-up to the 15 Oct review round |
 | 26 | [#220](pr-220-orders-you.md) | feat(app): Ink v3 Your orders and You screens (#193) | OPEN, APPROVE 5638912878 on `bf73554`, 20 questions open | H10d closes the customer screens; prod migrations 0022 to 0026 applied |
+| 27 | [#222](pr-222-rider-ink.md) | feat(app): Ink v3 rider app, boards R1 to R9 (#194) | OPEN, APPROVE 5639179226 on `ab5c8e4`, 17 questions open, Guard red until the reword | H11a, layer 1 of the #194 stack |
+| 28 | [#223](pr-223-kitchen-ink.md) | feat(app): Ink v3 kitchen app, boards K1 to K6 (#194) | OPEN, APPROVE 5639174623 on `be32bc1`, 15 questions open | H11b, layer 2, merged into the #222 branch |
 
 ## Journals
 - [concepts.md](concepts.md) â€” naye technical words, plain Hindi mein.
@@ -75,6 +77,8 @@ Maqsad: ek non-coding PM ko PR padhne, samajhne, aur review karne layak banana â
 | Prod copy: environment table, share only what is safe, same build different stamp | #85 |
 | Block by path not only content, a guard proves itself on its own PR, ignore before you add | #86 |
 | Short order number, customer words vs kitchen words, window event as a bell, theme pin, one-way permission switch | #220 |
+| Render-prop gate, one job in hand, sticky done slip, today by the phone's clock, generic Tabs | #222 |
+| Ticket buckets, the gate holds the switch, one ticket over the tabs, bigger than the board for a story rule, copy as a promise | #223 |
 
 ## Notes
 - Chapters Romanized Hindi mein hain. Code, file paths, commands English mein.

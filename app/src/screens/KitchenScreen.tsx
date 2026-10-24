@@ -46,8 +46,9 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, gate }: 
       </div>
     );
   };
-  const state = gate ? (gate.open ? "Open" : "Closed") : null;
+  const state = gate ? (gate.open === null ? "Unknown" : gate.open ? "Open" : "Closed") : null;
   const dot = gate && <span className={gate.open ? "ui-state-dot on" : "ui-state-dot"} aria-hidden="true" />;
+  const pastClose = !!gate?.closesAt && hhmm(new Date().toISOString()) >= gate.closesAt;   // after closing time the customer app shows "closed" whatever the switch says
   const todayLine = <p className="mono ui-foot">Today · {done.length} done{tab === "kitchen" ? ` · ${formatRupees(onSlips)} on the slips` : ""}</p>;
 
   if (opened) {   // K4: one ticket over the tabs
@@ -56,7 +57,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, gate }: 
     return (
       <>
         <header className="ui-head">
-          <button type="button" className="ui-back" aria-label="Back to new tickets" onClick={() => setOpenId(null)}><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg></button>
+          <button type="button" className="ui-back" aria-label={`Back to ${tab === "cooking" ? "cooking" : "new"} tickets`} onClick={() => setOpenId(null)}><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg></button>
           <h1>Ticket</h1>
           <span className="meta">No. {shortId(opened.id)}</span>
         </header>
@@ -96,7 +97,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, gate }: 
       {tab === "new" && (fresh.length === 0 ? (
         <div className="ui-scroll ui-center"><div className="ui-empty"><h2>No new tickets</h2><p className="ui-meta">New orders ring and show here. Keep this page open.</p>{todayLine}</div></div>
       ) : (
-        <div className="ui-scroll ui-tickets">{fresh.map(row)}<p className="mono ui-foot">New tickets ring · accept within 2 min</p></div>
+        <div className="ui-scroll ui-tickets">{fresh.map(row)}<p className="mono ui-foot">New tickets land here · accept within 2 min</p></div>
       ))}
       {tab === "cooking" && (
         <div className="ui-scroll ui-tickets">
@@ -111,8 +112,8 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, gate }: 
           {gate ? (
             <>
               <div className="ui-row ui-row-static ui-row-tall">
-                <label htmlFor="open" className="ui-row-label"><span>Open for orders</span><span className="ui-row-sub mono">{gate.open ? `${gate.closesAt ? `Till ${gate.closesAt} · ` : ""}customers see "closed" the moment you switch off` : "Closed · customers see it now"}</span></label>
-                <input id="open" className="ui-switch" type="checkbox" role="switch" checked={gate.open} onChange={() => void gate.flipOpen()} />
+                <label htmlFor="open" className="ui-row-label"><span>Open for orders</span><span className="ui-row-sub mono">{gate.open === null ? "Could not read the kitchen. Reload to try again." : !gate.open ? "Closed · customers see it now" : pastClose ? `Past ${gate.closesAt} · customers see "closed" till opening time` : `${gate.closesAt ? `Till ${gate.closesAt} · ` : ""}customers see "closed" on their next look`}</span></label>
+                <input id="open" className="ui-switch" type="checkbox" role="switch" checked={gate.open === true} disabled={gate.open === null} onChange={() => void gate.flipOpen()} />
               </div>
               <DishList kitchenId={gate.kitchenId} />
               <button type="button" className="ui-row" onClick={gate.signOut}><span>Sign out</span><span className="go" aria-hidden="true">›</span></button>

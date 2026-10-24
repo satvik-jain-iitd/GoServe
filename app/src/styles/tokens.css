@@ -11,3 +11,5 @@
 /* Kept until the screens move to Ink (H10b to H10d): sizes and roles the old screens still use. */
 :root { --gs-radius-m: 12px; --gs-radius-l: 20px; --gs-shadow-s: 0 1px 2px rgba(38, 53, 40, 0.08); --gs-space-8: 4rem; --gs-space-9: 6rem; --gs-text-xl: 1.625rem;
   --md-secondary-container: var(--gs-lime); --md-tertiary-container: var(--gs-lime-soft); }
+/* Story D3: staff read with wet hands, one size up for ticket lines; taps use --gs-tap-big. */
+:root { --gs-text-staff: 18px; }
