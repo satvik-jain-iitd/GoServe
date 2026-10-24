@@ -129,3 +129,8 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F125 | `DemoBar` and the Feedback button keep the old `.btn` class. Move them to the shared Button. | Coder | Open |
 | F126 | Web push: only the iPhone home-screen app is a live row. Other browsers and per-order opt-out are later. | Coder | Open |
 | F127 | `ci.yml` runs on pull_request only for base main or dev, so a stacked layer gets no CI until it is retargeted (PR #129 needed an empty commit). Add `feat/**` as a base in the next runtime PR. Also: pass `VITE_VAPID_PUBLIC_KEY` to the prod and dev builds in `deploy-app.yml` and `deploy-dev.yml` (secret `PROD_VITE_VAPID_PUBLIC_KEY`). | Coder | Open |
+| F128 | Site v2 shows labelled placeholders for the three Haikei SVGs (`hero-blob`, `section-waves`, `invest-glow`). The owner exports them from haikei.app; swap them in `site/public/` and delete the three `::after` label rules in `site.css`. | Owner, then Coder | Open |
+| F129 | The two thali photos now carry the full CC BY-SA 4.0 credit in the footer and in PHOTOS.md. The pilot kitchen\'s real plates still replace them before launch. | Owner | Credit done |
+| F130 | Site v2 is Day only. The canvas has a Night theme; wire it to the clock or a toggle if the owner wants it. Privacy and Terms links are removed from the footer until the text exists. | Reviewer | Open |
+| F131 | Watermelon and Motion Primitives blocks are now installed from their registries (J3 review fixes). | Reviewer | Done |
+| F132 | Home keeps a total blocking time of about 300 ms (React and motion start-up). Owner wants Lighthouse performance kept high: next, cut island count and load motion later. Also one accessibility audit at 98 on Pre-register. | Coder | Open |

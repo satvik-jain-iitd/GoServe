@@ -269,3 +269,12 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | The kitchen app and the rider app ask for this user's own row (an admin can read every row); an account that is not kitchen staff sees "This account is not kitchen staff. Ask the admin." and reads no orders | #186 | S1-S3 | Automatic | `app/tests/unit/session.test.ts`, `app/tests/e2e/staff-gate.spec.ts` | Pass |
 | Database (migration 0023): one kitchen per staff account, admin_add_person refuses a second kitchen with already_staff, an admin who is also staff gets only their own kitchen from the user-filtered query | #186 | S2 | Check | `scripts/check_city_model.py dev` | Pass on dev, 102 of 102 |
 | Live row: the owner's account (admin and kitchen staff) sees the Tau Ka Dhaba order on `/kitchen/` | #186 | S2 | Manual | owner, after the prod release | Open |
+| Site v2: Home, For investors and Pre-register load, every internal link resolves, the nav moves between them, and the v1 pages redirect | #200 | S1 | Automatic | `site/tests/e2e/site.spec.ts` | Pass |
+| Site v2: no serious or critical axe violation on the three pages (final state, reduced motion) | #200 | S1 | Automatic | `site/tests/e2e/site.spec.ts` | Pass |
+| Site v2: pin code on Home carries to the Pre-register form; the form sends the pin inside city to the same webhook | #200 | S1 | Automatic | `site/tests/e2e/site.spec.ts` | Pass |
+| Site v2: under reduced motion the headings and numbers show final text, and the page has no half-hidden element or progress bar; the final numbers are in the server HTML | #200 | S1 | Automatic | `site/tests/e2e/site.spec.ts` | Pass |
+| Site v2: ink.css (Day) keeps every token colour except the retired olive-soft | #200 | S1 | Automatic | `site/tests/unit/tokens.test.ts` | Pass |
+| Site v2: Lighthouse mobile 90 or more on the three pages | #200 | S1 | Manual | `npx lighthouse` on the preview | 99 / 98 / 100 performance; 100 for the rest |
+| Site v2 review fixes: heading keeps its spaces, footer credits Wikimedia Commons and has no Privacy or Terms link, theme-color is cream, the phone nav menu opens (Watermelon navigation) | #200 | S1 | Automatic | `site/tests/e2e/site.spec.ts` | Pass |
+| Site v2: no page scrolls sideways at 390 px (red first: 422 px before the box-sizing rule) | #200 | S1 | Automatic | `site/tests/e2e/site.spec.ts` | Pass |
+| Site v2: footer credits both thali photos with author, CC BY-SA 4.0 link and Wikimedia Commons | #200 | S1 | Automatic | `site/tests/e2e/site.spec.ts` | Pass |

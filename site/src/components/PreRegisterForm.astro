@@ -1,4 +1,5 @@
 ---
+import { Input } from "@/components/ui/input";
 // Posts to the n8n webhook "GoServe — Pre-Registration Capture".
 // The endpoint is provided at build time; a fallback keeps the build safe.
 const endpoint =
@@ -11,44 +12,50 @@ const endpoint =
   data-endpoint={endpoint}
   novalidate
 >
-  <div class="field">
-    <label for="pr-name">Your name</label>
-    <input id="pr-name" name="name" type="text" autocomplete="name" required />
+  <div class="f">
+    <label for="pr-name">Name</label>
+    <Input id="pr-name" name="name" type="text" autoComplete="name" required />
     <p class="error" data-error-for="name" hidden></p>
   </div>
 
-  <div class="field">
+  <div class="f">
     <label for="pr-email">Email</label>
-    <input id="pr-email" name="email" type="email" autocomplete="email" required />
+    <Input id="pr-email" name="email" type="email" autoComplete="email" required />
     <p class="error" data-error-for="email" hidden></p>
   </div>
 
-  <div class="field">
+  <div class="f">
     <label for="pr-phone">Phone <span class="hint">(optional)</span></label>
-    <input id="pr-phone" name="phone" type="tel" autocomplete="tel" />
+    <Input id="pr-phone" name="phone" type="tel" autoComplete="tel" />
     <p class="error" data-error-for="phone" hidden></p>
   </div>
 
-  <div class="field">
+  <div class="f">
+    <label for="pr-pin">Pin code <span class="hint">(optional)</span></label>
+    <Input id="pr-pin" name="pin" type="tel" inputMode="numeric" maxLength={6} placeholder="110024" />
+    <p class="error" data-error-for="pin" hidden></p>
+  </div>
+
+  <div class="f">
     <label for="pr-city">City</label>
-    <input id="pr-city" name="city" type="text" autocomplete="address-level2" required />
+    <Input id="pr-city" name="city" type="text" autoComplete="address-level2" value="Delhi" required />
     <p class="error" data-error-for="city" hidden></p>
   </div>
 
-  <div class="field">
-    <label for="pr-role">How do you want to be involved?</label>
+  <div class="f">
+    <label for="pr-role">I am a</label>
     <select id="pr-role" name="role" required>
       <option value="">Choose one…</option>
-      <option value="customer">I want to order food</option>
-      <option value="rider">I want to ride</option>
-      <option value="kitchen partner">I run a kitchen</option>
-      <option value="investor">I want to invest</option>
+      <option value="customer">Customer</option>
+      <option value="kitchen partner">Cook or kitchen</option>
+      <option value="rider">Rider</option>
+      <option value="investor">Investor</option>
     </select>
     <p class="error" data-error-for="role" hidden></p>
   </div>
 
-  <button class="btn btn--primary" type="submit">Pre-register my interest</button>
-  <p class="form-status" id="preregister-status" role="status" hidden></p>
+  <div class="f full"><button class="ui-btn big" type="submit">Join the list</button>
+  <p class="form-status" id="preregister-status" role="status" hidden></p></div>
 </form>
 
 <script>
@@ -62,7 +69,7 @@ const endpoint =
 
   function showError(name: string, message: string) {
     const p = document.querySelector(`[data-error-for="${name}"]`) as HTMLElement | null;
-    const field = document.getElementById(`pr-${name}`)?.closest(".field") as HTMLElement | null;
+    const field = document.getElementById(`pr-${name}`)?.closest(".f") as HTMLElement | null;
     if (p) {
       p.textContent = message;
       p.hidden = !message;
@@ -76,10 +83,16 @@ const endpoint =
     if (!EMAIL_RE.test((data.email || "").trim())) errors.email = "Please enter a valid email address.";
     if (!data.city || data.city.trim().length < 2) errors.city = "Please enter your city.";
     if (!ROLES.includes(data.role)) errors.role = "Please choose how you want to be involved.";
+    if (data.pin && data.pin.trim() !== "" && !/^[1-9][0-9]{5}$/.test(data.pin.trim()))
+      errors.pin = "Please enter a 6-digit pin code, or leave it empty.";
     if (data.phone && data.phone.trim() !== "" && !PHONE_RE.test(data.phone.trim()))
       errors.phone = "Please enter a valid phone number, or leave it empty.";
     return errors;
   }
+
+  const pre = new URLSearchParams(location.search).get("pin");
+  const pinEl = document.getElementById("pr-pin") as HTMLInputElement | null;
+  if (pre && pinEl && /^[0-9]{1,6}$/.test(pre)) pinEl.value = pre;
 
   const el = form();
   if (el) {
@@ -87,10 +100,10 @@ const endpoint =
       e.preventDefault();
       const fd = new FormData(el);
       const data = Object.fromEntries(
-        ["name", "email", "phone", "city", "role"].map((k) => [k, String(fd.get(k) || "")]),
+        ["name", "email", "phone", "pin", "city", "role"].map((k) => [k, String(fd.get(k) || "")]),
       ) as Record<string, string>;
 
-      for (const key of ["name", "email", "phone", "city", "role"]) showError(key, "");
+      for (const key of ["name", "email", "phone", "pin", "city", "role"]) showError(key, "");
       const errors = validate(data);
       if (Object.keys(errors).length > 0) {
         for (const [k, v] of Object.entries(errors)) showError(k, v);
@@ -110,7 +123,7 @@ const endpoint =
         const res = await fetch(el.dataset.endpoint as string, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...data, source: "goserve-site", submittedAt: new Date().toISOString() }),
+          body: JSON.stringify({ ...data, city: data.pin.trim() ? `${data.city.trim()} ${data.pin.trim()}` : data.city, source: "goserve-site", submittedAt: new Date().toISOString() }),
         });
         if (!res.ok) throw new Error(String(res.status));
         status.className = "form-status form-status--ok";

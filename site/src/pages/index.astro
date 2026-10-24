@@ -1,280 +1,114 @@
 ---
 import Base from "../layouts/Base.astro";
+import { Card } from "@/components/ui/card";
+import Reveal from "../islands/Reveal";
+import AnimatedNumber from "../islands/AnimatedNumber";
+import TextEffect from "../islands/TextEffect";
+import Tilt from "../islands/Tilt";
+import Spotlight from "../islands/Spotlight";
+import Slider from "../islands/Slider";
+
+const phones = [
+  ["phone-pin.webp", "Pin code screen", "01 · Pin code"],
+  ["phone-menu.webp", "Menu", "02 · Today's thali"],
+  ["phone-slip.webp", "Tracker", "06 · The slip"],
+  ["phone-kitchen.webp", "Kitchen tickets", "Kitchen · New tickets"],
+  ["phone-rider.webp", "Rider pick up", "Rider · Pick up"],
+  ["phone-night.webp", "Menu at night", "Night · 6 pm to 6 am"],
+];
 ---
-<Base title="Fresh food, under 15 minutes">
-  <!-- HERO -->
-  <section class="hero">
-    <div class="container hero-grid">
-      <div class="hero-copy">
-        <span class="eyebrow">Hyperlocal food OS · First kitchen in Delhi</span>
-        <h1 class="display">
-          Fresh food.<br />
-          Your door.<br />
-          <span class="hero-accent">Under 15 minutes.</span>
-        </h1>
-        <p class="lead">
-          GoServe is not another delivery app. It is a food operating system:
-          a hyperlocal kitchen network, a live rider mesh, and a decision engine
-          that thinks ahead, so the food is cooked and on the move before you
-          even finish deciding.
-        </p>
-        <div class="hero-cta">
-          <a class="btn btn--primary" href="/pre-register">Pre-register your interest</a>
-          <a class="btn btn--ghost" href="/how-it-works">See how it works</a>
+<Base title="How it works" description="GoServe cooks hot meals in its own kitchen and brings them to your door in 25 to 35 minutes. Delhi pilot. Cash at the door. No app to install.">
+  <section class="hero" aria-label="Hot meals from our kitchen">
+    <div class="blob" aria-hidden="true"></div>
+    <div class="wrap">
+      <div class="copy">
+        <span class="eyebrow">Delhi pilot · hot meals · cash at the door</span>
+        <TextEffect client:idle text="Hot meals from our kitchen. At your door in 25 to 35 minutes." className="display xl" />
+        <p class="lead">One thali, cooked today, carried a short way by a rider who knows your lane. No app to install. No card. Pay cash when it arrives.</p>
+        <form class="pinform" action="/pre-register" method="get" aria-label="Check your pin code">
+          <label for="pin" class="eyebrow" style="position: absolute; left: -9999px;">Your pin code</label>
+          <input id="pin" name="pin" type="tel" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="110024" />
+          <button type="submit" class="ui-btn big" style="width: auto; padding: 0 28px;">See if we deliver</button>
+        </form>
+        <span class="mono" style="font-size: 12px; color: var(--gs-text-muted); text-transform: uppercase;">We serve a few pin codes for now. We add more every week.</span>
+      </div>
+      <div class="art"><Tilt client:visible><div class="phone"><img src="/site-img/phone-menu.webp" alt="The GoServe menu on a phone: today's thali, then the extras" width="280" height="606" fetchpriority="high" loading="eager" decoding="async" /></div></Tilt></div>
+    </div>
+  </section>
+  <div class="strip" aria-label="Today">
+    <div class="wrap"><span>Today</span><span><b><AnimatedNumber client:visible value={1} /></b> kitchen live in Delhi</span><span><b>25 to 35</b> min to the door</span><span>Cash at the door</span><span>No app to install</span></div>
+  </div>
+  <section class="section" aria-label="Today's thali">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow">Today's thali</span><h2 class="display l">The plate that arrives.</h2><p class="lead">One veg plate and one non-veg plate, set by the kitchen each day. On the day, the photo in the app is the real plate. Dishes beyond the thali are extras.</p><div class="ui-zigzag" aria-hidden="true"></div></div>
+      <div class="thali">
+        <Reveal client:visible>
+          <Card className="card">
+            <div class="photo"><img src="/site-img/thali-veg.webp" alt="Veg thali" loading="lazy" width="720" height="411" /></div>
+            <div class="body"><span class="eyebrow">Veg · serves 1</span><h3 class="display m">Veg thali</h3><p style="margin: 0; color: var(--gs-text-muted);">Roti, a dal, a sabzi and salad. What is on the plate changes with the day.</p><span class="eyebrow">Price set by the kitchen each day · cash at the door</span></div>
+          </Card>
+        </Reveal>
+        <Reveal client:visible delay={0.1}>
+          <Card className="card">
+            <div class="photo"><img src="/site-img/thali-nonveg.webp" alt="Non-veg thali" loading="lazy" width="720" height="411" /></div>
+            <div class="body"><span class="eyebrow">Non-veg · serves 1</span><h3 class="display m">Non-veg thali</h3><p style="margin: 0; color: var(--gs-text-muted);">Roti, a chicken or egg curry, a dal and salad. What is on the plate changes with the day.</p><span class="eyebrow">Price set by the kitchen each day · cash at the door</span></div>
+          </Card>
+        </Reveal>
+      </div>
+    </div>
+  </section>
+  <section class="section" id="how" aria-label="How it works">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow">How it works</span><h2 class="display l">Three moves. One hot plate.</h2><div class="ui-zigzag" aria-hidden="true"></div></div>
+      <div class="cards">
+        <Reveal client:visible><Card className="card"><span class="num">01</span><h3>Pick your thali</h3><p>Type your pin code. See today's plate. Tap once. Your name, phone and address stay on your phone, no sign in.</p></Card></Reveal>
+        <Reveal client:visible delay={0.1}><Card className="card"><span class="num">02</span><h3>The system picks the kitchen and the rider</h3><p>Our kitchen nearest to you gets the ticket. The nearest free rider gets the job. Nobody guesses; the system decides in a second.</p></Card></Reveal>
+        <Reveal client:visible delay={0.2}><Card className="card"><span class="num">03</span><h3>Hot at your door. Pay cash.</h3><p>Cooked today, carried a short way. You watch the status on one slip: cooking, ready, on the way, delivered.</p></Card></Reveal>
+      </div>
+    </div>
+  </section>
+  <section class="section" aria-label="The product">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow">The product</span><h2 class="display l">One app. Four hands.</h2><p class="lead">Customer, kitchen, rider and admin run on one codebase. Day and Night by the clock.</p><div class="ui-zigzag" aria-hidden="true"></div></div>
+      <Slider client:visible>
+        {phones.map(([src, alt, cap]) => (
+          <figure><div class="phone"><img src={`/site-img/${src}`} alt={alt} loading="lazy" width="220" height="476" /></div><figcaption>{cap}</figcaption></figure>
+        ))}
+      </Slider>
+    </div>
+  </section>
+  <div class="waves" aria-hidden="true"></div>
+  <section class="section" style="background: var(--md-surface); border-top: 0;" aria-label="Why GoServe">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow">Why it is hot</span><h2 class="display l">Small promises we can keep.</h2><div class="ui-zigzag" aria-hidden="true"></div></div>
+      <div class="cards four">
+        <Card className="card"><h3>A short way</h3><p>Our kitchen serves a few pin codes around it. Short trips keep the food hot.</p></Card>
+        <Card className="card"><h3>Honest minutes</h3><p>25 to 35 minutes is what we do today. We say it before you order, not after.</p></Card>
+        <Card className="card"><h3>Cash at the door</h3><p>No card, no wallet, no sign in. Pay the rider when the plate is in your hand.</p></Card>
+        <Card className="card"><h3>Nothing to install</h3><p>It runs in the browser. Save it to your home screen if you like.</p></Card>
+      </div>
+    </div>
+  </section>
+  <section class="band" style="position: relative;" aria-label="For investors">
+    <div class="glow" aria-hidden="true"></div>
+    <div class="wrap" style="position: relative;">
+      <Spotlight client:visible>
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <span class="eyebrow">For investors</span>
+          <h2 class="display l" style="color: #e8ecf5;">GoServe runs the kitchen. The system runs the city.</h2>
+          <p class="lead">Hot meals as quick commerce: one kitchen per few pin codes, one codebase for every role, decisions made by small models, not by people on phones. A Delhi pilot today. Ten kitchens next.</p>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;"><a href="/investors" class="ui-btn big" style="width: auto; padding: 0 28px;">Read the model</a><a href="/investors#ask" class="ui-btn ghost big" style="width: auto; padding: 0 28px;">Talk to us</a></div>
         </div>
-      </div>
-      <div class="hero-mark" aria-hidden="true">
-        <div class="hero-ring">
-          <div class="hero-badge">
-            <span class="hero-num">15</span>
-            <span class="hero-unit">min</span>
-          </div>
-        </div>
-      </div>
+      </Spotlight>
+      <div style="display: flex; justify-content: center;"><div class="phone"><img src="/site-img/phone-first-night.webp" alt="GoServe first screen at night" loading="lazy" width="280" height="606" /></div></div>
     </div>
   </section>
-
-  <!-- STATS -->
-  <section class="stats">
-    <div class="container stats-grid">
-      <div class="stat"><span class="stat-num">15 min</span><span class="stat-label">Target door-to-door</span></div>
-      <div class="stat"><span class="stat-num">1 city</span><span class="stat-label">Focused beachhead: Delhi</span></div>
-      <div class="stat"><span class="stat-num">10</span><span class="stat-label">Decision models (Jev) at launch</span></div>
-      <div class="stat"><span class="stat-num">PWA</span><span class="stat-label">One app, every device</span></div>
-    </div>
-  </section>
-
-  <!-- MISSION -->
-  <section class="section section--sage">
-    <div class="container container-narrow reveal">
-      <span class="eyebrow">The mission</span>
-      <h2 class="h1" style="margin-bottom: var(--gs-space-5)">
-        Fast food should not taste like fast food.
-      </h2>
-      <p class="lead">
-        Most delivery promises speed and delivers cold food. GoServe promises
-        freshness and speed together. A tight hyperlocal radius makes a 15-minute
-        promise honest: short trips, hot food, riders who are part of the
-        neighbourhood, not strangers passing through.
-      </p>
-    </div>
-  </section>
-
-  <!-- HOW IT WORKS -->
-  <section class="section">
-    <div class="container">
-      <span class="eyebrow reveal">How it works</span>
-      <h2 class="h1 reveal" style="margin-bottom: var(--gs-space-8)">Three moves. One promise.</h2>
-      <div class="steps">
-        <article class="step card reveal">
-          <span class="step-num">01</span>
-          <h3 class="h3">Order in seconds</h3>
-          <p>A menu built for speed. No clutter, no ten-tap checkouts. What you came for, one screen away.</p>
-        </article>
-        <article class="step card reveal">
-          <span class="step-num">02</span>
-          <h3 class="h3">The OS decides</h3>
-          <p>Jev picks the right kitchen, the best rider, and the quickest route, in the same second you tap pay.</p>
-        </article>
-        <article class="step card reveal">
-          <span class="step-num">03</span>
-          <h3 class="h3">Cooked hot, sent live</h3>
-          <p>Cooking starts when the rider is close. You watch it move on a live map. It arrives hot.</p>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <!-- JEV -->
-  <section class="section section--surface">
-    <div class="container jev">
-      <div class="reveal">
-        <span class="eyebrow">The difference</span>
-        <h2 class="h1" style="margin-bottom: var(--gs-space-5)">Jev, the decision engine.</h2>
-        <p class="lead">
-          Every order asks ten questions at once: which rider, which ETA, which
-          kitchen cooks next, which order is about to be late. Humans guess.
-          Jev calculates. It is the quiet engine that turns a promise into a
-          habit.
-        </p>
-        <a class="btn btn--secondary" href="/technology">Meet the technology</a>
-      </div>
-      <ul class="jev-list reveal">
-        <li><strong>Assign rider</strong><span>Who is free, close, and fast?</span></li>
-        <li><strong>Estimate time</strong><span>An honest ETA, not a hopeful one.</span></li>
-        <li><strong>Next cook</strong><span>What should the kitchen start right now?</span></li>
-        <li><strong>Late risk</strong><span>Which order needs a nudge before it slips?</span></li>
-        <li><strong>Zone check</strong><span>Is this order inside the 15-minute promise?</span></li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- CTA -->
-  <section class="section cta">
-    <div class="container container-narrow reveal" style="text-align:center">
-      <h2 class="display" style="color:#fff">Be early to the future of food.</h2>
-      <p class="lead" style="color:var(--gs-sage); margin-inline:auto">
-        Customers, riders, kitchen partners, and investors: all welcome.
-        Tell us who you are and we will keep you close.
-      </p>
-      <a class="btn btn--secondary" href="/pre-register">Pre-register your interest</a>
+  <section class="section" aria-label="Pre-register">
+    <div class="wrap" style="display: flex; flex-direction: column; gap: 20px; align-items: flex-start;">
+      <span class="eyebrow">Your pin code next</span>
+      <h2 class="display l">Get in before the first order in your lane.</h2>
+      <p class="lead">Tell us your pin code. When our kitchen reaches it, you hear first.</p>
+      <a href="/pre-register" class="ui-btn big" style="width: auto; padding: 0 28px;">Pre-register your pin code</a>
     </div>
   </section>
 </Base>
-
-<style>
-  /* HERO */
-  .hero {
-    padding-block: var(--gs-space-10);
-  }
-  .hero-grid {
-    display: grid;
-    grid-template-columns: 1.15fr 0.85fr;
-    gap: var(--gs-space-8);
-    align-items: center;
-  }
-  .hero-accent {
-    color: var(--gs-deep-green);
-  }
-  .hero-cta {
-    display: flex;
-    gap: var(--gs-space-4);
-    margin-top: var(--gs-space-6);
-    flex-wrap: wrap;
-  }
-  .hero-mark {
-    display: grid;
-    place-items: center;
-  }
-  .hero-ring {
-    width: min(30rem, 80vw);
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: var(--gs-sage);
-    display: grid;
-    place-items: center;
-    box-shadow: var(--gs-shadow-l);
-  }
-  .hero-badge {
-    width: 78%;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: var(--gs-lime);
-    display: grid;
-    place-items: center;
-    place-content: center;
-    text-align: center;
-    border: 3px solid var(--gs-deep-green);
-  }
-  .hero-num {
-    display: block;
-    font-size: clamp(4rem, 12vw, 8rem);
-    font-weight: 900;
-    line-height: 0.9;
-    color: var(--gs-ink-green);
-    letter-spacing: -0.04em;
-  }
-  .hero-unit {
-    display: block;
-    font-size: var(--gs-text-lg);
-    font-weight: 700;
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    color: var(--gs-deep-green);
-  }
-
-  /* STATS */
-  .stats {
-    border-block: 1px solid var(--gs-sage);
-  }
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--gs-space-5);
-    padding-block: var(--gs-space-6);
-  }
-  .stat-num {
-    display: block;
-    font-size: var(--gs-text-xl);
-    font-weight: 800;
-    color: var(--gs-deep-green);
-    letter-spacing: -0.02em;
-  }
-  .stat-label {
-    font-size: var(--gs-text-sm);
-    color: var(--gs-text-muted);
-  }
-
-  /* STEPS */
-  .steps {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--gs-space-5);
-  }
-  .step-num {
-    display: inline-block;
-    font-size: var(--gs-text-sm);
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    color: var(--gs-deep-green);
-    margin-bottom: var(--gs-space-3);
-  }
-  .h3 {
-    font-size: var(--gs-text-lg);
-    margin-bottom: var(--gs-space-3);
-  }
-
-  /* JEV */
-  .jev {
-    display: grid;
-    grid-template-columns: 1fr 0.9fr;
-    gap: var(--gs-space-8);
-    align-items: center;
-  }
-  .jev-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: var(--gs-space-3);
-  }
-  .jev-list li {
-    background: var(--gs-cream);
-    border: 1px solid var(--gs-sage);
-    border-radius: var(--gs-radius-m);
-    padding: var(--gs-space-4) var(--gs-space-5);
-    display: grid;
-    gap: 2px;
-  }
-  .jev-list strong {
-    color: var(--gs-ink-green);
-  }
-  .jev-list span {
-    font-size: var(--gs-text-sm);
-    color: var(--gs-deep-green);
-  }
-
-  /* CTA */
-  .cta {
-    background: var(--gs-ink-green);
-  }
-  .cta .lead {
-    max-width: 46ch;
-  }
-
-  @media (max-width: 860px) {
-    .hero-grid,
-    .jev {
-      grid-template-columns: 1fr;
-    }
-    .hero-mark {
-      order: -1;
-    }
-    .stats-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-    .steps {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>
