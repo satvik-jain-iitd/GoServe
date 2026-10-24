@@ -1,14 +1,17 @@
 // The customer flow in one place: menu, cart, bill, placed (story #48). No router yet: four steps in state.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MAX_QTY, addDish, cartLines, cartTotal, changeQty, toOrderItems, type Cart } from "./lib/cart";
-import { kitchenOrders, mergeOrder, riderOrders, type Order, type RiderAction } from "./lib/kitchen";
+import { kitchenOrders, mergeOrder, riderOrders, shortId, statusLabel, type Order, type RiderAction } from "./lib/kitchen";
+import { clientPlatform } from "./lib/platform";
+import { riderRefused, savePlatform, tapCall } from "./lib/signals";
 import { useLiveOrders } from "./lib/useLiveOrders";
 import { loadMenu, MENU_KEY, type Dish } from "./lib/menu";
-import { fetchKitchens, forgetArea, loadPin, resolveArea, savePin, type Area } from "./lib/area";
+import { fetchKitchens, forgetArea, loadPin, openingText, resolveArea, savePin, type Area } from "./lib/area";
 import { AreaScreen } from "./screens/AreaScreen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { AdminGate } from "./screens/AdminGate";
 import { RiderGate } from "./screens/RiderGate";
+import { KitchenGate } from "./screens/KitchenGate";
 import { KitchenTools } from "./screens/KitchenTools";
 import { enablePush } from "./lib/push";
 import { loadProfile, saveProfile } from "./lib/profile";
@@ -19,10 +22,8 @@ import { FeedbackSheet } from "./screens/FeedbackSheet";
 import { ensureSession, fetchMenuRows, fetchRiderCard, getClient, type RiderCard } from "./lib/supabase";
 import { openTill } from "./lib/browse";
 import { AccountScreen } from "./screens/AccountScreen";
-import { Button, Skeleton } from "./ui";
 import { currentSession, joinCode, joinLink, joinSession, rememberJoin, resetSession } from "./lib/session";
 import { MenuScreen } from "./screens/MenuScreen";
-import { CartScreen } from "./screens/CartScreen";
 import { BillScreen } from "./screens/BillScreen";
 import { openOrderToResume } from "./lib/resume";
 import { SignIn } from "./screens/SignIn";
@@ -36,7 +37,7 @@ import { OpsScreen } from "./screens/OpsScreen";
 import { DemoBar } from "./screens/DemoBar";
 import { AUTOPILOT_MS, demoDecisions, demoOrder, nextAutoAction } from "./lib/autopilot";
 
-type Step = "menu" | "cart" | "bill" | "placed" | "orders" | "account";
+type Step = "menu" | "bill" | "placed" | "orders" | "account";
 type Role = "customer" | "kitchen" | "rider" | "split" | "ops" | "admin";
 
 const api = orderDeps;
@@ -52,7 +53,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [menuError, setMenuError] = useState<string | null>(null);
   // The customer app keeps an unfinished order across a refresh (story B1); the demo console and the other apps start fresh.
   const [draft0] = useState(() => (lock === "customer" ? loadDraft() : null));
-  const [step, setStep] = useState<Step>(draft0 && draft0.step !== "placed" && draft0.step !== "orders" ? draft0.step : "menu");
+  const [step, setStep] = useState<Step>(draft0 && draft0.step !== "placed" && draft0.step !== "orders" ? draft0.step === "cart" ? "bill" : (draft0.step as Step) : "menu");   // an older draft may hold the cart step: the bill replaced it (H10c)
   const [cart, setCart] = useState<Cart>(draft0?.cart ?? {});
   const [address, setAddress] = useState(draft0?.address ?? "");
   const [name, setName] = useState(draft0?.name ?? "");
@@ -104,6 +105,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // Delivered by hand (story S-C): the delivery question for the customer's order, the Yes, and the Not yet.
   const [confirmCfg, setConfirmCfg] = useState<ConfirmCfg>(DEFAULT_CFG);
   const [placedAt, setPlacedAt] = useState(() => new Date().toISOString());
+  const [placedLines, setPlacedLines] = useState<{ name: string; qty: number; paise: number }[]>([]);   // what the bill showed, for the slip until the live copy arrives
   const [asking, setAsking] = useState(false);
   const [snoozeUntil, setSnoozeUntil] = useState(0);
   const [confirming, setConfirming] = useState(false);
@@ -214,7 +216,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }, []);
 
   useEffect(() => {
-    if (lock !== "customer") return void loadMenu(() => fetchMenuRows(), window.localStorage).then(setMenu, (e: Error) => setMenuError(e.message));
+    if (lock && lock !== "customer") return;   // story H2: the kitchen, rider, ops and admin apps have nothing to sell
+    if (!lock) return void loadMenu(() => fetchMenuRows(), window.localStorage).then(setMenu, (e: Error) => setMenuError(e.message));
     if (!pin) return;
     let alive = true;
     setLooking(true);
@@ -223,9 +226,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       .then(async (found) => {
         if (!alive) return;
         setArea(found);
-        if (found.kind !== "ok") return;
+        if (found.kind === "none") return;
+        const kitchenId = found.kind === "ok" ? found.kitchen.id : found.id;   // a closed kitchen still shows its menu (board 02c)
         try {
-          const loaded = await loadMenu(() => fetchMenuRows(found.kitchen.id), window.localStorage, `${MENU_KEY}.${found.kitchen.id}`);
+          const loaded = await loadMenu(() => fetchMenuRows(kitchenId), window.localStorage, `${MENU_KEY}.${kitchenId}`);
           if (alive) setMenu(loaded);
         } catch (e) {
           if (alive) setMenuError((e as Error).message);
@@ -254,14 +258,20 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // Returns null when it worked, or the error code. The offline demo changes the local copy only and sends nothing.
   async function act(order: Order, action: { kind: "status"; to: string } | RiderAction, actor: "kitchen" | "rider"): Promise<{ code: string; message: string } | null> {
     if (demo) {
-      setOrders((cur) => mergeOrder(cur, { ...order, status: action.kind === "status" ? action.to : order.status, updated_at: new Date().toISOString() }));
+      setOrders((cur) => mergeOrder(cur, { ...order, status: action.kind === "status" ? action.to : action.kind === "refused" ? "cancelled" : order.status, updated_at: new Date().toISOString() }));
       if (action.kind === "event") setArrived((cur) => new Set(cur).add(order.id));
       return null;
     }
     setBusyId(order.id);
     live.setError(null);
-    pushTrail(`${actor}: ${action.kind === "status" ? action.to : action.event}`);
+    pushTrail(`${actor}: ${action.kind === "status" ? action.to : action.kind === "refused" ? "not delivered" : action.event}`);
     try {
+      if (action.kind === "refused") {   // story H14: the customer refused or was not there; the database ends the order
+        if (!window.confirm(`Mark order ${shortId(order.id)} as not delivered? The customer refused it or was not there.`)) return null;
+        if (!(await riderRefused(getClient(), order.id))) throw new Error("Could not mark it. Try again.");
+        setOrders((cur) => mergeOrder(cur, { ...order, status: "cancelled", updated_at: new Date().toISOString() }));
+        return null;
+      }
       const deps = { sessionId: order.session_id, orderId: order.id, actor };
       const { order: saved } = action.kind === "status" ? await changeStatus({ ...deps, to: action.to }, api()) : await addEvent({ ...deps, event: action.event }, api());
       setOrders((cur) => mergeOrder(cur, { ...order, status: saved.status, updated_at: saved.updated_at }));
@@ -375,10 +385,38 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   function orderAgain(o: { items: { menu_item_id: string; qty: number }[] }) {
     const ids = new Set((menu?.dishes ?? []).map((d) => d.id));
     setCart(Object.fromEntries(o.items.filter((i) => ids.has(i.menu_item_id)).map((i) => [i.menu_item_id, Math.min(i.qty, MAX_QTY)])));
-    setStep("cart");
+    setStep("bill");
+  }
+
+  // A tap on a slip of "Your orders" opens it as the tracker or the delivered screen (story H10d).
+  function openOrder(o: Order) {
+    setPlaced({ id: o.id, status: o.status, total_paise: o.total_paise, updated_at: o.updated_at, paid_by: o.paid_by ?? null });
+    setPlacedAt(o.created_at);
+    setStep("placed");
+  }
+  const openOrderNow = orders.find((o) => !["delivered", "cancelled"].includes(o.status));
+  const openLive = openOrderNow ? { label: statusLabel(openOrderNow.status), no: shortId(openOrderNow.id), onOpen: () => openOrder(openOrderNow) } : null;
+  // "Use on another phone": the link that joins this session, shared or copied.
+  async function shareFromAccount(): Promise<string | null> {
+    let link: string | null = null;
+    try {
+      link = await shareLink();
+      if (navigator.share) { await navigator.share({ url: link }); return null; }
+      await navigator.clipboard.writeText(link);
+      return "Link copied. Open it on the other phone.";
+    } catch {
+      return link ? `Copy this link by hand: ${link}` : "Could not make the link. Try again.";   // no share, no clipboard (private mode): the link itself
+    }
+  }
+  // "Forget me on this phone": what this phone remembers is wiped and the session ends.
+  async function forgetMe() {
+    try { await getClient().auth.signOut(); } catch { /* offline: the local wipe still runs */ }
+    try { window.localStorage.clear(); } catch { /* blocked storage: nothing to wipe */ }
+    window.location.reload();
   }
 
   const lines = useMemo(() => cartLines(cart, menu?.dishes ?? []), [cart, menu]);
+  const kitchenName = area?.kind === "ok" ? area.kitchen.name : area?.kind === "closed" ? area.name : "";
   const total = cartTotal(lines);
   const count = lines.reduce((n, l) => n + l.qty, 0);
 
@@ -395,6 +433,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }
 
   async function place() {
+    if (lock && lock !== "customer") return;   // story H2: only the customer app and the demo console place orders
     pushTrail("place order");
     setSending(true);
     setError(null);
@@ -412,6 +451,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         api(),
       );
       setPlaced(order);
+      setPlacedLines(lines.map((l) => ({ name: l.dish.name, qty: l.qty, paise: l.line_paise })));
+      if (!demo) void savePlatform(getClient(), order.id, clientPlatform(navigator.userAgent));   // story H14: the iPhone share of orders
       setConfirmCfg(confirm);
       setPlacedAt(new Date().toISOString());
       setAsking(false);
@@ -441,46 +482,49 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <KitchenScreen orders={kitchenOrders(orders)} loading={live.loading} error={live.error} busyId={busyId}
       onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} />
   );
-  const needArea = lock === "customer" && step !== "placed" && step !== "orders" && !(pin && area?.kind === "ok");
+  const needArea = lock === "customer" && step !== "placed" && step !== "orders" && !(pin && (area?.kind === "ok" || area?.kind === "closed"));
   const customerView = needArea ? (
-    <AreaScreen pin={pin} area={area} busy={looking} error={areaError} onPin={choosePin} />
+    <AreaScreen pin={pin} area={area} busy={looking} error={areaError} onPin={choosePin} onTrack={() => setStep("orders")} />
   ) : (
     <>
-        {lock === "customer" && step === "menu" && area?.kind === "ok" && (
-          <div className="ui-kitchen">
-            <h2>{area.kitchen.name}</h2>
-            {openTill(area.kitchen.closes_at) && <p className="ui-meta">{openTill(area.kitchen.closes_at)}</p>}
-            <div className="ui-chips"><Button variant="ghost" onClick={() => setStep("orders")}>My orders</Button><Button variant="ghost" onClick={() => setStep("account")}>Account</Button><Button variant="ghost" onClick={changeArea}>Change area</Button></div>
-          </div>
+        {step === "menu" && (
+          <MenuScreen dishes={menu?.dishes ?? null} fromCache={menu?.fromCache ?? false} error={menuError}
+            pin={pin} name={name} qty={cart} cartCount={count} cartTotal={total}
+            kitchenName={kitchenName}
+            openText={area?.kind === "ok" ? openTill(area.kitchen.closes_at) : ""}
+            closedText={area?.kind === "closed" ? openingText(area.name, area.opens_at) : null}
+            onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
+            onChangePin={changeArea} onOrders={() => setStep("orders")} onYou={() => setStep("account")} />
         )}
-        {menuError && <p role="alert" className="error">{menuError}</p>}
-        {!menu && !menuError && <Skeleton lines={4} />}
-        {menu && step === "menu" && (
-          <MenuScreen dishes={menu.dishes} fromCache={menu.fromCache} cartCount={count} cartTotal={total}
-            onAdd={(id) => setCart((c) => addDish(c, id))} onOpenCart={() => setStep("cart")} />
-        )}
-        {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} onBack={() => setStep("menu")} onAgain={orderAgain} />}
-        {step === "account" && <AccountScreen name={name} phone={phone} address={address} pin={pin} onBack={() => setStep("menu")} onChangeArea={changeArea} />}
-        {menu && step === "cart" && (
-          <CartScreen lines={lines} address={address} onAddress={setAddress} details={lock === "customer" ? { name, phone, onName: setName, onPhone: setPhone } : undefined} onChange={(id, d) => setCart((c) => changeQty(c, id, d))}
-            onBack={() => setStep("menu")} onReview={() => { setError(null); setStep("bill"); }} />
+        {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} onYou={() => setStep("account")} />}
+        {step === "account" && (
+          <AccountScreen name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone} onAddress={setAddress}
+            alerts={reminder} onAlerts={allowReminder} live={openLive} onShare={shareFromAccount} onForget={forgetMe}
+            onMenu={() => setStep("menu")} onOrders={() => setStep("orders")} />
         )}
         {menu && step === "bill" && (
-          <BillScreen lines={lines} total={total} address={address.trim()} sending={sending} error={error}
-            onBack={() => setStep("cart")} onPlace={place} />
+          <BillScreen lines={lines} total={total} kitchenName={kitchenName} pin={pin} address={address} onAddress={setAddress}
+            details={lock === "customer" ? { name, phone, onName: setName, onPhone: setPhone } : undefined} sending={sending} error={error}
+            onBack={() => setStep("menu")} onPlace={place} />
         )}
         {step === "placed" && placed && (
           <PlacedScreen order={placed} status={tracked?.status ?? placed.status} paidBy={tracked?.paid_by ?? null}
+            placedAt={tracked?.created_at ?? placedAt} kitchenName={kitchenName} pin={pin} kitchenPhone={area?.kind === "ok" ? area.kitchen.phone ?? null : null}
+            lines={tracked && "items" in tracked ? tracked.items.map((i) => ({ name: i.name, qty: i.qty, paise: i.price_paise * i.qty })) : placedLines}
+            address={tracked && "address" in tracked ? tracked.address : address.trim()}
             confirmedAt={tracked && tracked.status === "delivered" ? tracked.updated_at : null}
             asking={asking} busy={confirming} error={confirmError} reminder={reminder}
-            onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} onAgain={() => { setPlaced(null); setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} />
+            onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} onBack={() => setStep("menu")} onAgain={() => { const t = tracked && "items" in tracked ? tracked : null; setPlaced(null); if (t) orderAgain(t); else setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} onCall={() => void tapCall(getClient(), placed.id)} />
         )}
     </>
   );
 
+  const framed = lock === "customer" && role === "customer";   // the Ink boards fill the phone; the chrome goes below
+  const Shell = framed ? "div" : "main";
   return (
     <>
-    <main className={role === "split" ? "shell split" : "shell"}>
+    {framed && <main className="frame">{customerView}</main>}
+    <Shell className={framed ? "shell below" : role === "split" ? "shell split" : "shell"}>
       <h1>{lock && lock !== "customer" ? `GoServe ${lock[0].toUpperCase()}${lock.slice(1)}` : "GoServe"}</h1>
       {!demo && <SignIn mode={lock && lock !== "customer" ? "signin" : "link"} />}
       {!lock && <nav className="roles" aria-label="Screen">
@@ -492,10 +536,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       </nav>}
       {demo && <p role="status" className="notice"><strong>Offline demo</strong></p>}
       {!lock && <DemoBar onReset={reset} getLink={shareLink} autoOn={auto || demo} autoNote={autoNote} onAuto={toggleAuto} />}
-      {role === "kitchen" && (lock === "kitchen" ? <>{kitchenView}<KitchenTools /></> : kitchenView)}
+      {role === "kitchen" && (lock === "kitchen" ? <KitchenGate>{kitchenView}<KitchenTools /></KitchenGate> : kitchenView)}
       {role === "rider" && (lock === "rider" ? <RiderGate>{riderView}</RiderGate> : riderView)}
       {role === "ops" && (lock === "ops" ? <AdminGate>{opsView}</AdminGate> : opsView)}
-      {role === "customer" && customerView}
+      {role === "customer" && !framed && customerView}
       {role === "admin" && <AdminScreen />}
       <FeedbackSheet role={lock ?? "console"} screen={`${window.location.pathname}${lock ? "" : ` (${role} tab)`}`}
         order={placed ? { id: placed.id, status: orders.find((o) => o.id === placed.id)?.status ?? placed.status } : orders[0] ? { id: orders[0].id, status: orders[0].status } : null}
@@ -506,7 +550,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
           <div>{kitchenView}</div>
         </div>
       )}
-    </main>
+    </Shell>
       <footer className="legal">
         <p>GoServe: order food, the kitchen cooks, a rider brings it</p>
         <p><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>

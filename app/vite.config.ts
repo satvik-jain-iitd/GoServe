@@ -34,5 +34,5 @@ const pushWorker = (): Plugin => ({
 });
 
 export default defineConfig({
-  plugins: [react(), rolePages(), pushWorker(), VitePWA({ registerType: "autoUpdate", manifest, includeAssets: ["icons/*"], workbox: { importScripts: ["push-sw.js"] } })],
+  plugins: [react(), rolePages(), pushWorker(), VitePWA({ registerType: "autoUpdate", manifest, includeAssets: ["icons/*", "fonts/*"], workbox: { importScripts: ["push-sw.js"] } })],
 });

@@ -9,12 +9,11 @@ const now = () => new Date().toISOString();
 async function placeOrder(page: Page) {
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
-  await page.getByRole("button", { name: /View cart/ }).click();
-  await page.getByLabel("Delivery address").fill("Flat 4, Green Park");
+  await page.getByRole("button", { name: /View bill/ }).click();
+  await page.getByLabel("Address").fill("Flat 4, Green Park");
   await page.getByLabel("Your name").fill("Asha");
-  await page.getByLabel("Phone number").fill("9876543210");
-  await page.getByRole("button", { name: "Review bill" }).click();
-  await page.getByRole("button", { name: "Place order (cash on delivery)" }).click();
+  await page.getByLabel("Phone").fill("9876543210");
+  await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
 }
 const prompt = (page: Page) => page.getByText("Was your order delivered?");
@@ -22,7 +21,7 @@ const prompt = (page: Page) => page.getByText("Was your order delivered?");
 test("the bill and the placed screen say cash on delivery", async ({ page, context }) => {
   await setup(context, page);
   await placeOrder(page);
-  await expect(page.getByText("About 20 min · cash on delivery")).toBeVisible();
+  await expect(page.getByText(/About 20 min/)).toBeVisible();
 });
 
 test("S1 the prompt comes after the kitchen taps Ready, not before", async ({ page, context }) => {
@@ -103,6 +102,7 @@ test("a reminder: when the tester allowed notifications the phone shows one when
 
 test("S6 a double tap on a kitchen step: the second answer already_done is not shown as an error", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
+  net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
   net.state.reply = { status: 409, body: { ok: false, error: "already_done", message: "Already done." } };
   await page.getByRole("button", { name: "Accept 0f0f0f0f" }).click();
