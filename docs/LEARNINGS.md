@@ -190,3 +190,4 @@ short. Say what happened and what to do next time.
 - Never run `git checkout -- .` to "check" state. It discards all uncommitted work.
 - In one SQL statement the subqueries see the data as it was at the start, even after a function in the same statement wrote rows. A proof check must call the function in one statement and read in the next.
 - The zip the reviewer sends may sit in Downloads and never get unpacked. Look there before you say a file is missing.
+- A report that falls back to "the input item" when the right node failed can show the wrong period as the current one. Read each period by node name, and say "could not read" when it is missing.
