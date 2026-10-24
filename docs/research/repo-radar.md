@@ -23,3 +23,15 @@ Runs: `scout.py --need "cash hand-over reconciliation between delivery rider and
 | accord-erp-automation/accord_mobile (★10, pushed Jun 2026) | C | Flutter client for ERPNext delivery and warehouse. | Flutter, ERPNext; nothing on cash days. | Skip |
 
 Decision: build in the app. Two small functions (`dayOf`, `cashInHand`) shared by both screens, one column `orders.cash_handed_at` and one rpc `kitchen_handover`; the "settlement batch" idea from scarpar became a stamp per order, which is less code and gives both screens one source. Confidence 0.7 (the topic search found no library for a cash day or hand-over; the four reconciliation repos were bank or ERP tools, ★0).
+
+## 2026-10-25 · need: roadmap page generated from GitHub issues, static HTML, Python (story #239)
+
+Runs: `scout.py --need "roadmap page generated from GitHub issues, static HTML, python"` → no repos found; GitHub `topic:roadmap topic:github-issues`, `github issues roadmap static html generator in:readme stars:>30`, `topic:github-issues topic:kanban stars:>50`.
+
+| Repo | Tier | What it is | Fit for this need | Verdict |
+|---|---|---|---|---|
+| kamranahmedse/developer-roadmap (★370k) | A for the counts | Hand-written learning roadmaps. | Content, not a generator. | Skip |
+| Meekdai/Gmeek (★2k, pushed Feb 2026) | C | A blog built from GitHub issues by a GitHub Action. | Same idea (issues to static HTML, Python) but a blog shape, Chinese templates, Action-bound; our page needs epics, stories, PR state and a board. | Borrow the idea only |
+| GitHub Projects (the platform's own board) | A | A kanban and roadmap view over issues. | Needs a login, shows titles not the Business sentences, no Vision or Delivered sections, cannot be opened as one local file. | Skip |
+
+Decision: one stdlib script over `gh` (GraphQL for issues with parent links, `gh pr list` for checks). Confidence 0.8: the shape (plain sentence per story, jargon swap, delivered accordion) is this project's own; nothing found renders it.
