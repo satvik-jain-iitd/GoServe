@@ -297,3 +297,4 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | Component sheet rules for Ink: spacing, no colour outside tokens, no review-only themes, tap targets 44 px, big button 56 px, fonts self-hosted | #193 | S3 | Automatic | `app/tests/unit/ui.test.ts` | Pass |
 | H10b: greeting by the hour, thali hero by category, sections in menu order | #193 | S1 | Automatic | `app/tests/unit/home.test.ts` | Pass |
 | H10b: hero, Add turns into a stepper, Dish sheet, Filter sheet, closed menu with Add off, loading state, invalid pin field, no contrast violation in Day and Night | #193 | S1 | Automatic | `app/tests/e2e/home.spec.ts` | Pass |
+| The three background files answer 200 and no page says Haikei | J3 | S1 | Automatic | `site/tests/e2e/site.spec.ts` | Pass |

@@ -217,3 +217,12 @@ test.describe("phone width", () => {
     });
   }
 });
+
+// Story J3: the three Haikei backgrounds are real files, and no page still shows the placeholder labels.
+test("the three background files answer 200 and no page says Haikei", async ({ page, request }) => {
+  for (const f of ["hero-blob.svg", "section-waves.svg", "invest-glow.svg"]) expect((await request.get(`/bg/${f}`)).status(), f).toBe(200);
+  for (const path of ["/", "/investors/", "/pre-register/"]) {
+    await page.goto(path);
+    expect(await page.locator("body").innerText(), path).not.toContain("Haikei");
+  }
+});
