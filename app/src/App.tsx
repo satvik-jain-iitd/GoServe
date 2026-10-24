@@ -398,13 +398,14 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const openLive = openOrderNow ? { label: statusLabel(openOrderNow.status), no: shortId(openOrderNow.id), onOpen: () => openOrder(openOrderNow) } : null;
   // "Use on another phone": the link that joins this session, shared or copied.
   async function shareFromAccount(): Promise<string | null> {
+    let link: string | null = null;
     try {
-      const link = await shareLink();
+      link = await shareLink();
       if (navigator.share) { await navigator.share({ url: link }); return null; }
       await navigator.clipboard.writeText(link);
       return "Link copied. Open it on the other phone.";
     } catch {
-      return "Could not share the link. Try again.";
+      return link ? `Copy this link by hand: ${link}` : "Could not make the link. Try again.";   // no share, no clipboard (private mode): the link itself
     }
   }
   // "Forget me on this phone": what this phone remembers is wiped and the session ends.

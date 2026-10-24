@@ -1,6 +1,6 @@
 // "You" of the Ink v3 board 09 (story H10d, #193; story D2): the details this phone remembers, order alerts, Day and Night, another phone, forget me, feedback.
 import { useState } from "react";
-import { readPin, pinTheme, type Theme } from "../lib/theme";
+import { clockLabel, readPin, pinTheme, type Theme } from "../lib/theme";
 import { TabBar } from "../ui";
 
 type Props = {
@@ -55,7 +55,7 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
           <div className="ui-chips">
             <button type="button" className={look === "day" ? "ui-chip on" : "ui-chip"} aria-pressed={look === "day"} onClick={() => pick("day")}>Day</button>
             <button type="button" className={look === "night" ? "ui-chip on" : "ui-chip"} aria-pressed={look === "night"} onClick={() => pick("night")}>Night</button>
-            <button type="button" className={look === null ? "ui-chip on" : "ui-chip"} aria-pressed={look === null} onClick={() => pick(null)}>By the clock · 6 pm to 6 am</button>
+            <button type="button" className={look === null ? "ui-chip on" : "ui-chip"} aria-pressed={look === null} onClick={() => pick(null)}>By the clock · {clockLabel()}</button>
           </div>
         </section>
         <button type="button" className="ui-row" onClick={async () => setNote(await onShare())}><span>Use on another phone</span><span className="go" aria-hidden="true">›</span></button>

@@ -1,6 +1,6 @@
 // Story H10 (#193): Day and Night by the clock, a pin wins, and a blocked storage does not break anything.
 import { describe, expect, it } from "vitest";
-import { applyTheme, parseTheme, pinTheme, readPin, resolveTheme, themeAtHour, THEME_KEY } from "../../src/lib/theme";
+import { applyTheme, parseTheme, pinTheme, readPin, resolveTheme, themeAtHour, THEME_KEY, clockLabel } from "../../src/lib/theme";
 
 const memory = () => { const m = new Map<string, string>(); return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), removeItem: (k: string) => void m.delete(k), m }; };
 const doc = () => { const meta = { v: "", setAttribute: (_: string, v: string) => { meta.v = v; } }; return { documentElement: { dataset: {} as Record<string, string> }, querySelector: () => meta, meta } as unknown as Document & { meta: { v: string } }; };
@@ -35,4 +35,8 @@ describe("pin", () => {
     expect(readPin(bad)).toBeNull();
     expect(pinTheme(bad, doc(), "night")).toBe("night");
   });
+});
+
+it("the By the clock chip label is built from the night hours", () => {
+  expect(clockLabel()).toBe("6 pm to 6 am");
 });

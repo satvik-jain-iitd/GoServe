@@ -2,7 +2,11 @@
 // index.html carries the same rule in a few lines so the first paint is already right; this file is the tested copy.
 export type Theme = "day" | "night";
 export const THEME_KEY = "gs-theme";
-export const themeAtHour = (hour: number): Theme => (hour >= 18 || hour < 6 ? "night" : "day");
+export const NIGHT = { from: 18, to: 6 } as const;   // index.html repeats these two numbers for the first paint
+export const themeAtHour = (hour: number): Theme => (hour >= NIGHT.from || hour < NIGHT.to ? "night" : "day");
+const h12 = (h: number) => `${h % 12 || 12} ${h < 12 ? "am" : "pm"}`;
+/** The words on the "By the clock" chip, built from NIGHT so they never drift: "6 pm to 6 am". */
+export const clockLabel = (): string => `${h12(NIGHT.from)} to ${h12(NIGHT.to)}`;
 export const parseTheme = (v: string | null | undefined): Theme | null => (v === "day" || v === "night" ? v : null);
 type Store = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 

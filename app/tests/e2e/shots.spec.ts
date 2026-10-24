@@ -122,7 +122,7 @@ for (const theme of ["day", "night"] as const) {
     await shot("Orders");
     await page.getByRole("button", { name: "You (Account)" }).click();
     await page.getByRole("heading", { name: "You", exact: true }).waitFor();
-    await page.waitForTimeout(400);
+    await page.evaluate(() => document.fonts.ready);
     await shot("Account");
   });
   test(`shots empty orders ${theme}`, async ({ page, context }) => {
