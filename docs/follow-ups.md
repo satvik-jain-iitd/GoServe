@@ -137,4 +137,6 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 
 | F133 | The live pre-register workflow keeps only the old fields, so the form sends the pin code inside `city` and also as `pin`. `ops/n8n/build_goserve_workflows.py` now lifts `pin` and shows it in the Telegram alert. After the owner's yes to redeploy that workflow, send a plain `city`. | Coder | Open |
 | F134 | Not measured yet in the pilot numbers: radius (needs Ola Maps, H8), customers who lost their list (no source), realtime connections (H15 reads connections). The kitchen-silent watch (no staff read for 30 minutes) has no data source either. | Coder | Open |
-| F135 | MAIN 93 has no health and cost block yet: SUB 94 and its call arrive with H15, so no empty workflow is deployed now. | Coder | Open |
+| F135 | MAIN 93 has no health and cost block yet: SUB 94 and its call arrive with H15, so no empty workflow is deployed now. | Coder | Done in H15: SUB 94 and its call are built. |
+
+| F136 | The report needs two things from the owner to be complete: the n8n credential "GoServe n8n API" (an n8n API key, so the failed-run line can read), and a yes to run `ops/health/uptimerobot.py --apply` (five monitors are missing). Until then those lines say "could not read" or show one monitor. The app still has no error tracker (Sentry stays deferred). | Owner | Open |
