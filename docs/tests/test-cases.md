@@ -291,3 +291,7 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | UptimeRobot plan: six monitors, only the missing ones, no delete or edit call | #205 | S3 | Automatic | `scripts/test_uptimerobot.py` | Pass |
 | Live row: `ops/health/uptimerobot.py` plan, `--apply` after the owner's yes, then `getMonitors` lists six more | #205 | S3 | Manual | owner | Open (plan read on 24 Oct: 1 monitor today, 6 missing) |
 | pilot_numbers reports the most pin codes around one kitchen, not the sum over all kitchens (migration 0026; red first: 134 of 135) | #204 | S1 | Check | `scripts/check_city_model.py dev` | Pass on dev, 135 of 135 |
+| Ink v3 tokens: the app's Day and Night colours equal design/tokens.json `ink`, Night changes only paper and ink, the original brand colours are the Day colours, the three fonts are named | #193 | S1 | Automatic | `app/tests/unit/tokens.test.ts` | Pass |
+| Theme: Night 18:00 to 06:00, a pin wins, blocked storage is not an error, the browser bar colour follows | #193 | S2 | Automatic | `app/tests/unit/theme.test.ts`, `app/tests/e2e/theme.spec.ts` | Pass |
+| The first customer screen has no serious contrast or role violation in Day and in Night | #193 | S3 | Automatic | `app/tests/e2e/theme.spec.ts` | Pass |
+| Component sheet rules for Ink: spacing, no colour outside tokens, no review-only themes, tap targets 44 px, big button 56 px, fonts self-hosted | #193 | S3 | Automatic | `app/tests/unit/ui.test.ts` | Pass |

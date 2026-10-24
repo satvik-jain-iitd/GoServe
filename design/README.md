@@ -8,7 +8,7 @@ diagram or slide we build reuses it. Nothing here may be lost, so it lives in Gi
 `design/tokens.json` holds every colour, the Material Design 3 roles, the font, the
 spacing scale and the corner sizes. If a value changes, change it here first.
 
-These copies must match it. A unit test checks the colours (`site/tests/unit/tokens.test.ts`):
+These copies must match it. A unit test checks the colours (`site/tests/unit/tokens.test.ts`). The app uses the `ink` block (Day and Night, GoServe Ink v3, ADR-019); `app/tests/unit/tokens.test.ts` keeps `app/src/styles/tokens.css` equal to it. The design system artifact is https://claude.ai/artifact/GfQw6ksEWwcnanEAEumZRg (private).
 
 | Where | What it is |
 |---|---|
