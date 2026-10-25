@@ -108,8 +108,11 @@ class Workflows(unittest.TestCase):
     def test_roadmap_runs_every_15_minutes_and_on_issue_and_pr_events_and_deploys_to_the_pages_project(self):
         t = self.read("roadmap.yml")
         self.assertIn("cron: \"*/15 * * * *\"", t)
-        for ev in ("issues:", "pull_request:", "workflow_dispatch:"):
+        for ev in ("issues:", "workflow_dispatch:"):
             self.assertIn(ev, t)
+        # Unmerged pull request code must never get the Cloudflare token or publish the live page (review of #438).
+        self.assertNotRegex(t, r"(?m)^  pull_request(_target)?:")
+        self.assertIn("issues closed with GITHUB_TOKEN fire no events", t)   # why the cron is what refreshes the page after a merge
         self.assertIn("scripts/roadmap.py", t)
         self.assertIn("pages project create goserve-roadmap", t)   # created when missing
         self.assertIn("pages deploy site --project-name=goserve-roadmap --branch=main", t)
