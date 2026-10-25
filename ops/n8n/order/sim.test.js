@@ -46,6 +46,10 @@ test('H5 MAIN 30 wiring: webhook, Config, token, kill switch, route to SUB 30, r
   assert.deepEqual(next(m, 'Action ok?', 1), ['Respond 400']);
   assert.equal(byName(m, 'Call SUB 30 Simulator write').parameters.workflowId.value, 'SUB30');
   assert.deepEqual(next(m, 'Call SUB 30 Simulator write'), ['Respond result']);
+  const rr = byName(m, 'Respond result').parameters;   // the body is a JSON string and the code the SUB's status_code, exactly like MAIN 01 (prod 502 on 25 Oct with an object body)
+  assert.equal(rr.responseBody, '={{ JSON.stringify($json) }}');
+  assert.equal(rr.options.responseCode, '={{ $json.status_code }}');
+  assert.equal(rr.respondWith, 'json');
   assert.ok(!JSON.stringify(m.nodes.filter((n) => n.name !== 'Config')).includes('SIMTOKEN'), 'the token lives in Config only');
   assert.ok(JSON.stringify(byName(m, 'Config')).includes('SIMTOKEN'));
 });
