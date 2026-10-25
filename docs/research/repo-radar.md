@@ -180,3 +180,9 @@ Decision: adopt `r0adkll/upload-google-play` v1.1.5 as one workflow step, pinned
 Runs: none new. The page already exists (`app/public/privacy/index.html`, story #123, linked from the Account screen); it only lacked the phone, saved profile, rider place and push address. A privacy-policy generator would write a generic text that does not match our schema, so none is adopted. The only new code is one test that reads our own migrations.
 
 Decision: edit the existing page; add `scripts/test_privacy_page.py` (every personal column in the schema must be named on the page, and nothing listed may be missing from the schema). Confidence 0.8. The text is still a draft, not lawyer-checked: Play may ask for more (data safety form), see F204.
+
+## 2026-10-25 · need: delete rider place history after 30 days on prod without an active n8n workflow (story #302, review of #304)
+
+Runs: no repo search. `pg_available_extensions` on the dev project shows `pg_cron` available (Supabase ships it). A scheduler inside the database is the standard answer for a plain SQL delete and needs no new tool. MAIN 90 PROD stays off (read from the n8n API on 25 Oct: only MAIN 01, 30, 31 and 32 are active, plus their SUBs).
+
+Decision: one migration, `0040_prune_rider_pings.sql`, schedules `pilot_prune()` daily at 02:00 India. MAIN 90 keeps its prune node too; running twice is harmless. Confidence 0.85 (dev run proved the job and the delete; prod not run yet).
