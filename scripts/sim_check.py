@@ -41,8 +41,8 @@ def counts():
 
 
 def dream_ok():
-    """The fixed Delhi list (#282): 10 kitchens on 2 to 4 real pins each, 10 to 14 dishes each, pin 110092 served, and a drop point for every pin served."""
-    _, k, _ = call("GET", "/rest/v1/kitchens?select=id,pin_codes&synthetic=eq.true")
+    """The fixed Delhi list (#282, #290): 10 kitchens on 2 to 4 real pins each, 10 to 14 dishes each, pin 110092 served, and a drop point for every pin served."""
+    _, k, _ = call("GET", "/rest/v1/kitchens?select=id,name,pin_codes&synthetic=eq.true")
     _, d, _ = call("GET", "/rest/v1/menu_items?select=kitchen_id&synthetic=eq.true")
     s, pp, _ = call("GET", "/rest/v1/pin_points?select=pin,lat,lng")
     if not (isinstance(k, list) and isinstance(d, list) and s < 400 and isinstance(pp, list)):
@@ -50,7 +50,8 @@ def dream_ok():
     pins = {x["pin"] for x in pp}
     per = {x["id"]: sum(1 for y in d if y["kitchen_id"] == x["id"]) for x in k}
     return (all(2 <= len(x["pin_codes"]) <= 4 and all(c in pins and not c.startswith("9") for c in x["pin_codes"]) for x in k)
-            and all(10 <= n <= 14 for n in per.values()) and any("110092" in x["pin_codes"] for x in k) and "110092" in pins)
+            and all(10 <= n <= 14 for n in per.values()) and any("110092" in x["pin_codes"] for x in k) and "110092" in pins
+            and any(x["name"] == "Laxmi Nagar Wok House" and sorted(x["pin_codes"]) == ["110051", "110091", "110092"] for x in k) and {"110091", "110051"} <= pins)   # #290
 
 
 def serve_all_ok():
@@ -63,7 +64,9 @@ def serve_all_ok():
     def candidates():
         s, c, _ = call("POST", "/rest/v1/rpc/dispatch_candidates", {"p_order": o[0]["id"]})
         return {r["id"] for r in c["riders"]} if s < 400 and isinstance(c, dict) else None
-    set_flag = lambda on: call("POST", "/rest/v1/params", {"session_id": "global", "key": "sim_riders_serve_all", "value": {"on": on}, "version": 900 + int(on) + 2 * int(time.time() % 100000)}, {"Prefer": "return=minimal"})
+    def set_flag(on):   # the next version is read from the table, never made from the clock: two writes in one second once got the same number and the flag stuck (F192)
+        _, v, _ = call("GET", "/rest/v1/params?select=version&session_id=eq.global&key=eq.sim_riders_serve_all&order=version.desc&limit=1")
+        call("POST", "/rest/v1/params", {"session_id": "global", "key": "sim_riders_serve_all", "value": {"on": on}, "version": (v[0]["version"] if isinstance(v, list) and v else 0) + 1}, {"Prefer": "return=minimal"})
     set_flag(True)
     on = candidates()
     set_flag(False)

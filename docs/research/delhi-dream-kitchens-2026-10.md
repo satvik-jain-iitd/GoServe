@@ -23,9 +23,9 @@
 | 7 | Karol Bagh Chaat Corner | the chaat and mithai shops of Karol Bagh | Karol Bagh | 110005, 110055, 110060 | 28.6514, 77.1907 | 10:00 to 22:00 | 14 |
 | 8 | Nizam Dum Biryani | the biryani and kebab lanes of Nizamuddin | Nizamuddin | 110013, 110003, 110014, 110092 | 28.5886, 77.2509 | 12:00 to 23:30 | 13 |
 | 9 | Thali Ghar CP | the thali houses around Connaught Place | Connaught Place | 110001, 110002, 110055, 110092 | 28.6315, 77.2167 | 11:30 to 22:30 | 12 |
-| 10 | Green Bowl Co | the healthy bowl cloud kitchens of Hauz Khas and Saket | Hauz Khas | 110016, 110017, 110029 | 28.5494, 77.2001 | 08:00 to 22:00 | 14 |
+| 11 | Laxmi Nagar Wok House | the Indo-Chinese kitchens of Laxmi Nagar | Laxmi Nagar | 110092, 110091, 110051 | 28.6304, 77.2773 | 11:00 to 23:00 | 12 |
 
-Total: 137 dishes. Pin 110092 (the owner's test pin) is served by four kitchens.
+Total: 135 dishes. Pin 110092 (the owner's test pin) is served by five kitchens (the numbers 1, 2, 8, 9 and 11); the fifth, Laxmi Nagar Wok House, is in East Delhi itself (story #290).
 
 ## Sources and confidence, per kitchen
 
@@ -40,7 +40,7 @@ Total: 137 dishes. Pin 110092 (the owner's test pin) is served by four kitchens.
 | 7 | Swiggy listing, Bikaner Sweets Karol Bagh (Tier C, a seller): Kaju Burfi Rs 337, Jodhpuri Ladoo Rs 127; about Rs 400 for two. Delhi Tourism lists Karol Bagh as a street-food area (Tier A, for that fact only). | C | 0.4 | 2026-10-25 |
 | 8 | magicpin, Behrouz price list 2024 (Tier C, a seller): chicken dum biryani Rs 329, dum gosht Rs 349 (regular). Majeed's about Rs 450 for two. No Nizamuddin menu found. | C | 0.4 | 2026-10-25 |
 | 9 | CRISIL Roti Rice Rate, July 2026 (Tier B): a home-cooked veg thali costs about Rs 30 to 35, so a restaurant thali price is not derivable from it. No Connaught Place menu found. Price is our estimate. | C | 0.4 | 2026-10-25 |
-| 10 | OT Eats, Salad Life (Tier C, August 2025): salads, rice bowls, smoothie bowls, wraps, cold-pressed juice. No price. Our estimate. | C | 0.4 | 2026-10-25 |
+| 11 | No web source: the owner's own SQL of 25 Oct (Tier S for the choice of kitchen, pins and dishes). Prices are our estimates for an Indo-Chinese delivery menu. Tier C. | C | 0.4 | 2026-10-25 |
 
 Motive check: every source above earns from listings, ads or bookings, so a price in it leans high or is a show price. We kept the estimate low-to-middle. Tier A for the place facts (Delhi Tourism) proves the area is a food area, not any price.
 
@@ -230,26 +230,28 @@ Modelled on the thali houses around Connaught Place. Connaught Place, Central De
 | Gulab Jamun (2) | Sweets | veg | 80 |
 | Chaas | Drinks | veg | 60 |
 
-## 10. Green Bowl Co
+## 11. Laxmi Nagar Wok House
 
-Modelled on the healthy bowl cloud kitchens of Hauz Khas and Saket. Hauz Khas, South Delhi. Hours 08:00 to 22:00. Pins 110016, 110017, 110029.
+Modelled on the Indo-Chinese kitchens of Laxmi Nagar. Laxmi Nagar, East Delhi. Hours 11:00 to 23:00. Pins 110092, 110091, 110051.
 
 | Dish | Category | Veg | Price (Rs) |
 |---|---|---|---|
-| Quinoa Power Bowl | Bowls | veg | 320 |
-| Grilled Chicken Rice Bowl | Bowls | non-veg | 340 |
-| Paneer Tikka Bowl | Bowls | veg | 310 |
-| Burrito Bowl | Bowls | veg | 330 |
-| Falafel Hummus Salad | Salads | veg | 290 |
-| Caesar Salad | Salads | non-veg | 280 |
-| Greek Salad | Salads | veg | 270 |
-| Smoothie Bowl | Bowls | veg | 350 |
-| Oats and Berry Bowl | Bowls | veg | 260 |
-| Avocado Toast | Light bites | veg | 280 |
-| Cold-pressed Orange Juice | Drinks | veg | 170 |
-| Green Detox Juice | Drinks | veg | 190 |
-| Protein Shake | Drinks | veg | 240 |
-| Millet Khichdi Bowl | Bowls | veg | 250 |
+| Veg Hakka Noodles | Noodles | veg | 150 |
+| Chicken Hakka Noodles | Noodles | non-veg | 180 |
+| Schezwan Noodles | Noodles | veg | 160 |
+| Veg Fried Rice | Rice | veg | 150 |
+| Chicken Fried Rice | Rice | non-veg | 180 |
+| Veg Manchurian Gravy | Mains | veg | 170 |
+| Chilli Chicken | Mains | non-veg | 240 |
+| Chilli Paneer | Mains | veg | 220 |
+| Veg Spring Roll (4) | Starters | veg | 130 |
+| Crispy Honey Chilli Potato | Starters | veg | 160 |
+| Hot and Sour Soup | Soups | veg | 110 |
+| Chicken Manchow Soup | Soups | non-veg | 130 |
+
+## Dropped
+
+Green Bowl Co (number 10, healthy bowls, Hauz Khas) was dropped on 25 Oct 2026: the owner wants exactly ten kitchens and keeps the Wok House. Its ids stay unused so no other kitchen moves. The row is kept for the record: its menu was a Tier C estimate like the others.
 
 ## Pin drop points
 
@@ -276,10 +278,12 @@ Used by `pin_points`. The centre of each area; an order drops within a few hundr
 | 110029 | 28.566 | 77.21 |
 | 110048 | 28.545 | 77.24 |
 | 110049 | 28.56 | 77.23 |
+| 110051 | 28.656 | 77.28 |
 | 110054 | 28.685 | 77.228 |
 | 110055 | 28.645 | 77.21 |
 | 110060 | 28.64 | 77.17 |
 | 110064 | 28.66 | 77.1 |
+| 110091 | 28.604 | 77.297 |
 | 110092 | 28.635 | 77.295 |
 
 ## Riders
