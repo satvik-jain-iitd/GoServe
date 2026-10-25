@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { filterDishes } from "../lib/browse";
 import { greeting, sectionsOf, thalisOf } from "../lib/home";
-import { creditLine, type Dish } from "../lib/menu";
+import { creditLicence, creditLine, type Dish } from "../lib/menu";
 import { formatRupees } from "../lib/money";
 import { Empty, Stepper, TabBar, VegMark } from "../ui";
 
@@ -163,7 +163,7 @@ function DishSheet({ dish, closed, qty, onAdd, onClose }: { dish: Dish; closed: 
       <div className="ui-dish-body">
         <div className="ui-dish-head"><h2>{dish.veg !== undefined && <VegMark veg={dish.veg} size={14} />}{dish.name}</h2><span className="ui-dish-price">{formatRupees(dish.price_paise)}</span></div>
         <p className="ui-kicker">{dish.veg === undefined ? "" : dish.veg ? "Veg" : "Non-veg"}{dish.category ? ` · ${dish.category}` : ""}</p>
-        {dish.image_credit && <p className="ui-meta">{creditLine(dish.image_credit)}</p>}
+        {dish.image_credit && <CreditLine credit={dish.image_credit} />}
         <div className="ui-dish-count"><span className="ui-kicker">How many</span><Stepper label={dish.name} value={n} min={1} onChange={setN} /></div>
       </div>
       <div className="ui-dish-act">
@@ -172,4 +172,10 @@ function DishSheet({ dish, closed, qty, onAdd, onClose }: { dish: Dish; closed: 
       </div>
     </Modal>
   );
+}
+
+function CreditLine({ credit }: { credit: string }) {
+  const lic = creditLicence(credit);
+  if (!lic) return <p className="ui-meta">{creditLine(credit)}</p>;
+  return <p className="ui-meta">Photo: {lic.before}<a href={lic.href} target="_blank" rel="noopener noreferrer">{lic.label}</a></p>;
 }

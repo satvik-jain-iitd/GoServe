@@ -33,3 +33,9 @@ export async function loadMenu(fetchRows: () => Promise<Dish[]>, storage: KeyVal
 
 // "File:Butter chicken.jpg, Wikimedia Commons, CC BY-SA 4.0" becomes "Photo: Wikimedia Commons, CC BY-SA 4.0" (story #274).
 export const creditLine = (credit: string): string => `Photo: ${credit.replace(/^File:[^,]*,\s*/, "")}`;
+
+// A CC BY credit ("Title" by Creator, CC BY 2.0): the licence name links to its text, as the licence asks (story #292). Other credits show as plain text.
+export const creditLicence = (credit: string): { before: string; label: string; href: string } | null => {
+  const m = /^(.*, )(CC BY (\d\.\d))$/.exec(credit);
+  return m ? { before: m[1], label: m[2], href: `https://creativecommons.org/licenses/by/${m[3]}/` } : null;
+};
