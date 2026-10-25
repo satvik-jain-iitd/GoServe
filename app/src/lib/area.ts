@@ -8,10 +8,8 @@ export const isPin = (text: string): boolean => /^\d{6}$/.test(text);
 
 // Kitchens that serve the pin code: an open, active one wins. Several: the nearest to `from` when it is known, else the first by name.
 // (ponytail: the customer's coordinates are not collected yet, so the name order decides; a place can be passed in when they are.)
-// Story H5 (#188): a synthetic kitchen (the simulator's) is shown only to a simulator pin (9000xx, no real Indian pin starts with 9).
-export const isSimPin = (pin: string): boolean => pin.startsWith("9000");
 export function chooseKitchen(kitchens: AreaKitchen[], pin: string, from?: { lat: number; lng: number }): Area {
-  const serving = kitchens.filter((k) => k.pin_codes.includes(pin) && (!k.synthetic || isSimPin(pin))).sort((a, b) => a.name.localeCompare(b.name));
+  const serving = kitchens.filter((k) => k.pin_codes.includes(pin)).sort((a, b) => a.name.localeCompare(b.name));
   if (serving.length === 0) return { kind: "none" };
   const open = serving.filter((k) => k.open && k.active);
   if (open.length === 0) return { kind: "closed", id: serving[0].id, name: serving[0].name, opens_at: serving[0].opens_at ?? null };

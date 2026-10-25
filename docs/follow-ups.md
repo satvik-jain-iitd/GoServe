@@ -190,3 +190,5 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F183 | The download page reads the GitHub API without a key (60 calls an hour per visitor address). Enough for a pilot; if it ever fails, the page already says no app is published and links to all releases. | #251 | open |
 | F184 | Menus and prices of the ten dream kitchens are Tier C estimates (confidence 0.4 to 0.5). Swap a kitchen's rows for real ones when it signs, or from a Swiggy or Zomato export for a pin. | #282 | open |
 | F185 | `sim_seed` loads the fixed list, so the old random seed knobs (kitchens, dishes per kitchen, seed) no longer do anything. The admin Simulator tab still sends them; #284 cleans the tab. | #282 | open |
+| F186 | Pin 110092 (East Delhi, the owner's test pin) is served only by kitchens 8 to 10 km away (reviewer, #285). Add an East Delhi dream kitchen (Laxmi Nagar or Preet Vihar) later. | #282 | open |
+| F187 | Migration numbers moved: 0035 is `sim_riders_serve_all` (#283); the order tick of #284 takes 0036. | #283 | open |
