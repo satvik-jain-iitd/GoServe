@@ -48,3 +48,5 @@ ops/android/**/build/
 ops/android/**/*.apk
 ops/android/**/*.aab
 ops/android/**/*.idsig
+ops/android/**/*.jks
+ops/android/**/*.keystore

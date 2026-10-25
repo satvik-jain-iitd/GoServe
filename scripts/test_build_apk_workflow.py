@@ -32,6 +32,17 @@ class Workflow(unittest.TestCase):
         self.assertRegex(self.t, r"rm -f .*\.jks")
         self.assertRegex(self.t, r"permissions:\s*\n\s*contents:\s*write")
 
+    def test_the_manifest_is_applied_before_the_build_with_no_terminal(self):
+        # The version step and the keystore step rewrite twa-manifest.json; without `update` Bubblewrap asks a question and keeps the old versionCode.
+        u = self.t.index("bubblewrap update --skipVersionUpgrade < /dev/null")
+        b = self.t.index("bubblewrap build --skipPwaValidation < /dev/null")
+        self.assertLess(u, b)
+
+    def test_no_keystore_can_be_committed(self):
+        g = (W.parent.parent.parent / ".gitignore").read_text()
+        self.assertIn("ops/android/**/*.jks", g)
+        self.assertIn("ops/android/**/*.keystore", g)
+
 
 if __name__ == "__main__":
     unittest.main()
