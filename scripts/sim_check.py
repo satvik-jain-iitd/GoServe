@@ -70,8 +70,11 @@ def main():
     print(f"reset: {s} {c} in {t3}s")
     after = counts()
     print("after reset (real, synthetic):", after)
+    s, st, _ = call("POST", "/rest/v1/rpc/sim_status", {})   # H7: what the admin tab reads
+    print(f"status: {s} {st}")
+    status_ok = isinstance(st, dict) and st.get("enabled") is False and st.get("kitchens") == 0 and st.get("riders") == 0 and st.get("dishes") == 0
     ok = ids1 == ids2 and a.get("kitchens") == 10 and a.get("riders") == 20 and a.get("dishes") == 60 \
-        and all(after[k][0] == before[k][0] for k in before) and all(after[k][1] == 0 for k in after) and tick_ok
+        and all(after[k][0] == before[k][0] for k in before) and all(after[k][1] == 0 for k in after) and tick_ok and status_ok
     print("PASS" if ok else "FAIL")
     return 0 if ok else 1
 

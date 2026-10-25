@@ -94,3 +94,9 @@ Runs: `scout.py --need "simulated delivery riders moving on a map every minute, 
 | emanuele8888/MockGPSPrivacy (★4) | C | Fakes the phone's own location. | Wrong layer; our fake riders have no phones. | Skip |
 
 Decision: one SQL function (`sim_tick`) called by a schedule workflow. Random walk of 100 to 300 m per minute, a tether toward the nearest synthetic kitchen past 1 km so riders do not drift out of Delhi. Nothing found that fits; built from scratch. Confidence 0.9.
+
+## 2026-10-25 · need: admin control panel for a demo data simulator (seed, reset, tick on and off, counts), React (story #190, epic E16)
+
+Runs: `scout.py --need "admin control panel for a demo data simulator: seed, reset, start and stop a tick, show counts, React"` → no repos found. GitHub search skipped: the need is one screen on our own design system (Ink v3) calling our own webhook; any admin-panel kit would bring a second UI language. Log: scratchpad `radar-h7.log`.
+
+Decision: one screen (`AdminSim.tsx`) on the existing rows, fields, switch and buttons of `ui/`, one small client (`lib/sim.ts`) shaped like `lib/orders.ts`. Nothing found that fits; built from scratch. Confidence 0.95.

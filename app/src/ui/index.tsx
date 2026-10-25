@@ -113,6 +113,7 @@ const TAB_ICONS = {
   kitchen: <><path d="M3 11l9-7 9 7" /><path d="M5 10v10h14V10" /></>,
   city: <><path d="M3 21h18M5 21V8l4-3v16M9 21V11h6v10M15 21V5l4 3v13" /></>,
   numbers: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
+  sim: <><circle cx="12" cy="12" r="9" /><path d="M10 8l6 4-6 4z" /></>,
 };
 export type TabIcon = keyof typeof TAB_ICONS;
 // Bottom tabs of the rider and kitchen apps (story H11, #194): the visible word is the accessible name.

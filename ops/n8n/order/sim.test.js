@@ -68,9 +68,9 @@ test('H5 both canvases pass the layout checks (rulebook B12)', () => {
 test('H6 the guard knows tick, enable and disable, with clamped movement numbers', () => {
   const tick = run('guard_sim.js', { action: 'tick', body: {}, kill_switch: false, supabase_url: 'u' });
   assert.equal(tick.rpc_fn, 'sim_tick');
-  assert.deepEqual(tick.rpc_body, { p: { move_min_m: 100, move_max_m: 300, kitchen_flip_pct: 10, dish_flip_pct: 5 } });
+  assert.deepEqual(tick.rpc_body, { p: { move_min_m: 100, move_max_m: 300, kitchen_flip_pct: 2, dish_flip_pct: 5, rider_flip_pct: 2 } });   // H7: 2 % (review Q1), riders flip too (Q2)
   const far = run('guard_sim.js', { action: 'tick', body: { move_min_m: 50, move_max_m: 99999, kitchen_flip_pct: -1, dish_flip_pct: 500 }, kill_switch: false, supabase_url: 'u' });
-  assert.deepEqual(far.rpc_body.p, { move_min_m: 50, move_max_m: 2000, kitchen_flip_pct: 0, dish_flip_pct: 100 });
+  assert.deepEqual(far.rpc_body.p, { move_min_m: 50, move_max_m: 2000, kitchen_flip_pct: 0, dish_flip_pct: 100, rider_flip_pct: 2 });
   assert.deepEqual(run('guard_sim.js', { action: 'enable', body: {}, kill_switch: false, supabase_url: 'u' }).rpc_body, { p: { enabled: true } });
   const off = run('guard_sim.js', { action: 'disable', body: {}, kill_switch: false, supabase_url: 'u' });
   assert.equal(off.rpc_fn, 'sim_enable'); assert.deepEqual(off.rpc_body, { p: { enabled: false } });
@@ -91,4 +91,17 @@ test('H6 MAIN 31 wiring: a schedule every minute, Config, kill switch, then SUB 
   assert.equal(run('sim_tick.js', { kill_switch: false, supabase_url: 'u' }).action, 'tick');
   assert.equal(m.settings.errorWorkflow, 'ALERT1');
   assert.deepEqual(checkLayout(m, m.sections), []);
+});
+
+// ---- Story H7 (#190): the admin Simulator tab asks "status" through the same webhook; MAIN 31 keeps no successful runs (review Q3). ----
+test('H7 the guard knows status (sim_status, no body) and the token check lets it through', () => {
+  const st = run('guard_sim.js', { action: 'status', body: {}, kill_switch: false, supabase_url: 'u' });
+  assert.equal(st.rpc_fn, 'sim_status'); assert.deepEqual(st.rpc_body, {});
+  assert.equal(run('sim_token.js', { headers: { 'x-gs-sim-token': 'S' }, body: { action: 'status' }, sim_token: 'S' }).action, 'status');
+});
+
+test('H7 MAIN 31 saves no successful execution, errors still go to GS ERR 00', () => {
+  assert.equal(wf.main31.settings.saveDataSuccessExecution, 'none');
+  assert.equal(wf.main31.settings.saveDataErrorExecution, 'all');
+  assert.equal(wf.main31.settings.errorWorkflow, 'ALERT1');
 });
