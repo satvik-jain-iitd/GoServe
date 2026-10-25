@@ -156,3 +156,9 @@ Runs: `scout.py --need "download free licensed food photos from Pexels or Unspla
 | Pexels API (`GET /v1/search`, key in the `Authorization` header, 200 requests an hour) | A | Gives `photographer`, `url`, `alt` and sizes per photo. Licence: free commercial use, credit not required but asked, no implied endorsement, no unaltered resale. The API page asks for a visible link to Pexels. | Adopt the API with a stdlib script |
 
 Decision: one stdlib script (`scripts/dish_photos.py`) that calls the API, picks a photo whose alt text names the dish, saves it in the `menu` Storage bucket and records the source in a table. Nothing on GitHub fits. Confidence 0.8. Unsplash is the fallback; its API needs a key too.
+
+## 2026-10-25 · need: measure whether the rider app keeps sending its place with the screen off, and build a rider test APK (story #252, epic E22, experiment E-TWA-1)
+
+Runs: no new search. The ADR-020 research (radar of 25 Oct, `docs/research/mobile-stack-2026-10.md`) already chose Bubblewrap, and #250 built the customer project with it. The rider test APK is the same project with another package name, start URL and scope (`ops/android/rider/twa-manifest.json`, then `bubblewrap update` and `build`). Nothing off the shelf reads our own `rider_pings` table, so the gap check is a 40-line stdlib script, `scripts/rider_gap.py`.
+
+Decision: reuse Bubblewrap and the customer project; one small script for the measurement. No Kotlin service until E-TWA-1 says the TWA stops pinging (ADR-020: the only Android code before 2 Nov). Confidence 0.8.
