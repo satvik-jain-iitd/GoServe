@@ -1,15 +1,17 @@
 // Pin code to kitchen (story B2). The customer app asks for a pin code once, finds the open kitchen that serves it and shows that kitchen's menu.
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type AreaKitchen = { id: string; name: string; pin_codes: string[]; lat: number | null; lng: number | null; phone?: string | null; open: boolean; active: boolean; opens_at?: string | null; closes_at?: string | null };
+export type AreaKitchen = { id: string; name: string; pin_codes: string[]; synthetic?: boolean; lat: number | null; lng: number | null; phone?: string | null; open: boolean; active: boolean; opens_at?: string | null; closes_at?: string | null };
 export type Area = { kind: "ok"; kitchen: AreaKitchen } | { kind: "closed"; id: string; name: string; opens_at: string | null } | { kind: "none" };
 
 export const isPin = (text: string): boolean => /^\d{6}$/.test(text);
 
 // Kitchens that serve the pin code: an open, active one wins. Several: the nearest to `from` when it is known, else the first by name.
 // (ponytail: the customer's coordinates are not collected yet, so the name order decides; a place can be passed in when they are.)
+// Story H5 (#188): a synthetic kitchen (the simulator's) is shown only to a simulator pin (9000xx, no real Indian pin starts with 9).
+export const isSimPin = (pin: string): boolean => pin.startsWith("9000");
 export function chooseKitchen(kitchens: AreaKitchen[], pin: string, from?: { lat: number; lng: number }): Area {
-  const serving = kitchens.filter((k) => k.pin_codes.includes(pin)).sort((a, b) => a.name.localeCompare(b.name));
+  const serving = kitchens.filter((k) => k.pin_codes.includes(pin) && (!k.synthetic || isSimPin(pin))).sort((a, b) => a.name.localeCompare(b.name));
   if (serving.length === 0) return { kind: "none" };
   const open = serving.filter((k) => k.open && k.active);
   if (open.length === 0) return { kind: "closed", id: serving[0].id, name: serving[0].name, opens_at: serving[0].opens_at ?? null };
@@ -50,7 +52,7 @@ export function forgetArea(store: Storage = window.localStorage): void {
 }
 
 export async function fetchKitchens(client: Pick<SupabaseClient, "from">): Promise<AreaKitchen[]> {
-  const { data, error } = await client.from("kitchens").select("id, name, phone, pin_codes, lat, lng, open, active, opens_at, closes_at");
+  const { data, error } = await client.from("kitchens").select("id, name, phone, pin_codes, lat, lng, open, active, opens_at, closes_at, synthetic");
   if (error) throw error;
   return (data ?? []) as AreaKitchen[];
 }

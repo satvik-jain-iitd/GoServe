@@ -38,3 +38,6 @@ __pycache__/
 
 # Cloudflare CLI cache (cf auth login makes it in the working folder)
 .cloudflare/
+
+# Story #239: the roadmap page is rebuilt every 15 minutes by launchd; open it from the checkout, never commit it.
+docs/roadmap/index.html

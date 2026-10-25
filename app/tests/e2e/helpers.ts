@@ -17,12 +17,12 @@ export const decisionOf = (over: object = {}) => ({
   use_case: "D1", rule_pick: "r2", chosen_pick: "r2", chosen_by: "rule", jev_status: "ok", jev: { pick: "r2", confidence: 0.81, agrees: true, ms: 310 }, ...over,
 });
 
-type Calls = { riderWrites: { method: string; body: any }[]; customerWrites: { method: string; body: any }[]; menuReads: string[]; menuWrites: { method: string; url: string; body: any }[]; uploads: string[]; kitchenWrites: { method: string; url: string; body: any }[]; signups: number; status: any[]; decide: any[]; health: any[]; feedback: any[]; confirm: any[]; rpc: { name: string; body: any }[]; orderReads: string[]; staffReads: string[]; riderReads: string[] };
+type Calls = { riderWrites: { method: string; body: any }[]; customerWrites: { method: string; body: any }[]; menuReads: string[]; menuWrites: { method: string; url: string; body: any }[]; uploads: string[]; kitchenWrites: { method: string; url: string; body: any }[]; signups: number; status: any[]; decide: any[]; health: any[]; feedback: any[]; confirm: any[]; rpc: { name: string; body: any }[]; orderReads: string[]; staffReads: string[]; riderReads: string[]; sim: { headers: Record<string, string>; body: any }[] };
 // `pin` is the pin code this device already knows (story B2); pass null for a first visit. The test kitchen k-1 serves 110016.
 export async function setup(context: BrowserContext, page: Page, initial: object[] = [], { pin = "110016" as string | null } = {}) {
   if (pin) await context.addInitScript((p) => { try { if (!window.localStorage.getItem("gs-pin")) window.localStorage.setItem("gs-pin", p); } catch { /* blocked */ } }, pin);
-  const calls: Calls = { riderWrites: [], customerWrites: [], menuReads: [], menuWrites: [], uploads: [], kitchenWrites: [], signups: 0, status: [], decide: [], health: [], feedback: [], confirm: [], rpc: [], orderReads: [], staffReads: [], riderReads: [] };
-  const state = { confirmCfg: { confirm_after_ready_min: 3, confirm_after_place_min: 8 }, confirmDone: false, feedbackDown: false, orders: initial, reply: null as null | { status: number; body: unknown }, menuUp: true, kitchen: null as null | string, staffOther: null as null | string, otherRider: false, rider: { user_id: SESSION, name: "Rider", online: true, lat: null, lng: null } as null | { online: boolean; [k: string]: unknown }, customer: null as null | object, numbers: [] as object[], admin: false, people: [] as object[], kitchens: [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: true, active: true, opens_at: "10:00:00", closes_at: "22:00:00" }] as object[], menu: [{ id: "d1", name: "Butter Chicken", price_paise: 32000, image_url: null, image_credit: null }] as object[], riderCard: null as null | { name: string; phone: string }, anonymous: true, riders: null as null | object[], ridersFail: false, decisions: [] as object[], runs: [] as object[], runCount: 0 };
+  const calls: Calls = { riderWrites: [], customerWrites: [], menuReads: [], menuWrites: [], uploads: [], kitchenWrites: [], signups: 0, status: [], decide: [], health: [], feedback: [], confirm: [], rpc: [], orderReads: [], staffReads: [], riderReads: [], sim: [] };
+  const state = { confirmCfg: { confirm_after_ready_min: 3, confirm_after_place_min: 8 }, confirmDone: false, feedbackDown: false, orders: initial, reply: null as null | { status: number; body: unknown }, menuUp: true, kitchen: null as null | string, staffOther: null as null | string, otherRider: false, rider: { user_id: SESSION, name: "Rider", online: true, lat: null, lng: null } as null | { online: boolean; [k: string]: unknown }, customer: null as null | object, numbers: [] as object[], admin: false, people: [] as object[], kitchens: [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: true, active: true, opens_at: "10:00:00", closes_at: "22:00:00" }] as object[], menu: [{ id: "d1", name: "Butter Chicken", price_paise: 32000, image_url: null, image_credit: null }] as object[], riderCard: null as null | { name: string; phone: string }, anonymous: true, riders: null as null | object[], ridersFail: false, decisions: [] as object[], runs: [] as object[], runCount: 0, sim: { enabled: false, kitchens: 10, riders: 20, riders_online: 14, dishes: 60 } };
   const json = (route: any, status: number, body: unknown) => route.fulfill({ status, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(body) });
   await context.route("https://test.supabase.co/**", async (route) => {
     const req = route.request();
@@ -99,6 +99,19 @@ export async function setup(context: BrowserContext, page: Page, initial: object
     if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: CORS });
     calls.uploads.push(req.url());
     return json(route, 200, { Key: "menu/x" });
+  });
+  await context.route("https://sim.test/**", async (route) => {   // H7 (#190): GS MAIN 30 Simulator, answered by the test
+    const req = route.request();
+    if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: CORS });
+    const body = JSON.parse(req.postData() ?? "{}");
+    calls.sim.push({ headers: req.headers(), body });
+    if (state.reply) return json(route, state.reply.status, state.reply.body);
+    const sim = state.sim;
+    if (body.action === "seed") { sim.kitchens = body.kitchens; sim.riders = body.riders; sim.dishes = body.kitchens * body.dishes_per_kitchen; return json(route, 200, { ok: true, seed: body.seed, kitchens: sim.kitchens, kitchens_open: 8, riders: sim.riders, riders_online: sim.riders_online, dishes: sim.dishes }); }
+    if (body.action === "reset") { const gone = { ok: true, kitchens: sim.kitchens, riders: sim.riders, dishes: sim.dishes, orders: 0 }; sim.kitchens = 0; sim.riders = 0; sim.riders_online = 0; sim.dishes = 0; return json(route, 200, gone); }
+    if (body.action === "enable" || body.action === "disable") { sim.enabled = body.action === "enable"; return json(route, 200, { ok: true, enabled: sim.enabled }); }
+    if (body.action === "tick") return json(route, 200, { ok: true, riders_moved: 14, kitchens_flipped: 1, dishes_flipped: 2, riders_flipped: 1 });
+    return json(route, 200, { ok: true, enabled: sim.enabled, kitchens: sim.kitchens, riders: sim.riders, riders_online: sim.riders_online, dishes: sim.dishes });
   });
   await context.route("https://orders.test/**", async (route) => {
     const req = route.request();

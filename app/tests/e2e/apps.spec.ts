@@ -125,3 +125,18 @@ test("S2 each role page uses its own tab icon and iPhone home-screen icon", asyn
     expect((await request.get(`/icons/${role}-192.png`)).status(), role).toBe(200);
   }
 });
+
+// Story #250 (E22): the Android app (a Trusted Web Activity) trusts this site only when /.well-known/assetlinks.json is a real JSON file,
+// one entry per role app. Pages serves the app shell for unknown paths, so a missing file would answer 200 with HTML and the APK would show the address bar.
+test("S4 assetlinks.json is real JSON served as application/json, one entry per role app", async ({ request }) => {
+  const r = await request.get("/.well-known/assetlinks.json");
+  expect(r.status()).toBe(200);
+  expect(r.headers()["content-type"]).toContain("application/json");
+  const links = await r.json();
+  expect(links.map((l: { target: { package_name: string } }) => l.target.package_name).sort()).toEqual(["in.goserve.admin", "in.goserve.customer", "in.goserve.kitchen", "in.goserve.rider"]);
+  for (const l of links) {
+    expect(l.relation).toEqual(["delegate_permission/common.handle_all_urls"]);
+    expect(l.target.namespace).toBe("android_app");
+    expect(Array.isArray(l.target.sha256_cert_fingerprints)).toBe(true);   // empty until the signing key exists (#251, F157); then one fingerprint each
+  }
+});

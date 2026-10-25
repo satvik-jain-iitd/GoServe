@@ -329,6 +329,43 @@ do $$ begin begin set local role authenticated; perform set_config('request.jwt.
 HEALTH_NAMES = ["health_numbers: database size and open connections", "health_numbers: row counts of the four growing tables", "health_numbers: the oldest row of each", "health_numbers: the cost caps come from params (cost_caps v1)",
                 "params holds cost_caps version 1", "a signed-in customer cannot call health_numbers"]
 
+# Story H5 (#188): the synthetic city never mixes with the real one. A synthetic rider is no candidate for a real kitchen and cannot be assigned;
+# a synthetic kitchen's order sees synthetic riders only. Run as the database owner (the functions are service_role only).
+SIMR2 = "00000000-0000-4000-8000-00000000005b"
+SIMR, SIMK, SIMO, SIMD = "00000000-0000-4000-8000-00000000005a", "00000000-0000-4000-8000-0000000001a5", "00000000-0000-4000-8000-0000000002e5", "00000000-0000-4000-8000-0000000003a5"
+SIM = f"""
+insert into riders (user_id, name, online, lat, lng, synthetic) values ('{SIMR}', 'Sim Rider', true, 28.55, 77.20, true);
+insert into kitchens (id, name, pin_codes, open, active, lat, lng, synthetic) values ('{SIMK}', 'Sim Rasoi', '{{900001}}', true, true, 28.55, 77.20, true);
+insert into orders (id, kitchen_id, session_id, client_order_key, status, items, total_paise, address) values ('{SIMO}', '{SIMK}', 'sim', 'k-s1', 'ready', '[]', 100, 'x');
+create temp table dm0 as select not exists (select 1 from jsonb_array_elements(dispatch_candidates('00000000-0000-4000-8000-0000000002e1') -> 'riders') r where r ->> 'id' = '{SIMR}') as v;
+do $$ begin begin perform assign_rider('{O['prep']}', '{SIMR}'); create temp table dm1 as select false as v; exception when others then create temp table dm1 as select (sqlerrm like '%rider_not_available%') as v; end; end $$;
+create temp table dm2 as select (select jsonb_agg(r ->> 'id') from jsonb_array_elements(dispatch_candidates('{SIMO}') -> 'riders') r) = '["{SIMR}"]'::jsonb as v;
+do $$ begin perform assign_rider('{SIMO}', '{SIMR}'); end $$;
+create temp table dm3 as select (select rider_id from orders where id = '{SIMO}') = '{SIMR}' as v;
+insert into menu_items (id, kitchen_id, name, price_paise, category, veg, sort, available, synthetic) values ('{SIMD}', '{SIMK}', 'sim dish', 1000, 'main', true, 1, true, true);
+create temp table dm4 as select (sim_tick('{{"kitchen_flip_pct":100}}') ->> 'skipped') = 'sim_disabled' and (select lat from riders where user_id = '{SIMR}') = 28.55 and (select open from kitchens where id = '{SIMK}') as v;
+do $$ begin perform sim_enable('{{"enabled":true}}'); end $$;
+create temp table dm_t as select sim_tick('{{"kitchen_flip_pct":100,"dish_flip_pct":100,"rider_flip_pct":100}}') as t;
+create temp table dm_h as select (extract(hour from now() at time zone 'Asia/Kolkata') between 11 and 22) as open_hours;   -- H7: kitchens flip only 11:00 to 23:00 India time
+create temp table dm5 as select ((t ->> 'riders_moved')::int = 1 and (t ->> 'kitchens_flipped')::int = (case when open_hours then 1 else 0 end) and (t ->> 'dishes_flipped')::int = 1 and (t ->> 'riders_flipped')::int = 1) as v from dm_t, dm_h;
+create temp table dm6 as select (select round(distance_m(28.55, 77.20, lat, lng)) between 100 and 300 and updated_at > now() - interval '5 seconds' from riders where user_id = '{SIMR}') as v;
+create temp table dm7 as select (select lat = 28.90 and lng = 77.60 from riders where user_id = '{U['rider2']}') and (select open from kitchens where id = '{K1}') and (select available from menu_items where id = '{DISH}') as v;
+create temp table dm8 as select ((select open from kitchens where id = '{SIMK}') = (select not open_hours from dm_h)) and (select not available from menu_items where id = '{SIMD}') and (select not online from riders where user_id = '{SIMR}') as v;
+insert into riders (user_id, name, online, lat, lng, synthetic) values ('{SIMR2}', 'Far Sim Rider', true, 28.58, 77.20, true);   -- 3.3 km north of Sim Rasoi
+create temp table dm_t2 as select sim_tick('{{"kitchen_flip_pct":0,"dish_flip_pct":0}}') as t;
+create temp table dm9 as select (select round(distance_m(lat, lng, 28.55, 77.20)) between 3000 and 3250 from riders where user_id = '{SIMR2}') as v;
+do $$ begin perform sim_enable('{{"enabled":false}}'); end $$;
+create temp table dm10 as select (select (value ->> 'enabled')::boolean from params where session_id = 'global' and key = 'sim_enabled' order by version desc limit 1) is false and (sim_tick() ->> 'skipped') = 'sim_disabled' as v;
+create temp table dm11 as select (sim_status() ->> 'enabled')::boolean is false and (sim_status() ->> 'kitchens')::int = 1 and (sim_status() ->> 'riders')::int = 2 and (sim_status() ->> 'dishes')::int = 1 and (sim_status() ->> 'riders_online')::int = 1 as v;
+"""
+SIM_NAMES = ["H5: a synthetic online rider is no candidate for a real kitchen's order", "H5: assign_rider refuses a synthetic rider on a real order (rider_not_available)",
+             "H5: a synthetic kitchen's order sees synthetic riders only", "H5: a synthetic rider takes a synthetic order",
+             "H6: sim_tick does nothing while sim_enabled is off", "H6: an enabled tick moves one rider, flips one kitchen and one dish (100%)",
+             "H6: the synthetic rider moved 100 to 300 m and was stamped", "H6: the real rider, kitchen and dish did not change",
+             "H6: the synthetic kitchen (in opening hours), dish and rider flipped", "H6: a rider more than 1 km from every synthetic kitchen walks toward the nearest one",
+             "H6: sim_enable off writes a new params version and the tick skips again",
+             "H7: sim_status says off and counts the synthetic kitchens, riders (online) and dishes"]
+
 
 def run(ref: str, query: str):
     req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/database/query", data=json.dumps({"query": query}).encode(),
@@ -337,16 +374,16 @@ def run(ref: str, query: str):
 
 
 def build() -> str:
-    selects = [f"select 'c{i}' as k, v from c{i}" for i in range(len(checks))] + [f"select 'cx{j}' as k, v from cx{j}" for j in range(len(EXTRA_NAMES))] + [f"select 'dx{j}' as k, v from dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"select 'dr{j}' as k, v from dr{j}" for j in range(len(RIDER_NAMES))] + [f"select 'ds{j}' as k, v from ds{j}" for j in range(len(STAFF_NAMES))] + [f"select 'dp{j}' as k, v from dp{j}" for j in range(len(PILOT_NAMES))] + [f"select 'dh{j}' as k, v from dh{j}" for j in range(len(HEALTH_NAMES))]
-    return "\n".join(["begin;", SETUP, *[sql for _, sql in checks], FINAL_EXTRA, DISPATCH, RIDER_CARD, STAFF, PILOT, HEALTH, " union all ".join(selects) + ";", "rollback;"])
+    selects = [f"select 'c{i}' as k, v from c{i}" for i in range(len(checks))] + [f"select 'cx{j}' as k, v from cx{j}" for j in range(len(EXTRA_NAMES))] + [f"select 'dx{j}' as k, v from dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"select 'dr{j}' as k, v from dr{j}" for j in range(len(RIDER_NAMES))] + [f"select 'ds{j}' as k, v from ds{j}" for j in range(len(STAFF_NAMES))] + [f"select 'dp{j}' as k, v from dp{j}" for j in range(len(PILOT_NAMES))] + [f"select 'dh{j}' as k, v from dh{j}" for j in range(len(HEALTH_NAMES))] + [f"select 'dm{j}' as k, v from dm{j}" for j in range(len(SIM_NAMES))]
+    return "\n".join(["begin;", SETUP, *[sql for _, sql in checks], FINAL_EXTRA, DISPATCH, RIDER_CARD, STAFF, PILOT, HEALTH, SIM, " union all ".join(selects) + ";", "rollback;"])
 
 
 if __name__ == "__main__":
     if sys.argv[1:] != ["dev"]:
         sys.exit("Usage: check_city_model.py dev (prod is never allowed)")
     rows = {r["k"]: r["v"] for r in run(DEV_REF, build())}
-    names = [n for n, _ in checks] + EXTRA_NAMES + DISPATCH_NAMES + RIDER_NAMES + STAFF_NAMES + PILOT_NAMES + HEALTH_NAMES
-    keys = [f"c{i}" for i in range(len(checks))] + [f"cx{j}" for j in range(len(EXTRA_NAMES))] + [f"dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"dr{j}" for j in range(len(RIDER_NAMES))] + [f"ds{j}" for j in range(len(STAFF_NAMES))] + [f"dp{j}" for j in range(len(PILOT_NAMES))] + [f"dh{j}" for j in range(len(HEALTH_NAMES))]
+    names = [n for n, _ in checks] + EXTRA_NAMES + DISPATCH_NAMES + RIDER_NAMES + STAFF_NAMES + PILOT_NAMES + HEALTH_NAMES + SIM_NAMES
+    keys = [f"c{i}" for i in range(len(checks))] + [f"cx{j}" for j in range(len(EXTRA_NAMES))] + [f"dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"dr{j}" for j in range(len(RIDER_NAMES))] + [f"ds{j}" for j in range(len(STAFF_NAMES))] + [f"dp{j}" for j in range(len(PILOT_NAMES))] + [f"dh{j}" for j in range(len(HEALTH_NAMES))] + [f"dm{j}" for j in range(len(SIM_NAMES))]
     bad = 0
     for n, k in zip(names, keys):
         ok = rows.get(k) is True
