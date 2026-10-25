@@ -110,3 +110,14 @@ Runs: `scout.py --need "feature flag to switch the live decision engine between 
 | Hosted or self-hosted flag services (Unleash, Flagsmith, GrowthBook class) | C | A server, an SDK and a dashboard for many flags. | One flag with three values, already inside our database (`params`, versioned, the same shape as `sim_enabled` and `cost_caps`). A service adds a server to run and a second admin. | Skip; borrow the idea of a versioned, audited flag |
 
 Decision: one `params` row per change (global/decision_engine), two database functions that check `is_admin()` on the caller, n8n forwards the admin's own token. Nothing found that fits; built from scratch. Confidence 0.9.
+
+## 2026-10-25 · need: batch matching of delivery riders to kitchen orders by food-ready time, in SQL on Postgres (story #263 layer 2)
+
+Runs: the research pass of `docs/research/quick-commerce-dispatch-2026-10.md` (36 claims, tiers A to C, written by the reviewer the same day) is the radar for this need; it covers the published methods of the big delivery apps and found no open component for a 20-rider city. `scout.py` for the earlier engine switch also found nothing near.
+
+| Repo or method | Tier | What it is | Fit for this need | Verdict |
+|---|---|---|---|---|
+| Hungarian or auction matching libraries | C | Optimal assignment. | The research (D3) says greedy inside a batch window is enough at our size; a library adds a runtime for no gain. | Skip |
+| Open vehicle-routing solvers (OR-Tools class) | C | Routing with time windows. | Needs customer coordinates and road times we do not have yet (Stage 2). | Later, Stage 3 |
+
+Decision: one SQL function (`dispatch_match`) written from the research file's Stage 1 steps, one tick function that applies it, replayed by `scripts/dispatch_sim.py` (E9). Nothing found that fits; built from scratch. Confidence 0.8 on the design (D4 ready-time is Tier A), 0.6 on the size of the gain at our scale until E9.
