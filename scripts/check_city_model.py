@@ -176,6 +176,8 @@ true_for("the kitchen is closed after that", "admin", f"(select not open from ki
 raises("kitchen staff cannot close another kitchen", "staff", f"perform set_kitchen_open('{K2}', false)")
 raises("an admin can open any kitchen", "admin", f"perform set_kitchen_open('{K1}', true)", expect_ok=True)
 raises("a stranger cannot open or close a kitchen", "stranger", f"perform set_kitchen_open('{K1}', false)")
+raises("#272: a stranger cannot flip the per-order pick", "stranger", "perform set_per_order_pick('nearest_band')")
+raises("#272: an unknown pick is refused", "admin", "perform set_per_order_pick('fastest')")
 
 
 # Story A7 (#154): web push subscriptions and the notification text.
@@ -492,6 +494,51 @@ DISP_NAMES = ["#263 L2: an order whose send time has not come gets no rider", "#
   "#263 L2: with the engine on Jev the batch rule is off", "#263 L2: a closed zone refuses a new order in batch mode", "#263 L2: a slow zone still takes the order",
   "#263 L2: in per-order mode a closed zone changes nothing", "#263 L2: a non-admin cannot set the mode", "#263 L2: an unknown mode is refused", "#263 L2: every mode change is a new row",
   "#263 L2: in per-order mode an early assignment (food still being made) is refused", "#263 L2: batch mode is refused while the rider app cannot show an early job (hard gate)"]
+# Story #272: per-order mode picks the nearest free rider; trips today break a tie only inside a band (params per_order_rules.near_band_m, 500 m).
+NK = "00000000-0000-4000-8000-0000000001e1"
+NO = "00000000-0000-4000-8000-0000000002e8"
+NR = {n: f"00000000-0000-4000-8000-0000000007{i:02x}" for i, n in enumerate(["a", "b", "c", "d"], start=1)}
+def _nr(name, north_m, trips=0, extra=""):
+    lat = "null" if north_m is None else f"28.55 + {north_m} * 0.0009 / 100"
+    return f"insert into riders (user_id, name, online, lat, lng, synthetic) values ('{NR[name]}', 'N {name}', true, {lat}, 77.20, false);"
+def _pos(name):
+    return f"(select min(ord) from jsonb_array_elements(dispatch_candidates('{NO}') -> 'riders') with ordinality t(r, ord) where r ->> 'id' = '{NR[name]}')"
+def _trips(name, n):
+    return "".join(f"insert into orders (id, kitchen_id, session_id, client_order_key, status, items, total_paise, address, rider_id) values (gen_random_uuid(), '{NK}', 'near-{name}', 'nk-{name}-{i}', 'delivered', '[]', 100, 'x', '{NR[name]}');" for i in range(n))
+def _dn(i, expr):
+    return f"create temp table dn{i} as select ({expr}) as v;"
+NEAR = f"""
+delete from params where session_id = 'global' and key in ('decision_engine', 'dispatch_mode');
+insert into params (kitchen_id, session_id, key, value, version) values (null, 'global', 'decision_engine', '{{"engine":"rules","by":"system"}}', 1), (null, 'global', 'dispatch_mode', '{{"mode":"per_order","by":"system"}}', 1);
+update riders set online = false where not synthetic and user_id not in ('{NR['a']}', '{NR['b']}', '{NR['c']}', '{NR['d']}');
+insert into kitchens (id, name, pin_codes, open, active, lat, lng, synthetic) values ('{NK}', 'Near Kitchen', '{{110097}}', true, true, 28.55, 77.20, false);
+insert into orders (id, kitchen_id, session_id, client_order_key, status, items, total_paise, address) values ('{NO}', '{NK}', 'near-s', 'nk-0', 'ready', '[]', 100, 'x');
+{_nr("a", 400)}{_nr("b", 3000)}{_trips("a", 3)}
+{_dn(8, f"not (dispatch_candidates('{NO}') -> 'riders' -> 0 ? 'rank') and {_pos('a')} < {_pos('b')}")}
+insert into params (kitchen_id, session_id, key, value, version) values (null, 'global', 'per_order_rules', '{{"pick":"nearest_band","near_band_m":500,"fresh_ping_s":90}}', 3);
+{_dn(0, f"{_pos('a')} < {_pos('b')}")}
+update riders set lat = 28.55 + 300 * 0.0009 / 100 where user_id = '{NR['a']}';
+update riders set lat = 28.55 + 600 * 0.0009 / 100 where user_id = '{NR['b']}';
+{_dn(1, f"{_pos('b')} < {_pos('a')}")}
+insert into params (kitchen_id, session_id, key, value, version) values (null, 'global', 'per_order_rules', '{{"pick":"nearest_band","near_band_m":100,"fresh_ping_s":90}}', 4) on conflict (session_id, key, version) do nothing;
+{_dn(2, f"{_pos('a')} < {_pos('b')}")}
+delete from params where session_id = 'global' and key = 'per_order_rules' and version = 4;
+{_nr("c", None)}
+{_dn(3, f"{_pos('a')} < {_pos('c')} and {_pos('b')} < {_pos('c')}")}
+update riders set updated_at = now() - interval '5 minutes' where user_id = '{NR['a']}';
+{_dn(4, f"{_pos('b')} < {_pos('a')} and {_pos('a')} is not null")}
+update riders set updated_at = now() - interval '5 minutes' where user_id in ('{NR['b']}', '{NR['c']}');
+{_dn(5, f"jsonb_array_length(dispatch_candidates('{NO}') -> 'riders') >= 3 and {_pos('a')} < {_pos('b')}")}
+update riders set updated_at = now() where user_id in ('{NR['a']}', '{NR['b']}', '{NR['c']}');
+insert into orders (id, kitchen_id, session_id, client_order_key, status, items, total_paise, address, rider_id) values (gen_random_uuid(), '{NK}', 'near-a2', 'nk-busy', 'out_for_delivery', '[]', 100, 'x', '{NR['a']}');
+{_dn(6, f"{_pos('b')} < {_pos('a')} and (select (r ->> 'free')::boolean from jsonb_array_elements(dispatch_candidates('{NO}') -> 'riders') r where r ->> 'id' = '{NR['a']}') is false")}
+{_dn(7, f"(select bool_and((r ->> 'rank')::int = ord) from jsonb_array_elements(dispatch_candidates('{NO}') -> 'riders') with ordinality t(r, ord))")}
+delete from params where session_id = 'global' and key = 'per_order_rules' and version = 3;
+"""
+NEAR_NAMES = ["#272: a free rider 400 m away beats one 3 km away even with more trips", "#272: two riders inside the 500 m band: fewer trips today wins",
+  "#272: the band is a tunable (100 m: the nearer rider wins again)", "#272: a rider with no place on the map is last",
+  "#272: a stale ping ranks behind a fresh one, but is still a candidate", "#272: only stale pings: still candidates, nearest first",
+  "#272: a rider on a delivery ranks behind free riders even if nearer", "#272: the list comes back in rank order, rank 1, 2, 3 ...", "#272: default params (pick fewest_trips) give today's order exactly, no rank"]
 
 def run(ref: str, query: str):
     req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/database/query", data=json.dumps({"query": query}).encode(),
@@ -500,16 +547,16 @@ def run(ref: str, query: str):
 
 
 def build() -> str:
-    selects = [f"select 'c{i}' as k, v from c{i}" for i in range(len(checks))] + [f"select 'cx{j}' as k, v from cx{j}" for j in range(len(EXTRA_NAMES))] + [f"select 'dx{j}' as k, v from dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"select 'dr{j}' as k, v from dr{j}" for j in range(len(RIDER_NAMES))] + [f"select 'ds{j}' as k, v from ds{j}" for j in range(len(STAFF_NAMES))] + [f"select 'dp{j}' as k, v from dp{j}" for j in range(len(PILOT_NAMES))] + [f"select 'dh{j}' as k, v from dh{j}" for j in range(len(HEALTH_NAMES))] + [f"select 'dm{j}' as k, v from dm{j}" for j in range(len(SIM_NAMES))] + [f"select 'de{j}' as k, v from de{j}" for j in range(len(ENGINE_NAMES))] + [f"select 'dd{j}' as k, v from dd{j}" for j in range(len(DISP_NAMES))]
-    return "\n".join(["begin;", SETUP, *[sql for _, sql in checks], FINAL_EXTRA, DISPATCH, RIDER_CARD, STAFF, PILOT, HEALTH, SIM, ENGINE, DISP, " union all ".join(selects) + ";", "rollback;"])
+    selects = [f"select 'c{i}' as k, v from c{i}" for i in range(len(checks))] + [f"select 'cx{j}' as k, v from cx{j}" for j in range(len(EXTRA_NAMES))] + [f"select 'dx{j}' as k, v from dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"select 'dr{j}' as k, v from dr{j}" for j in range(len(RIDER_NAMES))] + [f"select 'ds{j}' as k, v from ds{j}" for j in range(len(STAFF_NAMES))] + [f"select 'dp{j}' as k, v from dp{j}" for j in range(len(PILOT_NAMES))] + [f"select 'dh{j}' as k, v from dh{j}" for j in range(len(HEALTH_NAMES))] + [f"select 'dm{j}' as k, v from dm{j}" for j in range(len(SIM_NAMES))] + [f"select 'de{j}' as k, v from de{j}" for j in range(len(ENGINE_NAMES))] + [f"select 'dd{j}' as k, v from dd{j}" for j in range(len(DISP_NAMES))] + [f"select 'dn{j}' as k, v from dn{j}" for j in range(len(NEAR_NAMES))]
+    return "\n".join(["begin;", SETUP, *[sql for _, sql in checks], FINAL_EXTRA, DISPATCH, RIDER_CARD, STAFF, PILOT, HEALTH, SIM, ENGINE, DISP, NEAR, " union all ".join(selects) + ";", "rollback;"])
 
 
 if __name__ == "__main__":
     if sys.argv[1:] != ["dev"]:
         sys.exit("Usage: check_city_model.py dev (prod is never allowed)")
     rows = {r["k"]: r["v"] for r in run(DEV_REF, build())}
-    names = [n for n, _ in checks] + EXTRA_NAMES + DISPATCH_NAMES + RIDER_NAMES + STAFF_NAMES + PILOT_NAMES + HEALTH_NAMES + SIM_NAMES + ENGINE_NAMES + DISP_NAMES
-    keys = [f"c{i}" for i in range(len(checks))] + [f"cx{j}" for j in range(len(EXTRA_NAMES))] + [f"dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"dr{j}" for j in range(len(RIDER_NAMES))] + [f"ds{j}" for j in range(len(STAFF_NAMES))] + [f"dp{j}" for j in range(len(PILOT_NAMES))] + [f"dh{j}" for j in range(len(HEALTH_NAMES))] + [f"dm{j}" for j in range(len(SIM_NAMES))] + [f"de{j}" for j in range(len(ENGINE_NAMES))] + [f"dd{j}" for j in range(len(DISP_NAMES))]
+    names = [n for n, _ in checks] + EXTRA_NAMES + DISPATCH_NAMES + RIDER_NAMES + STAFF_NAMES + PILOT_NAMES + HEALTH_NAMES + SIM_NAMES + ENGINE_NAMES + DISP_NAMES + NEAR_NAMES
+    keys = [f"c{i}" for i in range(len(checks))] + [f"cx{j}" for j in range(len(EXTRA_NAMES))] + [f"dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"dr{j}" for j in range(len(RIDER_NAMES))] + [f"ds{j}" for j in range(len(STAFF_NAMES))] + [f"dp{j}" for j in range(len(PILOT_NAMES))] + [f"dh{j}" for j in range(len(HEALTH_NAMES))] + [f"dm{j}" for j in range(len(SIM_NAMES))] + [f"de{j}" for j in range(len(ENGINE_NAMES))] + [f"dd{j}" for j in range(len(DISP_NAMES))] + [f"dn{j}" for j in range(len(NEAR_NAMES))]
     bad = 0
     for n, k in zip(names, keys):
         ok = rows.get(k) is True

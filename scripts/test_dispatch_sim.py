@@ -25,6 +25,18 @@ class DispatchSim(unittest.TestCase):
         self.assertEqual(ds.old_rule_pick(riders, {"lat": 28.5505, "lng": 77.20})["id"], "c")   # c and b have 1 trip; c is nearer
         self.assertIsNone(ds.old_rule_pick([], {"lat": 28.55, "lng": 77.20}))
 
+    def test_band_rule_nearest_first_trips_inside_the_band(self):
+        k = {"lat": 28.55, "lng": 77.20}
+        def r(i, north_m, trips): return {"id": i, "lat": 28.55 + north_m * 0.0009 / 100, "lng": 77.20, "trips": trips}
+        self.assertEqual(ds.band_pick([r("a", 400, 9), r("b", 3000, 0)], k)["id"], "a")   # 400 m beats 3 km even with more trips
+        self.assertEqual(ds.band_pick([r("a", 300, 5), r("b", 600, 1)], k)["id"], "b")    # 600 m is inside 300 m + 500 m: fewer trips wins
+        self.assertEqual(ds.band_pick([r("a", 300, 5), r("b", 600, 1)], k, band=100)["id"], "a")   # the band is a tunable
+        self.assertIsNone(ds.band_pick([], k))
+
+    def test_band_arm_delivers_every_order(self):
+        r = ds.run_sim(3, "band", None, hours=0.5)
+        self.assertEqual(r["m"]["delivered"], r["m"]["orders"])
+
     def test_same_seed_same_result(self):
         a = ds.run_sim(7, "old", None, hours=0.5)
         b = ds.run_sim(7, "old", None, hours=0.5)

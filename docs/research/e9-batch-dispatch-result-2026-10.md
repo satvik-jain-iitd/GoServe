@@ -64,3 +64,25 @@ Late share at load 1.0: today's rule 67 %, 65 %, 70 %; new rule 34 %, 27 %, 21 %
 ## Decision
 
 The code ships **off** and is behind a hard gate (the rider app must show an early job, F173). `dispatch_mode` stays `per_order`. The rule as written passes at the peak the test named (load 1.0) and at 0.6. It fails strictly at 0.4 on one seed, where it is still not worse. Turning it on is the owner's yes, with the light-load result in front of him. Before it goes on for real riders: F-row for the rider app (an early job must show), and the first real orders to compare against.
+
+## Story #272: the per-order band rule against today's rule (25 Oct 2026)
+
+The question: does "nearest free rider at Ready, trips today break a tie only inside 500 m" beat today's "fewest trips first"? Same world, same seeds, no database needed (`dispatch_sim.py --arms old,nearest,band`). Seconds are mismatch P50/P90 (the gap the order waits for a rider, rider wait is 0 everywhere) and door P50/P90.
+
+| Load | Seed | Today: mismatch | Band 500: mismatch | Today: door P90 | Band 500: door P90 | Today: late > 10 min | Band 500: late |
+|---|---|---|---|---|---|---|---|
+| 0.4 | 1 | 427 / 1108 | 373 / 896 | 2833 | 2609 | 15.6 % | 8.9 % |
+| 0.4 | 2 | 442 / 1413 | 318 / 654 | 3230 | 2359 | 15.9 % | 2.3 % |
+| 0.4 | 3 | 356 / 825 | 185 / 650 | 2881 | 2500 | 15.9 % | 4.5 % |
+| 0.6 | 1 | 1476 / 2651 | 762 / 2028 | 4204 | 3726 | 58.7 % | 42.7 % |
+| 0.6 | 2 | 696 / 1785 | 503 / 1793 | 3478 | 3507 | 32.9 % | 26.3 % |
+| 0.6 | 3 | 719 / 1620 | 439 / 1149 | 3495 | 3085 | 40.0 % | 23.8 % |
+| 1.0 | 1 | 2047 / 3847 | 1453 / 3829 | 5526 | 5701 | 66.7 % | 57.8 % |
+| 1.0 | 2 | 2086 / 3902 | 1699 / 3578 | 5504 | 5246 | 64.9 % | 61.4 % |
+| 1.0 | 3 | 2023 / 3944 | 2029 / 4226 | 5567 | 6011 | 70.2 % | 66.7 % |
+
+**Result.** Loads 0.4 and 0.6 pass: the median mismatch falls on every seed and the door P90 never rises by more than 60 s. Load 1.0 does not pass the story's line: mismatch falls on 2 of 3 seeds (seed 3 is flat), and the door P90 rises by 175 s on seed 1 and 444 s on seed 3. At load 1.0 most orders are late under both rules, so the tail is queue luck.
+
+**Sweep, so nobody tunes by hand.** Band 1500 m passed load 1.0 on seeds 1 to 3 (0 of 3 over the line) but on fresh seeds 4 to 6 both 500 m and 1500 m break the line on 1 of 3 seeds. Band 250 and 1000 m changed nothing on seeds 1 and 2. I keep the 500 m the story names. The band is a param (`per_order_rules`), so the owner can widen it without code.
+
+**Verdict: PARTIAL, so it ships behind a switch.** At 0.4 and 0.6, the pilot's load, the band rule wins on every seed. At 1.0 both rules are saturated (door P90 about 92 min), which is batch mode's job. The param `per_order_rules.pick` is `fewest_trips` (today, exactly) by default or `nearest_band`; `set_per_order_pick` (admin) flips it. F179 compares them on real trips.
