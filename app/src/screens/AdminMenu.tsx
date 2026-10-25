@@ -52,7 +52,7 @@ export function AdminMenu({ kitchenId, onError }: { kitchenId: string; onError: 
           </div>
           <div className="ui-dish-acts">
             <button type="button" className="ui-btn ghost small" aria-label={d.available === false ? `Put ${d.name} back in stock` : `Mark ${d.name} sold out`} onClick={() => void change(d.id, { available: d.available === false })}>{d.available === false ? "Back in stock" : "Sold out"}</button>
-            <input className="ui-dish-price" aria-label={`New price for ${d.name}`} inputMode="decimal" placeholder="₹" value={prices[d.id] ?? ""} onChange={(e) => setPrices({ ...prices, [d.id]: e.target.value })} />
+            <input className="ui-price-in" aria-label={`New price for ${d.name}`} inputMode="decimal" placeholder="₹" value={prices[d.id] ?? ""} onChange={(e) => setPrices({ ...prices, [d.id]: e.target.value })} />
             <button type="button" className="ui-btn ghost small" aria-label={`Save price of ${d.name}`} onClick={() => {
               const paise = rupeesToPaise(prices[d.id] ?? "");
               if (paise === null) return onError("Type the price in rupees, for example 220 or 220.50.");

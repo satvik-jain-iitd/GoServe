@@ -16,11 +16,11 @@ export function AdminNumbers({ live, kitchens }: { live?: number; kitchens?: Kit
   return (
     <div className="ui-pad">
       <p data-testid="day-total" className="mono ui-foot ui-day-total">Today: {t.orders} orders · {t.delivered} delivered · {t.cancelled} cancelled · cash {formatRupees(t.cash_paise)}</p>
-      <div className="ui-tiles">
-        <div className="ui-tile" data-testid="tile-orders"><span className="ui-tile-k">Orders</span><span className="ui-tile-v mono">{t.orders}</span>{live !== undefined && <span className="ui-tile-s mono">{live} live</span>}</div>
-        <div className="ui-tile" data-testid="tile-delivered"><span className="ui-tile-k">Delivered</span><span className="ui-tile-v mono">{t.delivered}</span><span className="ui-tile-s mono">{t.cancelled} cancelled</span></div>
-        <div className="ui-tile" data-testid="tile-cash"><span className="ui-tile-k">Cash today</span><span className="ui-tile-v mono">{formatRupees(t.cash_paise)}</span></div>
-        {open !== null && <div className="ui-tile" data-testid="tile-kitchens"><span className="ui-tile-k">Kitchens open</span><span className="ui-tile-v mono">{open} of {kitchens!.length}</span></div>}
+      <div className="ui-stats">
+        <div className="ui-stat" data-testid="tile-orders"><span className="ui-stat-k">Orders</span><span className="ui-stat-v mono">{t.orders}</span>{live !== undefined && <span className="ui-stat-s mono">{live} live</span>}</div>
+        <div className="ui-stat" data-testid="tile-delivered"><span className="ui-stat-k">Delivered</span><span className="ui-stat-v mono">{t.delivered}</span><span className="ui-stat-s mono">{t.cancelled} cancelled</span></div>
+        <div className="ui-stat" data-testid="tile-cash"><span className="ui-stat-k">Cash today</span><span className="ui-stat-v mono">{formatRupees(t.cash_paise)}</span></div>
+        {open !== null && <div className="ui-stat" data-testid="tile-kitchens"><span className="ui-stat-k">Kitchens open</span><span className="ui-stat-v mono">{open} of {kitchens!.length}</span></div>}
       </div>
       <section className="ui-group" aria-label="Per kitchen">
         <h2>Per kitchen</h2>

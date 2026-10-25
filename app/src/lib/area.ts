@@ -27,6 +27,10 @@ export const openingClock = (t: string): string => {
 export const openingText = (name: string, opensAt: string | null): string =>
   opensAt ? `${name} is closed right now. It opens at ${openingClock(opensAt)}.` : `${name} is closed right now. Please try again later.`;
 
+// The menu's one closed line (story #274).
+export const closedLine = (opensAt: string | null): string =>
+  opensAt ? `Closed now. Opens at ${openingClock(opensAt)}. You can look at the menu.` : "Closed now. You can look at the menu.";
+
 const PIN_KEY = "gs-pin";
 const KITCHEN_KEY = "gs-kitchen";
 export function loadPin(store: Storage = window.localStorage): string | null {
