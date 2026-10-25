@@ -1,0 +1,55 @@
+name: Live roadmap
+
+# Plan v2, R4.10. Builds the roadmap page from the GitHub issues and pull requests and publishes it to the Cloudflare Pages
+# project goserve-roadmap (public address goserve-roadmap.pages.dev). Runs every 15 minutes and on issue and pull request
+# events, so the page is under 20 minutes old. Schedule and event triggers run only from the default branch (main).
+# The token is the secret CLOUDFLARE_API_TOKEN that deploy-app.yml already uses; it must be allowed to edit Pages.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  issues:
+    types: [opened, edited, closed, reopened, labeled, unlabeled, milestoned, demilestoned]
+  pull_request:
+    types: [opened, closed, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+concurrency:
+  group: roadmap
+  cancel-in-progress: true
+
+jobs:
+  roadmap:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the page
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/roadmap.py
+
+      - name: Only the page goes public
+        run: |
+          mkdir -p site
+          cp docs/roadmap/index.html site/index.html
+
+      - name: Create the Pages project when it is missing
+        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3.15.0
+        continue-on-error: true
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages project create goserve-roadmap --production-branch=main
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3.15.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy site --project-name=goserve-roadmap --branch=main
