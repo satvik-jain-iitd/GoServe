@@ -48,7 +48,8 @@ class Workflow(unittest.TestCase):
     def test_the_bundle_is_attached_and_sent_to_the_internal_track_only(self):
         self.assertIn("goserve-${VERSION}.aab", self.t)
         self.assertIn("app-release-bundle.aab", self.t)
-        self.assertRegex(self.t, r"uses: r0adkll/upload-google-play@v1\.1\.5")
+        # The action receives the Play key, so it is pinned to the commit of v1.1.5, not to a tag that can move.
+        self.assertRegex(self.t, r"uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1\.1\.5")
         self.assertRegex(self.t, r"tracks: internal\s*\n")
         self.assertIn("packageName: in.goserve.customer", self.t)
         self.assertNotRegex(self.t, r"tracks:\s*(production|beta|alpha)")
