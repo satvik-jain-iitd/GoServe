@@ -1,7 +1,7 @@
 # Story #239 (epic E21): the roadmap renderer. A fixture of issues and PRs goes in; one HTML page comes out.
 # Run: python3 -m unittest scripts/test_roadmap.py  (no token, no network: the fixture replaces gh)
 import os, re, sys, unittest
-from datetime import datetime
+from datetime import datetime, timedelta
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import roadmap
 
@@ -62,6 +62,219 @@ class Roadmap(unittest.TestCase):
         self.assertIn("doing", now)
         self.assertIn("updated 09:05", self.html)
         self.assertIn('http-equiv="refresh" content="300"', self.html)
+
+
+# ---- Story #247: the deploy step. A fake wrangler replaces the real one; no network, no token. ----
+import stat, tempfile
+
+
+class Deploy(unittest.TestCase):
+    def setUp(self):
+        self.d = tempfile.mkdtemp()
+        self.page = os.path.join(self.d, "index.html")
+        open(self.page, "w").write("<html>updated 09:05</html>")
+        self.log = os.path.join(self.d, "wrangler.log")
+        self.fake = os.path.join(self.d, "fake-wrangler")
+        # records its arguments, the two Cloudflare variables, and the file names in the folder it was asked to deploy
+        open(self.fake, "w").write('#!/bin/sh\necho "ARGS $*" > "%s"\necho "TOKEN $CLOUDFLARE_API_TOKEN ACCOUNT $CLOUDFLARE_ACCOUNT_ID" >> "%s"\nls "$3" >> "%s"\n' % (self.log, self.log, self.log))
+        os.chmod(self.fake, os.stat(self.fake).st_mode | stat.S_IEXEC)
+        self.vault = os.path.join(self.d, "03_cloudflare.env")
+
+    def test_the_token_and_account_come_from_the_vault_file_and_only_the_page_is_deployed(self):
+        open(self.vault, "w").write("CLOUDFLARE_ROADMAP_TOKEN=tok123\nCLOUDFLARE_ACCOUNT_ID=acc456\nOTHER=x\n")
+        code, msg = roadmap.deploy(self.page, self.vault, [self.fake])
+        self.assertEqual(code, 0, msg)
+        log = open(self.log).read()
+        self.assertRegex(log, r"ARGS pages deploy \S+ --project-name=goserve-roadmap --branch=main")
+        self.assertIn("TOKEN tok123 ACCOUNT acc456", log)
+        self.assertEqual(log.strip().splitlines()[-1], "index.html")   # nothing else (README, scripts) goes public
+        self.assertNotIn("tok123", log.splitlines()[0])   # the token is in the environment, never in the arguments
+
+    def test_a_missing_token_names_the_variable_and_deploys_nothing(self):
+        open(self.vault, "w").write("CLOUDFLARE_ACCOUNT_ID=acc456\n")
+        code, msg = roadmap.deploy(self.page, self.vault, [self.fake])
+        self.assertNotEqual(code, 0)
+        self.assertIn("CLOUDFLARE_ROADMAP_TOKEN", msg)
+        self.assertFalse(os.path.exists(self.log))
+
+    def test_a_missing_vault_file_is_the_same_loud_failure(self):
+        code, msg = roadmap.deploy(self.page, os.path.join(self.d, "nope.env"), [self.fake])
+        self.assertNotEqual(code, 0)
+        self.assertIn("CLOUDFLARE_ROADMAP_TOKEN", msg)
+        self.assertIn("CLOUDFLARE_ACCOUNT_ID", msg)
+
+    def test_a_failing_wrangler_fails_loud(self):
+        open(self.vault, "w").write("CLOUDFLARE_ROADMAP_TOKEN=t\nCLOUDFLARE_ACCOUNT_ID=a\n")
+        open(self.fake, "w").write("#!/bin/sh\necho boom >&2\nexit 3\n")
+        code, msg = roadmap.deploy(self.page, self.vault, [self.fake])
+        self.assertEqual(code, 3)
+        self.assertIn("boom", msg)
+
+    def test_the_page_is_written_even_when_the_deploy_fails(self):
+        out = os.path.join(self.d, "out", "index.html")
+        old = (roadmap.OUT, roadmap.fetch_issues, roadmap.fetch_prs, roadmap.vision_text, roadmap.DEFAULT_VAULT)
+        try:
+            roadmap.OUT, roadmap.fetch_issues, roadmap.fetch_prs, roadmap.vision_text = out, lambda: ISSUES, lambda: PRS, lambda: "v"
+            roadmap.DEFAULT_VAULT = os.path.join(self.d, "missing.env")
+            self.assertNotEqual(roadmap.main(["--deploy"]), 0)
+            self.assertTrue(os.path.exists(out))
+        finally:
+            roadmap.OUT, roadmap.fetch_issues, roadmap.fetch_prs, roadmap.vision_text, roadmap.DEFAULT_VAULT = old
+
+
+# ---- Story R4 (plan v2): roadmap v2. Timeline by close day, start and cycle time, You are here, Next order, Delivered date range. ----
+def issue(n, title, state="OPEN", labels=("story",), closed=None, doing=None, ms=None, body=None, parent=None):
+    return {"number": n, "title": title, "body": body or f"Part of epic E9 (#9).\n\n## Business\n{title} works.", "state": state, "labels": list(labels),
+            "closedAt": closed, "doing_at": doing, "milestone": ms, "parent": parent}
+M1 = {"title": "M1 MVP2", "dueOn": "2026-10-27T18:29:00Z"}
+M2 = {"title": "M2 Design", "dueOn": "2026-10-28T18:29:00Z"}
+V2 = [
+    issue(9, "Epic E9: Plan v2", labels=("epic",), body="## Business\nOne plan."),
+    issue(20, "Story A done early", "CLOSED", closed="2026-10-24T20:00:00Z", doing="2026-10-24T18:00:00Z", ms=M1),     # IST 25 Oct 01:30, took 2 h
+    issue(21, "Story B done late", "CLOSED", closed="2026-10-25T06:00:00Z", doing="2026-10-25T05:15:00Z", ms=M1),     # IST 25 Oct 11:30, took 45 min
+    issue(22, "Story C done no start", "CLOSED", closed="2026-10-23T06:00:00Z", ms=M1),                              # no doing label ever
+    issue(23, "Story D in progress", labels=("story", "doing", "P0"), doing="2026-10-26T04:00:00Z", ms=M1),
+    issue(24, "Story E ready p1", labels=("story", "ready", "P1"), ms=M1),
+    issue(25, "Story F ready p0 later milestone", labels=("story", "ready", "P0"), ms=M2, body="Part of epic E9 (#9).\n\n## Business\nF works.\n\nNeeds: #26"),
+    issue(26, "Story G ready p0 first", labels=("story", "ready", "P0"), ms=M1),
+    issue(40, "Story old open, no plan labels", ms=M1),
+    issue(27, "Story H blocked", labels=("story", "blocked", "P0"), ms=M1, body="Part of epic E9 (#9).\n\n## Business\nH works.\n\n## Needs\nNeeds: #23\nNeeds: #26"),
+]
+NOW = datetime(2026, 10, 26, 11, 0)   # IST, naive like the page clock
+
+
+class RoadmapV2(unittest.TestCase):
+    def setUp(self):
+        self.model = roadmap.build(V2, [])
+        self.html = roadmap.render(self.model, "Vision.", NOW)
+
+    def test_the_timeline_groups_closed_stories_by_india_close_day_newest_first(self):
+        days = [(d["day"], [s["number"] for s in d["stories"]]) for d in self.model["timeline"]]
+        self.assertEqual(days, [("2026-10-25", [21, 20]), ("2026-10-23", [22])])   # 20 closed at 01:30 IST on the 25th, not the 24th UTC
+        tl = self.html.split('id="timeline"')[1].split("</section>")[0]
+        self.assertLess(tl.index("25 Oct"), tl.index("23 Oct"))
+
+    def test_start_is_the_first_doing_label_and_cycle_time_is_close_minus_start(self):
+        by = {s["number"]: s for s in self.model["stories"]}
+        self.assertEqual((by[20]["cycle_min"], by[21]["cycle_min"], by[22]["cycle_min"]), (120, 45, None))
+        tl = self.html.split('id="timeline"')[1].split("</section>")[0]
+        self.assertIn("2 h", tl)
+        self.assertIn("45 min", tl)
+        self.assertIn("no start time", tl)   # honest: the story was never marked doing
+
+    def test_you_are_here_shows_now_the_story_in_progress_and_the_next_ready_story(self):
+        here = self.model["here"]
+        self.assertEqual([s["number"] for s in here["doing"]], [23])
+        self.assertEqual(here["next"]["number"], 26)   # P0 in the earliest milestone, then lowest number
+        h = self.html.split('id="here"')[1].split("</section>")[0]
+        self.assertIn("11:00", h)
+        self.assertIn("Story D in progress", h)
+        self.assertIn("since 09:30", h)   # 04:00 UTC is 09:30 IST
+        self.assertIn("Story G ready p0 first", h)
+
+    def test_next_is_sorted_by_milestone_then_priority_then_number_and_marks_blocked(self):
+        order = [s["number"] for s in self.model["next"]]
+        self.assertEqual(order, [26, 27, 24, 25])   # M1 first: P0 (26, 27) then P1 (24); M2 last. Doing and done stories are not in Next.
+        nx = self.html.split('id="next"')[1].split("</section>")[0]
+        self.assertIn("blocked by #23, #26", nx)
+
+    def test_stories_without_a_ready_or_blocked_label_are_older_work_and_stay_out_of_next(self):
+        self.assertNotIn(40, [s["number"] for s in self.model["next"]])
+        self.assertEqual([s["number"] for s in self.model["older"]], [40])
+        self.assertIn("Story old open, no plan labels", self.html.split('id="older"')[1])
+
+    def test_needs_lines_become_numbers(self):
+        by = {s["number"]: s for s in self.model["stories"]}
+        self.assertEqual(by[27]["needs"], [23, 26])
+        self.assertEqual(by[26]["needs"], [])
+
+    def test_delivered_epics_show_their_date_range(self):
+        issues = V2 + [issue(30, "Epic E8: Old", "CLOSED", labels=("epic",), closed="2026-10-25T07:00:00Z", body="## Business\nOld work."),
+                       issue(31, "Story old one", "CLOSED", closed="2026-10-21T08:00:00Z", parent={"number": 30}),
+                       issue(32, "Story old two", "CLOSED", closed="2026-10-25T07:00:00Z", parent={"number": 30})]
+        html = roadmap.render(roadmap.build(issues, []), "v", NOW)
+        d = html.split('id="delivered"')[1].split('id="here"')[0]
+        self.assertIn("21 Oct to 25 Oct", d)
+        self.assertNotIn("<details open", d)   # collapsed
+
+
+class RoadmapMaps(unittest.TestCase):
+    def setUp(self):
+        self.model = roadmap.build(V2, [])
+        self.html = roadmap.render(self.model, "Vision.", NOW)
+
+    def test_milestone_bars_count_done_over_total_with_due_date_and_days_left(self):
+        ms = {m["title"]: m for m in self.model["milestones"]}
+        self.assertEqual([m["title"] for m in self.model["milestones"]], ["M1 MVP2", "M2 Design"])   # by due date
+        self.assertEqual((ms["M1 MVP2"]["done"], ms["M1 MVP2"]["total"], ms["M1 MVP2"]["days_left"], ms["M1 MVP2"]["late"]), (3, 8, 1, False))
+        self.assertEqual((ms["M2 Design"]["done"], ms["M2 Design"]["total"], ms["M2 Design"]["days_left"]), (0, 1, 2))
+        bar = self.html.split('id="milestones"')[1].split("</section>")[0]
+        self.assertIn("3 of 8", bar)
+        self.assertIn("due 27 Oct", bar)
+        self.assertIn("1 day left", bar)
+
+    def test_a_milestone_past_its_due_date_with_work_left_is_late_and_red(self):
+        later = roadmap.render(roadmap.build(V2, []), "v", datetime(2026, 10, 30, 9, 0))
+        bar = later.split('id="milestones"')[1].split("</section>")[0]
+        self.assertIn('class="bar late"', bar)
+        self.assertIn("late by 2 days", bar)
+
+    def test_the_map_has_one_edge_per_pair_of_milestones_with_the_number_of_needs(self):
+        self.assertEqual(self.model["map"]["edges"], [{"from": "M1 MVP2", "to": "M2 Design", "count": 1, "back": False}])   # 25 (M2) needs 26 (M1); needs inside one milestone are not edges
+
+    def test_a_need_on_a_later_milestone_is_a_backward_edge(self):
+        issues = V2 + [issue(41, "Story early needs late", labels=("story", "blocked", "P0"), ms=M1, body="Needs: #25")]
+        m = roadmap.build(issues, [])
+        back = [e for e in m["map"]["edges"] if e["back"]]
+        self.assertEqual(back, [{"from": "M2 Design", "to": "M1 MVP2", "count": 1, "back": True}])
+
+    def test_crossings_are_measured_not_guessed(self):
+        self.assertEqual(roadmap.crossings([(0, 2), (1, 3)]), 1)   # interleaved arcs cross
+        self.assertEqual(roadmap.crossings([(0, 3), (1, 2)]), 0)   # nested arcs do not
+        self.assertEqual(roadmap.crossings([(0, 1), (1, 2), (2, 3)]), 0)   # arcs that only touch at a box do not
+        self.assertEqual(self.model["map"]["crossings"], 0)
+
+    def test_the_svg_labels_every_arrow_and_names_the_crossings(self):
+        svg = self.html.split('id="map"')[1].split("</section>")[0]
+        self.assertEqual(svg.count("<svg"), 1)
+        self.assertEqual(svg.count('data-edge='), 1)
+        self.assertIn("1 need", svg)
+        self.assertIn("0 crossings", svg)
+        self.assertIn("M1 MVP2", svg)
+
+
+    def test_an_arrow_that_only_repeats_a_longer_path_is_hidden_and_counted(self):
+        m3 = {"title": "M3 Late", "dueOn": "2026-10-29T18:29:00Z"}
+        issues = V2 + [issue(50, "Story L1", labels=("story", "blocked"), ms=m3, body="Needs: #26\nNeeds: #25")]   # M3 waits for M1 and for M2, and M2 already waits for M1
+        mp = roadmap.build(issues, [])["map"]
+        self.assertEqual([(e["from"], e["to"]) for e in mp["edges"]], [("M1 MVP2", "M2 Design"), ("M2 Design", "M3 Late")])
+        self.assertEqual(mp["hidden"], 1)
+        self.assertIn("1 arrow", roadmap.render(roadmap.build(issues, []), "v", NOW).split('id="map"')[1])
+
+    def test_the_longest_chain_of_open_work_is_listed(self):
+        self.assertEqual([s["number"] for s in self.model["chain"]], [23, 27])   # ties go to the lowest numbers
+        self.assertIn("Longest chain", self.html)
+
+class IndiaClock(unittest.TestCase):
+    def test_the_page_clock_is_india_time_even_when_the_machine_runs_in_utc(self):
+        # A GitHub runner has no India time zone: the page must still say India time (review of #436).
+        import io, time, contextlib
+        old_tz = os.environ.get("TZ")
+        os.environ["TZ"] = "UTC"; time.tzset()
+        saved = (roadmap.fetch_issues, roadmap.fetch_prs, roadmap.vision_text)
+        try:
+            roadmap.fetch_issues, roadmap.fetch_prs, roadmap.vision_text = lambda: [], lambda: [], lambda: "v"
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                roadmap.main(["--print"])
+            from datetime import timezone
+            want = {(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=5, minutes=30) + timedelta(minutes=k)).strftime("%H:%M") for k in (-1, 0, 1)}
+            self.assertTrue(any(f"updated {w}" in buf.getvalue() for w in want), buf.getvalue()[buf.getvalue().index("updated"):][:30])
+        finally:
+            roadmap.fetch_issues, roadmap.fetch_prs, roadmap.vision_text = saved
+            if old_tz is None: os.environ.pop("TZ", None)
+            else: os.environ["TZ"] = old_tz
+            time.tzset()
 
 
 if __name__ == "__main__":
