@@ -46,6 +46,10 @@ test('H5 MAIN 30 wiring: webhook, Config, token, kill switch, route to SUB 30, r
   assert.deepEqual(next(m, 'Action ok?', 1), ['Respond 400']);
   assert.equal(byName(m, 'Call SUB 30 Simulator write').parameters.workflowId.value, 'SUB30');
   assert.deepEqual(next(m, 'Call SUB 30 Simulator write'), ['Respond result']);
+  const rr = byName(m, 'Respond result').parameters;   // the body is a JSON string and the code the SUB's status_code, exactly like MAIN 01 (prod 502 on 25 Oct with an object body)
+  assert.equal(rr.responseBody, '={{ JSON.stringify($json) }}');
+  assert.equal(rr.options.responseCode, '={{ $json.status_code }}');
+  assert.equal(rr.respondWith, 'json');
   assert.ok(!JSON.stringify(m.nodes.filter((n) => n.name !== 'Config')).includes('SIMTOKEN'), 'the token lives in Config only');
   assert.ok(JSON.stringify(byName(m, 'Config')).includes('SIMTOKEN'));
 });
@@ -104,4 +108,24 @@ test('H7 MAIN 31 saves no successful execution, errors still go to GS ERR 00', (
   assert.equal(wf.main31.settings.saveDataSuccessExecution, 'none');
   assert.equal(wf.main31.settings.saveDataErrorExecution, 'all');
   assert.equal(wf.main31.settings.errorWorkflow, 'ALERT1');
+});
+
+// ---- Prod bug, 25 Oct 2026: SUB 30's "Shape result" (shape.js) knew only order and rider answers, so every good sim_* answer became a 502 database_error. ----
+test('H7 fix: the shape node passes a good sim answer through with its counts and a 200', () => {
+  const seed = run('shape.js', { statusCode: 200, body: { ok: true, seed: 42, kitchens: 10, kitchens_open: 8, riders: 20, riders_online: 14, dishes: 60 } });
+  assert.deepEqual(seed, { ok: true, status_code: 200, seed: 42, kitchens: 10, kitchens_open: 8, riders: 20, riders_online: 14, dishes: 60 });
+  assert.equal(run('shape.js', { statusCode: 200, body: { ok: true, enabled: true } }).enabled, true);
+  assert.equal(run('shape.js', { statusCode: 200, body: { ok: true, skipped: 'sim_disabled' } }).status_code, 200);
+  assert.equal(run('shape.js', { statusCode: 200, body: { ok: true, riders_moved: 14, kitchens_flipped: 1, dishes_flipped: 2, riders_flipped: 1 } }).riders_moved, 14);
+});
+
+test('H7 fix: a database refusal on a sim call is still a 502 with no raw text, and an order answer is unchanged', () => {
+  const bad = run('shape.js', { statusCode: 400, body: { message: 'permission denied for function sim_seed' } });
+  assert.equal(bad.status_code, 502); assert.equal(bad.message, 'Something went wrong. Please try again.');
+  assert.equal(run('shape.js', { statusCode: 200, body: { order: { id: 'o1' }, created: true } }).status_code, 201);
+  assert.equal(run('shape.js', { statusCode: 200, body: { riders: [{ id: 'r1' }] } }).riders.length, 1);
+});
+
+test('H7 fix: the 400 text of MAIN 30 names all six actions', () => {
+  assert.match(byName(wf.main30, 'Respond 400').parameters.responseBody, /seed, reset, tick, enable, disable or status/);
 });

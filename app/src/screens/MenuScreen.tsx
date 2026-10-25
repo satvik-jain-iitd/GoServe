@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { filterDishes } from "../lib/browse";
 import { greeting, sectionsOf, thalisOf } from "../lib/home";
-import type { Dish } from "../lib/menu";
+import { creditLine, type Dish } from "../lib/menu";
 import { formatRupees } from "../lib/money";
 import { Empty, Stepper, TabBar, VegMark } from "../ui";
 
@@ -47,7 +47,7 @@ export function MenuScreen(p: Props) {
         {closed && (
           <div className="ui-closed">
             <span className="ui-stamp placed small">Closed</span>
-            <div><p className="ui-closed-main">{p.closedText}</p><p className="ui-closed-sub">Look at the menu now. Order when it opens.</p></div>
+            <p className="ui-closed-main">{p.closedText}</p>
           </div>
         )}
         {p.fromCache && <p className="notice">Showing the saved menu (offline).</p>}
@@ -66,7 +66,6 @@ export function MenuScreen(p: Props) {
                   </button>
                   <div className="ui-tile-body">
                     <h3>{d.veg !== undefined && <VegMark veg={d.veg} />}{d.name}</h3>
-                    {d.image_credit && <p className="ui-meta">Photo: {d.image_credit}</p>}
                     <p className="ui-price">{formatRupees(d.price_paise)}</p>
                   </div>
                   {control(d)}
@@ -164,7 +163,7 @@ function DishSheet({ dish, closed, qty, onAdd, onClose }: { dish: Dish; closed: 
       <div className="ui-dish-body">
         <div className="ui-dish-head"><h2>{dish.veg !== undefined && <VegMark veg={dish.veg} size={14} />}{dish.name}</h2><span className="ui-dish-price">{formatRupees(dish.price_paise)}</span></div>
         <p className="ui-kicker">{dish.veg === undefined ? "" : dish.veg ? "Veg" : "Non-veg"}{dish.category ? ` · ${dish.category}` : ""}</p>
-        {dish.image_credit && <p className="ui-meta">Photo: {dish.image_credit}</p>}
+        {dish.image_credit && <p className="ui-meta">{creditLine(dish.image_credit)}</p>}
         <div className="ui-dish-count"><span className="ui-kicker">How many</span><Stepper label={dish.name} value={n} min={1} onChange={setN} /></div>
       </div>
       <div className="ui-dish-act">

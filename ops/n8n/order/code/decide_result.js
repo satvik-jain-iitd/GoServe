@@ -1,10 +1,10 @@
 // SUB 13, node "Decide": Jev is advice only, the rule decides (build design section 4, contract 1.5). Builds the one decision_log row.
 // Jev is accepted into the record when it answers in time, in shape, with enough confidence and under the cost cap; otherwise the row says why.
-const g = $('Guard').first().json;
+const g = $('Pick engine').first().json;   // the Guard item plus the engine (story #263)
 const res = $input.first().json || {};
 const THRESHOLD = 0.70;   // contract D1
 let jev = null;
-let status = 'jev_off';
+let status = g.engine === 'rules' ? 'engine_rules' : g.engine === 'laya' ? 'laya_not_deployed' : 'jev_off';   // why Jev did not answer
 if (g.use_jev) {
   status = 'jev_error';
   if (!res.error && res.statusCode === 200) {
@@ -20,7 +20,7 @@ if (g.use_jev) {
     }
   }
 }
-const decision = { use_case: 'D1', schema_version: 1, order_id: g.order_id, state: g.state, options: g.options, rule_pick: g.rule_pick,
+const decision = { use_case: 'D1', schema_version: 1, engine: g.engine, order_id: g.order_id, state: g.state, options: g.options, rule_pick: g.rule_pick,
   jev, jev_status: status, chosen_pick: g.rule_pick, chosen_by: 'rule', chosen_chance: 1, params_version: g.params_version, place: 'demo', result: null };
 return [{ json: { ok: true, status_code: 200, supabase_url: g.supabase_url, cost: jev ? jev.cost : 0,
   log_row: { kitchen_id: g.kitchen_id, session_id: g.session_id, order_id: g.order_id, decision } } }];
