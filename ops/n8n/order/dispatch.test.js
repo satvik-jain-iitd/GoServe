@@ -76,7 +76,8 @@ test('wiring: MAIN 01 answers first, then dispatches a ready order through SUB 2
 test('wiring: SUB 22 asks for riders, decides, assigns once; no rider and no pick stop with an error', () => {
   const w = wf.sub22;
   assert.deepEqual(next(w, 'Start'), ['Call SUB 21 Riders']);
-  assert.deepEqual(next(w, 'Call SUB 21 Riders'), ['Riders found?']);
+  assert.deepEqual(next(w, 'Call SUB 21 Riders'), ['Batch mode?']);   // #263: in batch mode this run ends here
+  assert.deepEqual(next(w, 'Batch mode?', 1), ['Riders found?']);
   assert.deepEqual(next(w, 'Riders found?', 0), ['Prepare decision']);
   assert.deepEqual(next(w, 'Riders found?', 1), ['No rider']);
   assert.deepEqual(next(w, 'Prepare decision'), ['Call SUB 13 Decide']);

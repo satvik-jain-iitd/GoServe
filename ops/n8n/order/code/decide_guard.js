@@ -13,7 +13,10 @@ if (!ridersOk || typeof j.session_id !== 'string' || j.session_id.trim() === '' 
   return refuse(400, 'invalid_request', 'The decision is missing something.');
 }
 const state = { order_id: j.order_id, riders: riders.map((r) => ({ id: r.id, free: r.free, distance_m: Number(r.distance_m) || 0, trips_done: Number(r.trips_done) || 0 })) };
-const free = state.riders.filter((r) => r.free).sort((a, b) => a.trips_done - b.trips_done || a.distance_m - b.distance_m);
+// Story #272: the database ranks the riders (nearest free rider first, trips only inside a band, params per_order_rules). Follow the rank when every rider has one.
+const rank = new Map(riders.map((r) => [r.id, r.rank]));
+const ranked = riders.every((r) => Number.isFinite(r.rank));
+const free = state.riders.filter((r) => r.free).sort(ranked ? (a, b) => rank.get(a.id) - rank.get(b.id) : (a, b) => a.trips_done - b.trips_done || a.distance_m - b.distance_m);
 const rule_pick = free.length ? free[0].id : 'none';
 const options = state.riders.map((r) => r.id).concat('none');
 // OpenRouter's decisions endpoint (POST /api/alpha/decisions) takes the state and typed questions. Jev is a decisions model: the chat endpoint refuses it with a 400.

@@ -30,3 +30,6 @@ export async function loadMenu(fetchRows: () => Promise<Dish[]>, storage: KeyVal
   if (saved) return { dishes: saved, fromCache: true };
   throw new Error(NOT_AVAILABLE);
 }
+
+// "File:Butter chicken.jpg, Wikimedia Commons, CC BY-SA 4.0" becomes "Photo: Wikimedia Commons, CC BY-SA 4.0" (story #274).
+export const creditLine = (credit: string): string => `Photo: ${credit.replace(/^File:[^,]*,\s*/, "")}`;

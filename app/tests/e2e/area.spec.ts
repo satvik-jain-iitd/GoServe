@@ -39,7 +39,7 @@ test("S4 a kitchen that serves the pin code but is closed says it is closed", as
   await page.goto("/customer/");
   await page.getByLabel("Your pin code").fill("110016");
   await page.getByRole("button", { name: "See the menu" }).click();
-  await expect(page.getByText("Hauz Khas Kitchen is closed right now. It opens at 10:00 am.")).toBeVisible();
+  await expect(page.getByText("Closed now. Opens at 10:00 am. You can look at the menu.")).toBeVisible();
 });
 
 test("S5 a known pin code goes straight to the menu, and Change area goes back to the question", async ({ page, context }) => {
