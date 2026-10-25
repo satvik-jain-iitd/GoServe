@@ -1,257 +1,73 @@
 # Delhi dream kitchens, October 2026
 
-**Story #282, epic E16.** The ten demo kitchens in the dream city. Written under the `web-research` skill, 25 Oct 2026.
+**Epic E16, stories #282, #290, #292.** The ten demo kitchens of the dream city. Written under the `web-research` skill, 25 Oct 2026. Updated the same day.
 
 ## Read this first
 
 - Every kitchen is **demo**. It carries GoServe's own name. It is *modelled on* a real kind of Delhi place. It is not that place, and no real brand name is used.
-- **Menus and prices are estimates.** The web gave place names, areas and a few anchor prices (Tier C). It gave almost no per-dish prices. Each price below is our estimate for a delivery menu in 2026, anchored on the sources in the table. Confidence **0.4 to 0.5**. Good enough for a demo. Never a pitch claim.
-- Pins and coordinates are the centre of the area, from public knowledge (Tier C, 0.6). Dish prices are a range of about plus or minus 25 percent, not a quote.
-- The 40 riders carry names of famous Indians (sport, film, music, science). Names only. No photo, no quote, no claim that the person has any link to GoServe.
-- The data lives in `app/supabase/migrations/0034_dream_city.sql`. That file is the single source. This page explains it.
+- **One menu for all ten kitchens** (owner, 25 Oct): the same 12 dishes, the same prices, the same 12 photos. This replaced the first plan of ten different menus (135 dishes), then 70 dishes, then 14. The web gave place names and a few anchor prices (Tier C) and almost no per-dish prices, so the **prices are our estimates** (confidence 0.4 to 0.5). The two thali prices (Rs 199, Rs 279) are the owner's own, from 25 Oct. Demo only, never a pitch claim.
+- Pins and coordinates are the centre of the area, from public knowledge (Tier C, 0.6). The owner's prod SQL gave the Wok House pins 110091 and 110051 (Tier S).
+- **Photos: exactly 12 different pictures, one per dish** (owner: photos cost storage, and every dish has one). They come from Openverse, only under CC0, public domain or CC BY (free commercial use, no share-alike). Each was looked at before it was accepted.
+- The 40 riders carry names of famous Indians. Names only. No photo, no quote, no link to GoServe.
+- The data lives in `app/supabase/migrations/0034`, `0037` and `0038`; the photo records in `scripts/dish_photo_choices.json`. Those files are the single source. This page explains them.
 
 ## Ten kitchens
 
-| # | GoServe name | Modelled on | Area | Pins served | Lat, lng | Hours | Dishes |
-|---|---|---|---|---|---|---|---|
-| 1 | Dilli-6 Kebab Ghar | Karim's, Gali Kababian (Old Delhi Mughlai) | Jama Masjid | 110006, 110002, 110092 | 28.6507, 77.2334 | 12:00 to 23:00 | 14 |
-| 2 | Gali Parantha Rasoi | the shops of Paranthe Wali Gali | Chandni Chowk | 110006, 110007, 110054, 110092 | 28.6562, 77.23 | 08:00 to 22:00 | 14 |
-| 3 | Punjab Da Dhaba | the Punjabi dhabas of Rajouri Garden | Rajouri Garden | 110027, 110018, 110064 | 28.6492, 77.1219 | 11:00 to 23:30 | 14 |
-| 4 | Madras Tiffin Room | the South Indian tiffin rooms of Lajpat Nagar | Lajpat Nagar | 110024, 110014, 110049 | 28.5677, 77.2433 | 07:30 to 22:00 | 14 |
-| 5 | Bhodro Bangali | the Bengali kitchens of CR Park Market 1 | CR Park | 110019, 110048, 110020 | 28.5384, 77.248 | 11:00 to 22:30 | 14 |
-| 6 | Tilla Momo House | the momo and thukpa shops of Majnu ka Tilla | Majnu ka Tilla | 110054, 110009, 110007 | 28.6995, 77.2285 | 11:00 to 22:00 | 14 |
-| 7 | Karol Bagh Chaat Corner | the chaat and mithai shops of Karol Bagh | Karol Bagh | 110005, 110055, 110060 | 28.6514, 77.1907 | 10:00 to 22:00 | 14 |
-| 8 | Nizam Dum Biryani | the biryani and kebab lanes of Nizamuddin | Nizamuddin | 110013, 110003, 110014, 110092 | 28.5886, 77.2509 | 12:00 to 23:30 | 13 |
-| 9 | Thali Ghar CP | the thali houses around Connaught Place | Connaught Place | 110001, 110002, 110055, 110092 | 28.6315, 77.2167 | 11:30 to 22:30 | 12 |
-| 11 | Laxmi Nagar Wok House | the Indo-Chinese kitchens of Laxmi Nagar | Laxmi Nagar | 110092, 110091, 110051 | 28.6304, 77.2773 | 11:00 to 23:00 | 12 |
+| # | GoServe name | Area | Pins served | Lat, lng | Hours |
+|---|---|---|---|---|---|
+| 1 | Dilli-6 Kebab Ghar | Jama Masjid | 110006, 110002, 110092 | 28.6507, 77.2334 | 12:00 to 23:00 |
+| 2 | Gali Parantha Rasoi | Chandni Chowk | 110006, 110007, 110054, 110092 | 28.6562, 77.23 | 08:00 to 22:00 |
+| 3 | Punjab Da Dhaba | Rajouri Garden | 110027, 110018, 110064 | 28.6492, 77.1219 | 11:00 to 23:30 |
+| 4 | Madras Tiffin Room | Lajpat Nagar | 110024, 110014, 110049 | 28.5677, 77.2433 | 07:30 to 22:00 |
+| 5 | Bhodro Bangali | CR Park | 110019, 110048, 110020 | 28.5384, 77.248 | 11:00 to 22:30 |
+| 6 | Tilla Momo House | Majnu ka Tilla | 110054, 110009, 110007 | 28.6995, 77.2285 | 11:00 to 22:00 |
+| 7 | Karol Bagh Chaat Corner | Karol Bagh | 110005, 110055, 110060 | 28.6514, 77.1907 | 10:00 to 22:00 |
+| 8 | Nizam Dum Biryani | Nizamuddin | 110013, 110003, 110014, 110092 | 28.5886, 77.2509 | 12:00 to 23:30 |
+| 9 | Thali Ghar CP | Connaught Place | 110001, 110002, 110055, 110092 | 28.6315, 77.2167 | 11:30 to 22:30 |
+| 11 | Laxmi Nagar Wok House | Laxmi Nagar | 110092, 110091, 110051 | 28.6304, 77.2773 | 11:00 to 23:00 |
 
-Total: 135 dishes. Pin 110092 (the owner's test pin) is served by five kitchens (the numbers 1, 2, 8, 9 and 11); the fifth, Laxmi Nagar Wok House, is in East Delhi itself (story #290).
+Kitchens 1 to 9 are modelled on the Delhi food kinds of the first version of this file (Old Delhi kebabs, paranthas, a Punjabi dhaba, South Indian tiffin, Bengali, momos, chaat, biryani, a thali house). Number 11 is Laxmi Nagar Wok House (Indo-Chinese, East Delhi). Number 10, Green Bowl Co, was dropped on 25 Oct (owner: exactly ten kitchens); its ids stay unused. Pin 110092 (the owner's test pin) is served by five kitchens (1, 2, 8, 9 and 11).
 
-## Sources and confidence, per kitchen
+## The one menu
 
-| # | What the web said | Tier | Confidence | Date |
+| # | Dish | Category | Veg | Price (Rs) |
 |---|---|---|---|---|
-| 1 | Karim's Gurgaon branch review (indianfoodfreak.com, undated): mutton burra Rs 440, seekh kebab Rs 245, nihari Rs 320. Delhi Food Walks guide (blog.delhifoodwalks.com, undated): seekh recommended, about Rs 850 for two. Tier C. | C | 0.4 | 2026-10-25 |
-| 2 | Wikipedia, Gali Paranthe Wali (Tier C, encyclopedia). Explurger and a travel blog: Rs 100 to 200 per person, fillings aloo, gobhi, mattar, paneer. No per-dish price found. Tier C. | C | 0.4 | 2026-10-25 |
-| 3 | EazyDiner listings for Rajouri Garden dhabas (Tier C): about Rs 1,500 to 1,800 for two, dal makhani and butter chicken named. No dish price found. Tier C. | C | 0.4 | 2026-10-25 |
-| 4 | EazyDiner, Southy Lajpat Nagar (Tier C): about Rs 400 to 450 for two. No dish price found. Tier C. | C | 0.4 | 2026-10-25 |
-| 5 | chittaranjanpark.com guide, June 2026 (Tier C, local guide): Mutton Kosha Rs 180 to 220 a plate at one shop, Luchi Rs 20 each, fish thali Rs 180 to 220, Bhetki Paturi Rs 120 to 150. Raised for delivery. Tier C. | C | 0.4 | 2026-10-25 |
-| 6 | The Delhi Walla, 2009 (Tier C, old): Dolma House veg momos Rs 35, Tibetan sausage Rs 55. Wanderlog and Outlook Traveller: Tee Dee, Tenzin Dorje, Ama named. 2009 prices not used. Tier C. | C | 0.4 | 2026-10-25 |
-| 7 | Swiggy listing, Bikaner Sweets Karol Bagh (Tier C, a seller): Kaju Burfi Rs 337, Jodhpuri Ladoo Rs 127; about Rs 400 for two. Delhi Tourism lists Karol Bagh as a street-food area (Tier A, for that fact only). | C | 0.4 | 2026-10-25 |
-| 8 | magicpin, Behrouz price list 2024 (Tier C, a seller): chicken dum biryani Rs 329, dum gosht Rs 349 (regular). Majeed's about Rs 450 for two. No Nizamuddin menu found. | C | 0.4 | 2026-10-25 |
-| 9 | CRISIL Roti Rice Rate, July 2026 (Tier B): a home-cooked veg thali costs about Rs 30 to 35, so a restaurant thali price is not derivable from it. No Connaught Place menu found. Price is our estimate. | C | 0.4 | 2026-10-25 |
-| 11 | No web source: the owner's own SQL of 25 Oct (Tier S for the choice of kitchen, pins and dishes). Prices are our estimates for an Indo-Chinese delivery menu. Tier C. | C | 0.4 | 2026-10-25 |
+| 1 | Butter Chicken | Mains | non-veg | 340 |
+| 3 | Dal Makhani | Mains | veg | 240 |
+| 4 | Chole Bhature | Mains | veg | 130 |
+| 5 | Amritsari Kulcha | Breads | veg | 90 |
+| 6 | Veg Fried Rice | Rice | veg | 150 |
+| 7 | Samosa (2) | Snacks | veg | 40 |
+| 8 | Gulab Jamun (2) | Sweets | veg | 60 |
+| 9 | Masala Chai | Drinks | veg | 30 |
+| 10 | Sweet Lassi | Drinks | veg | 80 |
+| 11 | Aloo Parantha | Breads | veg | 70 |
+| 13 | Veg Thali | Thali | veg | 199 |
+| 14 | Non-veg Thali | Thali | non-veg | 279 |
 
-Motive check: every source above earns from listings, ads or bookings, so a price in it leans high or is a show price. We kept the estimate low-to-middle. Tier A for the place facts (Delhi Tourism) proves the area is a food area, not any price.
+## Photo sources (the photographer's own page, licence from Openverse)
 
-## 1. Dilli-6 Kebab Ghar
+| Dish | Title | Creator | Licence | Source page | Openverse id |
+|---|---|---|---|---|---|
+| Butter Chicken | Mango Shiva - Butter Chicken with Honey Coconut Naan | elsie.hui | BY 2.0 | https://www.flickr.com/photos/91188380@N05/11200970036 | b9a0e3b0-08e7-4c2e-b796-ac27b5f30c82 |
+| Dal Makhani | Indian Food Dal Makhani | MyStockPhotos | CC0 1.0 | https://www.flickr.com/photos/136375272@N05/40300293643 | bf5e31b5-2305-4905-954a-b87e48278c54 |
+| Chole Bhature | That's The Chole Bhature Ka Plate | gagandeepsapra | BY 2.0 | https://www.flickr.com/photos/17983554@N00/5270482725 | 642fea6c-6941-4870-b67b-f5bf8ae54609 |
+| Amritsari Kulcha | Amritsari Kulche | प्रतीक | BY 2.0 | https://www.flickr.com/photos/58196392@N00/6312710807 | 1d919521-6891-4780-aa7a-b0c417771b2f |
+| Veg Fried Rice | Veg fried rice at a Nepali Restaurant, Kathmandu, Nepal | Mehraz Morshed | CC0 1.0 | https://wordpress.org/photos/photo/2706a2adbd/ | fff15beb-a5a2-47a8-b59b-bc9167f852fe |
+| Samosa (2) | samosa di verdure | cristina.sanvito | BY 2.0 | https://www.flickr.com/photos/40385177@N07/9316387431 | 144c7994-6e59-4902-9654-70d24b535e38 |
+| Gulab Jamun (2) | gulab jamun (1) | Joelk75 | BY 2.0 | https://www.flickr.com/photos/75001512@N00/4120363611 | 4687c81e-2ffb-4a1c-a764-58d8e88ebe7d |
+| Masala Chai | Masala Chai Tea | elsie.hui | BY 2.0 | http://www.flickr.com/photos/91188380@N05/16635237970 | 27082df1-925d-4199-924e-307b50936e4e |
+| Sweet Lassi | Lassi, Fat free yogurt shake | Swami Stream | BY 2.0 | https://www.flickr.com/photos/21063397@N00/440401976 | 1e130ca3-0184-4840-8661-7b29d1bb1152 |
+| Aloo Parantha | Aloo parantha and dahi for breakfast | rosemilkinabottle | BY 2.0 | https://www.flickr.com/photos/66606504@N00/4364825054 | 7ea3dc97-db19-468b-8594-44b7715ac834 |
+| Veg Thali | Veg Thali in Kochi | Saaheel Majethia | CC0 1.0 | https://wordpress.org/photos/photo/22864218d0/ | 7852d3f6-5536-4306-81e6-cfe373622555 |
+| Non-veg Thali | A metal plate holds a Varhadi Chicken Thali with tandoori roti, spicy  | Pritam Sonone | CC0 1.0 | https://wordpress.org/photos/photo/616a002419/ | f4aa8ab4-6696-41c5-a7c0-dec8b162763c |
 
-Modelled on Karim's, Gali Kababian (Old Delhi Mughlai). Near Jama Masjid, Old Delhi. Hours 12:00 to 23:00. Pins 110006, 110002, 110092.
-
-| Dish | Category | Veg | Price (Rs) |
-|---|---|---|---|
-| Mutton Seekh Kebab | Kebabs | non-veg | 260 |
-| Mutton Burra | Kebabs | non-veg | 450 |
-| Chicken Tikka | Kebabs | non-veg | 300 |
-| Chicken Seekh Kebab | Kebabs | non-veg | 240 |
-| Paneer Tikka | Kebabs | veg | 260 |
-| Mutton Korma | Curries | non-veg | 380 |
-| Mutton Nihari | Curries | non-veg | 330 |
-| Butter Chicken | Curries | non-veg | 320 |
-| Chicken Changezi | Curries | non-veg | 340 |
-| Mutton Biryani | Rice | non-veg | 380 |
-| Sheermal | Breads | veg | 40 |
-| Roomali Roti | Breads | veg | 20 |
-| Tandoori Roti | Breads | veg | 15 |
-| Phirni | Sweets | veg | 80 |
-
-## 2. Gali Parantha Rasoi
-
-Modelled on the shops of Paranthe Wali Gali. Chandni Chowk, Old Delhi. Hours 08:00 to 22:00. Pins 110006, 110007, 110054, 110092.
-
-| Dish | Category | Veg | Price (Rs) |
-|---|---|---|---|
-| Aloo Parantha | Paranthas | veg | 70 |
-| Gobhi Parantha | Paranthas | veg | 80 |
-| Mattar Parantha | Paranthas | veg | 80 |
-| Paneer Parantha | Paranthas | veg | 100 |
-| Mooli Parantha | Paranthas | veg | 75 |
-| Mixed Veg Parantha | Paranthas | veg | 90 |
-| Lachha Parantha | Paranthas | veg | 60 |
-| Rabri Parantha | Sweets | veg | 90 |
-| Parantha Thali (2 paranthas, sabzi, chutney, pickle) | Thali | veg | 160 |
-| Aloo Sabzi | Sides | veg | 60 |
-| Dahi | Sides | veg | 40 |
-| Sweet Lassi | Drinks | veg | 70 |
-| Masala Chai | Drinks | veg | 30 |
-| Gajar Halwa | Sweets | veg | 90 |
-
-## 3. Punjab Da Dhaba
-
-Modelled on the Punjabi dhabas of Rajouri Garden. Rajouri Garden, West Delhi. Hours 11:00 to 23:30. Pins 110027, 110018, 110064.
-
-| Dish | Category | Veg | Price (Rs) |
-|---|---|---|---|
-| Dal Makhani | Mains | veg | 240 |
-| Paneer Butter Masala | Mains | veg | 280 |
-| Butter Chicken | Mains | non-veg | 340 |
-| Chicken Curry | Mains | non-veg | 300 |
-| Sarson Ka Saag | Mains | veg | 220 |
-| Makki Ki Roti | Breads | veg | 50 |
-| Butter Naan | Breads | veg | 55 |
-| Tandoori Roti | Breads | veg | 20 |
-| Lachha Parantha | Breads | veg | 50 |
-| Amritsari Kulcha | Breads | veg | 90 |
-| Jeera Rice | Rice | veg | 140 |
-| Boondi Raita | Sides | veg | 70 |
-| Punjabi Lassi | Drinks | veg | 90 |
-| Dhaba Thali | Thali | veg | 280 |
-
-## 4. Madras Tiffin Room
-
-Modelled on the South Indian tiffin rooms of Lajpat Nagar. Lajpat Nagar, South Delhi. Hours 07:30 to 22:00. Pins 110024, 110014, 110049.
-
-| Dish | Category | Veg | Price (Rs) |
-|---|---|---|---|
-| Idli Sambar (2) | Tiffin | veg | 90 |
-| Medu Vada (2) | Tiffin | veg | 100 |
-| Plain Dosa | Dosa | veg | 110 |
-| Masala Dosa | Dosa | veg | 140 |
-| Rava Dosa | Dosa | veg | 150 |
-| Mysore Masala Dosa | Dosa | veg | 160 |
-| Onion Uttapam | Dosa | veg | 130 |
-| Ven Pongal | Tiffin | veg | 120 |
-| Rava Upma | Tiffin | veg | 100 |
-| Curd Rice | Rice | veg | 120 |
-| Lemon Rice | Rice | veg | 120 |
-| Filter Coffee | Drinks | veg | 60 |
-| Payasam | Sweets | veg | 90 |
-| South Indian Thali | Thali | veg | 260 |
-
-## 5. Bhodro Bangali
-
-Modelled on the Bengali kitchens of CR Park Market 1. Chittaranjan Park, South Delhi. Hours 11:00 to 22:30. Pins 110019, 110048, 110020.
-
-| Dish | Category | Veg | Price (Rs) |
-|---|---|---|---|
-| Kosha Mangsho | Mains | non-veg | 300 |
-| Macher Jhol | Mains | non-veg | 260 |
-| Bhetki Paturi | Mains | non-veg | 380 |
-| Chingri Malai Curry | Mains | non-veg | 420 |
-| Egg Roll | Rolls | non-veg | 90 |
-| Chicken Kathi Roll | Rolls | non-veg | 130 |
-| Luchi (4) | Breads | veg | 80 |
-| Aloo Dum | Mains | veg | 130 |
-| Basanti Pulao | Rice | veg | 160 |
-| Bengali Fish Thali | Thali | non-veg | 280 |
-| Bengali Veg Thali | Thali | veg | 220 |
-| Mishti Doi | Sweets | veg | 80 |
-| Rasgulla (2) | Sweets | veg | 70 |
-| Sandesh (2) | Sweets | veg | 90 |
-
-## 6. Tilla Momo House
-
-Modelled on the momo and thukpa shops of Majnu ka Tilla. Majnu ka Tilla, North Delhi. Hours 11:00 to 22:00. Pins 110054, 110009, 110007.
-
-| Dish | Category | Veg | Price (Rs) |
-|---|---|---|---|
-| Veg Steamed Momos (8) | Momos | veg | 120 |
-| Chicken Steamed Momos (8) | Momos | non-veg | 150 |
-| Chicken Fried Momos (8) | Momos | non-veg | 170 |
-| Paneer Momos (8) | Momos | veg | 140 |
-| Chicken Pan-fried Momos (8) | Momos | non-veg | 170 |
-| Veg Thukpa | Soups | veg | 150 |
-| Chicken Thukpa | Soups | non-veg | 190 |
-| Chicken Thenthuk | Soups | non-veg | 200 |
-| Tingmo (2) | Breads | veg | 60 |
-| Chicken Shaphale | Snacks | non-veg | 140 |
-| Laphing | Snacks | veg | 100 |
-| Chilli Chicken Dry | Mains | non-veg | 260 |
-| Veg Fried Rice | Rice | veg | 160 |
-| Tibetan Butter Tea | Drinks | veg | 70 |
-
-## 7. Karol Bagh Chaat Corner
-
-Modelled on the chaat and mithai shops of Karol Bagh. Karol Bagh, Central Delhi. Hours 10:00 to 22:00. Pins 110005, 110055, 110060.
-
-| Dish | Category | Veg | Price (Rs) |
-|---|---|---|---|
-| Aloo Tikki Chaat | Chaat | veg | 90 |
-| Raj Kachori | Chaat | veg | 110 |
-| Dahi Bhalla | Chaat | veg | 90 |
-| Papdi Chaat | Chaat | veg | 90 |
-| Golgappa (6) | Chaat | veg | 60 |
-| Chole Bhature | Mains | veg | 130 |
-| Samosa (2) | Snacks | veg | 40 |
-| Kachori Sabzi | Snacks | veg | 70 |
-| Jalebi (250 g) | Sweets | veg | 100 |
-| Gulab Jamun (2) | Sweets | veg | 60 |
-| Kaju Katli (250 g) | Sweets | veg | 340 |
-| Rasmalai (2) | Sweets | veg | 110 |
-| Kulfi Falooda | Sweets | veg | 130 |
-| Sweet Lassi | Drinks | veg | 80 |
-
-## 8. Nizam Dum Biryani
-
-Modelled on the biryani and kebab lanes of Nizamuddin. Nizamuddin, South-Central Delhi. Hours 12:00 to 23:30. Pins 110013, 110003, 110014, 110092.
-
-| Dish | Category | Veg | Price (Rs) |
-|---|---|---|---|
-| Chicken Dum Biryani | Biryani | non-veg | 320 |
-| Mutton Dum Biryani | Biryani | non-veg | 380 |
-| Veg Dum Biryani | Biryani | veg | 240 |
-| Egg Biryani | Biryani | non-veg | 260 |
-| Chicken 65 | Starters | non-veg | 220 |
-| Seekh Kebab | Starters | non-veg | 240 |
-| Chicken Korma | Curries | non-veg | 280 |
-| Mutton Korma | Curries | non-veg | 340 |
-| Mirchi Ka Salan | Sides | veg | 120 |
-| Boondi Raita | Sides | veg | 50 |
-| Sheermal | Breads | veg | 50 |
-| Double Ka Meetha | Sweets | veg | 110 |
-| Phirni | Sweets | veg | 90 |
-
-## 9. Thali Ghar CP
-
-Modelled on the thali houses around Connaught Place. Connaught Place, Central Delhi. Hours 11:30 to 22:30. Pins 110001, 110002, 110055, 110092.
-
-| Dish | Category | Veg | Price (Rs) |
-|---|---|---|---|
-| Veg Thali | Thali | veg | 320 |
-| Deluxe Veg Thali | Thali | veg | 420 |
-| Non-veg Thali | Thali | non-veg | 460 |
-| Mini Thali | Thali | veg | 220 |
-| Rajma Chawal | Mains | veg | 180 |
-| Chole Bhature | Mains | veg | 190 |
-| Kadhi Chawal | Mains | veg | 170 |
-| Dal Tadka Rice | Mains | veg | 170 |
-| Paneer Lababdar | Mains | veg | 300 |
-| Butter Naan | Breads | veg | 60 |
-| Gulab Jamun (2) | Sweets | veg | 80 |
-| Chaas | Drinks | veg | 60 |
-
-## 11. Laxmi Nagar Wok House
-
-Modelled on the Indo-Chinese kitchens of Laxmi Nagar. Laxmi Nagar, East Delhi. Hours 11:00 to 23:00. Pins 110092, 110091, 110051.
-
-| Dish | Category | Veg | Price (Rs) |
-|---|---|---|---|
-| Veg Hakka Noodles | Noodles | veg | 150 |
-| Chicken Hakka Noodles | Noodles | non-veg | 180 |
-| Schezwan Noodles | Noodles | veg | 160 |
-| Veg Fried Rice | Rice | veg | 150 |
-| Chicken Fried Rice | Rice | non-veg | 180 |
-| Veg Manchurian Gravy | Mains | veg | 170 |
-| Chilli Chicken | Mains | non-veg | 240 |
-| Chilli Paneer | Mains | veg | 220 |
-| Veg Spring Roll (4) | Starters | veg | 130 |
-| Crispy Honey Chilli Potato | Starters | veg | 160 |
-| Hot and Sour Soup | Soups | veg | 110 |
-| Chicken Manchow Soup | Soups | non-veg | 130 |
+Licence check: Openverse lists the licence of each file and links the creator's page. CC BY 2.0 and CC0 1.0 are Creative Commons licences (creativecommons.org), free for commercial use. CC BY needs the title, creator and licence named; the dish sheet does that and links the licence name. Looked at by eye on 25 Oct 2026: the Butter Chicken photo is butter chicken with naan; the Veg Fried Rice photo is a plate from a Nepali restaurant; the Veg Thali is a banana-leaf spread from Kochi and the Non-veg Thali a chicken curry thali from Vidarbha.
 
 ## Dropped
 
-Green Bowl Co (number 10, healthy bowls, Hauz Khas) was dropped on 25 Oct 2026: the owner wants exactly ten kitchens and keeps the Wok House. Its ids stay unused so no other kitchen moves. The row is kept for the record: its menu was a Tier C estimate like the others.
+- Green Bowl Co (number 10, healthy bowls, Hauz Khas): dropped 25 Oct, owner decision.
+- The first menus (135 dishes, then 70, then 14 with Chicken Tikka and Paneer Tikka Masala): replaced by the one menu above on 25 Oct. Migration 0038 deletes their dish rows; the research that found them is in the git history of this file.
 
 ## Pin drop points
 
@@ -286,12 +102,8 @@ Used by `pin_points`. The centre of each area; an order drops within a few hundr
 | 110091 | 28.604 | 77.297 |
 | 110092 | 28.635 | 77.295 |
 
-## Riders
-
-Forty, four per kitchen to start, each near its kitchen. Sachin Tendulkar, Virat Kohli, Kapil Dev, MS Dhoni, Sunil Gavaskar, Rahul Dravid, Sourav Ganguly, Mithali Raj, PV Sindhu, Mary Kom, Neeraj Chopra, Milkha Singh, Dhyan Chand, Abhinav Bindra, Saina Nehwal, Vishwanathan Anand, APJ Abdul Kalam, CV Raman, Homi Bhabha, Vikram Sarabhai, Srinivasa Ramanujan, Satyendra Nath Bose, Kalpana Chawla, Jagadish Chandra Bose, Amitabh Bachchan, Shah Rukh Khan, Dilip Kumar, Raj Kapoor, Madhubala, Nargis, Lata Mangeshkar, Kishore Kumar, Mohammed Rafi, Asha Bhosle, AR Rahman, Satyajit Ray, Ravi Shankar, Zakir Hussain, Bismillah Khan, Rabindranath Tagore.
-
 ## What would change a number here
 
-- A real kitchen signs: replace that row with its own menu and its own prices.
-- A Swiggy or Zomato export for a pin: Tier B, lifts the confidence of that kitchen to about 0.7.
+- A real kitchen signs: replace that kitchen's menu with its own and its own prices.
+- A Swiggy or Zomato export for a pin: Tier B, lifts the confidence of a price to about 0.7.
 - The owner's own pilot data (Tier S) beats everything above.
