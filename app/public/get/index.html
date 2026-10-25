@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Get the GoServe app</title>
+<style>
+  body { margin: 0; font: 16px/1.5 system-ui, sans-serif; background: #e4e6d9; color: #1b2a1f; }
+  main { max-width: 420px; margin: 0 auto; padding: 32px 16px; }
+  h1 { font-size: 28px; margin: 0 0 8px; }
+  a.btn { display: block; box-sizing: border-box; padding: 16px; border-radius: 999px; background: #45654e; color: #fff; text-align: center; font-weight: 600; text-decoration: none; min-height: 56px; }
+  img { display: block; width: 200px; height: 200px; margin: 24px auto; }
+  .meta { color: #4a5a4f; font-size: 14px; }
+  @media (prefers-color-scheme: dark) { body { background: #14201a; color: #e4e6d9; } .meta { color: #a9b5ab; } a.btn { background: #c6f26b; color: #14201a; } img { background: #fff; padding: 8px; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Get the GoServe app</h1>
+  <p id="state" class="meta">Looking for the latest app...</p>
+  <div id="found" hidden>
+    <a id="dl" class="btn" href="#">Download</a>
+    <p id="when" class="meta"></p>
+    <img id="qr" alt="QR code for the download" />
+    <p class="meta">Open the file on your Android phone. If it asks, allow installs from your browser. Installing a new version keeps your pin and your orders.</p>
+  </div>
+  <p><a id="all" href="https://github.com/satvik-jain-iitd/GoServe/releases">All releases</a></p>
+</main>
+<script>
+  // Story #251: the latest published release is the source. No build step, no key.
+  fetch("https://api.github.com/repos/satvik-jain-iitd/GoServe/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+    .then((rel) => {
+      const apk = (rel.assets || []).find((a) => /^goserve-.+\.apk$/.test(a.name));
+      const qr = (rel.assets || []).find((a) => a.name === "goserve-qr.png");
+      if (!apk) throw new Error("no apk");
+      const version = apk.name.replace(/^goserve-/, "").replace(/\.apk$/, "");
+      document.getElementById("dl").href = apk.browser_download_url;
+      document.getElementById("dl").textContent = "Download GoServe " + version;
+      document.getElementById("when").textContent = "Version " + version + " · " + new Date(rel.published_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+      if (qr) document.getElementById("qr").src = qr.browser_download_url; else document.getElementById("qr").hidden = true;
+      document.getElementById("state").hidden = true;
+      document.getElementById("found").hidden = false;
+    })
+    .catch(() => { document.getElementById("state").textContent = "No app is published yet."; });
+</script>
+</body>
+</html>
