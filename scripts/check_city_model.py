@@ -352,7 +352,7 @@ create temp table dm6 as select (select round(distance_m(28.55, 77.20, lat, lng)
 create temp table dm7 as select (select lat = 28.90 and lng = 77.60 from riders where user_id = '{U['rider2']}') and (select open from kitchens where id = '{K1}') and (select available from menu_items where id = '{DISH}') as v;
 create temp table dm8 as select ((select open from kitchens where id = '{SIMK}') = (select not open_hours from dm_h)) and (select not available from menu_items where id = '{SIMD}') and (select not online from riders where user_id = '{SIMR}') as v;
 insert into riders (user_id, name, online, lat, lng, synthetic) values ('{SIMR2}', 'Far Sim Rider', true, 28.58, 77.20, true);   -- 3.3 km north of Sim Rasoi
-create temp table dm_t2 as select sim_tick('{{"kitchen_flip_pct":0,"dish_flip_pct":0}}') as t;
+create temp table dm_t2 as select sim_tick('{{"kitchen_flip_pct":0,"dish_flip_pct":0,"rider_flip_pct":0}}') as t;
 create temp table dm9 as select (select round(distance_m(lat, lng, 28.55, 77.20)) between 3000 and 3250 from riders where user_id = '{SIMR2}') as v;
 do $$ begin perform sim_enable('{{"enabled":false}}'); end $$;
 create temp table dm10 as select (select (value ->> 'enabled')::boolean from params where session_id = 'global' and key = 'sim_enabled' order by version desc limit 1) is false and (sim_tick() ->> 'skipped') = 'sim_disabled' as v;
@@ -391,6 +391,103 @@ create temp table de9 as select (select count(*) from params where session_id = 
 ENGINE_NAMES = ["#263: an admin reads the engine: Rules, version 1, Laya not ready", "#263: an admin sets Jev: version 2, changed by their email", "#263: setting the same engine again writes no new row",
                 "#263: Laya is refused (laya_not_deployed)", "#263: an unknown engine is refused (invalid_engine)", "#263: a non-admin cannot set (not_admin)", "#263: a non-admin cannot read (not_admin)",
                 "#263: refused calls wrote no row", "#263: the anon role has no permission to call it", "#263: back to Rules is version 3: every change is a new row"]
+# Story #263 layer 2: Stage 1 batch dispatch. dispatch_match is a pure function (jsonb in, jsonb out); dispatch_tick reads the tables and applies it.
+# Numbers: 0.0009 degrees of latitude is 100 m; a rider 1000 m away is 336 s from the kitchen (x1.4 detour at 15 km/h); the send time is ready - travel - 120 s.
+import json as _json
+_NOW = 1000000
+def _M(riders, orders, kitchens=None, params=None, now=_NOW):
+    ks = kitchens or [{"id": "k1", "lat": 28.55, "lng": 77.20}, {"id": "k2", "lat": 28.56, "lng": 77.20}]
+    r = [{"ping_age_s": 10, "trips": 0, "load": [], **x} for x in riders]
+    return "dispatch_match('" + _json.dumps({"now": now, "params": params or {}, "riders": r, "orders": orders, "kitchens": ks}) + "'::jsonb)"
+def _R(i, north_m, trips=0, k=(28.55, 77.20), **kw):
+    return {"id": i, "lat": k[0] + north_m * 0.0009 / 100, "lng": k[1], "trips": trips, **kw}
+def _O(i, ready_in, k="k1"):
+    return {"id": i, "kitchen_id": k, "ready_at": _NOW + ready_in}
+def _dd(i, expr):
+    return f"create temp table dd{i} as select ({expr}) as v;"
+def _dd_raises(uid, i, stmt, msg):
+    return f"set local role authenticated; select set_config('request.jwt.claim.sub', '{uid}', true); do $$ begin begin perform {stmt}; create temp table dd{i} as select false as v; exception when others then create temp table dd{i} as select (sqlerrm like '%{msg}%') as v; end; end $$; reset role;"
+def _pair(m, o, r, stacked=None):
+    st = "" if stacked is None else f" and (a->>'stacked')::boolean = {str(stacked).lower()}"
+    return f"exists (select 1 from jsonb_array_elements({m} -> 'assignments') a where a->>'order_id' = '{o}' and a->>'rider_id' = '{r}'{st})"
+def _n(m, n):
+    return f"jsonb_array_length({m} -> 'assignments') = {n}"
+_k2 = (28.56, 77.20)
+_m_notdue = _M([_R("ra", 1000)], [_O("o1", 900)])
+_m_due = _M([_R("ra", 1000)], [_O("o1", 400)])
+_m_best = _M([_R("ra", 200), _R("rb", 200, k=_k2)], [_O("o1", -60), _O("o2", -60, "k2")])
+_m_stale = _M([_R("ra", 200, ping_age_s=120)], [_O("o1", -60)])
+_m_fair = _M([_R("ra", 300, trips=5), _R("rb", -300, trips=1)], [_O("o1", -60)])
+_m_st_ok = _M([_R("ra", 200)], [_O("o1", -10), _O("o2", 60)])
+_m_st_gap = _M([_R("ra", 200)], [_O("o1", -10), _O("o2", 230)])
+_m_st_far = _M([_R("ra", 200)], [_O("o1", -10), _O("o2", 400)])
+_m_st_max = _M([_R("ra", 200)], [_O("o1", -10), _O("o2", -10), _O("o3", -10)])
+_m_st_kit = _M([_R("ra", 200)], [_O("o1", -10), _O("o2", -10, "k2")])
+_m_st_load = _M([_R("ra", 200, load=[{"order_id": "o0", "kitchen_id": "k1", "ready_at": _NOW + 30}])], [_O("o1", 60)])
+_m_st_busy = _M([_R("ra", 200, load=[{"order_id": "o0", "kitchen_id": "k1", "ready_at": _NOW + 30}])], [_O("o1", 60, "k2")])
+_zr = lambda n_o, n_r: _M([_R(f"r{j}", 200 + 50 * j) for j in range(n_r)], [_O(f"o{j}", -60) for j in range(n_o)])
+def _zone(m, state):
+    return f"({m} -> 'zones') @> '[{{\"kitchen_id\":\"k1\",\"state\":\"{state}\"}}]'::jsonb"
+DK, DKS, DRR, DSR, DOR, DOS, DZ = ("00000000-0000-4000-8000-0000000001d1", "00000000-0000-4000-8000-0000000001d2", "00000000-0000-4000-8000-00000000006a", "00000000-0000-4000-8000-00000000006b",
+    "00000000-0000-4000-8000-0000000002d1", "00000000-0000-4000-8000-0000000002d2", "00000000-0000-4000-8000-0000000002d3")
+DISP = f"""
+delete from params where session_id = 'global' and key in ('decision_engine', 'dispatch_mode');
+insert into params (kitchen_id, session_id, key, value, version) values (null, 'global', 'decision_engine', '{{"engine":"rules","by":"system"}}', 1), (null, 'global', 'dispatch_mode', '{{"mode":"per_order","by":"system"}}', 1);
+{_dd(0, f"{_n(_m_notdue, 0)} and ({_m_notdue} -> 'zones') is not null")}
+{_dd(1, _pair(_m_due, "o1", "ra"))}
+{_dd(2, f"{_pair(_m_best, 'o1', 'ra')} and {_pair(_m_best, 'o2', 'rb')} and {_n(_m_best, 2)}")}
+{_dd(3, _n(_m_stale, 0))}
+{_dd(4, _pair(_m_fair, "o1", "rb"))}
+{_dd(5, f"{_pair(_m_st_ok, 'o1', 'ra', False)} and {_pair(_m_st_ok, 'o2', 'ra', True)}")}
+{_dd(6, f"{_pair(_m_st_gap, 'o1', 'ra')} and {_n(_m_st_gap, 1)}")}
+{_dd(7, f"{_pair(_m_st_far, 'o1', 'ra')} and {_n(_m_st_far, 1)}")}
+{_dd(8, _n(_m_st_max, 2))}
+{_dd(9, f"{_pair(_m_st_kit, 'o1', 'ra')} and {_n(_m_st_kit, 1)}")}
+{_dd(10, _pair(_m_st_load, "o1", "ra", True))}
+{_dd(11, _n(_m_st_busy, 0))}
+{_dd(12, f"{_zone(_zr(4, 2), 'open')} and {_zone(_zr(6, 2), 'slow')} and {_zone(_zr(7, 2), 'closed')}")}
+{_dd(13, f"{_zone(_M([], [_O('o1', -60)]), 'closed')} and {_zone(_M([_R('ra', 200)], []), 'open')}")}
+{_dd(14, f"({_M([_R('ra', 200)], [_O('o1', -60)], params={'detour': 3.0})} -> 'assignments' -> 0 ->> 'travel_s')::numeric > 100 and ({_M([_R('ra', 200)], [_O('o1', -60)])} -> 'assignments' -> 0 ->> 'travel_s')::numeric between 60 and 70")}
+insert into kitchens (id, name, pin_codes, open, active, lat, lng, synthetic) values ('{DK}', 'Disp Real', '{{110098}}', true, true, 28.55, 77.20, false), ('{DKS}', 'Disp Sim', '{{900098}}', true, true, 28.55, 77.20, true);
+insert into riders (user_id, name, online, lat, lng, synthetic) values ('{DRR}', 'Real Rider', true, 28.5518, 77.20, false), ('{DSR}', 'Sim Rider', true, 28.5509, 77.20, true);
+insert into orders (id, kitchen_id, session_id, client_order_key, status, items, total_paise, address) values
+  ('{DOR}', '{DK}', 'disp-s', 'dk-1', 'preparing', '[]', 100, 'x'), ('{DOS}', '{DKS}', 'sim', 'dk-2', 'preparing', '[]', 100, 'x');
+insert into order_events (order_id, kitchen_id, session_id, event, actor, created_at) values
+  ('{DOR}', '{DK}', 'disp-s', 'order.accepted', 'kitchen', now() - interval '14 minutes'), ('{DOS}', '{DKS}', 'sim', 'order.accepted', 'kitchen', now() - interval '14 minutes');
+create temp table dd15 as select (dispatch_tick() ->> 'skipped') = 'not_batch' and (select rider_id from orders where id = '{DOR}') is null as v;
+create temp table dd16 as select not dispatch_batch_on() and (dispatch_candidates('{DOR}') ->> 'batch') is distinct from 'true' as v;
+{_call(U['admin'], "set_dispatch_mode('batch')")}
+create temp table dd17 as select dispatch_batch_on() and (dispatch_candidates('{DOR}') ->> 'batch') = 'true' and (select (value ->> 'mode') = 'batch' from params where session_id = 'global' and key = 'dispatch_mode' order by version desc limit 1) as v;
+create temp table dd_t as select dispatch_tick() as t;
+create temp table dd18 as select (select rider_id from orders where id = '{DOR}') = '{DRR}' and (select synthetic from riders where user_id = (select rider_id from orders where id = '{DOS}')) as v;
+create temp table dd19 as select ((select count(*) from order_events where order_id = '{DOR}' and event = 'order.assigned') = 1 and (t ->> 'assigned')::int >= 2) as v from dd_t;
+create temp table dd20 as select exists (select 1 from zone_state where kitchen_id = '{DK}' and state = 'open') as v;
+update params set value = '{{"engine":"jev","by":"x"}}' where session_id = 'global' and key = 'decision_engine';
+create temp table dd21 as select not dispatch_batch_on() and (dispatch_tick() ->> 'skipped') = 'not_batch' as v;
+update params set value = '{{"engine":"rules","by":"x"}}' where session_id = 'global' and key = 'decision_engine';
+insert into zone_state (kitchen_id, state, eta_extra_min) values ('{DK}', 'closed', 10) on conflict (kitchen_id) do update set state = 'closed';
+do $$ begin begin insert into orders (id, kitchen_id, session_id, client_order_key, status, items, total_paise, address) values ('{DZ}', '{DK}', 'disp-s', 'dk-3', 'placed', '[]', 100, 'x'); create temp table dd22 as select false as v; exception when others then create temp table dd22 as select (sqlerrm like '%zone_closed%') as v; end; end $$;
+update zone_state set state = 'slow' where kitchen_id = '{DK}';
+insert into orders (id, kitchen_id, session_id, client_order_key, status, items, total_paise, address) values ('{DZ}', '{DK}', 'disp-s', 'dk-3', 'placed', '[]', 100, 'x');
+create temp table dd23 as select exists (select 1 from orders where id = '{DZ}') as v;
+delete from orders where id = '{DZ}';
+{_call(U['admin'], "set_dispatch_mode('per_order')")}
+update zone_state set state = 'closed' where kitchen_id = '{DK}';
+insert into orders (id, kitchen_id, session_id, client_order_key, status, items, total_paise, address) values ('{DZ}', '{DK}', 'disp-s', 'dk-3', 'placed', '[]', 100, 'x');
+create temp table dd24 as select exists (select 1 from orders where id = '{DZ}') as v;
+{_dd_raises(U['cust'], 25, "set_dispatch_mode('batch')", 'not_admin')}
+{_dd_raises(U['admin'], 26, "set_dispatch_mode('fast')", 'invalid_mode')}
+create temp table dd27 as select (select count(*) from params where session_id = 'global' and key = 'dispatch_mode') = 3 as v;
+"""
+DISP_NAMES = ["#263 L2: an order whose send time has not come gets no rider", "#263 L2: when its send time has come the rider is assigned", "#263 L2: best pair first, no crossing of kitchens",
+  "#263 L2: a rider with a stale ping is not used", "#263 L2: equal travel, the rider with fewer trips today wins", "#263 L2: a second order of the same kitchen, ready within the gap, stacks",
+  "#263 L2: a gap that adds more than 5 min does not stack", "#263 L2: ready more than 5 min apart does not stack", "#263 L2: never more than 2 orders for one rider",
+  "#263 L2: orders of another kitchen do not stack", "#263 L2: a rider already waiting for one order takes a second of the same kitchen", "#263 L2: a rider waiting at one kitchen takes no order of another",
+  "#263 L2: zone throttle: 4 orders for 2 riders open, 6 slow, 7 closed", "#263 L2: no rider and an order waiting is closed; nothing waiting is open", "#263 L2: the detour factor is a tunable",
+  "#263 L2: the tick does nothing while the mode is per order", "#263 L2: per-order mode: no batch flag for SUB 22", "#263 L2: an admin can set the batch mode and SUB 22 is told to stand down",
+  "#263 L2: the tick gives real orders to real riders and synthetic orders to synthetic riders", "#263 L2: the assignment writes one order.assigned event", "#263 L2: the tick writes the zone state",
+  "#263 L2: with the engine on Jev the batch rule is off", "#263 L2: a closed zone refuses a new order in batch mode", "#263 L2: a slow zone still takes the order",
+  "#263 L2: in per-order mode a closed zone changes nothing", "#263 L2: a non-admin cannot set the mode", "#263 L2: an unknown mode is refused", "#263 L2: every mode change is a new row"]
 
 def run(ref: str, query: str):
     req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/database/query", data=json.dumps({"query": query}).encode(),
@@ -399,16 +496,16 @@ def run(ref: str, query: str):
 
 
 def build() -> str:
-    selects = [f"select 'c{i}' as k, v from c{i}" for i in range(len(checks))] + [f"select 'cx{j}' as k, v from cx{j}" for j in range(len(EXTRA_NAMES))] + [f"select 'dx{j}' as k, v from dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"select 'dr{j}' as k, v from dr{j}" for j in range(len(RIDER_NAMES))] + [f"select 'ds{j}' as k, v from ds{j}" for j in range(len(STAFF_NAMES))] + [f"select 'dp{j}' as k, v from dp{j}" for j in range(len(PILOT_NAMES))] + [f"select 'dh{j}' as k, v from dh{j}" for j in range(len(HEALTH_NAMES))] + [f"select 'dm{j}' as k, v from dm{j}" for j in range(len(SIM_NAMES))] + [f"select 'de{j}' as k, v from de{j}" for j in range(len(ENGINE_NAMES))]
-    return "\n".join(["begin;", SETUP, *[sql for _, sql in checks], FINAL_EXTRA, DISPATCH, RIDER_CARD, STAFF, PILOT, HEALTH, SIM, ENGINE, " union all ".join(selects) + ";", "rollback;"])
+    selects = [f"select 'c{i}' as k, v from c{i}" for i in range(len(checks))] + [f"select 'cx{j}' as k, v from cx{j}" for j in range(len(EXTRA_NAMES))] + [f"select 'dx{j}' as k, v from dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"select 'dr{j}' as k, v from dr{j}" for j in range(len(RIDER_NAMES))] + [f"select 'ds{j}' as k, v from ds{j}" for j in range(len(STAFF_NAMES))] + [f"select 'dp{j}' as k, v from dp{j}" for j in range(len(PILOT_NAMES))] + [f"select 'dh{j}' as k, v from dh{j}" for j in range(len(HEALTH_NAMES))] + [f"select 'dm{j}' as k, v from dm{j}" for j in range(len(SIM_NAMES))] + [f"select 'de{j}' as k, v from de{j}" for j in range(len(ENGINE_NAMES))] + [f"select 'dd{j}' as k, v from dd{j}" for j in range(len(DISP_NAMES))]
+    return "\n".join(["begin;", SETUP, *[sql for _, sql in checks], FINAL_EXTRA, DISPATCH, RIDER_CARD, STAFF, PILOT, HEALTH, SIM, ENGINE, DISP, " union all ".join(selects) + ";", "rollback;"])
 
 
 if __name__ == "__main__":
     if sys.argv[1:] != ["dev"]:
         sys.exit("Usage: check_city_model.py dev (prod is never allowed)")
     rows = {r["k"]: r["v"] for r in run(DEV_REF, build())}
-    names = [n for n, _ in checks] + EXTRA_NAMES + DISPATCH_NAMES + RIDER_NAMES + STAFF_NAMES + PILOT_NAMES + HEALTH_NAMES + SIM_NAMES + ENGINE_NAMES
-    keys = [f"c{i}" for i in range(len(checks))] + [f"cx{j}" for j in range(len(EXTRA_NAMES))] + [f"dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"dr{j}" for j in range(len(RIDER_NAMES))] + [f"ds{j}" for j in range(len(STAFF_NAMES))] + [f"dp{j}" for j in range(len(PILOT_NAMES))] + [f"dh{j}" for j in range(len(HEALTH_NAMES))] + [f"dm{j}" for j in range(len(SIM_NAMES))] + [f"de{j}" for j in range(len(ENGINE_NAMES))]
+    names = [n for n, _ in checks] + EXTRA_NAMES + DISPATCH_NAMES + RIDER_NAMES + STAFF_NAMES + PILOT_NAMES + HEALTH_NAMES + SIM_NAMES + ENGINE_NAMES + DISP_NAMES
+    keys = [f"c{i}" for i in range(len(checks))] + [f"cx{j}" for j in range(len(EXTRA_NAMES))] + [f"dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"dr{j}" for j in range(len(RIDER_NAMES))] + [f"ds{j}" for j in range(len(STAFF_NAMES))] + [f"dp{j}" for j in range(len(PILOT_NAMES))] + [f"dh{j}" for j in range(len(HEALTH_NAMES))] + [f"dm{j}" for j in range(len(SIM_NAMES))] + [f"de{j}" for j in range(len(ENGINE_NAMES))] + [f"dd{j}" for j in range(len(DISP_NAMES))]
     bad = 0
     for n, k in zip(names, keys):
         ok = rows.get(k) is True

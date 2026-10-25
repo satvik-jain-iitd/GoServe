@@ -204,6 +204,8 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
   const n22 = [
     node('gs-sub22-01', 'Start', 'n8n-nodes-base.executeWorkflowTrigger', 1.1, inputs(f22)),
     callSub('gs-sub22-02', 'Call SUB 21 Riders', ids.sub21, [['order_id', "={{ $json.order_id }}", 'string'], ['kill_switch', '={{ $json.kill_switch }}', 'boolean'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
+    ifNode('gs-sub22-10', 'Batch mode?', '={{ $json.batch === true }}', 'true'),   // story #263: in batch mode the 30 s tick assigns riders; this run ends here, no error
+    node('gs-sub22-11', 'Batch dispatch', 'n8n-nodes-base.noOp', 1, {}),
     ifNode('gs-sub22-03', 'Riders found?', '={{ $json.ok && $json.riders.length > 0 }}', 'true'),
     codeNode('gs-sub22-04', 'Prepare decision', code('dispatch_prepare.js')),
     callSub('gs-sub22-05', 'Call SUB 13 Decide', ids.sub13, f13.map(([k, t]) => [k, '={{ $json.' + k + ' }}', t])),
@@ -214,11 +216,13 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
     // The error stops this run, and the error workflow (GS ERR 00) tells the owner: a ready order has no rider.
     node('gs-sub22-09', 'No rider', 'n8n-nodes-base.stopAndError', 1, { errorMessage: "={{ 'No rider could be assigned to ready order ' + $('Start').first().json.order_id }}" }),
   ];
-  const e22 = [['Start', 'Call SUB 21 Riders'], ['Call SUB 21 Riders', 'Riders found?'], ['Riders found?', 'Prepare decision', 0], ['Riders found?', 'No rider', 1],
+  const e22 = [['Start', 'Call SUB 21 Riders'], ['Call SUB 21 Riders', 'Batch mode?'], ['Batch mode?', 'Batch dispatch', 0], ['Batch mode?', 'Riders found?', 1], ['Riders found?', 'Prepare decision', 0], ['Riders found?', 'No rider', 1],
     ['Prepare decision', 'Call SUB 13 Decide'], ['Call SUB 13 Decide', 'Prepare assign'], ['Prepare assign', 'Rider chosen?'], ['Rider chosen?', 'Call SUB 19 Assign', 0], ['Rider chosen?', 'No rider', 1]];
   const s22 = [
     { name: 'RECEIVE', what: 'MAIN 01 calls this after the kitchen taps Ready. It is called after the answer went to the phone.', needs: 'Input: ' + f22.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
-    { name: 'RIDERS', what: 'Ask SUB 21 which riders are online. If there are none, stop with an error.', needs: 'SUB 21 id. Input: order_id.', nodes: ['Call SUB 21 Riders', 'Riders found?'], color: 6 },
+    { name: 'RIDERS', what: 'Ask SUB 21 which riders are online.', needs: 'SUB 21 id. Input: order_id.', nodes: ['Call SUB 21 Riders'], color: 6 },
+    { name: 'BATCH MODE', what: 'When the admin has turned on batch dispatch (and the engine is Rules), the 30 second tick of MAIN 33 assigns riders. This run then ends here on purpose, with no error.', needs: 'The rider answer from SUB 21 (flag batch).', nodes: ['Batch mode?', 'Batch dispatch'], color: 5 },
+    { name: 'ANY RIDER', what: 'If no rider is online, stop with an error.', needs: 'The rider answer from SUB 21.', nodes: ['Riders found?'], color: 5 },
     { name: 'DECIDE', what: 'SUB 13 picks by rule (online, nearest, fewest trips). Jev only advises. One decision row is written.', needs: 'SUB 13 id. Config values come from MAIN 01.', nodes: ['Prepare decision', 'Call SUB 13 Decide'], color: 6 },
     { name: 'ASSIGN', what: 'Save the picked rider on the order through SUB 19. No pick means stop with an error.', needs: 'SUB 19 id.', nodes: ['Prepare assign', 'Rider chosen?', 'Call SUB 19 Assign'], color: 6 },
     { name: 'STOP', what: 'No rider could be assigned. The run fails on purpose so GS ERR 00 tells the owner; the order stays ready.', needs: 'GS ERR 00 as the error workflow.', nodes: ['No rider'], color: 1 },
@@ -669,6 +673,29 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
   ];
   const main32 = finish('GS MAIN 32 Decision engine', n32, e32, s32, noKeep);
 
+  // ---- Batch dispatch (story #263 layer 2): every 30 s one database function matches free riders to orders whose food is nearly ready. Off until the admin turns it on. ----
+  const quiet = Object.assign({}, settings, { saveDataSuccessExecution: 'none' });   // 2880 runs a day would bury real errors
+  const sub33 = sub({ name: 'GS SUB 33 Dispatch tick', n: 33, callerIds: ids.main33, credential: cred, settings: quiet,
+    fields: [['kill_switch', 'boolean'], ['supabase_url', 'string']],
+    guardFile: 'guard_dispatch.js', rpc: { fn: 'dispatch_tick', label: 'Dispatch tick' },
+    what: 'dispatch_tick() matches free riders to orders whose send time has come, stacks at most two orders of one kitchen, and writes the zone state. It does nothing unless batch mode is on and the engine is Rules.' });
+  const n33 = [
+    schedule('gs-main33-01', 'Every 30 seconds', '*/30 * * * * *'),
+    cfgSet('gs-main33-02', [['kill_switch', 'boolean', false], ['supabase_url', 'string', url], ['env', 'string', prod ? 'prod' : 'dev']]),
+    ifNode('gs-main33-03', 'Kill switch?', '={{ $json.kill_switch }}', 'true'),
+    node('gs-main33-04', 'Paused', 'n8n-nodes-base.noOp', 1, {}),
+    codeNode('gs-main33-05', 'Tick', code('dispatch_tick.js')),
+    callSub('gs-main33-06', 'Call SUB 33 Dispatch', ids.sub33, [['kill_switch', '={{ $json.kill_switch }}', 'boolean'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
+  ];
+  const e33 = [['Every 30 seconds', 'Config'], ['Config', 'Kill switch?'], ['Kill switch?', 'Paused', 0], ['Kill switch?', 'Tick', 1], ['Tick', 'Call SUB 33 Dispatch']];
+  const s33 = [
+    { name: 'CLOCK', what: 'Runs every 30 seconds. The real on/off switch is in the database (dispatch_mode, and the engine must be Rules); when it is off the tick does nothing.', needs: 'Nothing.', nodes: ['Every 30 seconds'], color: 4 },
+    { name: 'CONFIG', what: 'The kill switch stops the schedule itself. The database address.', needs: 'Config keys: kill_switch, supabase_url, env.', nodes: ['Config'], color: 5 },
+    { name: 'GATE', what: 'Kill switch on: stop here.', needs: 'Config: kill_switch.', nodes: ['Kill switch?', 'Paused'], color: 5 },
+    { name: 'TICK', what: 'Call SUB 33. It runs dispatch_tick(): riders are named while the food is still being made, so they arrive as the bag is sealed. Real and synthetic never mix. Successful runs are not saved.', needs: 'SUB 33 id.', nodes: ['Tick', 'Call SUB 33 Dispatch'], color: 6 },
+  ];
+  const main33 = finish('GS MAIN 33 Dispatch tick', n33, e33, s33, quiet);
+
   // ---- ERR 00: tells the owner on Telegram when a GoServe workflow fails (rulebook 84) ----
   const aNodes = [
     node('gs-err00-01', 'Error trigger', 'n8n-nodes-base.errorTrigger', 1, {}),
@@ -686,7 +713,7 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
     { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send alert'], color: 6 },
   ];
   const alert = finish('GS ERR 00 Alert', aNodes, aEdges, aSections, baseSettings);
-  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub19, sub20, sub21, sub22, sub30, sub32, main30, main31, main32, sub91, sub93, sub94, main01, main90, main92, main93, alert };
+  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub19, sub20, sub21, sub22, sub30, sub32, sub33, main30, main31, main32, main33, sub91, sub93, sub94, main01, main90, main92, main93, alert };
   if (prod) for (const k of Object.keys(all)) if (k !== 'alert') all[k].name += ' PROD';   // the one GS ERR 00 alert is shared (one bot, one chat)
   return { ...all, STATUS_ROLES };
 }
