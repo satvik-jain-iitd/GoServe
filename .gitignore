@@ -48,5 +48,8 @@ ops/android/**/build/
 ops/android/**/*.apk
 ops/android/**/*.aab
 ops/android/**/*.idsig
+<<<<<<< HEAD
 ops/android/**/*.jks
 ops/android/**/*.keystore
+=======
+>>>>>>> origin/dev
