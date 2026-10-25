@@ -56,7 +56,9 @@ test('S1 refusals: kill switch gives 503; bad input gives 400', () => {
   }
 });
 
-const pick = (g, engine) => run('decide_engine.js', engine === undefined ? { statusCode: 200, body: [] } : { statusCode: 200, body: [{ version: 1, value: { engine } }] }, { Guard: g });
+// #253: Read engine now asks the database gate, one object: the engine, the daily Jev cap and today's Jev calls.
+const gate = (engine, over) => ({ statusCode: 200, body: Object.assign({ engine, jev_cap: 100, jev_used: 0 }, over) });
+const pick = (g, engine, over) => run('decide_engine.js', engine === undefined ? { statusCode: 200, body: {} } : gate(engine, over), { Guard: g });
 const ctx = () => ({ Guard: guard({}), 'Pick engine': pick(guard({}), 'jev') });   // H: Jev is the engine in these Jev tests (story #263)
 // The shape OpenRouter's decisions endpoint answered on 15 Oct 2026 for a choice question (cost and fields from the real call).
 const jevReply = (content, over) => ({ statusCode: 200, body: { id: 'gen-dec-1', model: 'typesafe/jev-1.13', provider: 'TypeSafe', answers: { rider: { type: 'choice', choice: content.choice, confidence: content.confidence, probabilities: {} } }, usage: { input_tokens: 477, output_tokens: 50, cost: 0.00002 } }, ...over });
@@ -105,13 +107,29 @@ test('#263 Pick engine: rules turns Jev off even when Config has it on; jev keep
   assert.deepEqual([pick(g, 'jev').engine, pick(g, 'jev').use_jev], ['jev', true]);
   assert.deepEqual([pick(g, 'laya').engine, pick(g, 'laya').use_jev], ['laya', false]);
   assert.deepEqual([pick(g).engine, pick(g).use_jev], ['rules', false]);   // no row
-  for (const res of [{ error: 'timeout' }, { statusCode: 500, body: { message: 'x' } }, { statusCode: 200, body: [{ value: { engine: 'gpt' } }] }, { statusCode: 200, body: '<html>' }]) {
+  for (const res of [{ error: 'timeout' }, { statusCode: 500, body: { message: 'x' } }, { statusCode: 200, body: { engine: 'gpt', jev_cap: 9, jev_used: 0 } }, { statusCode: 200, body: '<html>' }]) {
     const r = run('decide_engine.js', res, { Guard: g });
     assert.deepEqual([r.engine, r.use_jev], ['rules', false], JSON.stringify(res));
   }
   const off = guard({ jev_enabled: false });
   assert.equal(pick(off, 'jev').use_jev, false);   // the cost switch in Config still wins
   assert.equal(pick(g, 'rules').rule_pick, g.rule_pick);   // the rest of the Guard item goes on untouched
+});
+
+test('#253 Pick engine: Jev is refused at the daily cap, and a missing or bad cap means zero', () => {
+  const g = guard({});
+  assert.equal(pick(g, 'jev', { jev_cap: 5, jev_used: 4 }).use_jev, true);
+  for (const over of [{ jev_cap: 5, jev_used: 5 }, { jev_cap: 5, jev_used: 9 }, { jev_cap: 0 }, { jev_cap: -1 }, { jev_cap: null }, { jev_cap: 'x' }, { jev_used: 'x' }]) {
+    const r = pick(g, 'jev', over);
+    assert.deepEqual([r.engine, r.use_jev, r.jev_capped], ['jev', false, true], JSON.stringify(over));
+  }
+  assert.equal(pick(g, 'rules', { jev_cap: 5 }).jev_capped, false);   // rules never reaches the cap
+});
+
+test('#253 the row says jev_daily_cap when the cap, not the admin, kept Jev out; no Jev call is recorded', () => {
+  const g = guard({});
+  const d = decide({}, { Guard: g, 'Pick engine': pick(g, 'jev', { jev_cap: 3, jev_used: 3 }) }).log_row.decision;
+  assert.deepEqual([d.engine, d.jev_status, d.jev, d.chosen_pick, d.chosen_by], ['jev', 'jev_daily_cap', null, 'r2', 'rule']);
 });
 
 test('#263 the row says which engine decided: rules gives engine_rules and no Jev, laya gives laya_not_deployed, jev is unchanged', () => {
@@ -185,9 +203,9 @@ test('wiring: SUB 13 asks Jev only after the guard, Jev failure never stops the 
   assert.deepEqual(next('Read engine'), ['Pick engine']);
   assert.deepEqual(next('Pick engine'), ['Ask Jev?']);
   const re = byName(wf.sub13, 'Read engine');
-  assert.match(re.parameters.url, /rest\/v1\/params\?select=value,version&session_id=eq\.global&key=eq\.decision_engine&order=version\.desc&limit=1/);
+  assert.match(re.parameters.url, /rest\/v1\/rpc\/decision_gate$/);   // #253: engine, cap and today's Jev calls in one answer
   assert.equal(re.onError, 'continueRegularOutput');   // an unreadable engine means Rules, never a stopped order
-  assert.equal(re.parameters.method, 'GET');
+  assert.equal(re.parameters.method, 'POST');
   assert.deepEqual([next('Ask Jev?', 0), next('Ask Jev?', 1)], [['Ask Jev'], ['Decide']]);
   assert.deepEqual(next('Ask Jev'), ['Decide']);
   assert.deepEqual(next('Decide'), ['Write decision']);

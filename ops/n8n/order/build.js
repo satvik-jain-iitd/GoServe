@@ -105,8 +105,8 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
     codeNode('gs-sub13-02', 'Guard', code('decide_guard.js')),
     ifNode('gs-sub13-03', 'Allowed?', '={{ $json.ok }}', 'true'),
     // Story #263: the engine is read on every call. Unreadable or unknown means Rules; this read never stops an order.
-    node('gs-sub13-10', 'Read engine', 'n8n-nodes-base.httpRequest', 4.2, { method: 'GET',
-      url: "={{ $json.supabase_url }}/rest/v1/params?select=value,version&session_id=eq.global&key=eq.decision_engine&order=version.desc&limit=1",
+    node('gs-sub13-10', 'Read engine', 'n8n-nodes-base.httpRequest', 4.2, { method: 'POST',
+      url: "={{ $json.supabase_url }}/rest/v1/rpc/decision_gate", sendBody: true, specifyBody: 'json', jsonBody: '{}',
       authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
       options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 3000 } },
       { credentials: { httpCustomAuth: cred }, onError: 'continueRegularOutput' }),
@@ -127,7 +127,7 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
   const s13 = [
     { name: 'RECEIVE', what: 'The MAIN workflow calls this with a ready order and the riders.', needs: 'Input: ' + f13.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
     { name: 'CHECK', what: 'Refuse if the kill switch is on or input is bad. Work out the rule pick and build the Jev question (no names or addresses).', needs: 'Input fields. No credential.', nodes: ['Guard', 'Allowed?'], color: 5 },
-    { name: 'ENGINE', what: 'Read which engine the admin picked (Rules, Jev or Laya). Rules means no Jev call at all. Laya is not deployed, so the rule decides. If the read fails, Rules.', needs: 'Credential "GoServe Supabase dev". Table: params (decision_engine).', nodes: ['Read engine', 'Pick engine'], color: 6 },
+    { name: 'ENGINE', what: 'Read which engine the admin picked (Rules, Jev or Laya), the daily Jev cap and today\'s Jev calls. Rules means no Jev call at all. At the cap, no Jev call. Laya is not deployed, so the rule decides. If the read fails, Rules.', needs: 'Credential "GoServe Supabase dev". Database function: decision_gate.', nodes: ['Read engine', 'Pick engine'], color: 6 },
     { name: 'JEV', what: 'Ask Jev for a suggestion within 1500 ms, only when the engine is Jev. If Jev fails, go on without it.', needs: 'Credential "GoServe OpenRouter". Config: jev_enabled, jev_model.', nodes: ['Ask Jev?', 'Ask Jev'], color: 3 },
     { name: 'DECIDE', what: 'The rule decides. Jev is kept in the record with its confidence, or the reason it was not used.', needs: 'Guard and Jev results. Config: jev_cost_cap.', nodes: ['Decide'], color: 5 },
     { name: 'WRITE', what: 'Write one decision_log row with the rule pick, the Jev pick and the pick used.', needs: 'Credential "GoServe Supabase dev". Table: decision_log.', nodes: ['Write decision'], color: 6 },
