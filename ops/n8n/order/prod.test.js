@@ -20,9 +20,9 @@ test('S3 environments: prod has its own address, credential, token and name mark
   assert.equal(ENVS.dev.suffix, '');
 });
 
-test('S3 the prod set has fifteen workflows (no second alert), the dev set keeps sixteen; SUBs before MAINs', () => {
-  assert.deepEqual(orderFor('prod'), ['sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'sub16', 'sub18', 'sub17', 'sub19', 'sub20', 'sub21', 'sub22', 'sub91', 'sub93', 'sub94', 'main01', 'main90', 'main92', 'main93']);
-  assert.equal(orderFor('dev').length, 20);
+test('S3 the prod set has 22 workflows (no second alert), the dev set 23; SUBs before MAINs', () => {
+  assert.deepEqual(orderFor('prod'), ['sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'sub16', 'sub18', 'sub17', 'sub19', 'sub20', 'sub21', 'sub22', 'sub30', 'sub91', 'sub93', 'sub94', 'main01', 'main30', 'main31', 'main90', 'main92', 'main93']);
+  assert.equal(orderFor('dev').length, 23);
   assert.equal(orderFor('dev')[0], 'alert');
   assert.equal(namesFor('prod').main01, 'GS MAIN 01 Order API PROD');
   assert.equal(namesFor('dev').main01, NAMES.main01);
