@@ -41,8 +41,8 @@ def counts():
 
 
 def dream_ok():
-    """The fixed Delhi list (#282): 10 kitchens on 2 to 4 real pins each, 10 to 14 dishes each, pin 110092 served, and a drop point for every pin served."""
-    _, k, _ = call("GET", "/rest/v1/kitchens?select=id,pin_codes&synthetic=eq.true")
+    """The fixed Delhi list (#282, #290): 11 kitchens on 2 to 4 real pins each, 10 to 14 dishes each, pin 110092 served, and a drop point for every pin served."""
+    _, k, _ = call("GET", "/rest/v1/kitchens?select=id,name,pin_codes&synthetic=eq.true")
     _, d, _ = call("GET", "/rest/v1/menu_items?select=kitchen_id&synthetic=eq.true")
     s, pp, _ = call("GET", "/rest/v1/pin_points?select=pin,lat,lng")
     if not (isinstance(k, list) and isinstance(d, list) and s < 400 and isinstance(pp, list)):
@@ -50,7 +50,8 @@ def dream_ok():
     pins = {x["pin"] for x in pp}
     per = {x["id"]: sum(1 for y in d if y["kitchen_id"] == x["id"]) for x in k}
     return (all(2 <= len(x["pin_codes"]) <= 4 and all(c in pins and not c.startswith("9") for c in x["pin_codes"]) for x in k)
-            and all(10 <= n <= 14 for n in per.values()) and any("110092" in x["pin_codes"] for x in k) and "110092" in pins)
+            and all(10 <= n <= 14 for n in per.values()) and any("110092" in x["pin_codes"] for x in k) and "110092" in pins
+            and any(x["name"] == "Laxmi Nagar Wok House" and sorted(x["pin_codes"]) == ["110051", "110091", "110092"] for x in k) and {"110091", "110051"} <= pins)   # #290
 
 
 def serve_all_ok():
@@ -109,7 +110,7 @@ def main():
     s, st, _ = call("POST", "/rest/v1/rpc/sim_status", {})   # H7: what the admin tab reads
     print(f"status: {s} {st}")
     status_ok = isinstance(st, dict) and st.get("enabled") is False and st.get("kitchens") == 0 and st.get("riders") == 0 and st.get("dishes") == 0
-    ok = ids1 == ids2 and a.get("kitchens") == 10 and a.get("riders") == 40 and 100 <= a.get("dishes", 0) <= 140 and dream and serve is not False \
+    ok = ids1 == ids2 and a.get("kitchens") == 11 and a.get("riders") == 44 and 112 <= a.get("dishes", 0) <= 154 and dream and serve is not False \
         and all(after[k][0] == before[k][0] for k in before) and all(after[k][1] == 0 for k in after) and tick_ok and status_ok
     print("PASS" if ok else "FAIL")
     return 0 if ok else 1
