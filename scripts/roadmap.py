@@ -5,15 +5,18 @@ Reads the repo's epics, stories and open pull requests with `gh`, and writes doc
 Now, Next and a Board. Plain words: a story's roadmap text is the first sentence of its "## Business" section.
 Run: python3 scripts/roadmap.py            (writes the page)
      python3 scripts/roadmap.py --print    (prints the page, writes nothing)
+     python3 scripts/roadmap.py --deploy   (writes the page, then publishes it to the Cloudflare Pages project goserve-roadmap; story #247)
 A launchd job (ops/launchd/com.goserve.roadmap.plist) runs it every 15 minutes.
 """
 from __future__ import annotations   # /usr/bin/python3 under launchd may be 3.9
-import html, json, os, re, subprocess, sys
+import html, json, os, re, shutil, subprocess, sys, tempfile
 from datetime import datetime
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "docs", "roadmap", "index.html")
 REPO = "satvik-jain-iitd/GoServe"
+DEFAULT_VAULT = os.path.expanduser("~/Desktop/Secrets/03_cloudflare.env")   # the owner's file (F207): CLOUDFLARE_ROADMAP_TOKEN and CLOUDFLARE_ACCOUNT_ID
+WRANGLER = ["npx", "--yes", "wrangler@4.145.0"]   # pinned: it receives the Pages token
 COLUMNS = ("To do", "Doing", "Review", "Done")
 # Words a stranger does not need. The Board cards keep the story's own words (raw); every other section gets the plain swap.
 PLAIN = [(re.compile(r"\bCI/CD\b"), "build and deploy"), (re.compile(r"\bPRs?\b"), "change"), (re.compile(r"\bCI\b"), "the checks"), (re.compile(r"\brpc\b", re.I), "server call"),
@@ -156,6 +159,30 @@ def vision_text() -> str:
     return " ".join(l.strip("*") for l in lines[:2])
 
 
+def deploy(page: str, vault: str, wrangler: list) -> tuple:
+    """Publish only the page to the Pages project. The token comes from the vault file and goes to wrangler in its environment, never in its arguments.
+    Returns (exit code, message); a missing variable is a loud failure that names it."""
+    found = {}
+    try:
+        for line in open(vault).read().splitlines():
+            k, _, v = line.partition("=")
+            if k.strip() in ("CLOUDFLARE_ROADMAP_TOKEN", "CLOUDFLARE_ACCOUNT_ID") and v.strip():
+                found[k.strip()] = v.strip()
+    except OSError:
+        pass
+    missing = [k for k in ("CLOUDFLARE_ROADMAP_TOKEN", "CLOUDFLARE_ACCOUNT_ID") if k not in found]
+    if missing:
+        return 1, "not deployed: missing " + ", ".join(missing) + " in " + vault
+    site = tempfile.mkdtemp(prefix="goserve-roadmap-")
+    try:
+        shutil.copy(page, os.path.join(site, "index.html"))
+        env = dict(os.environ, CLOUDFLARE_API_TOKEN=found["CLOUDFLARE_ROADMAP_TOKEN"], CLOUDFLARE_ACCOUNT_ID=found["CLOUDFLARE_ACCOUNT_ID"])
+        r = subprocess.run(wrangler + ["pages", "deploy", site, "--project-name=goserve-roadmap", "--branch=main"], env=env, capture_output=True, text=True, timeout=180)
+        return r.returncode, ((r.stdout or "") + (r.stderr or "")).strip()[-600:]
+    finally:
+        shutil.rmtree(site, ignore_errors=True)
+
+
 def main(argv: list) -> int:
     page = render(build(fetch_issues(), fetch_prs()), vision_text(), datetime.now())
     if "--print" in argv:
@@ -165,6 +192,10 @@ def main(argv: list) -> int:
     with open(OUT, "w") as f:
         f.write(page)
     print(f"wrote {os.path.relpath(OUT, ROOT)}")
+    if "--deploy" in argv:
+        code, msg = deploy(OUT, DEFAULT_VAULT, WRANGLER)
+        print(("deployed: " if code == 0 else "DEPLOY FAILED: ") + msg, file=sys.stdout if code == 0 else sys.stderr)
+        return code
     return 0
 
 
