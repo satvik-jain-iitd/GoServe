@@ -94,3 +94,12 @@ test('#263 SUB 13 is still callable by MAIN 01 and SUB 22 only', () => {
 for (const key of ['sub13', 'sub32', 'main32']) {
   test(`#263 canvas layout ${key}`, () => assert.deepEqual(checkLayout(wf[key], wf[key].sections), []));
 }
+
+// Review of #270: the admin's token rides through these two workflows as an item field, so n8n must not keep their execution data.
+test('#263 MAIN 32 and SUB 32 save no execution data, success or error; errors still reach GS ERR 00', () => {
+  for (const w of [wf.main32, wf.sub32]) {
+    assert.equal(w.settings.saveDataSuccessExecution, 'none');
+    assert.equal(w.settings.saveDataErrorExecution, 'none');
+    assert.equal(w.settings.errorWorkflow, 'ALERT1');
+  }
+});

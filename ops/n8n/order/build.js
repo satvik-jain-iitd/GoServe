@@ -639,7 +639,8 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
   const main31 = finish('GS MAIN 31 Simulator tick', n31, e31, s31, Object.assign({}, settings, { saveDataSuccessExecution: 'none' }));   // 1440 'skipped' runs a day would bury real errors (review of #259)
 
   // ---- Decision engine (story #263): the admin app asks MAIN 32 with the admin's own sign-in token; SUB 32 forwards it to the database, which checks is_admin(). ----
-  const sub32 = sub({ name: 'GS SUB 32 Engine call', n: 32, callerIds: ids.main32, credential: cred, settings,
+  const noKeep = Object.assign({}, settings, { saveDataSuccessExecution: 'none', saveDataErrorExecution: 'none' });   // the admin's token passes through as an item field: n8n keeps no run data (review of #270)
+  const sub32 = sub({ name: 'GS SUB 32 Engine call', n: 32, callerIds: ids.main32, credential: cred, settings: noKeep,
     fields: [['action', 'string'], ['engine', 'string'], ['auth', 'string'], ['kill_switch', 'boolean'], ['supabase_url', 'string'], ['anon_key', 'string']],
     guardFile: 'guard_engine.js', shapeFile: 'engine_shape.js', rpc: { fn: 'get_decision_engine or set_decision_engine', label: 'Engine rpc', userJwt: true },
     what: 'Get reads the decision engine and set changes it. The database checks that the caller is an admin; the change is a new params version with the admin\'s email.' });
@@ -666,7 +667,7 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
     { name: 'ANSWER', what: 'Send the engine, its version and who changed it back, with the status code.', needs: 'The SUB output: status_code, engine, version, by, changed_at.', nodes: ['Respond result'], color: 4 },
     { name: 'REFUSE', what: 'Answer the calls that must not go on: 401, 503 and 400.', needs: 'Nothing.', nodes: ['Respond 401', 'Respond 503', 'Respond 400'], color: 1 },
   ];
-  const main32 = finish('GS MAIN 32 Decision engine', n32, e32, s32, settings);
+  const main32 = finish('GS MAIN 32 Decision engine', n32, e32, s32, noKeep);
 
   // ---- ERR 00: tells the owner on Telegram when a GoServe workflow fails (rulebook 84) ----
   const aNodes = [
