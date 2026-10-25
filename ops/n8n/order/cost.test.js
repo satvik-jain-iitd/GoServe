@@ -24,7 +24,7 @@ const reads = {
   Start: { since: '2026-10-12T03:30:00.000Z', days: 7, supabase_url: 'https://x.test', uptimerobot_key: 'k' },
   'Read OpenRouter': ok({ data: { usage: 0.0007, limit: 2 } }),
   'Read database numbers': ok({ db_mb: 42.3, connections: 9, rows: { orders: 30, run_log: 5, rider_pings: 100, order_events: 90 },
-    oldest: { orders: '2026-10-01T05:00:00Z', run_log: '2026-10-02T05:00:00Z', rider_pings: null, order_events: '2026-10-01T05:00:00Z' }, caps: { openrouter_usd: 2, supabase_mb: 500, n8n_errors_day: 5 } }),
+    oldest: { orders: '2026-10-01T05:00:00Z', run_log: '2026-10-02T05:00:00Z', rider_pings: null, order_events: '2026-10-01T05:00:00Z' }, caps: { openrouter_usd: 2, supabase_mb: 500, n8n_errors_day: 5 }, ai: { jev_calls_today: 3, jev_cost_today: 0.00012, jev_cap: 10 } }),
   'Read n8n errors': ok({ data: [{ startedAt: '2026-10-15T10:00:00.000Z' }, { startedAt: '2026-10-14T10:00:00.000Z' }, { startedAt: '2026-10-01T10:00:00.000Z' }] }),
   'Read uptime': ok({ stat: 'ok', monitors: [{ friendly_name: 'App customer', status: 2, custom_uptime_ratio: '99.98' }, { friendly_name: 'Site', status: 9, custom_uptime_ratio: '90.00' }] }),
 };
@@ -40,6 +40,17 @@ test('H15 lines: OpenRouter spend against the cap, database size, connections, r
   assert.ok(l.includes('n8n errors in the window: 2 of 35 allowed · OK'));   // the third error is older than the window; the cap is 5 a day for 7 days
   assert.ok(l.includes('Uptime, App customer: up, 99.98% in 7 days'));
   assert.ok(l.includes('Uptime, Site: DOWN, 90.00% in 7 days'));
+});
+
+test('#253 lines: Laya and Jev calls today, the Jev cap and its cost; cap zero reads as off; old database answer has no AI lines', () => {
+  const l = lines(reads);
+  assert.ok(l.includes('Jev calls today: 3 of 10 allowed · cost $0.00012 · OK'));
+  assert.ok(l.includes('Laya calls today: 0 (not deployed)'));
+  const ai = (a) => lines({ ...reads, 'Read database numbers': ok({ ...reads['Read database numbers'].body, ai: a }) }).find((x) => x.startsWith('Jev calls'));
+  assert.equal(ai({ jev_calls_today: 0, jev_cost_today: 0, jev_cap: 0 }), 'Jev calls today: 0 of 0 allowed · cost $0 · OFF');
+  assert.equal(ai({ jev_calls_today: 8, jev_cost_today: 0.0001, jev_cap: 10 }), 'Jev calls today: 8 of 10 allowed · cost $0.0001 · OVER');
+  const old = lines({ ...reads, 'Read database numbers': ok({ ...reads['Read database numbers'].body, ai: undefined }) });
+  assert.equal(old.some((x) => x.startsWith('Jev calls') || x.startsWith('Laya calls')), false);
 });
 
 test('H15 marks: WATCH from half the cap, OVER from 80% of the cap', () => {

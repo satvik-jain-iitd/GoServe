@@ -4,7 +4,7 @@ const g = $('Pick engine').first().json;   // the Guard item plus the engine (st
 const res = $input.first().json || {};
 const THRESHOLD = 0.70;   // contract D1
 let jev = null;
-let status = g.engine === 'rules' ? 'engine_rules' : g.engine === 'laya' ? 'laya_not_deployed' : 'jev_off';   // why Jev did not answer
+let status = g.engine === 'rules' ? 'engine_rules' : g.engine === 'laya' ? 'laya_not_deployed' : g.jev_capped ? 'jev_daily_cap' : 'jev_off';   // why Jev did not answer
 if (g.use_jev) {
   status = 'jev_error';
   if (!res.error && res.statusCode === 200) {
