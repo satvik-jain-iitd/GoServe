@@ -6,7 +6,9 @@
     "target": {
       "namespace": "android_app",
       "package_name": "in.goserve.customer",
-      "sha256_cert_fingerprints": []
+      "sha256_cert_fingerprints": [
+        "A7:4F:E2:AC:28:84:A3:62:85:D4:54:28:53:83:99:FD:B0:D7:0F:94:54:BE:14:D7:B7:47:9F:64:F2:BE:91:34"
+      ]
     }
   },
   {

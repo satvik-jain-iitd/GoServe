@@ -44,3 +44,17 @@ The owner's goal of 25 Oct 03:45 reverses the priority above: the APK is now fir
 3. `bubblewrap build` → `app-release-signed.apk`; size written here.
 4. Install on the owner's Android phone (`adb install` or the file by Telegram), run the customer app end to end, then the rider app by its address; measure each feature: push, location with the screen on and off, call links, camera for the feedback screenshot, offline.
 5. ADR-020: one APK or four, TWA or Capacitor, what #252 needs.
+
+## Spike result, 25 Oct 2026 (customer APK, Bubblewrap 1.27.0)
+
+| Step | What happened | Time |
+|---|---|---|
+| `bubblewrap update` from a hand-written `ops/android/customer/twa-manifest.json` (no interactive `init`; the live manifest's name, colours, icons, scope `/customer/`, location delegation on) | Android project generated | seconds |
+| Build 1 | Failed: two SDK licences not accepted (build-tools 35, platform 36). The legacy `tools/bin/sdkmanager` that Bubblewrap installs cannot accept them on JDK 17; the licence hash files under `~/.bubblewrap/android_sdk/licenses/` did | 2 min 13 s |
+| Build 3 | Failed: `minSdkVersion 21` is below the 24 that `androidbrowserhelper 2.7.4` needs. Set 24 (Android 7, 2016) | 41 s |
+| Build 4 | `app-release-signed.apk` 1,495,896 bytes (1.5 MB), `app-release-bundle.aab` 1.6 MB | 75 s |
+
+- Signing: one upload key for the four role apps, alias `goserve`, keystore and passwords in the vault (`08_android_keystore.env`, `android/goserve-upload.jks`). Never in the repo. Cert SHA-256 `A7:4F:E2:AC:28:84:A3:62:85:D4:54:28:53:83:99:FD:B0:D7:0F:94:54:BE:14:D7:B7:47:9F:64:F2:BE:91:34`, now in `assetlinks.json` for `in.goserve.customer` (F157, one of four).
+- Non-interactive build: `BUBBLEWRAP_KEYSTORE_PASSWORD` and `BUBBLEWRAP_KEY_PASSWORD` in the environment, `bubblewrap build --skipPwaValidation`. This is the shape `build-apk.yml` (#251) will use.
+- Copy for the owner's phone: `~/Downloads/goserve-customer-v1.apk`. Install, open, check: no address bar once the assetlinks file is live on main, Day theme bar `#45654E`, location prompt from the app not the browser.
+- Not measured yet (needs the phone): E-TWA-1 screen-off pings, push, install size on device.

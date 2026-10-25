@@ -41,3 +41,10 @@ __pycache__/
 
 # Story #239: the roadmap page is rebuilt every 15 minutes by launchd; open it from the checkout, never commit it.
 docs/roadmap/index.html
+
+# Android TWA projects (story #250): build outputs and signed files stay out; the keystore lives in the vault
+ops/android/**/.gradle/
+ops/android/**/build/
+ops/android/**/*.apk
+ops/android/**/*.aab
+ops/android/**/*.idsig
