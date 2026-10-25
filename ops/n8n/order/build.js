@@ -589,7 +589,7 @@ function build({ ids, token, simToken, supabaseUrl, credential, openrouterCreden
     ifNode('gs-main30-05', 'Kill switch?', '={{ $json.kill_switch }}', 'true'),
     ifNode('gs-main30-06', 'Action ok?', '={{ $json.action !== "bad" }}', 'true'),
     callSub('gs-main30-07', 'Call SUB 30 Simulator write', ids.sub30, [['action', '={{ $json.action }}', 'string'], ['body', '={{ $json.body }}', 'object'], ['kill_switch', '={{ $json.kill_switch }}', 'boolean'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
-    node('gs-main30-08', 'Respond result', 'n8n-nodes-base.respondToWebhook', 1.1, { respondWith: 'json', responseBody: '={{ $json }}', options: { responseCode: '={{ $json.status_code || 200 }}' } }),
+    respond('gs-main30-08', 'Respond result', '={{ $json.status_code }}', '={{ JSON.stringify($json) }}'),   // a JSON string like MAIN 01; an object body made the edge answer 502 (prod, 25 Oct)
     respond('gs-main30-09', 'Respond 401', 401, '{"ok":false,"error":"unauthorized","message":"Missing or wrong simulator token."}'),
     respond('gs-main30-10', 'Respond 503', 503, '{"ok":false,"error":"kill_switch","message":"The simulator is paused."}'),
     respond('gs-main30-11', 'Respond 400', 400, '{"ok":false,"error":"bad_action","message":"Action must be seed or reset."}'),
