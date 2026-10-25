@@ -174,3 +174,9 @@ Decision: nothing is built from scratch. If we serve Laya, we use the author's `
 Runs: `scout.py --need "upload Android AAB or APK to Google Play internal testing track from GitHub Actions"` → no repos found; `gh search repos --topic google-play --topic github-actions`; read the READMEs of `r0adkll/upload-google-play` (MIT, 1054 stars, last release v1.1.5 on 21 Apr 2026, last push 17 Oct 2026; takes `.aab` or `.apk`, `tracks`, `status`, a service account JSON from a secret) and `Triple-T/gradle-play-publisher` (MIT, 4322 stars, maintenance mode; needs a Gradle project, we build with Bubblewrap).
 
 Decision: adopt `r0adkll/upload-google-play` v1.1.5 as one workflow step, pinned to its commit e738b9d (reviewer, #300: it receives the Play key and a tag can move); no code of our own. Facts from its README: the app must already exist in the Play Console (the API cannot create it), so the first bundle is uploaded by hand by the owner. Confidence 0.8 (vendor README, Tier C; the Play API itself is Tier A and was not run yet). Test: the first real upload (owner's step, phone test P2).
+
+## 2026-10-25 · need: a privacy page for the Play listing that matches what the database keeps (story #302, epic E22)
+
+Runs: none new. The page already exists (`app/public/privacy/index.html`, story #123, linked from the Account screen); it only lacked the phone, saved profile, rider place and push address. A privacy-policy generator would write a generic text that does not match our schema, so none is adopted. The only new code is one test that reads our own migrations.
+
+Decision: edit the existing page; add `scripts/test_privacy_page.py` (every personal column in the schema must be named on the page, and nothing listed may be missing from the schema). Confidence 0.8. The text is still a draft, not lawyer-checked: Play may ask for more (data safety form), see F204.
