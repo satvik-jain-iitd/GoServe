@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed 25 Oct 2026 (story #263, layer 2). Becomes Accepted when test E9 passes on dev and the owner says yes to turning it on.
+Proposed 25 Oct 2026 (story #263, layer 2). E9 verdict: PARTIAL (see `docs/research/e9-batch-dispatch-result-2026-10.md`). Becomes Accepted when the rider app gate is done, shadow data (#267) agrees with the model, and the owner says yes to turning it on.
 
 ## Date
 
@@ -17,7 +17,8 @@ Today a rider is picked when the cook taps Ready: the nearest free rider with th
 1. The rule is one pure database function, `dispatch_match(jsonb)`. It takes riders, orders, kitchens and tunables and returns assignments and zone states. A test and the E9 replay both call this exact function.
 2. A second function, `dispatch_tick()`, reads the tables, calls the matcher, names the riders and writes `zone_state`. Real and synthetic rows are matched in separate rounds and never mix. n8n GS MAIN 33 calls it every 30 seconds. All the numbers live in `params` (`dispatch_rules`).
 3. It is off. `params` global/`dispatch_mode` is `per_order` until an admin sets `batch`, and the rule only works while the decision engine (ADR in story #263 layer 1) is Rules. In batch mode SUB 22 stands down and a closed zone refuses new orders.
-4. E9 decides. The owner turns it on only after the replay passes on dev (research file section 2: median mismatch between rider arrival and food ready down 30 % or more, P90 order-to-door up no more than 1 minute, on all three seeds).
+4. **Hard gate.** `set_dispatch_mode('batch')` refuses (`gate_rider_app`) until `params` global `dispatch_gates` says `rider_app_early_job` is true. That flag is flipped in the same PR that makes the rider app show a job that is named before Ready (follow-up F173). Before Ready a rider may be named only in batch mode: `assign_rider` still needs Ready in per-order mode.
+5. E9 decides. The owner turns it on only after the replay passes on dev (research file section 2: median mismatch between rider arrival and food ready down 30 % or more, P90 order-to-door up no more than 1 minute, on all three seeds).
 
 ## What the function does
 
@@ -35,7 +36,7 @@ Today a rider is picked when the cook taps Ready: the nearest free rider with th
 
 ## Consequences
 
-- Riders can be named while the food is being made. The rider app shows such a job only from Ready today (F-row); a rider who is named early needs to be told to head to the kitchen.
+- Riders can be named while the food is being made. The rider app shows such a job only from Ready today; a rider who is named early must be told to head to the kitchen. This is the hard gate in decision 4.
 - Customers have no coordinates yet, so the second-order check uses the ready-time gap plus a 2 minute allowance for the extra stop (A-row).
 - A closed zone is a hard stop for new orders. The customer sees a plain "we are very busy" line; the live tracking story (#266) makes this message and the ETA friendlier.
 - Rolling back is one admin action (mode back to `per_order`) or the engine set to Jev.

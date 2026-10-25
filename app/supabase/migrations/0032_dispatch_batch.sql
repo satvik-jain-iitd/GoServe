@@ -9,6 +9,9 @@ insert into params (kitchen_id, session_id, key, value, version) values
   (null, 'global', 'dispatch_mode', '{"mode":"per_order","by":"system"}', 1),
   (null, 'global', 'dispatch_rules', '{"detour":1.4,"speed_kmh":15,"margin_min":2,"early_free_min":3,"fair_w":0.5,"stack_max":2,"stack_gap_min":5,"stack_added_max_min":5,"stack_drop_min":2,"slow_ratio":2,"close_ratio":3,"slow_eta_min":10,"ping_max_s":90,"horizon_min":10,"zone_reach_min":15,"prep_default_min":15,"prep_min_orders":30,"ready_grace_s":60}', 1)
 on conflict (session_id, key, version) do nothing;
+-- Hard gate (review of #271): batch mode cannot be turned on until the rider app shows a job that is named early. Flip this to true in the same PR that does it (F173).
+insert into params (kitchen_id, session_id, key, value, version) values (null, 'global', 'dispatch_gates', '{"rider_app_early_job":false}', 1)
+on conflict (session_id, key, version) do nothing;
 
 create table if not exists zone_state (
   kitchen_id uuid primary key references kitchens (id) on delete cascade,
@@ -34,6 +37,9 @@ declare v_now text; v_by text;
 begin
   if not is_admin() then raise exception 'not_admin'; end if;
   if p_mode is null or p_mode not in ('per_order', 'batch') then raise exception 'invalid_mode'; end if;
+  if p_mode = 'batch' and not coalesce((select (value ->> 'rider_app_early_job')::boolean from params where session_id = 'global' and key = 'dispatch_gates' order by version desc limit 1), false) then
+    raise exception 'gate_rider_app';   -- a rider named early must see the job (F173)
+  end if;
   select value ->> 'mode' into v_now from params where session_id = 'global' and key = 'dispatch_mode' order by version desc limit 1;
   if v_now is distinct from p_mode then
     select coalesce(email, id::text) into v_by from auth.users where id = auth.uid();
@@ -181,7 +187,8 @@ begin
   if v_order.rider_id = p_rider then
     return jsonb_build_object('order', to_jsonb(v_order));
   end if;
-  if v_order.status not in ('accepted', 'preparing', 'ready') or v_order.rider_id is not null then
+  -- before Ready a rider may be named only in batch mode (review of #271); per-order mode still needs Ready
+  if not (v_order.status = 'ready' or (v_order.status in ('accepted', 'preparing') and dispatch_batch_on())) or v_order.rider_id is not null then
     raise exception 'not_ready';
   end if;
   if not exists (select 1 from riders r join kitchens k on k.id = v_order.kitchen_id

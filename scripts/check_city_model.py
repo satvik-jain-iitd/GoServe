@@ -455,7 +455,10 @@ insert into orders (id, kitchen_id, session_id, client_order_key, status, items,
 insert into order_events (order_id, kitchen_id, session_id, event, actor, created_at) values
   ('{DOR}', '{DK}', 'disp-s', 'order.accepted', 'kitchen', now() - interval '14 minutes'), ('{DOS}', '{DKS}', 'sim', 'order.accepted', 'kitchen', now() - interval '14 minutes');
 create temp table dd15 as select (dispatch_tick() ->> 'skipped') = 'not_batch' and (select rider_id from orders where id = '{DOR}') is null as v;
+do $$ begin begin perform assign_rider('{DOR}', '{DRR}'); create temp table dd28 as select false as v; exception when others then create temp table dd28 as select (sqlerrm like '%not_ready%') and (select rider_id from orders where id = '{DOR}') is null as v; end; end $$;
 create temp table dd16 as select not dispatch_batch_on() and (dispatch_candidates('{DOR}') ->> 'batch') is distinct from 'true' as v;
+{_dd_raises(U['admin'], 29, "set_dispatch_mode('batch')", 'gate_rider_app')}
+insert into params (kitchen_id, session_id, key, value, version) values (null, 'global', 'dispatch_gates', '{{"rider_app_early_job": true}}', 2) on conflict (session_id, key, version) do nothing;
 {_call(U['admin'], "set_dispatch_mode('batch')")}
 create temp table dd17 as select dispatch_batch_on() and (dispatch_candidates('{DOR}') ->> 'batch') = 'true' and (select (value ->> 'mode') = 'batch' from params where session_id = 'global' and key = 'dispatch_mode' order by version desc limit 1) as v;
 create temp table dd_t as select dispatch_tick() as t;
@@ -487,7 +490,8 @@ DISP_NAMES = ["#263 L2: an order whose send time has not come gets no rider", "#
   "#263 L2: the tick does nothing while the mode is per order", "#263 L2: per-order mode: no batch flag for SUB 22", "#263 L2: an admin can set the batch mode and SUB 22 is told to stand down",
   "#263 L2: the tick gives real orders to real riders and synthetic orders to synthetic riders", "#263 L2: the assignment writes one order.assigned event", "#263 L2: the tick writes the zone state",
   "#263 L2: with the engine on Jev the batch rule is off", "#263 L2: a closed zone refuses a new order in batch mode", "#263 L2: a slow zone still takes the order",
-  "#263 L2: in per-order mode a closed zone changes nothing", "#263 L2: a non-admin cannot set the mode", "#263 L2: an unknown mode is refused", "#263 L2: every mode change is a new row"]
+  "#263 L2: in per-order mode a closed zone changes nothing", "#263 L2: a non-admin cannot set the mode", "#263 L2: an unknown mode is refused", "#263 L2: every mode change is a new row",
+  "#263 L2: in per-order mode an early assignment (food still being made) is refused", "#263 L2: batch mode is refused while the rider app cannot show an early job (hard gate)"]
 
 def run(ref: str, query: str):
     req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/database/query", data=json.dumps({"query": query}).encode(),

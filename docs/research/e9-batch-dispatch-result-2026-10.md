@@ -20,7 +20,7 @@ Three loads, three seeds each: 0.4, 0.6 and 1.0 times the base peak (about 45, 7
 - **Door P90:** the order-to-door time that 9 orders in 10 beat.
 - **Late share:** orders that came more than 10 minutes after the 35 minute promise.
 
-The E9 row said "rider wait at the kitchen". In every run the rider wait was 0: a rider is never early, because he cannot be. So the number that moves is food waiting for the rider. I used the mismatch, which holds both. The reviewer should confirm that reading.
+The E9 row said "rider wait at the kitchen". In every run the rider wait was 0: a rider is never early, because he cannot be. So the written metric could not move in the model. The number that moves is food waiting for the rider. I used the mismatch, which holds both. The reviewer confirmed that reading, with a caveat: real data in shadow mode (#267) must agree before batch goes on.
 
 ## Results (seconds)
 
@@ -57,6 +57,10 @@ Late share at load 1.0: today's rule 67 %, 65 %, 70 %; new rule 34 %, 27 %, 21 %
 - Three seeds, two hours each. Enough to see a 30 % change at load 0.6 and 1.0; thin at load 0.4.
 - Stacking uses the A72 assumption (no customer places), so the extra drive of a stacked order is a guess.
 
+## Verdict
+
+**PARTIAL.** The rule as written passes at the named peak and at 0.6, misses one seed at 0.4, and the model is mine. Not a failure, not yet a ship.
+
 ## Decision
 
-The code ships **off**. `dispatch_mode` stays `per_order`. The rule as written passes at the peak the test named (load 1.0) and at 0.6. It fails strictly at 0.4 on one seed, where it is still not worse. Turning it on is the owner's yes, with the light-load result in front of him. Before it goes on for real riders: F-row for the rider app (an early job must show), and the first real orders to compare against.
+The code ships **off** and is behind a hard gate (the rider app must show an early job, F173). `dispatch_mode` stays `per_order`. The rule as written passes at the peak the test named (load 1.0) and at 0.6. It fails strictly at 0.4 on one seed, where it is still not worse. Turning it on is the owner's yes, with the light-load result in front of him. Before it goes on for real riders: F-row for the rider app (an early job must show), and the first real orders to compare against.
