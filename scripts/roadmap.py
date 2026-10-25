@@ -10,7 +10,7 @@ A launchd job (ops/launchd/com.goserve.roadmap.plist) runs it every 15 minutes.
 """
 from __future__ import annotations   # /usr/bin/python3 under launchd may be 3.9
 import html, json, os, re, shutil, subprocess, sys, tempfile
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "docs", "roadmap", "index.html")
@@ -23,7 +23,8 @@ PLAIN = [(re.compile(r"\bCI/CD\b"), "build and deploy"), (re.compile(r"\bPRs?\b"
          (re.compile(r"\bmigrations?\b", re.I), "database change"), (re.compile(r"\be2e\b", re.I), "end-to-end test")]
 ISSUE_QUERY = """query($after: String) { repository(owner: "satvik-jain-iitd", name: "GoServe") {
   issues(first: 100, after: $after, orderBy: {field: CREATED_AT, direction: ASC}) { pageInfo { hasNextPage endCursor }
-    nodes { number title body state closedAt labels(first: 10) { nodes { name } } parent { number } } } } }"""
+    nodes { number title body state closedAt labels(first: 20) { nodes { name } } parent { number } milestone { title dueOn }
+      timelineItems(first: 100, itemTypes: [LABELED_EVENT]) { nodes { ... on LabeledEvent { createdAt label { name } } } } } } } }"""
 
 
 def gh(*args: str) -> str:
@@ -36,7 +37,8 @@ def fetch_issues() -> list:
     while True:
         page = json.loads(gh("api", "graphql", "-f", f"query={ISSUE_QUERY}", *(["-f", f"after={after}"] if after else [])))["data"]["repository"]["issues"]
         for n in page["nodes"]:
-            out.append({**n, "labels": [l["name"] for l in n["labels"]["nodes"]]})
+            doing = sorted(t["createdAt"] for t in n.pop("timelineItems")["nodes"] if t.get("label", {}).get("name") == "doing")
+            out.append({**n, "labels": [l["name"] for l in n["labels"]["nodes"]], "doing_at": doing[0] if doing else None})
         if not page["pageInfo"]["hasNextPage"]:
             return out
         after = page["pageInfo"]["endCursor"]
@@ -82,6 +84,41 @@ def column(story: dict, pr: dict | None) -> str:
     return "Review" if green and not pr.get("isDraft") else "Doing"
 
 
+IST = timedelta(hours=5, minutes=30)
+PRIO = {"P0": 0, "P1": 1, "P2": 2}
+
+
+def india_now() -> datetime:
+    """The page clock: India time as a naive datetime, whatever time zone the machine is in (a GitHub runner is UTC)."""
+    return datetime.now(timezone.utc).replace(tzinfo=None) + IST
+
+
+def ist(stamp: str | None) -> datetime | None:
+    """A GitHub UTC stamp as a naive India time."""
+    return datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%SZ") + IST if stamp else None
+
+
+def needs_of(body: str) -> list:
+    return [int(n) for n in re.findall(r"^Needs:\s*#(\d+)", body or "", re.M)]
+
+
+def span(minutes: int | None) -> str:
+    if minutes is None:
+        return "no start time"
+    d, rest = divmod(minutes, 1440)
+    h, m = divmod(rest, 60)
+    return " ".join(p for p in (f"{d} d" if d else "", f"{h} h" if h else "", f"{m} min" if m else "") if p) or "0 min"
+
+
+def day_label(d: datetime) -> str:
+    return f"{d.day} {d.strftime('%b')}"
+
+
+def day_range(stories: list) -> str:
+    days = sorted(s["closed"] for s in stories if s.get("closed"))
+    return f" · {day_label(days[0])} to {day_label(days[-1])}" if days else ""
+
+
 def plain(text: str) -> str:
     for pat, word in PLAIN:
         text = pat.sub(word, text)
@@ -95,9 +132,26 @@ def build(issues: list, prs: list) -> dict:
     for i in sorted((i for i in issues if "story" in i["labels"]), key=lambda i: i["number"]):
         pr = pr_for(i, prs)
         sentence = first_sentence(section(i.get("body"), "Business"))
+        closed, started = ist(i.get("closedAt")), ist(i.get("doing_at"))
+        ms = i.get("milestone")
+        labels = i.get("labels") or []
         stories.append({"number": i["number"], "title": i["title"], "epic": epic_of(i), "state": i["state"], "pr": pr, "column": column(i, pr),
-                        "sentence": sentence, "raw": sentence or i["title"], "text": plain(sentence or i["title"]), "needs_words": not sentence})
-    return {"epics": [{"number": e["number"], "title": plain(re.sub(r"^(Epic|Feature):?\s*(E\d+:?)?\s*", "", e["title"])), "state": e["state"],
+                        "sentence": sentence, "raw": sentence or i["title"], "text": plain(sentence or i["title"]), "needs_words": not sentence,
+                        "labels": labels, "prio": next((PRIO[l] for l in labels if l in PRIO), 9), "milestone": ms["title"] if ms else None,
+                        "due": ms["dueOn"] if ms else "9999", "needs": needs_of(i.get("body")), "closed": closed, "started": started,
+                        "cycle_min": int((closed - started).total_seconds() // 60) if closed and started else None})
+    by_n = {s["number"]: s for s in stories}
+    for s in stories:
+        s["blocked_by"] = [n for n in s["needs"] if n in by_n and by_n[n]["state"] != "CLOSED"]
+    live = [s for s in stories if s["state"] != "CLOSED" and "doing" not in s["labels"]]
+    open_ = sorted((s for s in live if {"ready", "blocked"} & set(s["labels"])), key=lambda s: (s["due"], s["prio"], s["number"]))   # the plan's stories
+    older = sorted((s for s in live if not {"ready", "blocked"} & set(s["labels"])), key=lambda s: s["number"])   # open work from before the plan
+    days: dict = {}
+    for s in sorted((s for s in stories if s["closed"]), key=lambda s: s["closed"], reverse=True):
+        days.setdefault(s["closed"].strftime("%Y-%m-%d"), []).append(s)
+    here = {"doing": [s for s in stories if s["state"] != "CLOSED" and "doing" in s["labels"]],
+            "next": next((s for s in open_ if "ready" in s["labels"] and not s["blocked_by"]), None)}
+    return {"timeline": [{"day": d, "stories": v} for d, v in days.items()], "next": open_, "older": older, "here": here, "epics": [{"number": e["number"], "title": plain(re.sub(r"^(Epic|Feature):?\s*(E\d+:?)?\s*", "", e["title"])), "state": e["state"],
                        "sentence": plain(first_sentence(section(e.get("body"), "Business"))), "stories": [s for s in stories if s["epic"] == e["number"]]} for e in epics],
             "stories": stories, "prs": prs}
 
@@ -105,14 +159,24 @@ def build(issues: list, prs: list) -> dict:
 def render(model: dict, vision: str, now: datetime) -> str:
     e = html.escape
     delivered = "".join(
-        f'<details><summary><b>{e(ep["title"])}</b> <span class="mono">{len(ep["stories"])} done</span></summary>'
+        f'<details><summary><b>{e(ep["title"])}</b> <span class="mono">{len(ep["stories"])} done{e(day_range(ep["stories"]))}</span></summary>'
         f'<p>{e(plain(ep["sentence"]))}</p><ul>' + "".join(f'<li>{e(plain(s["text"]))}</li>' for s in ep["stories"]) + "</ul></details>"
         for ep in model["epics"] if ep["state"] == "CLOSED")
     in_progress = [s for s in model["stories"] if s["column"] in ("Doing", "Review")]
     now_rows = "".join(f'<li><b>{e(plain(s["text"]))}</b> <span class="mono">{e(s["column"].lower())}</span></li>' for s in in_progress) or "<li>Nothing is being built right now.</li>"
-    next_rows = "".join(
-        f'<li><b>{e(ep["title"])}</b><ul>' + "".join(f'<li>{e(plain(s["text"]))}</li>' for s in ep["stories"] if s["column"] == "To do") + "</ul></li>"
-        for ep in model["epics"] if any(s["column"] == "To do" for s in ep["stories"])) or "<li>Nothing is queued.</li>"
+    def next_row(s):
+        why = f' <span class="mono needs">blocked by {", ".join("#" + str(n) for n in s["blocked_by"])}</span>' if s["blocked_by"] else ' <span class="mono">ready</span>'
+        return f'<li><b>{e(plain(s["text"]))}</b> <span class="mono">#{s["number"]} · {e(s["milestone"] or "no milestone")}{" · P" + str(s["prio"]) if s["prio"] < 9 else ""}</span>{why}</li>'
+    next_rows = "".join(next_row(s) for s in model["next"]) or "<li>Nothing is queued.</li>"
+    older_rows = "".join(f'<li>{e(plain(s["text"]))} <span class="mono">#{s["number"]}</span></li>' for s in model["older"])
+    here = model["here"]
+    doing_rows = "".join(f'<li><b>{e(plain(s["text"]))}</b> <span class="mono">#{s["number"]} · since {s["started"].strftime("%H:%M") if s["started"] else "?"}</span></li>' for s in here["doing"]) or "<li>Nothing is marked doing.</li>"
+    nxt = here["next"]
+    next_line = f'<p>Next to start: <b>{e(plain(nxt["text"]))}</b> <span class="mono">#{nxt["number"]}</span></p>' if nxt else "<p>No story is ready to start.</p>"
+    timeline = "".join(
+        f'<h3>{e(day_label(datetime.strptime(d["day"], "%Y-%m-%d")))}</h3><ul>' + "".join(
+            f'<li>{e(plain(s["text"]))} <span class="mono">#{s["number"]} · {e(span(s["cycle_min"]))}</span></li>' for s in d["stories"]) + "</ul>"
+        for d in model["timeline"]) or "<p>Nothing is closed yet.</p>"
     epic_name = {ep["number"]: ep["title"] for ep in model["epics"]}
     cards = {c: "".join(
         f'<div class="card" data-story="{s["number"]}"><span class="tag">{e(epic_name.get(s["epic"], "no epic"))}</span><p>{e(s["raw"])}</p>'
@@ -142,8 +206,11 @@ footer {{ margin-top:40px; }} .needs {{ color:var(--error); }}
 <h1>GoServe roadmap</h1><p class="mono">updated {now.strftime("%H:%M")} · {done} of {len(model["stories"])} stories done</p>
 <section id="vision"><h2>Vision</h2><div class="vision">{e(vision)}</div></section>
 <section id="delivered"><h2>Delivered</h2>{delivered or "<p>Nothing finished yet.</p>"}</section>
+<section id="here"><h2>You are here</h2><p class="mono">{now.strftime("%d %b %H:%M")} India time</p><ul>{doing_rows}</ul>{next_line}</section>
+<section id="timeline"><h2>Timeline</h2>{timeline}</section>
 <section id="now"><h2>Now</h2><ul>{now_rows}</ul></section>
 <section id="next"><h2>Next</h2><ul>{next_rows}</ul></section>
+<section id="older"><h2>Older open work</h2><details><summary>{len(model["older"])} stories from before the plan</summary><ul>{older_rows}</ul></details></section>
 <section id="board"><h2>Board</h2><div class="board">{board}</div></section>
 <footer class="mono">{f'<span class="needs">{needs} {"story" if needs == 1 else "stories"} still need{"s" if needs == 1 else ""} plain words</span> · ' if needs else ""}made by scripts/roadmap.py from the GitHub issues and pull requests</footer>
 </main></body></html>
@@ -184,7 +251,7 @@ def deploy(page: str, vault: str, wrangler: list) -> tuple:
 
 
 def main(argv: list) -> int:
-    page = render(build(fetch_issues(), fetch_prs()), vision_text(), datetime.now())
+    page = render(build(fetch_issues(), fetch_prs()), vision_text(), india_now())
     if "--print" in argv:
         sys.stdout.write(page)
         return 0
