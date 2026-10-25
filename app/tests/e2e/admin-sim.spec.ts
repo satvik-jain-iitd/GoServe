@@ -10,7 +10,7 @@ test("S1 the tab asks the webhook for the status and shows the counts, the switc
   await open(page);
   await expect(page.getByRole("heading", { name: "Simulator", exact: true })).toBeVisible();
   await expect(page.getByText("Synthetic only. Real kitchens, riders and orders never change.")).toBeVisible();
-  await expect(page.getByTestId("sim-counts")).toHaveText("10 kitchens · 20 riders (14 online) · 60 dishes");
+  await expect(page.getByTestId("sim-counts")).toHaveText("10 kitchens · 40 riders (29 online) · 137 dishes");
   await expect(page.getByRole("switch", { name: "City moves every minute" })).not.toBeChecked();
   expect(net.calls.sim.map((c) => c.body.action)).toEqual(["status"]);
   expect(net.calls.sim[0].headers["x-gs-sim-token"]).toBe("sim-token");
@@ -21,13 +21,12 @@ test("S2 Seed posts the parameters and shows the new counts; nothing goes to the
   const net = await setup(context, page);
   net.state.admin = true;
   await open(page);
-  await page.getByLabel("Kitchens", { exact: true }).fill("12");
-  await page.getByLabel("Seed number").fill("7");
+  await page.getByLabel("Riders per kitchen").fill("6");   // #284: the seed loads the fixed Delhi list; only the riders are a choice
   await page.getByRole("button", { name: "Seed the city" }).click();
-  await expect(page.getByTestId("sim-counts")).toHaveText("12 kitchens · 20 riders (14 online) · 72 dishes");
-  await expect(page.getByRole("status")).toContainText("Seeded: 12 kitchens, 20 riders, 72 dishes.");
+  await expect(page.getByTestId("sim-counts")).toHaveText("10 kitchens · 60 riders (42 online) · 137 dishes");
+  await expect(page.getByRole("status")).toContainText("Seeded: 10 kitchens, 60 riders, 137 dishes.");
   const seed = net.calls.sim.find((c) => c.body.action === "seed")!;
-  expect(seed.body).toEqual({ action: "seed", kitchens: 12, riders: 20, dishes_per_kitchen: 6, seed: 7, open_pct: 80, online_pct: 70 });
+  expect(seed.body).toEqual({ action: "seed", riders_per_kitchen: 6, online_pct: 70 });
   expect(net.calls.kitchenWrites).toEqual([]);   // the admin's own reads (is_admin, numbers) may run; no sim_* function is ever called from the app
   expect(net.calls.rpc.filter((r) => r.name.startsWith("sim_"))).toEqual([]);
   expect(net.calls.menuWrites).toEqual([]);
@@ -51,7 +50,7 @@ test("S4 the switch sends enable then disable; Tick now sends tick and reports w
   await sw.click();
   await expect(sw).toBeChecked();
   await page.getByRole("button", { name: "Tick now" }).click();
-  await expect(page.getByRole("status")).toContainText("Tick: 14 riders moved, 1 kitchen flipped, 2 dishes flipped, 1 rider flipped.");
+  await expect(page.getByRole("status")).toContainText("Tick: 14 riders moved, 1 kitchen flipped, 2 dishes flipped, 1 rider flipped. Orders: 2 accepted, 1 turned away, 1 delivered, 0 riders dropped.");
   await sw.click();
   await expect(sw).not.toBeChecked();
   expect(net.calls.sim.map((c) => c.body.action)).toEqual(["status", "enable", "tick", "disable"]);
@@ -64,5 +63,21 @@ test("S5 a refused call shows the server's line and leaves the counts as they we
   net.state.reply = { status: 503, body: { ok: false, error: "kill_switch", message: "The simulator is paused." } };
   await page.getByRole("button", { name: "Seed the city" }).click();
   await expect(page.getByRole("alert")).toContainText("The simulator is paused.");
-  await expect(page.getByTestId("sim-counts")).toHaveText("10 kitchens · 20 riders (14 online) · 60 dishes");
+  await expect(page.getByTestId("sim-counts")).toHaveText("10 kitchens · 40 riders (29 online) · 137 dishes");
+});
+
+test("S6 (#284) the four scenario knobs show their values and Save posts them", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.admin = true;
+  await open(page);
+  await expect(page.getByLabel("Kitchen turns the order away %")).toHaveValue("5");
+  await expect(page.getByLabel("Item sold out %")).toHaveValue("3");
+  await expect(page.getByLabel("Kitchen is slow %")).toHaveValue("10");
+  await expect(page.getByLabel("Rider drops out %")).toHaveValue("2");
+  await page.getByLabel("Kitchen turns the order away %").fill("12");
+  await page.getByLabel("Rider drops out %").fill("30");
+  await page.getByRole("button", { name: "Save the scenario" }).click();
+  await expect(page.getByRole("status")).toContainText("Scenario saved.");
+  expect(net.calls.sim.find((c) => c.body.action === "knobs")!.body).toEqual({ action: "knobs", reject_pct: 12, sold_out_pct: 3, delay_pct: 10, rider_drop_pct: 30 });
+  expect(await axeScan(page)).toEqual([]);
 });

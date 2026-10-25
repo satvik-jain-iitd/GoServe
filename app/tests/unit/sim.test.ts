@@ -1,6 +1,6 @@
 // Story H7 (#190): the admin Simulator tab talks to n8n GS MAIN 30 (webhook gs-sim) with the simulator token, never to the database.
 import { describe, expect, it } from "vitest";
-import { callSim, SimError } from "../../src/lib/sim";
+import { KNOB_DEFAULTS, SEED_DEFAULTS, callSim, SimError, tickLine } from "../../src/lib/sim";
 
 const deps = (res: () => Promise<Response>, seen: { url?: string; init?: RequestInit } = {}) => ({
   url: "https://n8n.test/webhook/gs-sim", token: "sim-token",
@@ -23,5 +23,16 @@ describe("callSim", () => {
     await expect(callSim("status", {}, deps(async () => { throw new Error("down"); }))).rejects.toBeInstanceOf(SimError);
     await expect(callSim("status", {}, deps(async () => { throw new Error("down"); }))).rejects.toMatchObject({ message: "No network. Check your connection and try again.", code: "network" });
     await expect(callSim("tick", {}, deps(json(500, "<html>")))).rejects.toMatchObject({ code: "unknown" });
+  });
+});
+
+describe("the #284 numbers", () => {
+  it("the seed has two choices and the knobs start where the database starts", () => {
+    expect(SEED_DEFAULTS).toEqual({ riders_per_kitchen: 4, online_pct: 70 });
+    expect(KNOB_DEFAULTS).toEqual({ reject_pct: 5, sold_out_pct: 3, delay_pct: 10, rider_drop_pct: 2 });
+  });
+  it("the tick line says what the orders did", () => {
+    expect(tickLine({ ok: true, riders_moved: 3, orders: { accepted: 2, cancelled: 1, delivered: 1, dropped: 0 } })).toContain("Orders: 2 accepted, 1 turned away, 1 delivered, 0 riders dropped.");
+    expect(tickLine({ ok: true, riders_moved: 3 })).not.toContain("Orders:");
   });
 });
