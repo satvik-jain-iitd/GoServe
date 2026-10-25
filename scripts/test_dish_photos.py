@@ -1,7 +1,10 @@
 """Story #292: the dish photo loader (Openverse). Run: python3 scripts/test_dish_photos.py"""
 import io, json, unittest
 from pathlib import Path
-from PIL import Image
+try:
+    from PIL import Image
+except ImportError:   # the CI runner has no Pillow: the picture test is skipped there and runs on a Mac
+    Image = None
 from dish_photos import CHOICES, MAX_BYTES, credit, row, webp_bytes
 
 P = lambda title="Masala dosa", lic="by", ver="2.0", creator="Jane Doe", i=1: {
@@ -30,6 +33,7 @@ class Credit(unittest.TestCase):
         self.assertEqual(r["image_credit"], '"Masala dosa" by Jane Doe, CC BY 2.0')
 
 
+@unittest.skipUnless(Image, "Pillow is not installed")
 class Picture(unittest.TestCase):
     def test_a_big_photo_becomes_a_small_webp_under_the_limit(self):
         import random
