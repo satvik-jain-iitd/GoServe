@@ -37,6 +37,7 @@ Rules:
   git rm -rq --cached ops/ai 2>/dev/null; rm -rf ops/ai   # offline tools stay on dev
   git commit -m "chore: promote <what> to main"
   ```
+- **Branch map and lanes (owner, 26 Oct 2026, plan v2 D6 and D7):** `main` = releases. `dev` = the PWA MVP2 (hotfix only after the tag `mvp2-demo`, on the owner's ask). `staging` = native apps and backend v2, code only (`supabase/`, `api/`, `android/`, `ios/`, `design/tokens.json`, `.github/`), same dev practice as `dev`. `documents` = every document (plans, ADRs, research, tests list, trace, learnings, the review book). One stack may be open per lane (`pwa`, `documents`, and on `staging` `backend`, `android`, `ios`); a release to `main` takes the run-critical paths from `dev` or `staging` with the recipe above.
 - I never push directly to `main`.
 - **One stack at a time** (owner, 22 Oct 2026, `CLAUDE.md` rule 19): one PR or one `gh stack` chain open in the whole repo. Dependent work is a layer on top, not a loose PR. Review and merge bottom up; GitHub rebases the rest. Review changes are commits on the same layer, then `gh stack sync`. **Merge the bottom layer; the coder then runs `gh pr edit <n> --base dev` on the next layer and tells the owner "base is dev"; only then the owner merges it. The owner merges a layer only when the PR page shows base dev. A layer merged into a base that was already merged is lost (#228 on 24 Oct, #233 on 25 Oct 2026).**
 - PR template: issue link, what changed, scenarios covered, test output pasted, demo, decisions made (ADR link), ideas noted.
