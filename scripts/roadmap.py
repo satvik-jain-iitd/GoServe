@@ -10,7 +10,7 @@ A launchd job (ops/launchd/com.goserve.roadmap.plist) runs it every 15 minutes.
 """
 from __future__ import annotations   # /usr/bin/python3 under launchd may be 3.9
 import html, json, os, re, shutil, subprocess, sys, tempfile
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "docs", "roadmap", "index.html")
@@ -86,6 +86,11 @@ def column(story: dict, pr: dict | None) -> str:
 
 IST = timedelta(hours=5, minutes=30)
 PRIO = {"P0": 0, "P1": 1, "P2": 2}
+
+
+def india_now() -> datetime:
+    """The page clock: India time as a naive datetime, whatever time zone the machine is in (a GitHub runner is UTC)."""
+    return datetime.now(timezone.utc).replace(tzinfo=None) + IST
 
 
 def ist(stamp: str | None) -> datetime | None:
@@ -246,7 +251,7 @@ def deploy(page: str, vault: str, wrangler: list) -> tuple:
 
 
 def main(argv: list) -> int:
-    page = render(build(fetch_issues(), fetch_prs()), vision_text(), datetime.now())
+    page = render(build(fetch_issues(), fetch_prs()), vision_text(), india_now())
     if "--print" in argv:
         sys.stdout.write(page)
         return 0

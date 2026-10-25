@@ -1,7 +1,7 @@
 # Story #239 (epic E21): the roadmap renderer. A fixture of issues and PRs goes in; one HTML page comes out.
 # Run: python3 -m unittest scripts/test_roadmap.py  (no token, no network: the fixture replaces gh)
 import os, re, sys, unittest
-from datetime import datetime
+from datetime import datetime, timedelta
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import roadmap
 
@@ -196,6 +196,28 @@ class RoadmapV2(unittest.TestCase):
         d = html.split('id="delivered"')[1].split('id="here"')[0]
         self.assertIn("21 Oct to 25 Oct", d)
         self.assertNotIn("<details open", d)   # collapsed
+
+
+class IndiaClock(unittest.TestCase):
+    def test_the_page_clock_is_india_time_even_when_the_machine_runs_in_utc(self):
+        # A GitHub runner has no India time zone: the page must still say India time (review of #436).
+        import io, time, contextlib
+        old_tz = os.environ.get("TZ")
+        os.environ["TZ"] = "UTC"; time.tzset()
+        saved = (roadmap.fetch_issues, roadmap.fetch_prs, roadmap.vision_text)
+        try:
+            roadmap.fetch_issues, roadmap.fetch_prs, roadmap.vision_text = lambda: [], lambda: [], lambda: "v"
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                roadmap.main(["--print"])
+            from datetime import timezone
+            want = {(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=5, minutes=30) + timedelta(minutes=k)).strftime("%H:%M") for k in (-1, 0, 1)}
+            self.assertTrue(any(f"updated {w}" in buf.getvalue() for w in want), buf.getvalue()[buf.getvalue().index("updated"):][:30])
+        finally:
+            roadmap.fetch_issues, roadmap.fetch_prs, roadmap.vision_text = saved
+            if old_tz is None: os.environ.pop("TZ", None)
+            else: os.environ["TZ"] = old_tz
+            time.tzset()
 
 
 if __name__ == "__main__":
