@@ -121,3 +121,14 @@ Runs: the research pass of `docs/research/quick-commerce-dispatch-2026-10.md` (3
 | Open vehicle-routing solvers (OR-Tools class) | C | Routing with time windows. | Needs customer coordinates and road times we do not have yet (Stage 2). | Later, Stage 3 |
 
 Decision: one SQL function (`dispatch_match`) written from the research file's Stage 1 steps, one tick function that applies it, replayed by `scripts/dispatch_sim.py` (E9). Nothing found that fits; built from scratch. Confidence 0.8 on the design (D4 ready-time is Tier A), 0.6 on the size of the gain at our scale until E9.
+
+## 2026-10-25 · need: build and sign the Bubblewrap APK in GitHub Actions on a release and attach it (story #251, epic E22)
+
+Runs: `gh search repos "bubblewrap twa build action"` → nothing; GitHub `topic:trusted-web-activity github-actions` → nothing. The Bubblewrap README (Tier A) already documents the CI shape: `BUBBLEWRAP_KEYSTORE_PASSWORD` and `BUBBLEWRAP_KEY_PASSWORD` in the environment, `bubblewrap build --skipPwaValidation`. Log: radar record of #250 above.
+
+| Repo | Tier | Fit | Verdict |
+|---|---|---|---|
+| GoogleChromeLabs/bubblewrap | A | The CLI itself runs in CI with the two env vars; `actions/setup-java` and the runner's Android SDK give the rest. | Adopt (already chosen in #250) |
+| A ready-made GitHub Action for Bubblewrap | none found | n/a | Build the 90-line workflow ourselves |
+
+Decision: one workflow file, no new dependency except `qrencode` from apt for the QR picture. Confidence 0.7: the steps follow the spike on my Mac, but the first run on a GitHub runner is still to be seen (F181).
