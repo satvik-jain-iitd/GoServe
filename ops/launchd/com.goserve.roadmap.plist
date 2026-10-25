@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- Story #239: refresh the roadmap page every 15 minutes. /usr/local/bin/python3 (universal 3.13), like the other LaunchAgents on this Mac:
+<!-- Story #239 and #247: refresh the roadmap page every 15 minutes and publish it to the public Cloudflare Pages project goserve-roadmap.
+     Owner's two steps (phase gate): (1) in the Cloudflare dashboard create the Pages project `goserve-roadmap` (Direct Upload, no git);
+     (2) make an API token that can edit Cloudflare Pages and save it in ~/Desktop/Secrets/03_cloudflare.env as CLOUDFLARE_ROADMAP_TOKEN=..., with CLOUDFLARE_ACCOUNT_ID=... on the next line (file mode 0600).
+     Without them the page is still written on this Mac and /tmp/goserve-roadmap.log says which variable is missing. /usr/local/bin/python3 (universal 3.13), like the other LaunchAgents on this Mac:
      the Command Line Tools python is blocked by macOS from reading ~/Documents under launchd ("Operation not permitted", 25 Oct 2026).
      Install: cp ops/launchd/com.goserve.roadmap.plist ~/Library/LaunchAgents/ && launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.goserve.roadmap.plist
      Remove:  launchctl bootout gui/$(id -u)/com.goserve.roadmap -->
@@ -8,10 +11,10 @@
 <dict>
   <key>Label</key><string>com.goserve.roadmap</string>
   <key>ProgramArguments</key>
-  <array><string>/usr/local/bin/python3</string><string>/Users/satvikjain/Documents/GoServe/scripts/roadmap.py</string></array>
+  <array><string>/usr/local/bin/python3</string><string>/Users/satvikjain/Documents/GoServe/scripts/roadmap.py</string><string>--deploy</string></array>
   <key>WorkingDirectory</key><string>/Users/satvikjain/Documents/GoServe</string>
   <key>EnvironmentVariables</key>
-  <dict><key>PATH</key><string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string></dict>
+  <dict><key>PATH</key><string>/Users/satvikjain/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string></dict>
   <key>StartInterval</key><integer>900</integer>
   <key>RunAtLoad</key><true/>
   <key>StandardOutPath</key><string>/tmp/goserve-roadmap.log</string>
