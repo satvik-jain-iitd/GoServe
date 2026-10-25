@@ -19,6 +19,12 @@ if (db && db.rows) {
   out.push('Database size: ' + num(db.db_mb) + ' of ' + cap + ' MB · ' + mark(Number(db.db_mb), cap));
   out.push('Open database connections: ' + db.connections);
   out.push('Rows: ' + ['orders', 'run_log', 'rider_pings', 'order_events'].map((t) => t + ' ' + db.rows[t]).join(', '));
+  if (db.ai) {   // story #253: who made the decisions today, and what Jev cost
+    const cap = Number(db.ai.jev_cap) || 0;
+    const n = Number(db.ai.jev_calls_today) || 0;
+    out.push('Jev calls today: ' + n + ' of ' + cap + ' allowed · cost $' + String(Number(Number(db.ai.jev_cost_today || 0).toFixed(6))) + ' · ' + (cap === 0 ? 'OFF' : mark(n, cap)));
+    out.push('Laya calls today: 0 (not deployed)');
+  }
   out.push('Oldest rows: ' + ['orders', 'run_log', 'rider_pings', 'order_events'].map((t) => t + ' ' + day(db.oldest && db.oldest[t])).join(', '));
 } else out.push('Database: could not read');
 
