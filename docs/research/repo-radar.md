@@ -132,3 +132,15 @@ Runs: `gh search repos "bubblewrap twa build action"` → nothing; GitHub `topic
 | A ready-made GitHub Action for Bubblewrap | none found | n/a | Build the 90-line workflow ourselves |
 
 Decision: one workflow file, no new dependency except `qrencode` from apt for the QR picture. Confidence 0.7: the steps follow the spike on my Mac, but the first run on a GitHub runner is still to be seen (F181).
+
+## 2026-10-25 · need: seed a realistic simulated food delivery city: restaurants, menus, couriers that move (E16 dream city, stories #282 to #284)
+
+Runs: `scout.py --need "seed a realistic simulated food delivery city: restaurants, menus, couriers that move"` → no repos found; a second run with "synthetic delivery data generator couriers restaurants" → no repos found; `gh search repos "food delivery simulation courier"` and `--topic food-delivery --topic simulation`. Read the two READMEs that matched.
+
+| Repo | Tier | Fit | Verdict |
+|---|---|---|---|
+| seldon1000/Food-Delivery-Simulation | C | A C and TCP exam project, 0 stars, last push 2021. No Delhi data, no database. | Skip |
+| ankitjangir-ai/zomato-batching | C | A Python batching study on synthetic Indian cities. It already informed #273 and has no seed data or live tick. | Borrow ideas only (already done in E9) |
+| Our own `sim_seed` and `sim_tick` (0028, 0030) | S | Seed, reset and the tick exist, with random kitchens. | Extend in SQL (0034, 0035) |
+
+Decision: nothing off the shelf seeds named kitchens, menus and moving riders inside Postgres. Build in SQL by extending the existing functions, no new dependency. The menu data comes from web research, written under the `web-research` skill. Confidence 0.8 that nothing fits.
