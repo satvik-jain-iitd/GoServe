@@ -6,7 +6,7 @@ import { clientPlatform } from "./lib/platform";
 import { riderRefused, savePlatform, tapCall } from "./lib/signals";
 import { useLiveOrders } from "./lib/useLiveOrders";
 import { loadMenu, MENU_KEY, type Dish } from "./lib/menu";
-import { fetchKitchens, forgetArea, loadArea, loadPin, openingText, resolveArea, savePin, type Area } from "./lib/area";
+import { fetchKitchens, forgetArea, loadArea, loadPin, closedLine, openingText, resolveArea, savePin, type Area } from "./lib/area";
 import { AreaScreen } from "./screens/AreaScreen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { AdminGate } from "./screens/AdminGate";
@@ -508,7 +508,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             pin={pin} name={name} qty={cart} cartCount={count} cartTotal={total}
             kitchenName={kitchenName}
             openText={area?.kind === "ok" ? openTill(area.kitchen.closes_at) : ""}
-            closedText={area?.kind === "closed" ? openingText(area.name, area.opens_at) : null}
+            closedText={area?.kind === "closed" ? closedLine(area.opens_at) : null}
             onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
             onChangePin={changeArea} onOrders={() => setStep("orders")} onYou={() => setStep("account")} />
         )}
