@@ -24,13 +24,20 @@ test('H5 the token check accepts only the sim token in x-gs-sim-token and only s
 
 test('H5 the guard fills defaults, clamps the numbers and picks the database function', () => {
   const seed = run('guard_sim.js', { action: 'seed', body: {}, kill_switch: false, supabase_url: 'u' });
-  assert.deepEqual(seed, { ok: true, supabase_url: 'u', rpc_fn: 'sim_seed', rpc_body: { p: { kitchens: 10, riders: 20, dishes_per_kitchen: 6, seed: 42, open_pct: 80, online_pct: 70 } } });
-  const big = run('guard_sim.js', { action: 'seed', body: { kitchens: 9999, riders: -3, dishes_per_kitchen: '4', seed: 7, open_pct: 150 }, kill_switch: false, supabase_url: 'u' });
-  assert.deepEqual(big.rpc_body.p, { kitchens: 50, riders: 1, dishes_per_kitchen: 4, seed: 7, open_pct: 100, online_pct: 70 });
+  assert.deepEqual(seed, { ok: true, supabase_url: 'u', rpc_fn: 'sim_seed', rpc_body: { p: { riders_per_kitchen: 4, online_pct: 70 } } });
+  const big = run('guard_sim.js', { action: 'seed', body: { riders_per_kitchen: 9999, online_pct: -5 }, kill_switch: false, supabase_url: 'u' });
+  assert.deepEqual(big.rpc_body.p, { riders_per_kitchen: 20, online_pct: 0 });
+  const knobs = run('guard_sim.js', { action: 'knobs', body: { reject_pct: 12, sold_out_pct: 'x', delay_pct: 250, rider_drop_pct: 3 }, kill_switch: false, supabase_url: 'u' });   // #284: the four scenario knobs
+  assert.equal(knobs.rpc_fn, 'sim_set_knobs');
+  assert.deepEqual(knobs.rpc_body.p, { reject_pct: 12, sold_out_pct: 3, delay_pct: 100, rider_drop_pct: 3 });   // a bad number falls back to the default; over 100 clamps
   const reset = run('guard_sim.js', { action: 'reset', body: {}, kill_switch: false, supabase_url: 'u' });
   assert.equal(reset.rpc_fn, 'sim_reset'); assert.deepEqual(reset.rpc_body, {});
   assert.equal(run('guard_sim.js', { action: 'seed', body: {}, kill_switch: true }).status_code, 503);
   assert.equal(run('guard_sim.js', { action: 'bad', body: {}, kill_switch: false }).status_code, 400);
+});
+
+test('#284 the token check lets the knobs action through', () => {
+  assert.equal(run('sim_token.js', { headers: { 'x-gs-sim-token': 'S' }, body: { action: 'knobs' }, sim_token: 'S' }).action, 'knobs');
 });
 
 test('H5 MAIN 30 wiring: webhook, Config, token, kill switch, route to SUB 30, respond; the sim token never sits in a node', () => {

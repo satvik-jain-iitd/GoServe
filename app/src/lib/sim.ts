@@ -5,9 +5,11 @@ export class SimError extends Error {
     super(message);
   }
 }
-export type SimAction = "status" | "seed" | "reset" | "tick" | "enable" | "disable";
+export type SimAction = "status" | "seed" | "reset" | "tick" | "enable" | "disable" | "knobs";
 export type SimDeps = { url: string; token: string; fetchFn: typeof fetch };
-export type SimAnswer = { ok: boolean; enabled?: boolean; kitchens?: number; kitchens_open?: number; riders?: number; riders_online?: number; dishes?: number; orders?: number; riders_moved?: number; kitchens_flipped?: number; dishes_flipped?: number; riders_flipped?: number; skipped?: string; error?: string; message?: string };
+export type Knobs = { reject_pct: number; sold_out_pct: number; delay_pct: number; rider_drop_pct: number };
+export type OrderTick = { accepted?: number; cancelled?: number; delivered?: number; dropped?: number };
+export type SimAnswer = { ok: boolean; knobs?: Knobs; orders?: OrderTick | number; enabled?: boolean; kitchens?: number; kitchens_open?: number; riders?: number; riders_online?: number; dishes?: number; riders_moved?: number; kitchens_flipped?: number; dishes_flipped?: number; riders_flipped?: number; skipped?: string; error?: string; message?: string };
 export const simDeps = (): SimDeps => ({ url: import.meta.env.VITE_SIM_URL, token: import.meta.env.VITE_SIM_TOKEN, fetchFn: fetch.bind(window) });
 
 export async function callSim(action: SimAction, params: Record<string, number | string>, deps: SimDeps): Promise<SimAnswer> {
@@ -24,7 +26,13 @@ export async function callSim(action: SimAction, params: Record<string, number |
   throw new SimError("Something went wrong. Please try again.", "unknown");
 }
 
-// The seed parameters the tab shows; the server clamps them again (1 to 50 kitchens, 1 to 200 riders, 1 to 12 dishes).
-export const SEED_DEFAULTS = { kitchens: 10, riders: 20, dishes_per_kitchen: 6, seed: 42, open_pct: 80, online_pct: 70 };
+// What the tab shows. The seed loads the fixed Delhi list (migration 0034), so only the riders are a choice. The knobs start where the database starts (0036).
+export const SEED_DEFAULTS = { riders_per_kitchen: 4, online_pct: 70 };
+export const KNOB_DEFAULTS: Knobs = { reject_pct: 5, sold_out_pct: 3, delay_pct: 10, rider_drop_pct: 2 };
 export const countsLine = (a: SimAnswer): string => `${a.kitchens ?? 0} kitchens · ${a.riders ?? 0} riders (${a.riders_online ?? 0} online) · ${a.dishes ?? 0} dishes`;
-export const tickLine = (a: SimAnswer): string => a.skipped ? "Tick: the city is off, nothing moved." : `Tick: ${a.riders_moved ?? 0} riders moved, ${a.kitchens_flipped ?? 0} kitchen${a.kitchens_flipped === 1 ? "" : "s"} flipped, ${a.dishes_flipped ?? 0} dishes flipped, ${a.riders_flipped ?? 0} rider${a.riders_flipped === 1 ? "" : "s"} flipped.`;
+export const tickLine = (a: SimAnswer): string => {
+  if (a.skipped) return "Tick: the city is off, nothing moved.";
+  const o = typeof a.orders === "object" ? a.orders : null;
+  const orders = o ? ` Orders: ${o.accepted ?? 0} accepted, ${o.cancelled ?? 0} turned away, ${o.delivered ?? 0} delivered, ${o.dropped ?? 0} riders dropped.` : "";
+  return `Tick: ${a.riders_moved ?? 0} riders moved, ${a.kitchens_flipped ?? 0} kitchen${a.kitchens_flipped === 1 ? "" : "s"} flipped, ${a.dishes_flipped ?? 0} dishes flipped, ${a.riders_flipped ?? 0} rider${a.riders_flipped === 1 ? "" : "s"} flipped.${orders}`;
+};
