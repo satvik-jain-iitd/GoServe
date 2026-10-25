@@ -135,9 +135,9 @@ update riders set online = true, lat = 28.90, lng = 77.60 where user_id = '{U['r
 update kitchens set lat = 28.5494, lng = 77.2001 where id = '{K1}';
 insert into orders (id, kitchen_id, session_id, client_order_key, status, items, total_paise, address) values ('00000000-0000-4000-8000-0000000002e1', '{K1}', 'dispatch-s', 'k-d1', 'ready', '[]', 100, 'x');
 create temp table dx0 as select (select jsonb_array_length(dispatch_candidates('00000000-0000-4000-8000-0000000002e1') -> 'riders')) = 2 as v;
-create temp table dx1 as select (dispatch_candidates('00000000-0000-4000-8000-0000000002e1') -> 'riders' -> 0 ->> 'id') = '{U['rider2']}' as v;   -- #272: the free rider comes first, even 40 km away; the near one carries a ready order
+create temp table dx1 as select (dispatch_candidates('00000000-0000-4000-8000-0000000002e1') -> 'riders' -> 0 ->> 'id') = '{U['rider']}' as v;
 create temp table dx2 as select (select (r ->> 'free')::boolean from jsonb_array_elements(dispatch_candidates('00000000-0000-4000-8000-0000000002e1') -> 'riders') r where r ->> 'id' = '{U['rider']}') is false as v;
-create temp table dx3 as select ((select (r ->> 'distance_m')::int from jsonb_array_elements(dispatch_candidates('00000000-0000-4000-8000-0000000002e1') -> 'riders') r where r ->> 'id' = '{U['rider']}') between 100 and 2000) as v;
+create temp table dx3 as select ((dispatch_candidates('00000000-0000-4000-8000-0000000002e1') -> 'riders' -> 0 ->> 'distance_m')::int between 100 and 2000) as v;
 do $$ begin begin perform dispatch_candidates('00000000-0000-4000-8000-0000000002ff'); create temp table dx4 as select false as v; exception when others then create temp table dx4 as select (sqlerrm like '%order_not_found%') as v; end; end $$;
 do $$ begin perform assign_rider('00000000-0000-4000-8000-0000000002e1', '{U['rider2']}'); end $$;
 create temp table dx5 as select (select rider_id from orders where id = '00000000-0000-4000-8000-0000000002e1') = '{U['rider2']}' and (select count(*) from order_events where order_id = '00000000-0000-4000-8000-0000000002e1' and event = 'order.assigned') = 1 as v;
@@ -161,7 +161,7 @@ create temp table dx14 as select (push_targets('{U['cust']}') -> 'targets' -> 0 
 do $$ begin perform push_forget('{EP}'); end $$;
 create temp table dx15 as select jsonb_array_length(push_targets('{U['cust']}') -> 'targets') = 0 as v;
 """
-DISPATCH_NAMES = ["candidates: both online riders are listed", "candidates: a free rider comes before a busy one (#272)", "candidates: a rider with an open ready order is not free", "candidates: the distance to the kitchen is in metres", "candidates: an unknown order is refused",
+DISPATCH_NAMES = ["candidates: both online riders are listed", "candidates: the nearest rider is first", "candidates: a rider with an open ready order is not free", "candidates: the distance to the kitchen is in metres", "candidates: an unknown order is refused",
                   "assign: the rider is saved on the order and one event is written", "assign: a second call for the same rider changes nothing", "assign: another rider cannot take an assigned order", "assign: an order that is not ready is refused",
                   "assign: a rider who is offline is refused", "assign: a refused call leaves the order unassigned",
                   "place_order refuses a closed kitchen", "place_order refuses an inactive kitchen", "place_order works again once the kitchen is open and active",
@@ -176,6 +176,8 @@ true_for("the kitchen is closed after that", "admin", f"(select not open from ki
 raises("kitchen staff cannot close another kitchen", "staff", f"perform set_kitchen_open('{K2}', false)")
 raises("an admin can open any kitchen", "admin", f"perform set_kitchen_open('{K1}', true)", expect_ok=True)
 raises("a stranger cannot open or close a kitchen", "stranger", f"perform set_kitchen_open('{K1}', false)")
+raises("#272: a stranger cannot flip the per-order pick", "stranger", "perform set_per_order_pick('nearest_band')")
+raises("#272: an unknown pick is refused", "admin", "perform set_per_order_pick('fastest')")
 
 
 # Story A7 (#154): web push subscriptions and the notification text.
@@ -512,13 +514,15 @@ update riders set online = false where not synthetic and user_id not in ('{NR['a
 insert into kitchens (id, name, pin_codes, open, active, lat, lng, synthetic) values ('{NK}', 'Near Kitchen', '{{110097}}', true, true, 28.55, 77.20, false);
 insert into orders (id, kitchen_id, session_id, client_order_key, status, items, total_paise, address) values ('{NO}', '{NK}', 'near-s', 'nk-0', 'ready', '[]', 100, 'x');
 {_nr("a", 400)}{_nr("b", 3000)}{_trips("a", 3)}
+{_dn(8, f"not (dispatch_candidates('{NO}') -> 'riders' -> 0 ? 'rank') and {_pos('a')} < {_pos('b')}")}
+insert into params (kitchen_id, session_id, key, value, version) values (null, 'global', 'per_order_rules', '{{"pick":"nearest_band","near_band_m":500,"fresh_ping_s":90}}', 3);
 {_dn(0, f"{_pos('a')} < {_pos('b')}")}
 update riders set lat = 28.55 + 300 * 0.0009 / 100 where user_id = '{NR['a']}';
 update riders set lat = 28.55 + 600 * 0.0009 / 100 where user_id = '{NR['b']}';
 {_dn(1, f"{_pos('b')} < {_pos('a')}")}
-insert into params (kitchen_id, session_id, key, value, version) values (null, 'global', 'per_order_rules', '{{"near_band_m":100,"fresh_ping_s":90}}', 2) on conflict (session_id, key, version) do nothing;
+insert into params (kitchen_id, session_id, key, value, version) values (null, 'global', 'per_order_rules', '{{"pick":"nearest_band","near_band_m":100,"fresh_ping_s":90}}', 4) on conflict (session_id, key, version) do nothing;
 {_dn(2, f"{_pos('a')} < {_pos('b')}")}
-delete from params where session_id = 'global' and key = 'per_order_rules' and version = 2;
+delete from params where session_id = 'global' and key = 'per_order_rules' and version = 4;
 {_nr("c", None)}
 {_dn(3, f"{_pos('a')} < {_pos('c')} and {_pos('b')} < {_pos('c')}")}
 update riders set updated_at = now() - interval '5 minutes' where user_id = '{NR['a']}';
@@ -529,11 +533,12 @@ update riders set updated_at = now() where user_id in ('{NR['a']}', '{NR['b']}',
 insert into orders (id, kitchen_id, session_id, client_order_key, status, items, total_paise, address, rider_id) values (gen_random_uuid(), '{NK}', 'near-a2', 'nk-busy', 'out_for_delivery', '[]', 100, 'x', '{NR['a']}');
 {_dn(6, f"{_pos('b')} < {_pos('a')} and (select (r ->> 'free')::boolean from jsonb_array_elements(dispatch_candidates('{NO}') -> 'riders') r where r ->> 'id' = '{NR['a']}') is false")}
 {_dn(7, f"(select bool_and((r ->> 'rank')::int = ord) from jsonb_array_elements(dispatch_candidates('{NO}') -> 'riders') with ordinality t(r, ord))")}
+delete from params where session_id = 'global' and key = 'per_order_rules' and version = 3;
 """
 NEAR_NAMES = ["#272: a free rider 400 m away beats one 3 km away even with more trips", "#272: two riders inside the 500 m band: fewer trips today wins",
   "#272: the band is a tunable (100 m: the nearer rider wins again)", "#272: a rider with no place on the map is last",
   "#272: a stale ping ranks behind a fresh one, but is still a candidate", "#272: only stale pings: still candidates, nearest first",
-  "#272: a rider on a delivery ranks behind free riders even if nearer", "#272: the list comes back in rank order, rank 1, 2, 3 ..."]
+  "#272: a rider on a delivery ranks behind free riders even if nearer", "#272: the list comes back in rank order, rank 1, 2, 3 ...", "#272: default params (pick fewest_trips) give today's order exactly, no rank"]
 
 def run(ref: str, query: str):
     req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/database/query", data=json.dumps({"query": query}).encode(),

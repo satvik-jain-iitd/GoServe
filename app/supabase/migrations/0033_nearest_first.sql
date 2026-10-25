@@ -1,10 +1,11 @@
+-- `pick` chooses the rule: 'fewest_trips' (default, exactly today's list, no rank) or 'nearest_band'. The owner flips it with set_per_order_pick.
 -- Story #272 (epic E23, from follow-up F178 and the E9 control arm). Per-order mode: when an order is ready, the NEAREST free rider gets it.
 -- Trips today break a tie only between riders within `near_band_m` (500 m) of the nearest one. Before this, the rule took the rider with the fewest trips first, even a
 -- far one (SUB 13). The rule lives here, in SQL, as a rank; the n8n guard just follows the rank. Real and synthetic still never mix.
 -- A rider with no place on the map, or with a ping older than `fresh_ping_s`, ranks after the ones that have both; if nobody is fresh the stale riders still count, by distance only (no band).
 
 insert into params (kitchen_id, session_id, key, value, version)
-values (null, 'global', 'per_order_rules', '{"near_band_m":500,"fresh_ping_s":90}', 1)
+values (null, 'global', 'per_order_rules', '{"pick":"fewest_trips","near_band_m":500,"fresh_ping_s":90}', 1)
 on conflict (session_id, key, version) do nothing;
 
 create or replace function dispatch_candidates(p_order uuid) returns jsonb
@@ -15,6 +16,7 @@ declare
   v_rules jsonb := coalesce((select value from params where session_id = 'global' and key = 'per_order_rules' order by version desc limit 1), '{}'::jsonb);
   v_band double precision := coalesce((v_rules ->> 'near_band_m')::double precision, 500);
   v_fresh double precision := coalesce((v_rules ->> 'fresh_ping_s')::double precision, 90);
+  v_pick text := coalesce(v_rules ->> 'pick', 'fewest_trips');
 begin
   select * into v_order from orders where id = p_order;
   if v_order.id is null then
@@ -24,6 +26,20 @@ begin
     return jsonb_build_object('riders', '[]'::jsonb, 'batch', true);
   end if;
   select * into v_kitchen from kitchens where id = v_order.kitchen_id;
+  if v_pick <> 'nearest_band' then
+    return jsonb_build_object('riders', coalesce((
+      select jsonb_agg(jsonb_build_object('id', c.id, 'free', c.free, 'distance_m', c.distance_m, 'trips_done', c.trips_done) order by c.distance_m, c.trips_done)
+      from (
+        select r.user_id::text as id,
+               not exists (select 1 from orders o where o.rider_id = r.user_id and o.status in ('ready', 'out_for_delivery')) as free,
+               case when r.lat is null or v_kitchen.lat is null then 0 else round(distance_m(v_kitchen.lat, v_kitchen.lng, r.lat, r.lng))::integer end as distance_m,
+               (select count(*) from orders o where o.rider_id = r.user_id and o.status in ('out_for_delivery', 'delivered')
+                  and (o.created_at at time zone 'Asia/Kolkata')::date = (now() at time zone 'Asia/Kolkata')::date)::integer as trips_done
+        from riders r where r.online and r.synthetic = v_kitchen.synthetic
+        order by 3, 4
+        limit 10
+      ) c), '[]'::jsonb));
+  end if;
   return jsonb_build_object('riders', coalesce((
     select jsonb_agg(jsonb_build_object('id', c.id, 'free', c.free, 'distance_m', c.distance_m, 'trips_done', c.trips_done, 'rank', c.rank) order by c.rank)
     from (
@@ -50,3 +66,23 @@ end $$;
 
 revoke execute on function dispatch_candidates(uuid) from public, anon, authenticated;
 grant execute on function dispatch_candidates(uuid) to service_role;
+
+create or replace function set_per_order_pick(p_pick text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_rules jsonb := coalesce((select value from params where session_id = 'global' and key = 'per_order_rules' order by version desc limit 1), '{}'::jsonb);
+begin
+  if not is_admin() then
+    raise exception 'not_admin';
+  end if;
+  if p_pick not in ('fewest_trips', 'nearest_band') then
+    raise exception 'unknown_pick';
+  end if;
+  insert into params (kitchen_id, session_id, key, value, version)
+  values (null, 'global', 'per_order_rules', jsonb_set(v_rules, '{pick}', to_jsonb(p_pick)),
+          coalesce((select max(version) from params where session_id = 'global' and key = 'per_order_rules'), 0) + 1);
+  return jsonb_build_object('pick', p_pick);
+end $$;
+
+revoke execute on function set_per_order_pick(text) from public, anon;
+grant execute on function set_per_order_pick(text) to authenticated;

@@ -85,4 +85,4 @@ The question: does "nearest free rider at Ready, trips today break a tie only in
 
 **Sweep, so nobody tunes by hand.** Band 1500 m passed load 1.0 on seeds 1 to 3 (0 of 3 over the line) but on fresh seeds 4 to 6 both 500 m and 1500 m break the line on 1 of 3 seeds. Band 250 and 1000 m changed nothing on seeds 1 and 2. I keep the 500 m the story names. The band is a param (`per_order_rules`), so the owner can widen it without code.
 
-**Verdict: PARTIAL.** A clear gain below the peak, a tail risk at the peak. The pilot has 2 kitchens and 2 riders, so it sits at the light end. Follow-up F179 checks the tail with real trips.
+**Verdict: PARTIAL, so it ships behind a switch.** At 0.4 and 0.6, the pilot's load, the band rule wins on every seed. At 1.0 both rules are saturated (door P90 about 92 min), which is batch mode's job. The param `per_order_rules.pick` is `fewest_trips` (today, exactly) by default or `nearest_band`; `set_per_order_pick` (admin) flips it. F179 compares them on real trips.
