@@ -1,14 +1,15 @@
-// The founder's app on the Ink v3 boards A1 to A4 and A8 (story H12, #195; story A2): the gate, Orders, City (the kitchen, staff and menu tools until the A5 to A7 layer), Numbers.
+// The founder's app on the Ink v3 boards A1 to A4 and A8 (story H12, #195; story A2): the gate, Orders, City (the kitchen, staff and menu tools until the A5 to A7 layer), Numbers, Simulator (H7, #190).
 import { useCallback, useEffect, useState } from "react";
 import { isAdmin, listKitchens, listPeople, listRiders, type KitchenRow, type Person, type RiderListRow } from "../lib/admin";
 import { ensureSession, getClient } from "../lib/supabase";
 import { AdminCity } from "./AdminCity";
 import { AdminNumbers } from "./AdminNumbers";
 import { AdminOrders } from "./AdminOrders";
+import { AdminSim } from "./AdminSim";
 import { SignIn } from "./SignIn";
 import { StaffLanding, Tabs } from "../ui";
 
-type Tab = "orders" | "city" | "numbers";
+type Tab = "orders" | "city" | "numbers" | "sim";
 type CityView = { kind: "list" } | { kind: "kitchen"; id: string } | { kind: "add" };
 
 export function AdminScreen() {
@@ -61,7 +62,7 @@ export function AdminScreen() {
     </StaffLanding>
   );
 
-  const head = tab === "orders" ? { h: "Orders", meta: `Today · ${count.total}` } : tab === "city" ? { h: "City", meta: "Delhi" } : { h: "Numbers", meta: `Today · ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` };
+  const head = tab === "orders" ? { h: "Orders", meta: `Today · ${count.total}` } : tab === "city" ? { h: "City", meta: "Delhi" } : tab === "sim" ? { h: "Simulator", meta: "Synthetic city" } : { h: "Numbers", meta: `Today · ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` };
   const ordersView = <AdminOrders kitchens={kitchens} onError={setError} open={openOrder} onOpen={setOpenOrder} onCount={onCount} />;
   if (tab === "orders" && openOrder) return <>{error && <p role="alert" className="ui-note error">{error}</p>}{ordersView}</>;   // A4 sits over the tabs
   const cityScreen = <AdminCity kitchens={kitchens} people={people} riders={riders} onError={setError} reload={load} view={cityView} onView={setCityView} />;
@@ -73,7 +74,8 @@ export function AdminScreen() {
       {tab === "orders" && ordersView}
       {tab === "numbers" && <div className="ui-scroll"><AdminNumbers live={count.live} kitchens={kitchens} /></div>}
       {tab === "city" && cityScreen}
-      <Tabs current={tab} onPick={(t) => { setError(null); setTab(t); }} tabs={[{ key: "orders", label: "Orders", icon: "orders", badge: count.live }, { key: "city", label: "City", icon: "city" }, { key: "numbers", label: "Numbers", icon: "numbers" }]} />
+      {tab === "sim" && <div className="ui-scroll"><AdminSim /></div>}
+      <Tabs current={tab} onPick={(t) => { setError(null); setTab(t); }} tabs={[{ key: "orders", label: "Orders", icon: "orders", badge: count.live }, { key: "city", label: "City", icon: "city" }, { key: "numbers", label: "Numbers", icon: "numbers" }, { key: "sim", label: "Simulator", icon: "sim" }]} />
     </>
   );
 }

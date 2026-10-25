@@ -580,7 +580,7 @@ function build({ ids, token, simToken, supabaseUrl, credential, openrouterCreden
   const sub30 = sub({ name: 'GS SUB 30 Simulator write', n: 30, callerIds: [ids.main30, ids.main31].filter(Boolean).join(','), credential: cred, settings,
     fields: [['action', 'string'], ['body', 'object'], ['kill_switch', 'boolean'], ['supabase_url', 'string']],
     guardFile: 'guard_sim.js', rpc: { fn: 'sim_seed or sim_reset', label: 'Seed or reset', dynamic: true },
-    what: 'Seed fills the synthetic kitchens, dishes and riders (same seed, same rows). Reset deletes every synthetic row and nothing else. Tick moves the synthetic riders and flips a few kitchens and dishes (H6). Enable and disable write the sim_enabled switch.' });
+    what: 'Seed fills the synthetic kitchens, dishes and riders (same seed, same rows). Reset deletes every synthetic row and nothing else. Tick moves the synthetic riders and flips a few kitchens, dishes and riders (H6). Enable and disable write the sim_enabled switch. Status reads the switch and the counts for the admin tab (H7).' });
   const n30 = [
     node('gs-main30-01', 'Sim webhook', 'n8n-nodes-base.webhook', 2, { httpMethod: 'POST', path: prod ? 'gs-sim-prod' : 'gs-sim', responseMode: 'responseNode', options: { allowedOrigins: '*' } }, { webhookId: prod ? '3c7a9e52-6d1b-4f08-9a2e-7b5d1c0e8f30' : 'a1e4c830-5b2f-4d7e-8c3a-9f0b6d2e1c30' }),
     cfgSet('gs-main30-02', [['kill_switch', 'boolean', false], ['sim_token', 'string', simToken || PLACEHOLDER], ['supabase_url', 'string', url], ['env', 'string', prod ? 'prod' : 'dev']]),
@@ -597,7 +597,7 @@ function build({ ids, token, simToken, supabaseUrl, credential, openrouterCreden
   const e30 = [['Sim webhook', 'Config'], ['Config', 'Check token'], ['Check token', 'Token ok?'], ['Token ok?', 'Kill switch?', 0], ['Token ok?', 'Respond 401', 1],
     ['Kill switch?', 'Respond 503', 0], ['Kill switch?', 'Action ok?', 1], ['Action ok?', 'Call SUB 30 Simulator write', 0], ['Action ok?', 'Respond 400', 1], ['Call SUB 30 Simulator write', 'Respond result']];
   const s30 = [
-    { name: 'RECEIVE', what: 'The admin Simulator tab posts here through n8n, never the database. Body field "action" is seed or reset; seed may carry kitchens, riders, dishes_per_kitchen, seed, open_pct, online_pct. The header x-gs-sim-token carries the simulator token.', needs: 'Path gs-sim. Body: action and the seed numbers.', nodes: ['Sim webhook'], color: 4 },
+    { name: 'RECEIVE', what: 'The admin Simulator tab posts here through n8n, never the database. Body field "action" is seed, reset, tick, enable, disable or status; seed may carry kitchens, riders, dishes_per_kitchen, seed, open_pct, online_pct. The header x-gs-sim-token carries the simulator token.', needs: 'Path gs-sim. Body: action and the seed numbers.', nodes: ['Sim webhook'], color: 4 },
     { name: 'CONFIG', what: 'The kill switch, the simulator token (its own, not the demo token) and the database address.', needs: 'Config keys: kill_switch, sim_token, supabase_url, env.', nodes: ['Config'], color: 5 },
     { name: 'GATE', what: 'Wrong token gets 401. Kill switch on gets 503. An action that is not seed or reset gets 400.', needs: 'Config: sim_token, kill_switch. Header x-gs-sim-token. Body: action.', nodes: ['Check token', 'Token ok?', 'Kill switch?', 'Action ok?'], color: 5 },
     { name: 'WRITE', what: 'Call SUB 30. It clamps the numbers and runs sim_seed or sim_reset. Only rows marked synthetic are ever touched.', needs: 'SUB 30 id. Body: action and the seed numbers.', nodes: ['Call SUB 30 Simulator write'], color: 6 },
@@ -620,9 +620,9 @@ function build({ ids, token, simToken, supabaseUrl, credential, openrouterCreden
     { name: 'CLOCK', what: 'Runs every minute. The real on/off switch is the database param sim_enabled (the admin tab flips it through MAIN 30); when it is off the tick does nothing.', needs: 'Nothing.', nodes: ['Every minute'], color: 4 },
     { name: 'CONFIG', what: 'The kill switch stops the schedule itself. The database address.', needs: 'Config keys: kill_switch, supabase_url, env.', nodes: ['Config'], color: 5 },
     { name: 'GATE', what: 'Kill switch on: stop here.', needs: 'Config: kill_switch.', nodes: ['Kill switch?', 'Paused'], color: 5 },
-    { name: 'TICK', what: 'Say "tick" and call SUB 30. It runs sim_tick: synthetic riders walk 100 to 300 m, a few synthetic kitchens and dishes flip. Real rows never change.', needs: 'SUB 30 id.', nodes: ['Tick', 'Call SUB 30 Simulator write'], color: 6 },
+    { name: 'TICK', what: 'Say "tick" and call SUB 30. It runs sim_tick: synthetic riders walk 100 to 300 m, a few synthetic kitchens (opening hours only), dishes and riders flip. Real rows never change. Successful runs are not saved.', needs: 'SUB 30 id.', nodes: ['Tick', 'Call SUB 30 Simulator write'], color: 6 },
   ];
-  const main31 = finish('GS MAIN 31 Simulator tick', n31, e31, s31, settings);
+  const main31 = finish('GS MAIN 31 Simulator tick', n31, e31, s31, Object.assign({}, settings, { saveDataSuccessExecution: 'none' }));   // 1440 'skipped' runs a day would bury real errors (review of #259)
 
   // ---- ERR 00: tells the owner on Telegram when a GoServe workflow fails (rulebook 84) ----
   const aNodes = [
