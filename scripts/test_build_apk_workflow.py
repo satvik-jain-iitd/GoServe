@@ -38,6 +38,12 @@ class Workflow(unittest.TestCase):
         b = self.t.index("bubblewrap build --skipPwaValidation < /dev/null")
         self.assertLess(u, b)
 
+    def test_the_sdk_path_passes_bubblewrap_and_build_tools_are_installed(self):
+        # Bubblewrap 1.27 wants <sdk>/tools or <sdk>/bin; the runner has only cmdline-tools/latest/bin. Run 40175699981 failed on it.
+        self.assertRegex(self.t, r'ln -sfn "\$ANDROID_HOME/cmdline-tools/latest/bin" "\$ANDROID_HOME/bin"')
+        self.assertRegex(self.t, r'sdkmanager[^\n]*"build-tools;36\.1\.0"')
+        self.assertLess(self.t.index('ln -sfn'), self.t.index("bubblewrap update"))
+
     def test_no_keystore_can_be_committed(self):
         g = (W.parent.parent.parent / ".gitignore").read_text()
         self.assertIn("ops/android/**/*.jks", g)
