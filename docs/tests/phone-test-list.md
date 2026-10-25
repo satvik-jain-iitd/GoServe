@@ -19,3 +19,18 @@ Reviewer runs after it (the owner's yes is needed for prod):
 `python3 scripts/rider_gap.py prod --yes-prod --minutes 25`
 
 Result: PASS when the longest gap between two pings is 60 seconds or less. FAIL means the foreground service is needed. Record the result in `docs/research/experiments.md` row E-TWA-1.
+
+## P2. GoServe installs from the Play internal testing link (#254)
+
+Needs first (owner, F201): Play Console app, store listing, service account and secret `PLAY_SERVICE_ACCOUNT_JSON`, the first bundle uploaded by hand, and your email on the internal track.
+
+Steps:
+1. On an Android phone signed in with the tester email, open the internal testing link from the Play Console.
+2. Tap "Install", then open GoServe.
+3. Later, after a new release to main, wait up to one day and open the Play page again.
+
+What to look for:
+- GoServe installs in one tap, with no "unknown source" warning, and opens on the pin screen.
+- After a new release, the Play page offers the new version within the day.
+
+Reviewer runs after it: `gh run list --workflow build-apk.yml --limit 3` must show a green run for the release, and the "Send to the Play internal testing track" step must say success.
