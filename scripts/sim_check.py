@@ -53,6 +53,25 @@ def dream_ok():
             and all(10 <= n <= 14 for n in per.values()) and any("110092" in x["pin_codes"] for x in k) and "110092" in pins)
 
 
+def serve_all_ok():
+    """#283: with sim_riders_serve_all on (default) the candidates for an order of a REAL kitchen include synthetic riders; off, none. Uses any real order."""
+    _, o, _ = call("GET", "/rest/v1/orders?select=id,kitchen_id,kitchens!inner(synthetic)&kitchens.synthetic=eq.false&limit=1")
+    if not (isinstance(o, list) and o):
+        return None   # no real order on this database: nothing to test against
+    _, syn, _ = call("GET", "/rest/v1/riders?select=user_id&synthetic=eq.true")
+    ids = {r["user_id"] for r in syn} if isinstance(syn, list) else set()
+    def candidates():
+        s, c, _ = call("POST", "/rest/v1/rpc/dispatch_candidates", {"p_order": o[0]["id"]})
+        return {r["id"] for r in c["riders"]} if s < 400 and isinstance(c, dict) else None
+    set_flag = lambda on: call("POST", "/rest/v1/params", {"session_id": "global", "key": "sim_riders_serve_all", "value": {"on": on}, "version": 900 + int(on) + 2 * int(time.time() % 100000)}, {"Prefer": "return=minimal"})
+    set_flag(True)
+    on = candidates()
+    set_flag(False)
+    off = candidates()
+    set_flag(True)
+    return on is not None and off is not None and bool(on & ids) and not (off & ids)
+
+
 def main():
     before = counts()
     print("before (real, synthetic):", before)
@@ -64,6 +83,8 @@ def main():
     s, b, t2 = call("POST", "/rest/v1/rpc/sim_seed", {"p": {}})
     _, ids2, _ = call("GET", "/rest/v1/kitchens?select=id&synthetic=eq.true&order=id")
     print(f"seed #2: {s} {b} in {t2}s; same ids: {ids1 == ids2}")
+    serve = serve_all_ok()
+    print("synthetic riders offered for a real kitchen's order (on) and not (off):", serve)
     dream = dream_ok()   # E16 (#282): the fixed Delhi list
     mid = counts()
     print("after seed (real, synthetic):", mid)
@@ -88,7 +109,7 @@ def main():
     s, st, _ = call("POST", "/rest/v1/rpc/sim_status", {})   # H7: what the admin tab reads
     print(f"status: {s} {st}")
     status_ok = isinstance(st, dict) and st.get("enabled") is False and st.get("kitchens") == 0 and st.get("riders") == 0 and st.get("dishes") == 0
-    ok = ids1 == ids2 and a.get("kitchens") == 10 and a.get("riders") == 40 and 100 <= a.get("dishes", 0) <= 140 and dream \
+    ok = ids1 == ids2 and a.get("kitchens") == 10 and a.get("riders") == 40 and 100 <= a.get("dishes", 0) <= 140 and dream and serve is not False \
         and all(after[k][0] == before[k][0] for k in before) and all(after[k][1] == 0 for k in after) and tick_ok and status_ok
     print("PASS" if ok else "FAIL")
     return 0 if ok else 1
