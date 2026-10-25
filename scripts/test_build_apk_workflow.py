@@ -44,6 +44,22 @@ class Workflow(unittest.TestCase):
         self.assertRegex(self.t, r'sdkmanager[^\n]*"build-tools;36\.1\.0"')
         self.assertLess(self.t.index('ln -sfn'), self.t.index("bubblewrap update"))
 
+    # Story #254: the bundle goes to the Play internal testing track. Never to production.
+    def test_the_bundle_is_attached_and_sent_to_the_internal_track_only(self):
+        self.assertIn("goserve-${VERSION}.aab", self.t)
+        self.assertIn("app-release-bundle.aab", self.t)
+        self.assertRegex(self.t, r"uses: r0adkll/upload-google-play@v1\.1\.5")
+        self.assertRegex(self.t, r"tracks: internal\s*\n")
+        self.assertIn("packageName: in.goserve.customer", self.t)
+        self.assertNotRegex(self.t, r"tracks:\s*(production|beta|alpha)")
+        self.assertNotRegex(self.t, r"tracks:[^\n]*,")
+
+    def test_the_play_key_comes_from_a_secret_and_a_missing_key_skips_the_upload(self):
+        self.assertIn("${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}", self.t)
+        self.assertIn("serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}", self.t)
+        self.assertRegex(self.t, r"steps\.play\.outputs\.ready == 'true'")   # without the secret the APK still builds and attaches
+        self.assertLess(self.t.index("gh release upload"), self.t.index("upload-google-play"))   # the GitHub release never waits on Play
+
     def test_no_keystore_can_be_committed(self):
         g = (W.parent.parent.parent / ".gitignore").read_text()
         self.assertIn("ops/android/**/*.jks", g)

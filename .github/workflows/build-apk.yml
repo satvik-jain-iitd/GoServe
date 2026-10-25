@@ -2,6 +2,9 @@ name: Build the signed APK
 
 # Story #251 (epic E22). A published release builds the customer APK with Bubblewrap, signs it, and attaches it to the release
 # as goserve-<version>.apk, with a QR picture of the download link. The page app/public/get/ shows the latest one.
+# Story #254: the signed bundle (.aab) is attached too and sent to the Play INTERNAL testing track, never to production.
+# Add the secret once, after the owner makes the Play Console app and a service account: PLAY_SERVICE_ACCOUNT_JSON (the whole JSON key).
+# Without it the build still works and the Play step is skipped. The first bundle of a new app is uploaded by hand in the Play Console.
 # The keystore and both passwords come from GitHub secrets only. Add them once: ANDROID_KEYSTORE_B64 (base64 of the .jks),
 # ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_PASSWORD. The vault copy is ~/Desktop/Secrets/08_android_keystore.env.
 on:
@@ -83,13 +86,31 @@ jobs:
         run: |
           sudo apt-get install -y qrencode > /dev/null
           cp ops/android/customer/app-release-signed.apk "goserve-${VERSION}.apk"
+          cp ops/android/customer/app-release-bundle.aab "goserve-${VERSION}.aab"
           qrencode -s 8 -m 2 -o goserve-qr.png "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/goserve-${VERSION}.apk"
-          ls -l "goserve-${VERSION}.apk" goserve-qr.png
+          ls -l "goserve-${VERSION}.apk" "goserve-${VERSION}.aab" goserve-qr.png
 
       - name: Attach to the release
         env:
           VERSION: ${{ steps.ver.outputs.version }}
-        run: gh release upload "$TAG" "goserve-${VERSION}.apk" goserve-qr.png --clobber
+        run: gh release upload "$TAG" "goserve-${VERSION}.apk" "goserve-${VERSION}.aab" goserve-qr.png --clobber
+
+      - name: Is the Play key set?
+        id: play
+        env:
+          PLAY_KEY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -n "$PLAY_KEY" ]; then echo "ready=true" >> "$GITHUB_OUTPUT"; else echo "ready=false" >> "$GITHUB_OUTPUT"; echo "::notice::PLAY_SERVICE_ACCOUNT_JSON is not set, so the Play upload is skipped"; fi
+
+      - name: Send to the Play internal testing track
+        if: steps.play.outputs.ready == 'true'
+        uses: r0adkll/upload-google-play@v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: in.goserve.customer
+          releaseFiles: goserve-${{ steps.ver.outputs.version }}.aab
+          tracks: internal
+          status: completed
 
       - name: Remove the keystore
         if: always()
