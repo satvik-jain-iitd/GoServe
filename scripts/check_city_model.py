@@ -366,6 +366,31 @@ SIM_NAMES = ["H5: a synthetic online rider is no candidate for a real kitchen's 
              "H6: sim_enable off writes a new params version and the tick skips again",
              "H7: sim_status says off and counts the synthetic kitchens, riders (online) and dishes"]
 
+# Story #263: the decision engine switch. Run as users; the functions check is_admin() on the caller. A checked copy of the row starts at Rules version 1.
+def _eng(uid: str, i: int, expr: str) -> str:
+    return f"set local role authenticated; select set_config('request.jwt.claim.sub', '{uid}', true); create temp table de{i} as select ({expr}) as v; reset role;"
+def _eng_raises(uid: str, i: int, stmt: str, msg: str) -> str:
+    return f"set local role authenticated; select set_config('request.jwt.claim.sub', '{uid}', true); do $$ begin begin perform {stmt}; create temp table de{i} as select false as v; exception when others then create temp table de{i} as select (sqlerrm like '%{msg}%') as v; end; end $$; reset role;"
+ENGINE = f"""
+delete from params where session_id = 'global' and key = 'decision_engine';
+insert into params (kitchen_id, session_id, key, value, version) values (null, 'global', 'decision_engine', '{{"engine":"rules","by":"system"}}', 1);
+{_eng(U['admin'], 0, "get_decision_engine() ->> 'engine' = 'rules' and (get_decision_engine() ->> 'version')::int = 1 and (get_decision_engine() -> 'engines' ->> 'laya')::boolean is false")}
+{_call(U['admin'], "set_decision_engine('jev')")}
+{_eng(U['admin'], 1, "get_decision_engine() ->> 'engine' = 'jev' and (get_decision_engine() ->> 'version')::int = 2 and get_decision_engine() ->> 'by' = 'founder@check.test'")}
+{_call(U['admin'], "set_decision_engine('jev')")}
+create temp table de2 as select (select count(*) from params where session_id = 'global' and key = 'decision_engine') = 2 as v;
+{_eng_raises(U['admin'], 3, "set_decision_engine('laya')", 'laya_not_deployed')}
+{_eng_raises(U['admin'], 4, "set_decision_engine('gpt')", 'invalid_engine')}
+{_eng_raises(U['cust'], 5, "set_decision_engine('rules')", 'not_admin')}
+{_eng_raises(U['cust'], 6, "get_decision_engine()", 'not_admin')}
+create temp table de7 as select (select count(*) from params where session_id = 'global' and key = 'decision_engine') = 2 as v;
+do $$ begin begin set local role anon; perform set_decision_engine('rules'); reset role; create temp table de8 as select false as v; exception when others then reset role; create temp table de8 as select (sqlerrm like '%permission denied%') as v; end; end $$;
+{_call(U['admin'], "set_decision_engine('rules')")}
+create temp table de9 as select (select count(*) from params where session_id = 'global' and key = 'decision_engine') = 3 and (select value ->> 'engine' from params where session_id = 'global' and key = 'decision_engine' order by version desc limit 1) = 'rules' as v;
+"""
+ENGINE_NAMES = ["#263: an admin reads the engine: Rules, version 1, Laya not ready", "#263: an admin sets Jev: version 2, changed by their email", "#263: setting the same engine again writes no new row",
+                "#263: Laya is refused (laya_not_deployed)", "#263: an unknown engine is refused (invalid_engine)", "#263: a non-admin cannot set (not_admin)", "#263: a non-admin cannot read (not_admin)",
+                "#263: refused calls wrote no row", "#263: the anon role has no permission to call it", "#263: back to Rules is version 3: every change is a new row"]
 
 def run(ref: str, query: str):
     req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/database/query", data=json.dumps({"query": query}).encode(),
@@ -374,16 +399,16 @@ def run(ref: str, query: str):
 
 
 def build() -> str:
-    selects = [f"select 'c{i}' as k, v from c{i}" for i in range(len(checks))] + [f"select 'cx{j}' as k, v from cx{j}" for j in range(len(EXTRA_NAMES))] + [f"select 'dx{j}' as k, v from dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"select 'dr{j}' as k, v from dr{j}" for j in range(len(RIDER_NAMES))] + [f"select 'ds{j}' as k, v from ds{j}" for j in range(len(STAFF_NAMES))] + [f"select 'dp{j}' as k, v from dp{j}" for j in range(len(PILOT_NAMES))] + [f"select 'dh{j}' as k, v from dh{j}" for j in range(len(HEALTH_NAMES))] + [f"select 'dm{j}' as k, v from dm{j}" for j in range(len(SIM_NAMES))]
-    return "\n".join(["begin;", SETUP, *[sql for _, sql in checks], FINAL_EXTRA, DISPATCH, RIDER_CARD, STAFF, PILOT, HEALTH, SIM, " union all ".join(selects) + ";", "rollback;"])
+    selects = [f"select 'c{i}' as k, v from c{i}" for i in range(len(checks))] + [f"select 'cx{j}' as k, v from cx{j}" for j in range(len(EXTRA_NAMES))] + [f"select 'dx{j}' as k, v from dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"select 'dr{j}' as k, v from dr{j}" for j in range(len(RIDER_NAMES))] + [f"select 'ds{j}' as k, v from ds{j}" for j in range(len(STAFF_NAMES))] + [f"select 'dp{j}' as k, v from dp{j}" for j in range(len(PILOT_NAMES))] + [f"select 'dh{j}' as k, v from dh{j}" for j in range(len(HEALTH_NAMES))] + [f"select 'dm{j}' as k, v from dm{j}" for j in range(len(SIM_NAMES))] + [f"select 'de{j}' as k, v from de{j}" for j in range(len(ENGINE_NAMES))]
+    return "\n".join(["begin;", SETUP, *[sql for _, sql in checks], FINAL_EXTRA, DISPATCH, RIDER_CARD, STAFF, PILOT, HEALTH, SIM, ENGINE, " union all ".join(selects) + ";", "rollback;"])
 
 
 if __name__ == "__main__":
     if sys.argv[1:] != ["dev"]:
         sys.exit("Usage: check_city_model.py dev (prod is never allowed)")
     rows = {r["k"]: r["v"] for r in run(DEV_REF, build())}
-    names = [n for n, _ in checks] + EXTRA_NAMES + DISPATCH_NAMES + RIDER_NAMES + STAFF_NAMES + PILOT_NAMES + HEALTH_NAMES + SIM_NAMES
-    keys = [f"c{i}" for i in range(len(checks))] + [f"cx{j}" for j in range(len(EXTRA_NAMES))] + [f"dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"dr{j}" for j in range(len(RIDER_NAMES))] + [f"ds{j}" for j in range(len(STAFF_NAMES))] + [f"dp{j}" for j in range(len(PILOT_NAMES))] + [f"dh{j}" for j in range(len(HEALTH_NAMES))] + [f"dm{j}" for j in range(len(SIM_NAMES))]
+    names = [n for n, _ in checks] + EXTRA_NAMES + DISPATCH_NAMES + RIDER_NAMES + STAFF_NAMES + PILOT_NAMES + HEALTH_NAMES + SIM_NAMES + ENGINE_NAMES
+    keys = [f"c{i}" for i in range(len(checks))] + [f"cx{j}" for j in range(len(EXTRA_NAMES))] + [f"dx{j}" for j in range(len(DISPATCH_NAMES))] + [f"dr{j}" for j in range(len(RIDER_NAMES))] + [f"ds{j}" for j in range(len(STAFF_NAMES))] + [f"dp{j}" for j in range(len(PILOT_NAMES))] + [f"dh{j}" for j in range(len(HEALTH_NAMES))] + [f"dm{j}" for j in range(len(SIM_NAMES))] + [f"de{j}" for j in range(len(ENGINE_NAMES))]
     bad = 0
     for n, k in zip(names, keys):
         ok = rows.get(k) is True

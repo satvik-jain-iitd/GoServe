@@ -39,6 +39,7 @@ jobs:
           VITE_DEMO_TOKEN: ${{ secrets.PROD_VITE_DEMO_TOKEN }}
           VITE_SIM_URL: ${{ secrets.PROD_VITE_SIM_URL }}
           VITE_SIM_TOKEN: ${{ secrets.PROD_VITE_SIM_TOKEN }}
+          VITE_ENGINE_URL: ${{ secrets.PROD_VITE_ENGINE_URL }}
           VITE_VAPID_PUBLIC_KEY: ${{ secrets.PROD_VITE_VAPID_PUBLIC_KEY }}
           VITE_BUILD: ${{ github.sha }}
         run: |

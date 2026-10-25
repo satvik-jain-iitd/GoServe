@@ -51,6 +51,10 @@ else {
   lines.push('Time per run: ' + s.avg_ms + ' ms on average, ' + s.max_ms + ' ms at most');
 }
 lines.push('Decisions: ' + s.decisions + '. Jev advice used: ' + s.jev_used + ', agreed with the rule: ' + s.jev_agreed);
+if (s.engines && s.decisions) {   // story #263: who decided
+  const parts = ['rules', 'jev', 'laya'].filter((k) => s.engines[k] > 0).map((k) => k + ' ' + s.engines[k]);
+  lines.push('Engine: ' + (parts.join(', ') || 'none') + (s.engines.older > 0 ? ' (before the switch: ' + s.engines.older + ')' : ''));
+}
 lines.push('Cost of all calls: $' + s.cost.toFixed(5) + (s.decisions ? ' (about $' + (s.decide_cost / s.decisions).toFixed(5) + ' per decision)' : ''));
 lines.push('Health checks: ' + s.health_checks);
 if (health && health.ok && Array.isArray(health.lines) && health.lines.length) lines.push('', 'Platform health and cost:', ...health.lines);
