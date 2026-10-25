@@ -192,3 +192,6 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F185 | `sim_seed` loads the fixed list, so the old random seed knobs (kitchens, dishes per kitchen, seed) no longer do anything. The admin Simulator tab still sends them; #284 cleans the tab. | #282 | open |
 | F186 | Pin 110092 (East Delhi, the owner's test pin) is served only by kitchens 8 to 10 km away (reviewer, #285). Add an East Delhi dream kitchen (Laxmi Nagar or Preet Vihar) later. | #282 | open |
 | F187 | Migration numbers moved: 0035 is `sim_riders_serve_all` (#283); the order tick of #284 takes 0036. | #283 | open |
+| F188 | n8n GS SUB 30 and MAIN 30 must be redeployed (dev, then prod) for the new seed fields and the `knobs` action. Until then the tab's Save the scenario answers "Action must be seed, reset, tick, enable, disable or status." and Seed still works with the defaults. Owner or reviewer deploys; I did not. | #284 | open |
+| F189 | `prep_scale` (kitchen speed) is a knob in the database but not on the Simulator tab. Add it if the owner wants a faster demo. | #284 | open |
+| F190 | A real rider can still be offered a demo order while `sim_riders_serve_all` is on (SUB 13 candidates). Nothing moves a real rider, so the order waits for them. Turn the param off when real riders join. | #284 | open |
