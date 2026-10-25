@@ -577,10 +577,10 @@ function build({ ids, token, simToken, supabaseUrl, credential, openrouterCreden
   const main93 = finish('GS MAIN 93 Weekly and monthly report', n93m, e93m, s93m, Object.assign({}, settings, { timezone: 'Asia/Kolkata' }));
 
   // ---- Simulator (story H5, #188, epic E16): the synthetic city. SUB 30 writes through sim_seed or sim_reset; MAIN 30 is its own webhook with its own token. ----
-  const sub30 = sub({ name: 'GS SUB 30 Simulator write', n: 30, callerIds: ids.main30, credential: cred, settings,
+  const sub30 = sub({ name: 'GS SUB 30 Simulator write', n: 30, callerIds: [ids.main30, ids.main31].filter(Boolean).join(','), credential: cred, settings,
     fields: [['action', 'string'], ['body', 'object'], ['kill_switch', 'boolean'], ['supabase_url', 'string']],
     guardFile: 'guard_sim.js', rpc: { fn: 'sim_seed or sim_reset', label: 'Seed or reset', dynamic: true },
-    what: 'Seed fills the synthetic kitchens, dishes and riders (same seed, same rows). Reset deletes every synthetic row and nothing else.' });
+    what: 'Seed fills the synthetic kitchens, dishes and riders (same seed, same rows). Reset deletes every synthetic row and nothing else. Tick moves the synthetic riders and flips a few kitchens and dishes (H6). Enable and disable write the sim_enabled switch.' });
   const n30 = [
     node('gs-main30-01', 'Sim webhook', 'n8n-nodes-base.webhook', 2, { httpMethod: 'POST', path: prod ? 'gs-sim-prod' : 'gs-sim', responseMode: 'responseNode', options: { allowedOrigins: '*' } }, { webhookId: prod ? '3c7a9e52-6d1b-4f08-9a2e-7b5d1c0e8f30' : 'a1e4c830-5b2f-4d7e-8c3a-9f0b6d2e1c30' }),
     cfgSet('gs-main30-02', [['kill_switch', 'boolean', false], ['sim_token', 'string', simToken || PLACEHOLDER], ['supabase_url', 'string', url], ['env', 'string', prod ? 'prod' : 'dev']]),
@@ -606,6 +606,24 @@ function build({ ids, token, simToken, supabaseUrl, credential, openrouterCreden
   ];
   const main30 = finish('GS MAIN 30 Simulator', n30, e30, s30, settings);
 
+  // ---- MAIN 31 Simulator tick (story H6, #189): every minute, while the database switch sim_enabled is on, the synthetic city moves. ----
+  const n31 = [
+    schedule('gs-main31-01', 'Every minute', '* * * * *'),
+    cfgSet('gs-main31-02', [['kill_switch', 'boolean', false], ['supabase_url', 'string', url], ['env', 'string', prod ? 'prod' : 'dev']]),
+    ifNode('gs-main31-03', 'Kill switch?', '={{ $json.kill_switch }}', 'true'),
+    node('gs-main31-04', 'Paused', 'n8n-nodes-base.noOp', 1, {}),
+    codeNode('gs-main31-05', 'Tick', code('sim_tick.js')),
+    callSub('gs-main31-06', 'Call SUB 30 Simulator write', ids.sub30, [['action', '={{ $json.action }}', 'string'], ['body', '={{ $json.body }}', 'object'], ['kill_switch', '={{ $json.kill_switch }}', 'boolean'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
+  ];
+  const e31 = [['Every minute', 'Config'], ['Config', 'Kill switch?'], ['Kill switch?', 'Paused', 0], ['Kill switch?', 'Tick', 1], ['Tick', 'Call SUB 30 Simulator write']];
+  const s31 = [
+    { name: 'CLOCK', what: 'Runs every minute. The real on/off switch is the database param sim_enabled (the admin tab flips it through MAIN 30); when it is off the tick does nothing.', needs: 'Nothing.', nodes: ['Every minute'], color: 4 },
+    { name: 'CONFIG', what: 'The kill switch stops the schedule itself. The database address.', needs: 'Config keys: kill_switch, supabase_url, env.', nodes: ['Config'], color: 5 },
+    { name: 'GATE', what: 'Kill switch on: stop here.', needs: 'Config: kill_switch.', nodes: ['Kill switch?', 'Paused'], color: 5 },
+    { name: 'TICK', what: 'Say "tick" and call SUB 30. It runs sim_tick: synthetic riders walk 100 to 300 m, a few synthetic kitchens and dishes flip. Real rows never change.', needs: 'SUB 30 id.', nodes: ['Tick', 'Call SUB 30 Simulator write'], color: 6 },
+  ];
+  const main31 = finish('GS MAIN 31 Simulator tick', n31, e31, s31, settings);
+
   // ---- ERR 00: tells the owner on Telegram when a GoServe workflow fails (rulebook 84) ----
   const aNodes = [
     node('gs-err00-01', 'Error trigger', 'n8n-nodes-base.errorTrigger', 1, {}),
@@ -623,7 +641,7 @@ function build({ ids, token, simToken, supabaseUrl, credential, openrouterCreden
     { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send alert'], color: 6 },
   ];
   const alert = finish('GS ERR 00 Alert', aNodes, aEdges, aSections, baseSettings);
-  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub19, sub20, sub21, sub22, sub30, main30, sub91, sub93, sub94, main01, main90, main92, main93, alert };
+  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub19, sub20, sub21, sub22, sub30, main30, main31, sub91, sub93, sub94, main01, main90, main92, main93, alert };
   if (prod) for (const k of Object.keys(all)) if (k !== 'alert') all[k].name += ' PROD';   // the one GS ERR 00 alert is shared (one bot, one chat)
   return { ...all, STATUS_ROLES };
 }

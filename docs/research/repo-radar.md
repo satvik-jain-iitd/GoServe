@@ -82,3 +82,15 @@ Runs: `scout.py --need "synthetic city seed for a food delivery marketplace: fak
 | Faker-style libraries (not surfaced by the search) | C | Random names. | The names must be stable per seed, so a word list in SQL does the same with no dependency. | Skip |
 
 Decision: two plpgsql functions in one migration (`sim_seed`, `sim_reset`), ids from `md5(seed || index)` so a re-seed updates the same rows, a `synthetic` flag on three tables, service_role only. Nothing found that fits; built from scratch. Confidence 0.9 (a seed is a hundred lines of SQL; a library would cost more than it saves).
+
+## 2026-10-25 · need: simulated delivery riders moving on a map every minute, random walk in SQL (story #189, epic E16)
+
+Runs: `scout.py --need "simulated delivery riders moving on a map every minute, random walk in Postgres or SQL, fake GPS positions for a food delivery demo"` → no repos found; GitHub `gps simulator random walk delivery rider` → GNSS signal simulators and Android mock-location apps; `topic:gps-simulator` → the same. Log: scratchpad `radar-h6.log`.
+
+| Repo | Tier | What it is | Fit for this need | Verdict |
+|---|---|---|---|---|
+| BeepView/route-gps-simulator (★3) | C | Moves a tracker along a fixed route and posts positions on a timer. | Needs a route per rider and a process to run; our riders live in Postgres and n8n already ticks every minute. Idea borrowed: metres to degrees with the cosine of the latitude. | Borrow the maths only |
+| danusha2345/gnss-signal-simulator-rs (★34) | C | A radio-level GNSS signal simulator. | Wrong layer. | Skip |
+| emanuele8888/MockGPSPrivacy (★4) | C | Fakes the phone's own location. | Wrong layer; our fake riders have no phones. | Skip |
+
+Decision: one SQL function (`sim_tick`) called by a schedule workflow. Random walk of 100 to 300 m per minute, a tether toward the nearest synthetic kitchen past 1 km so riders do not drift out of Delhi. Nothing found that fits; built from scratch. Confidence 0.9.

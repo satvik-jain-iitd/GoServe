@@ -53,12 +53,25 @@ def main():
     print(f"seed #2: {s} {b} in {t2}s; same ids: {ids1 == ids2}")
     mid = counts()
     print("after seed (real, synthetic):", mid)
+    # H6 (#189): the tick. Off by default: skipped. On: every online synthetic rider moves 100 to 300 m; real rows stay as they were.
+    _, real_before, _ = call("GET", "/rest/v1/kitchens?select=id,open&synthetic=eq.false&order=id")
+    _, pos0, _ = call("GET", "/rest/v1/riders?select=user_id,lat,lng&synthetic=eq.true&online=eq.true&order=user_id")
+    s, t0, _ = call("POST", "/rest/v1/rpc/sim_tick", {"p": {}})
+    print(f"tick while off: {s} {t0}")
+    call("POST", "/rest/v1/rpc/sim_enable", {"p": {"enabled": True}})
+    s, t1, t4 = call("POST", "/rest/v1/rpc/sim_tick", {"p": {}})
+    _, pos1, _ = call("GET", "/rest/v1/riders?select=user_id,lat,lng&synthetic=eq.true&online=eq.true&order=user_id")
+    call("POST", "/rest/v1/rpc/sim_enable", {"p": {"enabled": False}})
+    _, real_after, _ = call("GET", "/rest/v1/kitchens?select=id,open&synthetic=eq.false&order=id")
+    moved = sum(1 for x, y in zip(pos0, pos1) if (x["lat"], x["lng"]) != (y["lat"], y["lng"])) if isinstance(pos0, list) and isinstance(pos1, list) else -1
+    tick_ok = isinstance(t0, dict) and t0.get("skipped") == "sim_disabled" and isinstance(t1, dict) and t1.get("riders_moved") == len(pos0) == moved and moved > 0 and real_before == real_after
+    print(f"tick while on: {s} {t1} in {t4}s; riders moved {moved} of {len(pos0) if isinstance(pos0, list) else '?'}; real kitchens unchanged: {real_before == real_after}")
     s, c, t3 = call("POST", "/rest/v1/rpc/sim_reset", {})
     print(f"reset: {s} {c} in {t3}s")
     after = counts()
     print("after reset (real, synthetic):", after)
     ok = ids1 == ids2 and a.get("kitchens") == 10 and a.get("riders") == 20 and a.get("dishes") == 60 \
-        and all(after[k][0] == before[k][0] for k in before) and all(after[k][1] == 0 for k in after)
+        and all(after[k][0] == before[k][0] for k in before) and all(after[k][1] == 0 for k in after) and tick_ok
     print("PASS" if ok else "FAIL")
     return 0 if ok else 1
 

@@ -7,7 +7,7 @@ const path = require('path');
 const { build } = require('./build');
 const { checkLayout } = require('../lib/layout_checks');
 
-const IDS = { main01: 'MAIN1', sub30: 'SUB30', main30: 'MAIN30', alert: 'ALERT1' };
+const IDS = { main01: 'MAIN1', sub30: 'SUB30', main30: 'MAIN30', main31: 'MAIN31', alert: 'ALERT1' };
 const wf = build({ ids: IDS, chatId: '42', simToken: 'SIMTOKEN' });
 const src = (f) => fs.readFileSync(path.join(__dirname, 'code', f), 'utf8');
 const run = (file, input) => new Function('$input', '$', src(file))({ first: () => ({ json: input }) }, () => { throw new Error('no named node in a SUB'); })[0].json;
@@ -18,7 +18,7 @@ test('H5 the token check accepts only the sim token in x-gs-sim-token and only s
   const ok = run('sim_token.js', { headers: { 'x-gs-sim-token': 'S' }, body: { action: 'seed' }, sim_token: 'S', kill_switch: false, supabase_url: 'u' });
   assert.equal(ok.token_ok, true); assert.equal(ok.action, 'seed');
   assert.equal(run('sim_token.js', { headers: { 'x-gs-token': 'S' }, body: { action: 'seed' }, sim_token: 'S' }).token_ok, false);   // the demo token header is not enough
-  assert.equal(run('sim_token.js', { headers: { 'x-gs-sim-token': 'S' }, body: { action: 'tick' }, sim_token: 'S' }).action, 'bad');
+  assert.equal(run('sim_token.js', { headers: { 'x-gs-sim-token': 'S' }, body: { action: 'fly' }, sim_token: 'S' }).action, 'bad');
   assert.equal(run('sim_token.js', { headers: { 'x-gs-sim-token': '' }, body: { action: 'reset' }, sim_token: '' }).token_ok, false);   // an empty token never matches
 });
 
@@ -53,7 +53,7 @@ test('H5 MAIN 30 wiring: webhook, Config, token, kill switch, route to SUB 30, r
 test('H5 SUB 30: only MAIN 30 may call it, the write is the dynamic rpc (sim_seed or sim_reset) with the service credential', () => {
   const s = wf.sub30;
   assert.equal(s.settings.callerPolicy, 'workflowsFromAList');
-  assert.equal(s.settings.callerIds, 'MAIN30');
+  assert.equal(s.settings.callerIds, 'MAIN30,MAIN31');   // H6: the tick schedule calls it too
   const http = byName(s, 'Seed or reset');
   assert.equal(http.parameters.url, '={{ $json.supabase_url }}/rest/v1/rpc/{{ $json.rpc_fn }}');
   assert.deepEqual(next(s, 'Allowed?', 0), ['Seed or reset']);
@@ -62,4 +62,33 @@ test('H5 SUB 30: only MAIN 30 may call it, the write is the dynamic rpc (sim_see
 
 test('H5 both canvases pass the layout checks (rulebook B12)', () => {
   for (const key of ['sub30', 'main30']) assert.deepEqual(checkLayout(wf[key], wf[key].sections), []);
+});
+
+// ---- Story H6 (#189): the tick. Every minute while sim_enabled, synthetic riders move, some kitchens and dishes flip. Only synthetic rows. ----
+test('H6 the guard knows tick, enable and disable, with clamped movement numbers', () => {
+  const tick = run('guard_sim.js', { action: 'tick', body: {}, kill_switch: false, supabase_url: 'u' });
+  assert.equal(tick.rpc_fn, 'sim_tick');
+  assert.deepEqual(tick.rpc_body, { p: { move_min_m: 100, move_max_m: 300, kitchen_flip_pct: 10, dish_flip_pct: 5 } });
+  const far = run('guard_sim.js', { action: 'tick', body: { move_min_m: 50, move_max_m: 99999, kitchen_flip_pct: -1, dish_flip_pct: 500 }, kill_switch: false, supabase_url: 'u' });
+  assert.deepEqual(far.rpc_body.p, { move_min_m: 50, move_max_m: 2000, kitchen_flip_pct: 0, dish_flip_pct: 100 });
+  assert.deepEqual(run('guard_sim.js', { action: 'enable', body: {}, kill_switch: false, supabase_url: 'u' }).rpc_body, { p: { enabled: true } });
+  const off = run('guard_sim.js', { action: 'disable', body: {}, kill_switch: false, supabase_url: 'u' });
+  assert.equal(off.rpc_fn, 'sim_enable'); assert.deepEqual(off.rpc_body, { p: { enabled: false } });
+  assert.equal(run('sim_token.js', { headers: { 'x-gs-sim-token': 'S' }, body: { action: 'enable' }, sim_token: 'S' }).action, 'enable');
+});
+
+test('H6 MAIN 31 wiring: a schedule every minute, Config, kill switch, then SUB 30 with action tick; nothing else', () => {
+  const m = wf.main31;
+  assert.equal(byName(m, 'Every minute').type, 'n8n-nodes-base.scheduleTrigger');
+  assert.equal(byName(m, 'Every minute').parameters.rule.interval[0].expression, '* * * * *');
+  assert.deepEqual(next(m, 'Every minute'), ['Config']);
+  assert.deepEqual(next(m, 'Config'), ['Kill switch?']);
+  assert.deepEqual(next(m, 'Kill switch?', 0), ['Paused']);
+  assert.deepEqual(next(m, 'Kill switch?', 1), ['Tick']);
+  assert.deepEqual(next(m, 'Tick'), ['Call SUB 30 Simulator write']);
+  assert.equal(byName(m, 'Call SUB 30 Simulator write').parameters.workflowId.value, 'SUB30');
+  assert.equal(byName(m, 'Call SUB 30 Simulator write').parameters.workflowInputs.value.action, "={{ $json.action }}");
+  assert.equal(run('sim_tick.js', { kill_switch: false, supabase_url: 'u' }).action, 'tick');
+  assert.equal(m.settings.errorWorkflow, 'ALERT1');
+  assert.deepEqual(checkLayout(m, m.sections), []);
 });
