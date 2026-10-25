@@ -228,3 +228,20 @@ for (const key of ['sub13', 'sub14', 'main01']) {
     assert.deepEqual(checkLayout(wf[key], wf[key].sections), []);
   });
 }
+
+// ---- Story #272: the rule is made in SQL (dispatch_candidates ranks the riders: nearest first, trips only inside a band); the guard and the prepare node follow the rank. ----
+test('#272 the guard picks the lowest rank among free riders; riders without a rank keep the old rule', () => {
+  const ranked = [{ id: 'r1', free: true, distance_m: 3000, trips_done: 0, rank: 2 }, { id: 'r2', free: true, distance_m: 400, trips_done: 9, rank: 1 }, { id: 'r3', free: false, distance_m: 100, trips_done: 0, rank: 3 }];
+  assert.equal(guard({ riders: ranked }).rule_pick, 'r2');   // nearest, although he has more trips
+  assert.equal(guard({ riders: ranked.map(({ rank, ...r }) => r) }).rule_pick, 'r1');   // an old payload: fewest trips first, as before
+  assert.equal(guard({ riders: ranked.map((r) => ({ ...r, free: false })) }).rule_pick, 'none');
+});
+
+test('#272 the prepare node sends the ten best by rank, or the ten nearest when there is no rank', () => {
+  const start = { session_id: 's', kitchen_id: UUID, order_id: ORDER, params_version: 1, jev_enabled: false, jev_model: 'm', jev_cost_cap: 1, kill_switch: false, supabase_url: 'u' };
+  const rs = Array.from({ length: 12 }, (_, i) => ({ id: 'r' + i, free: true, distance_m: 100 * (12 - i), trips_done: 0, rank: i + 1 }));
+  const r = run('dispatch_prepare.js', { riders: rs.slice().reverse() }, { Start: start });
+  assert.deepEqual(r.riders.map((x) => x.id), rs.slice(0, 10).map((x) => x.id));
+  const noRank = run('dispatch_prepare.js', { riders: rs.map(({ rank, ...x }) => x) }, { Start: start });
+  assert.equal(noRank.riders[0].id, 'r11');   // the nearest
+});

@@ -10,7 +10,7 @@ The world is made from the seed alone, so both rules see the same kitchens, ride
   around their own median (8 to 18 min). The rule is told the kitchen's median (as the database would learn it) and the real ready time once the cook taps Ready.
   Riders really move at 13 to 17 km/h on a road 1.25 to 1.6 times the straight line; the rule assumes 15 km/h and 1.4. A handover and a drop take 60 s each.
 
-Usage: python3 scripts/dispatch_sim.py dev [--seeds 1,2,3] [--hours 2] [--loads 0.4,0.6,1] [--out file.json]   (reads the dev service key from the vault; refuses prod)
+Usage: python3 scripts/dispatch_sim.py dev [--seeds 1,2,3] [--hours 2] [--loads 0.4,0.6,1] [--arms old,nearest,new] [--out file.json]   (reads the dev service key from the vault; refuses prod)
 Measures (seconds): per pickup visit the MISMATCH between the rider arriving and the food being ready (rider waiting for food, or food waiting for the rider),
 and its two halves; order-to-door; share late by more than 10 minutes over the 35 minute promise; spread of trips per rider.
 Decision rule written in experiments.md E9 (sharpened here, see the note in the result): median mismatch down 30 % or more AND P90 order-to-door up no more than
@@ -58,6 +58,18 @@ def old_rule_pick(riders, k):
     """Today's rule (SUB 13): the free rider with the fewest trips today, then the nearest to the kitchen. riders = the free ones."""
     free = list(riders)
     return min(free, key=lambda r: (r["trips"], dist_m(r, k))) if free else None
+
+
+BAND = 500   # metres; --band changes it for a sweep
+
+
+def band_pick(riders, k, band=500):
+    """Story #272: the nearest free rider; trips today break a tie only among riders within `band` metres of the nearest. riders = the free ones."""
+    free = list(riders)
+    if not free:
+        return None
+    d0 = min(dist_m(r, k) for r in free)
+    return min((r for r in free if dist_m(r, k) <= d0 + band), key=lambda r: (r["trips"], dist_m(r, k)))
 
 
 def make_world(seed, hours, load=1.0):
@@ -114,10 +126,10 @@ def run_sim(seed, mode, matcher, hours=2.0, load=1.0):
                     r["state"], r["free_at"], r["orders"] = "out", clock, []
                     r["busy"] += clock - r["since"]   # busy = from the first assignment to the last drop
         accepted = [o for o in orders if o["accept"] <= t and "rider" not in o]
-        if mode in ("old", "nearest"):
+        if mode in ("old", "nearest", "band"):
             for o in sorted([o for o in accepted if o["ready"] + 5 <= t], key=lambda x: x["ready"]):   # at Ready, five seconds for n8n
                 idle = [x for x in R.values() if x["state"] == "idle"]
-                r = old_rule_pick(idle, o["k"]) if mode == "old" else (min(idle, key=lambda x: dist_m(x, o["k"])) if idle else None)   # nearest: a control, same moment, distance only
+                r = old_rule_pick(idle, o["k"]) if mode == "old" else band_pick(idle, o["k"], BAND) if mode == "band" else (min(idle, key=lambda x: dist_m(x, o["k"])) if idle else None)   # nearest: a control, distance only; band: story #272
                 if r is not None:
                     _assign(seed, R[r["id"]], o, t)
         elif t % TICK == 0 and (accepted or any(r["state"] == "to_kitchen" for r in R.values())):
@@ -196,22 +208,28 @@ def main(argv):
     vault = open(os.path.expanduser("~/Desktop/Secrets/02_databases.env")).read()
     url = re.search(r"^SUPABASE_GOSERVE_DEV_URL=(\S+)", vault, re.M).group(1)
     key = re.search(r"^SUPABASE_GOSERVE_DEV_SERVICE_ROLE_KEY=(\S+)", vault, re.M).group(1)
-    matcher, allpairs = db_matcher(url, key), {}
+    global BAND
+    BAND = float(argv[argv.index("--band") + 1]) if "--band" in argv else BAND
+    arms = argv[argv.index("--arms") + 1].split(",") if "--arms" in argv else ["old", "nearest", "new"]
+    matcher, allpairs = db_matcher(url, key) if "new" in arms else None, {}
     print("load  seed  rule  orders  busy  mismatch p50/p90 s  rider wait p50  food wait p50/p90  door p50/p90 s  late>10 min  trip spread  seconds")
     for load in loads:
         pairs = []
         for s in seeds:
             res = {}
-            for mode in ("old", "nearest", "new"):
+            for mode in arms:
                 t0 = time.time()
                 r = run_sim(s, mode, matcher if mode == "new" else None, hours, load)
                 res[mode] = m = r["m"]
                 print(f"{load:<5} {s:<5} {mode:<5} {m['delivered']}/{m['orders']:<4} {m['utilisation']:>4.0%}  {m['wait_p50']:>7.0f}/{m['wait_p90']:<7.0f}   {m['rider_wait_p50']:>8.0f}      {m['food_wait_p50']:>6.0f}/{m['food_wait_p90']:<6.0f}  "
                       f"{m['door_p50']:>6.0f}/{m['door_p90']:<6.0f}  {m['late_share']:>9.1%}  {m['trip_spread']:>8}  {time.time() - t0:>6.0f}", flush=True)
-            pairs.append((res["old"], res["new"]))
-            print(f"      new vs nearest-at-ready: mismatch p50 {res['new']['wait_p50']:.0f} vs {res['nearest']['wait_p50']:.0f} s, door p90 {res['new']['door_p90']:.0f} vs {res['nearest']['door_p90']:.0f} s", flush=True)
+            pairs.append((res["old"], res["new"])) if "new" in res else pairs.append((res["old"], res["band"]))
+            if "new" in res and "nearest" in res: print(f"      new vs nearest-at-ready: mismatch p50 {res['new']['wait_p50']:.0f} vs {res['nearest']['wait_p50']:.0f} s, door p90 {res['new']['door_p90']:.0f} vs {res['nearest']['door_p90']:.0f} s", flush=True)
         allpairs[load] = pairs
-        print(f"load {load}: ship rule (median mismatch down 30 % and P90 door up at most 60 s, every seed):", "PASS" if ship_rule(pairs) else "FAIL", flush=True)
+        if "new" in arms:
+            print(f"load {load}: ship rule (median mismatch down 30 % and P90 door up at most 60 s, every seed):", "PASS" if ship_rule(pairs) else "FAIL", flush=True)
+        else:
+            print(f"load {load}: band rule vs today: median mismatch lower on {sum(n['wait_p50'] < o['wait_p50'] for o, n in pairs)}/{len(pairs)} seeds, door P90 up more than 60 s on {sum(n['door_p90'] > o['door_p90'] + 60 for o, n in pairs)}/{len(pairs)} seeds", flush=True)
     if "--out" in argv:   # keep the numbers outside the repo unless asked
         json.dump({str(k): [{"old": o, "new": n} for o, n in v] for k, v in allpairs.items()}, open(argv[argv.index("--out") + 1], "w"), indent=1)
 
