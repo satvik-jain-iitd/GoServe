@@ -162,3 +162,9 @@ Decision: one stdlib script (`scripts/dish_photos.py`) that calls the API, picks
 Runs: no new search. The ADR-020 research (radar of 25 Oct, `docs/research/mobile-stack-2026-10.md`) already chose Bubblewrap, and #250 built the customer project with it. The rider test APK is the same project with another package name, start URL and scope (`ops/android/rider/twa-manifest.json`, then `bubblewrap update` and `build`). Nothing off the shelf reads our own `rider_pings` table, so the gap check is a 40-line stdlib script, `scripts/rider_gap.py`.
 
 Decision: reuse Bubblewrap and the customer project; one small script for the measurement. No Kotlin service until E-TWA-1 says the TWA stops pinging (ADR-020: the only Android code before 2 Nov). Confidence 0.8.
+
+## 2026-10-25 · need: serve a fine-tuned Laya decision model over HTTP on the Oracle ARM server, with Jev capped at zero (story #253, epic E22)
+
+Runs: `scout.py --need "serve a fine-tuned ModernBERT decision model over HTTP on a small ARM CPU server"` → no repos found; `gh search repos "convaiinnovations laya"`. Found small repos around Laya: `TheNerdMan/docker-laya-api` (a Docker image of Laya, 0 stars, Sept 2026), `minhquan2904/laya-scripts` (Laya on CPU through FastAPI, 0 stars), `heheebei-rgb/laya-mirror` (a mirror of the weights). All Tier C, 0 stars, written by unknown people. The author's own `laya-serve` (Tier A, `POST /v1/systemone`) is the better base.
+
+Decision: nothing is built from scratch. If we serve Laya, we use the author's `laya-serve` and our own fine-tuned weights; the community Docker images are not adopted (unknown authors, no stars). Whether to serve at all is the owner's call: `docs/research/laya-first-readiness-2026-10.md`. Confidence 0.8.
