@@ -61,11 +61,11 @@ test("S4 the admin Numbers tiles keep their own class and the menu keeps the gri
   expect(await tile.evaluate((el) => ({ cls: el.className, dir: getComputedStyle(el).flexDirection }))).toEqual({ cls: "ui-stat", dir: "column" });
 });
 
-test("S4 (#292) a Pexels photo is credited by name and the word Pexels links to Pexels", async ({ page, context }) => {
+test("S4 (#292) a CC BY photo names its title and creator and the licence links to Creative Commons", async ({ page, context }) => {
   const net = await setup(context, page);
-  net.state.menu = [{ ...DISH, image_credit: "Jane Doe on Pexels" }];
+  net.state.menu = [{ ...DISH, image_credit: '"Masala dosa" by Jane Doe, CC BY 2.0' }];
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Butter Chicken details" }).click();
-  await expect(page.getByText("Photo: Jane Doe on Pexels", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Pexels" })).toHaveAttribute("href", "https://www.pexels.com");
+  await expect(page.getByText('Photo: "Masala dosa" by Jane Doe, CC BY 2.0', { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "CC BY 2.0" })).toHaveAttribute("href", "https://creativecommons.org/licenses/by/2.0/");
 });

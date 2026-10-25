@@ -41,20 +41,24 @@ def counts():
 
 
 def dream_ok():
-    """The fixed Delhi list (#282, #290): 10 kitchens on 2 to 4 real pins each, 10 to 14 dishes each, pin 110092 served, and a drop point for every pin served."""
+    """The fixed Delhi list (#282, #290): 10 kitchens on 2 to 4 real pins each, the same 12 dishes each, pin 110092 served, and a drop point for every pin served."""
     _, k, _ = call("GET", "/rest/v1/kitchens?select=id,name,pin_codes&synthetic=eq.true")
-    _, d, _ = call("GET", "/rest/v1/menu_items?select=kitchen_id&synthetic=eq.true")
+    _, d, _ = call("GET", "/rest/v1/menu_items?select=kitchen_id,category,veg&synthetic=eq.true")
     s, pp, _ = call("GET", "/rest/v1/pin_points?select=pin,lat,lng")
     if not (isinstance(k, list) and isinstance(d, list) and s < 400 and isinstance(pp, list)):
         return False
     pins = {x["pin"] for x in pp}
-    s2, ph, _ = call("GET", "/rest/v1/dish_photos?select=kitchen_n")   # #292: every photo row ends up on a seeded dish (none yet is fine)
-    s3, withp, _ = call("GET", "/rest/v1/menu_items?select=id&synthetic=eq.true&image_url=not.is.null")
-    if not (s2 < 400 and isinstance(ph, list) and isinstance(withp, list) and len(withp) == len(ph)):
+    s2, ph, _ = call("GET", "/rest/v1/dish_photos?select=dish_n")   # #292: every photo row ends up on a seeded dish (none yet is fine)
+    s3, withp, _ = call("GET", "/rest/v1/menu_items?select=id,image_url&synthetic=eq.true&image_url=not.is.null")
+    # owner, 25 Oct: photos cost storage, so at most 12 different pictures; every kitchen shows the same 12 dishes with the same photos
+    if not (s2 < 400 and isinstance(ph, list) and isinstance(withp, list) and len({x["image_url"] for x in withp}) <= 12 and len(withp) == 10 * len(ph)):
         return False
     per = {x["id"]: sum(1 for y in d if y["kitchen_id"] == x["id"]) for x in k}
     return (all(2 <= len(x["pin_codes"]) <= 4 and all(c in pins and not c.startswith("9") for c in x["pin_codes"]) for x in k)
-            and all(10 <= n <= 14 for n in per.values()) and any("110092" in x["pin_codes"] for x in k) and "110092" in pins
+            and all(n == 12 for n in per.values())
+            # the home screen's "Today's thali" needs a veg and a non-veg Thali in every kitchen
+            and all({v["veg"] for v in d if v["kitchen_id"] == x["id"] and v["category"] == "Thali"} == {True, False} for x in k)
+            and any("110092" in x["pin_codes"] for x in k) and "110092" in pins
             and any(x["name"] == "Laxmi Nagar Wok House" and sorted(x["pin_codes"]) == ["110051", "110091", "110092"] for x in k) and {"110091", "110051"} <= pins)   # #290
 
 
@@ -116,7 +120,7 @@ def main():
     s, st, _ = call("POST", "/rest/v1/rpc/sim_status", {})   # H7: what the admin tab reads
     print(f"status: {s} {st}")
     status_ok = isinstance(st, dict) and st.get("enabled") is False and st.get("kitchens") == 0 and st.get("riders") == 0 and st.get("dishes") == 0
-    ok = ids1 == ids2 and a.get("kitchens") == 10 and a.get("riders") == 40 and 100 <= a.get("dishes", 0) <= 140 and dream and serve is not False \
+    ok = ids1 == ids2 and a.get("kitchens") == 10 and a.get("riders") == 40 and a.get("dishes") == 120 and dream and serve is not False \
         and all(after[k][0] == before[k][0] for k in before) and all(after[k][1] == 0 for k in after) and tick_ok and status_ok
     print("PASS" if ok else "FAIL")
     return 0 if ok else 1

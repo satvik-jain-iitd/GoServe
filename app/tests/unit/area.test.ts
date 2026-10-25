@@ -78,7 +78,7 @@ describe("openingText (story A6)", () => {
 });
 
 import { closedLine } from "../../src/lib/area";
-import { creditLine } from "../../src/lib/menu";
+import { creditLicence, creditLine } from "../../src/lib/menu";
 
 describe("the menu's closed line and the photo credit (story #274)", () => {
   it("says one line, with or without an opening time", () => {
@@ -88,5 +88,10 @@ describe("the menu's closed line and the photo credit (story #274)", () => {
   it("drops the File: name from the credit", () => {
     expect(creditLine("File:Butter chicken.jpg, Wikimedia Commons, CC BY-SA 4.0")).toBe("Photo: Wikimedia Commons, CC BY-SA 4.0");
     expect(creditLine("Wikimedia Commons, CC BY-SA 4.0")).toBe("Photo: Wikimedia Commons, CC BY-SA 4.0");
+  });
+  it("#292 splits a CC BY credit so the licence can link to Creative Commons, and leaves other credits alone", () => {
+    expect(creditLicence('"Masala dosa" by Jane Doe, CC BY 2.0')).toEqual({ before: '"Masala dosa" by Jane Doe, ', label: "CC BY 2.0", href: "https://creativecommons.org/licenses/by/2.0/" });
+    expect(creditLicence("Jane Doe, CC0")).toBeNull();
+    expect(creditLicence("Wikimedia Commons, CC BY-SA 4.0")).toBeNull();
   });
 });
