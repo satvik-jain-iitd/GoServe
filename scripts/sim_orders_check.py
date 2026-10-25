@@ -6,7 +6,7 @@ calls sim_tick by hand and reads order_events. Pass marks (fixed before the run)
   B 100 orders with reject_pct 12 and sold_out_pct 8: the cancelled share is between 10 and 30 percent, each with a reason;
   C delay_pct 100 makes the ready time longer than delay_pct 0 for the same kitchen (compared by the median seconds from accepted to ready);
   D rider_drop_pct 100 writes order.unassigned, the rider goes offline and the order has no rider;
-  E orders of a real (manual) kitchen are not touched on the kitchen side by the tick;
+  E a real (manual) kitchen's placed order is still placed, with only its own event, after all the ticks (the order is cancelled at the end);
   F riders are free in Delhi: with rider_flip_pct 100 the riders go offline and come back online, at least one lands more than 3 km from where it left, and a rider
     that is the only one online, 3 km or more from the other kitchens, gets the order of the kitchen it is near.
 """
@@ -76,7 +76,10 @@ def main():
     kitchens = get("kitchens?select=id,name,pin_codes&synthetic=eq.true&order=name")
     kit = next(k for k in kitchens if "110092" in k["pin_codes"])
     others = [k["id"] for k in kitchens if k["id"] != kit["id"] and "110092" not in k["pin_codes"]][:3]
-    real_before = {o["id"]: o["status"] for o in get("orders?select=id,status,kitchens!inner(synthetic)&kitchens.synthetic=eq.false&status=in.(placed,accepted,preparing)")}
+    # E needs a real order to protect: place one on a real (manual) kitchen now, open it for the run, and put it back at the end.
+    real = get("kitchens?select=id,open&synthetic=eq.false&active=eq.true&limit=1")
+    real = real[0] if isinstance(real, list) and real else None
+    real_order = place(real["id"], "110092", 900) if real else None
 
     # A one order, start to finish
     s, _ = knobs()
@@ -165,9 +168,12 @@ def main():
             break
     check("F a rider back online far from the old place lands elsewhere and still gets the order near it", far > 0 and got == lone, f"{far} far returns; assigned {got == lone}")
 
-    # E the manual kitchens' kitchen side is not touched
-    real_after = {o["id"]: o["status"] for o in get("orders?select=id,status,kitchens!inner(synthetic)&kitchens.synthetic=eq.false&status=in.(placed,accepted,preparing)")}
-    check("E real kitchens' orders are not moved by the tick", real_before == real_after, f"{len(real_before)} orders")
+    # E the manual kitchens' kitchen side is not touched: the real order placed at the start is still placed, with only its own event
+    row = get(f"orders?select=status&id=eq.{real_order}") if real_order else None
+    check("E a real kitchen's order is not moved by the tick", bool(real_order) and isinstance(row, list) and row[0]["status"] == "placed" and events(real_order) == ["order.placed"], f"order {str(real_order)[:8]} {row}")
+    if real_order:   # leave dev as found: the order is cancelled (placed may go to cancelled), the kitchen goes back to what it was
+        call("PATCH", f"/rest/v1/orders?id=eq.{real_order}", {"status": "cancelled", "cancel_reason": "check finished"}, {"Prefer": "return=minimal"})
+        call("PATCH", f"/rest/v1/kitchens?id=eq.{real['id']}", {"open": real["open"]}, {"Prefer": "return=minimal"})
 
     rpc("sim_enable", {"p": {"enabled": False}})
     rpc("sim_reset")

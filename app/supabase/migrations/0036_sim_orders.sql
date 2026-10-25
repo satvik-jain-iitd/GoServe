@@ -68,7 +68,7 @@ declare
   v_drop double precision := (v_k->>'rider_drop_pct')::double precision;
   v_scale double precision := (v_k->>'prep_scale')::double precision;
   v_o record; v_r double precision; v_rider uuid; v_left double precision; v_tlat double precision; v_tlng double precision; v_ready timestamptz; v_acc timestamptz;
-  n_acc integer := 0; n_can integer := 0; n_prep integer := 0; n_rdy integer := 0; n_asg integer := 0; n_pick integer := 0; n_del integer := 0; n_drop integer := 0;
+  n_acc integer := 0; n_can integer := 0; n_prep integer := 0; n_rdy integer := 0; v_new uuid[] := '{}'; n_asg integer := 0; n_pick integer := 0; n_del integer := 0; n_drop integer := 0;
 begin
   -- Kitchen: placed. The kitchen looks at an order in 6 of 10 ticks; when it looks it decides once: busy, sold out, or accept.
   for v_o in select id, session_id, kitchen_id from orders where status = 'placed' and created_at < now() - interval '20 seconds'
@@ -118,6 +118,7 @@ begin
     if v_rider is not null then
       begin
         perform assign_rider(v_o.id, v_rider);
+        v_new := v_new || v_o.id;   -- the rider hears about the job now and starts walking next tick
         n_asg := n_asg + 1;
       exception when others then null;   -- the order moved on; the next tick looks again
       end;
@@ -126,7 +127,7 @@ begin
   end loop;
   -- Rider: walk to the kitchen, pick up when it is ready and the rider is within 100 m.
   for v_o in select o.id, o.session_id, o.status, o.rider_id, k.lat, k.lng from orders o join riders r on r.user_id = o.rider_id join kitchens k on k.id = o.kitchen_id
-           where r.synthetic and r.online and o.status in ('accepted', 'preparing', 'ready') and k.lat is not null and o.created_at > now() - interval '12 hours' loop
+           where r.synthetic and r.online and o.status in ('accepted', 'preparing', 'ready') and k.lat is not null and o.created_at > now() - interval '12 hours' and not (o.id = any (v_new)) loop
     v_left := sim_walk(v_o.rider_id, v_o.lat, v_o.lng, 250 + random() * 150);
     if v_o.status = 'ready' and v_left <= 100 then
       perform change_status(v_o.id, v_o.session_id, 'out_for_delivery', 'sim-rider');
