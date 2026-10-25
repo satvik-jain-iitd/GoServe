@@ -1,0 +1,90 @@
+name: Build the signed APK
+
+# Story #251 (epic E22). A published release builds the customer APK with Bubblewrap, signs it, and attaches it to the release
+# as goserve-<version>.apk, with a QR picture of the download link. The page app/public/get/ shows the latest one.
+# The keystore and both passwords come from GitHub secrets only. Add them once: ANDROID_KEYSTORE_B64 (base64 of the .jks),
+# ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_PASSWORD. The vault copy is ~/Desktop/Secrets/08_android_keystore.env.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to build and attach to, like v1.0.0"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-apk
+  cancel-in-progress: false
+
+jobs:
+  apk:
+    name: Build, sign and attach
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Version from the tag
+        id: ver
+        run: |
+          VERSION=$(python3 scripts/apk_version.py "$TAG" ops/android/customer/twa-manifest.json)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Keystore
+        env:
+          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_B64" || { echo "Secret ANDROID_KEYSTORE_B64 is not set"; exit 1; }
+          echo "$ANDROID_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/goserve-upload.jks"
+          chmod 600 "$RUNNER_TEMP/goserve-upload.jks"
+          jq --arg p "$RUNNER_TEMP/goserve-upload.jks" '.signingKey.path = $p' ops/android/customer/twa-manifest.json > "$RUNNER_TEMP/m.json"
+          mv "$RUNNER_TEMP/m.json" ops/android/customer/twa-manifest.json
+
+      - name: Bubblewrap and the Android SDK
+        run: |
+          npm install -g @bubblewrap/cli@1.27.0
+          mkdir -p ~/.bubblewrap
+          printf '{"jdkPath":"%s","androidSdkPath":"%s"}' "$JAVA_HOME" "$ANDROID_HOME" > ~/.bubblewrap/config.json
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+
+      - name: Build
+        working-directory: ops/android/customer
+        env:
+          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: bubblewrap build --skipPwaValidation
+
+      - name: Name the files and make the QR
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          sudo apt-get install -y qrencode > /dev/null
+          cp ops/android/customer/app-release-signed.apk "goserve-${VERSION}.apk"
+          qrencode -s 8 -m 2 -o goserve-qr.png "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/goserve-${VERSION}.apk"
+          ls -l "goserve-${VERSION}.apk" goserve-qr.png
+
+      - name: Attach to the release
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: gh release upload "$TAG" "goserve-${VERSION}.apk" goserve-qr.png --clobber
+
+      - name: Remove the keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/goserve-upload.jks"
