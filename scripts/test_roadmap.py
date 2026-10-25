@@ -135,7 +135,7 @@ V2 = [
     issue(22, "Story C done no start", "CLOSED", closed="2026-10-23T06:00:00Z", ms=M1),                              # no doing label ever
     issue(23, "Story D in progress", labels=("story", "doing", "P0"), doing="2026-10-26T04:00:00Z", ms=M1),
     issue(24, "Story E ready p1", labels=("story", "ready", "P1"), ms=M1),
-    issue(25, "Story F ready p0 later milestone", labels=("story", "ready", "P0"), ms=M2),
+    issue(25, "Story F ready p0 later milestone", labels=("story", "ready", "P0"), ms=M2, body="Part of epic E9 (#9).\n\n## Business\nF works.\n\nNeeds: #26"),
     issue(26, "Story G ready p0 first", labels=("story", "ready", "P0"), ms=M1),
     issue(40, "Story old open, no plan labels", ms=M1),
     issue(27, "Story H blocked", labels=("story", "blocked", "P0"), ms=M1, body="Part of epic E9 (#9).\n\n## Business\nH works.\n\n## Needs\nNeeds: #23\nNeeds: #26"),
@@ -197,6 +197,63 @@ class RoadmapV2(unittest.TestCase):
         self.assertIn("21 Oct to 25 Oct", d)
         self.assertNotIn("<details open", d)   # collapsed
 
+
+class RoadmapMaps(unittest.TestCase):
+    def setUp(self):
+        self.model = roadmap.build(V2, [])
+        self.html = roadmap.render(self.model, "Vision.", NOW)
+
+    def test_milestone_bars_count_done_over_total_with_due_date_and_days_left(self):
+        ms = {m["title"]: m for m in self.model["milestones"]}
+        self.assertEqual([m["title"] for m in self.model["milestones"]], ["M1 MVP2", "M2 Design"])   # by due date
+        self.assertEqual((ms["M1 MVP2"]["done"], ms["M1 MVP2"]["total"], ms["M1 MVP2"]["days_left"], ms["M1 MVP2"]["late"]), (3, 8, 1, False))
+        self.assertEqual((ms["M2 Design"]["done"], ms["M2 Design"]["total"], ms["M2 Design"]["days_left"]), (0, 1, 2))
+        bar = self.html.split('id="milestones"')[1].split("</section>")[0]
+        self.assertIn("3 of 8", bar)
+        self.assertIn("due 27 Oct", bar)
+        self.assertIn("1 day left", bar)
+
+    def test_a_milestone_past_its_due_date_with_work_left_is_late_and_red(self):
+        later = roadmap.render(roadmap.build(V2, []), "v", datetime(2026, 10, 30, 9, 0))
+        bar = later.split('id="milestones"')[1].split("</section>")[0]
+        self.assertIn('class="bar late"', bar)
+        self.assertIn("late by 2 days", bar)
+
+    def test_the_map_has_one_edge_per_pair_of_milestones_with_the_number_of_needs(self):
+        self.assertEqual(self.model["map"]["edges"], [{"from": "M1 MVP2", "to": "M2 Design", "count": 1, "back": False}])   # 25 (M2) needs 26 (M1); needs inside one milestone are not edges
+
+    def test_a_need_on_a_later_milestone_is_a_backward_edge(self):
+        issues = V2 + [issue(41, "Story early needs late", labels=("story", "blocked", "P0"), ms=M1, body="Needs: #25")]
+        m = roadmap.build(issues, [])
+        back = [e for e in m["map"]["edges"] if e["back"]]
+        self.assertEqual(back, [{"from": "M2 Design", "to": "M1 MVP2", "count": 1, "back": True}])
+
+    def test_crossings_are_measured_not_guessed(self):
+        self.assertEqual(roadmap.crossings([(0, 2), (1, 3)]), 1)   # interleaved arcs cross
+        self.assertEqual(roadmap.crossings([(0, 3), (1, 2)]), 0)   # nested arcs do not
+        self.assertEqual(roadmap.crossings([(0, 1), (1, 2), (2, 3)]), 0)   # arcs that only touch at a box do not
+        self.assertEqual(self.model["map"]["crossings"], 0)
+
+    def test_the_svg_labels_every_arrow_and_names_the_crossings(self):
+        svg = self.html.split('id="map"')[1].split("</section>")[0]
+        self.assertEqual(svg.count("<svg"), 1)
+        self.assertEqual(svg.count('data-edge='), 1)
+        self.assertIn("1 need", svg)
+        self.assertIn("0 crossings", svg)
+        self.assertIn("M1 MVP2", svg)
+
+
+    def test_an_arrow_that_only_repeats_a_longer_path_is_hidden_and_counted(self):
+        m3 = {"title": "M3 Late", "dueOn": "2026-10-29T18:29:00Z"}
+        issues = V2 + [issue(50, "Story L1", labels=("story", "blocked"), ms=m3, body="Needs: #26\nNeeds: #25")]   # M3 waits for M1 and for M2, and M2 already waits for M1
+        mp = roadmap.build(issues, [])["map"]
+        self.assertEqual([(e["from"], e["to"]) for e in mp["edges"]], [("M1 MVP2", "M2 Design"), ("M2 Design", "M3 Late")])
+        self.assertEqual(mp["hidden"], 1)
+        self.assertIn("1 arrow", roadmap.render(roadmap.build(issues, []), "v", NOW).split('id="map"')[1])
+
+    def test_the_longest_chain_of_open_work_is_listed(self):
+        self.assertEqual([s["number"] for s in self.model["chain"]], [23, 27])   # ties go to the lowest numbers
+        self.assertIn("Longest chain", self.html)
 
 class IndiaClock(unittest.TestCase):
     def test_the_page_clock_is_india_time_even_when_the_machine_runs_in_utc(self):
