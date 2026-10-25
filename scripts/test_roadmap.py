@@ -122,5 +122,81 @@ class Deploy(unittest.TestCase):
             roadmap.OUT, roadmap.fetch_issues, roadmap.fetch_prs, roadmap.vision_text, roadmap.DEFAULT_VAULT = old
 
 
+# ---- Story R4 (plan v2): roadmap v2. Timeline by close day, start and cycle time, You are here, Next order, Delivered date range. ----
+def issue(n, title, state="OPEN", labels=("story",), closed=None, doing=None, ms=None, body=None, parent=None):
+    return {"number": n, "title": title, "body": body or f"Part of epic E9 (#9).\n\n## Business\n{title} works.", "state": state, "labels": list(labels),
+            "closedAt": closed, "doing_at": doing, "milestone": ms, "parent": parent}
+M1 = {"title": "M1 MVP2", "dueOn": "2026-10-27T18:29:00Z"}
+M2 = {"title": "M2 Design", "dueOn": "2026-10-28T18:29:00Z"}
+V2 = [
+    issue(9, "Epic E9: Plan v2", labels=("epic",), body="## Business\nOne plan."),
+    issue(20, "Story A done early", "CLOSED", closed="2026-10-24T20:00:00Z", doing="2026-10-24T18:00:00Z", ms=M1),     # IST 25 Oct 01:30, took 2 h
+    issue(21, "Story B done late", "CLOSED", closed="2026-10-25T06:00:00Z", doing="2026-10-25T05:15:00Z", ms=M1),     # IST 25 Oct 11:30, took 45 min
+    issue(22, "Story C done no start", "CLOSED", closed="2026-10-23T06:00:00Z", ms=M1),                              # no doing label ever
+    issue(23, "Story D in progress", labels=("story", "doing", "P0"), doing="2026-10-26T04:00:00Z", ms=M1),
+    issue(24, "Story E ready p1", labels=("story", "ready", "P1"), ms=M1),
+    issue(25, "Story F ready p0 later milestone", labels=("story", "ready", "P0"), ms=M2),
+    issue(26, "Story G ready p0 first", labels=("story", "ready", "P0"), ms=M1),
+    issue(40, "Story old open, no plan labels", ms=M1),
+    issue(27, "Story H blocked", labels=("story", "blocked", "P0"), ms=M1, body="Part of epic E9 (#9).\n\n## Business\nH works.\n\n## Needs\nNeeds: #23\nNeeds: #26"),
+]
+NOW = datetime(2026, 10, 26, 11, 0)   # IST, naive like the page clock
+
+
+class RoadmapV2(unittest.TestCase):
+    def setUp(self):
+        self.model = roadmap.build(V2, [])
+        self.html = roadmap.render(self.model, "Vision.", NOW)
+
+    def test_the_timeline_groups_closed_stories_by_india_close_day_newest_first(self):
+        days = [(d["day"], [s["number"] for s in d["stories"]]) for d in self.model["timeline"]]
+        self.assertEqual(days, [("2026-10-25", [21, 20]), ("2026-10-23", [22])])   # 20 closed at 01:30 IST on the 25th, not the 24th UTC
+        tl = self.html.split('id="timeline"')[1].split("</section>")[0]
+        self.assertLess(tl.index("25 Oct"), tl.index("23 Oct"))
+
+    def test_start_is_the_first_doing_label_and_cycle_time_is_close_minus_start(self):
+        by = {s["number"]: s for s in self.model["stories"]}
+        self.assertEqual((by[20]["cycle_min"], by[21]["cycle_min"], by[22]["cycle_min"]), (120, 45, None))
+        tl = self.html.split('id="timeline"')[1].split("</section>")[0]
+        self.assertIn("2 h", tl)
+        self.assertIn("45 min", tl)
+        self.assertIn("no start time", tl)   # honest: the story was never marked doing
+
+    def test_you_are_here_shows_now_the_story_in_progress_and_the_next_ready_story(self):
+        here = self.model["here"]
+        self.assertEqual([s["number"] for s in here["doing"]], [23])
+        self.assertEqual(here["next"]["number"], 26)   # P0 in the earliest milestone, then lowest number
+        h = self.html.split('id="here"')[1].split("</section>")[0]
+        self.assertIn("11:00", h)
+        self.assertIn("Story D in progress", h)
+        self.assertIn("since 09:30", h)   # 04:00 UTC is 09:30 IST
+        self.assertIn("Story G ready p0 first", h)
+
+    def test_next_is_sorted_by_milestone_then_priority_then_number_and_marks_blocked(self):
+        order = [s["number"] for s in self.model["next"]]
+        self.assertEqual(order, [26, 27, 24, 25])   # M1 first: P0 (26, 27) then P1 (24); M2 last. Doing and done stories are not in Next.
+        nx = self.html.split('id="next"')[1].split("</section>")[0]
+        self.assertIn("blocked by #23, #26", nx)
+
+    def test_stories_without_a_ready_or_blocked_label_are_older_work_and_stay_out_of_next(self):
+        self.assertNotIn(40, [s["number"] for s in self.model["next"]])
+        self.assertEqual([s["number"] for s in self.model["older"]], [40])
+        self.assertIn("Story old open, no plan labels", self.html.split('id="older"')[1])
+
+    def test_needs_lines_become_numbers(self):
+        by = {s["number"]: s for s in self.model["stories"]}
+        self.assertEqual(by[27]["needs"], [23, 26])
+        self.assertEqual(by[26]["needs"], [])
+
+    def test_delivered_epics_show_their_date_range(self):
+        issues = V2 + [issue(30, "Epic E8: Old", "CLOSED", labels=("epic",), closed="2026-10-25T07:00:00Z", body="## Business\nOld work."),
+                       issue(31, "Story old one", "CLOSED", closed="2026-10-21T08:00:00Z", parent={"number": 30}),
+                       issue(32, "Story old two", "CLOSED", closed="2026-10-25T07:00:00Z", parent={"number": 30})]
+        html = roadmap.render(roadmap.build(issues, []), "v", NOW)
+        d = html.split('id="delivered"')[1].split('id="here"')[0]
+        self.assertIn("21 Oct to 25 Oct", d)
+        self.assertNotIn("<details open", d)   # collapsed
+
+
 if __name__ == "__main__":
     unittest.main()
