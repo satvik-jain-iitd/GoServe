@@ -48,6 +48,10 @@ def dream_ok():
     if not (isinstance(k, list) and isinstance(d, list) and s < 400 and isinstance(pp, list)):
         return False
     pins = {x["pin"] for x in pp}
+    s2, ph, _ = call("GET", "/rest/v1/dish_photos?select=kitchen_n")   # #292: every photo row ends up on a seeded dish (none yet is fine)
+    s3, withp, _ = call("GET", "/rest/v1/menu_items?select=id&synthetic=eq.true&image_url=not.is.null")
+    if not (s2 < 400 and isinstance(ph, list) and isinstance(withp, list) and len(withp) == len(ph)):
+        return False
     per = {x["id"]: sum(1 for y in d if y["kitchen_id"] == x["id"]) for x in k}
     return (all(2 <= len(x["pin_codes"]) <= 4 and all(c in pins and not c.startswith("9") for c in x["pin_codes"]) for x in k)
             and all(10 <= n <= 14 for n in per.values()) and any("110092" in x["pin_codes"] for x in k) and "110092" in pins

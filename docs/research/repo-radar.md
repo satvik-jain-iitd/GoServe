@@ -144,3 +144,15 @@ Runs: `scout.py --need "seed a realistic simulated food delivery city: restauran
 | Our own `sim_seed` and `sim_tick` (0028, 0030) | S | Seed, reset and the tick exist, with random kitchens. | Extend in SQL (0034, 0035) |
 
 Decision: nothing off the shelf seeds named kitchens, menus and moving riders inside Postgres. Build in SQL by extending the existing functions, no new dependency. The menu data comes from web research, written under the `web-research` skill. Confidence 0.8 that nothing fits.
+
+## 2026-10-25 · need: download free licensed food photos from Pexels or Unsplash for a list of dish names, keep the photographer credit (story #292, epic E16)
+
+Runs: `scout.py --need "download free licensed food photos from Pexels or Unsplash for a list of dish names, keep photographer credit"` → no repos found; `gh search repos "pexels python"`, `"pexels api client"`, `"unsplash python"`. Read the Pexels API page and licence page (Tier A, for what Pexels says it allows).
+
+| Repo | Tier | Fit | Verdict |
+|---|---|---|---|
+| Adoubf/pexels-python, Stink-Po/pexels-python, kilhage/pexels | C | One-star clients for a single GET endpoint; the newest has no tests and 1 star; kilhage last pushed in 2020. Adopting one adds a dependency for 10 lines. | Skip |
+| kipruun/Pexels-python-scrapper | C | Scrapes the website, which the API terms do not allow. | Skip |
+| Pexels API (`GET /v1/search`, key in the `Authorization` header, 200 requests an hour) | A | Gives `photographer`, `url`, `alt` and sizes per photo. Licence: free commercial use, credit not required but asked, no implied endorsement, no unaltered resale. The API page asks for a visible link to Pexels. | Adopt the API with a stdlib script |
+
+Decision: one stdlib script (`scripts/dish_photos.py`) that calls the API, picks a photo whose alt text names the dish, saves it in the `menu` Storage bucket and records the source in a table. Nothing on GitHub fits. Confidence 0.8. Unsplash is the fallback; its API needs a key too.

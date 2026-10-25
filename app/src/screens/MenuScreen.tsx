@@ -163,7 +163,10 @@ function DishSheet({ dish, closed, qty, onAdd, onClose }: { dish: Dish; closed: 
       <div className="ui-dish-body">
         <div className="ui-dish-head"><h2>{dish.veg !== undefined && <VegMark veg={dish.veg} size={14} />}{dish.name}</h2><span className="ui-dish-price">{formatRupees(dish.price_paise)}</span></div>
         <p className="ui-kicker">{dish.veg === undefined ? "" : dish.veg ? "Veg" : "Non-veg"}{dish.category ? ` · ${dish.category}` : ""}</p>
-        {dish.image_credit && <p className="ui-meta">{creditLine(dish.image_credit)}</p>}
+        {/* the Pexels API asks for a visible link to Pexels */}
+        {dish.image_credit && (/ on Pexels$/.test(dish.image_credit)
+          ? <p className="ui-meta">{creditLine(dish.image_credit).replace(/Pexels$/, "")}<a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer">Pexels</a></p>
+          : <p className="ui-meta">{creditLine(dish.image_credit)}</p>)}
         <div className="ui-dish-count"><span className="ui-kicker">How many</span><Stepper label={dish.name} value={n} min={1} onChange={setN} /></div>
       </div>
       <div className="ui-dish-act">
