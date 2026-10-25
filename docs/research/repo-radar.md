@@ -186,3 +186,9 @@ Decision: edit the existing page; add `scripts/test_privacy_page.py` (every pers
 Runs: no repo search. `pg_available_extensions` on the dev project shows `pg_cron` available (Supabase ships it). A scheduler inside the database is the standard answer for a plain SQL delete and needs no new tool. MAIN 90 PROD stays off (read from the n8n API on 25 Oct: only MAIN 01, 30, 31 and 32 are active, plus their SUBs).
 
 Decision: one migration, `0040_prune_rider_pings.sql`, schedules `pilot_prune()` daily at 02:00 India. MAIN 90 keeps its prune node too; running twice is harmless. Confidence 0.85 (dev run proved the job and the delete; prod not run yet).
+
+## 2026-10-25 · need: deploy a static folder to Cloudflare Pages from a cron job (story #247, epic E21)
+
+Runs: `scout.py --need "deploy a static folder to Cloudflare Pages from a cron job"` → no repos found. Checked the tools we have: the `cf` CLI has `cf pages deploy [directory]` but no project flag and no vault-token login here (it takes a profile and a Wrangler config), so it does not fit a headless job; `wrangler pages deploy` is the same command our two GitHub workflows already use (`cloudflare/wrangler-action@v3`).
+
+Decision: adopt wrangler, pinned to 4.145.0 (30 Sep 2026), run by `npx` from `scripts/roadmap.py --deploy`. The project has no Wrangler config file, which is fine because the project name goes on the command line. Only a temp folder with `index.html` is uploaded. Confidence 0.8 (fake wrangler tested; the real upload waits for the owner's project and token, F207).

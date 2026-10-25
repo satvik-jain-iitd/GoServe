@@ -64,5 +64,63 @@ class Roadmap(unittest.TestCase):
         self.assertIn('http-equiv="refresh" content="300"', self.html)
 
 
+# ---- Story #247: the deploy step. A fake wrangler replaces the real one; no network, no token. ----
+import stat, tempfile
+
+
+class Deploy(unittest.TestCase):
+    def setUp(self):
+        self.d = tempfile.mkdtemp()
+        self.page = os.path.join(self.d, "index.html")
+        open(self.page, "w").write("<html>updated 09:05</html>")
+        self.log = os.path.join(self.d, "wrangler.log")
+        self.fake = os.path.join(self.d, "fake-wrangler")
+        # records its arguments, the two Cloudflare variables, and the file names in the folder it was asked to deploy
+        open(self.fake, "w").write('#!/bin/sh\necho "ARGS $*" > "%s"\necho "TOKEN $CLOUDFLARE_API_TOKEN ACCOUNT $CLOUDFLARE_ACCOUNT_ID" >> "%s"\nls "$3" >> "%s"\n' % (self.log, self.log, self.log))
+        os.chmod(self.fake, os.stat(self.fake).st_mode | stat.S_IEXEC)
+        self.vault = os.path.join(self.d, "03_cloudflare.env")
+
+    def test_the_token_and_account_come_from_the_vault_file_and_only_the_page_is_deployed(self):
+        open(self.vault, "w").write("CLOUDFLARE_ROADMAP_TOKEN=tok123\nCLOUDFLARE_ACCOUNT_ID=acc456\nOTHER=x\n")
+        code, msg = roadmap.deploy(self.page, self.vault, [self.fake])
+        self.assertEqual(code, 0, msg)
+        log = open(self.log).read()
+        self.assertRegex(log, r"ARGS pages deploy \S+ --project-name=goserve-roadmap --branch=main")
+        self.assertIn("TOKEN tok123 ACCOUNT acc456", log)
+        self.assertEqual(log.strip().splitlines()[-1], "index.html")   # nothing else (README, scripts) goes public
+        self.assertNotIn("tok123", log.splitlines()[0])   # the token is in the environment, never in the arguments
+
+    def test_a_missing_token_names_the_variable_and_deploys_nothing(self):
+        open(self.vault, "w").write("CLOUDFLARE_ACCOUNT_ID=acc456\n")
+        code, msg = roadmap.deploy(self.page, self.vault, [self.fake])
+        self.assertNotEqual(code, 0)
+        self.assertIn("CLOUDFLARE_ROADMAP_TOKEN", msg)
+        self.assertFalse(os.path.exists(self.log))
+
+    def test_a_missing_vault_file_is_the_same_loud_failure(self):
+        code, msg = roadmap.deploy(self.page, os.path.join(self.d, "nope.env"), [self.fake])
+        self.assertNotEqual(code, 0)
+        self.assertIn("CLOUDFLARE_ROADMAP_TOKEN", msg)
+        self.assertIn("CLOUDFLARE_ACCOUNT_ID", msg)
+
+    def test_a_failing_wrangler_fails_loud(self):
+        open(self.vault, "w").write("CLOUDFLARE_ROADMAP_TOKEN=t\nCLOUDFLARE_ACCOUNT_ID=a\n")
+        open(self.fake, "w").write("#!/bin/sh\necho boom >&2\nexit 3\n")
+        code, msg = roadmap.deploy(self.page, self.vault, [self.fake])
+        self.assertEqual(code, 3)
+        self.assertIn("boom", msg)
+
+    def test_the_page_is_written_even_when_the_deploy_fails(self):
+        out = os.path.join(self.d, "out", "index.html")
+        old = (roadmap.OUT, roadmap.fetch_issues, roadmap.fetch_prs, roadmap.vision_text, roadmap.DEFAULT_VAULT)
+        try:
+            roadmap.OUT, roadmap.fetch_issues, roadmap.fetch_prs, roadmap.vision_text = out, lambda: ISSUES, lambda: PRS, lambda: "v"
+            roadmap.DEFAULT_VAULT = os.path.join(self.d, "missing.env")
+            self.assertNotEqual(roadmap.main(["--deploy"]), 0)
+            self.assertTrue(os.path.exists(out))
+        finally:
+            roadmap.OUT, roadmap.fetch_issues, roadmap.fetch_prs, roadmap.vision_text, roadmap.DEFAULT_VAULT = old
+
+
 if __name__ == "__main__":
     unittest.main()
