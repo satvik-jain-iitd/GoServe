@@ -592,7 +592,7 @@ function build({ ids, token, simToken, supabaseUrl, credential, openrouterCreden
     respond('gs-main30-08', 'Respond result', '={{ $json.status_code }}', '={{ JSON.stringify($json) }}'),   // a JSON string like MAIN 01; an object body made the edge answer 502 (prod, 25 Oct)
     respond('gs-main30-09', 'Respond 401', 401, '{"ok":false,"error":"unauthorized","message":"Missing or wrong simulator token."}'),
     respond('gs-main30-10', 'Respond 503', 503, '{"ok":false,"error":"kill_switch","message":"The simulator is paused."}'),
-    respond('gs-main30-11', 'Respond 400', 400, '{"ok":false,"error":"bad_action","message":"Action must be seed or reset."}'),
+    respond('gs-main30-11', 'Respond 400', 400, '{"ok":false,"error":"bad_action","message":"Action must be seed, reset, tick, enable, disable or status."}'),
   ];
   const e30 = [['Sim webhook', 'Config'], ['Config', 'Check token'], ['Check token', 'Token ok?'], ['Token ok?', 'Kill switch?', 0], ['Token ok?', 'Respond 401', 1],
     ['Kill switch?', 'Respond 503', 0], ['Kill switch?', 'Action ok?', 1], ['Action ok?', 'Call SUB 30 Simulator write', 0], ['Action ok?', 'Respond 400', 1], ['Call SUB 30 Simulator write', 'Respond result']];
