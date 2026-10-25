@@ -45,12 +45,12 @@ test('S1 window: the last 24 hours, so an evening after 22:15 is in the next car
 test('S1 numbers: runs and errors, time, decisions with Jev use and agreement, cost; health checks counted apart', () => {
   const r = run('score_summary.js', {}, { 'Read runs': ok(runs), 'Read decisions': ok(decisions) });
   assert.deepEqual([r.ok, r.status_code], [true, 200]);
-  assert.deepEqual(r.summary, { runs: 4, errors: 1, health_checks: 1, avg_ms: 425, max_ms: 900, cost: 0.0001, decide_cost: 0.00008, decisions: 3, jev_used: 2, jev_agreed: 1, truncated: false, pilot: null });
+  assert.deepEqual(r.summary, { runs: 4, errors: 1, health_checks: 1, avg_ms: 425, max_ms: 900, cost: 0.0001, decide_cost: 0.00008, decisions: 3, jev_used: 2, jev_agreed: 1, engines: { rules: 0, jev: 0, laya: 0, older: 3 }, truncated: false, pilot: null });
 });
 
 test('S1 numbers: an empty day gives zeros, a full page is marked as cut', () => {
   const r = run('score_summary.js', {}, { 'Read runs': ok([]), 'Read decisions': ok([]) });
-  assert.deepEqual(r.summary, { runs: 0, errors: 0, health_checks: 0, avg_ms: 0, max_ms: 0, cost: 0, decide_cost: 0, decisions: 0, jev_used: 0, jev_agreed: 0, truncated: false, pilot: null });
+  assert.deepEqual(r.summary, { runs: 0, errors: 0, health_checks: 0, avg_ms: 0, max_ms: 0, cost: 0, decide_cost: 0, decisions: 0, jev_used: 0, jev_agreed: 0, engines: { rules: 0, jev: 0, laya: 0, older: 0 }, truncated: false, pilot: null });
   const many = Array.from({ length: 1000 }, () => ({ workflow: 'GS MAIN 01 Order API: status', duration_ms: 1, cost: 0, error: '' }));
   assert.equal(run('score_summary.js', {}, { 'Read runs': ok(many), 'Read decisions': ok([]) }).summary.truncated, true);
 });
@@ -141,3 +141,14 @@ for (const key of ['sub91', 'main90', 'sub93', 'main92', 'main93']) {
     assert.deepEqual(checkLayout(wf[key], wf[key].sections), []);
   });
 }
+
+// ---- Story #263: the daily card says which engine made the day's decisions. ----
+test('#263 the summary counts decisions by engine and the card prints one Engine line', () => {
+  const rows = [{ decision: { engine: 'rules', jev_status: 'engine_rules' } }, { decision: { engine: 'rules', jev_status: 'engine_rules' } }, { decision: { engine: 'jev', jev_status: 'ok', jev: { agrees: true } } }, { decision: { jev_status: 'jev_off' } }];
+  const r = run('score_summary.js', {}, { 'Read runs': ok([]), 'Read decisions': ok(rows) });
+  assert.deepEqual(r.summary.engines, { rules: 2, jev: 1, laya: 0, older: 1 });
+  const named = { Config: { chat_id: '42' }, 'Prepare window': { until_label: '2026-10-14 22:15', period_label: 'last 24 hours' } };
+  assert.match(run('score_message.js', r, named).text, /Engine: rules 2, jev 1 \(before the switch: 1\)/);
+  const none = run('score_summary.js', {}, { 'Read runs': ok([]), 'Read decisions': ok([]) });
+  assert.doesNotMatch(run('score_message.js', none, named).text, /Engine:/);
+});

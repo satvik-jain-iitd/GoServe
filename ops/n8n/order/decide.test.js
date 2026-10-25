@@ -56,7 +56,8 @@ test('S1 refusals: kill switch gives 503; bad input gives 400', () => {
   }
 });
 
-const ctx = () => ({ Guard: guard({}) });
+const pick = (g, engine) => run('decide_engine.js', engine === undefined ? { statusCode: 200, body: [] } : { statusCode: 200, body: [{ version: 1, value: { engine } }] }, { Guard: g });
+const ctx = () => ({ Guard: guard({}), 'Pick engine': pick(guard({}), 'jev') });   // H: Jev is the engine in these Jev tests (story #263)
 // The shape OpenRouter's decisions endpoint answered on 15 Oct 2026 for a choice question (cost and fields from the real call).
 const jevReply = (content, over) => ({ statusCode: 200, body: { id: 'gen-dec-1', model: 'typesafe/jev-1.13', provider: 'TypeSafe', answers: { rider: { type: 'choice', choice: content.choice, confidence: content.confidence, probabilities: {} } }, usage: { input_tokens: 477, output_tokens: 50, cost: 0.00002 } }, ...over });
 const decide = (res, g) => run('decide_result.js', res, g || ctx());
@@ -92,8 +93,35 @@ test('S2 Jev down or unusable: the rule decision goes through and the row says w
     const r = decide(res);
     assert.deepEqual([r.ok, r.log_row.decision.chosen_pick, r.log_row.decision.jev_status], [true, 'r2', status], status + ' ' + JSON.stringify(res).slice(0, 40));
   }
-  const off = decide({}, { Guard: guard({ jev_enabled: false }) }).log_row.decision;
+  const g = guard({ jev_enabled: false });
+  const off = decide({}, { Guard: g, 'Pick engine': pick(g, 'jev') }).log_row.decision;
   assert.deepEqual([off.chosen_pick, off.jev_status, off.jev], ['r2', 'jev_off', null]);
+});
+
+// ---- Story #263: the engine switch. Rules makes no Jev call at all; Jev is today's behaviour; Laya is not deployed so the rule decides. ----
+test('#263 Pick engine: rules turns Jev off even when Config has it on; jev keeps today; laya and anything unreadable fall back to the rule', () => {
+  const g = guard({});
+  assert.deepEqual([pick(g, 'rules').engine, pick(g, 'rules').use_jev], ['rules', false]);
+  assert.deepEqual([pick(g, 'jev').engine, pick(g, 'jev').use_jev], ['jev', true]);
+  assert.deepEqual([pick(g, 'laya').engine, pick(g, 'laya').use_jev], ['laya', false]);
+  assert.deepEqual([pick(g).engine, pick(g).use_jev], ['rules', false]);   // no row
+  for (const res of [{ error: 'timeout' }, { statusCode: 500, body: { message: 'x' } }, { statusCode: 200, body: [{ value: { engine: 'gpt' } }] }, { statusCode: 200, body: '<html>' }]) {
+    const r = run('decide_engine.js', res, { Guard: g });
+    assert.deepEqual([r.engine, r.use_jev], ['rules', false], JSON.stringify(res));
+  }
+  const off = guard({ jev_enabled: false });
+  assert.equal(pick(off, 'jev').use_jev, false);   // the cost switch in Config still wins
+  assert.equal(pick(g, 'rules').rule_pick, g.rule_pick);   // the rest of the Guard item goes on untouched
+});
+
+test('#263 the row says which engine decided: rules gives engine_rules and no Jev, laya gives laya_not_deployed, jev is unchanged', () => {
+  const g = guard({});
+  const rules = decide({}, { Guard: g, 'Pick engine': pick(g, 'rules') }).log_row.decision;
+  assert.deepEqual([rules.engine, rules.jev_status, rules.jev, rules.chosen_pick, rules.chosen_by], ['rules', 'engine_rules', null, 'r2', 'rule']);
+  const laya = decide({}, { Guard: g, 'Pick engine': pick(g, 'laya') }).log_row.decision;
+  assert.deepEqual([laya.engine, laya.jev_status, laya.chosen_pick], ['laya', 'laya_not_deployed', 'r2']);
+  const jev = decide(jevReply({ choice: 'r2', confidence: 0.8, reason: 'x' })).log_row.decision;
+  assert.deepEqual([jev.engine, jev.jev_status], ['jev', 'ok']);
 });
 
 test('S1 the log write: a stored row gives 200, a database failure gives 502 without raw text', () => {
@@ -153,7 +181,13 @@ test('wiring: SUB 13 asks Jev only after the guard, Jev failure never stops the 
   const c = wf.sub13.connections;
   const next = (n, i = 0) => c[n].main[i].map((x) => x.node);
   assert.deepEqual(next('Guard'), ['Allowed?']);
-  assert.deepEqual([next('Allowed?', 0), next('Allowed?', 1)], [['Ask Jev?'], ['Return refusal']]);
+  assert.deepEqual([next('Allowed?', 0), next('Allowed?', 1)], [['Read engine'], ['Return refusal']]);   // #263: the engine is read on every call
+  assert.deepEqual(next('Read engine'), ['Pick engine']);
+  assert.deepEqual(next('Pick engine'), ['Ask Jev?']);
+  const re = byName(wf.sub13, 'Read engine');
+  assert.match(re.parameters.url, /rest\/v1\/params\?select=value,version&session_id=eq\.global&key=eq\.decision_engine&order=version\.desc&limit=1/);
+  assert.equal(re.onError, 'continueRegularOutput');   // an unreadable engine means Rules, never a stopped order
+  assert.equal(re.parameters.method, 'GET');
   assert.deepEqual([next('Ask Jev?', 0), next('Ask Jev?', 1)], [['Ask Jev'], ['Decide']]);
   assert.deepEqual(next('Ask Jev'), ['Decide']);
   assert.deepEqual(next('Decide'), ['Write decision']);

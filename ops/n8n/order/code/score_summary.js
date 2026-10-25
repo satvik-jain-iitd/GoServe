@@ -12,11 +12,13 @@ const health = runsRes.body.filter((r) => String(r.workflow).endsWith(': health'
 const runs = runsRes.body.filter((r) => !String(r.workflow).endsWith(': health'));
 const times = runs.map((r) => Number(r.duration_ms) || 0);
 const used = decRes.body.filter((d) => d.decision && d.decision.jev_status === 'ok');
+const engines = { rules: 0, jev: 0, laya: 0, older: 0 };   // story #263: which engine made the decisions; rows from before the switch have none
+for (const d of decRes.body) { const e = d.decision && d.decision.engine; engines[e in engines && e !== 'older' ? e : 'older'] += 1; }
 const sum = (rows) => rows.reduce((n, r) => n + (Number(r.cost) || 0), 0);
 const decideCost = sum(runs.filter((r) => String(r.workflow).endsWith(': decide')));
 return [{ json: { ok: true, status_code: 200, summary: {
   runs: runs.length, errors: runs.filter((r) => r.error).length, health_checks: health.length,
   avg_ms: times.length ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : 0, max_ms: times.length ? Math.max(...times) : 0,
   cost: round(sum(runsRes.body)), decide_cost: round(decideCost),
-  decisions: decRes.body.length, jev_used: used.length, jev_agreed: used.filter((d) => d.decision.jev && d.decision.jev.agrees === true).length,
+  decisions: decRes.body.length, jev_used: used.length, jev_agreed: used.filter((d) => d.decision.jev && d.decision.jev.agrees === true).length, engines,
   truncated: runsRes.body.length >= LIMIT || decRes.body.length >= LIMIT, pilot } } }];

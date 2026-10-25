@@ -100,3 +100,13 @@ Decision: one SQL function (`sim_tick`) called by a schedule workflow. Random wa
 Runs: `scout.py --need "admin control panel for a demo data simulator: seed, reset, start and stop a tick, show counts, React"` → no repos found. GitHub search skipped: the need is one screen on our own design system (Ink v3) calling our own webhook; any admin-panel kit would bring a second UI language. Log: scratchpad `radar-h7.log`.
 
 Decision: one screen (`AdminSim.tsx`) on the existing rows, fields, switch and buttons of `ui/`, one small client (`lib/sim.ts`) shaped like `lib/orders.ts`. Nothing found that fits; built from scratch. Confidence 0.95.
+
+## 2026-10-25 · need: a feature flag that switches the live decision engine between rules and a model, versioned, set by an admin through n8n (story #263)
+
+Runs: `scout.py --need "feature flag to switch the live decision engine between rules and an ML model, versioned setting, admin toggle, n8n"` → no repos found; GitHub `feature flag toggle self-hosted postgres stars:>500` → platforms (flag services with their own servers and SDKs). Log: scratchpad `radar-263.log`.
+
+| Repo | Tier | What it is | Fit for this need | Verdict |
+|---|---|---|---|---|
+| Hosted or self-hosted flag services (Unleash, Flagsmith, GrowthBook class) | C | A server, an SDK and a dashboard for many flags. | One flag with three values, already inside our database (`params`, versioned, the same shape as `sim_enabled` and `cost_caps`). A service adds a server to run and a second admin. | Skip; borrow the idea of a versioned, audited flag |
+
+Decision: one `params` row per change (global/decision_engine), two database functions that check `is_admin()` on the caller, n8n forwards the admin's own token. Nothing found that fits; built from scratch. Confidence 0.9.

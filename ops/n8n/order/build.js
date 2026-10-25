@@ -33,26 +33,32 @@ function connect(edges) {   // edges: [from, to, outputIndex?]
 const baseSettings = { executionOrder: 'v1', saveDataSuccessExecution: 'all', saveDataErrorExecution: 'all' };
 
 // ---- SUB: Execute Workflow Trigger -> Guard -> Allowed? -> database call -> Shape result (or Return refusal) ----
-function sub({ name, n, trigger, fields, guardFile, rpc, callerIds, what, credential, settings }) {
+function sub({ name, n, trigger, fields, guardFile, shapeFile, rpc, callerIds, what, credential, settings }) {
   const p = `gs-sub${n}`;
   const nodes = [
     node(`${p}-01`, 'Start', 'n8n-nodes-base.executeWorkflowTrigger', 1.1, { inputSource: 'workflowInputs', workflowInputs: { values: fields.map(([name, type]) => ({ name, type })) } }),
     codeNode(`${p}-02`, 'Guard', code(guardFile)),
     ifNode(`${p}-03`, 'Allowed?', '={{ $json.ok }}', 'true'),
-    node(`${p}-04`, rpc.label, 'n8n-nodes-base.httpRequest', 4.2, {
+    rpc.userJwt   // the caller's own sign-in token goes on to the database; no stored credential (story #263)
+      ? node(`${p}-04`, rpc.label, 'n8n-nodes-base.httpRequest', 4.2, {
+        method: 'POST', url: '={{ $json.supabase_url }}/rest/v1/rpc/{{ $json.rpc_fn }}', authentication: 'none',
+        sendHeaders: true, specifyHeaders: 'keypair', headerParameters: { parameters: [{ name: 'Authorization', value: '={{ $json.auth }}' }, { name: 'apikey', value: '={{ $json.anon_key }}' }] },
+        sendBody: true, specifyBody: 'json', jsonBody: '={{ $json.rpc_body }}',
+        options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 } })
+      : node(`${p}-04`, rpc.label, 'n8n-nodes-base.httpRequest', 4.2, {
       method: 'POST', url: rpc.dynamic ? '={{ $json.supabase_url }}/rest/v1/rpc/{{ $json.rpc_fn }}' : `={{ $json.supabase_url }}/rest/v1/rpc/${rpc.fn}`,
       authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
       sendBody: true, specifyBody: 'json', jsonBody: '={{ $json.rpc_body }}',
       options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 } },
       { credentials: { httpCustomAuth: credential } }),
-    codeNode(`${p}-05`, 'Shape result', code('shape.js')),
+    codeNode(`${p}-05`, 'Shape result', code(shapeFile || 'shape.js')),
     node(`${p}-06`, 'Return refusal', 'n8n-nodes-base.noOp', 1, {}),
   ];
   const edges = [['Start', 'Guard'], ['Guard', 'Allowed?'], ['Allowed?', rpc.label, 0], ['Allowed?', 'Return refusal', 1], [rpc.label, 'Shape result']];
   const sections = [
     { name: 'RECEIVE', what: `The MAIN workflow calls this with the fields below. ${what}`, needs: 'Input: ' + fields.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
     { name: 'CHECK', what: 'Refuse at once if the kill switch is on or a field is missing. Nothing is written here.', needs: 'Input fields. No credential.', nodes: ['Guard', 'Allowed?'], color: 5 },
-    { name: 'WRITE', what: `One database call (${rpc.fn}) does the check and the write together. The database decides, not this workflow.`, needs: 'Credential "GoServe Supabase dev". Input: supabase_url.', nodes: [rpc.label], color: 6 },
+    { name: 'WRITE', what: `One database call (${rpc.fn}) does the check and the write together. The database decides, not this workflow.`, needs: rpc.userJwt ? 'No stored credential: the caller\'s own sign-in token is forwarded. Input: supabase_url, auth, anon_key.' : 'Credential "GoServe Supabase dev". Input: supabase_url.', nodes: [rpc.label], color: 6 },
     { name: 'ANSWER', what: 'Turn the database answer into a short result with a status code. Raw database text is never returned.', needs: 'The database answer.', nodes: ['Shape result'], color: 5 },
     { name: 'REFUSE', what: 'Hand the refusal back unchanged.', needs: 'The refusal from CHECK.', nodes: ['Return refusal'], color: 1 },
   ];
@@ -65,7 +71,7 @@ function finish(name, nodes, edges, sections, setts) {
 }
 
 // env 'prod' builds the PROD copy (story #78): a `PROD` name mark and its own webhook path. Everything else, including the canvas, is the same code.
-function build({ ids, token, simToken, supabaseUrl, credential, openrouterCredential, n8nApiCredential, uptimerobotKey, vapidCredential, vapidPublicKey, vapidSubject, chatId, driveFolderId, env }) {
+function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrouterCredential, n8nApiCredential, uptimerobotKey, vapidCredential, vapidPublicKey, vapidSubject, chatId, driveFolderId, env }) {
   const prod = env === 'prod';
   const settings = ids.alert ? Object.assign({}, baseSettings, { errorWorkflow: ids.alert }) : baseSettings;
   const cred = credential || { id: 'REPLACE_CREDENTIAL_ID', name: 'GoServe Supabase dev' };
@@ -98,6 +104,13 @@ function build({ ids, token, simToken, supabaseUrl, credential, openrouterCreden
     node('gs-sub13-01', 'Start', 'n8n-nodes-base.executeWorkflowTrigger', 1.1, inputs(f13)),
     codeNode('gs-sub13-02', 'Guard', code('decide_guard.js')),
     ifNode('gs-sub13-03', 'Allowed?', '={{ $json.ok }}', 'true'),
+    // Story #263: the engine is read on every call. Unreadable or unknown means Rules; this read never stops an order.
+    node('gs-sub13-10', 'Read engine', 'n8n-nodes-base.httpRequest', 4.2, { method: 'GET',
+      url: "={{ $json.supabase_url }}/rest/v1/params?select=value,version&session_id=eq.global&key=eq.decision_engine&order=version.desc&limit=1",
+      authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
+      options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 3000 } },
+      { credentials: { httpCustomAuth: cred }, onError: 'continueRegularOutput' }),
+    codeNode('gs-sub13-11', 'Pick engine', code('decide_engine.js')),
     ifNode('gs-sub13-04', 'Ask Jev?', '={{ $json.use_jev }}', 'true'),
     // Jev is advice. If it fails, the rule decision still goes through, so this one node continues on error. It is not a write path.
     node('gs-sub13-05', 'Ask Jev', 'n8n-nodes-base.httpRequest', 4.2, { method: 'POST', url: 'https://openrouter.ai/api/alpha/decisions',
@@ -109,12 +122,13 @@ function build({ ids, token, simToken, supabaseUrl, credential, openrouterCreden
     codeNode('gs-sub13-08', 'Decision stored', code('decide_done.js')),
     node('gs-sub13-09', 'Return refusal', 'n8n-nodes-base.noOp', 1, {}),
   ];
-  const e13 = [['Start', 'Guard'], ['Guard', 'Allowed?'], ['Allowed?', 'Ask Jev?', 0], ['Allowed?', 'Return refusal', 1], ['Ask Jev?', 'Ask Jev', 0], ['Ask Jev?', 'Decide', 1],
+  const e13 = [['Start', 'Guard'], ['Guard', 'Allowed?'], ['Allowed?', 'Read engine', 0], ['Allowed?', 'Return refusal', 1], ['Read engine', 'Pick engine'], ['Pick engine', 'Ask Jev?'], ['Ask Jev?', 'Ask Jev', 0], ['Ask Jev?', 'Decide', 1],
     ['Ask Jev', 'Decide'], ['Decide', 'Write decision'], ['Write decision', 'Decision stored']];
   const s13 = [
     { name: 'RECEIVE', what: 'The MAIN workflow calls this with a ready order and the riders.', needs: 'Input: ' + f13.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
     { name: 'CHECK', what: 'Refuse if the kill switch is on or input is bad. Work out the rule pick and build the Jev question (no names or addresses).', needs: 'Input fields. No credential.', nodes: ['Guard', 'Allowed?'], color: 5 },
-    { name: 'JEV', what: 'Ask Jev for a suggestion within 1500 ms. If Jev is off or fails, go on without it.', needs: 'Credential "GoServe OpenRouter". Config: jev_enabled, jev_model.', nodes: ['Ask Jev?', 'Ask Jev'], color: 3 },
+    { name: 'ENGINE', what: 'Read which engine the admin picked (Rules, Jev or Laya). Rules means no Jev call at all. Laya is not deployed, so the rule decides. If the read fails, Rules.', needs: 'Credential "GoServe Supabase dev". Table: params (decision_engine).', nodes: ['Read engine', 'Pick engine'], color: 6 },
+    { name: 'JEV', what: 'Ask Jev for a suggestion within 1500 ms, only when the engine is Jev. If Jev fails, go on without it.', needs: 'Credential "GoServe OpenRouter". Config: jev_enabled, jev_model.', nodes: ['Ask Jev?', 'Ask Jev'], color: 3 },
     { name: 'DECIDE', what: 'The rule decides. Jev is kept in the record with its confidence, or the reason it was not used.', needs: 'Guard and Jev results. Config: jev_cost_cap.', nodes: ['Decide'], color: 5 },
     { name: 'WRITE', what: 'Write one decision_log row with the rule pick, the Jev pick and the pick used.', needs: 'Credential "GoServe Supabase dev". Table: decision_log.', nodes: ['Write decision'], color: 6 },
     { name: 'ANSWER', what: 'Return the decision if the row was stored, else a short error.', needs: 'The database answer.', nodes: ['Decision stored'], color: 5 },
@@ -624,6 +638,37 @@ function build({ ids, token, simToken, supabaseUrl, credential, openrouterCreden
   ];
   const main31 = finish('GS MAIN 31 Simulator tick', n31, e31, s31, Object.assign({}, settings, { saveDataSuccessExecution: 'none' }));   // 1440 'skipped' runs a day would bury real errors (review of #259)
 
+  // ---- Decision engine (story #263): the admin app asks MAIN 32 with the admin's own sign-in token; SUB 32 forwards it to the database, which checks is_admin(). ----
+  const noKeep = Object.assign({}, settings, { saveDataSuccessExecution: 'none', saveDataErrorExecution: 'none' });   // the admin's token passes through as an item field: n8n keeps no run data (review of #270)
+  const sub32 = sub({ name: 'GS SUB 32 Engine call', n: 32, callerIds: ids.main32, credential: cred, settings: noKeep,
+    fields: [['action', 'string'], ['engine', 'string'], ['auth', 'string'], ['kill_switch', 'boolean'], ['supabase_url', 'string'], ['anon_key', 'string']],
+    guardFile: 'guard_engine.js', shapeFile: 'engine_shape.js', rpc: { fn: 'get_decision_engine or set_decision_engine', label: 'Engine rpc', userJwt: true },
+    what: 'Get reads the decision engine and set changes it. The database checks that the caller is an admin; the change is a new params version with the admin\'s email.' });
+  const n32 = [
+    node('gs-main32-01', 'Engine webhook', 'n8n-nodes-base.webhook', 2, { httpMethod: 'POST', path: prod ? 'gs-engine-prod' : 'gs-engine', responseMode: 'responseNode', options: { allowedOrigins: '*' } }, { webhookId: prod ? 'd2b8f1a6-4c93-4e17-b0a5-6e9c3f7d2e32' : '5e0a7c94-1b68-4f3d-8d2a-c4b9e6f1a032' }),
+    cfgSet('gs-main32-02', [['kill_switch', 'boolean', false], ['supabase_url', 'string', url], ['anon_key', 'string', anonKey || PLACEHOLDER], ['env', 'string', prod ? 'prod' : 'dev']]),
+    codeNode('gs-main32-03', 'Check request', code('engine_check.js')),
+    ifNode('gs-main32-04', 'Signed in?', '={{ $json.auth_ok }}', 'true'),
+    ifNode('gs-main32-05', 'Kill switch?', '={{ $json.kill_switch }}', 'true'),
+    ifNode('gs-main32-06', 'Action ok?', '={{ $json.action !== "bad" }}', 'true'),
+    callSub('gs-main32-07', 'Call SUB 32 Engine', ids.sub32, [['action', '={{ $json.action }}', 'string'], ['engine', '={{ $json.engine }}', 'string'], ['auth', '={{ $json.auth }}', 'string'], ['kill_switch', '={{ $json.kill_switch }}', 'boolean'], ['supabase_url', '={{ $json.supabase_url }}', 'string'], ['anon_key', '={{ $json.anon_key }}', 'string']]),
+    respond('gs-main32-08', 'Respond result', '={{ $json.status_code }}', '={{ JSON.stringify($json) }}'),
+    respond('gs-main32-09', 'Respond 401', 401, '{"ok":false,"error":"not_signed_in","message":"Please sign in again."}'),
+    respond('gs-main32-10', 'Respond 503', 503, '{"ok":false,"error":"kill_switch","message":"Decision changes are paused."}'),
+    respond('gs-main32-11', 'Respond 400', 400, '{"ok":false,"error":"bad_action","message":"Action must be get or set with an engine."}'),
+  ];
+  const e32 = [['Engine webhook', 'Config'], ['Config', 'Check request'], ['Check request', 'Signed in?'], ['Signed in?', 'Kill switch?', 0], ['Signed in?', 'Respond 401', 1],
+    ['Kill switch?', 'Respond 503', 0], ['Kill switch?', 'Action ok?', 1], ['Action ok?', 'Call SUB 32 Engine', 0], ['Action ok?', 'Respond 400', 1], ['Call SUB 32 Engine', 'Respond result']];
+  const s32 = [
+    { name: 'RECEIVE', what: 'The admin app posts here with its own sign-in token in the Authorization header. Body: action get, or action set with the engine (rules, jev or laya).', needs: 'Path gs-engine. Header Authorization: Bearer <token>.', nodes: ['Engine webhook'], color: 4 },
+    { name: 'CONFIG', what: 'The kill switch, the database address and the public anon key. No admin token and no demo token live here.', needs: 'Config keys: kill_switch, supabase_url, anon_key, env.', nodes: ['Config'], color: 5 },
+    { name: 'GATE', what: 'No token in the right shape gets 401. Kill switch on gets 503. An unknown action or engine gets 400. Who is an admin is decided by the database in the next step.', needs: 'Header Authorization. Body: action, engine.', nodes: ['Check request', 'Signed in?', 'Kill switch?', 'Action ok?'], color: 5 },
+    { name: 'CALL', what: 'Call SUB 32. It forwards the token to the database function. A non-admin gets 403 from the database.', needs: 'SUB 32 id.', nodes: ['Call SUB 32 Engine'], color: 6 },
+    { name: 'ANSWER', what: 'Send the engine, its version and who changed it back, with the status code.', needs: 'The SUB output: status_code, engine, version, by, changed_at.', nodes: ['Respond result'], color: 4 },
+    { name: 'REFUSE', what: 'Answer the calls that must not go on: 401, 503 and 400.', needs: 'Nothing.', nodes: ['Respond 401', 'Respond 503', 'Respond 400'], color: 1 },
+  ];
+  const main32 = finish('GS MAIN 32 Decision engine', n32, e32, s32, noKeep);
+
   // ---- ERR 00: tells the owner on Telegram when a GoServe workflow fails (rulebook 84) ----
   const aNodes = [
     node('gs-err00-01', 'Error trigger', 'n8n-nodes-base.errorTrigger', 1, {}),
@@ -641,7 +686,7 @@ function build({ ids, token, simToken, supabaseUrl, credential, openrouterCreden
     { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send alert'], color: 6 },
   ];
   const alert = finish('GS ERR 00 Alert', aNodes, aEdges, aSections, baseSettings);
-  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub19, sub20, sub21, sub22, sub30, main30, main31, sub91, sub93, sub94, main01, main90, main92, main93, alert };
+  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub19, sub20, sub21, sub22, sub30, sub32, main30, main31, main32, sub91, sub93, sub94, main01, main90, main92, main93, alert };
   if (prod) for (const k of Object.keys(all)) if (k !== 'alert') all[k].name += ' PROD';   // the one GS ERR 00 alert is shared (one bot, one chat)
   return { ...all, STATUS_ROLES };
 }
