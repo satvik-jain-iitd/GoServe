@@ -119,6 +119,89 @@ def day_range(stories: list) -> str:
     return f" · {day_label(days[0])} to {day_label(days[-1])}" if days else ""
 
 
+def crossings(arcs: list) -> int:
+    """Arcs are (low, high) positions on one line. Two arcs cross when they interleave: a < c < b < d. Nested or touching arcs do not."""
+    n = 0
+    for i, (a, b) in enumerate(arcs):
+        for c, d in arcs[i + 1:]:
+            n += (a < c < b < d) or (c < a < d < b)
+    return n
+
+
+def dependency_map(stories: list, milestones: list) -> dict:
+    """One edge per pair of milestones: the story in `to` waits for a story in `from`. Needs inside one milestone are not edges."""
+    pos = {m["title"]: i for i, m in enumerate(milestones)}
+    by_n = {s["number"]: s for s in stories}
+    count: dict = {}
+    for st in stories:
+        for n in st["needs"]:
+            dep = by_n.get(n)
+            if dep and dep["milestone"] and st["milestone"] and dep["milestone"] != st["milestone"]:
+                count[(dep["milestone"], st["milestone"])] = count.get((dep["milestone"], st["milestone"]), 0) + 1
+    edges = [{"from": a, "to": b, "count": c, "back": pos[a] > pos[b]} for (a, b), c in sorted(count.items(), key=lambda kv: (pos[kv[0][0]], pos[kv[0][1]]))]
+    # A forward arrow that only repeats a longer path (A to B to C hides A to C) is left out, so the picture shows what waits directly.
+    fwd: dict = {}
+    for ed in edges:
+        if not ed["back"]:
+            fwd.setdefault(ed["from"], set()).add(ed["to"])
+    def reach(a, b, skip):
+        seen, todo = set(), [x for x in fwd.get(a, ()) if (a, x) != skip]
+        while todo:
+            x = todo.pop()
+            if x == b: return True
+            if x not in seen:
+                seen.add(x); todo += list(fwd.get(x, ()))
+        return False
+    kept = [ed for ed in edges if ed["back"] or not reach(ed["from"], ed["to"], (ed["from"], ed["to"]))]
+    return {"nodes": [m["title"] for m in milestones], "edges": kept, "hidden": len(edges) - len(kept),
+            "crossings": crossings([tuple(sorted((pos[e["from"]], pos[e["to"]]))) for e in kept])}
+
+
+def longest_chain(stories: list) -> list:
+    """The longest line of open stories where each waits for the one before. Ties go to the lowest story numbers."""
+    open_ = {s["number"]: s for s in stories if s["state"] != "CLOSED"}
+    best: dict = {}
+    def chain(n, seen=()):
+        if n in best: return best[n]
+        tails = [chain(d, seen + (n,)) for d in open_[n]["needs"] if d in open_ and d not in seen]
+        best[n] = min((t + [n] for t in tails), key=lambda c: (-len(c), c), default=[n])
+        return best[n]
+    longest = min((chain(n) for n in open_), key=lambda c: (-len(c), c), default=[])
+    return [open_[n] for n in longest]
+
+
+def clock(model: dict, now: datetime) -> None:
+    """Days left and late flags depend on the page clock, so they are set when the page is drawn."""
+    for m in model["milestones"]:
+        m["days_left"] = (m["due"].date() - now.date()).days if m["due"] else None
+        m["late"] = bool(m["due"] and m["days_left"] < 0 and m["done"] < m["total"])
+
+
+def map_svg(mp: dict) -> str:
+    """A vertical stack of milestone boxes (earliest on top). Arrows are arcs on the right, so none runs through a box. Dotted = waits for a later milestone."""
+    e = html.escape
+    gap, h, w = 62, 40, 250
+    ys = {t: 20 + i * gap for i, t in enumerate(mp["nodes"])}
+    pos = {t: i for i, t in enumerate(mp["nodes"])}
+    height = 40 + max(len(mp["nodes"]) - 1, 0) * gap + h
+    paths = []
+    for ed in mp["edges"]:
+        y1, y2 = ys[ed["from"]] + h / 2, ys[ed["to"]] + h / 2
+        off = 50 + 36 * abs(pos[ed["from"]] - pos[ed["to"]])
+        x = 24 + w
+        dash = ' stroke-dasharray="6 4"' if ed["back"] else ""
+        label = f'{ed["count"]} need{"" if ed["count"] == 1 else "s"}'
+        paths.append(f'<g data-edge="{e(ed["from"])} to {e(ed["to"])}"><path d="M{x} {y1} C{x + off} {y1} {x + off} {y2} {x + 6} {y2}" fill="none" stroke="#45654E" stroke-width="2"'
+                     f'{dash} marker-end="url(#ah)"/><text x="{x + off * 0.75 + 6}" y="{(y1 + y2) / 2 + 5}" font-size="14" fill="#263528">{label}</text></g>')
+    boxes = "".join(f'<g><rect x="24" y="{ys[t]}" width="{w}" height="{h}" rx="6" fill="#F7F3EF" stroke="#45654E"/><text x="36" y="{ys[t] + 25}" font-size="15" fill="#263528">{e(t[:30])}</text></g>' for t in mp["nodes"])
+    width = 24 + w + 50 + 36 * max(len(mp["nodes"]) - 1, 1) + 90
+    n = mp["crossings"]
+    hid = f' {mp["hidden"]} arrow{"" if mp["hidden"] == 1 else "s"} that only repeat a longer path {"is" if mp["hidden"] == 1 else "are"} left out.' if mp["hidden"] else ""
+    return (f'<svg viewBox="0 0 {width} {height}" width="100%" role="img" aria-label="Which milestone waits for which"><defs><marker id="ah" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">'
+            f'<path d="M0 0 L8 4 L0 8 z" fill="#45654E"/></marker></defs>{boxes}{"".join(paths)}</svg>'
+            f'<p class="mono">Arrow: the later box waits for the earlier box. Dotted: it waits for a later milestone. {n} crossing{"" if n == 1 else "s"}.{hid}</p>')
+
+
 def plain(text: str) -> str:
     for pat, word in PLAIN:
         text = pat.sub(word, text)
@@ -151,7 +234,14 @@ def build(issues: list, prs: list) -> dict:
         days.setdefault(s["closed"].strftime("%Y-%m-%d"), []).append(s)
     here = {"doing": [s for s in stories if s["state"] != "CLOSED" and "doing" in s["labels"]],
             "next": next((s for s in open_ if "ready" in s["labels"] and not s["blocked_by"]), None)}
-    return {"timeline": [{"day": d, "stories": v} for d, v in days.items()], "next": open_, "older": older, "here": here, "epics": [{"number": e["number"], "title": plain(re.sub(r"^(Epic|Feature):?\s*(E\d+:?)?\s*", "", e["title"])), "state": e["state"],
+    mss: dict = {}
+    for st in stories:
+        if st["milestone"]:
+            m = mss.setdefault(st["milestone"], {"title": st["milestone"], "due": ist(st["due"]) if st["due"] != "9999" else None, "done": 0, "total": 0})
+            m["total"] += 1
+            m["done"] += st["state"] == "CLOSED"
+    milestones = sorted(mss.values(), key=lambda m: (m["due"] is None, m["due"]))
+    return {"timeline": [{"day": d, "stories": v} for d, v in days.items()], "milestones": milestones, "map": dependency_map(stories, milestones), "chain": longest_chain(stories), "next": open_, "older": older, "here": here, "epics": [{"number": e["number"], "title": plain(re.sub(r"^(Epic|Feature):?\s*(E\d+:?)?\s*", "", e["title"])), "state": e["state"],
                        "sentence": plain(first_sentence(section(e.get("body"), "Business"))), "stories": [s for s in stories if s["epic"] == e["number"]]} for e in epics],
             "stories": stories, "prs": prs}
 
@@ -169,6 +259,19 @@ def render(model: dict, vision: str, now: datetime) -> str:
         return f'<li><b>{e(plain(s["text"]))}</b> <span class="mono">#{s["number"]} · {e(s["milestone"] or "no milestone")}{" · P" + str(s["prio"]) if s["prio"] < 9 else ""}</span>{why}</li>'
     next_rows = "".join(next_row(s) for s in model["next"]) or "<li>Nothing is queued.</li>"
     older_rows = "".join(f'<li>{e(plain(s["text"]))} <span class="mono">#{s["number"]}</span></li>' for s in model["older"])
+    clock(model, now)
+    def bar(m):
+        pct = round(100 * m["done"] / m["total"]) if m["total"] else 0
+        if m["due"] is None: when = "no due date"
+        elif m["late"]: when = f'late by {-m["days_left"]} day{"" if m["days_left"] == -1 else "s"}'
+        elif m["days_left"] == 0: when = "due today"
+        else: when = f'{m["days_left"]} day{"" if m["days_left"] == 1 else "s"} left' if m["days_left"] > 0 else "finished after its date"
+        due = f'due {day_label(m["due"])} · ' if m["due"] else ""
+        return (f'<div class="bar{" late" if m["late"] else ""}" data-milestone="{e(m["title"])}"><b>{e(m["title"])}</b> <span class="mono">{m["done"]} of {m["total"]} · {due}{when}</span>'
+                f'<div class="track"><div class="fill" style="width:{pct}%"></div></div></div>')
+    bars = "".join(bar(m) for m in model["milestones"]) or "<p>No milestones yet.</p>"
+    chain = " → ".join(f'#{c["number"]}' for c in model["chain"])
+    chain_line = f'<p>Longest chain of open work ({len(model["chain"])}): <span class="mono">{chain}</span></p>' if model["chain"] else "<p>No open work waits on other work.</p>"
     here = model["here"]
     doing_rows = "".join(f'<li><b>{e(plain(s["text"]))}</b> <span class="mono">#{s["number"]} · since {s["started"].strftime("%H:%M") if s["started"] else "?"}</span></li>' for s in here["doing"]) or "<li>Nothing is marked doing.</li>"
     nxt = here["next"]
@@ -200,6 +303,7 @@ ul {{ padding-left:20px; }} li {{ margin:4px 0; }}
 .board {{ display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; }} @media (max-width:720px) {{ .board {{ grid-template-columns:1fr 1fr; }} }}
 .col {{ background:var(--sage); border-radius:6px; padding:10px; min-height:80px; }}
 .card {{ background:var(--paper); border-radius:6px; padding:10px 12px; margin:8px 0; font-size:15px; }} .card p {{ margin:6px 0; }}
+.bar {{ background:var(--paper); border-radius:6px; padding:8px 12px; margin:8px 0; }} .track {{ background:var(--sage); border-radius:999px; height:10px; margin-top:6px; }} .fill {{ background:var(--green); border-radius:999px; height:10px; }} .bar.late .fill {{ background:var(--error); }} .bar.late b {{ color:var(--error); }}
 .tag {{ display:inline-block; background:var(--lime); border-radius:999px; padding:1px 10px; font-size:12px; }}
 footer {{ margin-top:40px; }} .needs {{ color:var(--error); }}
 </style></head><body><main>
@@ -207,6 +311,8 @@ footer {{ margin-top:40px; }} .needs {{ color:var(--error); }}
 <section id="vision"><h2>Vision</h2><div class="vision">{e(vision)}</div></section>
 <section id="delivered"><h2>Delivered</h2>{delivered or "<p>Nothing finished yet.</p>"}</section>
 <section id="here"><h2>You are here</h2><p class="mono">{now.strftime("%d %b %H:%M")} India time</p><ul>{doing_rows}</ul>{next_line}</section>
+<section id="milestones"><h2>Milestones</h2>{bars}</section>
+<section id="map"><h2>What waits for what</h2>{map_svg(model["map"]) if model["map"]["nodes"] else "<p>No milestones yet.</p>"}{chain_line}</section>
 <section id="timeline"><h2>Timeline</h2>{timeline}</section>
 <section id="now"><h2>Now</h2><ul>{now_rows}</ul></section>
 <section id="next"><h2>Next</h2><ul>{next_rows}</ul></section>
