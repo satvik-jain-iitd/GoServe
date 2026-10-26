@@ -99,3 +99,39 @@ test("S7 (#454) the Demo mode switch posts demo true then false, and shows the s
   expect(net.calls.sim.filter((c) => c.body.action === "knobs").map((c) => c.body)).toEqual([{ action: "knobs", demo: true }, { action: "knobs", demo: false }]);
   expect(await axeScan(page)).toEqual([]);
 });
+
+// #461: the Simulator tab follows the Ink design like the City forms: styled fields, a token gap between fields and between a field and its button, and the same button sizes.
+for (const theme of ["day", "night"]) {
+  test(`S8 (#461) fields and buttons keep the token sizes and gaps at 390 px in ${theme}`, async ({ page, context }) => {
+    await page.setViewportSize({ width: 390, height: 1500 });
+    await context.addInitScript((t) => localStorage.setItem("gs-theme", t), theme);
+    const net = await setup(context, page);
+    net.state.admin = true;
+    await open(page);
+    await expect(page.getByLabel("Riders per kitchen")).toBeVisible();
+    const m = await page.evaluate(() => {
+      const px = (token: string) => { const d = document.createElement("div"); d.style.cssText = `position:absolute;visibility:hidden;height:var(${token})`; document.body.append(d); const h = d.getBoundingClientRect().height; d.remove(); return h; };
+      const box = (el: Element) => el.getBoundingClientRect();
+      const input = (id: string) => document.getElementById(id) as HTMLElement;
+      const btn = (name: string) => [...document.querySelectorAll("button")].find((b) => b.textContent?.trim() === name) as HTMLElement;
+      const gap = (a: Element, b: Element) => box(b).top - box(a).bottom;
+      return {
+        tap: px("--gs-tap"), big: px("--gs-tap-big"), s2: px("--gs-space-2"), s4: px("--gs-space-4"),
+        inputH: box(input("sim-riders_per_kitchen")).height, radius: getComputedStyle(input("sim-riders_per_kitchen")).borderTopLeftRadius,
+        seedH: box(btn("Seed the city")).height, saveH: box(btn("Save the scenario")).height, tickH: box(btn("Tick now")).height, resetH: box(btn("Reset the city")).height,
+        fieldToField: gap(input("sim-riders_per_kitchen"), document.getElementById("sim-online_pct")!.previousElementSibling!),
+        lastFieldToSeed: gap(input("sim-online_pct"), btn("Seed the city")),
+        lastFieldToSave: gap(input("sim-rider_drop_pct"), btn("Save the scenario")),
+        tickToSeed: gap(btn("Tick now"), document.querySelector('[aria-label="Seed parameters"]')!),
+      };
+    });
+    expect(m.inputH).toBeGreaterThanOrEqual(m.tap);                      // the field is a full-size tap target, not the browser's thin box
+    expect(m.radius).not.toBe("0px");                                    // and it wears the Ink border
+    expect(m.seedH).toBe(m.big); expect(m.saveH).toBe(m.big);            // main buttons are the token big size, like Add person on City
+    expect(m.tickH).toBe(m.tap); expect(m.resetH).toBe(m.tap);           // the side buttons are the plain size, like + Add a kitchen on City
+    expect(m.fieldToField).toBeGreaterThanOrEqual(m.s4 - 1);             // space between two fields
+    expect(m.lastFieldToSeed).toBeGreaterThanOrEqual(m.s2);              // a button never hugs the last field
+    expect(m.lastFieldToSave).toBeGreaterThanOrEqual(m.s2);
+    expect(await axeScan(page)).toEqual([]);
+  });
+}
