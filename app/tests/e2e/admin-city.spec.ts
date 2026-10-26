@@ -125,3 +125,20 @@ test("S7 a kitchen taken out of the system says Off, not Closed", async ({ page,
   await expect(page.getByRole("button", { name: /^Open kitchen Old Kitchen/ })).toContainText("Off");
   await expect(page.getByRole("button", { name: /^Open kitchen Rohini Kitchen/ })).toContainText("Closed");
 });
+
+test("S9 (#466) a refused Add person shows a readable message, not a bare red bar", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.admin = true;
+  net.state.rpcError = { name: "admin_add_person", message: "already_staff" };
+  await city(page);
+  await page.getByRole("button", { name: "Add a person" }).click();
+  await page.getByLabel("Email").fill("cook@example.com");
+  await page.getByLabel("Role").selectOption("kitchen");
+  await page.getByLabel("Kitchen", { exact: true }).selectOption("k-1");
+  await page.getByRole("button", { name: "Add person" }).click();
+  const alert = page.getByRole("alert");
+  await expect(alert).toHaveText("This person already works for another kitchen. Remove them there first.");
+  const look = await alert.evaluate((el) => { const s = getComputedStyle(el); return { bg: s.backgroundColor, fg: s.color }; });
+  expect(look.bg).toBe("rgba(0, 0, 0, 0)");          // red text on the page colour, never on a red fill
+  expect(look.fg).not.toBe(look.bg);
+});
