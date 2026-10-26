@@ -277,5 +277,28 @@ class IndiaClock(unittest.TestCase):
             time.tzset()
 
 
+class RoadmapTheme(unittest.TestCase):
+    def test_the_page_has_a_night_theme_that_follows_the_phone_and_a_phone_width_layout(self):
+        html_ = roadmap.render(roadmap.build(V2, []), "v", NOW)
+        self.assertIn('<meta name="viewport" content="width=device-width, initial-scale=1">', html_)
+        self.assertIn('<meta name="color-scheme" content="light dark">', html_)
+        night = html_.split("@media (prefers-color-scheme: dark)")[1].split("</style>")[0]
+        for token in ("--cream", "--paper", "--ink", "--green", "--sage", "--muted"):
+            self.assertIn(token, night, token + " must change at night")
+        self.assertIn("@media (max-width:720px)", html_)
+
+    def test_board_columns_may_shrink_and_wrap_long_words_so_a_phone_does_not_scroll_sideways(self):
+        # Measured at 390 px on the real page: the Doing and Done columns were 3 px too wide (scrollWidth 393).
+        html_ = roadmap.render(roadmap.build(V2, []), "v", NOW)
+        col = re.search(r"\.col \{([^}]*)\}", html_.replace("{{", "{").replace("}}", "}")).group(1)
+        self.assertIn("min-width:0", col)
+        self.assertIn("overflow-wrap:anywhere", col)
+
+    def test_the_map_svg_uses_theme_colours_so_it_follows_night(self):
+        svg = roadmap.map_svg(roadmap.build(V2, [])["map"])
+        self.assertNotIn("#F7F3EF", svg)   # no fixed light fill: it would stay light at night
+        self.assertIn("var(--paper)", svg)
+
+
 if __name__ == "__main__":
     unittest.main()
