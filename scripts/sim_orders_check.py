@@ -50,7 +50,7 @@ def knobs(**k):
 
 def place(kitchen, pin=None, n=0):
     dishes = get(f"menu_items?select=id&kitchen_id=eq.{kitchen}&available=eq.true&limit=1")
-    call("PATCH", f"/rest/v1/kitchens?id=eq.{kitchen}", {"open": True}, {"Prefer": "return=minimal"})
+    call("PATCH", f"/rest/v1/kitchens?id=eq.{kitchen}", {"open": True, "opens_at": None, "closes_at": None}, {"Prefer": "return=minimal"})   # opening hours are obeyed by place_order (migration 0041): the check must not depend on the hour it runs
     sess = str(uuid.uuid4())
     if pin:
         call("POST", "/rest/v1/customers", {"user_id": sess, "name": "Check Customer", "phone": "9999900000", "address": "Test lane", "pin_code": pin}, {"Prefer": "return=minimal"})
@@ -77,7 +77,7 @@ def main():
     kit = next(k for k in kitchens if "110092" in k["pin_codes"])
     others = [k["id"] for k in kitchens if k["id"] != kit["id"] and "110092" not in k["pin_codes"]][:3]
     # E needs a real order to protect: place one on a real (manual) kitchen now, open it for the run, and put it back at the end.
-    real = get("kitchens?select=id,open&synthetic=eq.false&active=eq.true&limit=1")
+    real = get("kitchens?select=id,open,opens_at,closes_at&synthetic=eq.false&active=eq.true&limit=1")
     real = real[0] if isinstance(real, list) and real else None
     real_order = place(real["id"], "110092", 900) if real else None
 
@@ -173,7 +173,7 @@ def main():
     check("E a real kitchen's order is not moved by the tick", bool(real_order) and isinstance(row, list) and row[0]["status"] == "placed" and events(real_order) == ["order.placed"], f"order {str(real_order)[:8]} {row}")
     if real_order:   # leave dev as found: the order is cancelled (placed may go to cancelled), the kitchen goes back to what it was
         call("PATCH", f"/rest/v1/orders?id=eq.{real_order}", {"status": "cancelled", "cancel_reason": "check finished"}, {"Prefer": "return=minimal"})
-        call("PATCH", f"/rest/v1/kitchens?id=eq.{real['id']}", {"open": real["open"]}, {"Prefer": "return=minimal"})
+        call("PATCH", f"/rest/v1/kitchens?id=eq.{real['id']}", {"open": real["open"], "opens_at": real["opens_at"], "closes_at": real["closes_at"]}, {"Prefer": "return=minimal"})
 
     rpc("sim_enable", {"p": {"enabled": False}})
     rpc("sim_reset")
