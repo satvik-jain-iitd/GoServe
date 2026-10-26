@@ -1,6 +1,6 @@
 // Story M.2 (#321, plan v2 H.2): a kitchen's opening hours are obeyed, in India time, on any machine.
 import { describe, expect, it } from "vitest";
-import { isOpenNow } from "../../src/lib/hours";
+import { insideHours, isOpenNow } from "../../src/lib/hours";
 
 const at = (hhmm: string) => new Date(`2026-10-24T${hhmm}:00+05:30`);   // an India clock time
 const k = (opens_at: string | null, closes_at: string | null, over: object = {}) => ({ open: true, active: true, opens_at, closes_at, ...over });
@@ -36,5 +36,15 @@ describe("isOpenNow", () => {
     expect(isOpenNow(k("10:00:00", "23:00:00"), new Date("2026-10-24T17:29:00Z"))).toBe(true);    // 22:59 India
     expect(isOpenNow(k("10:00:00", "23:00:00"), new Date("2026-10-24T17:30:00Z"))).toBe(false);   // 23:00 India
     if (was === undefined) delete process.env.TZ; else process.env.TZ = was;
+  });
+});
+
+describe("insideHours (story #452)", () => {
+  it("is true only when both hours are set and the time is inside them, whatever the switch says", () => {
+    expect(insideHours(k("07:30:00", "22:00:00", { open: false }), at("12:49"))).toBe(true);   // a switched-off kitchen in the middle of its day
+    expect(insideHours(k("07:30:00", "22:00:00"), at("23:30"))).toBe(false);
+    expect(insideHours(k("20:00:00", "02:00:00"), at("00:30"))).toBe(true);
+    expect(insideHours(k("07:30:00", null), at("12:49"))).toBe(false);   // no full hours: the old wording stays
+    expect(insideHours(k(null, null), at("12:49"))).toBe(false);
   });
 });

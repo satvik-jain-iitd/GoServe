@@ -81,3 +81,21 @@ test("S6 (#284) the four scenario knobs show their values and Save posts them", 
   expect(net.calls.sim.find((c) => c.body.action === "knobs")!.body).toEqual({ action: "knobs", reject_pct: 12, sold_out_pct: 3, delay_pct: 10, rider_drop_pct: 30 });
   expect(await axeScan(page)).toEqual([]);
 });
+
+test("S7 (#454) the Demo mode switch posts demo true then false, and shows the saved state after a reload", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.admin = true;
+  await open(page);
+  const sw = page.getByRole("switch", { name: "Demo mode" });
+  await expect(sw).not.toBeChecked();
+  await sw.click();
+  await expect(sw).toBeChecked();
+  await expect(page.getByRole("status")).toContainText("Demo mode is on");
+  await page.reload();
+  await page.getByRole("button", { name: "Simulator", exact: true }).click();
+  await expect(page.getByRole("switch", { name: "Demo mode" })).toBeChecked();
+  await page.getByRole("switch", { name: "Demo mode" }).click();
+  await expect(page.getByRole("switch", { name: "Demo mode" })).not.toBeChecked();
+  expect(net.calls.sim.filter((c) => c.body.action === "knobs").map((c) => c.body)).toEqual([{ action: "knobs", demo: true }, { action: "knobs", demo: false }]);
+  expect(await axeScan(page)).toEqual([]);
+});

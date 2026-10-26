@@ -7,12 +7,12 @@ export class SimError extends Error {
 }
 export type SimAction = "status" | "seed" | "reset" | "tick" | "enable" | "disable" | "knobs";
 export type SimDeps = { url: string; token: string; fetchFn: typeof fetch };
-export type Knobs = { reject_pct: number; sold_out_pct: number; delay_pct: number; rider_drop_pct: number };
+export type Knobs = { reject_pct: number; sold_out_pct: number; delay_pct: number; rider_drop_pct: number; demo?: boolean };
 export type OrderTick = { accepted?: number; cancelled?: number; delivered?: number; dropped?: number };
 export type SimAnswer = { ok: boolean; knobs?: Knobs; orders?: OrderTick | number; enabled?: boolean; kitchens?: number; kitchens_open?: number; riders?: number; riders_online?: number; dishes?: number; riders_moved?: number; kitchens_flipped?: number; dishes_flipped?: number; riders_flipped?: number; skipped?: string; error?: string; message?: string };
 export const simDeps = (): SimDeps => ({ url: import.meta.env.VITE_SIM_URL, token: import.meta.env.VITE_SIM_TOKEN, fetchFn: fetch.bind(window) });
 
-export async function callSim(action: SimAction, params: Record<string, number | string>, deps: SimDeps): Promise<SimAnswer> {
+export async function callSim(action: SimAction, params: Record<string, number | string | boolean>, deps: SimDeps): Promise<SimAnswer> {
   let res: Response;
   try {
     res = await deps.fetchFn(deps.url, { method: "POST", headers: { "content-type": "application/json", "x-gs-sim-token": deps.token }, body: JSON.stringify({ action, ...params }) });
