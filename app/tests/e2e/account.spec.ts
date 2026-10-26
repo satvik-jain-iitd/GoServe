@@ -102,3 +102,10 @@ for (const t of ["day", "night"] as const) {
     expect(await scan()).toEqual([]);
   });
 }
+
+test("M.1 You shows which build this phone runs", async ({ page, context }) => {
+  await setup(context, page);
+  await page.goto("/customer/");
+  await you(page).click();
+  await expect(page.getByText(/^Build (dev|[0-9a-f]{7})$/)).toBeVisible();   // so the founder can tell an old build from a new one
+});
