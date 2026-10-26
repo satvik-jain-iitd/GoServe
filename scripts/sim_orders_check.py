@@ -186,7 +186,12 @@ def run():
     NUM = ("reject_pct", "sold_out_pct", "delay_pct", "rider_drop_pct", "prep_scale")
     knobs(reject_pct=7, sold_out_pct=4, delay_pct=20, rider_drop_pct=9, prep_scale=1)
     before = rpc("sim_knobs")[1]
+    shut = get("kitchens?select=id&synthetic=eq.true&active=eq.true&limit=1")[0]["id"]   # already switched off by the city's own flips: demo on must open it again
+    gone = get("menu_items?select=id&synthetic=eq.true&limit=1")[0]["id"]
+    call("PATCH", f"/rest/v1/kitchens?id=eq.{shut}", {"open": False}, {"Prefer": "return=minimal"})
+    call("PATCH", f"/rest/v1/menu_items?id=eq.{gone}", {"available": False}, {"Prefer": "return=minimal"})
     s_on, a_on = rpc("sim_set_knobs", {"p": {"demo": True}})
+    reopened = get(f"kitchens?select=open&id=eq.{shut}")[0]["open"] is True and get(f"menu_items?select=available&id=eq.{gone}")[0]["available"] is True
     on = a_on["knobs"] if isinstance(a_on, dict) and "knobs" in a_on else {}
     steady = rpc("sim_tick", {"p": {"kitchen_flip_pct": 100, "dish_flip_pct": 100}})[1]
     s_off, a_off = rpc("sim_set_knobs", {"p": {"demo": False}})
@@ -194,9 +199,9 @@ def run():
     loose = rpc("sim_tick", {"p": {"kitchen_flip_pct": 0, "dish_flip_pct": 100}})[1]
     check("G demo mode: no flips, no rejects, faster prep; off puts the old numbers back",
           bool(on) and on.get("demo") is True and all(on[k] == 0 for k in NUM[:4]) and on["prep_scale"] < 1
-          and steady.get("kitchens_flipped") == 0 and steady.get("dishes_flipped") == 0
+          and reopened and steady.get("kitchens_flipped") == 0 and steady.get("dishes_flipped") == 0
           and bool(off) and off.get("demo") is False and all(off[k] == before[k] for k in NUM) and loose.get("dishes_flipped", 0) > 0,
-          f"on {on}; steady {steady.get('kitchens_flipped')}/{steady.get('dishes_flipped')}; off {off}; loose {loose.get('dishes_flipped')}")
+          f"reopened {reopened}; on {on}; steady {steady.get('kitchens_flipped')}/{steady.get('dishes_flipped')}; off {off}; loose {loose.get('dishes_flipped')}")
     knobs()
 
     # E the manual kitchens' kitchen side is not touched: the real order placed at the start is still placed, with only its own event

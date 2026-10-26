@@ -1,4 +1,4 @@
--- Story #454 (epic E25). Demo mode: one stored switch, off by default. On, the demo city is steady and fast: no kitchen or dish flips by itself, no kitchen turns an order away,
+-- Story #454 (epic E25). Demo mode: one stored switch, off by default. On, the demo city is steady and fast: no kitchen or dish flips by itself (and the ones already off come back on), no kitchen turns an order away,
 -- no item sells out, no kitchen is slow, no rider drops out, prep takes a fifth of the usual time and riders walk twice as fast. Off, the numbers it replaced come back
 -- exactly. The switch lives in the sim_knobs row (keys demo and before), so the scheduled tick (GS MAIN 31) reads it without any change in n8n. Found in the M.5 rehearsal
 -- (26 Oct): a kitchen switched itself off in the middle of the show, and an order took 24 minutes to reach Delivered.
@@ -25,6 +25,8 @@ begin
       v_new := coalesce(v_old->'before', '{"reject_pct":5,"sold_out_pct":3,"delay_pct":10,"rider_drop_pct":2,"prep_scale":1}'::jsonb) || '{"demo":false}'::jsonb;
     else               -- on: steady and fast; the old numbers are kept under before
       v_new := jsonb_build_object('reject_pct', 0, 'sold_out_pct', 0, 'delay_pct', 0, 'rider_drop_pct', 0, 'prep_scale', 0.2, 'demo', true, 'before', v_base);
+      update kitchens set open = true where synthetic and active and not open;   -- what the city already switched off must not stay off for the whole demo
+      update menu_items set available = true where synthetic and not available;
     end if;
   else
     v_new := jsonb_build_object(
