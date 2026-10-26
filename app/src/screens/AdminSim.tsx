@@ -54,26 +54,30 @@ export function AdminSim() {
         <label htmlFor="sim-demo" className="ui-row-label"><span>Demo mode</span><span className="ui-row-sub">No flips, no turned-away orders, quick kitchens and riders</span></label>
         <input id="sim-demo" className="ui-switch" type="checkbox" role="switch" checked={knobs.demo === true} disabled={busy || !state} onChange={(e) => void demo(e.target.checked)} />
       </div>
-      <button type="button" className="ui-btn ghost big" disabled={busy} onClick={() => void tick()}>Tick now</button>
+      <div className="ui-pad-y"><button type="button" className="ui-btn ghost" disabled={busy} onClick={() => void tick()}>Tick now</button></div>
       <section className="ui-group" aria-label="Seed parameters">
         <h2>Seed</h2>
+        <div className="ui-form ui-form-flush">
         {FIELDS.map((f) => (
           <div key={f.key} className="ui-field"><label htmlFor={`sim-${f.key}`}>{f.label}</label>
             <input id={`sim-${f.key}`} className="mono-input" type="number" inputMode="numeric" min={f.min} max={f.max} value={form[f.key]} onChange={(e) => setForm({ ...form, [f.key]: Math.min(f.max, Math.max(f.min, Number(e.target.value) || 0)) })} /></div>
         ))}
-        <button type="button" className="ui-btn big" disabled={busy} onClick={() => void seed()}>Seed the city</button>
+        <div className="ui-form-acts"><button type="button" className="ui-btn big" disabled={busy} onClick={() => void seed()}>Seed the city</button></div>
         <p className="ui-meta">Loads the ten Delhi kitchens with their menus, and the riders. If the city still has the old random kitchens, reset it first.</p>
+        </div>
       </section>
       <section className="ui-group" aria-label="Scenario">
         <h2>Scenario</h2>
+        <div className="ui-form ui-form-flush">
         {KNOBS.map((f) => (
           <div key={f.key} className="ui-field"><label htmlFor={`sim-${f.key}`}>{f.label}</label>
             <input id={`sim-${f.key}`} className="mono-input" type="number" inputMode="numeric" min={0} max={100} value={knobs[f.key]} onChange={(e) => setKnobs({ ...knobs, [f.key]: Math.min(100, Math.max(0, Number(e.target.value) || 0)) })} /></div>
         ))}
-        <button type="button" className="ui-btn big" disabled={busy} onClick={() => void saveKnobs()}>Save the scenario</button>
+        <div className="ui-form-acts"><button type="button" className="ui-btn big" disabled={busy} onClick={() => void saveKnobs()}>Save the scenario</button></div>
         <p className="ui-meta">Orders are placed by people, never by the simulator. These numbers say how often a programmed kitchen turns one away or runs slow, and how often a rider drops out.</p>
+        </div>
       </section>
-      <button type="button" className="ui-btn ghost big" disabled={busy} onClick={reset}>Reset the city</button>
+      <div className="ui-pad-y"><button type="button" className="ui-btn ghost" disabled={busy} onClick={reset}>Reset the city</button></div>
     </div>
   );
 }
