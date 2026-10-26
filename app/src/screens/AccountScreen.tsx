@@ -1,6 +1,7 @@
 // "You" of the Ink v3 board 09 (story H10d, #193; story D2): the details this phone remembers, order alerts, Day and Night, another phone, forget me, feedback.
 import { useState } from "react";
 import { DEFAULT_THEME, readPin, pinTheme, type Theme } from "../lib/theme";
+import { buildLabel } from "../lib/updates";
 import { TabBar } from "../ui";
 
 type Props = {
@@ -66,6 +67,7 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
         )}
         {note && <p role="status" className="ui-note">{note}</p>}
         <p className="mono ui-legal"><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
+        <p className="mono ui-legal">{buildLabel(import.meta.env.VITE_BUILD)}</p>
       </div>
       <TabBar current="you" onMenu={onMenu} onOrders={onOrders} onYou={() => undefined} />
     </>
