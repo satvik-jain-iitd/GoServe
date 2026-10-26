@@ -3,7 +3,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { order, setup, scan as axeScan } from "./helpers";
 
 const you = (page: Page) => page.getByRole("button", { name: "You (Account)" });
-const KITCHEN = { id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: "9876543210", pin_codes: ["110016"], open: true, active: true, lat: null, lng: null, opens_at: "10:00:00", closes_at: "22:00:00" };
+const KITCHEN = { id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: "9876543210", pin_codes: ["110016"], open: true, active: true, lat: null, lng: null, opens_at: "00:00:00", closes_at: "23:59:00" };
 
 test("S1 a tap on a slip opens it, a delivered one offers Order again", async ({ page, context }) => {
   await setup(context, page, [{ ...order("delivered", "2020-01-01T11:00:00Z"), paid_by: "cash" }]);

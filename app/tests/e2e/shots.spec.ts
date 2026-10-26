@@ -68,7 +68,7 @@ for (const theme of ["day", "night"] as const) {
   });
 }
 
-const KITCHEN = { id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: "9876543210", pin_codes: ["110016"], open: true, active: true, lat: null, lng: null, opens_at: "10:00:00", closes_at: "22:00:00" };
+const KITCHEN = { id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: "9876543210", pin_codes: ["110016"], open: true, active: true, lat: null, lng: null, opens_at: "00:00:00", closes_at: "23:59:00" };
 for (const theme of ["day", "night"] as const) {
   test(`shots bill and tracker ${theme}`, async ({ page, context }) => {
     await context.addInitScript((v) => localStorage.setItem("gs-theme", v), theme);
@@ -140,7 +140,7 @@ for (const theme of ["day", "night"] as const) {
     const net = await setup(context, page, [{ ...order("ready"), rider_id: SESSION, customer_name: "Rahul Verma", customer_phone: "9876543210", address: "B-12, Lajpat Nagar II, near the park gate" },
       { ...order("delivered", now, now), id: "1038aaaa-0000-0000-0000-000000000000", rider_id: SESSION, customer_name: "Meera Kapoor", address: "Lajpat Nagar II", total_paise: 26000 }]);
     net.state.rider = { user_id: SESSION, name: "Amit Kumar", phone: "9810011223", online: true, lat: null, lng: null };
-    net.state.kitchens = [{ id: "k", name: "Tau Ka Dhaba", address: "C-4, Lajpat Nagar II, back lane", phone: "9876500000", pin_codes: ["110024"], open: true, active: true, opens_at: "10:00:00", closes_at: "22:00:00" }];
+    net.state.kitchens = [{ id: "k", name: "Tau Ka Dhaba", address: "C-4, Lajpat Nagar II, back lane", phone: "9876500000", pin_codes: ["110024"], open: true, active: true, opens_at: "00:00:00", closes_at: "23:59:00" }];
     await page.goto("/rider/");
     await page.getByText("Collect cash").waitFor();
     await page.evaluate(() => document.fonts.ready);
@@ -191,7 +191,7 @@ for (const theme of ["day", "night"] as const) {
       { ...order("ready"), id: "1041aaaa-0000-0000-0000-000000000000", items: [{ menu_item_id: "t2", name: "Non-veg thali", qty: 1, price_paise: 24000 }], total_paise: 24000 },
       { ...order("delivered", now, now), id: "1030aaaa-0000-0000-0000-000000000000", total_paise: 374000 }]);
     net.state.kitchen = "k-1";
-    net.state.kitchens = [{ id: "k-1", name: "Tau Ka Dhaba", address: "C-4, Lajpat Nagar II", phone: "9876500000", pin_codes: ["110024"], open: true, active: true, opens_at: "10:00:00", closes_at: "22:00:00" }];
+    net.state.kitchens = [{ id: "k-1", name: "Tau Ka Dhaba", address: "C-4, Lajpat Nagar II", phone: "9876500000", pin_codes: ["110024"], open: true, active: true, opens_at: "00:00:00", closes_at: "23:59:00" }];
     net.state.menu = MENU.map((d, i) => ({ ...d, available: i !== 3 }));
     await page.goto("/kitchen/");
     await page.getByText("No. 1043aaaa").waitFor();
