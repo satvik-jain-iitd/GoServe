@@ -1,6 +1,6 @@
 // Story B2 (#158): pin code to kitchen to menu.
 import { describe, expect, it } from "vitest";
-import { chooseKitchen, isPin, loadPin, savePin, type AreaKitchen } from "../../src/lib/area";
+import { chooseKitchen, isPin, loadPin, savePin, shownArea, type AreaKitchen } from "../../src/lib/area";
 import { MENU_KEY, loadMenu } from "../../src/lib/menu";
 
 const k = (id: string, name: string, pins: string[], over: Partial<AreaKitchen> = {}): AreaKitchen => ({ id, name, pin_codes: pins, lat: null, lng: null, open: true, active: true, opens_at: null, ...over });
@@ -39,6 +39,23 @@ describe("chooseKitchen", () => {
     expect(chooseKitchen([a], "110016", undefined, noon)).toMatchObject({ kind: "ok" });
     const b = k("b", "B", ["110016"], { opens_at: "10:00:00", closes_at: "23:59:00" } as never);
     expect(chooseKitchen([a, b], "110016", undefined, late)).toMatchObject({ kind: "ok", kitchen: { id: "b" } });
+  });
+  it("#452 a switched-off kitchen inside its hours is paused; outside its hours it is not", () => {
+    const noon = new Date("2026-10-24T07:30:00Z");   // 13:00 India
+    const night = new Date("2026-10-24T18:00:00Z");   // 23:30 India
+    const a = k("a", "A", ["110016"], { open: false, opens_at: "07:30:00", closes_at: "22:00:00" } as never);
+    expect(chooseKitchen([a], "110016", undefined, noon)).toEqual({ kind: "closed", id: "a", name: "A", opens_at: "07:30:00", paused: true });
+    expect(chooseKitchen([a], "110016", undefined, night)).toEqual({ kind: "closed", id: "a", name: "A", opens_at: "07:30:00" });   // no paused flag outside the hours
+  });
+  it("#453 an area that was open turns closed with the right reason when the clock or the switch changes", () => {
+    const noon = new Date("2026-10-24T07:30:00Z");   // 13:00 India
+    const night = new Date("2026-10-24T18:00:00Z");   // 23:30 India
+    const kit = (over: object) => ({ kind: "ok" as const, kitchen: k("a", "A", ["110016"], { opens_at: "07:30:00", closes_at: "22:00:00", ...over } as never) });
+    expect(shownArea(kit({}), noon)).toEqual(kit({}));   // still open: the same area
+    expect(shownArea(kit({}), night)).toEqual({ kind: "closed", id: "a", name: "A", opens_at: "07:30:00" });   // past closing time: opens at
+    expect(shownArea(kit({ open: false }), noon)).toEqual({ kind: "closed", id: "a", name: "A", opens_at: "07:30:00", paused: true });   // switched off at midday: a little while
+    expect(shownArea(null, noon)).toBeNull();
+    expect(shownArea({ kind: "none" }, noon)).toEqual({ kind: "none" });
   });
   it("with several open kitchens takes the nearest to a place, else the first by name", () => {
     const list = [k("far", "Zed", ["110016"], { lat: 28.9, lng: 77.5 }), k("near", "Beta", ["110016"], { lat: 28.55, lng: 77.2 }), k("noco", "Alpha", ["110016"])];
@@ -93,6 +110,9 @@ describe("the menu's closed line and the photo credit (story #274)", () => {
   it("says one line, with or without an opening time", () => {
     expect(closedLine("11:00:00")).toBe("Closed now. Opens at 11:00 am. You can look at the menu.");
     expect(closedLine(null)).toBe("Closed now. You can look at the menu.");
+    expect(openingText("A", "07:30:00", true)).toBe("A is closed for a little while. Please look again soon.");   // the pin screen says the same
+    expect(openingText("A", "07:30:00")).toBe("A is closed right now. It opens at 7:30 am.");
+    expect(closedLine("07:30:00", true)).toBe("Closed for a little while. Please look again soon. You can look at the menu.");   // #452: no opening time in the middle of the day
   });
   it("drops the File: name from the credit", () => {
     expect(creditLine("File:Butter chicken.jpg, Wikimedia Commons, CC BY-SA 4.0")).toBe("Photo: Wikimedia Commons, CC BY-SA 4.0");

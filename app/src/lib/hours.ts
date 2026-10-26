@@ -13,3 +13,9 @@ export function isOpenNow(k: Hours, now: Date): boolean {
   if (from === to) return true;
   return from < to ? here >= from && here < to : here >= from || here < to;   // from > to: opens one evening, closes after midnight
 }
+
+/** Story #452: both hours are set and the time is inside them, whatever the switch says. A kitchen like that is closed for a little while, not until tomorrow. */
+export function insideHours(k: Pick<Hours, "opens_at" | "closes_at">, now: Date): boolean {
+  if (!k.opens_at || !k.closes_at) return false;
+  return isOpenNow({ open: true, active: true, opens_at: k.opens_at, closes_at: k.closes_at }, now);
+}
