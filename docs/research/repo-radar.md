@@ -186,3 +186,11 @@ Decision: edit the existing page; add `scripts/test_privacy_page.py` (every pers
 Runs: no repo search. `pg_available_extensions` on the dev project shows `pg_cron` available (Supabase ships it). A scheduler inside the database is the standard answer for a plain SQL delete and needs no new tool. MAIN 90 PROD stays off (read from the n8n API on 25 Oct: only MAIN 01, 30, 31 and 32 are active, plus their SUBs).
 
 Decision: one migration, `0040_prune_rider_pings.sql`, schedules `pilot_prune()` daily at 02:00 India. MAIN 90 keeps its prune node too; running twice is harmless. Confidence 0.85 (dev run proved the job and the delete; prod not run yet).
+## 2026-10-26: watch a phone screen recording frame by frame (Swish app study)
+Need: let the agent watch a 9 min 44 s iPhone screen recording (1284x2778, 60 fps, HEVC, almost silent: mean -58.6 dB) of the Swish app, find every screen, journey and animation.
+Run: `scout.py --need "analyze a phone screen recording video frame by frame ..."` → no repos found. GitHub search (scene detection, video frames llm, video mcp, topic:scene-detection).
+| Repo | Stars, last push | Licence | Tier | Fit |
+| HUANGCHIHHUNGLeo/claude-real-video (crv) | 2.2k, 23 Oct 2026 | MIT | C (author's README) | Best fit: scene-change frames, drops near-duplicates, contact-sheet grids, timestamps in frames.json, runs locally. Adopted (pip in a scratch venv, no transcript: the clip is silent) |
+| Breakthrough/PySceneDetect | 5.3k, 25 Oct 2026, v0.7.2 | BSD-3 | C | Scene cuts only; crv covers it. Backup if crv misses a cut |
+| kajisho5/ffmpeg-skill | 2.8k, 25 Oct 2026 | MIT | C | An editor, not an analyser. Skip |
+Chosen: crv for key frames; plain ffmpeg (already installed) for short 10 fps bursts around transitions, so motion and animation can be seen frame by frame.
