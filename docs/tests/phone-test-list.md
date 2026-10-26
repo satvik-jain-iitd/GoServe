@@ -115,3 +115,33 @@ What to look for: one card with the pilot numbers, and in the weekly report the 
 
 Reviewer runs after it: the n8n execution list for the scorecard workflow shows one success.
 
+
+## P3. The installed app picks up a new build (M.1, #320)
+
+Steps:
+1. On the iPhone open the app from the home-screen icon (installed from Safari) and go to You. Read the line "Build xxxxxxx" at the bottom. Keep the app open in the background.
+2. The reviewer deploys a new build to prod (any small change).
+3. Wait two minutes. Switch back to the app from the app switcher (do not close it).
+
+What to look for: the app reloads once by itself and the "Build" line shows a new id. A cart you had filled is still there.
+
+Reviewer runs after it: `git log -1 --format=%h origin/main` must start with the new Build id.
+
+## T8. A kitchen obeys its opening hours (M.2, #321)
+
+Steps:
+1. In the customer app open the menu of a demo kitchen during its hours (the dream kitchens open between 07:30 and 12:00 and close between 22:00 and 23:30).
+2. Stay on the menu until the closing time of that kitchen, or open another kitchen after its closing time.
+
+What to look for: before closing the menu says "Open till ...", and Add works. After closing the menu says "Closed now. Opens at ...", Add is off, with no reload.
+
+Reviewer runs after it: in prod, `place_order` for a closed kitchen answers `kitchen_closed` (migration 0041 must be on prod).
+
+## T9. A pin code we serve and one we do not (M.3, #322)
+
+Steps:
+1. In the customer app change the area to 110016 and tap "See the menu". Do the same with 110099.
+
+What to look for: 110016 opens the menu of Madras Tiffin Room (after migration 0042 and Reset and Seed on prod). 110099 says "Not here yet. We do not deliver to 110099 yet." and makes no promise.
+
+Reviewer runs after it: `select name from kitchens where '110016' = any(pin_codes);` on prod returns Madras Tiffin Room.
