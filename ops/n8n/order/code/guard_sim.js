@@ -1,5 +1,5 @@
 // SUB 30, node "Guard": the kill switch again (rulebook 95.15), then the shape. Numbers are clamped so a typo cannot seed a thousand kitchens.
-// Actions: seed, reset (H5), tick, enable, disable (H6), status (H7), knobs (#284: the four scenario knobs). Each maps to one database function; the database clamps once more.
+// Actions: seed, reset (H5), tick, enable, disable (H6), status (H7), knobs (#284: the four scenario knobs; #454: and the demo switch). Each maps to one database function; the database clamps once more.
 const j = $input.first().json;
 const refuse = (status_code, error, message) => [{ json: { ok: false, status_code, error, message } }];
 if (j.kill_switch === true) return refuse(503, 'kill_switch', 'The simulator is paused.');
@@ -14,7 +14,7 @@ const P = {
   enable: () => ({ enabled: true }),
   disable: () => ({ enabled: false }),
   status: () => null,
-  knobs: () => ({ reject_pct: clamp(b.reject_pct, 5, 0, 100), sold_out_pct: clamp(b.sold_out_pct, 3, 0, 100), delay_pct: clamp(b.delay_pct, 10, 0, 100), rider_drop_pct: clamp(b.rider_drop_pct, 2, 0, 100) }),
+  knobs: () => ({ reject_pct: clamp(b.reject_pct, 5, 0, 100), sold_out_pct: clamp(b.sold_out_pct, 3, 0, 100), delay_pct: clamp(b.delay_pct, 10, 0, 100), rider_drop_pct: clamp(b.rider_drop_pct, 2, 0, 100), ...(typeof b.demo === 'boolean' ? { demo: b.demo } : {}) }),   // #454: demo mode; with it the database ignores the four numbers
 };
 const p = P[j.action]();
 return [{ json: { ok: true, supabase_url: j.supabase_url, rpc_fn: FN[j.action], rpc_body: p ? { p } : {} } }];

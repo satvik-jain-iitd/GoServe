@@ -8,7 +8,7 @@ const FIELDS: { key: keyof Form; label: string; min: number; max: number }[] = [
   { key: "riders_per_kitchen", label: "Riders per kitchen", min: 1, max: 20 }, { key: "online_pct", label: "Riders online %", min: 0, max: 100 },
 ];
 // #284: how the programmed kitchens and riders misbehave. Percent of orders (or of tick rolls) that go wrong.
-const KNOBS: { key: keyof Knobs; label: string }[] = [
+const KNOBS: { key: Exclude<keyof Knobs, "demo">; label: string }[] = [
   { key: "reject_pct", label: "Kitchen turns the order away %" }, { key: "sold_out_pct", label: "Item sold out %" },
   { key: "delay_pct", label: "Kitchen is slow %" }, { key: "rider_drop_pct", label: "Rider drops out %" },
 ];
@@ -36,6 +36,7 @@ export function AdminSim() {
     if (!window.confirm("Remove every synthetic kitchen, rider and dish? Real ones stay.")) return;
     void run(() => callSim("reset", {}, simDeps()), (a) => `Removed: ${a.kitchens} kitchens, ${a.riders} riders, ${a.dishes} dishes.`, () => counts({ ok: true, kitchens: 0, kitchens_open: 0, riders: 0, riders_online: 0, dishes: 0 }));
   };
+  const demo = (on: boolean) => run(() => callSim("knobs", { demo: on }, simDeps()), (a) => (a.knobs?.demo ? "Demo mode is on. The city stays steady and quick." : "Demo mode is off. Your old numbers are back."), (a) => { if (a.knobs) setKnobs(a.knobs); });
   const toggle = (on: boolean) => run(() => callSim(on ? "enable" : "disable", {}, simDeps()), (a) => (a.enabled ? "The city moves every minute." : "The city stands still."), (a) => counts({ ok: true, enabled: a.enabled }));
   const tick = () => run(() => callSim("tick", {}, simDeps()), tickLine, () => undefined);
 
@@ -48,6 +49,10 @@ export function AdminSim() {
       <div className="ui-row ui-row-static">
         <label htmlFor="sim-on" className="ui-row-label"><span>City moves every minute</span><span className="ui-row-sub">Riders walk, a few kitchens and dishes flip</span></label>
         <input id="sim-on" className="ui-switch" type="checkbox" role="switch" checked={state?.enabled === true} disabled={busy || !state} onChange={(e) => void toggle(e.target.checked)} />
+      </div>
+      <div className="ui-row ui-row-static">
+        <label htmlFor="sim-demo" className="ui-row-label"><span>Demo mode</span><span className="ui-row-sub">No flips, no turned-away orders, quick kitchens and riders</span></label>
+        <input id="sim-demo" className="ui-switch" type="checkbox" role="switch" checked={knobs.demo === true} disabled={busy || !state} onChange={(e) => void demo(e.target.checked)} />
       </div>
       <button type="button" className="ui-btn ghost big" disabled={busy} onClick={() => void tick()}>Tick now</button>
       <section className="ui-group" aria-label="Seed parameters">
