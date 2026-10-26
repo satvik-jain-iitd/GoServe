@@ -6,7 +6,7 @@ import { clientPlatform } from "./lib/platform";
 import { riderRefused, savePlatform, tapCall } from "./lib/signals";
 import { useLiveOrders } from "./lib/useLiveOrders";
 import { loadMenu, MENU_KEY, type Dish } from "./lib/menu";
-import { fetchKitchens, forgetArea, loadArea, loadPin, closedLine, openingText, resolveArea, savePin, type Area } from "./lib/area";
+import { fetchKitchens, forgetArea, loadArea, loadPin, closedLine, openingText, resolveArea, savePin, shownArea, type Area } from "./lib/area";
 import { AreaScreen } from "./screens/AreaScreen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { AdminGate } from "./screens/AdminGate";
@@ -21,7 +21,6 @@ import { pushTrail } from "./lib/trail";
 import { FeedbackSheet } from "./screens/FeedbackSheet";
 import { ensureSession, fetchMenuRows, fetchRiderCard, getClient, type RiderCard } from "./lib/supabase";
 import { openTill } from "./lib/browse";
-import { isOpenNow } from "./lib/hours";
 import { AccountScreen } from "./screens/AccountScreen";
 import { currentSession, joinCode, joinLink, joinSession, rememberJoin, resetSession } from "./lib/session";
 import { MenuScreen } from "./screens/MenuScreen";
@@ -56,7 +55,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     const t = setInterval(() => setClock(new Date()), 30_000);
     return () => clearInterval(t);
   }, [lock]);
-  const shown: Area | null = area?.kind === "ok" && !isOpenNow(area.kitchen, clock) ? { kind: "closed", id: area.kitchen.id, name: area.kitchen.name, opens_at: area.kitchen.opens_at ?? null } : area;
+  const shown = shownArea(area, clock);
   const [looking, setLooking] = useState(false);
   const [menuError, setMenuError] = useState<string | null>(null);
   // The customer app keeps an unfinished order across a refresh (story B1); the demo console and the other apps start fresh.
@@ -516,7 +515,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             pin={pin} name={name} qty={cart} cartCount={count} cartTotal={total}
             kitchenName={kitchenName}
             openText={shown?.kind === "ok" ? openTill(shown.kitchen.closes_at) : ""}
-            closedText={shown?.kind === "closed" ? closedLine(shown.opens_at) : null}
+            closedText={shown?.kind === "closed" ? closedLine(shown.opens_at, shown.paused === true) : null}
             onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
             onChangePin={changeArea} onOrders={() => setStep("orders")} onYou={() => setStep("account")} />
         )}

@@ -35,3 +35,13 @@ test("S3 the menu closes by itself at closing time, with no reload", async ({ pa
   await expect(page.getByText("Closed now. Opens at 10:00 am.")).toBeVisible();
   await expect(add(page)).toBeDisabled();
 });
+
+test("S4 #452 a kitchen switched off in the middle of its day says a little while, not tomorrow morning", async ({ page, context }) => {
+  const net = await setup(context, page);
+  Object.assign(net.state.kitchens[0], { ...HOURS, open: false });
+  await page.clock.setFixedTime(new Date("2026-10-24T07:30:00Z"));   // 13:00 India, inside 10:00 to 22:00
+  await page.goto("/customer/");
+  await expect(page.getByText("Closed for a little while. Please look again soon.")).toBeVisible();
+  await expect(page.getByText(/Opens at/)).toHaveCount(0);
+  await expect(add(page)).toBeDisabled();
+});

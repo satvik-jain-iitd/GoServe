@@ -11,14 +11,14 @@ describe("confirmAt", () => {
   it("S1 asks 3 minutes after Ready", () => {
     expect(confirmAt(order("ready", "2026-10-15T20:40:00Z", "2026-10-15T20:38:00Z"), cfg)).toBe(at("2026-10-15T20:43:00Z"));
   });
-  it("S1 never later than 8 minutes after the order was placed", () => {
-    expect(confirmAt(order("ready", "2026-10-15T20:39:00Z", "2026-10-15T20:30:00Z"), cfg)).toBe(at("2026-10-15T20:38:00Z"));
+  it("S1 Ready asks 3 minutes later even when the order was placed more than 8 minutes before (#456)", () => {
+    expect(confirmAt(order("ready", "2026-10-15T20:39:00Z", "2026-10-15T20:30:00Z"), cfg)).toBe(at("2026-10-15T20:42:00Z"));
   });
-  it("S2 asks 8 minutes after placing when nobody touched the order, or the kitchen is still cooking", () => {
-    for (const s of ["placed", "accepted", "preparing"]) expect(confirmAt(order(s), cfg)).toBe(at("2026-10-15T20:38:00Z"));
+  it("S2 never asks while the kitchen has not finished, however long ago the order was placed (#456)", () => {
+    for (const s of ["placed", "accepted", "preparing"]) expect(confirmAt(order(s, "2026-10-15T20:31:00Z", "2026-10-15T20:00:00Z"), cfg)).toBeNull();
   });
-  it("an order already out for delivery is asked 8 minutes after placing too", () => {
-    expect(confirmAt(order("out_for_delivery"), cfg)).toBe(at("2026-10-15T20:38:00Z"));
+  it("an order out for delivery is asked 3 minutes after it left (#456)", () => {
+    expect(confirmAt(order("out_for_delivery", "2026-10-15T20:40:00Z", "2026-10-15T20:30:00Z"), cfg)).toBe(at("2026-10-15T20:43:00Z"));
   });
   it("a delivered order is never asked", () => {
     expect(confirmAt(order("delivered"), cfg)).toBeNull();
