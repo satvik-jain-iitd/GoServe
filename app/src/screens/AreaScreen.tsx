@@ -32,7 +32,7 @@ export function AreaScreen({ pin, area, busy, error, onPin }: Props) {
           </div>
           {none && <p className="ui-note">A pin code next to yours may work.</p>}
           {busy && <p role="status" className="ui-note">Finding your kitchen…</p>}
-          {area?.kind === "closed" && <p role="status" className="ui-note">{openingText(area.name, area.opens_at)}</p>}
+          {area?.kind === "closed" && <p role="status" className="ui-note">{openingText(area.name, area.opens_at, area.paused === true)}</p>}
           <button type="button" className="ui-btn big" disabled={busy} onClick={() => (isPin(text) ? (setProblem(null), onPin(text)) : setProblem("A pin code is six digits."))}>See the menu</button>
         </div>
       </div>
