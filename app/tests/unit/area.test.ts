@@ -1,6 +1,6 @@
 // Story B2 (#158): pin code to kitchen to menu.
 import { describe, expect, it } from "vitest";
-import { chooseKitchen, isPin, loadPin, savePin, type AreaKitchen } from "../../src/lib/area";
+import { chooseKitchen, isPin, loadPin, savePin, shownArea, type AreaKitchen } from "../../src/lib/area";
 import { MENU_KEY, loadMenu } from "../../src/lib/menu";
 
 const k = (id: string, name: string, pins: string[], over: Partial<AreaKitchen> = {}): AreaKitchen => ({ id, name, pin_codes: pins, lat: null, lng: null, open: true, active: true, opens_at: null, ...over });
@@ -46,6 +46,16 @@ describe("chooseKitchen", () => {
     const a = k("a", "A", ["110016"], { open: false, opens_at: "07:30:00", closes_at: "22:00:00" } as never);
     expect(chooseKitchen([a], "110016", undefined, noon)).toEqual({ kind: "closed", id: "a", name: "A", opens_at: "07:30:00", paused: true });
     expect(chooseKitchen([a], "110016", undefined, night)).toEqual({ kind: "closed", id: "a", name: "A", opens_at: "07:30:00" });   // no paused flag outside the hours
+  });
+  it("#453 an area that was open turns closed with the right reason when the clock or the switch changes", () => {
+    const noon = new Date("2026-10-24T07:30:00Z");   // 13:00 India
+    const night = new Date("2026-10-24T18:00:00Z");   // 23:30 India
+    const kit = (over: object) => ({ kind: "ok" as const, kitchen: k("a", "A", ["110016"], { opens_at: "07:30:00", closes_at: "22:00:00", ...over } as never) });
+    expect(shownArea(kit({}), noon)).toEqual(kit({}));   // still open: the same area
+    expect(shownArea(kit({}), night)).toEqual({ kind: "closed", id: "a", name: "A", opens_at: "07:30:00" });   // past closing time: opens at
+    expect(shownArea(kit({ open: false }), noon)).toEqual({ kind: "closed", id: "a", name: "A", opens_at: "07:30:00", paused: true });   // switched off at midday: a little while
+    expect(shownArea(null, noon)).toBeNull();
+    expect(shownArea({ kind: "none" }, noon)).toEqual({ kind: "none" });
   });
   it("with several open kitchens takes the nearest to a place, else the first by name", () => {
     const list = [k("far", "Zed", ["110016"], { lat: 28.9, lng: 77.5 }), k("near", "Beta", ["110016"], { lat: 28.55, lng: 77.2 }), k("noco", "Alpha", ["110016"])];

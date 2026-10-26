@@ -22,6 +22,13 @@ export function chooseKitchen(kitchens: AreaKitchen[], pin: string, from?: { lat
   return { kind: "ok", kitchen: [...open].sort((a, b) => d(a) - d(b))[0] };
 }
 
+/** The area as the menu shows it now: an open kitchen turns closed when its hours end or its switch goes off (#321, #453). A kitchen inside its hours but off is paused. */
+export function shownArea(area: Area | null, now: Date): Area | null {
+  if (area?.kind !== "ok" || isOpenNow(area.kitchen, now)) return area;
+  const k = area.kitchen;
+  return { kind: "closed", id: k.id, name: k.name, opens_at: k.opens_at ?? null, ...(insideHours(k, now) ? { paused: true as const } : {}) };
+}
+
 // "10:00:00" becomes "10:00 am" (story A6).
 export const openingClock = (t: string): string => {
   const [h, m] = t.split(":").map(Number);
