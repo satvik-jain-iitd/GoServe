@@ -6,6 +6,24 @@ General set-up (once): an Android phone, Chrome, the tester's Google account, an
 
 The owner runs every phone test together, at the end, from this one list. Each test has steps, what to look for, and the line the reviewer runs after it. New tests are added here as they appear.
 
+## The one-sitting run (M.6, #325, 26 Oct)
+
+Order, so nothing waits on anything else. Before it: Demo mode is on in the Simulator tab, the city is seeded, and the Google account `satvik.jain@iitdalumni.com` is admin, kitchen staff of Madras Tiffin Room and rider (done 26 Oct).
+
+| # | Test | Needs | Time |
+|---|---|---|---|
+| 1 | T9 pin codes | phone only | 2 min |
+| 2 | T8 opening hours | phone only | 3 min |
+| 3 | T2 order (pin 110016 or 110018), then T4 kitchen and T5 rider on a second browser window while the order moves | the account above | 15 min |
+| 4 | T3 account, Night, feedback, offline | phone only; do it while T2 waits | 5 min |
+| 5 | T6 admin | the account above | 5 min |
+| 6 | T1 customer APK from /get | phone only | 5 min |
+| 7 | P3 new build reaches the installed app | the coder's tiny release; last | 5 min |
+
+Not in this sitting, the story stays open: **P1** (needs the rider spike APK on the phone and a 20 minute wait; it decides the foreground service, #252), **P2** (needs the Play Console steps F201, #254), **T7** (MAIN 90 and MAIN 93 are off on prod; it passes only after the owner turns them on, or it is marked "not in this release").
+
+For every row the owner writes PASS, or the first thing that looked wrong. A wrong row becomes a P0 story the same day. Facts from the 26 Oct rehearsal that the owner will see: with Demo mode on an order is delivered about 11 minutes after placing; the "Was your order delivered?" question comes only 3 minutes after Ready (or after the rider left); the simulator accepts orders of the demo kitchens within 1 to 2 minutes, so the cook in T4 must tap Accept at once.
+
 ## P1. Rider app keeps sending its place with the screen locked (#252, E-TWA-1)
 
 Why: a web app may stop in the background. If the rider app stops pinging, we must build a foreground service (ADR-020). If it keeps pinging, we do not.
@@ -59,7 +77,7 @@ Steps:
 4. Watch the order screen. Tap "Ping me when it is ready" and allow notifications.
 5. Cancel nothing. Wait until it says delivered, then tap "Yes, I have it".
 
-What to look for: the bill total matches the dishes; the order moves from placed to delivered by itself (the city is a simulation); a notification arrives when it is ready; the phone shows a Call link for the rider; the dish photos show with the credit link.
+What to look for: the bill total matches the dishes; the order moves from placed to delivered by itself (the city is a simulation; about 11 minutes with Demo mode on); the question "Was your order delivered?" shows only after Ready; a notification arrives when it is ready; the phone shows a Call link for the rider; the dish photos show with the credit link.
 
 Reviewer runs after it: a read of `orders` and `order_events` for this order: events `placed, accepted, preparing, ready, assigned, picked_up, delivered` once each, and `paid_by` cash.
 
@@ -133,7 +151,7 @@ Steps:
 1. In the customer app open the menu of a demo kitchen during its hours (the dream kitchens open between 07:30 and 12:00 and close between 22:00 and 23:30).
 2. Stay on the menu until the closing time of that kitchen, or open another kitchen after its closing time.
 
-What to look for: before closing the menu says "Open till ...", and Add works. After closing the menu says "Closed now. Opens at ...", Add is off, with no reload.
+What to look for: before closing the menu says "Open till ...", and Add works. After closing the menu says "Closed now. Opens at ...", Add is off, with no reload. A kitchen the admin or the city switched off inside its hours says "Closed for a little while. Please look again soon." (#452).
 
 Reviewer runs after it: in prod, `place_order` for a closed kitchen answers `kitchen_closed` (migration 0041 must be on prod).
 
