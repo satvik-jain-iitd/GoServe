@@ -40,3 +40,4 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - ID209 (2026-10-26, taken → plan D7): `docs` branch for every document; `staging` holds only run-critical code (owner, 00:40).
 - ID210 (2026-10-26, taken → plan E26): our own design approach on Apple's design principles; the "Living Slip" (one order slip from cart to lock screen), freshness stamp, honest ETA, on-time promise, "Your usual" (owner ask, reviewer concept, 00:40).
 - ID211 (2026-10-26, taken → plan E25): freeze the PWA as MVP2, demo-ready for the founder, then leave it undisturbed (owner, 00:40).
+- ID212 (2026-10-26, taken → #468, #469, #470): one person can work in two or more kitchens (owner of one, staff in another); the kitchen app lets them pick the kitchen. Replaces the one-kitchen rule of 0023 in the new app; the PWA stays frozen with the rule (owner, 19:40).
