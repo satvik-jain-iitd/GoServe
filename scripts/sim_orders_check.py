@@ -182,6 +182,23 @@ def run():
             break
     check("F a rider back online far from the old place lands elsewhere and still gets the order near it", far > 0 and got == lone, f"{far} far returns; assigned {got == lone}")
 
+    # G demo mode (#454): one switch makes the city steady and fast; switching it off puts the old numbers back
+    NUM = ("reject_pct", "sold_out_pct", "delay_pct", "rider_drop_pct", "prep_scale")
+    knobs(reject_pct=7, sold_out_pct=4, delay_pct=20, rider_drop_pct=9, prep_scale=1)
+    before = rpc("sim_knobs")[1]
+    s_on, a_on = rpc("sim_set_knobs", {"p": {"demo": True}})
+    on = a_on["knobs"] if isinstance(a_on, dict) and "knobs" in a_on else {}
+    steady = rpc("sim_tick", {"p": {"kitchen_flip_pct": 100, "dish_flip_pct": 100}})[1]
+    s_off, a_off = rpc("sim_set_knobs", {"p": {"demo": False}})
+    off = a_off["knobs"] if isinstance(a_off, dict) and "knobs" in a_off else {}
+    loose = rpc("sim_tick", {"p": {"kitchen_flip_pct": 0, "dish_flip_pct": 100}})[1]
+    check("G demo mode: no flips, no rejects, faster prep; off puts the old numbers back",
+          bool(on) and on.get("demo") is True and all(on[k] == 0 for k in NUM[:4]) and on["prep_scale"] < 1
+          and steady.get("kitchens_flipped") == 0 and steady.get("dishes_flipped") == 0
+          and bool(off) and off.get("demo") is False and all(off[k] == before[k] for k in NUM) and loose.get("dishes_flipped", 0) > 0,
+          f"on {on}; steady {steady.get('kitchens_flipped')}/{steady.get('dishes_flipped')}; off {off}; loose {loose.get('dishes_flipped')}")
+    knobs()
+
     # E the manual kitchens' kitchen side is not touched: the real order placed at the start is still placed, with only its own event
     row = get(f"orders?select=status&id=eq.{real_order}") if real_order else None
     check("E a real kitchen's order is not moved by the tick", bool(real_order) and isinstance(row, list) and row[0]["status"] == "placed" and events(real_order) == ["order.placed"], f"order {str(real_order)[:8]} {row}")
