@@ -5,7 +5,7 @@ Story M.4 (#323). Ten steps, about ten minutes. Run it twice before the real dem
 ## Before you start
 
 - **Run it in daytime, India time.** A kitchen obeys its opening hours (story M.2). The demo kitchens open between 07:30 and 12:00 and close between 22:00 and 23:30. Madras Tiffin Room (the kitchen for pin code 110016) is open 07:30 to 22:00.
-- **Switch Demo mode on** in the admin Simulator tab (needs 0043 and the n8n deploy of release #459). Without it a kitchen may switch itself off during the demo and an order takes about 24 minutes. With it the city is steady and an order should reach Delivered in about 10 minutes (to measure on the next rehearsal). If a kitchen is closed anyway, use another pin whose kitchen is open (110018 Punjab Da Dhaba, 110060 Karol Bagh, 110016 Madras Tiffin Room).
+- **Switch Demo mode on** in the admin Simulator tab (needs 0043 and the n8n deploy of release #459). Without it a kitchen may switch itself off during the demo and an order takes about 24 minutes. With it the city is steady and an order reaches Delivered in about 11 minutes (measured on prod, 26 Oct: placed 0:00, accepted 1:04, ready 5:03, picked up 7:06, delivered 11:04). If a kitchen is closed anyway, use another pin whose kitchen is open (110018 Punjab Da Dhaba, 110060 Karol Bagh, 110016 Madras Tiffin Room).
 - **Prod must have the database changes 0041 and 0042**, then **Reset the city** and **Seed the city** (see "Reset the demo data" below). Without 0042, pin code 110016 says "Not here yet".
 - Three screens: the customer on your phone, the admin on a laptop, and the kitchen and rider apps on a second phone or a second browser window.
 - Addresses: `goserve-app.pages.dev/customer/`, `/kitchen/`, `/rider/`, `/admin/`.
@@ -30,7 +30,7 @@ Story M.4 (#323). Ten steps, about ten minutes. Run it twice before the real dem
 ## Sign-ins
 
 - Customer: nothing to sign in; the phone makes an anonymous session.
-- Kitchen and rider: **Continue with Google**. The Google account must be added first: Admin, **City**, **Add a person**, then choose the role and the kitchen. Add two test accounts before the demo and write their emails here: `kitchen: ______`, `rider: ______`.
+- Kitchen and rider: **Continue with Google**. The Google account must be added first: Admin, **City**, **Add a person**, then choose the role and the kitchen. One Google account plays both roles: `satvik.jain@iitdalumni.com` (kitchen staff of **Madras Tiffin Room**, pin 110016, and rider; added in Admin, City, Add a person, twice). Madras Tiffin Room is a demo kitchen, so the simulator also accepts its orders within 1 to 2 minutes: the cook must tap Accept at once, or show the cook screen on a fresh order.
 - Admin: the founder's Google account (already an admin).
 
 ## Reset the demo data
