@@ -191,14 +191,14 @@ def map_svg(mp: dict) -> str:
         x = 24 + w
         dash = ' stroke-dasharray="6 4"' if ed["back"] else ""
         label = f'{ed["count"]} need{"" if ed["count"] == 1 else "s"}'
-        paths.append(f'<g data-edge="{e(ed["from"])} to {e(ed["to"])}"><path d="M{x} {y1} C{x + off} {y1} {x + off} {y2} {x + 6} {y2}" fill="none" stroke="#45654E" stroke-width="2"'
-                     f'{dash} marker-end="url(#ah)"/><text x="{x + off * 0.75 + 6}" y="{(y1 + y2) / 2 + 5}" font-size="14" fill="#263528">{label}</text></g>')
-    boxes = "".join(f'<g><rect x="24" y="{ys[t]}" width="{w}" height="{h}" rx="6" fill="#F7F3EF" stroke="#45654E"/><text x="36" y="{ys[t] + 25}" font-size="15" fill="#263528">{e(t[:30])}</text></g>' for t in mp["nodes"])
+        paths.append(f'<g data-edge="{e(ed["from"])} to {e(ed["to"])}"><path d="M{x} {y1} C{x + off} {y1} {x + off} {y2} {x + 6} {y2}" style="fill:none;stroke:var(--green)" stroke-width="2"'
+                     f'{dash} marker-end="url(#ah)"/><text x="{x + off * 0.75 + 6}" y="{(y1 + y2) / 2 + 5}" font-size="14" style="fill:var(--ink)">{label}</text></g>')
+    boxes = "".join(f'<g><rect x="24" y="{ys[t]}" width="{w}" height="{h}" rx="6" style="fill:var(--paper);stroke:var(--green)"/><text x="36" y="{ys[t] + 25}" font-size="15" style="fill:var(--ink)">{e(t[:30])}</text></g>' for t in mp["nodes"])
     width = 24 + w + 50 + 36 * max(len(mp["nodes"]) - 1, 1) + 90
     n = mp["crossings"]
     hid = f' {mp["hidden"]} arrow{"" if mp["hidden"] == 1 else "s"} that only repeat a longer path {"is" if mp["hidden"] == 1 else "are"} left out.' if mp["hidden"] else ""
     return (f'<svg viewBox="0 0 {width} {height}" width="100%" role="img" aria-label="Which milestone waits for which"><defs><marker id="ah" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">'
-            f'<path d="M0 0 L8 4 L0 8 z" fill="#45654E"/></marker></defs>{boxes}{"".join(paths)}</svg>'
+            f'<path d="M0 0 L8 4 L0 8 z" style="fill:var(--green)"/></marker></defs>{boxes}{"".join(paths)}</svg>'
             f'<p class="mono">Arrow: the later box waits for the earlier box. Dotted: it waits for a later milestone. {n} crossing{"" if n == 1 else "s"}.{hid}</p>')
 
 
@@ -290,7 +290,7 @@ def render(model: dict, vision: str, now: datetime) -> str:
     done = sum(1 for s in model["stories"] if s["column"] == "Done")
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="refresh" content="300"><title>GoServe roadmap</title>
+<meta name="color-scheme" content="light dark"><meta http-equiv="refresh" content="300"><title>GoServe roadmap</title>
 <style>
 :root {{ --cream:#E4E6D9; --paper:#F7F3EF; --ink:#263528; --green:#45654E; --sage:#BFCFB4; --lime:#C8D888; --yellow:#FFDE59; --muted:#46524A; --error:#B3261E; }}
 body {{ margin:0; background:var(--cream); color:var(--ink); font:17px/1.5 -apple-system, "Anek Latin", system-ui, sans-serif; }}
@@ -301,10 +301,12 @@ h1 {{ font-size:34px; margin:0 0 4px; }} h2 {{ font-size:24px; margin:40px 0 12p
 details {{ background:var(--paper); border-radius:6px; padding:10px 16px; margin:8px 0; }} summary {{ cursor:pointer; }}
 ul {{ padding-left:20px; }} li {{ margin:4px 0; }}
 .board {{ display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; }} @media (max-width:720px) {{ .board {{ grid-template-columns:1fr 1fr; }} }}
-.col {{ background:var(--sage); border-radius:6px; padding:10px; min-height:80px; }}
+.col {{ background:var(--sage); border-radius:6px; padding:10px; min-height:80px; min-width:0; overflow-wrap:anywhere; }}
 .card {{ background:var(--paper); border-radius:6px; padding:10px 12px; margin:8px 0; font-size:15px; }} .card p {{ margin:6px 0; }}
 .bar {{ background:var(--paper); border-radius:6px; padding:8px 12px; margin:8px 0; }} .track {{ background:var(--sage); border-radius:999px; height:10px; margin-top:6px; }} .fill {{ background:var(--green); border-radius:999px; height:10px; }} .bar.late .fill {{ background:var(--error); }} .bar.late b {{ color:var(--error); }}
 .tag {{ display:inline-block; background:var(--lime); border-radius:999px; padding:1px 10px; font-size:12px; }}
+@media (prefers-color-scheme: dark) {{ :root {{ --cream:#1B241D; --paper:#243026; --ink:#E4E6D9; --green:#A9C9B0; --sage:#2F3F33; --muted:#B4BFB6; --error:#FF8A80; }} }}
+.tag {{ color:#263528; }}
 footer {{ margin-top:40px; }} .needs {{ color:var(--error); }}
 </style></head><body><main>
 <h1>GoServe roadmap</h1><p class="mono">updated {now.strftime("%H:%M")} · {done} of {len(model["stories"])} stories done</p>

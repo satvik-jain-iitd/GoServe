@@ -1,5 +1,6 @@
 // Pin code to kitchen (story B2). The customer app asks for a pin code once, finds the open kitchen that serves it and shows that kitchen's menu.
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isOpenNow } from "./hours";
 
 export type AreaKitchen = { id: string; name: string; pin_codes: string[]; synthetic?: boolean; lat: number | null; lng: number | null; phone?: string | null; open: boolean; active: boolean; opens_at?: string | null; closes_at?: string | null };
 export type Area = { kind: "ok"; kitchen: AreaKitchen } | { kind: "closed"; id: string; name: string; opens_at: string | null } | { kind: "none" };
@@ -8,10 +9,10 @@ export const isPin = (text: string): boolean => /^\d{6}$/.test(text);
 
 // Kitchens that serve the pin code: an open, active one wins. Several: the nearest to `from` when it is known, else the first by name.
 // (ponytail: the customer's coordinates are not collected yet, so the name order decides; a place can be passed in when they are.)
-export function chooseKitchen(kitchens: AreaKitchen[], pin: string, from?: { lat: number; lng: number }): Area {
+export function chooseKitchen(kitchens: AreaKitchen[], pin: string, from?: { lat: number; lng: number }, now: Date = new Date()): Area {
   const serving = kitchens.filter((k) => k.pin_codes.includes(pin)).sort((a, b) => a.name.localeCompare(b.name));
   if (serving.length === 0) return { kind: "none" };
-  const open = serving.filter((k) => k.open && k.active);
+  const open = serving.filter((k) => isOpenNow(k, now));   // the switch, active and the opening hours (#321)
   if (open.length === 0) return { kind: "closed", id: serving[0].id, name: serving[0].name, opens_at: serving[0].opens_at ?? null };
   const d = (k: AreaKitchen) => (from && k.lat !== null && k.lng !== null ? (k.lat - from.lat) ** 2 + (k.lng - from.lng) ** 2 : Infinity);
   return { kind: "ok", kitchen: [...open].sort((a, b) => d(a) - d(b))[0] };

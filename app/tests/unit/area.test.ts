@@ -31,6 +31,15 @@ describe("chooseKitchen", () => {
   it("says closed, with the name, when every kitchen that serves it is closed or inactive", () => {
     expect(chooseKitchen([k("a", "A", ["110016"], { open: false }), k("b", "B", ["110016"], { active: false })], "110016")).toEqual({ kind: "closed", id: "a", name: "A", opens_at: null });
   });
+  it("#321 a kitchen outside its hours is closed even when its switch is on; one inside its hours still wins", () => {
+    const late = new Date("2026-10-24T18:00:00Z");   // 23:30 India
+    const noon = new Date("2026-10-24T06:30:00Z");   // 12:00 India
+    const a = k("a", "A", ["110016"], { opens_at: "10:00:00", closes_at: "22:00:00" } as never);
+    expect(chooseKitchen([a], "110016", undefined, late)).toEqual({ kind: "closed", id: "a", name: "A", opens_at: "10:00:00" });
+    expect(chooseKitchen([a], "110016", undefined, noon)).toMatchObject({ kind: "ok" });
+    const b = k("b", "B", ["110016"], { opens_at: "10:00:00", closes_at: "23:59:00" } as never);
+    expect(chooseKitchen([a, b], "110016", undefined, late)).toMatchObject({ kind: "ok", kitchen: { id: "b" } });
+  });
   it("with several open kitchens takes the nearest to a place, else the first by name", () => {
     const list = [k("far", "Zed", ["110016"], { lat: 28.9, lng: 77.5 }), k("near", "Beta", ["110016"], { lat: 28.55, lng: 77.2 }), k("noco", "Alpha", ["110016"])];
     expect(chooseKitchen(list, "110016", { lat: 28.5, lng: 77.2 })).toEqual({ kind: "ok", kitchen: expect.objectContaining({ id: "near" }) });
