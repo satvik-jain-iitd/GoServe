@@ -120,7 +120,7 @@ Reviewer runs after it: the n8n execution list for the scorecard workflow shows 
 
 Steps:
 1. On the iPhone open the app from the home-screen icon (installed from Safari) and go to You. Read the line "Build xxxxxxx" at the bottom. Keep the app open in the background.
-2. The reviewer deploys a new build to prod (any small change).
+2. The coder merges a small change to main (the owner merges it) so that the deploy workflow publishes a new build to prod.
 3. Wait two minutes. Switch back to the app from the app switcher (do not close it).
 
 What to look for: the app reloads once by itself and the "Build" line shows a new id. A cart you had filled is still there.

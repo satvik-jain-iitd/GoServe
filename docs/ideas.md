@@ -29,3 +29,14 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - ID186 (2026-10-25, taken: epic E22): MVP 3, an Android APK anyone can download and use by 2 Nov 2026, every feature working, zero running cost with Laya in place of Jev (owner, 03:45).
 - ID200 (2026-10-25, taken → E16 #188 #189 #190): a synthetic city before real onboarding: 10 kitchens, 20 riders moving on their own, dishes, switched off when real kitchens join (owner, 05:00).
 - ID201 (2026-10-25, taken → #263): the admin picks the live decision engine, Rules, Jev or Laya, exactly one on, no fallback mode; Rules before the release (owner, 07:30).
+- ID201 (2026-10-25, taken → E16 stories): a living demo city: ten dream Delhi kitchens with full menus at real pins, under GoServe's own names, riders named after famous Indians, programmed to behave like real staff with random events, so real hand-placed orders test every scenario at scale (owner, ~13:40).
+- ID202 (2026-10-25, taken → plan Phase 1, E24): a Steve Jobs style audit of every screen: each button, link and word, why it exists, is it needed, would a user love it (owner, 23:20).
+- ID203 (2026-10-25, taken → plan Phase 2, E24): compare GoServe with Zepto Cafe and Swish, journey by journey; borrow their best, keep ours where better, combine into one best solution (owner, 23:20).
+- ID204 (2026-10-25, taken → plan Phase 0): agents drive real mobile apps and websites (mobile-mcp, Maestro, playwright-mcp) to study competitor journeys (owner, 23:20).
+- ID205 (2026-10-25, taken → ADR-023, E25): move the order path off n8n to Supabase Edge Functions; n8n keeps reports and alerts (owner, 23:25).
+- ID206 (2026-10-25, taken → ADR-024, E26, E27): native Kotlin and Swift apps for all four roles, built on GitHub Actions, on staging-android and staging-ios, after the PWA is complete (owner, 23:25).
+- ID207 (2026-10-25, open → plan 0B): check the 40 "Claude repos" list from a reel for tools worth adopting (owner, 23:15).
+- ID208 (2026-10-26, taken → plan E24 R4): every story records a start time (`doing` label) and a close time; stories and epics close by themselves when the PR merges; a live roadmap shows it (owner, 00:40).
+- ID209 (2026-10-26, taken → plan D7): `docs` branch for every document; `staging` holds only run-critical code (owner, 00:40).
+- ID210 (2026-10-26, taken → plan E26): our own design approach on Apple's design principles; the "Living Slip" (one order slip from cart to lock screen), freshness stamp, honest ETA, on-time promise, "Your usual" (owner ask, reviewer concept, 00:40).
+- ID211 (2026-10-26, taken → plan E25): freeze the PWA as MVP2, demo-ready for the founder, then leave it undisturbed (owner, 00:40).
