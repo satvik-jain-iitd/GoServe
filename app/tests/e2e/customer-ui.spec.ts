@@ -13,7 +13,7 @@ test("S1 the menu shows the kitchen with its closing time, sections, a veg toggl
   net.state.menu = MENU;
   await page.goto("/customer/");
   await expect(page.getByRole("heading", { name: /Hauz Khas Kitchen/ })).toBeVisible();
-  await expect(page.getByText("Open till 10:00 pm")).toBeVisible();
+  await expect(page.getByText("Open till 11:59 pm")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Sweet" })).toBeVisible();
   await page.getByRole("button", { name: "Veg only" }).click();
   await expect(page.getByText("Butter Chicken")).toHaveCount(0);
