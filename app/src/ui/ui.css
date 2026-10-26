@@ -307,7 +307,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-cash { font-size: 22px; font-weight: 500; }
 .ui-state-dot { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 999px; background: var(--gs-text-muted); vertical-align: middle; }
 .ui-state-dot.on { background: var(--md-primary); }
-.ui-note.error { background: none; border-radius: 0; padding: var(--gs-space-2) var(--gs-gutter); font-size: var(--gs-text-sm); font-weight: 600; color: var(--md-error); }   /* #466: the global .error in app.css fills the box with the error colour; red text on that fill could not be read */
+.ui-note.error { background: none; border-radius: 0; padding: var(--gs-space-2) var(--gs-gutter); font-size: var(--gs-text-sm); font-weight: 600; color: var(--md-error); }   /* story 466: the global .error in app.css fills the box with the error colour; red text on that fill could not be read */
 .ui-pad .ui-note.error { padding-left: 0; padding-right: 0; }
 .ui-tab-badge { position: absolute; top: 6px; right: calc(50% - 22px); min-width: 18px; padding: 0 5px; border-radius: 999px; background: var(--md-primary); color: var(--md-on-primary); font-family: var(--gs-font-mono); font-size: 11px; line-height: 18px; }
 .ui-tab { position: relative; }
