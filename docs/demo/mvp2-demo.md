@@ -5,6 +5,7 @@ Story M.4 (#323). Ten steps, about ten minutes. Run it twice before the real dem
 ## Before you start
 
 - **Run it in daytime, India time.** A kitchen obeys its opening hours (story M.2). The demo kitchens open between 07:30 and 12:00 and close between 22:00 and 23:30. Madras Tiffin Room (the kitchen for pin code 110016) is open 07:30 to 22:00.
+- **Switch Demo mode on** in the admin Simulator tab (needs 0043 and the n8n deploy of release #459). Without it a kitchen may switch itself off during the demo and an order takes about 24 minutes. With it the city is steady and an order should reach Delivered in about 10 minutes (to measure on the next rehearsal). If a kitchen is closed anyway, use another pin whose kitchen is open (110018 Punjab Da Dhaba, 110060 Karol Bagh, 110016 Madras Tiffin Room).
 - **Prod must have the database changes 0041 and 0042**, then **Reset the city** and **Seed the city** (see "Reset the demo data" below). Without 0042, pin code 110016 says "Not here yet".
 - Three screens: the customer on your phone, the admin on a laptop, and the kitchen and rider apps on a second phone or a second browser window.
 - Addresses: `goserve-app.pages.dev/customer/`, `/kitchen/`, `/rider/`, `/admin/`.

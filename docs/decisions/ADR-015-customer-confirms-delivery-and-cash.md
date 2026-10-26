@@ -28,3 +28,9 @@ In the user acceptance test nobody delivers the food. The kitchen cooks and hand
 - The customer, not the rider, can close an order. In the UAT that is the point. With real riders the customer's Yes would only record cash and confirmation.
 - No payment, no push server, no delivery-time model.
 - Prod needs migration 0009 by `apply_migration.py` (with the owner's yes), then the new MAIN 01 and SUB 12.
+
+## Update 2026-10-26 (story #456)
+
+Point 2 changed. The app asks "Was your order delivered?" only **3 minutes after Ready**, or **3 minutes after the rider left** (out for delivery). It never asks while the order is placed, accepted or preparing, and never after Delivered. The "8 minutes after placing" rule is gone; `confirm_after_place_min` is still sent by the server and is ignored.
+
+Why: the rule was written for the manual UAT. With the programmed city an order takes about 24 minutes, so the question came while the slip said Cooking, and Yes failed (`confirm_delivery` only allows ready, out for delivery or delivered). Found in the M.5 rehearsal on prod (26 Oct, runs 2, 4 and 5).
