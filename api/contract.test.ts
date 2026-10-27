@@ -308,3 +308,13 @@ Deno.test("staff: /staff/mine, POST /staff and DELETE /staff answer as the contr
   body.kitchens[0].phone = "x";
   await assertRejects(() => checkAnswer("/staff/mine", "get", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
 });
+
+Deno.test("help: GET /help answers 200 as the contract says and a wrong field is red", async () => {
+  const { handler } = await import("../supabase/functions/help/fixture.ts");
+  const ok = await handler(new Request("https://x.test/help"));
+  assertEquals(ok.status, 200);
+  await checkAnswer("/help", "get", ok);
+  const body = await (await handler(new Request("https://x.test/help"))).json();
+  body.topics[0].items[0].id = 1;
+  await assertRejects(() => checkAnswer("/help", "get", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
+});
