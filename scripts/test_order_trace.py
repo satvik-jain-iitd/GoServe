@@ -40,10 +40,12 @@ class OrderTrace(unittest.TestCase):
                 "reset role", f"select actor, event, order_id = {ORDER} as same_order from order_trace")
         self.assertEqual(r[-1], {"actor": "sw", "event": "push_received", "same_order": True}, r)
 
-    def test_an_unknown_push_address_is_logged_without_an_order_and_without_the_address(self):
-        r = run(*AS_ANON, "select trace_sw('https://web.push.apple.com/secret', 'push_received', 'ok', '')",
-                "reset role", "select order_id is null as no_order, detail::text not like '%secret%' as no_address from order_trace")
-        self.assertEqual(r[-1], {"no_order": True, "no_address": True}, r)
+    def test_a_line_with_no_order_is_dropped_so_nobody_can_fill_the_table(self):
+        # An unknown push address and a null order from the app both used to write a row with no order, without limit (review 5661917354).
+        r = run(*AS_ANON, "select trace_sw('https://web.push.apple.com/secret', 'push_received', 'ok', '')", "reset role", "select count(*) as n from order_trace")
+        self.assertEqual(r[-1], {"n": 0}, r)
+        r = run(*AS_USER, "select trace_app(null, 'app_open', 'visible', '')", "reset role", "select count(*) as n from order_trace")
+        self.assertEqual(r[-1], {"n": 0}, r)
 
     def test_long_text_is_cut_and_one_order_gets_at_most_200_lines(self):
         r = run(PLACE, *AS_USER, f"select trace_app({ORDER}, 'x', 'y', repeat('a', 1000))",
