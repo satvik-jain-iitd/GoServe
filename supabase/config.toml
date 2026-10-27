@@ -4,3 +4,8 @@ project_id = "goserve-dev"
 # The health check is public on purpose: it answers ok and nothing else.
 [functions.health]
 verify_jwt = false
+
+# Story #563: the database asks /push/notify through pg_net with our own secret (x-push-secret), not a user's login, so the gateway must not demand a JWT.
+# /push/register still checks the caller's own token itself (the function reads /auth/v1/user), so it is not open.
+[functions.push]
+verify_jwt = false
