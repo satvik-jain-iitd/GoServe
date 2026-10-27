@@ -1,5 +1,5 @@
 // Story #324 (M.5): the demo rehearsal. Walks the customer steps of docs/demo/mvp2-demo.md on a real app: 1 pin, 2 menu, 3 two dishes and the bill, 4 place the order,
-// 5 the order slip, then waits for the demo city to take the order through steps 6 to 8 by itself and does step 9 (the slip says Delivered, tap "Yes, I have it").
+// 5 the order slip, then waits for the demo city to take the order through steps 6 to 8 by itself and does step 9: the question "Yes, I have it" comes first (story #593), then the slip says Delivered.
 // Steps 6 to 8 by hand and step 10 need a Google sign-in: those are the owner's, in story #325.
 // It fails on any error text and writes one row per step (step, pass, order number, seconds since the last step) to test-results/rehearsal-<run>.json for docs/demos/rehearsal-<date>.md.
 // It places a REAL order in the demo kitchen of the pin, so it needs LIVE_URL set on purpose and never runs by accident. Pin: REHEARSAL_PIN (default 110016, Madras Tiffin Room).
@@ -7,6 +7,7 @@
 // Red until the prod city is seeded and demo mode is on: without them the pin says "Not here yet" or the order stays at placed.
 import { test, expect, type Page } from "@playwright/test";
 import { writeFileSync, mkdirSync } from "node:fs";
+import { confirmAndDelivered } from "./rehearsalEnd";
 
 const PIN = process.env.REHEARSAL_PIN ?? "110016";
 const ERROR_TEXT = /Not here yet|Closed now|Something went wrong|Could not|No network|is not set up|unavailable/i;
@@ -65,11 +66,7 @@ test("S1 rehearsal: pin, menu, two dishes, bill, place order, the demo city deli
     await expect(page.getByText("Cash at door")).toBeVisible();
     await expect(page.locator(".ui-stamp").first()).toBeVisible();
   });
-  await step("6 to 8 the demo city moves the order to Delivered (about 11 minutes)", async () => {
-    await expect(page.getByRole("heading", { name: "Delivered", exact: true })).toBeVisible({ timeout: 20 * 60_000 });
-  });
-  await step("9 Yes, I have it", async () => {
-    await page.getByRole("button", { name: "Yes, I have it" }).click();
-    await expect(page.getByText(/Paid: cash/)).toBeVisible({ timeout: 20_000 });
+  await step("6 to 9 the demo city delivers (about 11 to 15 minutes); the question Yes, I have it comes first, then Delivered and Paid: cash", async () => {
+    await confirmAndDelivered(page);
   });
 });
