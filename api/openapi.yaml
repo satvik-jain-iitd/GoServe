@@ -149,6 +149,87 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /orders:
+    post:
+      operationId: postOrders
+      summary: Place an order. Re-quotes the cart, then writes the order in one transaction. The same idempotency key answers the same order.
+      x-handler: ../supabase/functions/orders/index.ts
+      x-contract-handler: ../supabase/functions/orders/fixture.ts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [kitchen_id, lines, address, idempotency_key, expected_to_pay_paise]
+              properties:
+                kitchen_id: { type: string, format: uuid }
+                lines:
+                  type: array
+                  maxItems: 30
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required: [menu_item_id, qty]
+                    properties:
+                      menu_item_id: { type: string, format: uuid }
+                      qty: { type: integer, minimum: 1, maximum: 20 }
+                      option_ids:
+                        type: array
+                        items: { type: string, format: uuid }
+                address:
+                  type: object
+                  required: [pin_code, text]
+                  properties:
+                    pin_code: { type: string, pattern: "^[0-9]{6}$" }
+                    text: { type: string, minLength: 1, maxLength: 300 }
+                coupon_code: { type: string, maxLength: 40 }
+                idempotency_key: { type: string, minLength: 8, maxLength: 64 }
+                expected_to_pay_paise: { type: integer, minimum: 0 }
+      responses:
+        "200":
+          description: The same idempotency key was used before. This is the order that already exists (created false).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderPlaced"
+        "201":
+          description: The order was placed (created true).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderPlaced"
+        "400":
+          description: The request is malformed (no kitchen, no lines, a bad pin code, no address text, a short key, no expected price, not JSON).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: There is no login (an anonymous login counts).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: The price is not the one the customer saw. The body carries the new quote when the app can show it.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PriceChanged"
+        "422":
+          description: A rule refused the order (empty, sold_out, kitchen_closed, quantity, add-on pick, coupon rule, session_order_cap). error is a stable code, message is for the customer.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: A data source failed. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   schemas:
     Error:
@@ -235,6 +316,39 @@ components:
               distance_m: { type: integer, minimum: 0 }
               eta_min: { type: integer, minimum: 0 }
               open: { type: boolean }
+    OrderPlaced:
+      type: object
+      additionalProperties: false
+      required: [ok, created, order]
+      properties:
+        ok:
+          const: true
+        created: { type: boolean }
+        order:
+          type: object
+          additionalProperties: false
+          required: [id, kitchen_id, status, total_paise, address, items, bill, created_at]
+          properties:
+            id: { type: string }
+            kitchen_id: { type: string }
+            status: { enum: [placed, accepted, preparing, ready, out_for_delivery, delivered, cancelled] }
+            total_paise: { type: integer, minimum: 0 }
+            address: { type: string }
+            items: { type: array }
+            bill: { type: object }
+            created_at: { type: string, format: date-time }
+    PriceChanged:
+      type: object
+      additionalProperties: false
+      required: [ok, error, message]
+      properties:
+        ok:
+          const: false
+        error:
+          const: price_changed
+        message: { type: string }
+        quote:
+          $ref: "#/components/schemas/Quote"
     Dish:
       type: object
       additionalProperties: false

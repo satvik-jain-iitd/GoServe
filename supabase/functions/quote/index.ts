@@ -15,7 +15,7 @@ const json = (status: number, body: unknown) => new Response(JSON.stringify(body
 const bad = () => json(400, { ok: false, error: "invalid_request" });
 
 type Line = { menu_item_id: string; qty: number; option_ids: string[] };
-function parse(b: any): { kitchen: string; lines: Line[]; code: string | null } | null {
+export function parse(b: any): { kitchen: string; lines: Line[]; code: string | null } | null {
   if (!b || typeof b !== "object" || !UUID.test(b.kitchen_id) || !Array.isArray(b.lines) || b.lines.length > MAX_LINES) return null;
   if (typeof b.address?.pin_code !== "string" || !/^\d{6}$/.test(b.address.pin_code)) return null;
   if (b.coupon_code != null && (typeof b.coupon_code !== "string" || b.coupon_code.length > 40)) return null;
@@ -28,6 +28,19 @@ function parse(b: any): { kitchen: string; lines: Line[]; code: string | null } 
   return { kitchen: b.kitchen_id, lines, code: b.coupon_code ? b.coupon_code.trim().toUpperCase() : null };
 }
 
+// The quote itself, shared with POST /orders (#347): one way to price a cart. Throws when a data source fails.
+export async function runQuote(deps: Deps, q: { kitchen: string; lines: Line[]; code: string | null }): Promise<ReturnType<typeof quote> | { ok: false; error: string; message: string }> {
+  const catalog = await deps.catalog(q.kitchen, q.lines.map((l) => l.menu_item_id), q.lines.flatMap((l) => l.option_ids));
+  const checks = new Map<string, Awaited<ReturnType<Deps["validate"]>>>();
+  for (const l of q.lines) if (catalog.dishes[l.menu_item_id] && l.option_ids.every((o) => catalog.options[o])) checks.set(l.menu_item_id + l.option_ids.join(), await deps.validate(l.menu_item_id, l.option_ids));
+  const coupon = q.code ? await deps.coupon(q.code) : null;
+  if (q.code && !coupon) return { ok: false, error: "coupon_invalid", message: `${q.code} is not a valid code.` };
+  const first = coupon?.first_order_only ? await deps.firstOrder(q.kitchen) : false;
+  // A pick for an option the catalog does not know is refused by the same code the database function uses.
+  const validate = (id: string, opts: string[]) => checks.get(id + opts.join()) ?? { ok: false as const, error: "unknown_option", message: "This option is not on this dish." };
+  return quote({ lines: q.lines, first_order: first }, catalog, await deps.rules(q.kitchen), coupon, validate);
+}
+
 export const makeHandler = (deps: Deps) => async (req: Request): Promise<Response> => {
   if (req.method !== "POST") return new Response(null, { status: 405, headers: { allow: "POST" } });
   let body: unknown;
@@ -35,15 +48,7 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
   const q = parse(body);
   if (!q) return bad();
   try {
-    const catalog = await deps.catalog(q.kitchen, q.lines.map((l) => l.menu_item_id), q.lines.flatMap((l) => l.option_ids));
-    const checks = new Map<string, Awaited<ReturnType<Deps["validate"]>>>();
-    for (const l of q.lines) if (catalog.dishes[l.menu_item_id] && l.option_ids.every((o) => catalog.options[o])) checks.set(l.menu_item_id + l.option_ids.join(), await deps.validate(l.menu_item_id, l.option_ids));
-    const coupon = q.code ? await deps.coupon(q.code) : null;
-    if (q.code && !coupon) return json(422, { ok: false, error: "coupon_invalid", message: `${q.code} is not a valid code.` });
-    const first = coupon?.first_order_only ? await deps.firstOrder(q.kitchen) : false;
-    // A pick for an option the catalog does not know is refused by the same code the database function uses.
-    const validate = (id: string, opts: string[]) => checks.get(id + opts.join()) ?? { ok: false as const, error: "unknown_option", message: "This option is not on this dish." };
-    const out = quote({ lines: q.lines, first_order: first }, catalog, await deps.rules(q.kitchen), coupon, validate);
+    const out = await runQuote(deps, q);
     return json(out.ok ? 200 : 422, out.ok ? { ...out, kitchen_id: q.kitchen } : out);
   } catch {
     return json(502, { ok: false, error: "quote_unavailable" });   // no detail: a database message must never reach an app
@@ -60,7 +65,7 @@ const get = async (path: string, h: Record<string, string>) => {
   if (!res.ok) throw new Error("read failed");
   return await res.json();
 };
-const live: Deps = {
+export const live: Deps = {
   catalog: async (kitchenId, dishIds, optionIds) => {
     const dishes = await get(`menu_items?select=id,name,price_paise,available&kitchen_id=eq.${kitchenId}&id=in.(${dishIds.join(",") || "null"})`, anon());
     const options = optionIds.length ? await get(`options?select=id,name,price_paise&id=in.(${optionIds.join(",")})`, anon()) : [];
