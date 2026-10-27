@@ -124,3 +124,19 @@ Deno.test("orders: the 201, 401, 409, 422 and 400 answers are in the contract, a
   ok.order.customer_phone = "9876543210";   // not a field of the order in the contract
   await assertRejects(() => checkAnswer("/orders", "post", new Response(JSON.stringify(ok), { status: 201 })), Error, "additional properties");
 });
+
+Deno.test("order-actions: the 200, 401, 409, 422 and 400 answers are in the contract, and a wrong field in the order is red", async () => {
+  const { handler } = await import("../supabase/functions/order-actions/fixture.ts");
+  const O = "7e57ab1e-0000-4000-8000-0000000000f1";
+  const post = (b: unknown, auth = true) => handler(new Request("https://x.test/order-actions", { method: "POST", headers: auth ? { authorization: "Bearer t" } : {}, body: JSON.stringify(b) }));
+  const good = await post({ order_id: O, action: "accept" });
+  assertEquals(good.status, 200);
+  await checkAnswer("/order-actions", "post", good);
+  await checkAnswer("/order-actions", "post", await post({ order_id: O, action: "accept" }, false));   // 401
+  await checkAnswer("/order-actions", "post", await post({ order_id: O, action: "deliver" }));   // 409
+  await checkAnswer("/order-actions", "post", await post({ order_id: O, action: "cancel" }));   // 422
+  await checkAnswer("/order-actions", "post", await post({ order_id: "x", action: "accept" }));   // 400
+  const body = await (await post({ order_id: O, action: "accept" })).json();
+  body.order.customer_phone = "9876543210";
+  await assertRejects(() => checkAnswer("/order-actions", "post", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
+});
