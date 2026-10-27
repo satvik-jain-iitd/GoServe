@@ -6,7 +6,7 @@ import { buildMenu, type DishRow } from "./menu.ts";
 const NOW = new Date("2026-10-27T10:00:00Z");
 const row = (o: Partial<DishRow> & { id: string }): DishRow => ({
   name: o.id, price_paise: 12000, available: true, veg: true, category: "Thali", sort: 0, image_url: null, badge: null, size_tag: null,
-  protein_g: null, back_soon_at: null, created_at: "2026-09-01T00:00:00Z", ...o,
+  protein_g: null, back_soon_at: null, created_at: "2026-09-01T00:00:00Z", option_groups: [], ...o,
 });
 
 Deno.test("dishes are grouped by category in the order of sort, then name", () => {
@@ -53,5 +53,24 @@ Deno.test("a dish carries badge, size tag and protein, and nothing the app must 
   const m = buildMenu([row({ id: "d", badge: "chef", size_tag: "large", protein_g: 24, image_url: "https://img/x.jpg" })], NOW);
   const d = m.categories[0].dishes[0];
   assertEquals([d.badge, d.size_tag, d.protein_g, d.image_url], ["chef", "large", 24, "https://img/x.jpg"]);
-  assertEquals(Object.keys(d).sort(), ["back_soon", "back_soon_at", "badge", "category", "id", "image_url", "name", "price_paise", "protein_g", "size_tag", "sold_out", "veg"]);
+  assertEquals(Object.keys(d).sort(), ["back_soon", "back_soon_at", "badge", "category", "id", "image_url", "name", "option_groups", "price_paise", "protein_g", "size_tag", "sold_out", "veg"]);
+});
+
+Deno.test("add-on groups come with the dish, in sort order, with min, max and their options (sold out marked, nothing else leaks)", () => {
+  const m = buildMenu([row({
+    id: "thali",
+    option_groups: [
+      { id: "g2", name: "Spice", min_select: 0, max_select: 1, sort: 2, options: [{ id: "o3", name: "Hot", price_paise: 0, available: true, sort: 1 }] },
+      { id: "g1", name: "Extras", min_select: 1, max_select: 2, sort: 1, options: [
+        { id: "o2", name: "Papad", price_paise: 1000, available: false, sort: 2 }, { id: "o1", name: "Raita", price_paise: 2000, available: true, sort: 1 }] },
+    ],
+  })], NOW);
+  const groups = m.categories[0].dishes[0].option_groups;
+  assertEquals(groups.map((g) => [g.name, g.min, g.max]), [["Extras", 1, 2], ["Spice", 0, 1]]);
+  assertEquals(groups[0].options, [{ id: "o1", name: "Raita", price_paise: 2000, sold_out: false }, { id: "o2", name: "Papad", price_paise: 1000, sold_out: true }]);
+  assertEquals(Object.keys(groups[0]).sort(), ["id", "max", "min", "name", "options"]);
+});
+
+Deno.test("a dish with no groups has an empty list", () => {
+  assertEquals(buildMenu([row({ id: "plain" })], NOW).categories[0].dishes[0].option_groups, []);
 });

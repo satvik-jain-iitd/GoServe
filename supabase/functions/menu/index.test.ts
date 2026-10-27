@@ -4,7 +4,7 @@ import { makeHandler } from "./index.ts";
 import type { DishRow } from "./menu.ts";
 
 const KITCHEN = "7e57ab1e-0000-4000-8000-000000000001";
-const rows: DishRow[] = [{ id: "d1", name: "Dal Makhani thali", price_paise: 14000, available: true, veg: true, category: "Thali", sort: 1, image_url: null, badge: "bestseller", size_tag: "regular", protein_g: 18, back_soon_at: null, created_at: "2026-09-01T00:00:00Z" }];
+const rows: DishRow[] = [{ id: "d1", name: "Dal Makhani thali", price_paise: 14000, available: true, veg: true, category: "Thali", sort: 1, image_url: null, badge: "bestseller", size_tag: "regular", protein_g: 18, back_soon_at: null, created_at: "2026-09-01T00:00:00Z", option_groups: [] }];
 const ok = makeHandler({ rows: async (k) => (k === KITCHEN ? rows : []), now: () => new Date("2026-10-27T10:00:00Z") });
 const get = (qs: string) => ok(new Request("https://x.test/menu" + qs));
 
