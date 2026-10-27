@@ -121,3 +121,20 @@ test("S9 a ticket opened from Cooking goes back to cooking", async ({ page, cont
   await page.getByRole("button", { name: "Back to cooking tickets" }).click();   // the arrow; the ghost button below says "Back to cooking"
   await expect(page.getByRole("heading", { name: "Cooking" })).toBeVisible();
 });
+
+// Story #616 (row T4 of the #325 sitting), board K-YourKitchen: the open row's sub-line is one quiet 12 px mono sentence-case line, one line at 390 px (the board's 39 characters, v92).
+test("S-616 the open switch's sub-line is 12 px mono in sentence case, one line, the board's words", async ({ page, context }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const net = await setup(context, page);
+  net.state.kitchen = "k-1";
+  await page.goto("/kitchen/");
+  await tab(page, "Today").click();
+  const sub = page.locator(".ui-row-sub").filter({ hasText: /shows "closed"/ });
+  await expect(sub).toHaveText('Till 23:59 · off shows "closed" at once');
+  const look = await sub.evaluate((el) => {
+    const s = getComputedStyle(el), lh = parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.45;
+    return { transform: s.textTransform, size: s.fontSize, lines: Math.round(el.getBoundingClientRect().height / lh) };
+  });
+  expect(look).toMatchObject({ transform: "none", size: "12px" });
+  expect(look.lines).toBe(1);
+});
