@@ -22,7 +22,7 @@ const BP = { orders_day: 30, tickets_hour: 10, missed_day: 1, deliveries_rider_h
 const NUM = { orders_day: 12, tickets_hour: 8, missed_day: 0, deliveries_rider_hour: 4, radius_km: null, pins: 2, on_time_pct: 95, gap_share: 0.25, cash_rider: 6500, refused_pct: 2.5, ios_share: 0.2, lost_week: null, calls_share: 0.1, realtime: null };
 const card = (numbers, extra = {}) => ({ ok: true, status_code: 200, summary: Object.assign({ runs: 0, errors: 0, health_checks: 0, avg_ms: 0, max_ms: 0, cost: 0, decide_cost: 0, decisions: 0, jev_used: 0, jev_agreed: 0, truncated: false, pilot: { numbers, breakpoints: BP } }, extra) });
 const win = { Config: { chat_id: '42' }, 'Prepare window': { until_label: '2026-10-14 22:15', period_label: 'last 24 hours' } };
-const text = (r, named = win) => run('score_message.js', r, named).text;
+const text = (r, named = win) => run('score_message.js', r, { 'Call SUB 91 Scorecard numbers': r, ...named }).text;   // the card reads SUB 91 by node name (story #610)
 
 test('H14 marks: OK below 80% of the line, WATCH from 80% of the line, OVER at the line (higher is worse)', () => {
   const t = text(card(Object.assign({}, NUM, { orders_day: 24, tickets_hour: 10, missed_day: 1 })));

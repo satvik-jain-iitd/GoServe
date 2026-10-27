@@ -89,7 +89,8 @@ test('H15 message: a report ends with the platform block; the day card has none'
   const named = { ...win, 'Call SUB 91 Scorecard numbers': card(), 'Call SUB 91 before': card(), 'Call SUB 94 Health and cost numbers': { ok: true, lines: ['OpenRouter spend: $0.0007 of $2 · OK'] } };
   const t = run('score_message.js', {}, named).text;
   assert.match(t, /\nPlatform health and cost:\nOpenRouter spend: \$0\.0007 of \$2 · OK/);
-  const day = run('score_message.js', card(), { Config: { chat_id: '42' }, 'Prepare window': { until_label: 'x', period_label: 'last 24 hours' } }).text;
+  const day = run('score_message.js', card(), { Config: { chat_id: '42' }, 'Prepare window': { until_label: 'x', period_label: 'last 24 hours' }, 'Call SUB 91 Scorecard numbers': card() }).text;
+  assert.match(day, /^Health checks: /m);   // the card was really built, not the could-not-read line
   assert.ok(!day.includes('Platform health'));
 });
 
