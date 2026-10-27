@@ -181,8 +181,8 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-hero .page { flex: none; width: 100%; scroll-snap-align: start; scroll-margin-top: 16px; }
 .ui-hero .price-pair { display: flex; align-items: baseline; gap: var(--gs-space-2); }
 .ui-hero .price-pair .was { font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); color: var(--gs-text-muted); text-decoration: line-through; }
-.ui-seg { position: absolute; top: 12px; right: 12px; z-index: 1; display: grid; grid-template-columns: 44px 44px; overflow: hidden; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-pill); background: var(--md-surface); }
-.ui-seg a { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; text-decoration: none; color: var(--md-on-surface); }
+.ui-seg { position: absolute; top: 12px; right: 12px; z-index: 1; display: grid; grid-template-columns: 46px 46px; padding: 3px; box-sizing: border-box; overflow: hidden; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-pill); background: var(--md-surface); }
+.ui-seg a { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; border-radius: var(--gs-radius-pill); text-decoration: none; color: var(--md-on-surface); }
 .ui-seg a svg { width: 16px; height: 16px; }
 .ui-seg a.on, .ui-hero:has(#thali-nonveg:target) .ui-seg a.nonveg { background: var(--gs-cream); box-shadow: inset 0 0 0 2px var(--md-primary); }   /* story 528: cream with a ring, so the green and red marks stay readable */
 .ui-hero:has(#thali-nonveg:target) .ui-seg a.on { background: transparent; box-shadow: none; }
