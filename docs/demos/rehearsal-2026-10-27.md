@@ -57,4 +57,4 @@ Why: `mergeOrder` replaced the order when `updated_at` was equal, so a live even
 | 5 the order slip | pass, 0 s | pass, 0 s |
 | 6 to 9 delivered and Yes, I have it | pass, 464 s | pass, 413 s |
 
-"Paid: cash" showed in both. Two passing runs: #324 is closed (reviewer). Delivery took 7 to 8 minutes in these runs, against 14.5 minutes in the first run (the demo kitchens are open all day since 27 Oct 22:43, follow-up F260).
+"Paid: cash" showed in both. Two passing runs: #324 is closed (reviewer). Delivery took 7 to 8 minutes in these runs, against 14.5 minutes in the first run. The cause is not measured (note: the demo kitchens have been open all day since 27 Oct 22:43, follow-up F260).
