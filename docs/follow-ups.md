@@ -227,3 +227,15 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F224 | The bare app address (`goserve-app.pages.dev`) shows a confusing screen. Story #503: design in the Ink artifact first (Day and Night, 390 px), the owner's yes, then code. Night lamp (ID225) and the motion framework wait for the owner's pick of a launch motion. | #503 | open |
 | F225 | New cities need `pin_points` rows. Candidate source: the data.gov.in "All India Pincode directory with latitude and longitude" (one point per post office). Check its licence and that the portal is up before use; some rows have unusable coordinates. | #508 | open |
 | F226 | "Ask for GoServe here" counts demand per pin with no name and no phone. A count can be inflated by repeat taps; the app keeps one ask per device per pin, the server cannot check it. Read the table as a hint, not a measure. | #508 | open |
+| F227 | Run Schemathesis against the deployed dev project once the Edge Functions are deployed there. The contract test today calls the handlers in process, so it cannot see the gateway. | #338 | open |
+| F228 | `Bestsellers` in the menu is a badge on a dish, not a ranking by sales. Rank it from real orders when there are enough. | #343 | open |
+| F229 | Nothing creates add-on groups yet: a kitchen cannot make one. Needs a kitchen-app screen and a write path. | #344 | open |
+| F230 | Quote defaults add no fee and no tax. That is an assumption (A84). The real delivery fee, packaging fee and tax come from the owner into the `quote_rules` params row. | #345 | open |
+| F231 | Rate-limit `waitlist` inserts: one per place per day. Today anyone can add rows. | #342 | open |
+| F232 | `POST /orders`: a retry with a known key must return the existing order before it re-quotes. Today a retry after a sold out dish answers 422 or 409. | #537 | open |
+| F233 | `orders.total_paise` is the item total in v1 and the amount to pay in v2. Decide one meaning, in an ADR, before fees or coupons go live. | #538 | open |
+| F234 | Push outbox: a row taken but never sent is lost. Re-offer after 2 minutes, at most 3 times, then dead-letter with a trace row. | #534 | open |
+| F235 | The health card should show the slowest prod call of the day, so a slow database is seen before a timeout. | #532 | open |
+| F236 | The credential `GoServe n8n API` does not exist in prod n8n, so the daily card says `n8n errors: could not read`. The owner makes it (an n8n API key, type n8nApi). The note has been in `deploy.js` since the 24 Oct promote. | release #535 | open |
+| F237 | Dispatch v2 is the rule only. Jev advice and the `decision_log` row stay in SUB 13. Port them if v2 is to replace SUB 13. | #350 | open |
+| F238 | Addresses are checked for a six digit pin code only. Distance from the kitchen is checked in serviceability, not in quote or orders. | #341 | open |
