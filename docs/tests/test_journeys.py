@@ -28,6 +28,20 @@ class Journeys(unittest.TestCase):
         for r in self.rows:
             self.assertRegex(r[4], r"`[^`]+`|screen|button", r)
 
+    def test_the_owners_swish_capture_fills_step_2_with_a_screen_tier(self):
+        # Story #509: the owner's own phone, 27 Oct 2026 (Tier S for the screen).
+        cap = os.path.join(os.path.dirname(DOC), "captures", "swish-unserviceable-2026-10-27.png")
+        self.assertTrue(os.path.getsize(cap) > 10_000)
+        step2 = next(r for r in self.rows if r[0] == "2")
+        self.assertRegex(step2[2], r"\(S, 0\.\d+")
+        self.assertIn("Coming soon to your neighbourhood", step2[2])
+
+    def test_the_pin_screen_radar_is_recorded(self):
+        radar = open(RADAR, encoding="utf-8").read().split("(story #508", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("scout.py --need", radar)
+        self.assertIn("Nominatim", radar)
+        self.assertIn("Decision:", radar)
+
     def test_gaps_and_how_to_close_them_are_written(self):
         self.assertIn("## Gaps", self.text)
         self.assertIn("## How to close the gaps", self.text)
