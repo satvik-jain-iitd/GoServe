@@ -41,6 +41,10 @@ class OnTimePromise(unittest.TestCase):
         r = run(LATE, f"update orders set status = 'cancelled' where id = '{O}'", final=COUPONS)
         self.assertEqual(r["late"], [], r)
 
+    def test_a_late_order_of_a_city_simulation_kitchen_makes_no_coupon(self):
+        r = run("update kitchens set synthetic = true where id = '00000000-0000-0000-0000-0000000000b1'", *late_walk(), final=COUPONS)
+        self.assertEqual(r["late"], [], r)
+
     def test_a_personal_coupon_is_not_public_and_is_listed_only_for_its_customer(self):
         r = run(*late_walk(), q("coupons_valid_v2()"), q(f"coupons_for_session_v2('{CUST}')"), q(f"coupons_for_session_v2('{OTHER}')"))
         codes = lambda i: [c["code"] for c in r["rs"][i]]

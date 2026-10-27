@@ -29,7 +29,8 @@ language plpgsql security definer set search_path = public as $$
 declare
   v_rules jsonb := on_time_promise_rules();
 begin
-  if new.status = 'delivered' and old.status is distinct from 'delivered' and new.promised_at is not null and now() > new.promised_at then
+  if new.status = 'delivered' and old.status is distinct from 'delivered' and new.promised_at is not null and now() > new.promised_at
+     and not exists (select 1 from kitchens where id = new.kitchen_id and synthetic) then   -- the city simulation's own orders get no coupon
     insert into coupons (code, title, kind, amount_paise, ends_at, max_uses, session_id, order_id)
     values ('LATE-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8)), 'Sorry we were late', 'flat', (v_rules ->> 'late_coupon_paise')::integer,
       now() + make_interval(days => (v_rules ->> 'late_coupon_days')::integer), 1, new.session_id, new.id)
