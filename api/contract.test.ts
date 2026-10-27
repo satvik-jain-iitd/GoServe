@@ -248,3 +248,63 @@ Deno.test("coupons: GET /coupons answers 200 as the contract says and a wrong fi
   const q = await (await quote(new Request("https://x.test/quote", { method: "POST", body: JSON.stringify({ kitchen_id: "7e57ab1e-0000-4000-8000-000000000001", lines: [{ menu_item_id: "7e57ab1e-0000-4000-8000-0000000000d1", qty: 1 }], address: { pin_code: "110016" } }) }))).json();
   assertEquals(q.offers, [{ code: "FLAT50", title: "Rs 50 off", saves_paise: 5000 }]);
 });
+
+Deno.test("rating: POST /orders/{id}/rating answers 200, 400, 401, 404, 409 as the contract says and a wrong field is red", async () => {
+  const { handler } = await import("../supabase/functions/orders/fixture.ts");
+  const post = (id: string, b: unknown, auth = true) => handler(new Request(`https://x.test/orders/${id}/rating`, { method: "POST", headers: auth ? { authorization: "Bearer t" } : {}, body: JSON.stringify(b) }));
+  const O = "7e57ab1e-0000-4000-8000-0000000000f1";
+  const ok = await post(O, { food_score: 5, rider_score: 4, comment: "Hot" });
+  assertEquals(ok.status, 200);
+  await checkAnswer("/orders/{id}/rating", "post", ok);
+  await checkAnswer("/orders/{id}/rating", "post", await post(O, { food_score: 5 }, false));   // 401
+  await checkAnswer("/orders/{id}/rating", "post", await post(O, { food_score: "5" }));   // 400
+  await checkAnswer("/orders/{id}/rating", "post", await post("7e57ab1e-0000-4000-8000-00000000dead", { food_score: 5 }));   // 404
+  await checkAnswer("/orders/{id}/rating", "post", await post("7e57ab1e-0000-4000-8000-0000000000f2", { food_score: 5 }));   // 409
+  const body = await (await post(O, { food_score: 5 })).json();
+  body.score = 5;
+  await assertRejects(() => checkAnswer("/orders/{id}/rating", "post", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
+});
+
+Deno.test("me: GET, PATCH and DELETE /me answer as the contract says and a wrong field is red", async () => {
+  const { handler } = await import("../supabase/functions/me/fixture.ts");
+  const call = (method: string, b?: unknown, auth = true) => handler(new Request("https://x.test/me", { method, headers: auth ? { authorization: "Bearer t" } : {}, body: b === undefined ? undefined : JSON.stringify(b) }));
+  const got = await call("GET");
+  assertEquals(got.status, 200);
+  await checkAnswer("/me", "get", got);
+  await checkAnswer("/me", "get", await call("GET", undefined, false));   // 401
+  const saved = await call("PATCH", { name: "Asha K" });
+  assertEquals(saved.status, 200);
+  await checkAnswer("/me", "patch", saved);
+  await checkAnswer("/me", "patch", await call("PATCH", {}));   // 400
+  await checkAnswer("/me", "patch", await call("PATCH", { name: "Gone" }));   // 410
+  await checkAnswer("/me", "patch", await call("PATCH", { name: "x".repeat(81) }));   // 422
+  const del = await call("DELETE");
+  assertEquals(del.status, 200);
+  await checkAnswer("/me", "delete", del);
+  const body = await (await call("GET")).json();
+  body.profile.phone = "x";   // a phone is not part of the profile
+  await assertRejects(() => checkAnswer("/me", "get", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
+});
+
+Deno.test("staff: /staff/mine, POST /staff and DELETE /staff answer as the contract says and a wrong field is red", async () => {
+  const { handler } = await import("../supabase/functions/staff/fixture.ts");
+  const KB = "7e57ab1e-0000-4000-8000-0000000000b2", U = "7e57ab1e-0000-4000-8000-0000000000c1";
+  const call = (method: string, path: string, b?: unknown, auth = true) => handler(new Request(`https://x.test/staff${path}`, { method, headers: auth ? { authorization: "Bearer t" } : {}, body: b === undefined ? undefined : JSON.stringify(b) }));
+  const mine = await call("GET", "/mine");
+  assertEquals(mine.status, 200);
+  await checkAnswer("/staff/mine", "get", mine);
+  await checkAnswer("/staff/mine", "get", await call("GET", "/mine", undefined, false));   // 401
+  const added = await call("POST", "", { kitchen_id: KB, user_id: U, role: "staff" });
+  assertEquals(added.status, 200);
+  await checkAnswer("/staff", "post", added);
+  await checkAnswer("/staff", "post", await call("POST", "", { kitchen_id: "x", user_id: U, role: "staff" }));   // 400
+  await checkAnswer("/staff", "post", await call("POST", "", { kitchen_id: "7e57ab1e-0000-4000-8000-0000000000f0", user_id: U, role: "staff" }));   // 403
+  await checkAnswer("/staff", "post", await call("POST", "", { kitchen_id: "7e57ab1e-0000-4000-8000-00000000dead", user_id: U, role: "staff" }));   // 404
+  await checkAnswer("/staff", "post", await call("POST", "", { kitchen_id: KB, user_id: U, role: "boss" }));   // 422
+  const removed = await call("DELETE", "", { kitchen_id: KB, user_id: U });
+  assertEquals(removed.status, 200);
+  await checkAnswer("/staff", "delete", removed);
+  const body = await (await call("GET", "/mine")).json();
+  body.kitchens[0].phone = "x";
+  await assertRejects(() => checkAnswer("/staff/mine", "get", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
+});

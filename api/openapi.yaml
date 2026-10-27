@@ -597,6 +597,323 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /orders/{id}/rating:
+    post:
+      operationId: postOrderRating
+      summary: The customer rates the food and the rider of a delivered order
+      description: "One rating per order, from the customer who placed it, once it is delivered. Scores are whole numbers 1 to 5. The rider score is optional and refused (no_rider) for an order that had no rider. Same function as POST /orders."
+      x-handler: ../supabase/functions/orders/index.ts
+      x-contract-handler: ../supabase/functions/orders/fixture.ts
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [food_score]
+              properties:
+                food_score: { type: integer, minimum: 1, maximum: 5 }
+                rider_score: { type: [integer, "null"], minimum: 1, maximum: 5 }
+                comment: { type: [string, "null"], maxLength: 500 }
+      responses:
+        "200":
+          description: The rating is stored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RatingStored"
+        "400":
+          description: The request is malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: There is no login.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: The order was not found (also for an order that is not the caller's).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "409":
+          description: The order is not delivered yet (not_delivered) or was already rated (already_rated).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "422":
+          description: A score is not 1 to 5 (invalid_score), the note is too long (invalid_comment) or the order had no rider (no_rider).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /me:
+    get:
+      operationId: getMe
+      summary: The caller's own name and email
+      description: "Read from the bearer token; nobody can name another user. A customer who has set nothing gets null for both."
+      x-handler: ../supabase/functions/me/index.ts
+      x-contract-handler: ../supabase/functions/me/fixture.ts
+      responses:
+        "200":
+          description: The profile.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyProfile"
+        "401":
+          description: There is no login.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "410":
+          description: The account was deleted (account_deleted).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      operationId: patchMe
+      summary: Change the caller's name or email
+      description: "Send the fields to change. A field left out stays; an empty string clears it. At least one field."
+      x-handler: ../supabase/functions/me/index.ts
+      x-contract-handler: ../supabase/functions/me/fixture.ts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              minProperties: 1
+              properties:
+                name: { type: string, maxLength: 80 }
+                email: { type: string, maxLength: 254 }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyProfileSaved"
+        "400":
+          description: The request is malformed (not text fields, or none).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: There is no login.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "410":
+          description: The account was deleted (account_deleted).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "422":
+          description: A bad name (invalid_name) or email (invalid_email).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteMe
+      summary: Delete the caller's account
+      description: "A soft delete at once: the profile is hidden and emptied and the pings stop. A job later removes the personal rows, blanks the name, phone and address on their orders and deletes the login."
+      x-handler: ../supabase/functions/me/index.ts
+      x-contract-handler: ../supabase/functions/me/fixture.ts
+      responses:
+        "200":
+          description: The account is soft-deleted (a second delete answers the same).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyProfileSaved"
+        "401":
+          description: There is no login.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /staff/mine:
+    get:
+      operationId: getStaffMine
+      summary: The kitchens the caller belongs to, with their role in each
+      description: "One person can own one kitchen and work in another. The old role kitchen reads as staff. Read from the bearer token."
+      x-handler: ../supabase/functions/staff/index.ts
+      x-contract-handler: ../supabase/functions/staff/fixture.ts
+      responses:
+        "200":
+          description: The kitchens, possibly none.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyKitchens"
+        "401":
+          description: There is no login.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /staff:
+    post:
+      operationId: postStaff
+      summary: An admin adds one person to one kitchen
+      description: "Adds one membership and touches no other. Adding the same one again changes the role. Admin only."
+      x-handler: ../supabase/functions/staff/index.ts
+      x-contract-handler: ../supabase/functions/staff/fixture.ts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [kitchen_id, user_id, role]
+              properties:
+                kitchen_id: { type: string, format: uuid }
+                user_id: { type: string, format: uuid }
+                role: { enum: [owner, staff] }
+      responses:
+        "200":
+          description: The membership exists.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffChanged"
+        "400":
+          description: The request is malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: There is no login.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "403":
+          description: The caller is not an admin (not_allowed).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "404":
+          description: The kitchen or the person is not there (kitchen_not_found, user_not_found).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "422":
+          description: The role is not owner or staff (invalid_role).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteStaff
+      summary: An admin removes one person from one kitchen
+      description: "Removes this one membership and no other. Admin only."
+      x-handler: ../supabase/functions/staff/index.ts
+      x-contract-handler: ../supabase/functions/staff/fixture.ts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [kitchen_id, user_id]
+              properties:
+                kitchen_id: { type: string, format: uuid }
+                user_id: { type: string, format: uuid }
+      responses:
+        "200":
+          description: The membership is gone.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffChanged"
+        "400":
+          description: The request is malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: There is no login.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "403":
+          description: The caller is not an admin (not_allowed).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "404":
+          description: The person does not work in this kitchen (membership_not_found).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /otp/claim:
     post:
       operationId: postOtpClaim
@@ -945,6 +1262,13 @@ components:
         ok:
           const: true
         order_id: { type: string }
+    RatingStored:
+      type: object
+      additionalProperties: false
+      required: [ok]
+      properties:
+        ok:
+          const: true
     SwitchedToCash:
       type: object
       additionalProperties: false
@@ -991,6 +1315,51 @@ components:
               cap_paise: { type: integer, minimum: 0 }
               min_order_paise: { type: integer, minimum: 0 }
               first_order_only: { type: boolean }
+    MyProfile:
+      type: object
+      additionalProperties: false
+      required: [ok, profile]
+      properties:
+        ok:
+          const: true
+        profile:
+          type: object
+          additionalProperties: false
+          required: [name, email]
+          properties:
+            name: { type: [string, "null"] }
+            email: { type: [string, "null"] }
+    MyProfileSaved:
+      type: object
+      additionalProperties: false
+      required: [ok]
+      properties:
+        ok:
+          const: true
+    MyKitchens:
+      type: object
+      additionalProperties: false
+      required: [ok, kitchens]
+      properties:
+        ok:
+          const: true
+        kitchens:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [kitchen_id, name, role]
+            properties:
+              kitchen_id: { type: string, format: uuid }
+              name: { type: string }
+              role: { enum: [owner, staff] }
+    StaffChanged:
+      type: object
+      additionalProperties: false
+      required: [ok]
+      properties:
+        ok:
+          const: true
     Dish:
       type: object
       additionalProperties: false
