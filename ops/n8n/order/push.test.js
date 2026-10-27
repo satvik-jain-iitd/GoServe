@@ -6,7 +6,7 @@ const path = require('path');
 const { build } = require('./build');
 const { checkLayout } = require('../lib/layout_checks');
 
-const IDS = { main01: 'MAIN1', sub11: 'SUB11', sub12: 'SUB12', sub13: 'SUB13', sub19: 'SUB19', sub20: 'SUB20', sub21: 'SUB21', sub22: 'SUB22', alert: 'ALERT1' };
+const IDS = { main01: 'MAIN1', main34: 'MAIN34', sub11: 'SUB11', sub12: 'SUB12', sub13: 'SUB13', sub19: 'SUB19', sub20: 'SUB20', sub21: 'SUB21', sub22: 'SUB22', alert: 'ALERT1' };
 const wf = build({ ids: IDS, vapidPublicKey: 'PUBKEY', vapidSubject: 'mailto:ops@example.com' });
 const src = (file) => fs.readFileSync(path.join(__dirname, 'code', file), 'utf8');
 const run = (file, json, nodes = {}) => new Function('$input', '$', 'Date', src(file))({ first: () => ({ json }), all: () => (Array.isArray(json) ? json.map((j) => ({ json: j })) : [{ json }]) },
@@ -74,7 +74,7 @@ test('wiring: SUB 20 reads targets, signs and sends one push per subscription, a
   assert.deepEqual(next(w, 'Targets?', 0), ['Expand']);
   assert.deepEqual(next(w, 'Expand'), ['Sign VAPID']);
   assert.deepEqual(next(w, 'Sign VAPID'), ['Send push']);
-  assert.deepEqual(next(w, 'Send push'), ['Clean']);
+  assert.deepEqual(next(w, 'Send push').sort(), ['Clean', 'Trace push']);   // #484: the trace line is a second branch
   assert.deepEqual(next(w, 'Clean'), ['Forget']);
   assert.equal(byName(w, 'Sign VAPID').type, 'n8n-nodes-base.jwt');
   assert.equal(byName(w, 'Sign VAPID').credentials.jwtAuth.name, 'GoServe VAPID');
@@ -89,23 +89,12 @@ test('wiring: SUB 20 reads targets, signs and sends one push per subscription, a
   assert.equal(w.settings.errorWorkflow, 'ALERT1');
 });
 
-test('wiring: MAIN 01 pushes after it has answered, only for a new placed order, ready or delivered', () => {
-  assert.deepEqual(next(wf.main01, 'Respond result').sort(), ['Log run', 'Push?', 'Ready?']);
-  assert.deepEqual(next(wf.main01, 'Push?', 0), ['Call SUB 20 Push']);
-  assert.equal(byName(wf.main01, 'Call SUB 20 Push').parameters.workflowId.value, 'SUB20');
-  const cond = byName(wf.main01, 'Push?').parameters.conditions.conditions[0].leftValue;
-  assert.match(cond, /already_done/);
-  assert.match(cond, /created/);
-  assert.equal(byName(wf.main01, 'Call SUB 20 Push').parameters.options.waitForSubWorkflow, false);   // the answer is out; a slow push service never holds a run
-  assert.ok(wf.main01.nodes.filter((n) => n.type !== 'n8n-nodes-base.stickyNote').length <= 24);
-});
-
-test('safety: SUB 20 accepts calls only from MAIN 01; the private key is never in the build', () => {
+test('safety: SUB 20 accepts calls only from MAIN 34 (the drain); the private key is never in the build', () => {
   assert.equal(wf.sub20.settings.callerPolicy, 'workflowsFromAList');
-  assert.equal(wf.sub20.settings.callerIds, 'MAIN1');
+  assert.equal(wf.sub20.settings.callerIds, 'MAIN34');
   const all = JSON.stringify(wf);
   assert.ok(!/BEGIN (EC )?PRIVATE KEY/.test(all));
-  assert.equal(byName(wf.main01, 'Config').parameters.assignments.assignments.find((a) => a.name === 'vapid_public_key').value, 'PUBKEY');
+  assert.equal(byName(wf.main34, 'Config').parameters.assignments.assignments.find((a) => a.name === 'vapid_public_key').value, 'PUBKEY');
 });
 
 test('names and layout', () => {
@@ -121,4 +110,44 @@ test('deploy: SUB 20 is deployed before MAIN 01 and its credential is looked up,
   const deploySrc = fs.readFileSync(path.join(__dirname, 'deploy.js'), 'utf8');
   assert.match(deploySrc, /GoServe VAPID/);
   assert.ok(!/POST', '\/credentials/.test(deploySrc), 'the script must not create credentials');
+});
+
+// Story #484: every push send leaves a line in order_trace, so "what did the push service answer" is never a guess.
+const ORDER_ID = '0f0f0f0f-0000-4000-8000-000000000001';
+
+test('T1 guard passes the order id on, so the trace line belongs to the order', () => {
+  const good = { kill_switch: false, supabase_url: 'u', session_id: SESSION, order_id: ORDER_ID, status: 'ready', vapid_public_key: 'PUB', vapid_subject: 'mailto:a@b.c' };
+  assert.equal(run('guard_push.js', good).order_id, ORDER_ID);
+  assert.equal(run('guard_push.js', { ...good, order_id: undefined }).order_id, null);   // an old caller still works; the line just has no order
+});
+
+test('T2 trace row: one line per push with the push host and the HTTP status, never the full address or a key', () => {
+  const sent = [{ statusCode: 201, body: '' }, { statusCode: 403, body: { reason: 'BadJwtToken' } }, { statusCode: undefined, body: undefined }];
+  const expanded = [1, 2, 3].map((n) => ({ endpoint: 'https://web.push.apple.com/SECRET' + n, vapid_public_key: 'PUBKEY' }));
+  const out = runAll('push_trace.js', sent, { Guard: { supabase_url: 'u', order_id: ORDER_ID, status: 'ready' }, Expand: expanded });
+  assert.equal(out.length, 1);
+  assert.equal(out[0].supabase_url, 'u');
+  const rows = out[0].rpc_body;
+  assert.deepEqual(rows.map((r) => [r.actor, r.event, r.result, r.order_id]), [['n8n', 'push_sent', '201', ORDER_ID], ['n8n', 'push_sent', '403', ORDER_ID], ['n8n', 'push_sent', 'none', ORDER_ID]]);
+  assert.equal(rows[1].detail.host, 'web.push.apple.com');
+  assert.match(rows[1].detail.text, /BadJwtToken/);
+  assert.match(rows[0].detail.text, /^ready/);   // the status that was pushed
+  assert.ok(!/SECRET|PUBKEY/.test(JSON.stringify(rows)));
+});
+
+test('T3 no subscription is a line too', () => {
+  const out = run('push_trace_none.js', { statusCode: 200, body: { targets: [] } }, { Guard: { supabase_url: 'u', order_id: ORDER_ID, status: 'placed' } });
+  assert.deepEqual(out.rpc_body.map((r) => [r.actor, r.event, r.result, r.order_id]), [['n8n', 'push_skipped', 'no_subscription', ORDER_ID]]);
+});
+
+test('T4 wiring: both traces end in one write node that posts to order_trace; the push itself does not wait for it', () => {
+  const w = wf.sub20;
+  assert.deepEqual(next(w, 'Send push').sort(), ['Clean', 'Trace push']);
+  assert.deepEqual(next(w, 'Targets?', 1), ['Trace none']);
+  assert.deepEqual(next(w, 'Trace push'), ['Write trace']);
+  assert.deepEqual(next(w, 'Trace none'), ['Write trace']);
+  assert.equal(byName(w, 'Write trace').parameters.url, '={{ $json.supabase_url }}/rest/v1/order_trace');
+  assert.equal(byName(w, 'Write trace').parameters.jsonBody, '={{ $json.rpc_body }}');
+  assert.equal(byName(wf.main34, 'Call SUB 20 Push').parameters.workflowInputs.value.order_id, '={{ $json.order_id }}');
+  assert.deepEqual(checkLayout(w, w.sections), []);
 });
