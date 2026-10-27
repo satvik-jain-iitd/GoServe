@@ -69,14 +69,14 @@ test("S4 with no rider yet there is no rider card", async ({ page, context }) =>
   await expect(page.getByTestId("rider-card")).toHaveCount(0);
 });
 
-test("S5 My orders: Order again puts the same dishes in the cart", async ({ page, context }) => {
+test("S5 My orders: See the menu opens the menu with an empty cart", async ({ page, context }) => {
   await setup(context, page, [{ ...order("delivered", "2020-01-01T11:00:00Z"), paid_by: "cash" }]);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "My orders" }).click();
   await page.getByRole("button", { name: /Butter Chicken/ }).click();   // the slip opens as the delivered screen
-  await page.getByRole("button", { name: "Order again" }).click();
-  await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
-  await expect(page.getByText("2 × Butter Chicken")).toBeVisible();
+  await page.getByRole("button", { name: "See the menu" }).click();
+  await expect(page.getByRole("heading", { name: "Your bill" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Place order|View cart|Your bill/ })).toHaveCount(0);   // an empty cart shows no cart bar
 });
 
 test("S5 an empty My orders says so and points back to the menu", async ({ page, context }) => {
