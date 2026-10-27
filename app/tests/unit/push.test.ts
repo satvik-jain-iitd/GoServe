@@ -1,6 +1,6 @@
 // Story A7 (#154): web push. The phone subscribes once; the service worker asks the database what to say; the server only sends a "tickle" with no text.
 import { describe, expect, it, vi } from "vitest";
-import { enablePush, subscriptionPayload, urlBase64ToUint8Array } from "../../src/lib/push";
+import { enablePush, subscriptionPayload, urlBase64ToUint8Array, watchSession } from "../../src/lib/push";
 import { pushWorkerSource } from "../../src/pwa-push";
 
 describe("urlBase64ToUint8Array", () => {
@@ -42,6 +42,29 @@ describe("enablePush", () => {
   });
   it("says failed, not on, when the save fails", async () => {
     expect(await enablePush(deps({ save: vi.fn().mockResolvedValue("boom") }))).toBe("failed");
+  });
+});
+
+// Story #613: sign out and sign in give the phone a new session id; the push subscription must follow it, or no push is queued for the new session's orders.
+describe("watchSession", () => {
+  const feed = () => { let cb: (id: string | null) => void = () => {}; return { subscribe: (f: (id: string | null) => void) => { cb = f; return () => {}; }, send: (id: string | null) => cb(id) }; };
+  it("re-registers when the first session appears and when the session id changes, not when it stays the same", () => {
+    const f = feed(), resync = vi.fn();
+    watchSession(f.subscribe, resync);
+    f.send("s1"); f.send("s1"); f.send("s2"); f.send("s2");
+    expect(resync).toHaveBeenCalledTimes(2);
+  });
+  it("does nothing on a sign out (no session), and registers again for the next one", () => {
+    const f = feed(), resync = vi.fn();
+    watchSession(f.subscribe, resync);
+    f.send("s1"); f.send(null);
+    expect(resync).toHaveBeenCalledTimes(1);
+    f.send("s2");
+    expect(resync).toHaveBeenCalledTimes(2);
+  });
+  it("hands back the unsubscribe of the feed", () => {
+    const off = vi.fn();
+    expect(watchSession(() => off, vi.fn())).toBe(off);
   });
 });
 
