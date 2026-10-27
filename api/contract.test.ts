@@ -235,3 +235,16 @@ Deno.test("payments: switch-to-cash answers 200, 401, 404, 409 as the contract s
   body.token = "x";
   await assertRejects(() => checkAnswer("/payments/switch-to-cash", "post", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
 });
+
+Deno.test("coupons: GET /coupons answers 200 as the contract says and a wrong field is red; the quote carries its offers", async () => {
+  const { handler } = await import("../supabase/functions/coupons/fixture.ts");
+  const ok = await handler(new Request("https://x.test/coupons"));
+  assertEquals(ok.status, 200);
+  await checkAnswer("/coupons", "get", ok);
+  const body = await (await handler(new Request("https://x.test/coupons"))).json();
+  body.coupons[0].secret = "x";
+  await assertRejects(() => checkAnswer("/coupons", "get", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
+  const { handler: quote } = await import("../supabase/functions/quote/fixture.ts");
+  const q = await (await quote(new Request("https://x.test/quote", { method: "POST", body: JSON.stringify({ kitchen_id: "7e57ab1e-0000-4000-8000-000000000001", lines: [{ menu_item_id: "7e57ab1e-0000-4000-8000-0000000000d1", qty: 1 }], address: { pin_code: "110016" } }) }))).json();
+  assertEquals(q.offers, [{ code: "FLAT50", title: "Rs 50 off", saves_paise: 5000 }]);
+});

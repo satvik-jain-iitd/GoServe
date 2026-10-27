@@ -3,10 +3,12 @@
 import { quote, DEFAULT_RULES, MAX_QTY, type Catalog, type Coupon, type Rules } from "./quote.ts";
 import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
 
+export type Offer = { code: string; title: string; saves_paise: number };
 export type Deps = {
   catalog: (kitchenId: string, menuItemIds: string[], optionIds: string[]) => Promise<Catalog>;
   rules: (kitchenId: string) => Promise<Rules>;
   coupon: (code: string) => Promise<Coupon | null>;
+  coupons: () => Promise<Coupon[]>;   // story #346: every coupon valid now (the database decides)
   validate: (menuItemId: string, optionIds: string[]) => Promise<{ ok: true } | { ok: false; error: string; message: string }>;
   firstOrder: (kitchenId: string) => Promise<boolean>;
 };
@@ -30,16 +32,28 @@ export function parse(b: any): { kitchen: string; lines: Line[]; code: string | 
 }
 
 // The quote itself, shared with POST /orders (#347): one way to price a cart. Throws when a data source fails.
-export async function runQuote(deps: Deps, q: { kitchen: string; lines: Line[]; code: string | null }): Promise<ReturnType<typeof quote> | { ok: false; error: string; message: string }> {
+export async function runQuote(deps: Deps, q: { kitchen: string; lines: Line[]; code: string | null }): Promise<(Extract<ReturnType<typeof quote>, { ok: true }> & { offers: Offer[] }) | { ok: false; error: string; message: string }> {
   const catalog = await deps.catalog(q.kitchen, q.lines.map((l) => l.menu_item_id), q.lines.flatMap((l) => l.option_ids));
   const checks = new Map<string, Awaited<ReturnType<Deps["validate"]>>>();
   for (const l of q.lines) if (catalog.dishes[l.menu_item_id] && l.option_ids.every((o) => catalog.options[o])) checks.set(l.menu_item_id + l.option_ids.join(), await deps.validate(l.menu_item_id, l.option_ids));
-  const coupon = q.code ? await deps.coupon(q.code) : null;
-  if (q.code && !coupon) return { ok: false, error: "coupon_invalid", message: `${q.code} is not a valid code.` };
-  const first = coupon?.first_order_only ? await deps.firstOrder(q.kitchen) : false;
+  const typed = q.code ? await deps.coupon(q.code) : null;
+  if (q.code && !typed) return { ok: false, error: "coupon_invalid", message: `${q.code} is not a valid code.` };
   // A pick for an option the catalog does not know is refused by the same code the database function uses.
   const validate = (id: string, opts: string[]) => checks.get(id + opts.join()) ?? { ok: false as const, error: "unknown_option", message: "This option is not on this dish." };
-  return quote({ lines: q.lines, first_order: first }, catalog, await deps.rules(q.kitchen), coupon, validate);
+  const rules = await deps.rules(q.kitchen);
+  // Story #346: try every valid coupon on this cart. The ones that apply are the offers; the best saving is applied (a tie: the smaller code), unless the customer typed a code.
+  const list = await deps.coupons();
+  const first = list.some((c) => c.first_order_only) || typed?.first_order_only ? await deps.firstOrder(q.kitchen) : false;
+  const input = { lines: q.lines, first_order: first };
+  const offers: Offer[] = [];
+  for (const c of list) {
+    const r = quote(input, catalog, rules, c, validate);
+    if (r.ok && r.discount_paise > 0) offers.push({ code: c.code, title: c.title, saves_paise: r.discount_paise });
+  }
+  offers.sort((a, b) => b.saves_paise - a.saves_paise || (a.code < b.code ? -1 : 1));
+  const chosen = typed ?? list.find((c) => c.code === offers[0]?.code) ?? null;
+  const out = quote(input, catalog, rules, chosen, validate);
+  return out.ok ? { ...out, offers } : out;
 }
 
 export const makeHandler = (deps: Deps) => async (req: Request): Promise<Response> => {
@@ -57,13 +71,19 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
 };
 
 // The real data sources: PostgREST with the project's own URL. Catalog and rpc use the caller-level anon key (menu_items and options are public to read).
-// ponytail: no customer identity until phone login (#339), so first_order is false and a first-order coupon is refused; coupons table is #346, so every code is unknown.
+// ponytail: no customer identity until phone login (#339), so first_order is false and a first-order coupon is refused.  Coupons (#346) come from the database with the service key.
 const url = () => Deno.env.get("SUPABASE_URL")!;
 const headers = (key: string) => ({ apikey: key, authorization: `Bearer ${key}`, "content-type": "application/json" });
 const anon = () => headers(Deno.env.get("SUPABASE_ANON_KEY")!);
 const get = async (path: string, h: Record<string, string>) => {
   const res = await fetch(`${url()}/rest/v1/${path}`, { headers: h });
   if (!res.ok) throw new Error("read failed");
+  return await res.json();
+};
+const rpc = async (fn: string, body: Record<string, unknown>) => {   // the coupon functions are for the service role only
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const res = await fetch(`${url()}/rest/v1/rpc/${fn}`, { method: "POST", headers: headers(key), body: JSON.stringify(body) });
+  if (!res.ok) throw new Error("rpc failed");
   return await res.json();
 };
 export const live: Deps = {
@@ -82,7 +102,8 @@ export const live: Deps = {
     const rows = await get(`params?select=value&kitchen_id=eq.${kitchenId}&session_id=eq.global&key=eq.quote_rules&order=version.desc&limit=1`, headers(key));
     return rows.length ? { ...DEFAULT_RULES, ...rows[0].value } : DEFAULT_RULES;
   },
-  coupon: async () => null,
+  coupon: async (code) => (await rpc("coupon_by_code_v2", { p_code: code })) as Coupon | null,
+  coupons: async () => (await rpc("coupons_valid_v2", {})) as Coupon[],
   firstOrder: async () => false,
 };
 export const handler = withRunLog("quote", makeHandler(live), writeRunLog);   // story #356: one run_log row per call
