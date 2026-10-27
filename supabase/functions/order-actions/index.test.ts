@@ -58,3 +58,17 @@ Deno.test("anything but POST is 405", async () => {
   const res = await post(makeHandler(deps()), null, { method: "GET" });
   assertEquals([res.status, res.headers.get("allow")], [405, "POST"]);
 });
+
+Deno.test("cancel: after a successful cancel the refund step runs once, and a failing refund never fails the cancel (#348)", async () => {
+  const refunded: string[] = [];
+  const ok = makeHandler({ ...deps(), refundAfterCancel: async (id) => { refunded.push(id); } });
+  assertEquals((await post(ok, { order_id: O, action: "cancel", reason: "x" })).status, 200);
+  assertEquals(refunded, [O]);
+  await post(ok, { order_id: O, action: "accept" });
+  assertEquals(refunded.length, 1);   // only a cancel refunds
+  const broken = makeHandler({ ...deps(), refundAfterCancel: () => Promise.reject(new Error("gateway down")) });
+  assertEquals((await post(broken, { order_id: O, action: "cancel", reason: "x" })).status, 200);
+  const refused = makeHandler({ ...deps(async () => ({ ok: false, error: "cannot_cancel", message: "m" })), refundAfterCancel: async (id) => { refunded.push(id); } });
+  assertEquals((await post(refused, { order_id: O, action: "cancel", reason: "x" })).status, 409);
+  assertEquals(refunded.length, 1);   // a refused cancel refunds nothing
+});
