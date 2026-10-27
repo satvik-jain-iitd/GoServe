@@ -1,14 +1,14 @@
 name: Backend
 
-# Story #337 (E27). Backend v2 lives in supabase/ on the staging branch. Every pull request that touches it runs the Deno tests; a push to staging
+# Story #337 (E27). Backend v2 lives in supabase/ (functions) and api/ (the OpenAPI contract) on the staging branch. Every pull request that touches them runs the Deno tests, among them the contract test (story #338: a wrong field is red); a push to staging
 # deploys the functions to the DEV project (goserve-dev) and checks that health answers. Prod is the owner's step, never a CI job.
 # The token is the repository secret SUPABASE_ACCESS_TOKEN (the owner adds the value). Without it the deploy job stops with a clear message.
 on:
   pull_request:
-    paths: ["supabase/**", ".github/workflows/backend.yml"]
+    paths: ["supabase/**", "api/**", ".github/workflows/backend.yml"]
   push:
     branches: [staging]
-    paths: ["supabase/**", ".github/workflows/backend.yml"]
+    paths: ["supabase/**", "api/**", ".github/workflows/backend.yml"]
   workflow_dispatch:
 
 permissions:
@@ -19,15 +19,15 @@ env:
 
 jobs:
   test:
-    name: Functions (deno test)
+    name: Functions and contract (deno test)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - name: Test every function
-        run: deno test supabase/functions
+      - name: Test every function and the contract
+        run: deno test --allow-read api supabase/functions
 
   deploy:
     name: Deploy to dev and check health
