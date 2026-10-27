@@ -1,4 +1,4 @@
-// Story #348: POST /payments/create and POST /payments/webhook. TEST DOUBLE: the gateway is FakeGateway until the owner's Razorpay KYC click (docs/product/founder-checklist.md).
+// Story #348: POST /payments/create and POST /payments/webhook; story #565: POST /payments/switch-to-cash (the customer pays cash instead). TEST DOUBLE: the gateway is FakeGateway until the owner's Razorpay KYC click (docs/product/founder-checklist.md).
 // create: whose order and how much come from the database; the gateway is asked for THAT amount; the payment is stored; the order becomes online and waits for the payment.
 // webhook: HMAC-SHA256 over `provider_order_id|provider_payment_id` with our own secret (the Razorpay shape, PAYMENTS_WEBHOOK_SECRET). A bad signature is 400 and writes nothing.
 import { gatewayFromEnv, type Gateway } from "../_shared/gateway.ts";
@@ -11,6 +11,7 @@ export type Deps = {
   prepare: (order: string, session: string) => Promise<{ ok: true; amount_paise: number; existing: string | null } | Refusal>;
   store: (order: string, session: string, provider: string, providerOrderId: string) => Promise<{ ok: true } | Refusal>;
   markPaid: (provider: string, providerOrderId: string, providerPaymentId: string) => Promise<{ ok: true; order_id: string; already_paid?: boolean } | Refusal>;
+  switchCash: (order: string, session: string) => Promise<{ ok: true } | Refusal>;
   secret: () => string;
 };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -34,7 +35,7 @@ const same = (a: string, b: string) => {
 export const makeHandler = (deps: Deps) => async (req: Request): Promise<Response> => {
   if (req.method !== "POST") return new Response(null, { status: 405, headers: { allow: "POST" } });
   const route = new URL(req.url).pathname.split("/").pop();
-  if (route !== "create" && route !== "webhook") return json(404, { ok: false, error: "not_found" });
+  if (route !== "create" && route !== "webhook" && route !== "switch-to-cash") return json(404, { ok: false, error: "not_found" });
   let b: any;
   try { b = await req.json(); } catch { return json(400, { ok: false, error: "invalid_request" }); }
   try {
@@ -50,6 +51,10 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
     const session = await deps.session(req);
     if (!session) return json(401, { ok: false, error: "unauthorized", message: "Sign in first." });
     if (!UUID.test(b?.order_id)) return json(400, { ok: false, error: "invalid_request" });
+    if (route === "switch-to-cash") {
+      const done = await deps.switchCash(b.order_id, session);
+      return done.ok ? json(200, { ok: true }) : refuse(done);
+    }
     const prep = await deps.prepare(b.order_id, session);
     if (!prep.ok) return refuse(prep);
     if (prep.existing) return json(200, { ok: true, provider: deps.gateway.provider, provider_order_id: prep.existing, amount_paise: prep.amount_paise, currency: "INR" });
@@ -81,6 +86,7 @@ const live = async (): Promise<Deps> => ({
   prepare: (order, session) => rpc("payment_prepare_v2", { p_order: order, p_session: session }),
   store: (order, session, provider, providerOrderId) => rpc("payment_create_v2", { p_order: order, p_session: session, p_provider: provider, p_provider_order_id: providerOrderId }),
   markPaid: (provider, providerOrderId, providerPaymentId) => rpc("payment_paid_v2", { p_provider: provider, p_provider_order_id: providerOrderId, p_provider_payment_id: providerPaymentId }),
+  switchCash: (order, session) => rpc("payment_switch_to_cash_v2", { p_order: order, p_session: session }),
   secret: () => Deno.env.get("PAYMENTS_WEBHOOK_SECRET") ?? "",
 });
 export const handler = withRunLog("payments", async (req) => makeHandler(await live())(req), writeRunLog);   // story #356: one run_log row per call

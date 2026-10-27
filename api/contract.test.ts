@@ -219,3 +219,19 @@ Deno.test("push: register and notify answer 200, 400, 401, 404 as the contract s
   body.token = "x";   // a device token must never be a field of the answer
   await assertRejects(() => checkAnswer("/push/notify", "post", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
 });
+
+Deno.test("payments: switch-to-cash answers 200, 401, 404, 409 as the contract says and a wrong field is red", async () => {
+  const { handler } = await import("../supabase/functions/payments/fixture.ts");
+  const post = (b: unknown, auth = true) => handler(new Request("https://x.test/payments/switch-to-cash", { method: "POST", headers: auth ? { authorization: "Bearer t" } : {}, body: JSON.stringify(b) }));
+  const O = "7e57ab1e-0000-4000-8000-0000000000f1";
+  const ok = await post({ order_id: O });
+  assertEquals(ok.status, 200);
+  await checkAnswer("/payments/switch-to-cash", "post", ok);
+  await checkAnswer("/payments/switch-to-cash", "post", await post({ order_id: O }, false));   // 401
+  await checkAnswer("/payments/switch-to-cash", "post", await post({ order_id: "7e57ab1e-0000-4000-8000-00000000dead" }));   // 404
+  await checkAnswer("/payments/switch-to-cash", "post", await post({ order_id: "7e57ab1e-0000-4000-8000-0000000000f9" }));   // 409
+  await checkAnswer("/payments/switch-to-cash", "post", await post({ order_id: "x" }));   // 400
+  const body = await (await post({ order_id: O })).json();
+  body.token = "x";
+  await assertRejects(() => checkAnswer("/payments/switch-to-cash", "post", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
+});

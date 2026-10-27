@@ -9,5 +9,6 @@ export const handler = makeHandler({
   prepare: async (order) => (order.endsWith("dead") ? { ok: false, error: "order_not_found", message: "This order was not found." } : { ok: true, amount_paise: 28000, existing: null }),
   store: async () => ({ ok: true }),
   markPaid: async (_p, orderId) => (orderId === "unknown" ? { ok: false, error: "payment_not_found", message: "No such payment." } : { ok: true, order_id: "7e57ab1e-0000-4000-8000-0000000000f1" }),
+  switchCash: async (order) => (order.endsWith("dead") ? { ok: false, error: "order_not_found", message: "This order was not found." } : order.endsWith("f9") ? { ok: false, error: "already_paid", message: "This order is already paid." } : { ok: true }),
   secret: () => CONTRACT_SECRET,
 });
