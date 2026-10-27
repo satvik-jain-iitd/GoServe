@@ -29,6 +29,8 @@ import { openOrderToResume } from "./lib/resume";
 import { SignIn } from "./screens/SignIn";
 import { NameSheet, OtpSheet } from "./screens/OtpSheet";
 import { otpGateOn } from "./lib/otpGate";
+import { createPayment, switchToCash, simulatePaid, type PayMethod } from "./lib/payments";
+import { openGateway } from "./lib/payGateway";
 import { AdminScreen } from "./screens/AdminScreen";
 import { loadDraft, saveDraft } from "./lib/draft";
 import { PlacedScreen } from "./screens/PlacedScreen";
@@ -68,6 +70,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [nameAsked, setNameAsked] = useState(false);
   const [pendingPlace, setPendingPlace] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  // Story #552: how you pay. cod = today's cash order. UPI or Card: the order is placed, then Pay now makes the payment (the state machine lives here).
+  const [payMethod, setPayMethod] = useState<PayMethod>("cod");
+  const [payState, setPayState] = useState<"ready" | "starting" | "waiting" | "failed" | null>(null);
+  const [payError, setPayError] = useState<string | null>(null);
+  const [payStart, setPayStart] = useState<string | null>(null);
+  const payRef = useRef("");
   useEffect(() => {
     if (lock === "customer") saveDraft({ step: step === "account" ? "menu" : step, cart, address, name, phone });
   }, [lock, step, cart, address, name, phone]);
@@ -138,6 +146,32 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }, [orders, placed]);
 
   const tracked = placed ? orders.find((o) => o.id === placed.id) ?? { status: placed.status, created_at: placedAt, updated_at: placed.updated_at, paid_by: placed.paid_by ?? null } : null;
+  // Story #552: paid when the order row says so; a waiting payment that the database moved back to cash (it expired) is failed; a refresh of an online order waits without a clock.
+  const trackedPay = tracked as { payment_method?: string | null; paid_at?: string | null } | null;
+  const paidNow = !!trackedPay?.paid_at;
+  const resumedOnline = payState === null && trackedPay?.payment_method === "online" && !paidNow;
+  useEffect(() => {
+    if (payState === "waiting" && trackedPay?.payment_method === "cod") setPayState("failed");
+  }, [payState, trackedPay?.payment_method]);
+  async function payNow() {
+    if (!placed) return;
+    const before = payState === "failed" ? "failed" : "ready";
+    setPayState("starting");
+    setPayError(null);
+    const made = await createPayment(placed.id);
+    if (!made.ok) { setPayState(before); setPayError(made.message); return; }
+    payRef.current = made.provider_order_id;
+    await openGateway(made, import.meta.env).catch(() => undefined);
+    setPayState("waiting");
+  }
+  async function payCash() {
+    if (!placed) return;
+    setPayError(null);
+    const r = await switchToCash(placed.id);
+    if (!r.ok) return void setPayError(r.message);
+    setPayState(null);
+    setPayMethod("cod");
+  }
   useEffect(() => {
     if (!tracked || demo) return void setAsking(false);
     const check = () => {
@@ -489,6 +523,9 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       setConfirmError(null);
       notYetCount.current = 0;
       setStep("placed");
+      setPayState(lock === "customer" && payMethod !== "cod" ? "ready" : null);
+      setPayStart(new Date().toISOString());
+      setPayError(null);
       setCart({});
       keyRef.current = null;
     } catch (e) {
@@ -550,7 +587,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         )}
         {menu && step === "bill" && (
           <BillScreen lines={lines} total={total} kitchenName={kitchenName} pin={pin} address={address} onAddress={setAddress}
-            details={lock === "customer" ? { name, phone, onName: setName, onPhone: setPhone, gate } : undefined} sending={sending} error={error}
+            details={lock === "customer" ? { name, phone, onName: setName, onPhone: setPhone, gate } : undefined}
+            pay={lock === "customer" ? { value: payMethod, onChange: setPayMethod } : undefined} sending={sending} error={error}
             onBack={() => setStep("menu")} onPlace={place} />
         )}
         {step === "placed" && placed && (
@@ -560,7 +598,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             address={tracked && "address" in tracked ? tracked.address : address.trim()}
             confirmedAt={tracked && tracked.status === "delivered" ? tracked.updated_at : null}
             asking={asking} busy={confirming} error={confirmError} reminder={reminder}
-            onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} onBack={() => setStep("menu")} onAgain={() => { const t = tracked && "items" in tracked ? tracked : null; setPlaced(null); if (t) orderAgain(t); else setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} onCall={() => void tapCall(getClient(), placed.id)} />
+            onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} pay={paidNow || payState || resumedOnline ? { state: paidNow ? "paid" : payState ?? "waiting", method: payMethod === "cod" ? "upi" : payMethod, startedAt: payState ? payStart : null, error: payError, onPay: payNow, onCash: payCash, onSimulate: () => void simulatePaid(import.meta.env.VITE_PAYMENTS_DEV_SECRET ?? "", payRef.current) } : undefined}
+            onBack={() => setStep("menu")} onAgain={() => { const t = tracked && "items" in tracked ? tracked : null; setPlaced(null); if (t) orderAgain(t); else setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} onCall={() => void tapCall(getClient(), placed.id)} />
         )}
     </>
   );

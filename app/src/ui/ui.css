@@ -360,3 +360,11 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-sheet .ui-btn { width: 100%; margin-top: var(--gs-space-3); }
 .ui-link { background: none; border: 0; padding: 0; font: inherit; color: var(--md-primary); text-decoration: underline; cursor: pointer; min-height: 24px; }
 .otp-toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 40; padding: var(--gs-space-2) var(--gs-space-4); border-radius: var(--gs-radius-s); background: var(--md-primary); color: var(--md-on-primary); }
+
+/* How you pay and the pay bar (story 552, boards P1 to P5). */
+.ui-pay { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: var(--gs-space-2); }
+.ui-pay legend { padding: 0; margin-bottom: var(--gs-space-2); font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); text-transform: uppercase; color: var(--gs-text-muted); }
+.ui-pay-row { display: flex; align-items: center; gap: var(--gs-space-3); min-height: var(--gs-tap); padding: 0 var(--gs-space-3); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); cursor: pointer; }
+.ui-pay-row input { width: 20px; height: 20px; accent-color: var(--md-primary); }
+.ui-paybox { display: flex; flex-direction: column; gap: var(--gs-space-3); margin: var(--gs-space-3) 0; }
+.ui-wait { margin: 0; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); text-transform: uppercase; }

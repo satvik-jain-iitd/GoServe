@@ -2,11 +2,13 @@
 import type { Line } from "../lib/cart";
 import { formatRupees } from "../lib/money";
 import { isPhone } from "../lib/profile";
+import { PAY_METHODS, type PayMethod } from "../lib/payments";
 
 type Props = {
   lines: Line[]; total: number; kitchenName: string; pin: string | null;
   address: string; onAddress: (v: string) => void;
   details?: { name: string; phone: string; onName: (v: string) => void; onPhone: (v: string) => void; gate?: boolean };   // the customer app also asks who and which phone (story B3)
+  pay?: { value: PayMethod; onChange: (v: PayMethod) => void };   // story #552: how you pay (the customer app only)
   sending: boolean; error: string | null;
   onBack: () => void; onPlace: () => void;
 };
@@ -18,7 +20,7 @@ export const BackChevron = ({ label, onClick }: { label: string; onClick: () => 
   </button>
 );
 
-export function BillScreen({ lines, total, kitchenName, pin, address, onAddress, details, sending, error, onBack, onPlace }: Props) {
+export function BillScreen({ lines, total, kitchenName, pin, address, onAddress, details, pay, sending, error, onBack, onPlace }: Props) {
   const empty = lines.length === 0;
   const ready = !empty && address.trim().length > 0 && (!details || details.gate || (details.name.trim().length > 0 && isPhone(details.phone)));   // story #551: with the phone code on, the sheets ask the number and the name
   const head = [kitchenName, pin].filter(Boolean).join(" · ");
@@ -58,7 +60,15 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
               </>
             )}
             <div className="ui-field"><label htmlFor="address">Address{pin ? ` · pin ${pin}` : ""}</label><textarea id="address" rows={2} value={address} maxLength={300} onChange={(e) => onAddress(e.target.value)} /></div>
-            <p className="ui-note">Pay the rider cash at the door.</p>
+            {pay && (
+              <fieldset className="ui-pay" role="radiogroup" aria-label="How you pay">
+                <legend>How you pay</legend>
+                {PAY_METHODS.map((m) => (
+                  <label key={m.id} className="ui-pay-row"><input type="radio" name="pay" checked={pay.value === m.id} onChange={() => pay.onChange(m.id)} /><span>{m.label}</span></label>
+                ))}
+              </fieldset>
+            )}
+            <p className="ui-note">{pay && pay.value !== "cod" ? "You pay on the next screen. The kitchen starts when it is paid." : "Pay the rider cash at the door."}</p>
             {error && <p role="alert" className="ui-field-error">{error}</p>}
           </form>
         )}
@@ -66,7 +76,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
       {!empty && (
         <div className="ui-sticky float">
           <button type="button" className="ui-btn bar" disabled={!ready || sending} onClick={onPlace}>
-            <span className="mono">Cash · {formatRupees(total)}</span><span className="verb">Place order ›</span>
+            <span className="mono">{pay && pay.value !== "cod" ? PAY_METHODS.find((m) => m.id === pay.value)!.label : "Cash"} · {formatRupees(total)}</span><span className="verb">Place order ›</span>
           </button>
         </div>
       )}
