@@ -69,7 +69,7 @@ class Profile(unittest.TestCase):
     def test_the_purge_removes_personal_rows_blanks_the_orders_and_deletes_the_login_only_after_the_wait(self):
         r = run(PERSONAL, put(), delete(), purge(30), AGE, purge(30), final=GONE("customers") + ", " + GONE("addresses") + ", " + GONE("profiles")
                 + f", (select count(*) from auth.users where id = '{CUST}') as login, (select row_to_json(o) from (select customer_name, customer_phone, address, status from orders where id = '{O}') o) as ord, (select count(*) from orders where id = '{O}') as orders")
-        self.assertEqual((r["rs"][3]["purged"], r["rs"][5]["purged"]), (0, 1), r)   # too young the first time
+        self.assertEqual((r["rs"][2]["purged"], r["rs"][3]["purged"]), (0, 1), r)   # too young the first time
         self.assertEqual((r["customers"], r["addresses"], r["profiles"], r["login"]), (0, 0, 0, 0), r)
         self.assertEqual(r["orders"], 1, r)   # the order stays for the books
         self.assertEqual(r["ord"], {"customer_name": None, "customer_phone": None, "address": "[deleted]", "status": "placed"}, r)

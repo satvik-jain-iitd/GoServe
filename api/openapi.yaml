@@ -661,6 +661,117 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /me:
+    get:
+      operationId: getMe
+      summary: The caller's own name and email
+      description: "Read from the bearer token; nobody can name another user. A customer who has set nothing gets null for both."
+      x-handler: ../supabase/functions/me/index.ts
+      x-contract-handler: ../supabase/functions/me/fixture.ts
+      responses:
+        "200":
+          description: The profile.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyProfile"
+        "401":
+          description: There is no login.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "410":
+          description: The account was deleted (account_deleted).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      operationId: patchMe
+      summary: Change the caller's name or email
+      description: "Send the fields to change. A field left out stays; an empty string clears it. At least one field."
+      x-handler: ../supabase/functions/me/index.ts
+      x-contract-handler: ../supabase/functions/me/fixture.ts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              minProperties: 1
+              properties:
+                name: { type: string, maxLength: 80 }
+                email: { type: string, maxLength: 254 }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyProfileSaved"
+        "400":
+          description: The request is malformed (not text fields, or none).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: There is no login.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "410":
+          description: The account was deleted (account_deleted).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "422":
+          description: A bad name (invalid_name) or email (invalid_email).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteMe
+      summary: Delete the caller's account
+      description: "A soft delete at once: the profile is hidden and emptied and the pings stop. A job later removes the personal rows, blanks the name, phone and address on their orders and deletes the login."
+      x-handler: ../supabase/functions/me/index.ts
+      x-contract-handler: ../supabase/functions/me/fixture.ts
+      responses:
+        "200":
+          description: The account is soft-deleted (a second delete answers the same).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyProfileSaved"
+        "401":
+          description: There is no login.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /otp/claim:
     post:
       operationId: postOtpClaim
@@ -1062,6 +1173,27 @@ components:
               cap_paise: { type: integer, minimum: 0 }
               min_order_paise: { type: integer, minimum: 0 }
               first_order_only: { type: boolean }
+    MyProfile:
+      type: object
+      additionalProperties: false
+      required: [ok, profile]
+      properties:
+        ok:
+          const: true
+        profile:
+          type: object
+          additionalProperties: false
+          required: [name, email]
+          properties:
+            name: { type: [string, "null"] }
+            email: { type: [string, "null"] }
+    MyProfileSaved:
+      type: object
+      additionalProperties: false
+      required: [ok]
+      properties:
+        ok:
+          const: true
     Dish:
       type: object
       additionalProperties: false
