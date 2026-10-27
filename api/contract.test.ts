@@ -183,3 +183,18 @@ Deno.test("payments: create and webhook answer 200, 400, 401, 404 as the contrac
   body.key_secret = "x";   // a gateway key must never be a field of the answer
   await assertRejects(() => checkAnswer("/payments/create", "post", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
 });
+
+Deno.test("otp claim: the returning customer's answers are in the contract (200, 401, 403, 409) and a wrong field is red", async () => {
+  const { handler } = await import("../supabase/functions/otp/fixture.ts");
+  const post = (b: unknown, token: string | null) => handler(new Request("https://x.test/otp/claim", { method: "POST", headers: token ? { authorization: `Bearer ${token}` } : {}, body: JSON.stringify(b) }));
+  const ok = await post({ guest_token: "guest-tok" }, "old-tok");
+  assertEquals(ok.status, 200);
+  await checkAnswer("/otp/claim", "post", ok);
+  await checkAnswer("/otp/claim", "post", await post({ guest_token: "guest-tok" }, null));   // 401
+  await checkAnswer("/otp/claim", "post", await post({ guest_token: "guest-tok" }, "guest-tok"));   // 403
+  await checkAnswer("/otp/claim", "post", await post({ guest_token: "old-tok" }, "old-tok"));   // 409
+  await checkAnswer("/otp/claim", "post", await post({}, "old-tok"));   // 400
+  const body = await (await post({ guest_token: "guest-tok" }, "old-tok")).json();
+  body.session = "x";
+  await assertRejects(() => checkAnswer("/otp/claim", "post", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
+});

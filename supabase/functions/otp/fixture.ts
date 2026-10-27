@@ -7,4 +7,6 @@ export const handler = makeHandler({
   sms: async () => {},
   check: async (_phone, code) => (code === "482913" ? { ok: true, phone: "919876543210" } : { ok: false, error: "wrong_code", message: "That code is not right." }),
   link: async () => ({ ok: true }),
+  identify: async (token) => (token === "guest-tok" ? { id: "7e57ab1e-0000-4000-8000-0000000000a9", anonymous: true } : token === "old-tok" ? { id: "7e57ab1e-0000-4000-8000-0000000000a1", anonymous: false } : null),
+  claim: async () => ({ ok: true, orders: 2 }),
 });

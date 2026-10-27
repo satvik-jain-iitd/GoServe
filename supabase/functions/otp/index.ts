@@ -13,17 +13,37 @@ export type Deps = {
   sms: (phone: string, code: string) => Promise<void>;
   check: (phone: string, code: string) => Promise<{ ok: true; phone: string } | Refusal>;
   link: (userId: string, phone: string) => Promise<{ ok: true } | Refusal>;
+  // story #558, the returning customer: who a token belongs to, and the one database move of a guest's orders to the signed-in account
+  identify: (token: string) => Promise<{ id: string; anonymous: boolean } | null>;
+  claim: (from: string, to: string) => Promise<{ ok: true; orders: number } | Refusal>;
 };
-const STATUS: Record<string, number> = { invalid_phone: 400, too_many_sends: 429, too_many_attempts: 429, wrong_code: 422, code_expired: 422, no_code: 422, phone_in_use: 409 };
+const STATUS: Record<string, number> = { invalid_phone: 400, too_many_sends: 429, too_many_attempts: 429, wrong_code: 422, code_expired: 422, no_code: 422, phone_in_use: 409, not_signed_in: 403, not_a_guest: 409, same_user: 400, claim_failed: 502 };
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const refuse = (r: Refusal) => json(STATUS[r.error] ?? 422, { ok: false, error: r.error, message: r.message });
 
 export const makeHandler = (deps: Deps) => async (req: Request): Promise<Response> => {
   if (req.method !== "POST") return new Response(null, { status: 405, headers: { allow: "POST" } });
   const route = new URL(req.url).pathname.split("/").pop();
-  if (route !== "send" && route !== "verify") return json(404, { ok: false, error: "not_found" });
+  if (route !== "send" && route !== "verify" && route !== "claim") return json(404, { ok: false, error: "not_found" });
   let b: any;
   try { b = await req.json(); } catch { return json(400, { ok: false, error: "invalid_request" }); }
+  if (route === "claim") {
+    // The old account's session is the caller's; the guest's token is in the body. Both are real, the caller is signed in, the other is a guest.
+    try {
+      const callerToken = (req.headers.get("authorization") ?? "").replace(/^Bearer /i, "");
+      const caller = callerToken ? await deps.identify(callerToken) : null;
+      if (!caller) return json(401, { ok: false, error: "unauthorized", message: "Sign in first." });
+      if (typeof b?.guest_token !== "string" || b.guest_token.length === 0) return json(400, { ok: false, error: "invalid_request" });
+      if (caller.anonymous) return json(403, { ok: false, error: "not_signed_in", message: "Sign in to your account first." });
+      const guest = await deps.identify(b.guest_token);
+      if (!guest) return json(401, { ok: false, error: "unauthorized", message: "The guest session is not valid." });
+      if (!guest.anonymous) return json(409, { ok: false, error: "not_a_guest", message: "Only a guest session can be moved." });
+      const moved = await deps.claim(guest.id, caller.id);
+      return moved.ok ? json(200, { ok: true, moved: moved.orders }) : refuse(moved);
+    } catch {
+      return json(502, { ok: false, error: "otp_unavailable" });
+    }
+  }
   const bad = typeof b?.phone !== "string" || (route === "verify" && !/^[0-9]{6}$/.test(b?.code ?? ""));
   try {
     const user = await deps.session(req);
@@ -53,12 +73,18 @@ const rpc = async (fn: string, body: Record<string, unknown>) => {
   if (!res.ok) throw new Error("rpc failed");
   return await res.json();
 };
+const identify = async (token: string) => {
+  const res = await fetch(`${url()}/auth/v1/user`, { headers: { apikey: Deno.env.get("SUPABASE_ANON_KEY")!, authorization: `Bearer ${token}` } });
+  if (!res.ok) return null;
+  const u = await res.json();
+  return u?.id ? { id: u.id as string, anonymous: u.is_anonymous === true } : null;
+};
 const live: Deps = {
+  identify,
+  claim: (from, to) => rpc("claim_guest_orders_v2", { p_from: from, p_to: to }),
   session: async (req) => {
     const token = (req.headers.get("authorization") ?? "").replace(/^Bearer /i, "");
-    if (!token) return null;
-    const res = await fetch(`${url()}/auth/v1/user`, { headers: { apikey: Deno.env.get("SUPABASE_ANON_KEY")!, authorization: `Bearer ${token}` } });
-    return res.ok ? ((await res.json()).id ?? null) : null;
+    return token ? ((await identify(token))?.id ?? null) : null;
   },
   issue: (phone) => rpc("otp_send_v2", { p_phone: phone }),
   // FakeSms: delivers nothing. Swap this one line for the provider's sender when the owner clicks.
