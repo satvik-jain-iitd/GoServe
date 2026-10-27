@@ -230,6 +230,80 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /order-actions:
+    post:
+      operationId: postOrderActions
+      summary: Take a step on an order. The login decides who may do which step.
+      description: "accept, prepare, ready (kitchen staff or admin); pickup, arriving, deliver (the assigned rider or admin); confirm (the customer who placed it); cancel (customer, kitchen staff or admin, only while placed or accepted, a reason needed unless the customer cancels)."
+      x-handler: ../supabase/functions/order-actions/index.ts
+      x-contract-handler: ../supabase/functions/order-actions/fixture.ts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [order_id, action]
+              properties:
+                order_id: { type: string, format: uuid }
+                action: { enum: [accept, prepare, ready, pickup, arriving, deliver, confirm, cancel] }
+                reason: { type: string, maxLength: 200 }
+      responses:
+        "200":
+          description: The step was taken. The order carries its new status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderStep"
+        "400":
+          description: The request is malformed (bad order id, unknown action, reason too long, not JSON).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: There is no login.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "403":
+          description: This person may not take this step on this order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "404":
+          description: The order was not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "409":
+          description: The step was already done (already_done), the order is not at the step before it (illegal_step), or it is too late to cancel (cannot_cancel).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "422":
+          description: A reason is needed to cancel (reason_required).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "500":
+          description: The database refused the step for a reason that is not listed (order_action_failed). No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   schemas:
     Error:
@@ -325,18 +399,29 @@ components:
           const: true
         created: { type: boolean }
         order:
-          type: object
-          additionalProperties: false
-          required: [id, kitchen_id, status, total_paise, address, items, bill, created_at]
-          properties:
-            id: { type: string }
-            kitchen_id: { type: string }
-            status: { enum: [placed, accepted, preparing, ready, out_for_delivery, delivered, cancelled] }
-            total_paise: { type: integer, minimum: 0 }
-            address: { type: string }
-            items: { type: array }
-            bill: { type: object }
-            created_at: { type: string, format: date-time }
+          $ref: "#/components/schemas/OrderOut"
+    OrderOut:
+      type: object
+      additionalProperties: false
+      required: [id, kitchen_id, status, total_paise, address, items, bill, created_at]
+      properties:
+        id: { type: string }
+        kitchen_id: { type: string }
+        status: { enum: [placed, accepted, preparing, ready, out_for_delivery, delivered, cancelled] }
+        total_paise: { type: integer, minimum: 0 }
+        address: { type: string }
+        items: { type: array }
+        bill: { type: object }
+        created_at: { type: string, format: date-time }
+    OrderStep:
+      type: object
+      additionalProperties: false
+      required: [ok, order]
+      properties:
+        ok:
+          const: true
+        order:
+          $ref: "#/components/schemas/OrderOut"
     PriceChanged:
       type: object
       additionalProperties: false
