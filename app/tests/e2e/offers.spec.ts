@@ -30,7 +30,8 @@ async function toBill(page: Page) {
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
 }
-const best = (body: any) => body.coupon_code === "WELCOME10"
+const best = (body: any) => body.no_coupon === true ? { status: 200, body: bill(null, 0, [FLAT50, WELCOME10]) }
+  : body.coupon_code === "WELCOME10"
   ? { status: 200, body: bill({ code: "WELCOME10", title: WELCOME10.title }, 3000, [FLAT50, WELCOME10]) }
   : body.coupon_code === "SAVE99" ? { status: 422, body: { ok: false, error: "coupon_invalid", message: "SAVE99 is not a valid code." } }
   : { status: 200, body: bill({ code: "FLAT50", title: FLAT50.title }, 5000, [FLAT50, WELCOME10]) };
@@ -88,4 +89,20 @@ test("S5 no offers and no coupon: no Offers block, the quote's total still shows
   await toBill(page);
   await expect(page.getByRole("region", { name: "Offers" })).toHaveCount(0);
   await expect(page.getByTestId("bill-total")).toHaveText("₹360");
+});
+
+test("S6 Remove asks the quote with no_coupon, the Discount line goes, every offer has Apply; Apply brings an offer back (C1)", async ({ page, context }) => {
+  const seen = await withQuote(context, page, best);
+  await toBill(page);
+  await page.getByRole("button", { name: "Remove FLAT50" }).click();
+  await expect(page.getByRole("region", { name: "Items" }).getByText(/Discount/)).toHaveCount(0);
+  await expect(page.getByTestId("bill-total")).toHaveText("₹360");
+  await expect(page.getByRole("button", { name: "Apply FLAT50" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Apply WELCOME10" })).toBeVisible();
+  expect(seen.bodies.at(-1)).toMatchObject({ no_coupon: true });
+  expect(seen.bodies.at(-1).coupon_code ?? null).toBeNull();
+  await page.getByRole("button", { name: "Apply FLAT50" }).click();
+  await expect(page.getByTestId("bill-total")).toHaveText("₹310");
+  expect(seen.bodies.at(-1).coupon_code).toBe("FLAT50");
+  expect(seen.bodies.at(-1).no_coupon ?? false).toBe(false);
 });
