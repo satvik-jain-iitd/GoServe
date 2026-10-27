@@ -1,6 +1,6 @@
 // The customer flow in one place: menu, cart, bill, placed (story #48). No router yet: four steps in state.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MAX_QTY, addDish, cartLines, cartTotal, changeQty, toOrderItems, type Cart } from "./lib/cart";
+import { addDish, cartLines, cartTotal, changeQty, toOrderItems, type Cart } from "./lib/cart";
 import { mergeOrder, riderOrders, shortId, statusLabel, type Order, type RiderAction, confirmHandover, isCash } from "./lib/kitchen";
 import { clientPlatform } from "./lib/platform";
 import { riderRefused, savePlatform, tapCall } from "./lib/signals";
@@ -409,13 +409,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     return () => { alive = false; };
   }, [placed?.id, riderStatus, demo]);
 
-  // "Order again": the dishes of a past order that are still on today's menu go back into the cart.
-  function orderAgain(o: { items: { menu_item_id: string; qty: number }[] }) {
-    const ids = new Set((menu?.dishes ?? []).map((d) => d.id));
-    setCart(Object.fromEntries(o.items.filter((i) => ids.has(i.menu_item_id)).map((i) => [i.menu_item_id, Math.min(i.qty, MAX_QTY)])));
-    setStep("bill");
-  }
-
   // A tap on a slip of "Your orders" opens it as the tracker or the delivered screen (story H10d).
   function openOrder(o: Order) {
     setPlaced({ id: o.id, status: o.status, total_paise: o.total_paise, updated_at: o.updated_at, paid_by: o.paid_by ?? null });
@@ -559,7 +552,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             address={tracked && "address" in tracked ? tracked.address : address.trim()}
             confirmedAt={tracked && tracked.status === "delivered" ? tracked.updated_at : null}
             asking={asking} busy={confirming} error={confirmError} reminder={reminder}
-            onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} onBack={() => setStep("menu")} onAgain={() => { const t = tracked && "items" in tracked ? tracked : null; setPlaced(null); if (t) orderAgain(t); else setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} onCall={() => void tapCall(getClient(), placed.id)} />
+            onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} onCall={() => void tapCall(getClient(), placed.id)} />
         )}
     </>
   );
