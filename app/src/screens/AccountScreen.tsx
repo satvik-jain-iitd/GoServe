@@ -8,7 +8,7 @@ import { SignIn } from "./SignIn";
 type Props = {
   name: string; phone: string; address: string; pin: string | null;
   onName: (v: string) => void; onPhone: (v: string) => void; onAddress: (v: string) => void;
-  alerts: "ask" | "on" | "none"; onAlerts: () => void; alertsError?: string | null;
+  alerts: "ask" | "on" | "off" | "none"; onAlerts: () => void; alertsError?: string | null;
   live: { label: string; no: string; onOpen: () => void } | null;
   onGivenName: (name: string) => void;   // story 527: the Google first name fills an empty name
   onShare: () => Promise<string | null>; onForget: () => void;
@@ -51,8 +51,8 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
         <div className="ui-row ui-row-static"><SignIn onGivenName={onGivenName} /></div>
         <button type="button" className="ui-row" onClick={() => setEditing(!editing)}><span>{editing ? "Done" : "Edit delivery details"}</span><span className="go" aria-hidden="true">›</span></button>
         <div className="ui-row ui-row-static">
-          <label htmlFor="alerts" className="ui-row-label"><span>Order alerts</span><span className="ui-row-sub">{alerts === "none" ? "Blocked in your phone settings." : alerts === "on" ? "On for this phone" : "Tap to turn on"}</span></label>
-          <input id="alerts" className="ui-switch" type="checkbox" role="switch" checked={alerts === "on"} disabled={alerts !== "ask"} onChange={onAlerts} />
+          <label htmlFor="alerts" className="ui-row-label"><span>Order alerts</span><span className="ui-row-sub">{alerts === "none" ? "Blocked in your phone settings. Settings › Notifications › GoServe, then come back." : alerts === "on" ? "On for this phone" : alerts === "off" ? "Off for this phone. Tap to turn on." : "Tap to turn on"}</span></label>
+          <input id="alerts" className="ui-switch" type="checkbox" role="switch" checked={alerts === "on"} disabled={alerts === "none"} onChange={onAlerts} />
         </div>
         {alertsError && <p role="alert" className="ui-field-error">{alertsError}</p>}
         <section aria-label="Look" className="ui-look">
