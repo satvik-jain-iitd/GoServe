@@ -1,0 +1,38 @@
+# Story #338 (E27, plan v2 B.2): the one file the apps and the server agree on. Every function is a path. Every path names its handler (x-handler),
+# and `deno test --allow-read api` calls that handler and checks the answer against the schema below. Schemas close their objects
+# (additionalProperties false), so a renamed or extra field turns CI red. The dev project is the server until the owner says otherwise.
+openapi: 3.1.0
+info:
+  title: GoServe API v2
+  version: 0.1.0
+  description: Backend v2 on Supabase Edge Functions. This is the skeleton; each story adds its paths.
+servers:
+  - url: https://tmxyizmkpwwfyazvrfhw.supabase.co/functions/v1
+    description: dev (goserve-dev)
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Is the server up
+      x-handler: ../supabase/functions/health/index.ts
+      responses:
+        "200":
+          description: The server is up. Nothing else is said.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+components:
+  schemas:
+    Health:
+      type: object
+      additionalProperties: false
+      required: [ok, service, time]
+      properties:
+        ok:
+          const: true
+        service:
+          const: health
+        time:
+          type: string
+          format: date-time
