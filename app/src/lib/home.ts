@@ -3,7 +3,7 @@ import type { Dish } from "./menu";
 
 export const greeting = (hour: number, name: string): string => {
   const part = hour >= 5 && hour < 12 ? "morning" : hour >= 12 && hour < 17 ? "afternoon" : hour >= 17 && hour < 21 ? "evening" : "night";
-  return `Good ${part}${name.trim() ? `, ${name.trim().split(/\s+/)[0]}` : ""}.`;
+  return name.trim() ? `Good ${part}, ${name.trim().split(/\s+/)[0]}.` : `Good ${part}!`;   // story 527: no name known, no comma; never a default name
 };
 
 const isThali = (d: Dish) => /thali/i.test(d.category ?? "");

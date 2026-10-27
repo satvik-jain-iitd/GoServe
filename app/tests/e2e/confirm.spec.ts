@@ -36,17 +36,21 @@ test("S1 the prompt comes after the kitchen taps Ready, not before", async ({ pa
   await expect(prompt(page)).toBeVisible({ timeout: 5000 });
 });
 
-test("S2 the prompt comes after the place time when nobody touches the order", async ({ page, context }) => {
+test("S2 (#456) no prompt while the kitchen is still cooking, however long ago the order was placed", async ({ page, context }) => {
   const net = await setup(context, page);
-  net.state.confirmCfg = { confirm_after_ready_min: 3, confirm_after_place_min: 0.03 };
+  net.state.confirmCfg = { confirm_after_ready_min: 0.01, confirm_after_place_min: 0.01 };
   await placeOrder(page);
-  net.push("INSERT", order("placed", now(), now()));
-  await expect(prompt(page)).toBeVisible({ timeout: 8000 });
+  net.push("INSERT", order("preparing", now(), new Date(Date.now() - 20 * 60_000).toISOString()));
+  await expect(page.getByRole("list", { name: "Order progress" })).toBeVisible();
+  await page.waitForTimeout(2500);
+  await expect(prompt(page)).toHaveCount(0);
+  net.push("UPDATE", order("out_for_delivery", now(), now()));
+  await expect(prompt(page)).toBeVisible({ timeout: 5000 });
 });
 
 test("S3 Yes closes the order: Paid cash, and the server got the Yes once", async ({ page, context }) => {
   const net = await setup(context, page);
-  net.state.confirmCfg = { confirm_after_ready_min: 3, confirm_after_place_min: 0.03 };
+  net.state.confirmCfg = { confirm_after_ready_min: 0.03, confirm_after_place_min: 8 };
   await placeOrder(page);
   net.push("INSERT", order("ready", now(), now()));
   await expect(prompt(page)).toBeVisible({ timeout: 8000 });
@@ -60,7 +64,7 @@ test("S3 Yes closes the order: Paid cash, and the server got the Yes once", asyn
 
 test("S4 a second Yes is not an error", async ({ page, context }) => {
   const net = await setup(context, page);
-  net.state.confirmCfg = { confirm_after_ready_min: 3, confirm_after_place_min: 0.03 };
+  net.state.confirmCfg = { confirm_after_ready_min: 0.03, confirm_after_place_min: 8 };
   net.state.confirmDone = true;
   await placeOrder(page);
   net.push("INSERT", order("ready", now(), now()));
@@ -72,7 +76,7 @@ test("S4 a second Yes is not an error", async ({ page, context }) => {
 
 test("S5 Not yet three times opens the Feedback sheet with Order not delivered", async ({ page, context }) => {
   const net = await setup(context, page);
-  net.state.confirmCfg = { confirm_after_ready_min: 3, confirm_after_place_min: 0.03 };
+  net.state.confirmCfg = { confirm_after_ready_min: 0.03, confirm_after_place_min: 8 };
   await placeOrder(page);
   net.push("INSERT", order("ready", now(), now()));
   for (let i = 1; i <= 3; i++) {
@@ -91,7 +95,7 @@ test("a reminder: when the tester allowed notifications the phone shows one when
     (window as any).Notification = Fake;
   });
   const net = await setup(context, page);
-  net.state.confirmCfg = { confirm_after_ready_min: 3, confirm_after_place_min: 0.03 };
+  net.state.confirmCfg = { confirm_after_ready_min: 0.03, confirm_after_place_min: 8 };
   await placeOrder(page);
   await page.getByRole("button", { name: "Ping me when it is ready" }).click();
   net.push("INSERT", order("ready", now(), now()));
@@ -111,7 +115,7 @@ test("S6 a double tap on a kitchen step: the second answer already_done is not s
 
 test("S5 a live event with the same moment and no paid_by after the Yes does not take the Paid line away (story #601, night run 2)", async ({ page, context }) => {
   const net = await setup(context, page);
-  net.state.confirmCfg = { confirm_after_ready_min: 3, confirm_after_place_min: 0.03 };
+  net.state.confirmCfg = { confirm_after_ready_min: 0.03, confirm_after_place_min: 8 };
   const at = new Date(Date.now() + 60_000).toISOString();
   net.state.confirmAt = at;
   await placeOrder(page);
@@ -122,4 +126,20 @@ test("S5 a live event with the same moment and no paid_by after the Yes does not
   net.push("UPDATE", { ...order("delivered", at, now()), paid_by: null });
   await page.waitForTimeout(2500);   // the event is held until the screen has joined the channel, then sent
   await expect(page.getByText(/Paid: cash · confirmed/)).toBeVisible();
+});
+
+test("#501 a hidden app never asks; the question comes when the app is visible again", async ({ page, context }) => {
+  await context.addInitScript(() => {
+    let state = "hidden";
+    Object.defineProperty(document, "visibilityState", { get: () => state, configurable: true });
+    (window as any).__show = () => { state = "visible"; document.dispatchEvent(new Event("visibilitychange")); };
+  });
+  const net = await setup(context, page);
+  net.state.confirmCfg = { confirm_after_ready_min: 0.01, confirm_after_place_min: 5 };
+  await placeOrder(page);
+  net.push("UPDATE", order("ready", now(), now()));
+  await page.waitForTimeout(2500);
+  await expect(prompt(page)).toHaveCount(0);   // due long ago, but nobody is looking
+  await page.evaluate(() => (window as any).__show());
+  await expect(prompt(page)).toBeVisible({ timeout: 5000 });
 });

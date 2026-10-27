@@ -1,5 +1,5 @@
 // The menu of the Ink v3 boards 02, 02a, 02b, 02c and 03 (story H10b, #193): header, greeting, thali hero, sections, filter sheet, dish sheet.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { filterDishes } from "../lib/browse";
 import { greeting, sectionsOf, thalisOf } from "../lib/home";
 import { creditLicence, creditLine, type Dish } from "../lib/menu";
@@ -11,6 +11,7 @@ type Props = {
   pin: string | null; kitchenName: string; openText: string; name: string; closedText: string | null;
   qty: Record<string, number>; cartCount: number; cartTotal: number;
   onAdd: (id: string) => void; onChange: (id: string, delta: number) => void; onOpenCart: () => void;
+  land: boolean; onLanded: () => void;   // #525: true only for the first Menu after the pin screen
   onChangePin: () => void; onOrders: () => void; onYou: () => void;
 };
 
@@ -18,6 +19,8 @@ const FunnelIcon = () => <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"
 const VegIcon = () => <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="4" width="16" height="16" rx="1" /><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none" /></svg>;
 
 export function MenuScreen(p: Props) {
+  const [land] = useState(p.land);   // read once at mount, so a re-render never cuts the fly-in short
+  useEffect(() => { p.onLanded(); }, []);
   const [vegOnly, setVegOnly] = useState(false);
   const [query, setQuery] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -33,7 +36,7 @@ export function MenuScreen(p: Props) {
     <>
       <header className="ui-head">
         <button type="button" className="ui-pin" aria-label={`Change area, pin code ${p.pin ?? ""}`} onClick={p.onChangePin}>
-          <img className="ui-logo ui-pin-mark ui-mark-land" src="/brand/pin-mark-day.png" alt="" />{p.pin}
+          <img className={`ui-logo ui-pin-mark${land ? " ui-mark-land" : ""}`} src="/brand/pin-mark-day.png" alt="" />{p.pin}
         </button>
         <button type="button" className="ui-btn ghost icon" aria-label="Veg only" aria-pressed={vegOnly} onClick={() => setVegOnly(!vegOnly)}><VegIcon /></button>
         <button type="button" className="ui-btn ghost icon" aria-label="Filter" onClick={() => setFilterOpen(true)}><FunnelIcon /></button>

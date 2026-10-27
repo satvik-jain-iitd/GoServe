@@ -2,7 +2,7 @@
 import { test, expect } from "@playwright/test";
 import { order, setup, scan as axeScan } from "./helpers";
 
-const KITCHEN = { id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: "9876543210", pin_codes: ["110016"], open: true, active: true, lat: null, lng: null, opens_at: "10:00:00", closes_at: "22:00:00" };
+const KITCHEN = { id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: "9876543210", pin_codes: ["110016"], open: true, active: true, lat: null, lng: null, opens_at: "00:00:00", closes_at: "23:59:00" };
 
 test("S1 a bill with nothing on it says so and goes back to the menu", async ({ page, context }) => {
   await setup(context, page);
@@ -44,7 +44,7 @@ test("S4 a delivered order shows the Delivered stamp, Cash paid and a way to cal
   await expect(page.getByRole("heading", { name: "Delivered", exact: true })).toBeVisible({ timeout: 6000 });
   await expect(page.getByText("Cash paid")).toBeVisible();
   await expect(page.getByRole("link", { name: "Call the kitchen" })).toHaveAttribute("href", "tel:9876543210");
-  await expect(page.getByRole("button", { name: "Order again" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "See the menu" })).toBeVisible();
 });
 
 test("S5 a cooking order shows the Live mark and the Cooking stamp", async ({ page, context }) => {

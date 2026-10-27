@@ -184,11 +184,11 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
   const sub16 = finish('GS SUB 16 Health', n16, e16, s16, subSettings);
 
 
-  const callSub = (id, name, subId, mapping, wait = true) => node(id, name, 'n8n-nodes-base.executeWorkflow', 1.2, {
+  const callSub = (id, name, subId, mapping, wait = true, mode = 'once') => node(id, name, 'n8n-nodes-base.executeWorkflow', 1.2, {
     source: 'database', workflowId: { __rl: true, value: subId, mode: 'id' },
     workflowInputs: { mappingMode: 'defineBelow', value: Object.fromEntries(mapping.map(([k, v]) => [k, v])), matchingColumns: [],
       schema: schemaOf(mapping.map(([k, , t]) => [k, t])), attemptToConvertTypes: false, convertFieldsToString: false },
-    mode: 'once', options: { waitForSubWorkflow: wait } });
+    mode, options: { waitForSubWorkflow: wait } });
 
   // ---- Dispatch (story A5): a ready order gets a rider. SUB 21 reads who is online, SUB 13 decides, SUB 19 saves the rider on the order, SUB 22 runs the three in order. ----
   const sub21 = sub({ name: 'GS SUB 21 Dispatch riders', n: 21, callerIds: ids.sub22, credential: cred, settings,
@@ -231,9 +231,9 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
 
   // ---- SUB 20 Push (story A7): a text-less web push to every subscription of the customer. The phone's service worker asks the database what to say. ----
   const vapidCred = vapidCredential || { id: 'REPLACE_VAPID_CRED_ID', name: 'GoServe VAPID' };
-  const f20 = [['session_id', 'string'], ['status', 'string'], ['vapid_public_key', 'string'], ['vapid_subject', 'string'], ['kill_switch', 'boolean'], ['supabase_url', 'string']];
-  const rpcCall = (id, name, fn) => node(id, name, 'n8n-nodes-base.httpRequest', 4.2, {
-    method: 'POST', url: `={{ $json.supabase_url }}/rest/v1/rpc/${fn}`, authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
+  const f20 = [['session_id', 'string'], ['order_id', 'string'], ['status', 'string'], ['vapid_public_key', 'string'], ['vapid_subject', 'string'], ['kill_switch', 'boolean'], ['supabase_url', 'string']];
+  const rpcCall = (id, name, fn, table = false) => node(id, name, 'n8n-nodes-base.httpRequest', 4.2, {
+    method: 'POST', url: `={{ $json.supabase_url }}/rest/v1/${table ? '' : 'rpc/'}${fn}`, authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
     sendBody: true, specifyBody: 'json', jsonBody: '={{ $json.rpc_body }}',
     options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 } }, { credentials: { httpCustomAuth: cred } });
   const n20 = [
@@ -255,18 +255,25 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
     codeNode('gs-sub20-09', 'Clean', code('push_clean.js')),
     rpcCall('gs-sub20-10', 'Forget', 'push_forget'),
     node('gs-sub20-11', 'Return refusal', 'n8n-nodes-base.noOp', 1, {}),
+    codeNode('gs-sub20-12', 'Trace push', code('push_trace.js')),
+    codeNode('gs-sub20-13', 'Trace none', code('push_trace_none.js')),
+    codeNode('gs-sub20-15', 'Trace refused', code('push_trace_refused.js')),
+    rpcCall('gs-sub20-16', 'Write refusal', 'order_trace', true),
+    rpcCall('gs-sub20-14', 'Write trace', 'order_trace', true),
   ];
-  const e20 = [['Start', 'Guard'], ['Guard', 'Allowed?'], ['Allowed?', 'Read targets', 0], ['Allowed?', 'Return refusal', 1], ['Read targets', 'Targets?'], ['Targets?', 'Expand', 0],
-    ['Expand', 'Sign VAPID'], ['Sign VAPID', 'Send push'], ['Send push', 'Clean'], ['Clean', 'Forget']];
+  const e20 = [['Start', 'Guard'], ['Guard', 'Allowed?'], ['Allowed?', 'Read targets', 0], ['Allowed?', 'Return refusal', 1], ['Allowed?', 'Trace refused', 1], ['Read targets', 'Targets?'], ['Targets?', 'Expand', 0],
+    ['Expand', 'Sign VAPID'], ['Sign VAPID', 'Send push'], ['Send push', 'Clean'], ['Clean', 'Forget'],
+    ['Send push', 'Trace push'], ['Trace push', 'Write trace'], ['Targets?', 'Trace none', 1], ['Trace none', 'Write trace'], ['Trace refused', 'Write refusal']];
   const s20 = [
-    { name: 'RECEIVE', what: 'MAIN 01 calls this after it has answered, for a new order, a ready order or a delivered order. It is not waited for.', needs: 'Input: ' + f20.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
-    { name: 'CHECK', what: 'Refuse if the kill switch is on or input is bad. Any status other than placed, ready or delivered has nothing to send.', needs: 'Input fields. No credential.', nodes: ['Guard', 'Allowed?'], color: 5 },
+    { name: 'RECEIVE', what: 'MAIN 34 calls this once for each queued push (placed, ready, picked up, delivered).', needs: 'Input: ' + f20.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
+    { name: 'CHECK', what: 'Refuse if the kill switch is on or input is bad. Any status other than placed, ready, out_for_delivery or delivered has nothing to send.', needs: 'Input fields. No credential.', nodes: ['Guard', 'Allowed?'], color: 5 },
     { name: 'TARGETS', what: 'Read the push subscriptions of this customer. No subscription means stop quietly.', needs: 'Credential "GoServe Supabase dev". Function push_targets.', nodes: ['Read targets', 'Targets?'], color: 6 },
     { name: 'SEND', what: 'For each subscription sign a VAPID token and send an empty push. The phone asks the database what to show.', needs: 'Credential "GoServe VAPID" (JWT Auth, ES256). Config: the public key and the contact address.', nodes: ['Expand', 'Sign VAPID', 'Send push'], color: 6 },
     { name: 'CLEAN', what: 'A 404 or 410 means the phone unsubscribed. Forget that subscription.', needs: 'Credential "GoServe Supabase dev". Function push_forget.', nodes: ['Clean', 'Forget'], color: 6 },
-    refuseSection,
+    { name: 'TRACE', what: 'Write one line to order_trace for every push: the push service host and its HTTP status, or that there was no subscription. A failed write never stops the push.', needs: 'Credential "GoServe Supabase dev". Table order_trace.', nodes: ['Trace push', 'Trace none', 'Write trace'], color: 6 },
+    { name: 'REFUSE', what: 'Hand the refusal back unchanged, and write it as a push_skipped line in order_trace with the reason, so no refusal is silent.', needs: 'The refusal from CHECK. Credential "GoServe Supabase dev". Table order_trace.', nodes: ['Return refusal', 'Trace refused', 'Write refusal'], color: 1 },
   ];
-  const sub20 = finish('GS SUB 20 Push', n20, e20, s20, Object.assign({}, settings, { callerPolicy: 'workflowsFromAList', callerIds: main }));
+  const sub20 = finish('GS SUB 20 Push', n20, e20, s20, Object.assign({}, settings, { callerPolicy: 'workflowsFromAList', callerIds: ids.main34 }));
 
   // ---- SUB 17 Feedback: save a tester's report and answer; Drive and Telegram run in SUB 18 without being waited for (story S-B, #94; F90) ----
   const f17 = [['session_id', 'string'], ['kitchen_id', 'string'], ['role', 'string'], ['screen', 'string'], ['order_id', 'string'], ['doing', 'string'], ['text', 'string'], ['context', 'object'],
@@ -347,9 +354,7 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
       { id: 'cfg-10', name: 'chat_id', type: 'string', value: chatId || PLACEHOLDER },
       { id: 'cfg-11', name: 'env', type: 'string', value: prod ? 'prod' : 'dev' },
       { id: 'cfg-12', name: 'confirm_after_ready_min', type: 'number', value: 3 },
-      { id: 'cfg-13', name: 'confirm_after_place_min', type: 'number', value: 8 },
-      { id: 'cfg-14', name: 'vapid_public_key', type: 'string', value: vapidPublicKey || PLACEHOLDER },
-      { id: 'cfg-15', name: 'vapid_subject', type: 'string', value: vapidSubject || PLACEHOLDER }] }, options: {} }),
+      { id: 'cfg-13', name: 'confirm_after_place_min', type: 'number', value: 8 }] }, options: {} }),
     codeNode('gs-main01-03', 'Check token', code('check_token.js')),
     ifNode('gs-main01-04', 'Token ok?', '={{ $json.token_ok }}', 'true'),
     ifNode('gs-main01-05', 'Kill switch?', '={{ $json.kill_switch }}', 'true'),
@@ -387,11 +392,6 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
       ['params_version', "={{ $('Config').first().json.params_version }}", 'number'], ['jev_enabled', "={{ $('Config').first().json.jev_enabled }}", 'boolean'],
       ['jev_model', "={{ $('Config').first().json.jev_model }}", 'string'], ['jev_cost_cap', "={{ $('Config').first().json.jev_cost_cap }}", 'number'],
       ['kill_switch', "={{ $('Config').first().json.kill_switch }}", 'boolean'], ['supabase_url', "={{ $('Config').first().json.supabase_url }}", 'string']]),
-    ifNode('gs-main01-22', 'Push?', "={{ $json.ok === true && $json.already_done !== true && !!$json.order && (($json.order.status === 'placed' && $json.created === true) || $json.order.status === 'ready' || $json.order.status === 'delivered') }}", 'true'),
-    callSub('gs-main01-23', 'Call SUB 20 Push', ids.sub20, [
-      ['session_id', '={{ $json.order.session_id }}', 'string'], ['status', '={{ $json.order.status }}', 'string'],
-      ['vapid_public_key', "={{ $('Config').first().json.vapid_public_key }}", 'string'], ['vapid_subject', "={{ $('Config').first().json.vapid_subject }}", 'string'],
-      ['kill_switch', "={{ $('Config').first().json.kill_switch }}", 'boolean'], ['supabase_url', "={{ $('Config').first().json.supabase_url }}", 'string']], false),
     respond('gs-main01-09', 'Respond result', '={{ $json.status_code }}', answer),
     codeNode('gs-main01-14', 'Log run', code('log_run.js')),
     callSub('gs-main01-15', 'Call SUB 14 Write logs', ids.sub14, [
@@ -406,7 +406,7 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
     ['Token ok?', 'Kill switch?', 0], ['Token ok?', 'Respond 401', 1], ['Kill switch?', 'Respond 503', 0], ['Kill switch?', 'Route', 1],
     ['Route', 'Call SUB 11 Place order', 0], ['Route', 'Call SUB 12 Change status', 1], ['Route', 'Call SUB 13 Decide', 2], ['Route', 'Call SUB 15 Add event', 3], ['Route', 'Call SUB 16 Health', 4], ['Route', 'Call SUB 17 Feedback', 5], ['Route', 'Call SUB 12 Confirm', 6], ['Route', 'Respond 400', 7],
     ['Call SUB 11 Place order', 'Respond result'], ['Call SUB 12 Change status', 'Respond result'], ['Call SUB 13 Decide', 'Respond result'], ['Call SUB 15 Add event', 'Respond result'], ['Call SUB 16 Health', 'Respond result'], ['Call SUB 17 Feedback', 'Respond result'], ['Call SUB 12 Confirm', 'Respond result'],
-    ['Respond result', 'Log run'], ['Log run', 'Call SUB 14 Write logs'], ['Respond result', 'Ready?'], ['Ready?', 'Call SUB 22 Dispatch', 0], ['Respond result', 'Push?'], ['Push?', 'Call SUB 20 Push', 0]];
+    ['Respond result', 'Log run'], ['Log run', 'Call SUB 14 Write logs'], ['Respond result', 'Ready?'], ['Ready?', 'Call SUB 22 Dispatch', 0]];
   const sections = [
     { name: 'RECEIVE', what: 'The phone posts here. Body field "action" is place, status, decide, event, health, feedback or confirm. The header x-gs-token carries the demo token.', needs: 'Path gs-order. Body: action and the fields of the SUB.', nodes: ['Order webhook'], color: 4 },
     { name: 'CONFIG', what: 'All tunables live here: the kill switch, the demo token and the database address.', needs: 'Config keys: kill_switch, demo_token, supabase_url.', nodes: ['Config'], color: 5 },
@@ -421,7 +421,6 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
     { name: 'FEEDBACK', what: 'Call SUB 17. It saves a tester\'s report, puts the screenshot in Google Drive and tells the owner on Telegram.', needs: 'SUB 17 id. Body: session_id, role, screen, order_id, doing, text, context, image_b64. Config: drive_folder_id, chat_id, env.', nodes: ['Call SUB 17 Feedback'], color: 6 },
     { name: 'ANSWER', what: 'Send the SUB result back to the phone with its status code.', needs: 'The SUB output: status_code, ok, order, decision, id.', nodes: ['Respond result'], color: 4 },
     { name: 'DISPATCH', what: 'After the answer is out: if the order just became Ready, call SUB 22. It picks a rider and saves the rider on the order. If no rider is online the run fails on purpose and GS ERR 00 tells the owner.', needs: 'SUB 22 id. Config: params_version, jev keys.', nodes: ['Ready?', 'Call SUB 22 Dispatch'], color: 6 },
-    { name: 'PUSH', what: 'After the answer is out: a new order, a ready order or a delivered order sends a web push through SUB 20. It is not waited for.', needs: 'SUB 20 id. Config: vapid_public_key, vapid_subject.', nodes: ['Push?', 'Call SUB 20 Push'], color: 6 },
     { name: 'LOG', what: 'After the answer is out, write one run row: time taken, settings version, cost, error.', needs: 'SUB 14 id. Config: params_version, kitchen_id.', nodes: ['Log run', 'Call SUB 14 Write logs'], color: 6 },
     { name: 'REFUSE', what: 'Answer the calls that must not go on: 401, 503 and 400.', needs: 'Nothing.', nodes: ['Respond 401', 'Respond 503', 'Respond 400'], color: 1 },
   ];
@@ -494,7 +493,7 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
     { name: 'UPTIME', what: 'Ask UptimeRobot for each monitor and its 7-day uptime.', needs: 'Input: uptimerobot_key.', nodes: ['Read uptime'], color: 6 },
     { name: 'LINES', what: 'Write one line per number, with OK, WATCH or OVER against the cap. A failed read prints "could not read" and the rest go on.', needs: 'The four reads.', nodes: ['Health lines'], color: 5 },
   ];
-  const sub94 = finish('GS SUB 94 Health and cost numbers', n94, e94, s94, Object.assign({}, settings, { callerPolicy: 'workflowsFromAList', callerIds: ids.main93 }));
+  const sub94 = finish('GS SUB 94 Health and cost numbers', n94, e94, s94, Object.assign({}, settings, { callerPolicy: 'workflowsFromAList', callerIds: [ids.main90, ids.main93].filter(Boolean).join(',') }));
 
   const telegram = (id, name) => node(id, name, 'n8n-nodes-base.telegram', 1.2, { resource: 'message', operation: 'sendMessage', chatId: '={{ $json.chat_id }}', text: '={{ $json.text }}',
     additionalFields: { appendAttribution: false } }, { credentials: { telegramApi: { id: 'bBVpWzhaY0MCpoQ5', name: 'GoServeBot' } } });
@@ -504,28 +503,34 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
   // ---- MAIN 90 Daily pilot card: one schedule, one Telegram message (story #47; H14 moves it to 22:15 and adds the pilot block) ----
   const n90 = [
     schedule('gs-main90-01', 'Every day 22:15', '15 22 * * *'),
-    cfgSet('gs-main90-02', [['kill_switch', 'boolean', false], ['chat_id', 'string', chatId || PLACEHOLDER], ['supabase_url', 'string', url], ['prune_pings', 'boolean', true]]),
+    cfgSet('gs-main90-02', [['kill_switch', 'boolean', false], ['chat_id', 'string', chatId || PLACEHOLDER], ['supabase_url', 'string', url], ['uptimerobot_key', 'string', uptimerobotKey || PLACEHOLDER], ['prune_pings', 'boolean', true]]),
     ifNode('gs-main90-03', 'Kill switch?', '={{ $json.kill_switch }}', 'true'),
     node('gs-main90-04', 'Paused', 'n8n-nodes-base.noOp', 1, {}),
     codeNode('gs-main90-05', 'Prepare window', code('score_window.js')),
     callSub('gs-main90-06', 'Call SUB 91 Scorecard numbers', ids.sub91, [['since', '={{ $json.since }}', 'string'], ['until', '={{ $json.until }}', 'string'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
+    callSub('gs-main90-10', 'Call SUB 94 Health and cost numbers', ids.sub94, [['since', "={{ $('Prepare window').first().json.since }}", 'string'], ['days', "={{ $('Prepare window').first().json.days }}", 'number'], ['supabase_url', "={{ $('Prepare window').first().json.supabase_url }}", 'string'], ['uptimerobot_key', "={{ $('Prepare window').first().json.uptimerobot_key }}", 'string']]),
     codeNode('gs-main90-07', 'Format message', code('score_message.js')),
     telegram('gs-main90-08', 'Send scorecard'),
+    codeNode('gs-main90-11', 'Limit alert', code('health_alert.js')),
+    telegram('gs-main90-12', 'Send limit alert'),
     node('gs-main90-09', 'Prune ping history', 'n8n-nodes-base.httpRequest', 4.2, {
       method: 'POST', url: "={{ $('Config').first().json.supabase_url }}/rest/v1/rpc/pilot_prune", authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
       sendBody: true, specifyBody: 'json', jsonBody: '={{ {} }}',
       options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 } }, { credentials: { httpCustomAuth: cred } }),
   ];
   const e90 = [['Every day 22:15', 'Config'], ['Config', 'Kill switch?'], ['Kill switch?', 'Paused', 0], ['Kill switch?', 'Prepare window', 1], ['Prepare window', 'Call SUB 91 Scorecard numbers'],
-    ['Call SUB 91 Scorecard numbers', 'Format message'], ['Format message', 'Send scorecard'], ['Send scorecard', 'Prune ping history']];
+    ['Call SUB 91 Scorecard numbers', 'Call SUB 94 Health and cost numbers'], ['Call SUB 94 Health and cost numbers', 'Format message'], ['Format message', 'Send scorecard'], ['Send scorecard', 'Prune ping history'],
+    ['Send scorecard', 'Limit alert'], ['Limit alert', 'Send limit alert']];
   const s90 = [
     { name: 'SCHEDULE', what: 'Once a day at 22:15 India time, after the kitchen closes.', needs: 'Workflow timezone: Asia/Kolkata.', nodes: ['Every day 22:15'], color: 4 },
     { name: 'CONFIG', what: 'The kill switch, the owner chat and the database address live here.', needs: 'Config keys: kill_switch, chat_id, supabase_url, prune_pings.', nodes: ['Config'], color: 5 },
     { name: 'GATE', what: 'If the kill switch is on, send nothing.', needs: 'Config: kill_switch.', nodes: ['Kill switch?', 'Paused'], color: 1 },
     { name: 'WINDOW', what: 'Work out the last 24 hours, and the India time the card is for.', needs: 'Nothing.', nodes: ['Prepare window'], color: 5 },
     { name: 'COLLECT', what: 'Call SUB 91. It reads the rows of the last 24 hours and the pilot numbers.', needs: 'SUB 91 id. Config: supabase_url.', nodes: ['Call SUB 91 Scorecard numbers'], color: 6 },
-    { name: 'FORMAT', what: 'Make one short message: the pilot numbers against their lines first, then runs, time, decisions, cost.', needs: 'The SUB 91 numbers.', nodes: ['Format message'], color: 5 },
+    { name: 'HEALTH', what: 'Call SUB 94. It reads the Supabase free limits as "x of limit (pct%)", the OpenRouter spend, failed n8n runs and uptime.', needs: 'SUB 94 id. Config: uptimerobot_key.', nodes: ['Call SUB 94 Health and cost numbers'], color: 6 },
+    { name: 'FORMAT', what: 'Make one short message: the pilot numbers against their lines first, then runs, time, decisions, cost, and the platform health lines.', needs: 'The SUB 91 numbers and the SUB 94 lines.', nodes: ['Format message'], color: 5 },
     { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send scorecard'], color: 6 },
+    { name: 'ALERT', what: 'If any limit is at 80% or more, or the database did not answer, send one more message with only those lines. Nothing is sent when all is well.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Limit alert', 'Send limit alert'], color: 6 },
     { name: 'TIDY', what: 'Delete rider location pings older than 30 days.', needs: 'Credential "GoServe Supabase dev". Function: pilot_prune.', nodes: ['Prune ping history'], color: 6 },
   ];
   const main90 = finish('GS MAIN 90 Daily scorecard', n90, e90, s90, Object.assign({}, settings, { timezone: 'Asia/Kolkata' }));
@@ -696,6 +701,31 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
   ];
   const main33 = finish('GS MAIN 33 Dispatch tick', n33, e33, s33, quiet);
 
+  // ---- Push drain (story #483): the database queues a push for every order step, by any path. Every 30 s this takes the queue and calls SUB 20 once for each row. ----
+  const n34 = [
+    schedule('gs-main34-01', 'Every 30 seconds', '*/30 * * * * *'),
+    cfgSet('gs-main34-02', [['kill_switch', 'boolean', false], ['supabase_url', 'string', url], ['env', 'string', prod ? 'prod' : 'dev'],
+      ['vapid_public_key', 'string', vapidPublicKey || PLACEHOLDER], ['vapid_subject', 'string', vapidSubject || PLACEHOLDER]]),
+    ifNode('gs-main34-03', 'Kill switch?', '={{ $json.kill_switch }}', 'true'),
+    node('gs-main34-04', 'Paused', 'n8n-nodes-base.noOp', 1, {}),
+    codeNode('gs-main34-05', 'Tick', code('push_drain_tick.js')),
+    rpcCall('gs-main34-06', 'Take queue', 'push_outbox_take'),
+    codeNode('gs-main34-07', 'Expand rows', code('push_drain_expand.js')),
+    callSub('gs-main34-08', 'Call SUB 20 Push', ids.sub20, [
+      ['session_id', '={{ $json.session_id }}', 'string'], ['order_id', '={{ $json.order_id }}', 'string'], ['status', '={{ $json.status }}', 'string'],
+      ['vapid_public_key', '={{ $json.vapid_public_key }}', 'string'], ['vapid_subject', '={{ $json.vapid_subject }}', 'string'],
+      ['kill_switch', '={{ $json.kill_switch }}', 'boolean'], ['supabase_url', '={{ $json.supabase_url }}', 'string']], true, 'each'),
+  ];
+  const e34 = [['Every 30 seconds', 'Config'], ['Config', 'Kill switch?'], ['Kill switch?', 'Paused', 0], ['Kill switch?', 'Tick', 1], ['Tick', 'Take queue'], ['Take queue', 'Expand rows'], ['Expand rows', 'Call SUB 20 Push']];
+  const s34 = [
+    { name: 'CLOCK', what: 'Runs every 30 seconds.', needs: 'Nothing.', nodes: ['Every 30 seconds'], color: 4 },
+    { name: 'CONFIG', what: 'The kill switch stops the schedule itself. The database address and the VAPID public key and contact.', needs: 'Config keys: kill_switch, supabase_url, env, vapid_public_key, vapid_subject.', nodes: ['Config'], color: 5 },
+    { name: 'GATE', what: 'Kill switch on: stop here.', needs: 'Config: kill_switch.', nodes: ['Kill switch?', 'Paused'], color: 5 },
+    { name: 'TAKE', what: 'Take the queued pushes once. The database queued one for every order that reached placed, ready, picked up or delivered, by any path.', needs: 'Credential "GoServe Supabase dev". Function push_outbox_take.', nodes: ['Tick', 'Take queue', 'Expand rows'], color: 6 },
+    { name: 'SEND', what: 'Call SUB 20 once for each queued push. An empty queue ends the run quietly. Successful runs are not saved.', needs: 'SUB 20 id.', nodes: ['Call SUB 20 Push'], color: 6 },
+  ];
+  const main34 = finish('GS MAIN 34 Push drain', n34, e34, s34, quiet);
+
   // ---- ERR 00: tells the owner on Telegram when a GoServe workflow fails (rulebook 84) ----
   const aNodes = [
     node('gs-err00-01', 'Error trigger', 'n8n-nodes-base.errorTrigger', 1, {}),
@@ -713,7 +743,16 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
     { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send alert'], color: 6 },
   ];
   const alert = finish('GS ERR 00 Alert', aNodes, aEdges, aSections, baseSettings);
-  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub19, sub20, sub21, sub22, sub30, sub32, sub33, main30, main31, main32, main33, sub91, sub93, sub94, main01, main90, main92, main93, alert };
+  // Stories #532 and #541: a timer retries a slow database call. Every Supabase HTTP node in a timer workflow, and in a SUB a timer calls, waits up to 20 s and tries 3 times, 5 s apart.
+  // neverError stays on, so only a timeout or an aborted connection retries; an HTTP error is read by the next node. The order API is left alone: a customer waits there, and the app retries.
+  for (const w of [main31, main32, main33, main34, main90, main92, main93, sub20, sub30, sub32, sub33, sub91, sub93, sub94]) {
+    for (const n of w.nodes) {
+      if (n.type !== 'n8n-nodes-base.httpRequest' || !JSON.stringify(n.parameters.url || '').includes('/rest/v1/')) continue;
+      n.parameters.options.timeout = 20000;
+      Object.assign(n, { retryOnFail: true, maxTries: 3, waitBetweenTries: 5000 });
+    }
+  }
+  const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub19, sub20, sub21, sub22, sub30, sub32, sub33, main30, main31, main32, main33, main34, sub91, sub93, sub94, main01, main90, main92, main93, alert };
   if (prod) for (const k of Object.keys(all)) if (k !== 'alert') all[k].name += ' PROD';   // the one GS ERR 00 alert is shared (one bot, one chat)
   return { ...all, STATUS_ROLES };
 }

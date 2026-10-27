@@ -6,12 +6,13 @@ const before = tryNode('Call SUB 91 before');   // only MAIN 93 has it
 const cur = tryNode('Call SUB 91 Scorecard numbers');
 const wnd = $('Prepare window').first().json;
 const reportMode = wnd.period_label !== 'last 24 hours';
-// A report reads its two periods by node name. If the current one failed it says so; it never shows the period before as the current one.
-const r = reportMode ? (cur || { ok: false, error: 'no_answer' }) : $input.first().json;
+// The card and every report read the numbers by node name: since SUB 94 joined the chain, $input is SUB 94's answer, not the scorecard (story #610).
+// If the current one failed it says so; it never shows the period before as the current one.
+const r = cur || { ok: false, error: 'no_answer' };
 const chat_id = $('Config').first().json.chat_id;
 const w = wnd;
 const report = reportMode;
-const health = report ? tryNode('Call SUB 94 Health and cost numbers') : null;
+const health = tryNode('Call SUB 94 Health and cost numbers');   // every day since #488, not only in reports
 const head = 'GoServe pilot ' + (report ? 'report' : 'day card') + ', ' + w.period_label + ' (to ' + w.until_label + ' India time)';
 if (!r.ok) return [{ json: { chat_id, text: head + '\nI could not read the numbers (' + (r.error || 'error') + '). Please check the database.' } }];
 const s = r.summary;
