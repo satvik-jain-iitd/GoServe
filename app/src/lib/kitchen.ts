@@ -58,10 +58,12 @@ export const hhmmOf = (t: string | null | undefined): string | null => (t ? t.sl
 
 // A live event and the answer to a tap can arrive in either order: the copy with the later updated_at wins.
 // Moments are compared, not text: the same instant can be written with Z or +00:00.
+// Story #601: once an order has a paid_by it keeps it. Three updates of one transaction share a moment, and the first of them (paid_by null) can arrive after the Yes answer.
 export const mergeOrder = (orders: Order[], incoming: Order): Order[] => {
   const old = orders.find((o) => o.id === incoming.id);
   if (old && Date.parse(old.updated_at) > Date.parse(incoming.updated_at)) return orders;
-  return [...orders.filter((o) => o.id !== incoming.id), incoming].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+  const next = old?.paid_by && !incoming.paid_by ? { ...incoming, paid_by: old.paid_by } : incoming;
+  return [...orders.filter((o) => o.id !== incoming.id), next].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
 };
 
 // ---- Story #50: the rider's buttons and the customer's progress list ----
