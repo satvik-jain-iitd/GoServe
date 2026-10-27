@@ -248,3 +248,19 @@ Deno.test("coupons: GET /coupons answers 200 as the contract says and a wrong fi
   const q = await (await quote(new Request("https://x.test/quote", { method: "POST", body: JSON.stringify({ kitchen_id: "7e57ab1e-0000-4000-8000-000000000001", lines: [{ menu_item_id: "7e57ab1e-0000-4000-8000-0000000000d1", qty: 1 }], address: { pin_code: "110016" } }) }))).json();
   assertEquals(q.offers, [{ code: "FLAT50", title: "Rs 50 off", saves_paise: 5000 }]);
 });
+
+Deno.test("rating: POST /orders/{id}/rating answers 200, 400, 401, 404, 409 as the contract says and a wrong field is red", async () => {
+  const { handler } = await import("../supabase/functions/orders/fixture.ts");
+  const post = (id: string, b: unknown, auth = true) => handler(new Request(`https://x.test/orders/${id}/rating`, { method: "POST", headers: auth ? { authorization: "Bearer t" } : {}, body: JSON.stringify(b) }));
+  const O = "7e57ab1e-0000-4000-8000-0000000000f1";
+  const ok = await post(O, { food_score: 5, rider_score: 4, comment: "Hot" });
+  assertEquals(ok.status, 200);
+  await checkAnswer("/orders/{id}/rating", "post", ok);
+  await checkAnswer("/orders/{id}/rating", "post", await post(O, { food_score: 5 }, false));   // 401
+  await checkAnswer("/orders/{id}/rating", "post", await post(O, { food_score: "5" }));   // 400
+  await checkAnswer("/orders/{id}/rating", "post", await post("7e57ab1e-0000-4000-8000-00000000dead", { food_score: 5 }));   // 404
+  await checkAnswer("/orders/{id}/rating", "post", await post("7e57ab1e-0000-4000-8000-0000000000f2", { food_score: 5 }));   // 409
+  const body = await (await post(O, { food_score: 5 })).json();
+  body.score = 5;
+  await assertRejects(() => checkAnswer("/orders/{id}/rating", "post", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
+});
