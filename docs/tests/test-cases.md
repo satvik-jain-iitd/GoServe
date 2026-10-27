@@ -389,3 +389,4 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | `quote/index.test.ts` (3, no_coupon) | #589 | `no_coupon: true` means no discount with the offers still listed; null or missing stays the best; `no_coupon` with a code is `invalid_request`. | Deno | `supabase/functions/quote/index.test.ts` | pass |
 | place through `POST /orders` | #590 | A price change before Place order shows the new price and makes no order until the next tap. | e2e | not written yet | planned |
 | `rehearsal-end.spec.ts` | #593 | On a page where "Yes, I have it" comes before Delivered, the rehearsal's last step passes. | e2e | `app/tests/e2e/rehearsal-end.spec.ts` | pass |
+| `offers.spec.ts` S6 | #597 | Remove asks the quote with `no_coupon: true`, the Discount line goes, every offer has Apply; Apply brings an offer back. | e2e | `app/tests/e2e/offers.spec.ts` | pass |
