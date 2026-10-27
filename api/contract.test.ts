@@ -140,3 +140,24 @@ Deno.test("order-actions: the 200, 401, 409, 422 and 400 answers are in the cont
   body.order.customer_phone = "9876543210";
   await assertRejects(() => checkAnswer("/order-actions", "post", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
 });
+
+Deno.test("otp: send and verify answer 200, 400, 401, 422 and 429 as the contract says, and the code is never in an answer", async () => {
+  const { handler } = await import("../supabase/functions/otp/fixture.ts");
+  const post = (route: string, b: unknown, auth = true) => handler(new Request(`https://x.test/otp/${route}`, { method: "POST", headers: auth ? { authorization: "Bearer t" } : {}, body: JSON.stringify(b) }));
+  const sent = await post("send", { phone: "9876543210" });
+  assertEquals(sent.status, 200);
+  const text = await sent.clone().text();
+  assertEquals(text.includes("482913"), false);
+  await checkAnswer("/otp/send", "post", sent);
+  await checkAnswer("/otp/send", "post", await post("send", { phone: "9876543210" }, false));   // 401
+  await checkAnswer("/otp/send", "post", await post("send", { phone: "9000000000" }));   // 429
+  await checkAnswer("/otp/send", "post", await post("send", {}));   // 400
+  const ok = await post("verify", { phone: "9876543210", code: "482913" });
+  assertEquals(ok.status, 200);
+  await checkAnswer("/otp/verify", "post", ok);
+  await checkAnswer("/otp/verify", "post", await post("verify", { phone: "9876543210", code: "000000" }));   // 422
+  await checkAnswer("/otp/verify", "post", await post("verify", { phone: "9876543210", code: "1" }));   // 400
+  const body = await (await post("verify", { phone: "9876543210", code: "482913" })).json();
+  body.session = "x";   // not a field of the answer
+  await assertRejects(() => checkAnswer("/otp/verify", "post", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
+});
