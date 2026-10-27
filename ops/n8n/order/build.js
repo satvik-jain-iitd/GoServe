@@ -491,7 +491,7 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
     { name: 'UPTIME', what: 'Ask UptimeRobot for each monitor and its 7-day uptime.', needs: 'Input: uptimerobot_key.', nodes: ['Read uptime'], color: 6 },
     { name: 'LINES', what: 'Write one line per number, with OK, WATCH or OVER against the cap. A failed read prints "could not read" and the rest go on.', needs: 'The four reads.', nodes: ['Health lines'], color: 5 },
   ];
-  const sub94 = finish('GS SUB 94 Health and cost numbers', n94, e94, s94, Object.assign({}, settings, { callerPolicy: 'workflowsFromAList', callerIds: ids.main93 }));
+  const sub94 = finish('GS SUB 94 Health and cost numbers', n94, e94, s94, Object.assign({}, settings, { callerPolicy: 'workflowsFromAList', callerIds: [ids.main90, ids.main93].filter(Boolean).join(',') }));
 
   const telegram = (id, name) => node(id, name, 'n8n-nodes-base.telegram', 1.2, { resource: 'message', operation: 'sendMessage', chatId: '={{ $json.chat_id }}', text: '={{ $json.text }}',
     additionalFields: { appendAttribution: false } }, { credentials: { telegramApi: { id: 'bBVpWzhaY0MCpoQ5', name: 'GoServeBot' } } });
@@ -501,28 +501,34 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
   // ---- MAIN 90 Daily pilot card: one schedule, one Telegram message (story #47; H14 moves it to 22:15 and adds the pilot block) ----
   const n90 = [
     schedule('gs-main90-01', 'Every day 22:15', '15 22 * * *'),
-    cfgSet('gs-main90-02', [['kill_switch', 'boolean', false], ['chat_id', 'string', chatId || PLACEHOLDER], ['supabase_url', 'string', url], ['prune_pings', 'boolean', true]]),
+    cfgSet('gs-main90-02', [['kill_switch', 'boolean', false], ['chat_id', 'string', chatId || PLACEHOLDER], ['supabase_url', 'string', url], ['uptimerobot_key', 'string', uptimerobotKey || PLACEHOLDER], ['prune_pings', 'boolean', true]]),
     ifNode('gs-main90-03', 'Kill switch?', '={{ $json.kill_switch }}', 'true'),
     node('gs-main90-04', 'Paused', 'n8n-nodes-base.noOp', 1, {}),
     codeNode('gs-main90-05', 'Prepare window', code('score_window.js')),
     callSub('gs-main90-06', 'Call SUB 91 Scorecard numbers', ids.sub91, [['since', '={{ $json.since }}', 'string'], ['until', '={{ $json.until }}', 'string'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
+    callSub('gs-main90-10', 'Call SUB 94 Health and cost numbers', ids.sub94, [['since', "={{ $('Prepare window').first().json.since }}", 'string'], ['days', "={{ $('Prepare window').first().json.days }}", 'number'], ['supabase_url', "={{ $('Prepare window').first().json.supabase_url }}", 'string'], ['uptimerobot_key', "={{ $('Prepare window').first().json.uptimerobot_key }}", 'string']]),
     codeNode('gs-main90-07', 'Format message', code('score_message.js')),
     telegram('gs-main90-08', 'Send scorecard'),
+    codeNode('gs-main90-11', 'Limit alert', code('health_alert.js')),
+    telegram('gs-main90-12', 'Send limit alert'),
     node('gs-main90-09', 'Prune ping history', 'n8n-nodes-base.httpRequest', 4.2, {
       method: 'POST', url: "={{ $('Config').first().json.supabase_url }}/rest/v1/rpc/pilot_prune", authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
       sendBody: true, specifyBody: 'json', jsonBody: '={{ {} }}',
       options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 } }, { credentials: { httpCustomAuth: cred } }),
   ];
   const e90 = [['Every day 22:15', 'Config'], ['Config', 'Kill switch?'], ['Kill switch?', 'Paused', 0], ['Kill switch?', 'Prepare window', 1], ['Prepare window', 'Call SUB 91 Scorecard numbers'],
-    ['Call SUB 91 Scorecard numbers', 'Format message'], ['Format message', 'Send scorecard'], ['Send scorecard', 'Prune ping history']];
+    ['Call SUB 91 Scorecard numbers', 'Call SUB 94 Health and cost numbers'], ['Call SUB 94 Health and cost numbers', 'Format message'], ['Format message', 'Send scorecard'], ['Send scorecard', 'Prune ping history'],
+    ['Send scorecard', 'Limit alert'], ['Limit alert', 'Send limit alert']];
   const s90 = [
     { name: 'SCHEDULE', what: 'Once a day at 22:15 India time, after the kitchen closes.', needs: 'Workflow timezone: Asia/Kolkata.', nodes: ['Every day 22:15'], color: 4 },
     { name: 'CONFIG', what: 'The kill switch, the owner chat and the database address live here.', needs: 'Config keys: kill_switch, chat_id, supabase_url, prune_pings.', nodes: ['Config'], color: 5 },
     { name: 'GATE', what: 'If the kill switch is on, send nothing.', needs: 'Config: kill_switch.', nodes: ['Kill switch?', 'Paused'], color: 1 },
     { name: 'WINDOW', what: 'Work out the last 24 hours, and the India time the card is for.', needs: 'Nothing.', nodes: ['Prepare window'], color: 5 },
     { name: 'COLLECT', what: 'Call SUB 91. It reads the rows of the last 24 hours and the pilot numbers.', needs: 'SUB 91 id. Config: supabase_url.', nodes: ['Call SUB 91 Scorecard numbers'], color: 6 },
-    { name: 'FORMAT', what: 'Make one short message: the pilot numbers against their lines first, then runs, time, decisions, cost.', needs: 'The SUB 91 numbers.', nodes: ['Format message'], color: 5 },
+    { name: 'HEALTH', what: 'Call SUB 94. It reads the Supabase free limits as "x of limit (pct%)", the OpenRouter spend, failed n8n runs and uptime.', needs: 'SUB 94 id. Config: uptimerobot_key.', nodes: ['Call SUB 94 Health and cost numbers'], color: 6 },
+    { name: 'FORMAT', what: 'Make one short message: the pilot numbers against their lines first, then runs, time, decisions, cost, and the platform health lines.', needs: 'The SUB 91 numbers and the SUB 94 lines.', nodes: ['Format message'], color: 5 },
     { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send scorecard'], color: 6 },
+    { name: 'ALERT', what: 'If any limit is at 80% or more, or the database did not answer, send one more message with only those lines. Nothing is sent when all is well.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Limit alert', 'Send limit alert'], color: 6 },
     { name: 'TIDY', what: 'Delete rider location pings older than 30 days.', needs: 'Credential "GoServe Supabase dev". Function: pilot_prune.', nodes: ['Prune ping history'], color: 6 },
   ];
   const main90 = finish('GS MAIN 90 Daily scorecard', n90, e90, s90, Object.assign({}, settings, { timezone: 'Asia/Kolkata' }));
