@@ -1,6 +1,6 @@
 // Story S-C (#95): when the app asks "Was your order delivered?", and what each answer does. Pure timing, no network.
 import { describe, expect, it } from "vitest";
-import { confirmAt, notYet, REASK_MS, type ConfirmCfg } from "../../src/lib/confirm";
+import { confirmAt, mayAsk, notYet, REASK_MS, type ConfirmCfg } from "../../src/lib/confirm";
 import { confirmDelivery, placeOrder } from "../../src/lib/orders";
 
 const cfg: ConfirmCfg = { afterReadyMin: 3, afterPlaceMin: 8 };
@@ -61,5 +61,20 @@ describe("the calls", () => {
   });
   it("an order that is not ready yet is a clear refusal", async () => {
     await expect(confirmDelivery({ sessionId: "s1", orderId: "o1" }, deps(json(409, { ok: false, error: "illegal_step", message: "That step is not allowed now." })))).rejects.toMatchObject({ code: "illegal_step" });
+  });
+});
+
+// Story #501: the question is asked only to someone who can answer it, about an order the server still holds as open.
+describe("mayAsk", () => {
+  it("never asks while the app is hidden (order 1a6e8df7 asked at 04:49:32 with the app hidden)", () => {
+    expect(mayAsk(false, "out_for_delivery")).toBe(false);
+    expect(mayAsk(false, null)).toBe(false);
+  });
+  it("never asks once the server says delivered or cancelled, whatever the app remembers", () => {
+    expect(mayAsk(true, "delivered")).toBe(false);
+    expect(mayAsk(true, "cancelled")).toBe(false);
+  });
+  it("asks when the app is visible and the server still holds the order as open; a read that failed does not block it", () => {
+    for (const st of ["ready", "out_for_delivery", "preparing", null]) expect(mayAsk(true, st)).toBe(true);
   });
 });

@@ -18,3 +18,7 @@ export function confirmAt(o: Timed, cfg: ConfirmCfg): number | null {
 export function notYet(count: number, now: number, wait = REASK_MS): { feedback: boolean; askAgainAt: number | null } {
   return count >= 3 ? { feedback: true, askAgainAt: null } : { feedback: false, askAgainAt: now + wait };
 }
+
+// Story #501: ask only someone who can answer (the app is visible) about an order the server still holds as open. `serverStatus` is a fresh read;
+// null means the read failed, which does not block the question. A hidden app holds a stale status, and a notice it cannot answer is noise.
+export const mayAsk = (visible: boolean, serverStatus: string | null): boolean => visible && serverStatus !== "delivered" && serverStatus !== "cancelled";
