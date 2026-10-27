@@ -14,7 +14,7 @@ def walk(*extra):   # the status steps are checked by a trigger: placed has to p
 
 DELIVERED = [f"insert into auth.users (id) values ('{RIDER}')", f"insert into riders (user_id, name) values ('{RIDER}', 'Test rider')"] + walk(f"update orders set rider_id = '{RIDER}' where id = '{O}'")
 NO_RIDER = walk()
-STORED = f"(select row_to_json(r) from (select food_score, rider_score, comment from order_ratings where order_id = '{O}') r) as stored, (select count(*) from order_ratings) as n"
+STORED = f"(select row_to_json(r) from (select food_score, rider_score, comment from order_ratings where order_id = '{O}') r) as stored, (select count(*) from order_ratings where order_id = '{O}') as n"
 
 
 def rate(food=5, rider=4, comment="null", session=CUST, order=O):
