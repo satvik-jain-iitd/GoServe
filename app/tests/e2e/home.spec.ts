@@ -102,3 +102,42 @@ for (const t of ["day", "night"] as const) {
     expect(await axeScan(page)).toEqual([]);
   });
 }
+
+// Story #528: the selected half of the veg / non-veg toggle is cream with a ring, so the green and red marks stay readable on it.
+const seg = async (page: import("@playwright/test").Page, name: string) =>
+  page.getByRole("link", { name, exact: true }).evaluate((el) => { const s = getComputedStyle(el); return { bg: s.backgroundColor, ring: s.boxShadow }; });
+
+test("S9 in Day the selected half is cream with a deep-green ring, and the other half is plain", async ({ page, context }) => {
+  await context.addInitScript(() => localStorage.setItem("gs-theme", "day"));
+  const net = await setup(context, page);
+  net.state.menu = MENU;
+  await page.goto("/customer/");
+  const on = await seg(page, "Veg thali");
+  expect(on.bg).toBe("rgb(228, 230, 217)");   // --gs-cream #e4e6d9
+  expect(on.ring).toContain("inset");
+  expect(on.ring).toContain("rgb(69, 101, 78)");   // --md-primary, the deep green #45654E
+  expect((await seg(page, "Non-veg thali")).bg).toBe("rgba(0, 0, 0, 0)");
+});
+
+test("S9 the ring and the cream follow the side that is selected", async ({ page, context }) => {
+  await context.addInitScript(() => localStorage.setItem("gs-theme", "day"));
+  const net = await setup(context, page);
+  net.state.menu = MENU;
+  await page.goto("/customer/");
+  await page.getByRole("link", { name: "Non-veg thali", exact: true }).click();
+  const on = await seg(page, "Non-veg thali");
+  expect([on.bg, on.ring.includes("inset")]).toEqual(["rgb(228, 230, 217)", true]);
+  expect((await seg(page, "Veg thali")).bg).toBe("rgba(0, 0, 0, 0)");
+});
+
+test("S10 in Night the selected half has a lime ring", async ({ page, context }) => {
+  await context.addInitScript(() => localStorage.setItem("gs-theme", "night"));
+  const net = await setup(context, page);
+  net.state.menu = MENU;
+  await page.goto("/customer/");
+  const on = await seg(page, "Veg thali");
+  const primary = await page.evaluate(() => { const d = document.createElement("i"); d.style.color = "var(--md-primary)"; document.body.append(d); const c = getComputedStyle(d).color; d.remove(); return c; });
+  expect(on.ring).toContain("inset");
+  expect(on.ring).toContain(primary);
+  expect(on.bg).not.toBe("rgb(69, 101, 78)");
+});

@@ -58,3 +58,14 @@ test('D5 canvas layout and deploy order', () => {
   assert.ok(ORDER.indexOf('main34') > ORDER.indexOf('sub20'));
   assert.equal(NAMES.main34, wf.main34.name);
 });
+
+test('D6 (#532) Take queue retries a slow call: 3 tries, 5 s apart, 20 s timeout, and no other MAIN 34 node changes', () => {
+  const take = byName(wf.main34, 'Take queue');
+  assert.equal(take.retryOnFail, true);
+  assert.equal(take.maxTries, 3);
+  assert.equal(take.waitBetweenTries, 5000);
+  assert.equal(take.parameters.options.timeout, 20000);
+  assert.equal(take.continueOnFail, undefined);   // rulebook B7: a failed take stops the run, it never carries on
+  const others = wf.main34.nodes.filter((n) => n.name !== 'Take queue' && n.type === 'n8n-nodes-base.httpRequest');
+  assert.deepEqual(others, []);   // Take queue is the only HTTP node in MAIN 34
+});
