@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted 28 Oct 2026 (reviewer).
+Accepted 27 Oct 2026 (reviewer).
 
 ## Date
 
