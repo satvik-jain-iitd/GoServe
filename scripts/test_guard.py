@@ -73,6 +73,13 @@ class Guard(unittest.TestCase):
         self.assertIsNone(guard.check_count(50))
         self.assertIsNotNone(guard.check_count(51))
 
+    def test_a_sync_from_main_skips_the_file_cap(self):
+        # Code that main already holds was reviewed there; the title starts with chore(sync).
+        self.assertIsNone(guard.check_count(88, "chore(sync): main into staging (#621)"))
+        self.assertIsNotNone(guard.check_count(88, "chore: merge main into staging (#621)"))
+        self.assertIsNotNone(guard.check_count(88, "feat: something chore(sync)"))   # the prefix, not any mention
+        self.assertIsNotNone(guard.check_count(88, ""))
+
 
 if __name__ == "__main__":
     unittest.main()
