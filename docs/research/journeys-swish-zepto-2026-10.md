@@ -1,0 +1,33 @@
+# Swish and Zepto Cafe journeys next to GoServe (story #330, 27 Oct 2026)
+
+Question: at each step of ordering food, what do Swish and Zepto Cafe do, and what does GoServe do? Sources are public text only. Nobody installed the two apps for this note. A cell says UNKNOWN when no source describes the step. Each other cell ends with `(tier, confidence)`; tiers are in the `web-research` skill. Store listings are the vendors' own words, so they prove what the vendor says, not what the app does.
+
+What we read on 27 Oct 2026: the Apple App Store entry of Swish (iTunes lookup, India store, id 6504881715: 4.72 stars, 10,578 ratings, last release 21 Oct 2026, 6 screenshots, release notes "Exciting new features, performance improvements, and a smoother Swish experience"); `justswish.in`; our own Swish study (`docs/research/swish-deep-research-2026-10.md`); the dispatch study (`docs/research/quick-commerce-dispatch-2026-10.md`); the GoServe app code.
+
+| # | Step | Swish | Zepto Cafe | GoServe (screen) |
+|---|---|---|---|---|
+| 1 | Open the app and see the promise | "10-Min Food Delivery" is the app name and the site line: "at your door in ten minutes" (A, 0.9). In Jan 2026 the platforms were asked to drop "10-minute" claims; Swish still uses it (A, 0.6) | Own app launched Dec 2024; later the listing is gone from the India App Store (search "zepto cafe" returns only the main Zepto app) (B, 0.6). Cafe orders are made in the main Zepto app | First screen `Area`: the brand and "where are you" (pin code). No time promise; the ETA comes after the order is placed |
+| 2 | Say where you are | UNKNOWN: the listing says "inaccurate location" in reviews only (P, 0.6). Site: kitchens "built right where you live" (A, 0.4). Coverage is by pin code, about 50 pins (B, 0.8) | UNKNOWN: no source for the Cafe flow. Store radius for Zepto in general: farthest 2.5 to 3 km, average 1.8 km (A via press, 0.65) | `Area` screen: type a 6-digit pin code; the app lists the kitchens that serve it and say when they close |
+| 3 | Browse the menu | About 250 SKUs in 20 categories (B, 0.8); earlier launch coverage said 70 to 80 items (C, 0.4). Listing: "browse our menu, select your items" (A, 0.5) | UNKNOWN for Cafe screens. Listing for the old Cafe app promised an easy ordering process (A, 0.4) | `Menu` screen: dishes with photos and prices, Veg mark, closed kitchens greyed with the opening time |
+| 4 | Cart and the bill | MediaNama bill sample, 8 Oct 2026: item total Rs 439, packaging free, delivery free, no platform fee, taxes Rs 22, final Rs 461 (B, 0.7). One bill, one order only | UNKNOWN. Zepto was penalised in 2025 for drip pricing (fees added late) (A, 0.8) | `Bill` screen ("Your bill"): the slip with each dish, taxes, and "Cash at door". No fee is added after this screen |
+| 5 | Offers and wallet | Top pain in reviews: the wallet cannot be used with sale items or a coupon, and only 20 to 40% of it per order; 141 found that review helpful (P, 0.7). Aggressive bundling: "for a coffee of Rs 50 you have to pay at least Rs 300" (P, 0.6) | Listing advertised "up to 40% off on your first cafe order" (A, 0.5; the vendor's claim) | None on the `Bill` screen: no coupons or wallet in MVP 2. The price on the menu is the price on the bill |
+| 6 | Pay | UNKNOWN. The listing says nothing about payment. Prices and fees are shown before paying (B, 0.5) | Listing: "several payment options" (A, 0.4; vendor claim) | Cash at the door only. The `Place order` button says "Cash". Paid by the customer's "Yes" on delivery (see step 9) |
+| 7 | Wait and track | Prep under 4 minutes on average, 80% of orders under 15 minutes (A, 0.5; the CEO's words). Tracking screens: UNKNOWN | Listing: "live tracking" (A, 0.4; vendor claim). The only step by step text found is for groceries: My Orders, pick the order, see real-time updates (A, 0.5) | `Placed` tracker: the stamp (Cooking, Out, Delivered), a timeline, the kitchen's phone, and the rider card with name and Call once a rider is assigned |
+| 8 | Delivery and handover | In-house riders; the rider app exists ("Swish Delivery Partner", 3.9 stars) (A, 0.8). Handover steps: UNKNOWN | UNKNOWN | The rider screen `Job`: taps Pick up, Arriving, Delivered. The customer gets a push at ready, picked up and delivered (since 27 Oct) |
+| 9 | Confirm and pay at the door | UNKNOWN | UNKNOWN | `Placed` asks "Was your order delivered?" after the ready time; Yes closes it and records cash; Not yet asks again, then opens Feedback |
+| 10 | After: rate, get help | Reviews say customer care is weak and an order was cancelled without asking (P, 0.6) | UNKNOWN | The `Feedback` button on every screen; the kitchen's number on the delivered screen |
+| 11 | Order again | UNKNOWN (no source on a repeat flow). 70 to 75% of revenue is from repeat users (B, 0.7) | UNKNOWN | `See the menu` on a finished slip: the menu opens with an empty cart (one way to order, since 27 Oct) |
+
+## Gaps
+
+- No source describes the screens of either app. Steps 2, 6 and 8 to 11 are UNKNOWN for both; the other cells hold vendor claims or press, never a screen.
+- The standalone Zepto Cafe app is not in the India App Store any more, so there is no listing to read. Which app a Cafe order goes through today is not confirmed (0.6).
+- Reviews are a sample of one store and a few reviews (P, 0.6).
+- Swish Go (Oct 2026) adds third-party restaurants with a different flow and longer waits (A, 0.8). This table covers the own-kitchen flow.
+- Nothing here is measured on a phone. Every claim that matters stays a hypothesis until a screen shows it.
+
+## How to close the gaps
+
+1. Install both apps on a test phone and record one order each from the first screen to the delivered screen, with a screenshot per step. This is the owner's step (accounts, location, a real order). Store the screenshots under `docs/research/journeys/` and replace each UNKNOWN with `(S, ...)` from what the screen shows.
+2. Until then, no design decision rests on a cell above that is not tier A with confidence 0.8 or more.
+3. Re-run the iTunes lookup for the Zepto Cafe id and the Play Store page once a quarter; both change.
