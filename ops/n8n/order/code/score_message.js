@@ -11,7 +11,7 @@ const r = reportMode ? (cur || { ok: false, error: 'no_answer' }) : $input.first
 const chat_id = $('Config').first().json.chat_id;
 const w = wnd;
 const report = reportMode;
-const health = report ? tryNode('Call SUB 94 Health and cost numbers') : null;
+const health = tryNode('Call SUB 94 Health and cost numbers');   // every day since #488, not only in reports
 const head = 'GoServe pilot ' + (report ? 'report' : 'day card') + ', ' + w.period_label + ' (to ' + w.until_label + ' India time)';
 if (!r.ok) return [{ json: { chat_id, text: head + '\nI could not read the numbers (' + (r.error || 'error') + '). Please check the database.' } }];
 const s = r.summary;

@@ -25,7 +25,7 @@ type Props = {
   onYes: () => void;
   onNotYet: () => void;
   onAllowReminder: () => void;
-  onAgain: () => void;          // Order again (a delivered or cancelled order)
+  onMenu: () => void;           // See the menu, with an empty cart (a delivered or cancelled order)
   onBack: () => void;           // the chevron: back to the menu
   onCancel: () => void;         // story B3: allowed only while the order is placed
   cancelling: boolean;
@@ -39,7 +39,7 @@ const clock = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { hour:
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "At your door" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "error" };
 
-export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onAgain, onBack, onCancel, cancelling, rider, onCall }: Props) {
+export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onMenu, onBack, onCancel, cancelling, rider, onCall }: Props) {
   const steps = trackerSteps(status);
   const eta = etaMinutes();
   const placed = new Date(placedAt);
@@ -103,7 +103,7 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
         </div>
       </div>
       <div className="ui-bottom">
-        {(delivered || cancelled) && <button type="button" className="ui-btn big" onClick={onAgain}>Order again</button>}
+        {(delivered || cancelled) && <button type="button" className="ui-btn big" onClick={onMenu}>See the menu</button>}
         {status === "placed" && <button type="button" className="ui-btn ghost big" disabled={cancelling} onClick={onCancel}>Cancel order</button>}
         {kitchenPhone && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
       </div>

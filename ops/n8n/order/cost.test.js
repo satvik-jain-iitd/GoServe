@@ -33,7 +33,7 @@ const lines = (named) => run('health_lines.js', {}, named).lines;
 test('H15 lines: OpenRouter spend against the cap, database size, connections, rows, oldest rows, n8n errors, uptime', () => {
   const l = lines(reads);
   assert.ok(l.includes('OpenRouter spend: $0.0007 of $2 · OK'));
-  assert.ok(l.includes('Database size: 42.3 of 500 MB · OK'));
+  assert.ok(l.includes('Database size: 42.3 of 500 MB (8%) · OK'));
   assert.ok(l.includes('Open database connections: 9'));
   assert.ok(l.includes('Rows: orders 30, run_log 5, rider_pings 100, order_events 90'));
   assert.ok(l.includes('Oldest rows: orders 2026-10-01, run_log 2026-10-02, rider_pings none, order_events 2026-10-01'));
@@ -59,8 +59,8 @@ test('H15 marks: WATCH from half the cap, OVER from 80% of the cap', () => {
   assert.equal(spend(1), 'OpenRouter spend: $1 of $2 · WATCH');
   assert.equal(spend(1.6), 'OpenRouter spend: $1.6 of $2 · OVER');
   const db = (mb) => lines({ ...reads, 'Read database numbers': ok({ ...reads['Read database numbers'].body, db_mb: mb }) }).find((x) => x.startsWith('Database size'));
-  assert.equal(db(250), 'Database size: 250 of 500 MB · WATCH');
-  assert.equal(db(400), 'Database size: 400 of 500 MB · OVER');
+  assert.equal(db(250), 'Database size: 250 of 500 MB (50%) · WATCH');
+  assert.equal(db(400), 'Database size: 400 of 500 MB (80%) · OVER');
 });
 
 test('H15 soft: a failed read prints "could not read" for its lines and the others still print; no raw database text', () => {
@@ -77,7 +77,7 @@ test('H15 soft: a failed read prints "could not read" for its lines and the othe
 test('H15 soft: a read that never ran (node missing from the run) is also "could not read"', () => {
   const partial = { Start: reads.Start };
   const l = lines(partial);
-  assert.deepEqual(l, ['OpenRouter spend: could not read', 'Database: could not read', 'n8n errors: could not read', 'Uptime: could not read']);
+  assert.deepEqual(l, ['Health: UNHEALTHY (the database did not answer)', 'OpenRouter spend: could not read', 'Database: could not read', 'n8n errors: could not read', 'Uptime: could not read']);
 });
 
 // ---- the message ----
@@ -111,7 +111,7 @@ test('H15 wiring: SUB 94 reads in a row, each read keeps going on error, and onl
   assert.match(byName(wf.sub94, 'Read n8n errors').parameters.url, /\/api\/v1\/executions\?status=error&limit=100$/);
   assert.match(byName(wf.sub94, 'Read uptime').parameters.url, /api\.uptimerobot\.com\/v2\/getMonitors$/);
   assert.equal(wf.sub94.settings.callerPolicy, 'workflowsFromAList');
-  assert.equal(wf.sub94.settings.callerIds, 'MAIN93');
+  assert.equal(wf.sub94.settings.callerIds, 'MAIN90,MAIN93');   // #488: the daily card reads it too
   const call = byName(wf.main93, 'Call SUB 94 Health and cost numbers').parameters;
   assert.equal(call.workflowId.value, 'SUB94');
   const declared = byName(wf.sub94, 'Start').parameters.workflowInputs.values.map((v) => v.name).sort();
