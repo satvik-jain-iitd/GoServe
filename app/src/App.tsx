@@ -14,6 +14,7 @@ import { RiderGate } from "./screens/RiderGate";
 import { fetchKitchen, type KitchenCard, type RiderGateState } from "./lib/rider";
 import { KitchenGate, type KitchenGateState } from "./screens/KitchenGate";
 import { enablePush, watchSession } from "./lib/push";
+import { alertsState, readOff, turnAlertsOff, writeOff, type Alerts } from "./lib/alerts";
 import { loadProfile, saveProfile } from "./lib/profile";
 import { addEvent, changeStatus, confirmDelivery, orderDeps, placeOrder, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
 import { confirmAt, DEFAULT_CFG, mayAsk, notYet, reaskMs, type ConfirmCfg } from "./lib/confirm";
@@ -161,7 +162,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     document.addEventListener("visibilitychange", seen);
     return () => document.removeEventListener("visibilitychange", seen);
   }, [live.loading]);
-  const [reminder, setReminder] = useState<"ask" | "on" | "none">(() => (typeof Notification === "undefined" ? "none" : Notification.permission === "default" ? "ask" : Notification.permission === "granted" ? "on" : "none"));
+  const [reminder, setReminder] = useState<Alerts>(() => alertsState(typeof Notification === "undefined" ? undefined : Notification.permission, readOff(window.localStorage)));   // story #609: on, off (by the customer), ask, or none (blocked)
   // The tracker goes back to the menu when the order it showed has left the list (the other device reset the demo).
   const trackedSeen = useRef(false);
   useEffect(() => {
@@ -262,6 +263,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [alertsError, setAlertsError] = useState<string | null>(null);
   async function allowReminder() {
     setAlertsError(null);
+    writeOff(window.localStorage, false);
     const native = await wrapperToken(window);   // story #554: a phone wrapper also registers its device token, with its platform
     if (native && !(await registerNative(native))) return void setAlertsError("Could not turn on alerts. Try again.");
     void pushWith(() => Notification.requestPermission()).then((r) => {
@@ -270,6 +272,23 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       if (r === "unsupported" || r === "not_set_up") return void Notification.requestPermission().then((p) => setReminder(p === "granted" ? "on" : "none"), () => setReminder("none"));
       setReminder("on");   // on, or failed to save: the permission is given, the local reminder still works
     });
+  }
+  // Story #609: the switch on You always works. Off: the server row and the browser subscription go and "off" is remembered. On again: subscribe with no prompt (the permission is still granted).
+  async function toggleAlerts() {
+    if (reminder === "ask" || reminder === "none") return allowReminder();
+    setAlertsError(null);
+    if (reminder === "on") {
+      const r = await turnAlertsOff({
+        subscription: async () => (await (await navigator.serviceWorker.ready).pushManager.getSubscription()) as { endpoint: string; unsubscribe: () => Promise<boolean> } | null,
+        remove: async (endpoint) => (await getClient().from("push_subscriptions").delete().eq("endpoint", endpoint)).error?.message ?? null,
+        setOff: (off) => writeOff(window.localStorage, off),
+      });
+      return r === "off" ? setReminder("off") : setAlertsError("Could not turn off alerts. Try again.");
+    }
+    writeOff(window.localStorage, false);
+    const r = await pushWith(async () => "granted");
+    if (r === "failed") { writeOff(window.localStorage, true); return setAlertsError("Could not turn on alerts. Try again."); }
+    setReminder("on");
   }
   // The browser's subscription, saved for the current session. `permission` asks (the Allow tap) or only reads (the re-save below).
   const pushWith = (permission: () => Promise<NotificationPermission | string>) => enablePush({
@@ -284,7 +303,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     if (lock !== "customer" || typeof Notification === "undefined") return;
     return watchSession(
       (cb) => { const { data } = getClient().auth.onAuthStateChange((_e, s) => cb(s?.user.id ?? null)); return () => data.subscription.unsubscribe(); },
-      () => { if (Notification.permission === "granted") void pushWith(async () => "granted"); },
+      () => { if (Notification.permission === "granted" && !readOff(window.localStorage)) void pushWith(async () => "granted"); },
     );
   }, [lock]);   // eslint-disable-line react-hooks/exhaustive-deps
   async function yes() {
@@ -652,7 +671,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} onYou={() => setStep("account")} />}
         {step === "account" && (
           <AccountScreen onGivenName={(n) => setName((v) => v || n)} name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone} onAddress={setAddress}
-            alerts={reminder} onAlerts={allowReminder} alertsError={alertsError} live={openLive} onShare={shareFromAccount} onForget={forgetMe}
+            alerts={reminder} onAlerts={toggleAlerts} alertsError={alertsError} live={openLive} onShare={shareFromAccount} onForget={forgetMe}
             onMenu={() => setStep("menu")} onOrders={() => setStep("orders")} />
         )}
         {menu && step === "bill" && (
