@@ -120,3 +120,23 @@ Deno.test("a caller with no login sees the public offers only", async () => {
   const q = await (await post(makeHandler(mine()), body())).json();
   assertEquals(q.offers.map((o: { code: string }) => o.code), ["FLAT50"]);
 });
+
+// Story #589: no_coupon true means no coupon, not even the best one. coupon_code null stays "best".
+Deno.test("no_coupon true: no discount, the offers are still listed (the scenario)", async () => {
+  const q = await (await post(makeHandler(many([pct10, flat40, flat])), body({ no_coupon: true }))).json();
+  assertEquals([q.coupon, q.discount_paise, q.to_pay_paise, q.offers.map((o: { code: string }) => o.code)], [null, 0, 32000, ["FLAT50", "FLAT40", "PCT10"]]);
+});
+
+Deno.test("coupon_code null or missing stays: the server picks the best", async () => {
+  for (const b of [body({ coupon_code: null }), body({ no_coupon: false })]) {
+    const q = await (await post(makeHandler(many([flat40, flat])), b)).json();
+    assertEquals(q.coupon.code, "FLAT50");
+  }
+});
+
+Deno.test("no_coupon true with a code, or no_coupon that is not true or false, is invalid_request", async () => {
+  for (const b of [body({ no_coupon: true, coupon_code: "FLAT50" }), body({ no_coupon: "yes" })]) {
+    const res = await post(makeHandler(many([flat])), b);
+    assertEquals([res.status, (await res.json()).error], [400, "invalid_request"]);
+  }
+});

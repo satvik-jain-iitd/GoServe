@@ -90,6 +90,7 @@ Deno.test("quote: the 200, the 422 and the 400 answers are in the contract, and 
   const K = "7e57ab1e-0000-4000-8000-000000000001", D1 = "7e57ab1e-0000-4000-8000-0000000000d1", D2 = "7e57ab1e-0000-4000-8000-0000000000d2";
   const base = { kitchen_id: K, address: { pin_code: "110016" } };
   await checkAnswer("/quote", "post", await post({ ...base, lines: [{ menu_item_id: D1, qty: 2, option_ids: [] }], coupon_code: "FLAT50" }));
+  await checkAnswer("/quote", "post", await post({ ...base, lines: [{ menu_item_id: D1, qty: 2, option_ids: [] }], no_coupon: true }));   // story #589
   await checkAnswer("/quote", "post", await post({ ...base, lines: [{ menu_item_id: D2, qty: 1, option_ids: [] }] }));   // sold out: 422
   await checkAnswer("/quote", "post", await post({ ...base, lines: "no" }));   // 400
   const body = await (await post({ ...base, lines: [{ menu_item_id: D1, qty: 1, option_ids: [] }] })).json();
