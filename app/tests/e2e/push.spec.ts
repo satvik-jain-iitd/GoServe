@@ -26,3 +26,18 @@ test("S2 the built app carries the push service worker with this project's addre
   expect(text).toContain("anon-test");
   expect(text).not.toMatch(/PRIVATE|service_role/i);
 });
+
+test("S3 alerts already allowed: at app start the subscription is saved again for the current session, without a prompt (story #613)", async ({ page, context }) => {
+  await context.addInitScript(() => {
+    Object.defineProperty(Notification, "permission", { get: () => "granted", configurable: true });
+    (Notification as unknown as { requestPermission: () => Promise<string> }).requestPermission = async () => { (window as unknown as { __asked: boolean }).__asked = true; return "granted"; };
+    const fake = { pushManager: { subscribe: async () => ({ toJSON: () => ({ endpoint: "https://push.example/abc", keys: { p256dh: "PKEY", auth: "AKEY" } }) }) } };
+    Object.defineProperty(navigator.serviceWorker, "ready", { get: () => Promise.resolve(fake), configurable: true });
+    (window as unknown as { PushManager: unknown }).PushManager = function () {};
+  });
+  const net = await setup(context, page, []);
+  await page.goto("/customer/");
+  await expect.poll(() => net.calls.rpc.filter((c) => c.name === "save_push").length).toBe(1);
+  expect(net.calls.rpc.find((c) => c.name === "save_push")!.body).toEqual({ p_endpoint: "https://push.example/abc", p_p256dh: "PKEY", p_auth: "AKEY" });
+  expect(await page.evaluate(() => (window as unknown as { __asked?: boolean }).__asked ?? false)).toBe(false);
+});

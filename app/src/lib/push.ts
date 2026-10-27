@@ -33,3 +33,10 @@ export async function enablePush(d: Deps): Promise<PushResult> {
     return "failed";
   }
 }
+
+// Story #613: a sign out and a sign in give the phone a new session id, but the subscription stays on the old one and no push is queued for the new session's orders.
+// Call `resync` (save the subscription again, it moves to the current session) when the first session appears and whenever the session id changes. A sign out (no session) does nothing.
+export function watchSession(subscribe: (cb: (id: string | null) => void) => () => void, resync: () => void): () => void {
+  let last: string | null = null;
+  return subscribe((id) => { if (id && id !== last) { last = id; resync(); } });
+}

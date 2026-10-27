@@ -13,7 +13,7 @@ import { AdminGate } from "./screens/AdminGate";
 import { RiderGate } from "./screens/RiderGate";
 import { fetchKitchen, type KitchenCard, type RiderGateState } from "./lib/rider";
 import { KitchenGate, type KitchenGateState } from "./screens/KitchenGate";
-import { enablePush } from "./lib/push";
+import { enablePush, watchSession } from "./lib/push";
 import { loadProfile, saveProfile } from "./lib/profile";
 import { addEvent, changeStatus, confirmDelivery, orderDeps, placeOrder, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
 import { confirmAt, DEFAULT_CFG, notYet, reaskMs, type ConfirmCfg } from "./lib/confirm";
@@ -209,18 +209,28 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setAlertsError(null);
     const native = await wrapperToken(window);   // story #554: a phone wrapper also registers its device token, with its platform
     if (native && !(await registerNative(native))) return void setAlertsError("Could not turn on alerts. Try again.");
-    void enablePush({
-      vapidKey: import.meta.env.VITE_VAPID_PUBLIC_KEY ?? "",
-      supported: () => "serviceWorker" in navigator && "PushManager" in window,
-      permission: () => Notification.requestPermission(),
-      subscribe: async (key) => (await (await navigator.serviceWorker.ready).pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key as BufferSource })),
-      save: async (payload) => (await getClient().rpc("save_push", payload)).error?.message ?? null,
-    }).then((r) => {
+    void pushWith(() => Notification.requestPermission()).then((r) => {
       if (r === "denied") return setReminder("none");
       if (r === "unsupported" || r === "not_set_up") return void Notification.requestPermission().then((p) => setReminder(p === "granted" ? "on" : "none"), () => setReminder("none"));
       setReminder("on");   // on, or failed to save: the permission is given, the local reminder still works
     });
   }
+  // The browser's subscription, saved for the current session. `permission` asks (the Allow tap) or only reads (the re-save below).
+  const pushWith = (permission: () => Promise<NotificationPermission | string>) => enablePush({
+    vapidKey: import.meta.env.VITE_VAPID_PUBLIC_KEY ?? "",
+    supported: () => "serviceWorker" in navigator && "PushManager" in window,
+    permission,
+    subscribe: async (key) => (await (await navigator.serviceWorker.ready).pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key as BufferSource })),
+    save: async (payload) => (await getClient().rpc("save_push", payload)).error?.message ?? null,
+  });
+  // Story #613: alerts already allowed on this phone: at app start and after every sign in or sign out the subscription moves to the current session, so the push is queued for its orders. Never asks.
+  useEffect(() => {
+    if (lock !== "customer" || typeof Notification === "undefined") return;
+    return watchSession(
+      (cb) => { const { data } = getClient().auth.onAuthStateChange((_e, s) => cb(s?.user.id ?? null)); return () => data.subscription.unsubscribe(); },
+      () => { if (Notification.permission === "granted") void pushWith(async () => "granted"); },
+    );
+  }, [lock]);   // eslint-disable-line react-hooks/exhaustive-deps
   async function yes() {
     if (!placed) return;
     pushTrail("customer: yes, delivered");
