@@ -232,12 +232,10 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
   // ---- SUB 20 Push (story A7): a text-less web push to every subscription of the customer. The phone's service worker asks the database what to say. ----
   const vapidCred = vapidCredential || { id: 'REPLACE_VAPID_CRED_ID', name: 'GoServe VAPID' };
   const f20 = [['session_id', 'string'], ['order_id', 'string'], ['status', 'string'], ['vapid_public_key', 'string'], ['vapid_subject', 'string'], ['kill_switch', 'boolean'], ['supabase_url', 'string']];
-  // slow: story #532. A call the next tick cannot replace waits up to 20 s and tries 3 times, 5 s apart. neverError stays on, so only a timeout or an aborted connection retries; an HTTP error is read by the next node.
-  const rpcCall = (id, name, fn, table = false, slow = false) => node(id, name, 'n8n-nodes-base.httpRequest', 4.2, {
+  const rpcCall = (id, name, fn, table = false) => node(id, name, 'n8n-nodes-base.httpRequest', 4.2, {
     method: 'POST', url: `={{ $json.supabase_url }}/rest/v1/${table ? '' : 'rpc/'}${fn}`, authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
     sendBody: true, specifyBody: 'json', jsonBody: '={{ $json.rpc_body }}',
-    options: { response: { response: { fullResponse: true, neverError: true } }, timeout: slow ? 20000 : 10000 } },
-    Object.assign({ credentials: { httpCustomAuth: cred } }, slow ? { retryOnFail: true, maxTries: 3, waitBetweenTries: 5000 } : {}));
+    options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 } }, { credentials: { httpCustomAuth: cred } });
   const n20 = [
     node('gs-sub20-01', 'Start', 'n8n-nodes-base.executeWorkflowTrigger', 1.1, inputs(f20)),
     codeNode('gs-sub20-02', 'Guard', code('guard_push.js')),
@@ -711,7 +709,7 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
     ifNode('gs-main34-03', 'Kill switch?', '={{ $json.kill_switch }}', 'true'),
     node('gs-main34-04', 'Paused', 'n8n-nodes-base.noOp', 1, {}),
     codeNode('gs-main34-05', 'Tick', code('push_drain_tick.js')),
-    rpcCall('gs-main34-06', 'Take queue', 'push_outbox_take', false, true),
+    rpcCall('gs-main34-06', 'Take queue', 'push_outbox_take'),
     codeNode('gs-main34-07', 'Expand rows', code('push_drain_expand.js')),
     callSub('gs-main34-08', 'Call SUB 20 Push', ids.sub20, [
       ['session_id', '={{ $json.session_id }}', 'string'], ['order_id', '={{ $json.order_id }}', 'string'], ['status', '={{ $json.status }}', 'string'],
@@ -745,6 +743,15 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
     { name: 'SEND', what: 'Send the message to the owner on Telegram.', needs: 'Credential "GoServeBot". Config: chat_id.', nodes: ['Send alert'], color: 6 },
   ];
   const alert = finish('GS ERR 00 Alert', aNodes, aEdges, aSections, baseSettings);
+  // Stories #532 and #541: a timer retries a slow database call. Every Supabase HTTP node in a timer workflow, and in a SUB a timer calls, waits up to 20 s and tries 3 times, 5 s apart.
+  // neverError stays on, so only a timeout or an aborted connection retries; an HTTP error is read by the next node. The order API is left alone: a customer waits there, and the app retries.
+  for (const w of [main31, main32, main33, main34, main90, main92, main93, sub20, sub30, sub32, sub33, sub91, sub93, sub94]) {
+    for (const n of w.nodes) {
+      if (n.type !== 'n8n-nodes-base.httpRequest' || !JSON.stringify(n.parameters.url || '').includes('/rest/v1/')) continue;
+      n.parameters.options.timeout = 20000;
+      Object.assign(n, { retryOnFail: true, maxTries: 3, waitBetweenTries: 5000 });
+    }
+  }
   const all = { sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub19, sub20, sub21, sub22, sub30, sub32, sub33, main30, main31, main32, main33, main34, sub91, sub93, sub94, main01, main90, main92, main93, alert };
   if (prod) for (const k of Object.keys(all)) if (k !== 'alert') all[k].name += ' PROD';   // the one GS ERR 00 alert is shared (one bot, one chat)
   return { ...all, STATUS_ROLES };
