@@ -10,12 +10,14 @@ const SECRET = "test-webhook-secret";
 let gw: FakeGateway;
 const stored: unknown[][] = [];
 const paidCalls: unknown[][] = [];
+const cashCalls: unknown[][] = [];
 const deps = (o: Partial<Deps> = {}): Deps => ({
   session: async (req) => (req.headers.get("authorization") ? "u1" : null),
   gateway: gw,
   prepare: async () => ({ ok: true, amount_paise: 28000, existing: null }),
   store: async (...a) => { stored.push(a); return { ok: true }; },
   markPaid: async (...a) => { paidCalls.push(a); return { ok: true, order_id: O }; },
+  switchCash: async (...a) => { cashCalls.push(a); return { ok: true }; },
   secret: () => SECRET, ...o,
 });
 const post = (h: ReturnType<typeof makeHandler>, route: string, b: unknown, opts: { token?: string | null; method?: string } = {}) =>
@@ -84,6 +86,26 @@ Deno.test("webhook: an unknown payment is 404, a repeat is 200, no secret set is
   assertEquals((await post(makeHandler(deps({ secret: () => "" })), "webhook", b, { token: null })).status, 503);
   const res = await post(makeHandler(deps({ markPaid: () => Promise.reject(new Error("password=secret")) })), "webhook", b, { token: null });
   assertEquals([res.status, await res.json()], [502, { ok: false, error: "payment_unavailable" }]);
+});
+
+Deno.test("switch-to-cash: the signed-in caller switches their order to cash (the scenario)", async () => {
+  cashCalls.length = 0;
+  const res = await post(makeHandler(deps()), "switch-to-cash", { order_id: O });
+  assertEquals([res.status, await res.json()], [200, { ok: true }]);
+  assertEquals(cashCalls, [[O, "u1"]]);
+});
+
+Deno.test("switch-to-cash: refusals keep their code, no login is 401, a bad body is 400, a dead database is 502 with no detail", async () => {
+  cashCalls.length = 0;
+  for (const [error, status] of [["order_not_found", 404], ["already_paid", 409], ["order_not_payable", 409]] as const) {
+    const res = await post(makeHandler(deps({ switchCash: async () => ({ ok: false, error, message: "m" }) })), "switch-to-cash", { order_id: O });
+    assertEquals([error, res.status, (await res.json()).error], [error, status, error]);
+  }
+  assertEquals((await post(makeHandler(deps()), "switch-to-cash", { order_id: O }, { token: null })).status, 401);
+  assertEquals((await post(makeHandler(deps()), "switch-to-cash", { order_id: "x" })).status, 400);
+  const dead = await post(makeHandler(deps({ switchCash: () => Promise.reject(new Error("db host 10.0.0.1")) })), "switch-to-cash", { order_id: O });
+  assertEquals([dead.status, await dead.json()], [502, { ok: false, error: "payment_unavailable" }]);
+  assertEquals(cashCalls.length, 0);
 });
 
 Deno.test("the FakeGateway records a refund and answers an id", async () => {

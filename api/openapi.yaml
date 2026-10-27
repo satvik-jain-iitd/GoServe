@@ -523,6 +523,60 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /payments/switch-to-cash:
+    post:
+      operationId: postPaymentsSwitchToCash
+      summary: The customer pays cash instead of online
+      description: "The payment still open for the order is closed as failed and the order goes to cash on delivery now, so the kitchen can accept it. An order that is already cash stays cash. A paid order is refused."
+      x-handler: ../supabase/functions/payments/index.ts
+      x-contract-handler: ../supabase/functions/payments/fixture.ts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [order_id]
+              properties:
+                order_id: { type: string, format: uuid }
+      responses:
+        "200":
+          description: The order is cash on delivery.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwitchedToCash"
+        "400":
+          description: The request is malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: There is no login.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "404":
+          description: The order was not found (also for an order that is not the caller's).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "409":
+          description: The order is already paid (already_paid) or cannot be changed now (order_not_payable).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /otp/claim:
     post:
       operationId: postOtpClaim
@@ -860,6 +914,13 @@ components:
         ok:
           const: true
         order_id: { type: string }
+    SwitchedToCash:
+      type: object
+      additionalProperties: false
+      required: [ok]
+      properties:
+        ok:
+          const: true
     PushRegistered:
       type: object
       additionalProperties: false
