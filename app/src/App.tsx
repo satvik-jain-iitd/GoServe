@@ -566,7 +566,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         )}
         {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} onYou={() => setStep("account")} />}
         {step === "account" && (
-          <AccountScreen name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone} onAddress={setAddress}
+          <AccountScreen onGivenName={(n) => setName((v) => v || n)} name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone} onAddress={setAddress}
             alerts={reminder} onAlerts={allowReminder} live={openLive} onShare={shareFromAccount} onForget={forgetMe}
             onMenu={() => setStep("menu")} onOrders={() => setStep("orders")} />
         )}

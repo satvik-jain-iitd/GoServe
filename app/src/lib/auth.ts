@@ -6,6 +6,13 @@ type UserLike = { is_anonymous?: boolean; email?: string; user_metadata?: Record
 export const signedInName = (u: UserLike): string | null =>
   !u || u.is_anonymous ? null : (u.user_metadata?.full_name as string | undefined) || (u.user_metadata?.name as string | undefined) || u.email || null;
 
+// The first name from the Google profile (story 527), or null while the user is still anonymous.
+export const givenNameOf = (u: UserLike): string | null => {
+  if (!u || u.is_anonymous) return null;
+  const m = u.user_metadata;
+  return ((m?.given_name as string | undefined) || ((m?.full_name as string | undefined) || (m?.name as string | undefined) || "").trim().split(/\s+/)[0]) || null;
+};
+
 // Returns null on success (the browser goes to Google), or a plain message.
 // "link" (the customer app) keeps the anonymous user, so the session id stays. "signin" (kitchen, rider, ops; story S-M5) becomes the Google user
 // that may already exist, because linking fails when that Google account belongs to another user.
