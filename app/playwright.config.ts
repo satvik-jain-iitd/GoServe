@@ -12,7 +12,7 @@ export default defineConfig({
   webServer: {
     // Test keys are baked into the build; the specs answer those hosts themselves.
     command:
-      "VITE_SUPABASE_URL=https://test.supabase.co VITE_SUPABASE_ANON_KEY=anon-test VITE_ORDER_URL=https://orders.test/gs-order VITE_VAPID_PUBLIC_KEY=AQID VITE_STYLEGUIDE=1 VITE_DEMO_TOKEN=demo-token VITE_SIM_URL=https://sim.test/gs-sim VITE_SIM_TOKEN=sim-token VITE_ENGINE_URL=https://engine.test/gs-engine VITE_PAYMENTS_PLACEHOLDER=1 VITE_PAYMENTS_DEV_SECRET=dev-secret VITE_AUTOPILOT_MS=300 VITE_REASK_MS=400 npm run build && npm run preview -- --port 4180 --strictPort",
+      "VITE_SUPABASE_URL=https://test.supabase.co VITE_SUPABASE_ANON_KEY=anon-test VITE_ORDER_URL=https://orders.test/gs-order VITE_VAPID_PUBLIC_KEY=AQID VITE_STYLEGUIDE=1 VITE_DEMO_TOKEN=demo-token VITE_SIM_URL=https://sim.test/gs-sim VITE_SIM_TOKEN=sim-token VITE_ENGINE_URL=https://engine.test/gs-engine VITE_PAYMENTS_PLACEHOLDER=1 VITE_OFFERS=1 VITE_PAYMENTS_DEV_SECRET=dev-secret VITE_AUTOPILOT_MS=300 VITE_REASK_MS=400 npm run build && npm run preview -- --port 4180 --strictPort",
     url: "http://localhost:4180",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

@@ -3,11 +3,14 @@ import type { Line } from "../lib/cart";
 import { formatRupees } from "../lib/money";
 import { isPhone } from "../lib/profile";
 import { PAY_METHODS, type PayMethod } from "../lib/payments";
+import type { Quote } from "../lib/quote";
+import { useState } from "react";
 
 type Props = {
   lines: Line[]; total: number; kitchenName: string; pin: string | null;
   address: string; onAddress: (v: string) => void;
   details?: { name: string; phone: string; onName: (v: string) => void; onPhone: (v: string) => void; gate?: boolean };   // the customer app also asks who and which phone (story B3)
+  offers?: { quote: Quote; codeError: string | null; onApply: (code: string) => void };   // story #588: the quote's bill and the Offers block (boards C1, C2)
   pay?: { value: PayMethod; onChange: (v: PayMethod) => void };   // story #552: how you pay (the customer app only)
   sending: boolean; error: string | null;
   onBack: () => void; onPlace: () => void;
@@ -20,7 +23,9 @@ export const BackChevron = ({ label, onClick }: { label: string; onClick: () => 
   </button>
 );
 
-export function BillScreen({ lines, total, kitchenName, pin, address, onAddress, details, pay, sending, error, onBack, onPlace }: Props) {
+export function BillScreen({ lines, total, kitchenName, pin, address, onAddress, details, offers, pay, sending, error, onBack, onPlace }: Props) {
+  const [typed, setTyped] = useState("");
+  const q = offers?.quote;
   const empty = lines.length === 0;
   const ready = !empty && address.trim().length > 0 && (!details || details.gate || (details.name.trim().length > 0 && isPhone(details.phone)));   // story #551: with the phone code on, the sheets ask the number and the name
   const head = [kitchenName, pin].filter(Boolean).join(" · ");
@@ -43,14 +48,43 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
             ) : (
               <div className="ui-slip-lines">
                 {lines.map(({ dish, qty, line_paise }) => <div key={dish.id}><span>{qty} × {dish.name}</span><span>{plain(line_paise)}</span></div>)}
-                <div><span>Delivery</span><span>Free</span></div>
+                <div><span>Delivery</span><span>{q && q.fees.delivery_paise > 0 ? plain(q.fees.delivery_paise) : "Free"}</span></div>
+                {q && q.fees.packaging_paise > 0 && <div><span>Packaging</span><span>{plain(q.fees.packaging_paise)}</span></div>}
+                {q && q.tax_mode === "exclusive" && q.tax_paise > 0 && <div><span>Tax</span><span>{plain(q.tax_paise)}</span></div>}
+                {q && q.coupon && q.discount_paise > 0 && <div><span>Discount · {q.coupon.code}</span><span>−{plain(q.discount_paise)}</span></div>}
               </div>
             )}
             <div className="ui-slip-rule" />
-            <div className={empty ? "ui-slip-total ui-muted" : "ui-slip-total"}><b>Cash at door</b><span data-testid="bill-total">{formatRupees(total)}</span></div>
+            <div className={empty ? "ui-slip-total ui-muted" : "ui-slip-total"}><b>{q ? "To pay" : "Cash at door"}</b><span data-testid="bill-total">{formatRupees(total)}</span></div>
             {!empty && <button type="button" className="ui-btn ghost ui-add-more" onClick={onBack}>+ Add more</button>}
           </div>
         </section>
+        {offers && (offers.quote.offers.length > 0 || offers.quote.coupon) && (
+          <section aria-label="Offers" style={{ margin: "16px 20px 0 20px", display: "flex", flexDirection: "column", gap: 8 }}>
+            <h2 style={{ margin: "0 0 4px 0", fontFamily: "'DM Mono', monospace", fontSize: 12, fontWeight: 400, textTransform: "uppercase", color: "var(--gs-text-muted)" }}>Offers</h2>
+            {offers.quote.offers.map((o) => {
+              const on = offers.quote.coupon?.code === o.code;
+              return (
+                <div key={o.code} style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 48, padding: "0 12px", border: on ? "2px solid var(--md-primary)" : "1px solid var(--md-outline-variant)", borderRadius: 6, background: "var(--md-surface)" }}>
+                  {on
+                    ? <span aria-hidden="true" style={{ width: 20, height: 20, borderRadius: "50%", background: "var(--md-primary)", color: "var(--md-on-primary)", display: "inline-flex", alignItems: "center", justifyContent: "center", flex: "none" }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="square"><path d="M5 12l5 5 9-10" /></svg></span>
+                    : <span aria-hidden="true" style={{ width: 20, height: 20, borderRadius: "50%", border: "2px solid var(--md-outline-variant)", boxSizing: "border-box", flex: "none" }} />}
+                  <span style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}><span style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, fontWeight: 500 }}>{o.code}</span><span style={{ fontSize: 13, color: "var(--gs-text-muted)" }}>{o.title}</span></span>
+                  <span style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>Save {formatRupees(o.saves_paise)}</span>
+                  {!on && <button type="button" aria-label={`Apply ${o.code}`} onClick={() => offers.onApply(o.code)} style={{ border: 0, background: "none", padding: "0 0 0 4px", color: "var(--md-primary)", font: "inherit", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Apply</button>}
+                </div>
+              );
+            })}
+            <form style={{ display: "flex", gap: 8, marginTop: 4 }} onSubmit={(e) => { e.preventDefault(); if (typed.trim()) offers.onApply(typed); }}>
+              <label htmlFor="code" style={{ position: "absolute", left: -9999 }}>Have a code?</label>
+              <input id="code" type="text" placeholder="Have a code?" autoCapitalize="characters" value={typed} onChange={(e) => setTyped(e.target.value.toUpperCase())} maxLength={40}
+                aria-invalid={offers.codeError ? true : undefined}
+                style={{ flex: 1, minWidth: 0, height: 44, padding: "0 12px", border: `1px solid ${offers.codeError ? "var(--md-error)" : "var(--md-outline-variant)"}`, borderRadius: 6, background: "var(--md-surface)", color: "inherit", font: "inherit", fontFamily: "'DM Mono', monospace", fontSize: 14 }} />
+              <button type="submit" aria-label="Apply code" style={{ height: 44, padding: "0 16px", border: "1px solid var(--md-primary)", borderRadius: 6, background: "none", color: "var(--md-primary)", font: "inherit", fontWeight: 600, cursor: "pointer" }}>Apply</button>
+            </form>
+            {offers.codeError && <p role="alert" style={{ margin: 0, fontSize: 13, color: "var(--md-error)" }}>{offers.codeError}</p>}
+          </section>
+        )}
         {!empty && (
           <form className="ui-form" onSubmit={(e) => e.preventDefault()}>
             {details && !details.gate && (
