@@ -16,4 +16,7 @@ describe("deploy-app.yml (the real app)", () => {
     expect(text).not.toMatch(/VITE_OTP_GATE:\s*["']?1/);
     expect(text).not.toMatch(/VITE_PUSH_NATIVE:\s*["']?real/);
   });
+  it("does not turn the offers on: the order still goes through the v1 path (stories #588, #590)", () => {
+    expect(text).not.toContain("VITE_OFFERS");
+  });
 });
