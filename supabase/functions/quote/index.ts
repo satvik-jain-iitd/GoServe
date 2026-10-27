@@ -7,8 +7,9 @@ export type Offer = { code: string; title: string; saves_paise: number };
 export type Deps = {
   catalog: (kitchenId: string, menuItemIds: string[], optionIds: string[]) => Promise<Catalog>;
   rules: (kitchenId: string) => Promise<Rules>;
-  coupon: (code: string) => Promise<Coupon | null>;
-  coupons: () => Promise<Coupon[]>;   // story #346: every coupon valid now (the database decides)
+  session: (req: Request) => Promise<string | null>;   // who is asking: the login's user id, or null
+  coupon: (code: string, session: string | null) => Promise<Coupon | null>;
+  coupons: (session: string | null) => Promise<Coupon[]>;   // story #346: every coupon valid now (the database decides); story #579: plus this customer's own
   validate: (menuItemId: string, optionIds: string[]) => Promise<{ ok: true } | { ok: false; error: string; message: string }>;
   firstOrder: (kitchenId: string) => Promise<boolean>;
 };
@@ -32,17 +33,17 @@ export function parse(b: any): { kitchen: string; lines: Line[]; code: string | 
 }
 
 // The quote itself, shared with POST /orders (#347): one way to price a cart. Throws when a data source fails.
-export async function runQuote(deps: Deps, q: { kitchen: string; lines: Line[]; code: string | null }): Promise<(Extract<ReturnType<typeof quote>, { ok: true }> & { offers: Offer[] }) | { ok: false; error: string; message: string }> {
+export async function runQuote(deps: Deps, q: { kitchen: string; lines: Line[]; code: string | null }, session: string | null = null): Promise<(Extract<ReturnType<typeof quote>, { ok: true }> & { offers: Offer[] }) | { ok: false; error: string; message: string }> {
   const catalog = await deps.catalog(q.kitchen, q.lines.map((l) => l.menu_item_id), q.lines.flatMap((l) => l.option_ids));
   const checks = new Map<string, Awaited<ReturnType<Deps["validate"]>>>();
   for (const l of q.lines) if (catalog.dishes[l.menu_item_id] && l.option_ids.every((o) => catalog.options[o])) checks.set(l.menu_item_id + l.option_ids.join(), await deps.validate(l.menu_item_id, l.option_ids));
-  const typed = q.code ? await deps.coupon(q.code) : null;
+  const typed = q.code ? await deps.coupon(q.code, session) : null;
   if (q.code && !typed) return { ok: false, error: "coupon_invalid", message: `${q.code} is not a valid code.` };
   // A pick for an option the catalog does not know is refused by the same code the database function uses.
   const validate = (id: string, opts: string[]) => checks.get(id + opts.join()) ?? { ok: false as const, error: "unknown_option", message: "This option is not on this dish." };
   const rules = await deps.rules(q.kitchen);
   // Story #346: try every valid coupon on this cart. The ones that apply are the offers; the best saving is applied (a tie: the smaller code), unless the customer typed a code.
-  const list = await deps.coupons();
+  const list = await deps.coupons(session);
   const first = list.some((c) => c.first_order_only) || typed?.first_order_only ? await deps.firstOrder(q.kitchen) : false;
   const input = { lines: q.lines, first_order: first };
   const offers: Offer[] = [];
@@ -63,7 +64,7 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
   const q = parse(body);
   if (!q) return bad();
   try {
-    const out = await runQuote(deps, q);
+    const out = await runQuote(deps, q, await deps.session(req));
     return json(out.ok ? 200 : 422, out.ok ? { ...out, kitchen_id: q.kitchen } : out);
   } catch {
     return json(502, { ok: false, error: "quote_unavailable" });   // no detail: a database message must never reach an app
@@ -102,8 +103,14 @@ export const live: Deps = {
     const rows = await get(`params?select=value&kitchen_id=eq.${kitchenId}&session_id=eq.global&key=eq.quote_rules&order=version.desc&limit=1`, headers(key));
     return rows.length ? { ...DEFAULT_RULES, ...rows[0].value } : DEFAULT_RULES;
   },
-  coupon: async (code) => (await rpc("coupon_by_code_v2", { p_code: code })) as Coupon | null,
-  coupons: async () => (await rpc("coupons_valid_v2", {})) as Coupon[],
+  session: async (req) => {   // an anonymous user has a token too; anything that does not check out is no session
+    const token = (req.headers.get("authorization") ?? "").replace(/^Bearer /i, "");
+    if (!token) return null;
+    const res = await fetch(`${url()}/auth/v1/user`, { headers: { apikey: Deno.env.get("SUPABASE_ANON_KEY")!, authorization: `Bearer ${token}` } });
+    return res.ok ? ((await res.json()).id ?? null) : null;
+  },
+  coupon: async (code, session) => (await rpc("coupon_by_code_v2", { p_code: code, p_session: session })) as Coupon | null,
+  coupons: async (session) => (await rpc("coupons_for_session_v2", { p_session: session })) as Coupon[],
   firstOrder: async () => false,
 };
 export const handler = withRunLog("quote", makeHandler(live), writeRunLog);   // story #356: one run_log row per call

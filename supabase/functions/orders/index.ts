@@ -7,7 +7,6 @@ import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
 
 type Placed = { ok: true; created: boolean; order: Record<string, unknown> } | { ok: false; error: string; message: string };
 export type Deps = QuoteDeps & {
-  session: (req: Request) => Promise<string | null>;   // who is asking: the login's user id, or null
   existing: (session: string, key: string) => Promise<Record<string, unknown> | null>;   // story #537: the order this caller already made with this key
   rate: (order: string, session: string, food: number, rider: number | null, comment: string | null) => Promise<{ ok: true } | { ok: false; error: string; message: string }>;   // story #354
   place: (session: string, key: string, kitchen: string, lines: unknown, address: string, itemTotal: number, bill: Record<string, unknown>) => Promise<Placed>;
@@ -47,7 +46,7 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
     // A retry (a double tap, a phone that retried after a drop) gets the order it already made, before the dish or the price is looked at again.
     const prior = await deps.existing(session, key);
     if (prior) return json(200, { ok: true, created: false, order: Object.fromEntries(ORDER_FIELDS.map((f) => [f, prior[f]])) });
-    const out = await runQuote(deps, q);
+    const out = await runQuote(deps, q, session);
     if (!out.ok) return json(422, out.error === "dish_sold_out" ? { ...out, error: "sold_out" } : out);
     const quote = { ...out, kitchen_id: q.kitchen };
     if (out.to_pay_paise !== expected) return json(409, { ok: false, error: "price_changed", message: "A price changed. Check the bill again.", quote });
@@ -64,12 +63,6 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
 // The real data sources. The login is read from the caller's own token (an anonymous user has one too); the order is written with the service key.
 const live: Deps = {
   ...liveQuote,
-  session: async (req) => {
-    const token = (req.headers.get("authorization") ?? "").replace(/^Bearer /i, "");
-    if (!token) return null;
-    const res = await fetch(`${Deno.env.get("SUPABASE_URL")}/auth/v1/user`, { headers: { apikey: Deno.env.get("SUPABASE_ANON_KEY")!, authorization: `Bearer ${token}` } });
-    return res.ok ? ((await res.json()).id ?? null) : null;
-  },
   existing: async (session, key) => {
     const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const res = await fetch(`${Deno.env.get("SUPABASE_URL")}/rest/v1/orders?select=${ORDER_FIELDS.join(",")}&session_id=eq.${encodeURIComponent(session)}&client_order_key=eq.${encodeURIComponent(key)}&limit=1`,
