@@ -52,3 +52,9 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - ID223 (2026-10-27, open → Desk, later): each agent gets its own identity and inbox (GitHub App or machine accounts, Bus inbox) (owner).
 - ID224 (2026-10-27, open, later): find the "swarm" project the owner saw, where agents launch as a swarm and work together (owner).
 - ID225 (2026-10-27, open → design, after the owner picks a launch motion): the Night lamp. Night mode is a deep blue starry sky with small, soft stars. On open, a ship lamp on a wire drops from the top, the bulb turns on, and a warm triangle of light spreads down the screen: someone is awake and cooking hot food for you at night (owner, 27 Oct). Second note, same day: warm yellow-orange lights in the night, like a city from a plane window or an anime street with one shop open; the beam has a lighthouse shape. Full note: docs/design/night-lamp.md.
+- ID268 (2026-10-27, open, later): stair zigzag animation: the zigzag draws itself as a stepped build. Not in the launch motion. Transfer: loading states of the kitchen and rider apps.
+- ID269 (2026-10-27, wrong, replaced by ID273): first wording said a row of anchor triangles. Kept, not deleted.
+- ID273 (2026-10-27, open, later): the zigzag is only three small triangles: one at the left edge, one at the centre, one at the right edge. No zigzag run. They stay fixed while the rest animates.
+- ID270 (2026-10-27, open, later): the flames under the tawa become the zigzag.
+- ID271 (2026-10-27, open → design, after the owner picks a launch motion): Night lamp flicker-on instead of the swing; the owner leans to flicker. Related: ID225.
+- ID272 (2026-10-27, open, later): how often the launch story plays follows how the person uses the app. Today it plays once per day on the first open.

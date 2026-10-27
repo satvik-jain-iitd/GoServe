@@ -22,3 +22,4 @@ How the owner decides, in plain words. Each one has a source and an example from
 | 16 | Never name a cause without logs. A guess is a hypothesis until it points at exact lines. | "Probably the local reminder" was wrong; the order trace showed SUB 20 never ran at ready. | Reviewer relaying the owner, 27 Oct |
 | 17 | One way to do a thing, never two. | The Order again button goes; the slip's one button is "See the menu". Every push goes through one queue and one sender. | Owner, 27 Oct |
 | 18 | The design and the code stay one thing. A UI change in code is also made in the design artifact in the same story. | The safe-area inset change (#481) went to the Ink design system the same day. | Owner, 27 Oct |
+| 19 | No animation spec or annotation inside a final design screen. It must look exactly like the app. | The motion notes live in the motion framework, not on the pin screen board. | Owner, 27 Oct (motion round 2) |
