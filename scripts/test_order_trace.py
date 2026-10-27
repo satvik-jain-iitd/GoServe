@@ -32,7 +32,7 @@ class OrderTrace(unittest.TestCase):
         self.assertEqual(r[-1], {"actor": "app", "event": "delivered_asked", "result": "shown", "detail": "after 3 min", "has_order": True}, r)
 
     def test_the_app_cannot_write_a_line_for_someone_elses_order(self):
-        r = run(PLACE, f"select set_config('t.o', {ORDER}::text, true)", *AS_OTHER, "select trace_app(current_setting('t.o')::uuid, 'x', 'y', 'z')", "reset role", "select count(*) as n from order_trace")
+        r = run(PLACE, f"select set_config('t.o', {ORDER}::text, true)", *AS_OTHER, "select trace_app(current_setting('t.o')::uuid, 'x', 'y', 'z')", "reset role", "select count(*) as n from order_trace where actor = 'app'")
         self.assertEqual(r[-1], {"n": 0}, r)
 
     def test_the_service_worker_line_finds_the_order_by_the_push_address(self):
