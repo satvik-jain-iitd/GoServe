@@ -12,6 +12,7 @@ const deps = (o: Partial<Deps> = {}): Deps => ({
   catalog: async () => ({ dishes: { [D1]: { id: D1, name: "Thali", price_paise: 14000, available: true } }, options: {} }),
   rules: async () => DEFAULT_RULES, coupon: async () => null, coupons: async () => [], validate: async () => ({ ok: true }), firstOrder: async () => false,
   session: async () => "s1",
+  existing: async () => null,
   place: async (...a) => { placed.push(a); return { ok: true, created: true, order: row }; }, ...o,
 });
 const body = (o: Record<string, unknown> = {}) => ({ kitchen_id: K, lines: [{ menu_item_id: D1, qty: 2, option_ids: [] }], address: { pin_code: "110016", text: "Flat 4, Green Park" }, idempotency_key: "key-0001-abcd", expected_to_pay_paise: 28000, ...o });
@@ -84,4 +85,32 @@ Deno.test("when a data source fails the answer is 502 order_unavailable and no d
 Deno.test("anything but POST is 405", async () => {
   const res = await post(makeHandler(deps()), null, "GET");
   assertEquals([res.status, res.headers.get("allow")], [405, "POST"]);
+});
+
+// Story #537: a retry with a known key returns the existing order before anything is re-quoted.
+Deno.test("the same key after the dish sold out returns the existing order with created false (the scenario)", async () => {
+  placed.length = 0;
+  const soldOut = deps({ existing: async () => row, catalog: async () => ({ dishes: { [D1]: { id: D1, name: "Thali", price_paise: 14000, available: false } }, options: {} }) });
+  const res = await post(makeHandler(soldOut), body());
+  const o = await res.json();
+  assertEquals([res.status, o.ok, o.created, o.order.id], [200, true, false, "o1"]);
+  assertEquals(placed.length, 0);   // nothing was placed again
+});
+
+Deno.test("the same key after the price moved returns the existing order, not price_changed", async () => {
+  const res = await post(makeHandler(deps({ existing: async () => row })), body({ expected_to_pay_paise: 25000 }));
+  assertEquals([res.status, (await res.json()).created], [200, false]);
+});
+
+Deno.test("the lookup is for this caller and this key; a new key is quoted as before; no login is still 401", async () => {
+  const asked: unknown[][] = [];
+  const lookup = deps({ existing: async (...a) => { asked.push(a); return null; } });
+  assertEquals((await post(makeHandler(lookup), body())).status, 201);
+  assertEquals(asked, [["s1", "key-0001-abcd"]]);
+  assertEquals((await post(makeHandler(deps({ session: async () => null, existing: async () => row })), body())).status, 401);
+});
+
+Deno.test("a dead lookup is 502 with no detail", async () => {
+  const res = await post(makeHandler(deps({ existing: () => Promise.reject(new Error("host=10.0.0.1")) })), body());
+  assertEquals([res.status, await res.json()], [502, { ok: false, error: "order_unavailable" }]);
 });

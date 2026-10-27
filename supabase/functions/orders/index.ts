@@ -7,6 +7,7 @@ import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
 type Placed = { ok: true; created: boolean; order: Record<string, unknown> } | { ok: false; error: string; message: string };
 export type Deps = QuoteDeps & {
   session: (req: Request) => Promise<string | null>;   // who is asking: the login's user id, or null
+  existing: (session: string, key: string) => Promise<Record<string, unknown> | null>;   // story #537: the order this caller already made with this key
   place: (session: string, key: string, kitchen: string, lines: unknown, address: string, itemTotal: number, bill: Record<string, unknown>) => Promise<Placed>;
 };
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
@@ -24,6 +25,9 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
   try {
     const session = await deps.session(req);
     if (!session) return json(401, { ok: false, error: "unauthorized" });
+    // A retry (a double tap, a phone that retried after a drop) gets the order it already made, before the dish or the price is looked at again.
+    const prior = await deps.existing(session, key);
+    if (prior) return json(200, { ok: true, created: false, order: Object.fromEntries(ORDER_FIELDS.map((f) => [f, prior[f]])) });
     const out = await runQuote(deps, q);
     if (!out.ok) return json(422, out.error === "dish_sold_out" ? { ...out, error: "sold_out" } : out);
     const quote = { ...out, kitchen_id: q.kitchen };
@@ -46,6 +50,13 @@ const live: Deps = {
     if (!token) return null;
     const res = await fetch(`${Deno.env.get("SUPABASE_URL")}/auth/v1/user`, { headers: { apikey: Deno.env.get("SUPABASE_ANON_KEY")!, authorization: `Bearer ${token}` } });
     return res.ok ? ((await res.json()).id ?? null) : null;
+  },
+  existing: async (session, key) => {
+    const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const res = await fetch(`${Deno.env.get("SUPABASE_URL")}/rest/v1/orders?select=${ORDER_FIELDS.join(",")}&session_id=eq.${encodeURIComponent(session)}&client_order_key=eq.${encodeURIComponent(key)}&limit=1`,
+      { headers: { apikey: service, authorization: `Bearer ${service}` } });
+    if (!res.ok) throw new Error("read failed");
+    return (await res.json())[0] ?? null;
   },
   place: async (session, key, kitchen, lines, address, itemTotal, bill) => {
     const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
