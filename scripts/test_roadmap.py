@@ -302,3 +302,22 @@ class RoadmapTheme(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ---- Story #518: a story that never got the doing label can carry a "Started:" line in its body (the reviewer wrote it on 92 closed stories, marked estimated). ----
+class StartedLine(unittest.TestCase):
+    def cycle(self, **kw):
+        extra = kw.pop("body_extra", "")
+        i = issue(40, "Story S", "CLOSED", closed="2026-10-25T06:00:00Z", ms=M1, body=f"Part of epic E9 (#9).\n\n## Business\nS works.\n{extra}", **kw)
+        return {s["number"]: s for s in roadmap.build([issue(9, "Epic E9: Plan v2", labels=("epic",), body="## Business\nOne plan."), i], [])["stories"]}[40]["cycle_min"]
+
+    def test_a_started_line_gives_the_start_when_there_is_no_doing_label(self):
+        self.assertEqual(self.cycle(body_extra="Started: 2026-10-25T04:00:00Z (estimated)"), 120)
+
+    def test_the_doing_label_wins_over_a_started_line(self):
+        self.assertEqual(self.cycle(doing="2026-10-25T05:15:00Z", body_extra="Started: 2026-10-25T04:00:00Z (estimated)"), 45)
+
+    def test_no_label_and_no_line_means_no_cycle_time_and_a_bad_line_is_ignored(self):
+        self.assertIsNone(self.cycle())
+        self.assertIsNone(self.cycle(body_extra="Started: yesterday"))
+        self.assertIsNone(self.cycle(body_extra="Not started: 2026-10-25T04:00:00Z"))   # only a line that begins with Started:

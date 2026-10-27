@@ -98,6 +98,12 @@ def ist(stamp: str | None) -> datetime | None:
     return datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%SZ") + IST if stamp else None
 
 
+def started_line(body: str | None) -> str | None:
+    """Story #518: the first line of a body that begins "Started: <UTC time>" (written by hand on stories that closed before the doing label existed)."""
+    m = re.search(r"^Started:\s*(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ)", body or "", re.M)
+    return m.group(1) if m else None
+
+
 def needs_of(body: str) -> list:
     return [int(n) for n in re.findall(r"^Needs:\s*#(\d+)", body or "", re.M)]
 
@@ -215,7 +221,7 @@ def build(issues: list, prs: list) -> dict:
     for i in sorted((i for i in issues if "story" in i["labels"]), key=lambda i: i["number"]):
         pr = pr_for(i, prs)
         sentence = first_sentence(section(i.get("body"), "Business"))
-        closed, started = ist(i.get("closedAt")), ist(i.get("doing_at"))
+        closed, started = ist(i.get("closedAt")), ist(i.get("doing_at") or started_line(i.get("body")))   # #518: the label wins, the Started line is the fallback
         ms = i.get("milestone")
         labels = i.get("labels") or []
         stories.append({"number": i["number"], "title": i["title"], "epic": epic_of(i), "state": i["state"], "pr": pr, "column": column(i, pr),
