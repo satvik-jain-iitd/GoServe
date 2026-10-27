@@ -19,7 +19,7 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
 };
 
 // The real data source: PostgREST with the project's own URL and the caller's key (the anon key is enough: menu_items is public to read).
-const COLUMNS = "id,name,price_paise,available,veg,category,sort,image_url,badge,size_tag,protein_g,back_soon_at,created_at";
+const COLUMNS = "id,name,price_paise,available,veg,category,sort,image_url,badge,size_tag,protein_g,back_soon_at,created_at,option_groups(id,name,min_select,max_select,sort,options(id,name,price_paise,available,sort))";
 const live: Deps = {
   now: () => new Date(),
   rows: async (kitchenId) => {

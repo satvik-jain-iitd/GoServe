@@ -67,7 +67,7 @@ components:
     Dish:
       type: object
       additionalProperties: false
-      required: [id, name, price_paise, veg, category, image_url, badge, size_tag, protein_g, sold_out, back_soon, back_soon_at]
+      required: [id, name, price_paise, veg, category, image_url, badge, size_tag, protein_g, sold_out, back_soon, back_soon_at, option_groups]
       properties:
         id: { type: string }
         name: { type: string }
@@ -81,6 +81,31 @@ components:
         sold_out: { type: boolean }
         back_soon: { type: boolean }
         back_soon_at: { type: [string, "null"], format: date-time }
+        option_groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptionGroup"
+    OptionGroup:
+      type: object
+      additionalProperties: false
+      required: [id, name, min, max, options]
+      description: A choice on a dish (spice level, extras). The customer picks at least min and at most max; validate_options (the database) is the one judge.
+      properties:
+        id: { type: string }
+        name: { type: string }
+        min: { type: integer, minimum: 0 }
+        max: { type: integer, minimum: 1 }
+        options:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, name, price_paise, sold_out]
+            properties:
+              id: { type: string }
+              name: { type: string }
+              price_paise: { type: integer, minimum: 0 }
+              sold_out: { type: boolean }
     Menu:
       type: object
       additionalProperties: false

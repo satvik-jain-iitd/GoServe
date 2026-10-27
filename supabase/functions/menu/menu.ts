@@ -1,11 +1,14 @@
 // Story #343: the menu rules, pure. Rows come from menu_items; the answer is what every app shows. Nothing here talks to the network.
+export type OptionRow = { id: string; name: string; price_paise: number; available: boolean; sort: number };
+export type GroupRow = { id: string; name: string; min_select: number; max_select: number; sort: number; options: OptionRow[] };
 export type DishRow = {
   id: string; name: string; price_paise: number; available: boolean; veg: boolean; category: string | null; sort: number; image_url: string | null;
-  badge: "bestseller" | "new" | "chef" | null; size_tag: "small" | "regular" | "large" | null; protein_g: number | null; back_soon_at: string | null; created_at: string;
+  badge: "bestseller" | "new" | "chef" | null; size_tag: "small" | "regular" | "large" | null; protein_g: number | null; back_soon_at: string | null; created_at: string; option_groups: GroupRow[];
 };
 export type Dish = {
   id: string; name: string; price_paise: number; veg: boolean; category: string; image_url: string | null; badge: DishRow["badge"]; size_tag: DishRow["size_tag"];
   protein_g: number | null; sold_out: boolean; back_soon: boolean; back_soon_at: string | null;
+  option_groups: { id: string; name: string; min: number; max: number; options: { id: string; name: string; price_paise: number; sold_out: boolean }[] }[];
 };
 export type Menu = { categories: { name: string; dishes: Dish[] }[]; collections: { key: string; title: string; dish_ids: string[] }[] };
 
@@ -19,6 +22,10 @@ export function buildMenu(rows: DishRow[], now: Date): Menu {
     return {
       id: r.id, name: r.name, price_paise: r.price_paise, veg: r.veg, category: r.category ?? "Other", image_url: r.image_url, badge: r.badge,
       size_tag: r.size_tag, protein_g: r.protein_g, sold_out: !r.available, back_soon: back, back_soon_at: back ? new Date(r.back_soon_at!).toISOString() : null,
+      option_groups: [...(r.option_groups ?? [])].sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name)).map((g) => ({
+        id: g.id, name: g.name, min: g.min_select, max: g.max_select,
+        options: [...g.options].sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name)).map((o) => ({ id: o.id, name: o.name, price_paise: o.price_paise, sold_out: !o.available })),
+      })),
     };
   };
   const categories: Menu["categories"] = [];
