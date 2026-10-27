@@ -122,19 +122,19 @@ test("S9 a ticket opened from Cooking goes back to cooking", async ({ page, cont
   await expect(page.getByRole("heading", { name: "Cooking" })).toBeVisible();
 });
 
-// Story #616 (row T4 of the #325 sitting), board K-YourKitchen: the open row's sub-line is one quiet 12 px mono sentence-case line. The board's wording is 60 characters, which cannot fit one line beside the switch at 390 px in a 12 px mono face (about 7 px a character), so it may wrap to two; the check is the type, not the count.
-test("S-616 the open switch's sub-line is 12 px mono in sentence case, the board's words", async ({ page, context }) => {
+// Story #616 (row T4 of the #325 sitting), board K-YourKitchen: the open row's sub-line is one quiet 12 px mono sentence-case line, one line at 390 px (the board's 39 characters, v92).
+test("S-616 the open switch's sub-line is 12 px mono in sentence case, one line, the board's words", async ({ page, context }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const net = await setup(context, page);
   net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
   await tab(page, "Today").click();
-  const sub = page.locator(".ui-row-sub").filter({ hasText: /customers see/ });
-  await expect(sub).toHaveText('Till 23:59 · customers see "closed" the moment you switch off');
+  const sub = page.locator(".ui-row-sub").filter({ hasText: /shows "closed"/ });
+  await expect(sub).toHaveText('Till 23:59 · off shows "closed" at once');
   const look = await sub.evaluate((el) => {
     const s = getComputedStyle(el), lh = parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.45;
     return { transform: s.textTransform, size: s.fontSize, lines: Math.round(el.getBoundingClientRect().height / lh) };
   });
   expect(look).toMatchObject({ transform: "none", size: "12px" });
-  expect(look.lines).toBeLessThanOrEqual(2);
+  expect(look.lines).toBe(1);
 });
