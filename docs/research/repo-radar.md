@@ -231,3 +231,9 @@ Runs: `scout.py --need "append-only event log table with trace of one order acro
 Checked what we have: `order_events` is the customer-facing timeline (business events with a kitchen); `run_log` and `decision_log` are per workflow run and per decision, with no order id and no phone-side events. Reusing them would mix debug noise into the timeline the apps read.
 
 Decision: build one table `order_trace` (migration 0044) and one RPC for the phone and the service worker, plus `scripts/order_trace.py`. Borrowed idea from SigNoz/OpenTelemetry: one trace id (here the order id) across actors. Nothing else adopted.
+
+## 2026-10-27 · need: step by step customer journeys of Swish and Zepto Cafe beside GoServe (story #330, epic E26)
+
+Runs: `scout.py --need "quick food delivery app customer journey teardown Swish Zepto Cafe order flow screens"` → no repos found. GitHub search "zepto cafe clone food delivery app teardown" → clones and tutorials only (Tier C, not read as evidence). Tier A read instead: Apple's iTunes lookup for Swish and a search for Zepto Cafe, and `justswish.in`.
+
+Decision: nothing to adopt. Build the table from our own Swish study, the dispatch study, the store listing and the GoServe code; mark every step with no source as UNKNOWN and write how to close the gap (the owner's phone capture).
