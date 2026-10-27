@@ -18,6 +18,7 @@ import { loadProfile, saveProfile } from "./lib/profile";
 import { addEvent, changeStatus, confirmDelivery, orderDeps, placeOrder, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
 import { confirmAt, DEFAULT_CFG, notYet, reaskMs, type ConfirmCfg } from "./lib/confirm";
 import { pushTrail } from "./lib/trail";
+import { trace } from "./lib/trace";
 import { FeedbackSheet } from "./screens/FeedbackSheet";
 import { ensureSession, fetchMenuRows, fetchRiderCard, getClient, type RiderCard } from "./lib/supabase";
 import { openTill } from "./lib/browse";
@@ -121,6 +122,21 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const notYetCount = useRef(0);
   const askingRef = useRef(false);
   askingRef.current = asking;
+  // Story #484: a line in order_trace for what this phone did, on the newest order. Fire and forget.
+  const track = (event: string, result?: string, text?: string) => {
+    try {
+      void trace(getClient(), placed?.id ?? orders[0]?.id ?? null, event, result, text);
+    } catch { /* no database address (the offline story): no line */ }
+  };
+  const trackRef = useRef(track);
+  trackRef.current = track;
+  useEffect(() => {
+    if (live.loading) return;
+    trackRef.current("app_open", document.visibilityState);
+    const seen = () => document.visibilityState === "visible" && trackRef.current("app_visible");
+    document.addEventListener("visibilitychange", seen);
+    return () => document.removeEventListener("visibilitychange", seen);
+  }, [live.loading]);
   const [reminder, setReminder] = useState<"ask" | "on" | "none">(() => (typeof Notification === "undefined" ? "none" : Notification.permission === "default" ? "ask" : Notification.permission === "granted" ? "on" : "none"));
   // The tracker goes back to the menu when the order it showed has left the list (the other device reset the demo).
   const trackedSeen = useRef(false);
@@ -141,7 +157,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       const due = confirmAt(tracked, confirmCfg);
       if (due === null) return void setAsking(false);
       if (Date.now() >= Math.max(due, snoozeUntil)) {
-        if (!askingRef.current) remind();
+        if (!askingRef.current) {
+          trackRef.current("delivered_asked", typeof Notification === "undefined" ? "no_notification_api" : Notification.permission, document.visibilityState);
+          remind();
+        }
         setAsking(true);
       }
     };
@@ -172,6 +191,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       subscribe: async (key) => (await (await navigator.serviceWorker.ready).pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key as BufferSource })),
       save: async (payload) => (await getClient().rpc("save_push", payload)).error?.message ?? null,
     }).then((r) => {
+      track("push_subscribe", r, typeof Notification === "undefined" ? "no_notification_api" : Notification.permission);
       if (r === "denied") return setReminder("none");
       if (r === "unsupported" || r === "not_set_up") return void Notification.requestPermission().then((p) => setReminder(p === "granted" ? "on" : "none"), () => setReminder("none"));
       setReminder("on");   // on, or failed to save: the permission is given, the local reminder still works
@@ -180,6 +200,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   async function yes() {
     if (!placed) return;
     pushTrail("customer: yes, delivered");
+    track("delivered_answer", "yes");
     setConfirming(true);
     setConfirmError(null);
     try {
@@ -197,6 +218,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   function notYetTap() {
     const n = ++notYetCount.current;
     pushTrail(`customer: not yet (${n})`);
+    track("delivered_answer", "not_yet", String(n));
     const next = notYet(n, Date.now(), reaskMs());
     setAsking(false);
     if (next.feedback) {
