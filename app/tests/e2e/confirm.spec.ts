@@ -112,3 +112,19 @@ test("S6 a double tap on a kitchen step: the second answer already_done is not s
   await expect(page.getByText("Already done.")).toHaveCount(0);
   await expect(page.getByRole("alert")).toHaveCount(0);
 });
+
+test("#501 a hidden app never asks; the question comes when the app is visible again", async ({ page, context }) => {
+  await context.addInitScript(() => {
+    let state = "hidden";
+    Object.defineProperty(document, "visibilityState", { get: () => state, configurable: true });
+    (window as any).__show = () => { state = "visible"; document.dispatchEvent(new Event("visibilitychange")); };
+  });
+  const net = await setup(context, page);
+  net.state.confirmCfg = { confirm_after_ready_min: 0.01, confirm_after_place_min: 5 };
+  await placeOrder(page);
+  net.push("UPDATE", order("ready", now(), now()));
+  await page.waitForTimeout(2500);
+  await expect(prompt(page)).toHaveCount(0);   // due long ago, but nobody is looking
+  await page.evaluate(() => (window as any).__show());
+  await expect(prompt(page)).toBeVisible({ timeout: 5000 });
+});
