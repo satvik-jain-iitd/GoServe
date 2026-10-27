@@ -1,6 +1,7 @@
 // Story #345: POST /quote. Lines + address + optional coupon in, the one bill out. The data sources are injected so the tests need no network.
 // Prices come from the catalog, never from the request. Reads use the project's own URL; rules come from the versioned params row `quote_rules`.
 import { quote, DEFAULT_RULES, MAX_QTY, type Catalog, type Coupon, type Rules } from "./quote.ts";
+import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
 
 export type Deps = {
   catalog: (kitchenId: string, menuItemIds: string[], optionIds: string[]) => Promise<Catalog>;
@@ -84,6 +85,6 @@ export const live: Deps = {
   coupon: async () => null,
   firstOrder: async () => false,
 };
-export const handler = makeHandler(live);
+export const handler = withRunLog("quote", makeHandler(live), writeRunLog);   // story #356: one run_log row per call
 
 if (import.meta.main) Deno.serve(handler);

@@ -2,6 +2,7 @@
 // Out of range: serviceable false and request_here true (the app offers 'Request here', which saves a row in `waitlist`).
 // The data source is injected so the tests need no network; the real one reads kitchens with the project's anon key (kitchens are public to read).
 import { serviceability, type KitchenRow } from "./serviceability.ts";
+import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
 
 export type Deps = { kitchens: () => Promise<KitchenRow[]>; now: () => Date };
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
@@ -32,6 +33,6 @@ const live: Deps = {
     return await res.json();
   },
 };
-export const handler = makeHandler(live);
+export const handler = withRunLog("serviceability", makeHandler(live), writeRunLog);   // story #356: one run_log row per call
 
 if (import.meta.main) Deno.serve(handler);
