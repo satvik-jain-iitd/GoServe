@@ -16,14 +16,15 @@ import { KitchenGate, type KitchenGateState } from "./screens/KitchenGate";
 import { enablePush } from "./lib/push";
 import { loadProfile, saveProfile } from "./lib/profile";
 import { addEvent, changeStatus, confirmDelivery, orderDeps, placeOrder, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
-import { confirmAt, DEFAULT_CFG, notYet, reaskMs, type ConfirmCfg } from "./lib/confirm";
+import { confirmAt, DEFAULT_CFG, mayAsk, notYet, reaskMs, type ConfirmCfg } from "./lib/confirm";
+import { fetchOrders } from "./lib/live";
 import { pushTrail } from "./lib/trail";
 import { trace } from "./lib/trace";
 import { FeedbackSheet } from "./screens/FeedbackSheet";
 import { ensureSession, fetchMenuRows, fetchRiderCard, getClient, type RiderCard } from "./lib/supabase";
 import { openTill } from "./lib/browse";
 import { AccountScreen } from "./screens/AccountScreen";
-import { currentSession, joinCode, joinLink, joinSession, rememberJoin, resetSession } from "./lib/session";
+import { currentSession, scopeFor, joinCode, joinLink, joinSession, rememberJoin, resetSession } from "./lib/session";
 import { MenuScreen } from "./screens/MenuScreen";
 import { BillScreen } from "./screens/BillScreen";
 import { openOrderToResume } from "./lib/resume";
@@ -121,6 +122,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [preset, setPreset] = useState<{ nonce: number; text: string; doing: "ordering" } | undefined>();
   const notYetCount = useRef(0);
   const askingRef = useRef(false);
+  const checkingRef = useRef(false);
   askingRef.current = asking;
   // Story #484: a line in order_trace for what this phone did, on the newest order. Fire and forget.
   const track = (event: string, result?: string, text?: string) => {
@@ -157,11 +159,17 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       const due = confirmAt(tracked, confirmCfg);
       if (due === null) return void setAsking(false);
       if (Date.now() >= Math.max(due, snoozeUntil)) {
-        if (!askingRef.current) {
+        if (askingRef.current) return void setAsking(true);
+        // Story #501: a hidden app holds a stale status. Ask only when it is visible and a fresh read says the order is still open.
+        if (document.visibilityState !== "visible" || checkingRef.current) return;
+        checkingRef.current = true;
+        void freshStatus(placed?.id).then((st) => {
+          checkingRef.current = false;
+          if (!mayAsk(document.visibilityState === "visible", st)) return;
           trackRef.current("delivered_asked", typeof Notification === "undefined" ? "no_notification_api" : Notification.permission, document.visibilityState);
           remind();
-        }
-        setAsking(true);
+          setAsking(true);
+        });
       }
     };
     check();
@@ -173,9 +181,29 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     };
   }, [placed?.id, tracked?.status, tracked?.updated_at, tracked?.created_at, confirmCfg, snoozeUntil, demo]);
 
+  // The server's own word on this order, read just before the question (story #501). null: the read failed.
+  async function freshStatus(id: string | undefined): Promise<string | null> {
+    if (!id) return null;
+    try {
+      const rows = await fetchOrders(getClient(), scopeFor(null, await currentSession()));
+      return rows.find((o) => o.id === id)?.status ?? null;
+    } catch {
+      return null;
+    }
+  }
   // The phone also shows a notification when the question comes, if the tester allowed it. Some phones only allow it through the service worker.
-  function remind() {
+  // Story #501: with a push subscription the server push already tells the customer; a second local notice would repeat it. No answer in half a second counts as none.
+  async function hasPush(): Promise<boolean> {
+    try {
+      const sub = await Promise.race([navigator.serviceWorker.ready.then((r) => r.pushManager.getSubscription()), new Promise<null>((done) => setTimeout(() => done(null), 500))]);
+      return !!sub;
+    } catch {
+      return false;
+    }
+  }
+  async function remind() {
     if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    if (await hasPush()) return void trackRef.current("local_notice", "skipped_push");
     try {
       new Notification("Was your order delivered?");
     } catch {

@@ -31,6 +31,7 @@ test("S3 the menu closes by itself at closing time, with no reload", async ({ pa
   await page.clock.install({ time: new Date("2026-10-24T16:29:40Z") });   // 21:59:40 India
   await page.goto("/customer/");
   await expect(page.getByText("Open till 10:00 pm")).toBeVisible();
+  await expect(add(page)).toBeEnabled();   // the menu has loaded: a jump of the fake clock while its request is in flight times the request out (flake found 27 Oct)
   await page.clock.runFor(60_000);
   await expect(page.getByText("Closed now. Opens at 10:00 am.")).toBeVisible();
   await expect(add(page)).toBeDisabled();
