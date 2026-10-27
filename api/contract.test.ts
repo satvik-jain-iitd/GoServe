@@ -198,3 +198,24 @@ Deno.test("otp claim: the returning customer's answers are in the contract (200,
   body.session = "x";
   await assertRejects(() => checkAnswer("/otp/claim", "post", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
 });
+
+Deno.test("push: register and notify answer 200, 400, 401, 404 as the contract says and a wrong field is red", async () => {
+  const { handler, CONTRACT_SECRET } = await import("../supabase/functions/push/fixture.ts");
+  const O = "7e57ab1e-0000-4000-8000-0000000000f1";
+  const post = (route: string, b: unknown, headers: Record<string, string>) => handler(new Request(`https://x.test/push/${route}`, { method: "POST", headers, body: JSON.stringify(b) }));
+  const reg = await post("register", { platform: "android", token: "tok-a" }, { authorization: "Bearer t" });
+  assertEquals(reg.status, 200);
+  await checkAnswer("/push/register", "post", reg);
+  await checkAnswer("/push/register", "post", await post("register", { platform: "android", token: "tok-a" }, {}));   // 401
+  await checkAnswer("/push/register", "post", await post("register", { platform: "windows", token: "x" }, { authorization: "Bearer t" }));   // 400
+  const sec = { "x-push-secret": CONTRACT_SECRET };
+  const sent = await post("notify", { order_id: O }, sec);
+  assertEquals(sent.status, 200);
+  await checkAnswer("/push/notify", "post", sent);
+  await checkAnswer("/push/notify", "post", await post("notify", { order_id: O }, { "x-push-secret": "nope" }));   // 401
+  await checkAnswer("/push/notify", "post", await post("notify", { order_id: "x" }, sec));   // 400
+  await checkAnswer("/push/notify", "post", await post("notify", { order_id: "7e57ab1e-0000-4000-8000-00000000dead" }, sec));   // 404
+  const body = await (await post("notify", { order_id: O }, sec)).json();
+  body.token = "x";   // a device token must never be a field of the answer
+  await assertRejects(() => checkAnswer("/push/notify", "post", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
+});
