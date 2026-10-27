@@ -50,3 +50,4 @@ ops/android/**/*.aab
 ops/android/**/*.idsig
 ops/android/**/*.jks
 ops/android/**/*.keystore
+supabase/.temp/
