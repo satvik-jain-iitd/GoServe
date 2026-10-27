@@ -28,7 +28,7 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
     if (!out.ok) return json(422, out.error === "dish_sold_out" ? { ...out, error: "sold_out" } : out);
     const quote = { ...out, kitchen_id: q.kitchen };
     if (out.to_pay_paise !== expected) return json(409, { ok: false, error: "price_changed", message: "A price changed. Check the bill again.", quote });
-    const { ok: _ok, lines: _lines, ...bill } = out;
+    const { ok: _ok, lines: _lines, offers: _offers, ...bill } = out;   // the offers are for the screen, not for the order
     const res = await deps.place(session, key, q.kitchen, q.lines, text.trim(), out.item_total_paise, { ...bill, lines: out.lines });
     if (!res.ok) return json(res.error === "price_changed" ? 409 : 422, { ok: false, error: res.error, message: res.message });
     const order = Object.fromEntries(ORDER_FIELDS.map((f) => [f, res.order[f]]));

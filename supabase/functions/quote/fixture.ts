@@ -7,6 +7,7 @@ export const handler = makeHandler({
   catalog: async () => ({ dishes: { [D1]: { id: D1, name: "Dal Makhani thali", price_paise: 14000, available: true }, [D2]: { id: D2, name: "Masala chai", price_paise: 3000, available: false } }, options: {} }),
   rules: async () => DEFAULT_RULES,
   coupon: async (c) => (c === "FLAT50" ? { code: "FLAT50", title: "Rs 50 off", kind: "flat", amount_paise: 5000, percent: 0, cap_paise: 0, min_order_paise: 0, first_order_only: false } : null),
+  coupons: async () => [{ code: "FLAT50", title: "Rs 50 off", kind: "flat" as const, amount_paise: 5000, percent: 0, cap_paise: 0, min_order_paise: 0, first_order_only: false }],
   validate: async () => ({ ok: true }),
   firstOrder: async () => false,
 });

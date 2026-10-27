@@ -10,7 +10,7 @@ const placed: unknown[][] = [];
 const row = { id: "o1", kitchen_id: K, status: "placed", total_paise: 28000, address: "Flat 4, Green Park", items: [], bill: {}, created_at: "2026-10-27T10:00:00Z", customer_phone: "9876543210" };
 const deps = (o: Partial<Deps> = {}): Deps => ({
   catalog: async () => ({ dishes: { [D1]: { id: D1, name: "Thali", price_paise: 14000, available: true } }, options: {} }),
-  rules: async () => DEFAULT_RULES, coupon: async () => null, validate: async () => ({ ok: true }), firstOrder: async () => false,
+  rules: async () => DEFAULT_RULES, coupon: async () => null, coupons: async () => [], validate: async () => ({ ok: true }), firstOrder: async () => false,
   session: async () => "s1",
   place: async (...a) => { placed.push(a); return { ok: true, created: true, order: row }; }, ...o,
 });

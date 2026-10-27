@@ -577,6 +577,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /coupons:
+    get:
+      operationId: getCoupons
+      summary: The coupons valid now
+      description: "Active, inside their dates, under their max uses. Which one is best for a cart is the quote's job: POST /quote returns offers, best first."
+      x-handler: ../supabase/functions/coupons/index.ts
+      x-contract-handler: ../supabase/functions/coupons/fixture.ts
+      responses:
+        "200":
+          description: The list, possibly empty.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CouponList"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /otp/claim:
     post:
       operationId: postOtpClaim
@@ -751,7 +771,7 @@ components:
     Quote:
       type: object
       additionalProperties: false
-      required: [ok, kitchen_id, lines, item_total_paise, fees, discount_paise, coupon, tax_paise, tax_mode, to_pay_paise, saved_paise]
+      required: [ok, kitchen_id, lines, item_total_paise, fees, discount_paise, coupon, tax_paise, tax_mode, to_pay_paise, saved_paise, offers]
       properties:
         ok:
           const: true
@@ -793,6 +813,17 @@ components:
         tax_mode: { enum: [inclusive, exclusive] }
         to_pay_paise: { type: integer, minimum: 0 }
         saved_paise: { type: integer, minimum: 0 }
+        offers:
+          description: "Every valid coupon that applies to this cart, best saving first (a tie: the smaller code). The first one is applied unless the customer typed a code."
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [code, title, saves_paise]
+            properties:
+              code: { type: string }
+              title: { type: string }
+              saves_paise: { type: integer, minimum: 1 }
     Serviceability:
       type: object
       additionalProperties: false
@@ -938,6 +969,28 @@ components:
         sent: { type: integer, minimum: 0 }
         failed: { type: integer, minimum: 0 }
         forgotten: { type: integer, minimum: 0 }
+    CouponList:
+      type: object
+      additionalProperties: false
+      required: [ok, coupons]
+      properties:
+        ok:
+          const: true
+        coupons:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [code, title, kind, amount_paise, percent, cap_paise, min_order_paise, first_order_only]
+            properties:
+              code: { type: string }
+              title: { type: string }
+              kind: { enum: [flat, percent] }
+              amount_paise: { type: integer, minimum: 0 }
+              percent: { type: integer, minimum: 0, maximum: 100 }
+              cap_paise: { type: integer, minimum: 0 }
+              min_order_paise: { type: integer, minimum: 0 }
+              first_order_only: { type: boolean }
     Dish:
       type: object
       additionalProperties: false
