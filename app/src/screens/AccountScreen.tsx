@@ -6,7 +6,7 @@ import { TabBar } from "../ui";
 type Props = {
   name: string; phone: string; address: string; pin: string | null;
   onName: (v: string) => void; onPhone: (v: string) => void; onAddress: (v: string) => void;
-  alerts: "ask" | "on" | "none"; onAlerts: () => void;
+  alerts: "ask" | "on" | "none"; onAlerts: () => void; alertsError?: string | null;
   live: { label: string; no: string; onOpen: () => void } | null;
   onShare: () => Promise<string | null>; onForget: () => void;
   onMenu: () => void; onOrders: () => void;
@@ -14,7 +14,7 @@ type Props = {
 
 const store = (): Storage | null => { try { return window.localStorage; } catch { return null; } };
 
-export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAddress, alerts, onAlerts, live, onShare, onForget, onMenu, onOrders }: Props) {
+export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAddress, alerts, onAlerts, alertsError, live, onShare, onForget, onMenu, onOrders }: Props) {
   const [editing, setEditing] = useState(false);
   const [look, setLook] = useState<Theme>(() => readPin(store()) ?? DEFAULT_THEME);
   const [note, setNote] = useState<string | null>(null);
@@ -47,9 +47,10 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
         </section>
         <button type="button" className="ui-row" onClick={() => setEditing(!editing)}><span>{editing ? "Done" : "Edit delivery details"}</span><span className="go" aria-hidden="true">›</span></button>
         <div className="ui-row ui-row-static">
-          <label htmlFor="alerts" className="ui-row-label"><span>Order alerts</span><span className="ui-row-sub">{alerts === "none" ? "Blocked in your phone settings." : "A ping when it is ready and at your door."}</span></label>
+          <label htmlFor="alerts" className="ui-row-label"><span>Order alerts</span><span className="ui-row-sub">{alerts === "none" ? "Blocked in your phone settings." : alerts === "on" ? "On for this phone" : "Tap to turn on"}</span></label>
           <input id="alerts" className="ui-switch" type="checkbox" role="switch" checked={alerts === "on"} disabled={alerts !== "ask"} onChange={onAlerts} />
         </div>
+        {alertsError && <p role="alert" className="ui-field-error">{alertsError}</p>}
         <section aria-label="Look" className="ui-look">
           <h2 className="mono">Look</h2>
           <div className="ui-chips">
