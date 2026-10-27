@@ -92,9 +92,10 @@ test('wiring: MAIN 90 is a schedule at 22:15 India time; Config, kill switch, wi
   assert.deepEqual(next('Config'), ['Kill switch?']);
   assert.deepEqual([next('Kill switch?', 0), next('Kill switch?', 1)], [['Paused'], ['Prepare window']]);
   assert.deepEqual(next('Prepare window'), ['Call SUB 91 Scorecard numbers']);
-  assert.deepEqual(next('Call SUB 91 Scorecard numbers'), ['Format message']);
+  assert.deepEqual(next('Call SUB 91 Scorecard numbers'), ['Call SUB 94 Health and cost numbers']);   // #488
+  assert.deepEqual(next('Call SUB 94 Health and cost numbers'), ['Format message']);
   assert.deepEqual(next('Format message'), ['Send scorecard']);
-  assert.deepEqual(next('Send scorecard'), ['Prune ping history']);
+  assert.deepEqual(next('Send scorecard').sort(), ['Limit alert', 'Prune ping history']);
   assert.match(byName(wf.main90, 'Prune ping history').parameters.url, /rpc\/pilot_prune/);
   assert.equal(wf.main90.settings.timezone, 'Asia/Kolkata');
   assert.deepEqual(byName(wf.main90, 'Every day 22:15').parameters.rule.interval[0], { field: 'cronExpression', expression: '15 22 * * *' });
