@@ -10,7 +10,7 @@ type Props = {
   lines: Line[]; total: number; kitchenName: string; pin: string | null;
   address: string; onAddress: (v: string) => void;
   details?: { name: string; phone: string; onName: (v: string) => void; onPhone: (v: string) => void; gate?: boolean };   // the customer app also asks who and which phone (story B3)
-  offers?: { quote: Quote; codeError: string | null; onApply: (code: string) => void };   // story #588: the quote's bill and the Offers block (boards C1, C2)
+  offers?: { quote: Quote; codeError: string | null; onApply: (code: string) => void; onRemove: () => void };   // story #588: the quote's bill and the Offers block (boards C1, C2)
   pay?: { value: PayMethod; onChange: (v: PayMethod) => void };   // story #552: how you pay (the customer app only)
   sending: boolean; error: string | null;
   onBack: () => void; onPlace: () => void;
@@ -71,7 +71,8 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
                     : <span aria-hidden="true" style={{ width: 20, height: 20, borderRadius: "50%", border: "2px solid var(--md-outline-variant)", boxSizing: "border-box", flex: "none" }} />}
                   <span style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}><span style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, fontWeight: 500 }}>{o.code}</span><span style={{ fontSize: 13, color: "var(--gs-text-muted)" }}>{o.title}</span></span>
                   <span style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>Save {formatRupees(o.saves_paise)}</span>
-                  {!on && <button type="button" aria-label={`Apply ${o.code}`} onClick={() => offers.onApply(o.code)} style={{ border: 0, background: "none", padding: "0 0 0 4px", color: "var(--md-primary)", font: "inherit", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Apply</button>}
+                  {on && <button type="button" aria-label={`Remove ${o.code}`} onClick={offers.onRemove} style={{ border: 0, background: "none", padding: "0 0 0 4px", color: "var(--md-primary)", font: "inherit", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Remove</button>}
+                    {!on && <button type="button" aria-label={`Apply ${o.code}`} onClick={() => offers.onApply(o.code)} style={{ border: 0, background: "none", padding: "0 0 0 4px", color: "var(--md-primary)", font: "inherit", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Apply</button>}
                 </div>
               );
             })}
