@@ -261,3 +261,12 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F258 | Rehearsal reruns in the daytime (two passing runs close #324). If the demo city delivers before the ask time, the question never shows; with the demo knobs the ask comes first. | #324 | open |
 | F259 | The demo doc says an order reaches Delivered in about 11 minutes. Run 1 on prod took 14.5 minutes (868 s). Update `docs/demo/mvp2-demo.md` after the daytime reruns. | #324 | open |
 | F260 | The demo kitchens on prod are open 00:00 to 23:59 since 27 Oct 22:43 (the reviewer kept a backup of the old hours; the owner said no reset is needed). Set the real hours again before a real kitchen signs (ADR-022). | #324 | open |
+| F261 | Sync PRs need a merge commit: the repo squashes, so `main` stays unknown to `staging` and the next sync replays the same hunks (same content; conflicts possible). Ask the owner to allow merge commits for `chore(sync)` PRs, or accept the replay. | #621 | open |
+| F262 | Alerts Off does not unregister a phone wrapper's device token (`/push/register`); there is no unregister call. | #609 | open |
+| F263 | iOS Safari itself was not reproduced for the open switch: only Playwright's WebKit. `-webkit-appearance` is not in the built CSS (only `appearance`), which matters on iOS before 15.4. Check on a real iPhone. | #616 | open |
+| F264 | The phone-test-list row T2 step 4 must say: no "Ping me when it is ready" on the Placed screen when alerts are already on (by design, `reminder === "ask"` only). | #609 | open |
+| F265 | The alerts switch reads "on" from the browser permission; it does not read `push_subscriptions` for this session (#613 asked for it; the re-save makes the row exist whenever push works). | #613 | open |
+| F266 | `autopilot.spec.ts` S2 took 16.5 minutes on its first try in one full run and passed on retry; cause not looked at. | #621 | open |
+| F267 | The "Order again" button is gone from the Placed screen on `staging` (main's "See the menu", D13, won in the sync). Bring it back only if the owner asks. | #621 | decided |
+| F268 | `CLAUDE.md` rule 12 (PRs max 50 files) should say that a `chore(sync)` PR from `main` skips the cap, as `ci.yml` and `guard.py` now do (#623). The reviewer or the owner edits that file. | #623 | open |
+| F269 | Operating rules for a kitchen that switches off with open orders, the rider at the kitchen, cash hand-over and rider pay: proposed in `docs/product/operating-rules.md`, waiting on the owner's yes line by line; no story is built before it. | #620 | open |
