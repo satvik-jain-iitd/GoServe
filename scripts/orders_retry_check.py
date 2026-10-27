@@ -8,7 +8,8 @@ if (sys.argv[1] if len(sys.argv) > 1 else "dev") != "dev":
     sys.exit("dev only")
 vault = open(os.path.expanduser("~/Desktop/Secrets/02_databases.env")).read()
 get = lambda k: re.search(rf"^{k}=(\S+)", vault, re.M).group(1)
-URL, ANON, SERVICE = get("SUPABASE_GOSERVE_DEV_URL"), get("SUPABASE_GOSERVE_DEV_ANON_KEY"), get("SUPABASE_GOSERVE_DEV_SERVICE_ROLE_KEY")
+URL, ANON, SERVICE, MGMT = get("SUPABASE_GOSERVE_DEV_URL"), get("SUPABASE_GOSERVE_DEV_ANON_KEY"), get("SUPABASE_GOSERVE_DEV_SERVICE_ROLE_KEY"), get("SUPABASE_ACCESS_TOKEN")
+REF = "tmxyizmkpwwfyazvrfhw"
 
 
 def call(method, path, body=None, key=ANON, bearer=None):
@@ -23,6 +24,17 @@ def call(method, path, body=None, key=ANON, bearer=None):
             return e.code, json.loads(raw)
         except ValueError:
             return e.code, raw[:300]
+
+
+def wipe(kitchen_id):
+    """Delete a test kitchen's orders the way the demo reset does: the events are append-only, so the reset switch is on for this one transaction."""
+    k = f"'{kitchen_id}'"
+    q = ("begin; select set_config('goserve.reset', 'on', true); "
+         f"delete from order_events where order_id in (select id from orders where kitchen_id = {k}); delete from order_trace where order_id in (select id from orders where kitchen_id = {k}); "
+         f"delete from decision_log where order_id in (select id from orders where kitchen_id = {k}); delete from orders where kitchen_id = {k}; commit;")
+    req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{REF}/database/query", data=json.dumps({"query": q}).encode(),
+                                 headers={"Authorization": "Bearer " + MGMT, "Content-Type": "application/json", "User-Agent": "goserve-check"})
+    urllib.request.urlopen(req, timeout=60).read()
 
 
 def check(name, ok, note=""):
@@ -47,8 +59,7 @@ try:
     s3, o3 = order({**body, "idempotency_key": "retry-check-0002"})
     ok.append(check("a NEW key for the sold out dish is refused as before (422 sold_out)", s3 == 422 and o3.get("error") == "sold_out", f"{s3} {str(o3)[:100]}"))
 finally:
-    if user:
-        call("DELETE", f"/rest/v1/orders?session_id=eq.{user}", None, SERVICE)
+    wipe(kitchen)
     call("DELETE", f"/rest/v1/menu_items?id=eq.{dish}", None, SERVICE)
     call("DELETE", f"/rest/v1/kitchens?id=eq.{kitchen}", None, SERVICE)
     if user:
