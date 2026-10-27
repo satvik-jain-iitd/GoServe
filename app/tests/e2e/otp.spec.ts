@@ -39,7 +39,11 @@ async function toBill(page: Page) {
   await page.getByLabel("Address").fill("Flat 4, Green Park");
 }
 const dialog = (page: Page) => page.getByRole("dialog", { name: "Confirm your number" });
-async function typeCode(page: Page, code: string) { await page.getByLabel("Digit 1").pressSequentially(code); }
+// The boxes are disabled while a code is on its way; pressSequentially does not wait for that, so keys typed too early are lost. Wait for the boxes first.
+async function typeCode(page: Page, code: string) {
+  await expect(page.getByLabel("Digit 1")).toBeEnabled();
+  await page.getByLabel("Digit 1").pressSequentially(code);
+}
 async function toCodeStep(page: Page, phone = "9876543210") {
   await page.getByRole("button", { name: /Place order/ }).click();
   await dialog(page).getByLabel("Mobile number").fill(phone);
@@ -61,7 +65,7 @@ test("S1 a guest at checkout enters the number and the code, the phone is linked
   await expect(dialog(page).getByRole("button", { name: "Verify" })).toBeDisabled();
   await typeCode(page, "482913");
   await dialog(page).getByRole("button", { name: "Verify" }).click();
-  expect(otp.verifies).toEqual([{ phone: "9876543210", code: "482913" }]);
+  await expect.poll(() => otp.verifies).toEqual([{ phone: "9876543210", code: "482913" }]);   // the request leaves after the click returns
   await expect(page.getByRole("status").filter({ hasText: "Number confirmed" })).toBeVisible();
   await page.getByRole("dialog", { name: "Your name" }).getByLabel("Your name").fill("Asha");
   await page.getByRole("dialog", { name: "Your name" }).getByRole("button", { name: "Continue" }).click();
@@ -108,7 +112,7 @@ test("S4 resend: a 30 second timer counts down, then Resend code asks for a new 
   await expect(dialog(page).getByRole("button", { name: "Resend code" })).toHaveCount(0);
   await page.clock.runFor(31_000);
   await dialog(page).getByRole("button", { name: "Resend code" }).click();
-  expect(otp.sends).toHaveLength(2);
+  await expect.poll(() => otp.sends.length).toBe(2);
   await expect(dialog(page).getByText(/Resend code in 0:/)).toBeVisible();
 });
 
