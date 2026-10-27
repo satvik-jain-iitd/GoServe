@@ -113,6 +113,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /serviceability:
+    get:
+      operationId: getServiceability
+      summary: Can a kitchen deliver to this place, how soon, and is it open
+      x-handler: ../supabase/functions/serviceability/index.ts
+      x-contract-handler: ../supabase/functions/serviceability/fixture.ts
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema: { type: number, minimum: -90, maximum: 90 }
+          example: 28.5494
+        - name: lng
+          in: query
+          required: true
+          schema: { type: number, minimum: -180, maximum: 180 }
+          example: 77.2001
+      responses:
+        "200":
+          description: Kitchens that reach the place, nearest first. None in range gives serviceable false and request_here true (the app offers 'Request here').
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Serviceability"
+        "400":
+          description: The place is missing, not a number, or out of range.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "502":
+          description: The kitchens could not be read. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   schemas:
     Error:
@@ -178,6 +214,27 @@ components:
         tax_mode: { enum: [inclusive, exclusive] }
         to_pay_paise: { type: integer, minimum: 0 }
         saved_paise: { type: integer, minimum: 0 }
+    Serviceability:
+      type: object
+      additionalProperties: false
+      required: [ok, serviceable, request_here, kitchens]
+      properties:
+        ok:
+          const: true
+        serviceable: { type: boolean }
+        request_here: { type: boolean }
+        kitchens:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [kitchen_id, name, distance_m, eta_min, open]
+            properties:
+              kitchen_id: { type: string }
+              name: { type: string }
+              distance_m: { type: integer, minimum: 0 }
+              eta_min: { type: integer, minimum: 0 }
+              open: { type: boolean }
     Dish:
       type: object
       additionalProperties: false

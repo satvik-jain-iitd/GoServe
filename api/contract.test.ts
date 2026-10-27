@@ -96,3 +96,14 @@ Deno.test("quote: the 200, the 422 and the 400 answers are in the contract, and 
   body.lines[0].price = 1;   // not unit_paise
   await assertRejects(() => checkAnswer("/quote", "post", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
 });
+
+Deno.test("serviceability: the in-range, out-of-range and 400 answers are in the contract, and a wrong field in a kitchen is red", async () => {
+  const { handler } = await import("../supabase/functions/serviceability/fixture.ts");
+  const ask = (q: string) => handler(new Request(`https://x.test/serviceability${q}`));
+  await checkAnswer("/serviceability", "get", await ask(""));   // no place: 400, listed
+  await checkAnswer("/serviceability", "get", await ask("?lat=28.7&lng=77.5"));   // out of range: 200 with Request here
+  const body = await (await ask("?lat=28.5494&lng=77.2001")).json();
+  assertEquals(body.kitchens.length, 1);
+  body.kitchens[0].eta = 20;   // not eta_min
+  await assertRejects(() => checkAnswer("/serviceability", "get", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
+});
