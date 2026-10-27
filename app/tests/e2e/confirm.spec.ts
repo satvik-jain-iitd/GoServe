@@ -108,3 +108,18 @@ test("S6 a double tap on a kitchen step: the second answer already_done is not s
   await expect(page.getByText("Already done.")).toHaveCount(0);
   await expect(page.getByRole("alert")).toHaveCount(0);
 });
+
+test("S5 a live event with the same moment and no paid_by after the Yes does not take the Paid line away (story #601, night run 2)", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.confirmCfg = { confirm_after_ready_min: 3, confirm_after_place_min: 0.03 };
+  const at = new Date(Date.now() + 60_000).toISOString();
+  net.state.confirmAt = at;
+  await placeOrder(page);
+  net.push("INSERT", order("ready", now(), now()));
+  await expect(prompt(page)).toBeVisible({ timeout: 8000 });
+  await page.getByRole("button", { name: "Yes, I have it" }).click();
+  await expect(page.getByText(/Paid: cash · confirmed/)).toBeVisible();
+  net.push("UPDATE", { ...order("delivered", at, now()), paid_by: null });
+  await page.waitForTimeout(2500);   // the event is held until the screen has joined the channel, then sent
+  await expect(page.getByText(/Paid: cash · confirmed/)).toBeVisible();
+});
