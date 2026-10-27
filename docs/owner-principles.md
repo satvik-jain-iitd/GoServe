@@ -19,3 +19,6 @@ How the owner decides, in plain words. Each one has a source and an example from
 | 13 | New abilities go in the new app; the old one stays frozen. | Staff in several kitchens (ID212) is built in backend v2 and the native apps, not in the PWA. | ID212, 26 Oct |
 | 14 | Say it once and short. After work, say only what is needed from him. | No recaps unless he asks. | CLAUDE.md section 1, 7 Oct |
 | 15 | Start with the end goal. Every project has a live roadmap from day one, written for a stranger. | The roadmap page goes up with the first epic. | CLAUDE.md section 1, 25 Oct |
+| 16 | Never name a cause without logs. A guess is a hypothesis until it points at exact lines. | "Probably the local reminder" was wrong; the order trace showed SUB 20 never ran at ready. | Reviewer relaying the owner, 27 Oct |
+| 17 | One way to do a thing, never two. | The Order again button goes; the slip's one button is "See the menu". Every push goes through one queue and one sender. | Owner, 27 Oct |
+| 18 | The design and the code stay one thing. A UI change in code is also made in the design artifact in the same story. | The safe-area inset change (#481) went to the Ink design system the same day. | Owner, 27 Oct |

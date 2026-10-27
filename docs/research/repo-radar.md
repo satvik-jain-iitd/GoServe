@@ -216,3 +216,18 @@ Read: READMEs of Live-Notifications-Demo, platform-samples and open-swiftui-anim
 | Swish app study (`docs/research/swish-deep-research-2026-10.md`) | n/a | ours | S | Our own measurements from the screen recording: the best source for what a rival does today. |
 
 Decision: read the Tier A sources first (done in #327 and #328); use Live-Notifications-Demo as the one open reference for the Android Living Slip; use the animation repo for motion ideas only; adopt no dependency now. Nothing found beats Apple's and Google's own pages for rules, and nothing shows a finished iOS Live Activity for food delivery (the topic search found none); that one we design from Apple's page. Confidence that no better open reference exists: 0.6 (the search tool found nothing, and GitHub topic search only covers repos that carry the topic).
+
+## 2026-10-27 · need: daily Supabase free-tier usage and health numbers with an 80% alert (story #488, epic E25)
+
+Runs: `scout.py --need "monitor Supabase free tier usage limits database size egress storage and alert"` → no repos found. GitHub search "supabase usage monitor quota alert" and `topic:supabase topic:monitoring` → only the Supabase repo itself and unrelated apps. Tier A read instead: the Management API OpenAPI spec (`api.supabase.com/api/v1-json`) and the billing docs. Details: `docs/research/supabase-health-2026-10.md`.
+
+Decision: nothing to adopt. Reuse SUB 94 and `db_mb` (migrations 0025/0039) and the pilot card (MAIN 92). Add one SQL function for the numbers that SQL can give; the Management API (health, API counts, egress proxy) is phase 2 and needs the owner's token.
+
+
+## 2026-10-27 · need: one append-only log that answers "what happened to order X" across the app, the service worker and n8n (story #484, epic E25)
+
+Runs: `scout.py --need "append-only event log table with trace of one order across client service worker and server"` → no repos found. GitHub search `topic:observability topic:supabase` → netdata, Langfuse, SigNoz, MLflow, cilium (Tier C, read the descriptions): each is a hosted platform or agent with its own server and store. We need one table in the Supabase we already run, and one read script.
+
+Checked what we have: `order_events` is the customer-facing timeline (business events with a kitchen); `run_log` and `decision_log` are per workflow run and per decision, with no order id and no phone-side events. Reusing them would mix debug noise into the timeline the apps read.
+
+Decision: build one table `order_trace` (migration 0044) and one RPC for the phone and the service worker, plus `scripts/order_trace.py`. Borrowed idea from SigNoz/OpenTelemetry: one trace id (here the order id) across actors. Nothing else adopted.
