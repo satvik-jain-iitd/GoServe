@@ -27,6 +27,8 @@ import { MenuScreen } from "./screens/MenuScreen";
 import { BillScreen } from "./screens/BillScreen";
 import { openOrderToResume } from "./lib/resume";
 import { SignIn } from "./screens/SignIn";
+import { NameSheet, OtpSheet } from "./screens/OtpSheet";
+import { otpGateOn } from "./lib/otpGate";
 import { AdminScreen } from "./screens/AdminScreen";
 import { loadDraft, saveDraft } from "./lib/draft";
 import { PlacedScreen } from "./screens/PlacedScreen";
@@ -58,6 +60,14 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [address, setAddress] = useState(draft0?.address ?? "");
   const [name, setName] = useState(draft0?.name ?? "");
   const [phone, setPhone] = useState(draft0?.phone ?? "");
+  // Story #551: the phone code at checkout (off unless the gate is on). verified = this user already has a phone linked.
+  const gate = lock === "customer" && otpGateOn(import.meta.env, window.localStorage);
+  const [verified, setVerified] = useState(false);
+  const [otpOpen, setOtpOpen] = useState(false);
+  const [nameOpen, setNameOpen] = useState(false);
+  const [nameAsked, setNameAsked] = useState(false);
+  const [pendingPlace, setPendingPlace] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   useEffect(() => {
     if (lock === "customer") saveDraft({ step: step === "account" ? "menu" : step, cart, address, name, phone });
   }, [lock, step, cart, address, name, phone]);
@@ -431,8 +441,28 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setCancelling(false);
   }
 
+  // Story #551: a guest confirms a phone number before the order goes; the continuation runs once the sheets are closed (so it sees the new name and phone).
+  useEffect(() => {
+    if (!gate) return;
+    let alive = true;
+    ensureSession().then(() => getClient().auth.getUser()).then(({ data }) => {
+      const p = data.user && !data.user.is_anonymous ? data.user.phone : null;
+      const n = (data.user?.user_metadata?.full_name ?? data.user?.user_metadata?.name) as string | undefined;
+      if (alive && p) { setVerified(true); setPhone(p.replace(/^91/, "")); if (n) setName((cur) => cur || n); }
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, [gate]);
+  useEffect(() => {
+    if (!pendingPlace || otpOpen || nameOpen) return;
+    if (!name.trim() && !nameAsked) return void setNameOpen(true);
+    setPendingPlace(false);
+    void place();
+  }, [pendingPlace, otpOpen, nameOpen, nameAsked, name]);   // eslint-disable-line react-hooks/exhaustive-deps
+
   async function place() {
     if (lock && lock !== "customer") return;   // story H2: only the customer app and the demo console place orders
+    if (gate && !verified) { setOtpOpen(true); return; }
+    if (gate && !name.trim() && !nameAsked) { setPendingPlace(true); return; }
     pushTrail("place order");
     setSending(true);
     setError(null);
@@ -520,7 +550,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         )}
         {menu && step === "bill" && (
           <BillScreen lines={lines} total={total} kitchenName={kitchenName} pin={pin} address={address} onAddress={setAddress}
-            details={lock === "customer" ? { name, phone, onName: setName, onPhone: setPhone } : undefined} sending={sending} error={error}
+            details={lock === "customer" ? { name, phone, onName: setName, onPhone: setPhone, gate } : undefined} sending={sending} error={error}
             onBack={() => setStep("menu")} onPlace={place} />
         )}
         {step === "placed" && placed && (
@@ -549,6 +579,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
           </button>
         ))}
       </nav>}
+      {otpOpen && <OtpSheet phone={phone} onClose={() => setOtpOpen(false)}
+        onVerified={(p) => { setPhone(p); setVerified(true); setOtpOpen(false); setToast("Number confirmed"); setTimeout(() => setToast(null), 2500); setPendingPlace(true); }} />}
+      {nameOpen && <NameSheet onDone={(n) => { if (n) setName(n); setNameAsked(true); setNameOpen(false); }} />}
+      {toast && <p role="status" className="otp-toast">{toast}</p>}
       {demo && <p role="status" className="notice"><strong>Offline demo</strong></p>}
       {!lock && <DemoBar onReset={reset} getLink={shareLink} autoOn={auto || demo} autoNote={autoNote} onAuto={toggleAuto} />}
       {role === "kitchen" && !framed && kitchenView}
