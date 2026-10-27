@@ -161,3 +161,25 @@ Deno.test("otp: send and verify answer 200, 400, 401, 422 and 429 as the contrac
   body.session = "x";   // not a field of the answer
   await assertRejects(() => checkAnswer("/otp/verify", "post", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
 });
+
+Deno.test("payments: create and webhook answer 200, 400, 401, 404 as the contract says; a bad signature is 400 and a wrong field is red", async () => {
+  const { handler, CONTRACT_SECRET } = await import("../supabase/functions/payments/fixture.ts");
+  const { sign } = await import("../supabase/functions/payments/index.ts");
+  const O = "7e57ab1e-0000-4000-8000-0000000000f1";
+  const post = (route: string, b: unknown, auth = true) => handler(new Request(`https://x.test/payments/${route}`, { method: "POST", headers: auth ? { authorization: "Bearer t" } : {}, body: JSON.stringify(b) }));
+  const created = await post("create", { order_id: O });
+  assertEquals(created.status, 200);
+  await checkAnswer("/payments/create", "post", created);
+  await checkAnswer("/payments/create", "post", await post("create", { order_id: O }, false));   // 401
+  await checkAnswer("/payments/create", "post", await post("create", { order_id: "7e57ab1e-0000-4000-8000-00000000dead" }));   // 404
+  await checkAnswer("/payments/create", "post", await post("create", { order_id: "x" }));   // 400
+  const good = { provider_order_id: "fake_order_1", provider_payment_id: "fake_pay_1", signature: await sign(CONTRACT_SECRET, "fake_order_1", "fake_pay_1") };
+  const paid = await post("webhook", good, false);
+  assertEquals(paid.status, 200);
+  await checkAnswer("/payments/webhook", "post", paid);
+  await checkAnswer("/payments/webhook", "post", await post("webhook", { ...good, signature: "0".repeat(64) }, false));   // 400
+  await checkAnswer("/payments/webhook", "post", await post("webhook", { ...good, provider_order_id: "unknown", signature: await sign(CONTRACT_SECRET, "unknown", "fake_pay_1") }, false));   // 404
+  const body = await (await post("create", { order_id: O })).json();
+  body.key_secret = "x";   // a gateway key must never be a field of the answer
+  await assertRejects(() => checkAnswer("/payments/create", "post", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
+});

@@ -1,10 +1,14 @@
 // Story #349: POST /order-actions. The one door for every step an order takes after it is placed: accept, prepare, ready, pickup, arriving, deliver,
 // confirm, cancel. The caller's own token goes to the database, which reads who is asking (auth.uid()) and decides who may do what (act_on_order).
 // This handler only checks the request and maps the answer to a status code. The data source is injected so the tests need no network.
+import { gatewayFromEnv } from "../_shared/gateway.ts";
 import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
 
 export type Answer = { ok: true; order: Record<string, unknown> } | { ok: false; error: string; message: string };
-export type Deps = { act: (token: string, orderId: string, action: string, reason: string | null) => Promise<Answer> };
+export type Deps = {
+  act: (token: string, orderId: string, action: string, reason: string | null) => Promise<Answer>;
+  refundAfterCancel?: (orderId: string) => Promise<void>;   // story #348: a paid online order is refunded through the gateway after a cancel
+};
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ACTIONS = ["accept", "prepare", "ready", "pickup", "arriving", "deliver", "confirm", "cancel"];
@@ -22,6 +26,7 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
   try {
     const res = await deps.act(token, b.order_id, b.action, b.reason?.trim() || null);
     if (!res.ok) return json(STATUS[res.error] ?? 422, { ok: false, error: res.error, message: res.message });
+    if (b.action === "cancel") await deps.refundAfterCancel?.(b.order_id).catch(() => {});   // the cancel stands; a refund that fails stays refund_due in the database for a retry
     return json(200, { ok: true, order: Object.fromEntries(ORDER_FIELDS.map((f) => [f, res.order[f]])) });
   } catch {
     return json(502, { ok: false, error: "order_action_unavailable" });   // no detail: a database message must never reach an app
@@ -38,6 +43,19 @@ const live: Deps = {
     if (!res.ok) throw new Error("act failed");
     return await res.json();
   },
+};
+const service = () => Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const rpc = async (fn: string, body: Record<string, unknown>) => {
+  const res = await fetch(`${Deno.env.get("SUPABASE_URL")}/rest/v1/rpc/${fn}`, { method: "POST", headers: { apikey: service(), authorization: `Bearer ${service()}`, "content-type": "application/json" }, body: JSON.stringify(body) });
+  if (!res.ok) throw new Error("rpc failed");
+  return await res.json();
+};
+// Refund: the database says which payment is owed back; the gateway (FakeGateway until the owner's Razorpay click) refunds; the database closes it.
+live.refundAfterCancel = async (orderId) => {
+  const target = await rpc("payment_refund_target_v2", { p_order: orderId });
+  if (!target.ok) return;   // cash on delivery, or nothing was paid
+  await (await gatewayFromEnv()).refund(target.payment.provider_payment_id, target.payment.amount_paise);
+  await rpc("payment_refunded_v2", { p_order: orderId });
 };
 export const handler = withRunLog("order-actions", makeHandler(live), writeRunLog);   // story #356: one run_log row per call
 

@@ -413,6 +413,116 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /payments/create:
+    post:
+      operationId: postPaymentsCreate
+      summary: Start an online payment for an order the caller placed
+      description: "TEST DOUBLE until the owner's Razorpay KYC click: the gateway is FakeGateway (docs/product/founder-checklist.md). The amount comes from the order in the database, never from the request. The order becomes online and waits for the payment; cash on delivery never calls this."
+      x-handler: ../supabase/functions/payments/index.ts
+      x-contract-handler: ../supabase/functions/payments/fixture.ts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [order_id]
+              properties:
+                order_id: { type: string, format: uuid }
+      responses:
+        "200":
+          description: The payment order. An open payment for the order is returned again, not made twice.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentCreated"
+        "400":
+          description: The request is malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: There is no login.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "404":
+          description: The order was not found (also for an order that is not the caller's).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "409":
+          description: The order cannot be paid now (order_not_payable) or is already paid (already_paid).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: The database or the gateway could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /payments/webhook:
+    post:
+      operationId: postPaymentsWebhook
+      summary: The gateway tells us a payment was made
+      description: "No login: the signature is the proof. signature = hex HMAC-SHA256 over provider_order_id|provider_payment_id with our own secret (PAYMENTS_WEBHOOK_SECRET), the Razorpay shape. A bad signature is 400 and writes nothing. A repeat answers 200."
+      x-handler: ../supabase/functions/payments/index.ts
+      x-contract-handler: ../supabase/functions/payments/fixture.ts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [provider_order_id, provider_payment_id, signature]
+              properties:
+                provider_order_id: { type: string }
+                provider_payment_id: { type: string }
+                signature: { type: string }
+      responses:
+        "200":
+          description: The order is paid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentPaid"
+        "400":
+          description: The signature is wrong or missing (invalid_signature), or the request is malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: The payment is not known (payment_not_found).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "409":
+          description: The payment was closed (payment_closed).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "503":
+          description: The webhook secret is not set (webhook_not_configured).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   schemas:
     Error:
@@ -572,6 +682,25 @@ components:
           const: true
         phone: { type: string, pattern: "^91[6-9][0-9]{9}$" }
         user_id: { type: string }
+    PaymentCreated:
+      type: object
+      additionalProperties: false
+      required: [ok, provider, provider_order_id, amount_paise, currency]
+      properties:
+        ok:
+          const: true
+        provider: { type: string }
+        provider_order_id: { type: string }
+        amount_paise: { type: integer, minimum: 0 }
+        currency: { const: INR }
+    PaymentPaid:
+      type: object
+      additionalProperties: false
+      required: [ok, order_id]
+      properties:
+        ok:
+          const: true
+        order_id: { type: string }
     Dish:
       type: object
       additionalProperties: false
