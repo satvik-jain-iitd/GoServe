@@ -9,11 +9,11 @@ const O1 = "7e57ab1e-0000-4000-8000-0000000000e1";
 const flat: Coupon = { code: "FLAT50", title: "Rs 50 off", kind: "flat", amount_paise: 5000, percent: 0, cap_paise: 0, min_order_paise: 0, first_order_only: false };
 const deps = (o: Partial<Deps> = {}): Deps => ({
   catalog: async () => ({ dishes: { [D1]: { id: D1, name: "Thali", price_paise: 14000, available: true } }, options: { [O1]: { id: O1, name: "Raita", price_paise: 2000 } } }),
-  rules: async () => DEFAULT_RULES, coupon: async (c) => (c === "FLAT50" ? flat : null), coupons: async () => [flat], validate: async () => ({ ok: true }), firstOrder: async () => false, ...o,
+  rules: async () => DEFAULT_RULES, coupon: async (c) => (c === "FLAT50" ? flat : null), coupons: async () => [flat], validate: async () => ({ ok: true }), firstOrder: async () => false, session: async (req) => req.headers.get("authorization") ? "s1" : null, ...o,
 });
 const body = (o: Record<string, unknown> = {}) => ({ kitchen_id: K, lines: [{ menu_item_id: D1, qty: 2, option_ids: [O1] }], address: { pin_code: "110016" }, ...o });
-const post = (h: ReturnType<typeof makeHandler>, b: unknown, method = "POST") =>
-  h(new Request("https://x.test/quote", { method, headers: { "content-type": "application/json" }, body: method === "POST" ? JSON.stringify(b) : undefined }));
+const post = (h: ReturnType<typeof makeHandler>, b: unknown, method = "POST", auth = false) =>
+  h(new Request("https://x.test/quote", { method, headers: { "content-type": "application/json", ...(auth ? { authorization: "Bearer t" } : {}) }, body: method === "POST" ? JSON.stringify(b) : undefined }));
 
 Deno.test("a good request answers 200 with the quote", async () => {
   const res = await post(makeHandler(deps()), body({ coupon_code: "FLAT50" }));
@@ -93,4 +93,30 @@ Deno.test("a code the customer typed is applied even when another saves more, an
 Deno.test("no valid coupon: no discount and an empty list", async () => {
   const q = await (await post(makeHandler(many([])), body())).json();
   assertEquals([q.coupon, q.discount_paise, q.to_pay_paise, q.offers], [null, 0, 32000, []]);
+});
+
+// Story #579: a personal coupon (the late-order sorry) is in the offers of its own customer only.
+const late: Coupon = { ...flat, code: "LATE-AB12CD34", title: "Sorry we were late", amount_paise: 6000 };
+const mine = (o: Partial<Deps> = {}) => deps({
+  coupons: async (s) => (s === "s1" ? [flat, late] : [flat]),
+  coupon: async (c, s) => (c === "LATE-AB12CD34" ? (s === "s1" ? late : null) : c === "FLAT50" ? flat : null), ...o,
+});
+
+Deno.test("the customer's own late coupon is in their offers and wins (the scenario)", async () => {
+  const q = await (await post(makeHandler(mine()), body(), "POST", true)).json();
+  assertEquals([q.coupon.code, q.offers.map((o: { code: string }) => o.code)], ["LATE-AB12CD34", ["LATE-AB12CD34", "FLAT50"]]);
+});
+
+Deno.test("typing the own late code applies it; for anyone else it is coupon_invalid", async () => {
+  const own = await post(makeHandler(mine()), body({ coupon_code: "late-ab12cd34" }), "POST", true);
+  assertEquals([own.status, (await own.json()).coupon.code], [200, "LATE-AB12CD34"]);
+  const other = await post(makeHandler(mine({ session: async () => "s2" })), body({ coupon_code: "LATE-AB12CD34" }), "POST", true);
+  assertEquals([other.status, (await other.json()).error], [422, "coupon_invalid"]);
+  const anon = await post(makeHandler(mine()), body({ coupon_code: "LATE-AB12CD34" }));
+  assertEquals([anon.status, (await anon.json()).error], [422, "coupon_invalid"]);
+});
+
+Deno.test("a caller with no login sees the public offers only", async () => {
+  const q = await (await post(makeHandler(mine()), body())).json();
+  assertEquals(q.offers.map((o: { code: string }) => o.code), ["FLAT50"]);
 });

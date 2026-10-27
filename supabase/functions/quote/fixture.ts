@@ -8,6 +8,7 @@ export const handler = makeHandler({
   rules: async () => DEFAULT_RULES,
   coupon: async (c) => (c === "FLAT50" ? { code: "FLAT50", title: "Rs 50 off", kind: "flat", amount_paise: 5000, percent: 0, cap_paise: 0, min_order_paise: 0, first_order_only: false } : null),
   coupons: async () => [{ code: "FLAT50", title: "Rs 50 off", kind: "flat" as const, amount_paise: 5000, percent: 0, cap_paise: 0, min_order_paise: 0, first_order_only: false }],
+  session: async (req) => (req.headers.get("authorization") ? "s1" : null),
   validate: async () => ({ ok: true }),
   firstOrder: async () => false,
 });

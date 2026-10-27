@@ -57,3 +57,20 @@ class Coupons(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+@unittest.skipUnless(TOKEN, "SUPABASE_ACCESS_TOKEN not set")
+class PersonalCoupons(unittest.TestCase):
+    # Story #579: coupon_by_code_v2 knows the caller's session. A personal coupon is found by its own customer only.
+    def mine(self, code, session):
+        return coupon(code).replace("max_uses, active) values", "max_uses, active, session_id) values").rstrip(")") + f", '{session}')"
+
+    def test_a_personal_coupon_is_found_by_its_own_session_only(self):
+        r = run(self.mine("LATE-TEST0001", "sess-a"), q("coupon_by_code_v2('late-test0001', 'sess-a')"), q("coupon_by_code_v2('LATE-TEST0001', 'sess-b')"),
+                q("coupon_by_code_v2('LATE-TEST0001')"), q("coupon_by_code_v2('LATE-TEST0001', null)"))
+        self.assertEqual(r["rs"][0]["code"], "LATE-TEST0001", r)
+        self.assertEqual(r["rs"][1:4], [None, None, None], r)
+
+    def test_a_public_coupon_is_found_with_or_without_a_session(self):
+        r = run(coupon("PUB5"), q("coupon_by_code_v2('PUB5')"), q("coupon_by_code_v2('pub5', 'sess-a')"))
+        self.assertEqual([x["code"] for x in r["rs"]], ["PUB5", "PUB5"], r)
