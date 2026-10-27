@@ -523,6 +523,60 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /otp/claim:
+    post:
+      operationId: postOtpClaim
+      summary: A returning customer moves the orders of a guest session to their own account
+      description: "The caller is signed in as the old account (it signed in with Supabase's own phone sign-in, test OTP in dev). The body carries the guest session's access token. Both tokens are checked; only a guest can be moved, only into a signed-in account."
+      x-handler: ../supabase/functions/otp/index.ts
+      x-contract-handler: ../supabase/functions/otp/fixture.ts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [guest_token]
+              properties:
+                guest_token: { type: string, minLength: 1 }
+      responses:
+        "200":
+          description: The orders of the guest session are on the caller's account (moved is how many).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OtpClaimed"
+        "400":
+          description: The request is malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal400"
+        "401":
+          description: A token is missing or not valid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "403":
+          description: The caller is still a guest (not_signed_in).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "409":
+          description: The other session is not a guest (not_a_guest).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: The database could not be reached or the move failed (claim_failed). No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal400"
 components:
   schemas:
     Error:
@@ -663,6 +717,14 @@ components:
           const: false
         error: { type: string }
         message: { type: string }
+    OtpClaimed:
+      type: object
+      additionalProperties: false
+      required: [ok, moved]
+      properties:
+        ok:
+          const: true
+        moved: { type: integer, minimum: 0 }
     OtpSent:
       type: object
       additionalProperties: false

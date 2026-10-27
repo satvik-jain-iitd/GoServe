@@ -6,12 +6,15 @@ import { makeHandler, type Deps } from "./index.ts";
 
 const sent: unknown[][] = [];
 const linked: unknown[][] = [];
+const claimed: unknown[][] = [];
 const deps = (o: Partial<Deps> = {}): Deps => ({
   session: async (req) => (req.headers.get("authorization") ? "u1" : null),
   issue: async () => ({ ok: true, code: "482913", expires_in_s: 600 }),
   sms: async (...a) => { sent.push(a); },
   check: async () => ({ ok: true, phone: "919876543210" }),
-  link: async (...a) => { linked.push(a); return { ok: true }; }, ...o,
+  link: async (...a) => { linked.push(a); return { ok: true }; },
+  identify: async (token) => (token === "guest-tok" ? { id: "g1", anonymous: true } : token === "old-tok" ? { id: "u-old", anonymous: false } : null),
+  claim: async (...a) => { claimed.push(a); return { ok: true, orders: 2 }; }, ...o,
 });
 const post = (h: ReturnType<typeof makeHandler>, route: string, b: unknown, opts: { token?: string | null; method?: string } = {}) =>
   h(new Request(`https://x.test/otp/${route}`, { method: opts.method ?? "POST", headers: { "content-type": "application/json", ...(opts.token === null ? {} : { authorization: `Bearer ${opts.token ?? "t"}` }) }, body: (opts.method ?? "POST") === "POST" ? JSON.stringify(b) : undefined }));
@@ -87,4 +90,32 @@ Deno.test("when the database fails the answer is 502 otp_unavailable and no deta
 Deno.test("anything but POST is 405", async () => {
   const res = await post(makeHandler(deps()), "send", null, { method: "GET" });
   assertEquals([res.status, res.headers.get("allow")], [405, "POST"]);
+});
+
+Deno.test("claim: a returning customer signed in with the old account moves the guest's orders over (story #558)", async () => {
+  claimed.length = 0;
+  const res = await post(makeHandler(deps()), "claim", { guest_token: "guest-tok" }, { token: "old-tok" });
+  assertEquals([res.status, await res.json()], [200, { ok: true, moved: 2 }]);
+  assertEquals(claimed, [["g1", "u-old"]]);
+});
+
+Deno.test("claim: both tokens must be real, the caller must be signed in (not a guest) and the other one must be a guest; nothing is moved otherwise", async () => {
+  claimed.length = 0;
+  const h = makeHandler(deps());
+  assertEquals((await post(h, "claim", { guest_token: "guest-tok" }, { token: null })).status, 401);
+  assertEquals((await post(h, "claim", { guest_token: "guest-tok" }, { token: "bad-tok" })).status, 401);
+  assertEquals((await post(h, "claim", { guest_token: "bad-tok" }, { token: "old-tok" })).status, 401);
+  const asGuest = await post(h, "claim", { guest_token: "guest-tok" }, { token: "guest-tok" });
+  assertEquals([asGuest.status, (await asGuest.json()).error], [403, "not_signed_in"]);
+  const notGuest = await post(h, "claim", { guest_token: "old-tok" }, { token: "old-tok" });
+  assertEquals(notGuest.status, 409);
+  assertEquals((await post(h, "claim", {}, { token: "old-tok" })).status, 400);
+  assertEquals(claimed.length, 0);
+});
+
+Deno.test("claim: a refusal from the database keeps its code, and a failure is 502 with no detail", async () => {
+  const refused = await post(makeHandler(deps({ claim: async () => ({ ok: false, error: "claim_failed", message: "m" }) })), "claim", { guest_token: "guest-tok" }, { token: "old-tok" });
+  assertEquals([refused.status, (await refused.json()).error], [502, "claim_failed"]);
+  const dead = await post(makeHandler(deps({ claim: () => Promise.reject(new Error("password=secret")) })), "claim", { guest_token: "guest-tok" }, { token: "old-tok" });
+  assertEquals([dead.status, await dead.json()], [502, { ok: false, error: "otp_unavailable" }]);
 });
