@@ -1,6 +1,8 @@
 // Story #348: POST /payments/create and POST /payments/webhook; story #565: POST /payments/switch-to-cash (the customer pays cash instead). TEST DOUBLE: the gateway is FakeGateway until the owner's Razorpay KYC click (docs/product/founder-checklist.md).
 // create: whose order and how much come from the database; the gateway is asked for THAT amount; the payment is stored; the order becomes online and waits for the payment.
 // webhook: HMAC-SHA256 over `provider_order_id|provider_payment_id` with our own secret (the Razorpay shape, PAYMENTS_WEBHOOK_SECRET). A bad signature is 400 and writes nothing.
+// The gateway JWT check is OFF for this function (supabase/config.toml, story #569), because the real Razorpay webhook has no login. Safe because: create and switch-to-cash
+// read the caller's own token here (401 without it), and the webhook is proved by its HMAC signature (400 without a good one). Do not add a route that trusts the caller without one of these.
 import { gatewayFromEnv, type Gateway } from "../_shared/gateway.ts";
 import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
 

@@ -9,3 +9,9 @@ verify_jwt = false
 # /push/register still checks the caller's own token itself (the function reads /auth/v1/user), so it is not open.
 [functions.push]
 verify_jwt = false
+
+# Story #569: the real Razorpay webhook carries no login (no JWT), and the Supabase gateway answers 401 to such a call unless this is off.
+# Safe because the function checks the caller itself: create and switch-to-cash read the caller's token (401 without it) and the webhook has its HMAC
+# signature (400 without a good one). Pinned by supabase/functions/payments/config.test.ts.
+[functions.payments]
+verify_jwt = false
