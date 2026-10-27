@@ -6,8 +6,9 @@ const before = tryNode('Call SUB 91 before');   // only MAIN 93 has it
 const cur = tryNode('Call SUB 91 Scorecard numbers');
 const wnd = $('Prepare window').first().json;
 const reportMode = wnd.period_label !== 'last 24 hours';
-// A report reads its two periods by node name. If the current one failed it says so; it never shows the period before as the current one.
-const r = reportMode ? (cur || { ok: false, error: 'no_answer' }) : $input.first().json;
+// The card and every report read the numbers by node name: since SUB 94 joined the chain, $input is SUB 94's answer, not the scorecard (story #610).
+// If the current one failed it says so; it never shows the period before as the current one.
+const r = cur || { ok: false, error: 'no_answer' };
 const chat_id = $('Config').first().json.chat_id;
 const w = wnd;
 const report = reportMode;

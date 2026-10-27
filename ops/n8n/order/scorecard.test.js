@@ -63,7 +63,7 @@ test('S1 numbers: a database failure is a 502 with a short message, never raw te
 
 test('S1 message: one text with the pilot block first, then runs and errors, time, decisions, cost, health checks', () => {
   const summary = run('score_summary.js', {}, { 'Read runs': ok(runs), 'Read decisions': ok(decisions), 'Read pilot numbers': ok({ numbers: { missed_day: 0, on_time_pct: 90, gap_share: 0.1, orders_day: 12 }, breakpoints: { missed_day: 1, on_time_pct: 80, gap_share: 0.2, orders_day: 30 } }) });
-  const m = run('score_message.js', summary, { Config: { chat_id: '42' }, 'Prepare window': { until_label: '2026-10-14 22:15', period_label: 'last 24 hours' } });
+  const m = run('score_message.js', summary, { Config: { chat_id: '42' }, 'Prepare window': { until_label: '2026-10-14 22:15', period_label: 'last 24 hours' }, 'Call SUB 91 Scorecard numbers': summary });
   assert.equal(m.chat_id, '42');
   const lines = m.text.split('\n');
   assert.equal(lines[0], 'GoServe pilot day card, last 24 hours (to 2026-10-14 22:15 India time)');
@@ -78,11 +78,12 @@ test('S1 message: one text with the pilot block first, then runs and errors, tim
 test('S1 message: an empty day says so, a failed read says so, a cut page says so', () => {
   const named = { Config: { chat_id: '42' }, 'Prepare window': { until_label: '2026-10-14 22:15', period_label: 'last 24 hours' } };
   const empty = run('score_summary.js', {}, { 'Read runs': ok([]), 'Read decisions': ok([]) });
-  assert.match(run('score_message.js', empty, named).text, /No runs in the last 24 hours\./);
-  const failed = run('score_message.js', { ok: false, status_code: 502, error: 'database_error', message: 'Something went wrong.' }, named).text;
+  assert.match(run('score_message.js', empty, { ...named, 'Call SUB 91 Scorecard numbers': empty }).text, /No runs in the last 24 hours\./);
+  const down = { ok: false, status_code: 502, error: 'database_error', message: 'Something went wrong.' };
+  const failed = run('score_message.js', down, { ...named, 'Call SUB 91 Scorecard numbers': down }).text;
   assert.match(failed, /could not read the numbers/);
   const cut = run('score_summary.js', {}, { 'Read runs': ok(Array.from({ length: 1000 }, () => ({ workflow: 'w', duration_ms: 1, cost: 0, error: '' }))), 'Read decisions': ok([]) });
-  assert.match(run('score_message.js', cut, named).text, /latest 1000 runs only/);
+  assert.match(run('score_message.js', cut, { ...named, 'Call SUB 91 Scorecard numbers': cut }).text, /latest 1000 runs only/);
 });
 
 test('wiring: MAIN 90 is a schedule at 22:15 India time; Config, kill switch, window, SUB 91, message, Telegram, then the ping history is pruned', () => {
@@ -149,7 +150,23 @@ test('#263 the summary counts decisions by engine and the card prints one Engine
   const r = run('score_summary.js', {}, { 'Read runs': ok([]), 'Read decisions': ok(rows) });
   assert.deepEqual(r.summary.engines, { rules: 2, jev: 1, laya: 0, older: 1 });
   const named = { Config: { chat_id: '42' }, 'Prepare window': { until_label: '2026-10-14 22:15', period_label: 'last 24 hours' } };
-  assert.match(run('score_message.js', r, named).text, /Engine: rules 2, jev 1 \(before the switch: 1\)/);
+  assert.match(run('score_message.js', r, { ...named, 'Call SUB 91 Scorecard numbers': r }).text, /Engine: rules 2, jev 1 \(before the switch: 1\)/);
   const none = run('score_summary.js', {}, { 'Read runs': ok([]), 'Read decisions': ok([]) });
-  assert.doesNotMatch(run('score_message.js', none, named).text, /Engine:/);
+  assert.doesNotMatch(run('score_message.js', none, { ...named, 'Call SUB 91 Scorecard numbers': none }).text, /Engine:/);
+});
+
+// ---- Story #610: since SUB 94 joined the chain, `$input` of "Format message" is SUB 94's answer. The day card reads SUB 91 by node name, like the reports. ----
+test('#610 the day card with SUB 91 and SUB 94 both answered: pilot block first, health lines after, no throw', () => {
+  const sub91 = run('score_summary.js', {}, { 'Read runs': ok(runs), 'Read decisions': ok(decisions), 'Read pilot numbers': ok({ numbers: { missed_day: 0, on_time_pct: 90, gap_share: 0.1, orders_day: 12 }, breakpoints: { missed_day: 1, on_time_pct: 80, gap_share: 0.2, orders_day: 30 } }) });
+  const sub94 = { ok: true, lines: ['Database: 12 MB of 500 MB'] };
+  const named = { Config: { chat_id: '42' }, 'Prepare window': { until_label: '2026-10-14 22:15', period_label: 'last 24 hours' }, 'Call SUB 91 Scorecard numbers': sub91, 'Call SUB 94 Health and cost numbers': sub94 };
+  const text = run('score_message.js', sub94, named).text;
+  assert.ok(text.indexOf('Missed tickets') < text.indexOf('Runs: 4'));
+  assert.ok(text.indexOf('Runs: 4') < text.indexOf('Database: 12 MB of 500 MB'));
+});
+
+test('#610 the day card with SUB 91 failed and SUB 94 answered says the numbers could not be read', () => {
+  const sub94 = { ok: true, lines: ['Database: 12 MB of 500 MB'] };
+  const named = { Config: { chat_id: '42' }, 'Prepare window': { until_label: '2026-10-14 22:15', period_label: 'last 24 hours' }, 'Call SUB 91 Scorecard numbers': { ok: false, status_code: 502, error: 'database_error' }, 'Call SUB 94 Health and cost numbers': sub94 };
+  assert.match(run('score_message.js', sub94, named).text, /could not read the numbers \(database_error\)/);
 });
