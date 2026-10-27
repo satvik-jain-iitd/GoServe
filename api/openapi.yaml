@@ -577,6 +577,103 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Refusal400"
+  /push/register:
+    post:
+      operationId: postPushRegister
+      summary: The app saves the push token of this device
+      description: "TEST DOUBLE until the owner's FCM and Apple Developer clicks: the sender is FakePush (docs/product/founder-checklist.md). The signed-in caller saves its device token and platform. The same token twice is one row; a token that moves to another user follows the new user."
+      x-handler: ../supabase/functions/push/index.ts
+      x-contract-handler: ../supabase/functions/push/fixture.ts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [platform, token]
+              properties:
+                platform: { enum: [android, ios] }
+                token: { type: string, minLength: 1, maxLength: 4096 }
+      responses:
+        "200":
+          description: The device is saved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushRegistered"
+        "400":
+          description: The request is malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: There is no login.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /push/notify:
+    post:
+      operationId: postPushNotify
+      summary: The system says an order changed; every device of its customer gets a push
+      description: "Not for apps. The caller is the system and proves it with our own secret in the x-push-secret header (PUSH_NOTIFY_SECRET). The text comes from the order status. A token the push service says is dead is forgotten. A failed send is counted, not hidden."
+      x-handler: ../supabase/functions/push/index.ts
+      x-contract-handler: ../supabase/functions/push/fixture.ts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [order_id]
+              properties:
+                order_id: { type: string, format: uuid }
+      responses:
+        "200":
+          description: The pushes were tried. A customer with no device gives sent 0.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushNotified"
+        "400":
+          description: The request is malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: The secret is wrong or missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: The order was not found (order_not_found).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "503":
+          description: The notify secret is not set (notify_not_configured).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   schemas:
     Error:
@@ -763,6 +860,23 @@ components:
         ok:
           const: true
         order_id: { type: string }
+    PushRegistered:
+      type: object
+      additionalProperties: false
+      required: [ok]
+      properties:
+        ok:
+          const: true
+    PushNotified:
+      type: object
+      additionalProperties: false
+      required: [ok, sent, failed, forgotten]
+      properties:
+        ok:
+          const: true
+        sent: { type: integer, minimum: 0 }
+        failed: { type: integer, minimum: 0 }
+        forgotten: { type: integer, minimum: 0 }
     Dish:
       type: object
       additionalProperties: false
