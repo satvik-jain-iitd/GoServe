@@ -772,6 +772,148 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /staff/mine:
+    get:
+      operationId: getStaffMine
+      summary: The kitchens the caller belongs to, with their role in each
+      description: "One person can own one kitchen and work in another. The old role kitchen reads as staff. Read from the bearer token."
+      x-handler: ../supabase/functions/staff/index.ts
+      x-contract-handler: ../supabase/functions/staff/fixture.ts
+      responses:
+        "200":
+          description: The kitchens, possibly none.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyKitchens"
+        "401":
+          description: There is no login.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /staff:
+    post:
+      operationId: postStaff
+      summary: An admin adds one person to one kitchen
+      description: "Adds one membership and touches no other. Adding the same one again changes the role. Admin only."
+      x-handler: ../supabase/functions/staff/index.ts
+      x-contract-handler: ../supabase/functions/staff/fixture.ts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [kitchen_id, user_id, role]
+              properties:
+                kitchen_id: { type: string, format: uuid }
+                user_id: { type: string, format: uuid }
+                role: { enum: [owner, staff] }
+      responses:
+        "200":
+          description: The membership exists.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffChanged"
+        "400":
+          description: The request is malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: There is no login.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "403":
+          description: The caller is not an admin (not_allowed).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "404":
+          description: The kitchen or the person is not there (kitchen_not_found, user_not_found).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "422":
+          description: The role is not owner or staff (invalid_role).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteStaff
+      summary: An admin removes one person from one kitchen
+      description: "Removes this one membership and no other. Admin only."
+      x-handler: ../supabase/functions/staff/index.ts
+      x-contract-handler: ../supabase/functions/staff/fixture.ts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [kitchen_id, user_id]
+              properties:
+                kitchen_id: { type: string, format: uuid }
+                user_id: { type: string, format: uuid }
+      responses:
+        "200":
+          description: The membership is gone.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffChanged"
+        "400":
+          description: The request is malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: There is no login.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "403":
+          description: The caller is not an admin (not_allowed).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "404":
+          description: The person does not work in this kitchen (membership_not_found).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /otp/claim:
     post:
       operationId: postOtpClaim
@@ -1188,6 +1330,30 @@ components:
             name: { type: [string, "null"] }
             email: { type: [string, "null"] }
     MyProfileSaved:
+      type: object
+      additionalProperties: false
+      required: [ok]
+      properties:
+        ok:
+          const: true
+    MyKitchens:
+      type: object
+      additionalProperties: false
+      required: [ok, kitchens]
+      properties:
+        ok:
+          const: true
+        kitchens:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [kitchen_id, name, role]
+            properties:
+              kitchen_id: { type: string, format: uuid }
+              name: { type: string }
+              role: { enum: [owner, staff] }
+    StaffChanged:
       type: object
       additionalProperties: false
       required: [ok]
