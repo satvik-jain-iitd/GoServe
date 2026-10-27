@@ -256,7 +256,7 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F253 | Roadmap page: the "Owner buttons" block from the founder checklist. | #544 | open |
 | F254 | PWA Help screen. The owner reads the seven starter answers once before the screen ships. | #355 | open |
 | F255 | In the quote function, `live.session` throws when the auth endpoint is down, so every quote answers 502. It should degrade to no session (public offers only). | #579 | open |
-| F256 | The Bill's Remove button: `no_coupon: true` is on the server (#589); the PWA layer on top of it is next. | #589 | open |
+| F256 | The Bill's Remove button: `no_coupon: true` is on the server (#589); the PWA layer on top of it is #597. | #589 | done in #597 (PR #598) |
 | F257 | Place the order through `POST /orders` (idempotency key, `expected_to_pay_paise`, `price_changed`). Until then `VITE_OFFERS` stays off in the deploy. | #590 | open |
 | F258 | Rehearsal reruns in the daytime (two passing runs close #324). If the demo city delivers before the ask time, the question never shows; with the demo knobs the ask comes first. | #324 | open |
 | F259 | The demo doc says an order reaches Delivered in about 11 minutes. Run 1 on prod took 14.5 minutes (868 s). Update `docs/demo/mvp2-demo.md` after the daytime reruns. | #324 | open |
