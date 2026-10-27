@@ -237,3 +237,9 @@ Decision: build one table `order_trace` (migration 0044) and one RPC for the pho
 Runs: `scout.py --need "quick food delivery app customer journey teardown Swish Zepto Cafe order flow screens"` → no repos found. GitHub search "zepto cafe clone food delivery app teardown" → clones and tutorials only (Tier C, not read as evidence). Tier A read instead: Apple's iTunes lookup for Swish and a search for Zepto Cafe, and `justswish.in`.
 
 Decision: nothing to adopt. Build the table from our own Swish study, the dispatch study, the store listing and the GoServe code; mark every step with no source as UNKNOWN and write how to close the gap (the owner's phone capture).
+
+## 2026-10-27 · need: a scroll story for the bare app address, like justswish.in, with four doors (story #503, epic E26)
+
+Runs: `scout.py --need "scroll story landing page for a food delivery startup with sections hero neighbourhood kitchens technology delivery"` → no repos found. Looked at what we own: `site/` (Astro 5, Tailwind 4, React islands, built for `letsdwelo.in`, which stays untouched by rule 18).
+
+Decision: reuse the components and copy of `site/`; build no new site. Open question for the design step in the Ink artifact: the bare `/` of the app host is the single-page app, so the story is either a static route in the app build or a small page the host serves at `/`. Nothing is built before the design has the owner's yes.
