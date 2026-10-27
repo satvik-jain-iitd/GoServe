@@ -17,11 +17,11 @@ const byName = (w, n) => w.nodes.find((x) => x.name === n);
 const next = (w, from, out = 0) => (w.connections[from]?.main[out] || []).map((x) => x.node);
 const SESSION = '7e57ab1e-0000-4000-8000-0000000000a1';
 
-test('S1 guard: only placed, ready and delivered are pushed; the kill switch and a bad session are refused', () => {
+test('S1 guard: only placed, ready, out_for_delivery and delivered are pushed; the kill switch and a bad session are refused', () => {
   const good = { kill_switch: false, supabase_url: 'u', session_id: SESSION, status: 'ready', vapid_public_key: 'PUB', vapid_subject: 'mailto:a@b.c' };
   assert.deepEqual(run('guard_push.js', good).rpc_body, { p_session: SESSION });
-  for (const status of ['placed', 'ready', 'delivered']) assert.equal(run('guard_push.js', { ...good, status }).ok, true, status);
-  for (const status of ['accepted', 'preparing', 'out_for_delivery', 'cancelled', 'nonsense', undefined]) {
+  for (const status of ['placed', 'ready', 'out_for_delivery', 'delivered']) assert.equal(run('guard_push.js', { ...good, status }).ok, true, status);
+  for (const status of ['accepted', 'preparing', 'cancelled', 'nonsense', undefined]) {
     const r = run('guard_push.js', { ...good, status });
     assert.deepEqual([r.ok, r.status_code, r.error], [false, 200, 'not_pushed'], String(status));   // not an error: nothing to send
   }
@@ -149,5 +149,27 @@ test('T4 wiring: both traces end in one write node that posts to order_trace; th
   assert.equal(byName(w, 'Write trace').parameters.url, '={{ $json.supabase_url }}/rest/v1/order_trace');
   assert.equal(byName(w, 'Write trace').parameters.jsonBody, '={{ $json.rpc_body }}');
   assert.equal(byName(wf.main34, 'Call SUB 20 Push').parameters.workflowInputs.value.order_id, '={{ $json.order_id }}');
+  assert.deepEqual(checkLayout(w, w.sections), []);
+});
+
+// Story #500: out_for_delivery is pushed, and no guard refusal is silent.
+test('R1 a refusal carries what a trace line needs: the order, the address and the reason', () => {
+  const r = run('guard_push.js', { kill_switch: false, supabase_url: 'u', session_id: SESSION, order_id: ORDER_ID, status: 'accepted', vapid_public_key: 'PUB', vapid_subject: 'mailto:a@b.c' });
+  assert.deepEqual([r.ok, r.error, r.order_id, r.supabase_url, r.status], [false, 'not_pushed', ORDER_ID, 'u', 'accepted']);
+});
+
+test('R2 trace refused: one push_skipped line with the reason; nothing when there is no order to attach it to', () => {
+  const out = run('push_trace_refused.js', { ok: false, status_code: 503, error: 'kill_switch', message: 'Orders are paused. Please try again soon.', supabase_url: 'u', order_id: ORDER_ID, status: 'ready' });
+  assert.deepEqual(out.rpc_body.map((r) => [r.actor, r.event, r.result, r.order_id]), [['n8n', 'push_skipped', 'kill_switch', ORDER_ID]]);
+  assert.match(out.rpc_body[0].detail.text, /ready/);
+  assert.equal(out.supabase_url, 'u');
+  const none = new Function('$input', '$', src('push_trace_refused.js'))({ first: () => ({ json: { ok: false, error: 'invalid_request', supabase_url: 'u', order_id: null } }) }, () => ({}));
+  assert.deepEqual(none, []);
+});
+
+test('R3 wiring: a refusal goes to Return refusal and also to the trace write', () => {
+  const w = wf.sub20;
+  assert.deepEqual(next(w, 'Allowed?', 1).sort(), ['Return refusal', 'Trace refused']);
+  assert.deepEqual(next(w, 'Trace refused'), ['Write refusal']);
   assert.deepEqual(checkLayout(w, w.sections), []);
 });
