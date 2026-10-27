@@ -13,5 +13,6 @@ interface ImportMetaEnv {
   readonly VITE_PAYMENTS_PLACEHOLDER?: string;  // story #552: "1" shows the dev helper on the waiting panel (dev and tests only)
   readonly VITE_PAYMENTS_DEV_SECRET?: string;   // story #552: signs the dev helper's webhook; a dev value, public by design
   readonly VITE_PUSH_NATIVE?: string;           // story #554: "real" once a phone wrapper hands over device tokens (owner click: FCM and Apple)
+  readonly VITE_OFFERS?: string;         // story #588: "1" shows the offers on the Bill from POST /quote; off until the order goes through POST /orders (#590)
   readonly VITE_BUILD?: string;          // the commit the build was made from; set by the deploy workflows   // step time of the autopilot; tests set a short one
 }
