@@ -1,12 +1,12 @@
 // The customer flow in one place: menu, cart, bill, placed (story #48). No router yet: four steps in state.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MAX_QTY, addDish, cartLines, cartTotal, changeQty, toOrderItems, type Cart } from "./lib/cart";
+import { addDish, cartLines, cartTotal, changeQty, toOrderItems, type Cart } from "./lib/cart";
 import { mergeOrder, riderOrders, shortId, statusLabel, type Order, type RiderAction, confirmHandover, isCash } from "./lib/kitchen";
 import { clientPlatform } from "./lib/platform";
 import { riderRefused, savePlatform, tapCall } from "./lib/signals";
 import { useLiveOrders } from "./lib/useLiveOrders";
 import { loadMenu, MENU_KEY, type Dish } from "./lib/menu";
-import { fetchKitchens, forgetArea, loadArea, loadPin, closedLine, openingText, resolveArea, savePin, type Area } from "./lib/area";
+import { fetchKitchens, forgetArea, loadArea, loadPin, closedLine, openingText, resolveArea, savePin, shownArea, type Area } from "./lib/area";
 import { AreaScreen } from "./screens/AreaScreen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { AdminGate } from "./screens/AdminGate";
@@ -16,13 +16,15 @@ import { KitchenGate, type KitchenGateState } from "./screens/KitchenGate";
 import { enablePush, watchSession } from "./lib/push";
 import { loadProfile, saveProfile } from "./lib/profile";
 import { addEvent, changeStatus, confirmDelivery, orderDeps, placeOrder, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
-import { confirmAt, DEFAULT_CFG, notYet, reaskMs, type ConfirmCfg } from "./lib/confirm";
+import { confirmAt, DEFAULT_CFG, mayAsk, notYet, reaskMs, type ConfirmCfg } from "./lib/confirm";
+import { fetchOrders } from "./lib/live";
 import { pushTrail } from "./lib/trail";
+import { trace } from "./lib/trace";
 import { FeedbackSheet } from "./screens/FeedbackSheet";
 import { ensureSession, fetchMenuRows, fetchRiderCard, getClient, type RiderCard } from "./lib/supabase";
 import { openTill } from "./lib/browse";
 import { AccountScreen } from "./screens/AccountScreen";
-import { currentSession, joinCode, joinLink, joinSession, rememberJoin, resetSession } from "./lib/session";
+import { currentSession, scopeFor, joinCode, joinLink, joinSession, rememberJoin, resetSession } from "./lib/session";
 import { MenuScreen } from "./screens/MenuScreen";
 import { BillScreen } from "./screens/BillScreen";
 import { OFFERS_ON } from "./lib/quote";
@@ -53,9 +55,17 @@ const api = orderDeps;
 export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [menu, setMenu] = useState<{ dishes: Dish[]; fromCache: boolean } | null>(null);
   // The customer app asks for a pin code and shows the menu of the kitchen that serves it (story B2). The demo console and the other apps keep the plain menu.
+  const land = useRef(false);
   const [pin, setPin] = useState<string | null>(() => (lock === "customer" ? loadPin() : null));
   const [area, setArea] = useState<Area | null>(() => (lock === "customer" ? loadArea() : null));   // #242 D15: a saved kitchen opens the menu before the network answers
   const [areaError, setAreaError] = useState<string | null>(null);
+  const [clock, setClock] = useState(() => new Date());   // #321: the kitchen's hours are checked against this, so the menu closes at closing time without a reload
+  useEffect(() => {
+    if (lock !== "customer") return;
+    const t = setInterval(() => setClock(new Date()), 30_000);
+    return () => clearInterval(t);
+  }, [lock]);
+  const shown = shownArea(area, clock);
   const [looking, setLooking] = useState(false);
   const [menuError, setMenuError] = useState<string | null>(null);
   // The customer app keeps an unfinished order across a refresh (story B1); the demo console and the other apps start fresh.
@@ -134,7 +144,23 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [preset, setPreset] = useState<{ nonce: number; text: string; doing: "ordering" } | undefined>();
   const notYetCount = useRef(0);
   const askingRef = useRef(false);
+  const checkingRef = useRef(false);
   askingRef.current = asking;
+  // Story #484: a line in order_trace for what this phone did, on the newest order. Fire and forget.
+  const track = (event: string, result?: string, text?: string) => {
+    try {
+      void trace(getClient(), placed?.id ?? orders[0]?.id ?? null, event, result, text);
+    } catch { /* no database address (the offline story): no line */ }
+  };
+  const trackRef = useRef(track);
+  trackRef.current = track;
+  useEffect(() => {
+    if (live.loading) return;
+    trackRef.current("app_open", document.visibilityState);
+    const seen = () => document.visibilityState === "visible" && trackRef.current("app_visible");
+    document.addEventListener("visibilitychange", seen);
+    return () => document.removeEventListener("visibilitychange", seen);
+  }, [live.loading]);
   const [reminder, setReminder] = useState<"ask" | "on" | "none">(() => (typeof Notification === "undefined" ? "none" : Notification.permission === "default" ? "ask" : Notification.permission === "granted" ? "on" : "none"));
   // The tracker goes back to the menu when the order it showed has left the list (the other device reset the demo).
   const trackedSeen = useRef(false);
@@ -181,8 +207,17 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       const due = confirmAt(tracked, confirmCfg);
       if (due === null) return void setAsking(false);
       if (Date.now() >= Math.max(due, snoozeUntil)) {
-        if (!askingRef.current) remind();
-        setAsking(true);
+        if (askingRef.current) return void setAsking(true);
+        // Story #501: a hidden app holds a stale status. Ask only when it is visible and a fresh read says the order is still open.
+        if (document.visibilityState !== "visible" || checkingRef.current) return;
+        checkingRef.current = true;
+        void freshStatus(placed?.id).then((st) => {
+          checkingRef.current = false;
+          if (!mayAsk(document.visibilityState === "visible", st)) return;
+          trackRef.current("delivered_asked", typeof Notification === "undefined" ? "no_notification_api" : Notification.permission, document.visibilityState);
+          remind();
+          setAsking(true);
+        });
       }
     };
     check();
@@ -194,9 +229,29 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     };
   }, [placed?.id, tracked?.status, tracked?.updated_at, tracked?.created_at, confirmCfg, snoozeUntil, demo]);
 
+  // The server's own word on this order, read just before the question (story #501). null: the read failed.
+  async function freshStatus(id: string | undefined): Promise<string | null> {
+    if (!id) return null;
+    try {
+      const rows = await fetchOrders(getClient(), scopeFor(null, await currentSession()));
+      return rows.find((o) => o.id === id)?.status ?? null;
+    } catch {
+      return null;
+    }
+  }
   // The phone also shows a notification when the question comes, if the tester allowed it. Some phones only allow it through the service worker.
-  function remind() {
+  // Story #501: with a push subscription the server push already tells the customer; a second local notice would repeat it. No answer in half a second counts as none.
+  async function hasPush(): Promise<boolean> {
+    try {
+      const sub = await Promise.race([navigator.serviceWorker.ready.then((r) => r.pushManager.getSubscription()), new Promise<null>((done) => setTimeout(() => done(null), 500))]);
+      return !!sub;
+    } catch {
+      return false;
+    }
+  }
+  async function remind() {
     if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    if (await hasPush()) return void trackRef.current("local_notice", "skipped_push");
     try {
       new Notification("Was your order delivered?");
     } catch {
@@ -210,6 +265,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     const native = await wrapperToken(window);   // story #554: a phone wrapper also registers its device token, with its platform
     if (native && !(await registerNative(native))) return void setAlertsError("Could not turn on alerts. Try again.");
     void pushWith(() => Notification.requestPermission()).then((r) => {
+      track("push_subscribe", r, typeof Notification === "undefined" ? "no_notification_api" : Notification.permission);
       if (r === "denied") return setReminder("none");
       if (r === "unsupported" || r === "not_set_up") return void Notification.requestPermission().then((p) => setReminder(p === "granted" ? "on" : "none"), () => setReminder("none"));
       setReminder("on");   // on, or failed to save: the permission is given, the local reminder still works
@@ -234,6 +290,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   async function yes() {
     if (!placed) return;
     pushTrail("customer: yes, delivered");
+    track("delivered_answer", "yes");
     setConfirming(true);
     setConfirmError(null);
     try {
@@ -251,6 +308,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   function notYetTap() {
     const n = ++notYetCount.current;
     pushTrail(`customer: not yet (${n})`);
+    track("delivered_answer", "not_yet", String(n));
     const next = notYet(n, Date.now(), reaskMs());
     setAsking(false);
     if (next.feedback) {
@@ -299,6 +357,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     return () => { alive = false; };
   }, [lock, areaKitchenId]);
   function choosePin(p: string) {
+    land.current = true;   // #525: the mark flies in once, on the first Menu after this pick
     savePin(p);
     setArea(null);
     setMenu(null);
@@ -441,13 +500,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     return () => { alive = false; };
   }, [placed?.id, riderStatus, demo]);
 
-  // "Order again": the dishes of a past order that are still on today's menu go back into the cart.
-  function orderAgain(o: { items: { menu_item_id: string; qty: number }[] }) {
-    const ids = new Set((menu?.dishes ?? []).map((d) => d.id));
-    setCart(Object.fromEntries(o.items.filter((i) => ids.has(i.menu_item_id)).map((i) => [i.menu_item_id, Math.min(i.qty, MAX_QTY)])));
-    setStep("bill");
-  }
-
   // A tap on a slip of "Your orders" opens it as the tracker or the delivered screen (story H10d).
   function openOrder(o: Order) {
     setPlaced({ id: o.id, status: o.status, total_paise: o.total_paise, updated_at: o.updated_at, paid_by: o.paid_by ?? null });
@@ -589,17 +641,17 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   ) : (
     <>
         {step === "menu" && (
-          <MenuScreen dishes={menu?.dishes ?? null} fromCache={menu?.fromCache ?? false} error={menuError}
+          <MenuScreen land={land.current} onLanded={() => { land.current = false; }} dishes={menu?.dishes ?? null} fromCache={menu?.fromCache ?? false} error={menuError}
             pin={pin} name={name} qty={cart} cartCount={count} cartTotal={total}
             kitchenName={kitchenName}
-            openText={area?.kind === "ok" ? openTill(area.kitchen.closes_at) : ""}
-            closedText={area?.kind === "closed" ? closedLine(area.opens_at) : null}
+            openText={shown?.kind === "ok" ? openTill(shown.kitchen.closes_at) : ""}
+            closedText={shown?.kind === "closed" ? closedLine(shown.opens_at, shown.paused === true) : null}
             onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
             onChangePin={changeArea} onOrders={() => setStep("orders")} onYou={() => setStep("account")} />
         )}
         {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} onYou={() => setStep("account")} />}
         {step === "account" && (
-          <AccountScreen name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone} onAddress={setAddress}
+          <AccountScreen onGivenName={(n) => setName((v) => v || n)} name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone} onAddress={setAddress}
             alerts={reminder} onAlerts={allowReminder} alertsError={alertsError} live={openLive} onShare={shareFromAccount} onForget={forgetMe}
             onMenu={() => setStep("menu")} onOrders={() => setStep("orders")} />
         )}
@@ -617,7 +669,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             confirmedAt={tracked && tracked.status === "delivered" ? tracked.updated_at : null}
             asking={asking} busy={confirming} error={confirmError} reminder={reminder}
             onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} pay={paidNow || payState || resumedOnline ? { state: paidNow ? "paid" : payState ?? "waiting", method: payMethod === "cod" ? "upi" : payMethod, startedAt: payState ? payStart : null, error: payError, onPay: payNow, onCash: payCash, onSimulate: () => void simulatePaid(import.meta.env.VITE_PAYMENTS_DEV_SECRET ?? "", payRef.current) } : undefined}
-            onBack={() => setStep("menu")} onAgain={() => { const t = tracked && "items" in tracked ? tracked : null; setPlaced(null); if (t) orderAgain(t); else setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} onCall={() => void tapCall(getClient(), placed.id)} />
+            onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} onCall={() => void tapCall(getClient(), placed.id)} />
         )}
     </>
   );

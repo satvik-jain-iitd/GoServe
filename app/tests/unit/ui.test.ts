@@ -100,3 +100,19 @@ describe("styleguide flag", () => {
     expect(styleguideOn("/customer/", "1")).toBe(false);
   });
 });
+
+describe("phone safe areas (story #481)", () => {
+  const rule = (sel: string) => css.match(new RegExp("(?:^|\\n)" + sel.replace(/\./g, "\\.") + " \\{([^}]*)\\}"))?.[1] ?? "";
+  it("the page draws to the screen edges, so the insets have values (viewport-fit=cover)", () => {
+    expect(readFileSync(resolve(__dirname, "../../index.html"), "utf8")).toMatch(/<meta name="viewport"[^>]*viewport-fit=cover/);
+  });
+  it("the tab bar keeps its labels above the home bar, with a floor of one small space", () => {
+    expect(rule(".ui-tabs")).toContain("max(var(--gs-space-2), env(safe-area-inset-bottom))");
+  });
+  it("the bars and sheets that sit at the bottom use the bottom inset", () => {
+    for (const sel of [".ui-bottom", ".ui-sheet"]) expect(rule(sel), sel).toContain("env(safe-area-inset-bottom)");
+  });
+  it("every header at the top uses the top inset: screen header, back bar and sign-in landing", () => {
+    for (const sel of [".ui-head", ".ui-appbar", ".ui-landing"]) expect(rule(sel), sel).toContain("env(safe-area-inset-top)");
+  });
+});

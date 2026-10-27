@@ -13,6 +13,8 @@ calls sim_tick by hand and reads order_events. Pass marks (fixed before the run)
 import json, os, re, sys, time, urllib.request, uuid
 
 V2 = "--v2" in sys.argv   # place the orders with place_order_v2 instead of place_order
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import kitchen_restore
 
 if (sys.argv[1] if len(sys.argv) > 1 else "dev") != "dev":
     sys.exit("dev only")
@@ -38,6 +40,7 @@ def call(method, path, body=None, headers=None):
 rpc = lambda fn, body=None: call("POST", f"/rest/v1/rpc/{fn}", body if body is not None else {})
 get = lambda path: call("GET", "/rest/v1/" + path)[1]
 results = []
+SAVED = {}   # F210: the open flag and hours of every kitchen the check changes, put back in a finally
 
 
 def check(name, ok, note=""):
@@ -52,7 +55,10 @@ def knobs(**k):
 
 def place(kitchen, pin=None, n=0):
     dishes = get(f"menu_items?select=id,price_paise&kitchen_id=eq.{kitchen}&available=eq.true&limit=1")
-    call("PATCH", f"/rest/v1/kitchens?id=eq.{kitchen}", {"open": True}, {"Prefer": "return=minimal"})
+    row = get(f"kitchens?select=open,opens_at,closes_at&id=eq.{kitchen}")
+    if isinstance(row, list) and row:
+        kitchen_restore.remember(SAVED, kitchen, row[0])
+    call("PATCH", f"/rest/v1/kitchens?id=eq.{kitchen}", {"open": True, "opens_at": None, "closes_at": None}, {"Prefer": "return=minimal"})   # opening hours are obeyed by place_order (migration 0041): the check must not depend on the hour it runs
     sess = str(uuid.uuid4())
     if pin:
         call("POST", "/rest/v1/customers", {"user_id": sess, "name": "Check Customer", "phone": "9999900000", "address": "Test lane", "pin_code": pin}, {"Prefer": "return=minimal"})
@@ -76,6 +82,13 @@ def tick():
 
 
 def main():
+    try:
+        return run()
+    finally:
+        kitchen_restore.restore(lambda kid, body: call("PATCH", f"/rest/v1/kitchens?id=eq.{kid}", body, {"Prefer": "return=minimal"}), SAVED)
+
+
+def run():
     rpc("sim_reset")
     s, a = rpc("sim_seed", {"p": {}})
     if s >= 400:
@@ -85,7 +98,7 @@ def main():
     kit = next(k for k in kitchens if "110092" in k["pin_codes"])
     others = [k["id"] for k in kitchens if k["id"] != kit["id"] and "110092" not in k["pin_codes"]][:3]
     # E needs a real order to protect: place one on a real (manual) kitchen now, open it for the run, and put it back at the end.
-    real = get("kitchens?select=id,open&synthetic=eq.false&active=eq.true&limit=1")
+    real = get("kitchens?select=id,open,opens_at,closes_at&synthetic=eq.false&active=eq.true&limit=1")
     real = real[0] if isinstance(real, list) and real else None
     real_order = place(real["id"], "110092", 900) if real else None
 
@@ -176,12 +189,33 @@ def main():
             break
     check("F a rider back online far from the old place lands elsewhere and still gets the order near it", far > 0 and got == lone, f"{far} far returns; assigned {got == lone}")
 
+    # G demo mode (#454): one switch makes the city steady and fast; switching it off puts the old numbers back
+    NUM = ("reject_pct", "sold_out_pct", "delay_pct", "rider_drop_pct", "prep_scale")
+    knobs(reject_pct=7, sold_out_pct=4, delay_pct=20, rider_drop_pct=9, prep_scale=1)
+    before = rpc("sim_knobs")[1]
+    shut = get("kitchens?select=id&synthetic=eq.true&active=eq.true&limit=1")[0]["id"]   # already switched off by the city's own flips: demo on must open it again
+    gone = get("menu_items?select=id&synthetic=eq.true&limit=1")[0]["id"]
+    call("PATCH", f"/rest/v1/kitchens?id=eq.{shut}", {"open": False}, {"Prefer": "return=minimal"})
+    call("PATCH", f"/rest/v1/menu_items?id=eq.{gone}", {"available": False}, {"Prefer": "return=minimal"})
+    s_on, a_on = rpc("sim_set_knobs", {"p": {"demo": True}})
+    reopened = get(f"kitchens?select=open&id=eq.{shut}")[0]["open"] is True and get(f"menu_items?select=available&id=eq.{gone}")[0]["available"] is True
+    on = a_on["knobs"] if isinstance(a_on, dict) and "knobs" in a_on else {}
+    steady = rpc("sim_tick", {"p": {"kitchen_flip_pct": 100, "dish_flip_pct": 100}})[1]
+    s_off, a_off = rpc("sim_set_knobs", {"p": {"demo": False}})
+    off = a_off["knobs"] if isinstance(a_off, dict) and "knobs" in a_off else {}
+    loose = rpc("sim_tick", {"p": {"kitchen_flip_pct": 0, "dish_flip_pct": 100}})[1]
+    check("G demo mode: no flips, no rejects, faster prep; off puts the old numbers back",
+          bool(on) and on.get("demo") is True and all(on[k] == 0 for k in NUM[:4]) and on["prep_scale"] < 1
+          and reopened and steady.get("kitchens_flipped") == 0 and steady.get("dishes_flipped") == 0
+          and bool(off) and off.get("demo") is False and all(off[k] == before[k] for k in NUM) and loose.get("dishes_flipped", 0) > 0,
+          f"reopened {reopened}; on {on}; steady {steady.get('kitchens_flipped')}/{steady.get('dishes_flipped')}; off {off}; loose {loose.get('dishes_flipped')}")
+    knobs()
+
     # E the manual kitchens' kitchen side is not touched: the real order placed at the start is still placed, with only its own event
     row = get(f"orders?select=status&id=eq.{real_order}") if real_order else None
     check("E a real kitchen's order is not moved by the tick", bool(real_order) and isinstance(row, list) and row[0]["status"] == "placed" and events(real_order) == ["order.placed"], f"order {str(real_order)[:8]} {row}")
     if real_order:   # leave dev as found: the order is cancelled (placed may go to cancelled), the kitchen goes back to what it was
         call("PATCH", f"/rest/v1/orders?id=eq.{real_order}", {"status": "cancelled", "cancel_reason": "check finished"}, {"Prefer": "return=minimal"})
-        call("PATCH", f"/rest/v1/kitchens?id=eq.{real['id']}", {"open": real["open"]}, {"Prefer": "return=minimal"})
 
     rpc("sim_enable", {"p": {"enabled": False}})
     rpc("sim_reset")

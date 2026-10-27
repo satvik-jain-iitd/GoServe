@@ -19,7 +19,8 @@ test("S2 a pin code that no kitchen serves says so and is remembered", async ({ 
   await page.goto("/customer/");
   await page.getByLabel("Your pin code").fill("110099");
   await page.getByRole("button", { name: "See the menu" }).click();
-  await expect(page.getByText("Not in 110099 yet. We saved your pin. We will tell you when we come.")).toBeVisible();
+  await expect(page.getByText("Not here yet. We do not deliver to 110099 yet.")).toBeVisible();
+  await expect(page.getByText(/We will tell you|We add pin codes every week/)).toHaveCount(0);   // no waitlist exists yet, so no promise (M.3, #322)
   expect(await page.evaluate(() => window.localStorage.getItem("gs-pin"))).toBe("110099");
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toHaveCount(0);
 });

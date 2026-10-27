@@ -28,11 +28,11 @@ export function AreaScreen({ pin, area, busy, error, onPin }: Props) {
               aria-invalid={!!(shown || none) || undefined} aria-describedby={shown || none ? "pin-help" : undefined}
               onChange={(e) => setText(e.target.value.trim())} />
             {shown && <p id="pin-help" role="alert" className="ui-field-error">{shown}</p>}
-            {!shown && none && <p id="pin-help" role="status" className="ui-field-error">Not in {pin} yet. We saved your pin. We will tell you when we come.</p>}
+            {!shown && none && <p id="pin-help" role="status" className="ui-field-error">Not here yet. We do not deliver to {pin} yet.</p>}
           </div>
-          {none && <p className="ui-note">We add pin codes every week. A pin next to yours may work.</p>}
+          {none && <p className="ui-note">A pin code next to yours may work.</p>}
           {busy && <p role="status" className="ui-note">Finding your kitchen…</p>}
-          {area?.kind === "closed" && <p role="status" className="ui-note">{openingText(area.name, area.opens_at)}</p>}
+          {area?.kind === "closed" && <p role="status" className="ui-note">{openingText(area.name, area.opens_at, area.paused === true)}</p>}
           <button type="button" className="ui-btn big" disabled={busy} onClick={() => (isPin(text) ? (setProblem(null), onPin(text)) : setProblem("A pin code is six digits."))}>See the menu</button>
         </div>
       </div>

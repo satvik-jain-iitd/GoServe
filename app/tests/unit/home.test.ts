@@ -8,9 +8,12 @@ const d = (id: string, category: string | null, veg = true): Dish => ({ id, name
 describe("greeting", () => {
   it("follows the hour and uses the first name", () => {
     expect(greeting(8, "Rahul Sharma")).toBe("Good morning, Rahul.");
-    expect(greeting(13, "")).toBe("Good afternoon.");
     expect(greeting(19, " Asha ")).toBe("Good evening, Asha.");
-    expect(greeting(2, "")).toBe("Good night.");
+  });
+  it("is Good <part>! with an exclamation and no comma while the name is not known (#527)", () => {
+    expect(greeting(9, "")).toBe("Good morning!");
+    expect(greeting(13, "  ")).toBe("Good afternoon!");
+    expect(greeting(2, "")).toBe("Good night!");
   });
 });
 describe("thalisOf", () => {

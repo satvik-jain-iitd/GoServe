@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { authErrorFrom, linkGoogle, signedInName } from "../lib/auth";
+import { authErrorFrom, givenNameOf, linkGoogle, signedInName } from "../lib/auth";
 import { ensureSession, getClient } from "../lib/supabase";
 import { Button } from "../ui";
 
 // One line under the title: "Continue with Google", or "Signed in as <name>". No password, no email form.
-export function SignIn({ mode = "link" }: { mode?: "link" | "signin" }) {
+export function SignIn({ mode = "link", onGivenName }: { mode?: "link" | "signin"; onGivenName?: (name: string) => void }) {
   const [name, setName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(() => authErrorFrom(window.location.search, window.location.hash));
   useEffect(() => {
@@ -12,7 +12,7 @@ export function SignIn({ mode = "link" }: { mode?: "link" | "signin" }) {
     let alive = true;
     ensureSession()
       .then(() => getClient().auth.getUser())
-      .then(({ data }) => { if (alive) setName(signedInName(data.user)); })
+      .then(({ data }) => { if (!alive) return; setName(signedInName(data.user)); const given = givenNameOf(data.user); if (given) onGivenName?.(given); })
       .catch(() => {});
     return () => { alive = false; };
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
