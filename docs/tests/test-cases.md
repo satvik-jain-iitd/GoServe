@@ -382,3 +382,10 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | `scripts/test_help.py` (6) | #355 | The help answers are public and ordered. | DB | `scripts/test_help.py` | pass |
 | `me`, `staff`, `help`, `coupons`, `push` Deno tests and `api/contract.test.ts` | #340, #468, #355, #346, #351 | Every path in `api/openapi.yaml` is answered with the listed fields. | Deno | `supabase/functions`, `api/contract.test.ts` | pass |
 | `demo-rehearsal.live.spec.ts` | #584 | The customer path from Menu to a placed order on a live URL (steps 1 to 5 and 9). | live e2e | `app/tests/live/demo-rehearsal.live.spec.ts` | red on dev (no "Open till"); prod not run |
+| `quote/index.test.ts` (3, personal coupons) | #579 | A customer's own `LATE-` coupon is in their offers and applies when typed; for anyone else, or with no login, it is `coupon_invalid`. | Deno | `supabase/functions/quote/index.test.ts` | pass |
+| `scripts/test_coupons.py` PersonalCoupons (2) | #579 | `coupon_by_code_v2(code, session)` finds a personal coupon for its own session only; a public one with or without a session. | DB | `scripts/test_coupons.py` | pass |
+| `offers.spec.ts` (5) | #588 | The Bill shows the best offer applied, the discount and To pay; Apply moves the mark; a code that is not valid shows the server's line and keeps the text; a quote that is down leaves the old bill. | e2e | `app/tests/e2e/offers.spec.ts` | pass |
+| `deploy-env.test.ts` (offers line) | #588 | The deploy workflow never sets `VITE_OFFERS`. | unit | `app/tests/unit/deploy-env.test.ts` | pass |
+| `quote/index.test.ts` (3, no_coupon) | #589 | `no_coupon: true` means no discount with the offers still listed; null or missing stays the best; `no_coupon` with a code is `invalid_request`. | Deno | `supabase/functions/quote/index.test.ts` | pass |
+| place through `POST /orders` | #590 | A price change before Place order shows the new price and makes no order until the next tap. | e2e | not written yet | planned |
+| `rehearsal-end.spec.ts` | #593 | On a page where "Yes, I have it" comes before Delivered, the rehearsal's last step passes. | e2e | `app/tests/e2e/rehearsal-end.spec.ts` | pass |
