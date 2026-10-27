@@ -7,4 +7,4 @@ if (typeof j.session_id !== 'string' || j.session_id.trim() === '' || j.session_
   return refuse(400, 'invalid_request', 'The push is missing something.');
 }
 if (!['placed', 'ready', 'delivered'].includes(j.status)) return refuse(200, 'not_pushed', 'No push for this status.');
-return [{ json: { ok: true, supabase_url: j.supabase_url, status: j.status, vapid_public_key: j.vapid_public_key, vapid_subject: j.vapid_subject, rpc_body: { p_session: j.session_id } } }];
+return [{ json: { ok: true, supabase_url: j.supabase_url, order_id: typeof j.order_id === 'string' && j.order_id !== '' ? j.order_id : null, status: j.status, vapid_public_key: j.vapid_public_key, vapid_subject: j.vapid_subject, rpc_body: { p_session: j.session_id } } }];

@@ -62,7 +62,7 @@ describe("the push service worker", () => {
     const w = run({ title: "GoServe", body: "Your order is ready." });
     await w.done();
     expect(w.shown).toEqual([{ title: "GoServe", options: expect.objectContaining({ body: "Your order is ready." }) }]);
-    const [url, init] = w.fetchMock.mock.calls[0] as unknown as [string, { body: string; headers: Record<string, string> }];
+    const [url, init] = (w.fetchMock.mock.calls as unknown as [string, { body: string; headers: Record<string, string> }][]).find((c) => c[0].endsWith("/push_latest"))!;
     expect(url).toBe("https://db.test/rest/v1/rpc/push_latest");
     expect(JSON.parse(init.body)).toEqual({ p_endpoint: "https://push.example/abc" });
     expect(init.headers.apikey).toBe("anon-key");
