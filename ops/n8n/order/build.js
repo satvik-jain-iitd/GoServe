@@ -231,9 +231,9 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
 
   // ---- SUB 20 Push (story A7): a text-less web push to every subscription of the customer. The phone's service worker asks the database what to say. ----
   const vapidCred = vapidCredential || { id: 'REPLACE_VAPID_CRED_ID', name: 'GoServe VAPID' };
-  const f20 = [['session_id', 'string'], ['status', 'string'], ['vapid_public_key', 'string'], ['vapid_subject', 'string'], ['kill_switch', 'boolean'], ['supabase_url', 'string']];
-  const rpcCall = (id, name, fn) => node(id, name, 'n8n-nodes-base.httpRequest', 4.2, {
-    method: 'POST', url: `={{ $json.supabase_url }}/rest/v1/rpc/${fn}`, authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
+  const f20 = [['session_id', 'string'], ['order_id', 'string'], ['status', 'string'], ['vapid_public_key', 'string'], ['vapid_subject', 'string'], ['kill_switch', 'boolean'], ['supabase_url', 'string']];
+  const rpcCall = (id, name, fn, table = false) => node(id, name, 'n8n-nodes-base.httpRequest', 4.2, {
+    method: 'POST', url: `={{ $json.supabase_url }}/rest/v1/${table ? '' : 'rpc/'}${fn}`, authentication: 'genericCredentialType', genericAuthType: 'httpCustomAuth',
     sendBody: true, specifyBody: 'json', jsonBody: '={{ $json.rpc_body }}',
     options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 } }, { credentials: { httpCustomAuth: cred } });
   const n20 = [
@@ -255,15 +255,20 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
     codeNode('gs-sub20-09', 'Clean', code('push_clean.js')),
     rpcCall('gs-sub20-10', 'Forget', 'push_forget'),
     node('gs-sub20-11', 'Return refusal', 'n8n-nodes-base.noOp', 1, {}),
+    codeNode('gs-sub20-12', 'Trace push', code('push_trace.js')),
+    codeNode('gs-sub20-13', 'Trace none', code('push_trace_none.js')),
+    rpcCall('gs-sub20-14', 'Write trace', 'order_trace', true),
   ];
   const e20 = [['Start', 'Guard'], ['Guard', 'Allowed?'], ['Allowed?', 'Read targets', 0], ['Allowed?', 'Return refusal', 1], ['Read targets', 'Targets?'], ['Targets?', 'Expand', 0],
-    ['Expand', 'Sign VAPID'], ['Sign VAPID', 'Send push'], ['Send push', 'Clean'], ['Clean', 'Forget']];
+    ['Expand', 'Sign VAPID'], ['Sign VAPID', 'Send push'], ['Send push', 'Clean'], ['Clean', 'Forget'],
+    ['Send push', 'Trace push'], ['Trace push', 'Write trace'], ['Targets?', 'Trace none', 1], ['Trace none', 'Write trace']];
   const s20 = [
     { name: 'RECEIVE', what: 'MAIN 01 calls this after it has answered, for a new order, a ready order or a delivered order. It is not waited for.', needs: 'Input: ' + f20.map((f) => f[0]).join(', ') + '.', nodes: ['Start'], color: 4 },
     { name: 'CHECK', what: 'Refuse if the kill switch is on or input is bad. Any status other than placed, ready or delivered has nothing to send.', needs: 'Input fields. No credential.', nodes: ['Guard', 'Allowed?'], color: 5 },
     { name: 'TARGETS', what: 'Read the push subscriptions of this customer. No subscription means stop quietly.', needs: 'Credential "GoServe Supabase dev". Function push_targets.', nodes: ['Read targets', 'Targets?'], color: 6 },
     { name: 'SEND', what: 'For each subscription sign a VAPID token and send an empty push. The phone asks the database what to show.', needs: 'Credential "GoServe VAPID" (JWT Auth, ES256). Config: the public key and the contact address.', nodes: ['Expand', 'Sign VAPID', 'Send push'], color: 6 },
     { name: 'CLEAN', what: 'A 404 or 410 means the phone unsubscribed. Forget that subscription.', needs: 'Credential "GoServe Supabase dev". Function push_forget.', nodes: ['Clean', 'Forget'], color: 6 },
+    { name: 'TRACE', what: 'Write one line to order_trace for every push: the push service host and its HTTP status, or that there was no subscription. A failed write never stops the push.', needs: 'Credential "GoServe Supabase dev". Table order_trace.', nodes: ['Trace push', 'Trace none', 'Write trace'], color: 6 },
     refuseSection,
   ];
   const sub20 = finish('GS SUB 20 Push', n20, e20, s20, Object.assign({}, settings, { callerPolicy: 'workflowsFromAList', callerIds: main }));
@@ -389,7 +394,7 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
       ['kill_switch', "={{ $('Config').first().json.kill_switch }}", 'boolean'], ['supabase_url', "={{ $('Config').first().json.supabase_url }}", 'string']]),
     ifNode('gs-main01-22', 'Push?', "={{ $json.ok === true && $json.already_done !== true && !!$json.order && (($json.order.status === 'placed' && $json.created === true) || $json.order.status === 'ready' || $json.order.status === 'delivered') }}", 'true'),
     callSub('gs-main01-23', 'Call SUB 20 Push', ids.sub20, [
-      ['session_id', '={{ $json.order.session_id }}', 'string'], ['status', '={{ $json.order.status }}', 'string'],
+      ['session_id', '={{ $json.order.session_id }}', 'string'], ['order_id', '={{ $json.order.id }}', 'string'], ['status', '={{ $json.order.status }}', 'string'],
       ['vapid_public_key', "={{ $('Config').first().json.vapid_public_key }}", 'string'], ['vapid_subject', "={{ $('Config').first().json.vapid_subject }}", 'string'],
       ['kill_switch', "={{ $('Config').first().json.kill_switch }}", 'boolean'], ['supabase_url', "={{ $('Config').first().json.supabase_url }}", 'string']], false),
     respond('gs-main01-09', 'Respond result', '={{ $json.status_code }}', answer),
