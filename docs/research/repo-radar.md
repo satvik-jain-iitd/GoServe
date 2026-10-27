@@ -194,3 +194,25 @@ Run: `scout.py --need "analyze a phone screen recording video frame by frame ...
 | Breakthrough/PySceneDetect | 5.3k, 25 Oct 2026, v0.7.2 | BSD-3 | C | Scene cuts only; crv covers it. Backup if crv misses a cut |
 | kajisho5/ffmpeg-skill | 2.8k, 25 Oct 2026 | MIT | C | An editor, not an analyser. Skip |
 Chosen: crv for key frames; plain ffmpeg (already installed) for short 10 fps bursts around transitions, so motion and animation can be seen frame by frame.
+
+## 2026-10-27: design reference sources (story #329)
+
+Need: open, checkable design references for a native food-ordering app with an order slip that lives on the lock screen (the Living Slip): platform rules, sample code for Live Activities and Live Updates, motion ideas, colour contrast checks.
+Run: `scout.py --need "open source food delivery app ui design reference swiftui compose live activity"` → no repos found. GitHub topic searches: `live-activity` + `swiftui`, `dynamic-island` + `swiftui`, `food-delivery` + `swiftui`, `food-delivery` + `jetpack-compose`, `design-system` + `swiftui`. Numbers come from the GitHub API (Tier A for the numbers only). The tier below is for what we want from the source: design truth.
+Read: READMEs of Live-Notifications-Demo, platform-samples and open-swiftui-animations.
+
+| Source | Stars, last push | Licence | Tier | Fit and reason |
+|---|---|---|---|---|
+| Apple HIG data files (read in story #327) | n/a, current to Dec 2025 | Apple terms | A | The platform's own rules for iOS. True for "Apple says this"; Apple also sells the phones, so test what matters. |
+| Google's Material 3, Live Updates, accessibility and haptics pages (read in story #328) | n/a | Google terms | A | The platform's own rules for Android; four gaps are listed in `docs/design/research-android-2026-10.md`. |
+| android/platform-samples | 1.8k, 23 Oct 2026 | Apache-2.0 | A | Google's own sample code with a user-interface and an accessibility folder. Its README says the samples are "simplified" and "not intended to be used as production-ready code": use it to check an API call, not to copy a screen. I did not open the Live Updates sample yet. |
+| material-components/material-components-android | 17.4k, 16 Oct 2026 | Apache-2.0 | A | The official component library, so the true size and look of each Material part. 805 open issues is normal at this size. |
+| iVamsi/Live-Notifications-Demo | 10, 26 Oct 2026 | MIT | C | The same case as ours: a food delivery that goes Confirmed, Preparing, En Route, Delivered with `Notification.ProgressStyle`, segments and action buttons. One author, 10 stars, two days old, so it proves nothing by itself. Read it as a guide, then check every call against Google's page. Best open reference we found for the Android Living Slip. |
+| amosgyamfi/open-swiftui-animations | 5.7k, 14 Aug 2026 | Unlicense | C | Many small SwiftUI animation snippets, including a Liquid Glass morph. The README says some are made with AI models, so check each one. Apple's motion rules (short, optional, at most 2 s on a Live Activity) win over any snippet. Ideas only. |
+| Meliwat/awesome-ios-design-md | 621, 21 May 2026 | MIT | C | "200 production-grade DESIGN.md design systems" of well-known apps. I could not see how they were made or that the apps' makers wrote them, and it is five months old. Use as a prompt for ideas, never as proof of what an app does. |
+| metasidd/ColorTokensKit-Swift | 226, 29 Sep 2026 | MIT | C | Colour tokens with WCAG contrast built in. Our brand colours are fixed (Ink), so at most a contrast checker. No dependency now. |
+| Cheiineeey/ios-app-where-it-breaks | 103, 1 Oct 2026 | NOASSERTION | C | One person's field notes on where Dynamic Island, push and call features break on real devices. No proof shown, no licence. Read for hints, then test on a device before believing. |
+| ranazaid/food-delivery-ios | 0, 13 Aug 2026 | MIT | C | A SwiftUI food app with animated order tracking. Zero stars and one author: nothing says it is good. One look only. |
+| Swish app study (`docs/research/swish-deep-research-2026-10.md`) | n/a | ours | S | Our own measurements from the screen recording: the best source for what a rival does today. |
+
+Decision: read the Tier A sources first (done in #327 and #328); use Live-Notifications-Demo as the one open reference for the Android Living Slip; use the animation repo for motion ideas only; adopt no dependency now. Nothing found beats Apple's and Google's own pages for rules, and nothing shows a finished iOS Live Activity for food delivery (the topic search found none); that one we design from Apple's page. Confidence that no better open reference exists: 0.6 (the search tool found nothing, and GitHub topic search only covers repos that carry the topic).
