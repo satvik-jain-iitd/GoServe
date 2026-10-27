@@ -6,7 +6,7 @@
 create table order_trace (
   id bigint generated always as identity primary key,
   at timestamptz not null default now(),
-  order_id uuid,                       -- null when the line has no order (an unknown push address)
+  order_id uuid not null references orders (id) on delete cascade,
   actor text not null check (actor in ('app', 'sw', 'n8n', 'sim')),
   event text not null check (length(event) between 1 and 60),
   result text check (length(result) <= 60),
@@ -19,7 +19,8 @@ revoke all on order_trace from public, anon, authenticated;
 create function trace_write(p_order uuid, p_actor text, p_event text, p_result text, p_text text, p_host text) returns void
 language plpgsql security definer set search_path = public as $$
 begin
-  if p_order is not null and (select count(*) from order_trace where order_id = p_order) >= 200 then
+  -- A line with no order is dropped: the table is only for orders, and a null order would let anyone fill it without limit.
+  if p_order is null or (select count(*) from order_trace where order_id = p_order) >= 200 then
     return;
   end if;
   insert into order_trace (order_id, actor, event, result, detail)
@@ -39,7 +40,7 @@ end $$;
 revoke all on function trace_app(uuid, text, text, text) from public, anon;
 grant execute on function trace_app(uuid, text, text, text) to authenticated;
 
--- The service worker has no login, only its push address. The line goes to the newest order of that address's owner; an unknown address gets no order.
+-- The service worker has no login, only its push address. The line goes to the newest order of that address's owner; an unknown address writes nothing.
 create function trace_sw(p_endpoint text, p_event text, p_result text default null, p_text text default null) returns void
 language plpgsql security definer set search_path = public as $$
 declare
