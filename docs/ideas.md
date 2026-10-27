@@ -41,3 +41,13 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - ID210 (2026-10-26, taken → plan E26): our own design approach on Apple's design principles; the "Living Slip" (one order slip from cart to lock screen), freshness stamp, honest ETA, on-time promise, "Your usual" (owner ask, reviewer concept, 00:40).
 - ID211 (2026-10-26, taken → plan E25): freeze the PWA as MVP2, demo-ready for the founder, then leave it undisturbed (owner, 00:40).
 - ID212 (2026-10-26, taken → #468, #469, #470): one person can work in two or more kitchens (owner of one, staff in another); the kitchen app lets them pick the kitchen. Replaces the one-kitchen rule of 0023 in the new app; the PWA stays frozen with the rule (owner, 19:40).
+- ID215 (2026-10-27, open → ShipQuick Desk, later): a Mac app (Tauri + Rust) where any harness (Claude Code, OpenCode, Antigravity, Codex) runs in a live terminal; agents are registered like employees, dragged into a project team, given a kickoff, and talk 1:1 or in a group channel (owner, 26 Oct night).
+- ID216 (2026-10-27, open → Desk, later): governance for any kind of work, not only code: roles, gates, approvals for money/secrets/posts, an audit log (owner).
+- ID217 (2026-10-27, open → Desk, later): GitHub is the work hub for every project: issues, boards, milestones (owner).
+- ID218 (2026-10-27, open → Desk, later): memory = claude-mem run free and local (Ollama observer), with an Obsidian graph export as the owner's view, replacing the tpm "book" (owner).
+- ID219 (2026-10-27, open → Desk, later): phone remote control for every harness, not only Claude Code (owner).
+- ID220 (2026-10-27, open → Desk, later): a localhost UI like DeepSeek Harness that shows, annotated, everything each agent does behind the scenes (owner).
+- ID221 (2026-10-27, taken lite → reviewer session as Chief of Staff; full version later): a Chief of Staff agent, the owner's shadow, that decides the way he would in his absence, logs why, and escalates only when unsure (owner).
+- ID222 (2026-10-27, open → Desk, later): decision models pick which agent takes which task (rules, then Jev/Laya, then a small model) (owner).
+- ID223 (2026-10-27, open → Desk, later): each agent gets its own identity and inbox (GitHub App or machine accounts, Bus inbox) (owner).
+- ID224 (2026-10-27, open, later): find the "swarm" project the owner saw, where agents launch as a swarm and work together (owner).
