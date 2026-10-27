@@ -14,7 +14,8 @@ test("S1 a ready ticket with a rider says who is coming, and how many minutes wh
   await page.getByRole("button", { name: "Cooking", exact: true }).click();
   const ticket = page.locator(".ui-ticket", { hasText: "No. 0f0f0f0f" });
   await expect(ticket).toContainText("Amit Kumar");
-  await expect(ticket).toContainText(/Amit Kumar · \d+ min/);
+  await expect(ticket).toContainText(/Amit Kumar/);
+  await expect(ticket).toContainText(/\d+ min/);   // story 618, board K2-Cooking: the name, then the minutes on the next line
   await expect(ticket).not.toContainText("Rider on the way");
 });
 

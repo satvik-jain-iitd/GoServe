@@ -316,12 +316,15 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 
 /* Kitchen app, boards K3 to K6 (story H11) */
 .ui-tickets { padding: 0 var(--gs-gutter) var(--gs-space-4); }
-.ui-ticket { display: flex; align-items: center; gap: var(--gs-space-3); padding: var(--gs-space-3) 0; border-bottom: 1px solid var(--md-outline-variant); }
-.ui-ticket-open { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 0; border: 0; background: none; color: inherit; text-align: left; font: inherit; cursor: pointer; }
-.ui-ticket-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: var(--gs-mono-sm); }
-.ui-ticket-big { font-size: var(--gs-text-staff); }
-.ui-ticket-wait { flex: none; font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
-.ui-ticket .ui-btn { flex: none; width: auto; min-width: 96px; }
+/* Story 618, boards K2-Tickets and K2-Cooking: one grid on New, Cooking and Ready. Left: number line (one line) + tag, then the lines at 20 px. Right: the action, 112 px, or the rider. */
+.ui-ticket { display: grid; grid-template-columns: 1fr 112px; gap: 12px; align-items: start; padding: 14px 0; border-bottom: 1px solid var(--md-outline-variant); }
+.ui-ticket-open { min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 0; border: 0; background: none; color: inherit; text-align: left; font: inherit; cursor: pointer; }
+.ui-ticket-head { display: flex; justify-content: flex-start; align-items: center; gap: 8px; white-space: nowrap; font-size: 12px; }
+.ui-ticket-head .mono { font-size: 12px; color: var(--gs-text-muted); white-space: nowrap; }
+.ui-ticket .ui-slip-lines { font-size: 20px; line-height: 1.3; text-transform: none; }
+.ui-ticket-big { font-size: 20px; }
+.ui-ticket-wait { width: 112px; display: flex; flex-direction: column; align-items: flex-end; text-align: right; font-size: 12px; color: var(--gs-text-muted); }
+.ui-ticket .ui-btn { width: 112px; min-width: 0; box-sizing: border-box; justify-content: center; }
 .ui-group { padding-top: var(--gs-space-4); }
 .ui-group h2 { margin: 0 0 var(--gs-space-2); font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); text-transform: uppercase; color: var(--gs-text-muted); }
 .ui-dish-name { display: inline-flex; align-items: center; gap: 10px; }
