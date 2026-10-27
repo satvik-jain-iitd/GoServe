@@ -27,7 +27,7 @@ grant execute on function help_v2() to service_role;
 
 insert into faq (topic, topic_position, question, answer, position) values
   ('Ordering', 1, 'How do I place an order?', 'Type your pin code to see the kitchen near you. Add dishes, open your bill and tap Place order.', 1),
-  ('Ordering', 1, 'Can I cancel my order?', 'Yes, until the rider picks it up. Open your order and tap Cancel order. After that, call the kitchen.', 2),
+  ('Ordering', 1, 'Can I cancel my order?', 'Yes, until the kitchen starts cooking. Open your order and tap Cancel order. After that, call the kitchen.', 2),
   ('Paying', 2, 'How can I pay?', 'Pay the rider cash at the door. UPI and card are being switched on.', 1),
   ('Paying', 2, 'What if an online payment does not go through?', 'Nothing is charged for a payment that fails. If it is not paid in 15 minutes, the order goes back to cash.', 2),
   ('Delivery', 3, 'How long will it take?', 'About 45 minutes. Your order screen shows the time we promise.', 1),

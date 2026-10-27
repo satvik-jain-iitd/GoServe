@@ -34,6 +34,11 @@ class Help(unittest.TestCase):
         self.assertEqual(topics, ["Ordering", "Paying", "Delivery", "Your account"], r)
         self.assertTrue(all(i["question"] and i["answer"] for t in r["rs"][0]["topics"] for i in t["items"]), r)
 
+    def test_the_cancel_answer_says_what_cancel_order_does_until_the_kitchen_starts_cooking(self):
+        r = run(q("help_v2()"))
+        answers = {i["question"]: i["answer"] for t in r["rs"][0]["topics"] for i in t["items"]}
+        self.assertIn("until the kitchen starts cooking", answers["Can I cancel my order?"], r)   # cancel_order allows status placed or accepted only
+
     def test_nobody_reads_the_table_and_only_the_service_role_asks(self):
         for role in ("anon", "authenticated"):
             for stmt in ("select count(*) from faq", "select help_v2()"):
