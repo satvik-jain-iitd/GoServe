@@ -239,3 +239,19 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F236 | The credential `GoServe n8n API` does not exist in prod n8n, so the daily card says `n8n errors: could not read`. The owner makes it (an n8n API key, type n8nApi). The note has been in `deploy.js` since the 24 Oct promote. | release #535 | open |
 | F237 | Dispatch v2 is the rule only. Jev advice and the `decision_log` row stay in SUB 13. Port them if v2 is to replace SUB 13. | #350 | open |
 | F238 | Addresses are checked for a six digit pin code only. Distance from the kitchen is checked in serviceability, not in quote or orders. | #341 | open |
+| F239 | The purge timer for `purge_deleted_accounts_v2(30)` is not scheduled. Add a daily timer in n8n. | #340 | open |
+| F240 | A deleted account can still place orders and act. `place_order_v2` and `act_on_order` should refuse a deleted profile. | #340 | open |
+| F241 | PWA You screens for name, email and delete account. | #340 | open |
+| F242 | PWA rating screen after delivery (backend is merged). | #354 | open |
+| F243 | PWA Offers block on the Bill: best first, apply, remove a code. | #346 | open |
+| F244 | Personal coupons (`LATE-xxxx`) in the quote: the quote reads the caller session, `coupons_for_session_v2`, and `coupon_by_code_v2` becomes session-aware. | #579 | open |
+| F245 | Cash to collect on the rider, kitchen and admin screens must use `order_cash_to_collect_paise`. Today it is wrong for an order paid online. | #348 | open |
+| F246 | Push retry sweep for `push_jobs` rows that failed to send. | #351 | open |
+| F247 | A payment webhook that arrives after the order expired: mark it paid when the order is still placed and unpaid, refund it otherwise. | #348 | open |
+| F248 | Cap OTP sends per phone number per hour. | #339 | open |
+| F249 | `dispatch_order_v2` has no row lock. Two ticks can race (see also #546). | #350 | open |
+| F250 | `confirm_delivery` must record `paid_by` for an order paid online. | #348 | open |
+| F251 | The v1 n8n order path ignores payments. Retire it or teach it. | #348 | open |
+| F252 | Payment expiry runs when called; add a timer for it. | #560 | open |
+| F253 | Roadmap page: the "Owner buttons" block from the founder checklist. | #544 | open |
+| F254 | PWA Help screen. The owner reads the seven starter answers once before the screen ships. | #355 | open |

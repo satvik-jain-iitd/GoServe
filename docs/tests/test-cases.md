@@ -366,3 +366,19 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | `home.spec.ts` S9, S10 (3) | #528 | The selected half of the veg toggle is cream with a ring in Day and Night. | e2e | `app/tests/e2e/home.spec.ts` | pass |
 | `greeting-google.spec.ts` (5) and `home.test.ts` | #527 | Good morning! with no name; the first name once known; Google on You only; Google never overwrites a typed name. | e2e + unit | `app/tests/e2e/greeting-google.spec.ts` | pass |
 | `push_drain.test.js` D6, `retry.test.js` (3) | #532, #541 | Every Supabase node in a timer retries 3 times, 5 s apart, 20 s timeout; the order API is unchanged. | node | `ops/n8n/order` | pass |
+| `scripts/test_otp.py` (8) and the `otp` Deno tests (13) | #339 | A code is sent, checked once, expires, and is rate limited. | DB + Deno | `scripts/test_otp.py`, `supabase/functions/otp` | pass |
+| `scripts/test_payments.py` and the `payments` Deno tests | #348 | Create, webhook and switch to cash move the payment state once. | DB + Deno | `scripts/test_payments.py`, `supabase/functions/payments` | pass |
+| `scripts/test_claim_guest.py` (5) | #558 | A returning customer's session claims the earlier orders. | DB | `scripts/test_claim_guest.py` | pass |
+| `scripts/test_order_tracking.py` (8) | #352 | A customer sees only the tracking of their own order. | DB | `scripts/test_order_tracking.py` | pass |
+| `scripts/test_payment_expiry.py` (8) | #560 | An unpaid online order expires and frees the cart. | DB | `scripts/test_payment_expiry.py` | pass |
+| `scripts/test_push_devices.py` (6) | #561 | A device token is stored once per user and platform. | DB | `scripts/test_push_devices.py` | pass |
+| `scripts/test_push_trigger.py` (6) | #563 | An order change calls `/push/notify`. | DB | `scripts/test_push_trigger.py` | pass |
+| `scripts/test_order_amounts.py` (6) | #572 | The amount to pay, the item total and the cash to collect are separate numbers. | DB | `scripts/test_order_amounts.py` | pass |
+| `scripts/test_coupons.py` (6) | #574 | A coupon is valid once, within its dates. | DB | `scripts/test_coupons.py` | pass |
+| `scripts/test_ratings.py` (7) | #354 | One rating per delivered order, from its own session. | DB | `scripts/test_ratings.py` | pass |
+| `scripts/test_on_time_promise.py` (7) | #353 | A late delivery makes one personal coupon; an on-time or cancelled one makes none. | DB | `scripts/test_on_time_promise.py` | pass |
+| `scripts/test_profile.py` (8) | #340 | A profile is read, changed, soft deleted and purged. | DB | `scripts/test_profile.py` | pass |
+| `scripts/test_staff.py` (9) | #468 | One person can work at many kitchens; roles are owner, staff and kitchen. | DB | `scripts/test_staff.py` | pass |
+| `scripts/test_help.py` (6) | #355 | The help answers are public and ordered. | DB | `scripts/test_help.py` | pass |
+| `me`, `staff`, `help`, `coupons`, `push` Deno tests and `api/contract.test.ts` | #340, #468, #355, #346, #351 | Every path in `api/openapi.yaml` is answered with the listed fields. | Deno | `supabase/functions`, `api/contract.test.ts` | pass |
+| `demo-rehearsal.live.spec.ts` | #584 | The customer path from Menu to a placed order on a live URL (steps 1 to 5 and 9). | live e2e | `app/tests/live/demo-rehearsal.live.spec.ts` | red on dev (no "Open till"); prod not run |
