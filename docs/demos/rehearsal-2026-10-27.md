@@ -30,6 +30,31 @@ Delivery took 868 s (14.5 minutes). `docs/demo/mvp2-demo.md` says about 11 minut
 
 The menu said "Good night!": the kitchen closes at 22:00 IST. Expected, not a bug.
 
-## Next
+## Night runs, after the spec fix (#594), 27 Oct
 
-Two daytime runs after #594 lands. Two passing runs close #324 (follow-up F258).
+Spec: steps 6 to 9 are one row now (the question "Yes, I have it" comes first, then Delivered and the cash line).
+
+| Step | Run 1 (order b07232a4) | Run 2 (order dcc0a6e7) |
+|---|---|---|
+| 1 pin and See the menu | pass, 2 s | pass, 2 s |
+| 2 the menu | pass, 0 s | pass, 0 s |
+| 3 two dishes and View bill | pass, 0 s | pass, 0 s |
+| 4 name, phone, address and Place order | pass, 2 s | pass, 2 s |
+| 5 the order slip | pass, 0 s | pass, 0 s |
+| 6 to 9 delivered and Yes, I have it | pass, 518 s | **fail**, 1496 s |
+
+Run 2 failed at "Paid: cash". The server had `delivered` and `paid_by` cash (three updates in one transaction at 23:03:02.785, the Yes before the sim rider picked up). The phone showed "Cash at door" and no Paid line.
+Why: `mergeOrder` replaced the order when `updated_at` was equal, so a live event with `paid_by` null cleared the cash that the Yes answer had set. A real product bug. Fixed in story #601: `mergeOrder` keeps `paid_by` once set (staging PR #604, release PR #603 to `main`).
+
+## Final runs on the redeployed prod app (main 69cbba0), 28 Oct
+
+| Step | Run 1 (order 3c927135) | Run 2 (order 989d3a41) |
+|---|---|---|
+| 1 pin and See the menu | pass, 3 s | pass, 2 s |
+| 2 the menu | pass, 0 s | pass, 0 s |
+| 3 two dishes and View bill | pass, 0 s | pass, 0 s |
+| 4 name, phone, address and Place order | pass, 2 s | pass, 2 s |
+| 5 the order slip | pass, 0 s | pass, 0 s |
+| 6 to 9 delivered and Yes, I have it | pass, 464 s | pass, 413 s |
+
+"Paid: cash" showed in both. Two passing runs: #324 is closed (reviewer). Delivery took 7 to 8 minutes in these runs, against 14.5 minutes in the first run (the demo kitchens are open all day since 27 Oct 22:43, follow-up F260).
