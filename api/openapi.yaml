@@ -88,6 +88,7 @@ paths:
                   properties:
                     pin_code: { type: string, pattern: "^[0-9]{6}$" }
                 coupon_code: { type: string, maxLength: 40 }
+                no_coupon: { type: boolean, description: "true: apply no coupon, not even the best one. Not allowed together with coupon_code." }
       responses:
         "200":
           description: The quote. Prices come from the catalog; a price in the request is ignored.
@@ -185,6 +186,7 @@ paths:
                     pin_code: { type: string, pattern: "^[0-9]{6}$" }
                     text: { type: string, minLength: 1, maxLength: 300 }
                 coupon_code: { type: string, maxLength: 40 }
+                no_coupon: { type: boolean, description: "true: apply no coupon, not even the best one. Not allowed together with coupon_code." }
                 idempotency_key: { type: string, minLength: 8, maxLength: 64 }
                 expected_to_pay_paise: { type: integer, minimum: 0 }
       responses:

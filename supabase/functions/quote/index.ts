@@ -19,21 +19,23 @@ const json = (status: number, body: unknown) => new Response(JSON.stringify(body
 const bad = () => json(400, { ok: false, error: "invalid_request" });
 
 type Line = { menu_item_id: string; qty: number; option_ids: string[] };
-export function parse(b: any): { kitchen: string; lines: Line[]; code: string | null } | null {
+export function parse(b: any): { kitchen: string; lines: Line[]; code: string | null; none: boolean } | null {
   if (!b || typeof b !== "object" || !UUID.test(b.kitchen_id) || !Array.isArray(b.lines) || b.lines.length > MAX_LINES) return null;
   if (typeof b.address?.pin_code !== "string" || !/^\d{6}$/.test(b.address.pin_code)) return null;
   if (b.coupon_code != null && (typeof b.coupon_code !== "string" || b.coupon_code.length > 40)) return null;
+  if (b.no_coupon != null && typeof b.no_coupon !== "boolean") return null;   // story #589: true means no coupon, not even the best one
+  if (b.no_coupon === true && b.coupon_code) return null;
   const lines: Line[] = [];
   for (const l of b.lines) {
     const ids = l?.option_ids ?? [];
     if (!UUID.test(l?.menu_item_id) || !Array.isArray(ids) || ids.length > 20 || !ids.every((i: unknown) => typeof i === "string" && UUID.test(i))) return null;
     lines.push({ menu_item_id: l.menu_item_id, qty: l.qty, option_ids: ids });
   }
-  return { kitchen: b.kitchen_id, lines, code: b.coupon_code ? b.coupon_code.trim().toUpperCase() : null };
+  return { kitchen: b.kitchen_id, lines, code: b.coupon_code ? b.coupon_code.trim().toUpperCase() : null, none: b.no_coupon === true };
 }
 
 // The quote itself, shared with POST /orders (#347): one way to price a cart. Throws when a data source fails.
-export async function runQuote(deps: Deps, q: { kitchen: string; lines: Line[]; code: string | null }, session: string | null = null): Promise<(Extract<ReturnType<typeof quote>, { ok: true }> & { offers: Offer[] }) | { ok: false; error: string; message: string }> {
+export async function runQuote(deps: Deps, q: { kitchen: string; lines: Line[]; code: string | null; none: boolean }, session: string | null = null): Promise<(Extract<ReturnType<typeof quote>, { ok: true }> & { offers: Offer[] }) | { ok: false; error: string; message: string }> {
   const catalog = await deps.catalog(q.kitchen, q.lines.map((l) => l.menu_item_id), q.lines.flatMap((l) => l.option_ids));
   const checks = new Map<string, Awaited<ReturnType<Deps["validate"]>>>();
   for (const l of q.lines) if (catalog.dishes[l.menu_item_id] && l.option_ids.every((o) => catalog.options[o])) checks.set(l.menu_item_id + l.option_ids.join(), await deps.validate(l.menu_item_id, l.option_ids));
@@ -52,7 +54,7 @@ export async function runQuote(deps: Deps, q: { kitchen: string; lines: Line[]; 
     if (r.ok && r.discount_paise > 0) offers.push({ code: c.code, title: c.title, saves_paise: r.discount_paise });
   }
   offers.sort((a, b) => b.saves_paise - a.saves_paise || (a.code < b.code ? -1 : 1));
-  const chosen = typed ?? list.find((c) => c.code === offers[0]?.code) ?? null;
+  const chosen = q.none ? null : typed ?? list.find((c) => c.code === offers[0]?.code) ?? null;
   const out = quote(input, catalog, rules, chosen, validate);
   return out.ok ? { ...out, offers } : out;
 }
