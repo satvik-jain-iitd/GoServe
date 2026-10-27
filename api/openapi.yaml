@@ -304,6 +304,115 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /otp/send:
+    post:
+      operationId: postOtpSend
+      summary: Send a six digit code to a phone number
+      description: "TEST DOUBLE until the owner picks the SMS provider: the sender is FakeSms and delivers nothing (docs/product/founder-checklist.md). The rules are in the database: 3 sends per phone per 10 minutes, 5 tries per code, 10 minutes of life, one use. The code is never in an answer."
+      x-handler: ../supabase/functions/otp/index.ts
+      x-contract-handler: ../supabase/functions/otp/fixture.ts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [phone]
+              properties:
+                phone: { type: string, pattern: "^[6-9][0-9]{9}$" }
+      responses:
+        "200":
+          description: The code was sent (to the sender; never in this answer).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OtpSent"
+        "400":
+          description: The request is malformed (no phone, a code that is not six digits, not JSON) or the phone is not an Indian mobile number (invalid_phone).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal400"
+        "401":
+          description: There is no login (an anonymous login counts).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "429":
+          description: Too many codes for this phone (too_many_sends).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: The database or the sender could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /otp/verify:
+    post:
+      operationId: postOtpVerify
+      summary: Check the code and link the phone to the caller's own user
+      description: "TEST DOUBLE until the owner picks the SMS provider: the sender is FakeSms and delivers nothing (docs/product/founder-checklist.md). The rules are in the database: 3 sends per phone per 10 minutes, 5 tries per code, 10 minutes of life, one use. The code is never in an answer."
+      x-handler: ../supabase/functions/otp/index.ts
+      x-contract-handler: ../supabase/functions/otp/fixture.ts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [phone, code]
+              properties:
+                phone: { type: string, pattern: "^[6-9][0-9]{9}$" }
+                code: { type: string, pattern: "^[0-9]{6}$" }
+      responses:
+        "200":
+          description: The code is right. The phone is linked to the caller's user, so the user id and the guest orders stay. The client refreshes its session to see the phone.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OtpVerified"
+        "400":
+          description: The request is malformed (no phone, a code that is not six digits, not JSON) or the phone is not an Indian mobile number (invalid_phone).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal400"
+        "401":
+          description: There is no login (an anonymous login counts).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "409":
+          description: This number already belongs to another account (phone_in_use). A returning customer on a new phone needs the real provider.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "422":
+          description: The code is wrong, old or missing (wrong_code, code_expired, no_code).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "429":
+          description: Too many wrong tries (too_many_attempts).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: The database or the sender could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   schemas:
     Error:
@@ -434,6 +543,35 @@ components:
         message: { type: string }
         quote:
           $ref: "#/components/schemas/Quote"
+    Refusal400:
+      description: A refusal or a plain error; the message is present for a refusal.
+      type: object
+      additionalProperties: false
+      required: [ok, error]
+      properties:
+        ok:
+          const: false
+        error: { type: string }
+        message: { type: string }
+    OtpSent:
+      type: object
+      additionalProperties: false
+      required: [ok, expires_in_s]
+      properties:
+        ok:
+          const: true
+        expires_in_s: { type: integer, minimum: 1 }
+    OtpVerified:
+      type: object
+      additionalProperties: false
+      required: [ok, linked, phone, user_id]
+      properties:
+        ok:
+          const: true
+        linked:
+          const: true
+        phone: { type: string, pattern: "^91[6-9][0-9]{9}$" }
+        user_id: { type: string }
     Dish:
       type: object
       additionalProperties: false
