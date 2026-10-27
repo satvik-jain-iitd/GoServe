@@ -260,3 +260,4 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F257 | Place the order through `POST /orders` (idempotency key, `expected_to_pay_paise`, `price_changed`). Until then `VITE_OFFERS` stays off in the deploy. | #590 | open |
 | F258 | Rehearsal reruns in the daytime (two passing runs close #324). If the demo city delivers before the ask time, the question never shows; with the demo knobs the ask comes first. | #324 | open |
 | F259 | The demo doc says an order reaches Delivered in about 11 minutes. Run 1 on prod took 14.5 minutes (868 s). Update `docs/demo/mvp2-demo.md` after the daytime reruns. | #324 | open |
+| F260 | The demo kitchens on prod are open 00:00 to 23:59 since 27 Oct 22:43 (the reviewer kept a backup of the old hours; the owner said no reset is needed). Set the real hours again before a real kitchen signs (ADR-022). | #324 | open |

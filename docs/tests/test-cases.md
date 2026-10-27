@@ -390,3 +390,5 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | place through `POST /orders` | #590 | A price change before Place order shows the new price and makes no order until the next tap. | e2e | not written yet | planned |
 | `rehearsal-end.spec.ts` | #593 | On a page where "Yes, I have it" comes before Delivered, the rehearsal's last step passes. | e2e | `app/tests/e2e/rehearsal-end.spec.ts` | pass |
 | `offers.spec.ts` S6 | #597 | Remove asks the quote with `no_coupon: true`, the Discount line goes, every offer has Apply; Apply brings an offer back. | e2e | `app/tests/e2e/offers.spec.ts` | pass |
+| `merge_check.test.ts` (3) | #601 | An equal-moment event with `paid_by` null does not clear the cash; a newer row with another value wins; an order that never had one stays null. | unit | `app/tests/unit/merge_check.test.ts` | pass |
+| `confirm.spec.ts` S5 | #601 | After the Yes, a live event with the same moment and no `paid_by` does not take the Paid line away. | e2e | `app/tests/e2e/confirm.spec.ts` | pass |
