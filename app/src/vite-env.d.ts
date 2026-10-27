@@ -7,5 +7,7 @@ interface ImportMetaEnv {
   readonly VITE_DEMO_TOKEN: string;
   readonly VITE_AUTOPILOT_MS?: string;
   readonly VITE_REASK_MS?: string;       // how long after a Not yet the delivery question comes back; tests set a short one
+  readonly VITE_OTP_GATE?: string;       // story #551: "1" asks the phone code at checkout
+  readonly VITE_OTP_SMS?: string;        // story #551: "real" once the owner's SMS provider is set; anything else is the placeholder sender
   readonly VITE_BUILD?: string;          // the commit the build was made from; set by the deploy workflows   // step time of the autopilot; tests set a short one
 }

@@ -6,7 +6,7 @@ import { isPhone } from "../lib/profile";
 type Props = {
   lines: Line[]; total: number; kitchenName: string; pin: string | null;
   address: string; onAddress: (v: string) => void;
-  details?: { name: string; phone: string; onName: (v: string) => void; onPhone: (v: string) => void };   // the customer app also asks who and which phone (story B3)
+  details?: { name: string; phone: string; onName: (v: string) => void; onPhone: (v: string) => void; gate?: boolean };   // the customer app also asks who and which phone (story B3)
   sending: boolean; error: string | null;
   onBack: () => void; onPlace: () => void;
 };
@@ -20,7 +20,7 @@ export const BackChevron = ({ label, onClick }: { label: string; onClick: () => 
 
 export function BillScreen({ lines, total, kitchenName, pin, address, onAddress, details, sending, error, onBack, onPlace }: Props) {
   const empty = lines.length === 0;
-  const ready = !empty && address.trim().length > 0 && (!details || (details.name.trim().length > 0 && isPhone(details.phone)));
+  const ready = !empty && address.trim().length > 0 && (!details || details.gate || (details.name.trim().length > 0 && isPhone(details.phone)));   // story #551: with the phone code on, the sheets ask the number and the name
   const head = [kitchenName, pin].filter(Boolean).join(" · ");
   return (
     <>
@@ -51,7 +51,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
         </section>
         {!empty && (
           <form className="ui-form" onSubmit={(e) => e.preventDefault()}>
-            {details && (
+            {details && !details.gate && (
               <>
                 <div className="ui-field"><label htmlFor="name">Your name</label><input id="name" type="text" value={details.name} maxLength={80} autoComplete="name" onChange={(e) => details.onName(e.target.value)} /></div>
                 <div className="ui-field"><label htmlFor="phone">Phone · the rider calls this</label><input id="phone" className="mono-input" type="tel" value={details.phone} inputMode="numeric" maxLength={10} autoComplete="tel-national" onChange={(e) => details.onPhone(e.target.value.replace(/\D/g, ""))} /></div>
