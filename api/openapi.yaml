@@ -597,6 +597,70 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /orders/{id}/rating:
+    post:
+      operationId: postOrderRating
+      summary: The customer rates the food and the rider of a delivered order
+      description: "One rating per order, from the customer who placed it, once it is delivered. Scores are whole numbers 1 to 5. The rider score is optional and refused (no_rider) for an order that had no rider. Same function as POST /orders."
+      x-handler: ../supabase/functions/orders/index.ts
+      x-contract-handler: ../supabase/functions/orders/fixture.ts
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [food_score]
+              properties:
+                food_score: { type: integer, minimum: 1, maximum: 5 }
+                rider_score: { type: [integer, "null"], minimum: 1, maximum: 5 }
+                comment: { type: [string, "null"], maxLength: 500 }
+      responses:
+        "200":
+          description: The rating is stored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RatingStored"
+        "400":
+          description: The request is malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: There is no login.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: The order was not found (also for an order that is not the caller's).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "409":
+          description: The order is not delivered yet (not_delivered) or was already rated (already_rated).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "422":
+          description: A score is not 1 to 5 (invalid_score), the note is too long (invalid_comment) or the order had no rider (no_rider).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /otp/claim:
     post:
       operationId: postOtpClaim
@@ -945,6 +1009,13 @@ components:
         ok:
           const: true
         order_id: { type: string }
+    RatingStored:
+      type: object
+      additionalProperties: false
+      required: [ok]
+      properties:
+        ok:
+          const: true
     SwitchedToCash:
       type: object
       additionalProperties: false

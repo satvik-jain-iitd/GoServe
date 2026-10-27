@@ -7,12 +7,14 @@ import { DEFAULT_RULES } from "../quote/quote.ts";
 const K = "7e57ab1e-0000-4000-8000-000000000001";
 const D1 = "7e57ab1e-0000-4000-8000-0000000000d1";
 const placed: unknown[][] = [];
+const rated: unknown[][] = [];
 const row = { id: "o1", kitchen_id: K, status: "placed", total_paise: 28000, address: "Flat 4, Green Park", items: [], bill: {}, created_at: "2026-10-27T10:00:00Z", customer_phone: "9876543210" };
 const deps = (o: Partial<Deps> = {}): Deps => ({
   catalog: async () => ({ dishes: { [D1]: { id: D1, name: "Thali", price_paise: 14000, available: true } }, options: {} }),
   rules: async () => DEFAULT_RULES, coupon: async () => null, coupons: async () => [], validate: async () => ({ ok: true }), firstOrder: async () => false,
   session: async () => "s1",
   existing: async () => null,
+  rate: async (...a) => { rated.push(a); return { ok: true }; },
   place: async (...a) => { placed.push(a); return { ok: true, created: true, order: row }; }, ...o,
 });
 const body = (o: Record<string, unknown> = {}) => ({ kitchen_id: K, lines: [{ menu_item_id: D1, qty: 2, option_ids: [] }], address: { pin_code: "110016", text: "Flat 4, Green Park" }, idempotency_key: "key-0001-abcd", expected_to_pay_paise: 28000, ...o });
@@ -113,4 +115,40 @@ Deno.test("the lookup is for this caller and this key; a new key is quoted as be
 Deno.test("a dead lookup is 502 with no detail", async () => {
   const res = await post(makeHandler(deps({ existing: () => Promise.reject(new Error("host=10.0.0.1")) })), body());
   assertEquals([res.status, await res.json()], [502, { ok: false, error: "order_unavailable" }]);
+});
+
+// Story #354: POST /orders/{id}/rating. Scenario: Given a delivered order, when a rating is posted, then food and rider scores are stored.
+const rate = (h: ReturnType<typeof makeHandler>, b: unknown, o: { id?: string; token?: string | null } = {}) =>
+  h(new Request(`https://x.test/orders/${o.id ?? "7e57ab1e-0000-4000-8000-0000000000f1"}/rating`, { method: "POST",
+    headers: { "content-type": "application/json", ...(o.token === null ? {} : { authorization: `Bearer ${o.token ?? "t"}` }) }, body: JSON.stringify(b) }));
+
+Deno.test("rating: a delivered order's food and rider scores go to the database for this caller (the scenario)", async () => {
+  rated.length = 0;
+  const res = await rate(makeHandler(deps()), { food_score: 5, rider_score: 4, comment: " Hot and on time " });
+  assertEquals([res.status, await res.json()], [200, { ok: true }]);
+  assertEquals(rated, [["7e57ab1e-0000-4000-8000-0000000000f1", "s1", 5, 4, "Hot and on time"]]);
+});
+
+Deno.test("rating: the rider score and the comment are optional", async () => {
+  rated.length = 0;
+  assertEquals((await rate(makeHandler(deps()), { food_score: 3 })).status, 200);
+  assertEquals(rated[0].slice(2), [3, null, null]);
+});
+
+Deno.test("rating: refusals keep their code (404, 409, 422); no login is 401; a bad body is 400; a dead database is 502 with no detail", async () => {
+  for (const [error, status] of [["order_not_found", 404], ["not_delivered", 409], ["already_rated", 409], ["invalid_score", 422], ["invalid_comment", 422], ["no_rider", 422]] as const) {
+    const res = await rate(makeHandler(deps({ rate: async () => ({ ok: false, error, message: "m" }) })), { food_score: 5 });
+    assertEquals([error, res.status, (await res.json()).error], [error, status, error]);
+  }
+  assertEquals((await rate(makeHandler(deps({ session: async (req) => (req.headers.get("authorization") ? "s1" : null) })), { food_score: 5 }, { token: null })).status, 401);
+  for (const b of [{}, { food_score: "5" }, { food_score: 4.5 }, { food_score: 5, rider_score: "x" }, { food_score: 5, comment: 7 }, null]) {
+    assertEquals((await rate(makeHandler(deps()), b)).status, 400, JSON.stringify(b));
+  }
+  assertEquals((await rate(makeHandler(deps()), { food_score: 5 }, { id: "not-a-uuid" })).status, 400);
+  const dead = await rate(makeHandler(deps({ rate: () => Promise.reject(new Error("host=10.0.0.1")) })), { food_score: 5 });
+  assertEquals([dead.status, await dead.json()], [502, { ok: false, error: "order_unavailable" }]);
+});
+
+Deno.test("rating: placing an order still works at /orders", async () => {
+  assertEquals((await post(makeHandler(deps()), body())).status, 201);
 });
