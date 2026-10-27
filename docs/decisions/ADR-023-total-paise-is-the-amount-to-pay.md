@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed 27 Oct 2026 (coder, story #538). Needs the reviewer's yes.
+Accepted 28 Oct 2026 (reviewer).
 
 ## Date
 
