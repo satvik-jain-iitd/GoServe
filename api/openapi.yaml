@@ -22,8 +22,97 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Health"
+  /menu:
+    get:
+      operationId: getMenu
+      summary: The menu of one kitchen
+      x-handler: ../supabase/functions/menu/index.ts
+      x-contract-handler: ../supabase/functions/menu/fixture.ts
+      parameters:
+        - name: kitchen
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+          example: 7e57ab1e-0000-4000-8000-000000000001
+      responses:
+        "200":
+          description: Categories in order, then collections (only the ones that have dishes). Sold-out dishes stay on the menu with sold_out true.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Menu"
+        "400":
+          description: The kitchen id is missing or not a uuid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "502":
+          description: The menu could not be read. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   schemas:
+    Error:
+      type: object
+      additionalProperties: false
+      required: [ok, error]
+      properties:
+        ok:
+          const: false
+        error:
+          type: string
+    Dish:
+      type: object
+      additionalProperties: false
+      required: [id, name, price_paise, veg, category, image_url, badge, size_tag, protein_g, sold_out, back_soon, back_soon_at]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        price_paise: { type: integer, minimum: 1 }
+        veg: { type: boolean }
+        category: { type: string }
+        image_url: { type: [string, "null"] }
+        badge: { enum: [bestseller, new, chef, null] }
+        size_tag: { enum: [small, regular, large, null] }
+        protein_g: { type: [integer, "null"], minimum: 0 }
+        sold_out: { type: boolean }
+        back_soon: { type: boolean }
+        back_soon_at: { type: [string, "null"], format: date-time }
+    Menu:
+      type: object
+      additionalProperties: false
+      required: [ok, kitchen_id, categories, collections]
+      properties:
+        ok:
+          const: true
+        kitchen_id: { type: string, format: uuid }
+        categories:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [name, dishes]
+            properties:
+              name: { type: string }
+              dishes:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Dish"
+        collections:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [key, title, dish_ids]
+            properties:
+              key: { enum: [bestsellers, under_99, new] }
+              title: { type: string }
+              dish_ids:
+                type: array
+                items: { type: string }
     Health:
       type: object
       additionalProperties: false

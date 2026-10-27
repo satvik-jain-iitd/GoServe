@@ -29,7 +29,14 @@ export async function checkAnswer(path: string, method: string, res: Response): 
   if (!validate(body)) throw new Error(`${method.toUpperCase()} ${path} ${res.status}: ${ajv.errorsText(validate.errors)}`);
 }
 
-const handlerOf = async (op: Json): Promise<(r: Request) => Promise<Response> | Response> => (await import(new URL(op["x-handler"], import.meta.url).href)).handler;
+// x-contract-handler (optional) is the same function wired to fixed data, for handlers that read a database; it is never deployed.
+const handlerOf = async (op: Json): Promise<(r: Request) => Promise<Response> | Response> => (await import(new URL(op["x-contract-handler"] ?? op["x-handler"], import.meta.url).href)).handler;
+// A required query parameter is filled from its example.
+const urlOf = (path: string, op: Json): string => {
+  const q = new URLSearchParams();
+  for (const p of op.parameters ?? []) if (p.in === "query" && p.example !== undefined) q.set(p.name, String(p.example));
+  return "https://x.test" + path + (q.size ? "?" + q : "");
+};
 
 Deno.test("the contract is OpenAPI 3.1 and every operation names a handler and a 2xx answer", () => {
   assertEquals(spec.openapi.startsWith("3.1"), true);
@@ -50,7 +57,7 @@ Deno.test("every operation: the real handler answers what the contract says", as
   for (const [path, item] of Object.entries<Json>(spec.paths)) {
     for (const [method, op] of Object.entries<Json>(item)) {
       const handler = await handlerOf(op);
-      await checkAnswer(path, method, await handler(new Request("https://x.test" + path, { method: method.toUpperCase() })));
+      await checkAnswer(path, method, await handler(new Request(urlOf(path, op), { method: method.toUpperCase() })));
     }
   }
 });
@@ -66,4 +73,13 @@ Deno.test("a wrong field is red: a renamed field, an extra field and a wrong typ
 
 Deno.test("a status code the contract does not list is red", async () => {
   await assertRejects(() => checkAnswer("/health", "get", new Response("{}", { status: 500 })), Error, "does not list");
+});
+
+Deno.test("menu: the 400 answer is in the contract, and a wrong field in a dish is red", async () => {
+  const { handler } = await import("../supabase/functions/menu/fixture.ts");
+  await checkAnswer("/menu", "get", await handler(new Request("https://x.test/menu")));   // no kitchen: 400, listed
+  const res = await handler(new Request("https://x.test/menu?kitchen=7e57ab1e-0000-4000-8000-000000000001"));
+  const body = await res.json();
+  body.categories[0].dishes[0].protein = 18;   // not protein_g
+  await assertRejects(() => checkAnswer("/menu", "get", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
 });
