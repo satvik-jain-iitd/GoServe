@@ -1,6 +1,8 @@
 // Story #349: POST /order-actions. The one door for every step an order takes after it is placed: accept, prepare, ready, pickup, arriving, deliver,
 // confirm, cancel. The caller's own token goes to the database, which reads who is asking (auth.uid()) and decides who may do what (act_on_order).
 // This handler only checks the request and maps the answer to a status code. The data source is injected so the tests need no network.
+import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
+
 export type Answer = { ok: true; order: Record<string, unknown> } | { ok: false; error: string; message: string };
 export type Deps = { act: (token: string, orderId: string, action: string, reason: string | null) => Promise<Answer> };
 
@@ -37,6 +39,6 @@ const live: Deps = {
     return await res.json();
   },
 };
-export const handler = makeHandler(live);
+export const handler = withRunLog("order-actions", makeHandler(live), writeRunLog);   // story #356: one run_log row per call
 
 if (import.meta.main) Deno.serve(handler);
