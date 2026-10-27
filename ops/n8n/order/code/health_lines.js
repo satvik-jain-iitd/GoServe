@@ -4,6 +4,7 @@ const start = $('Start').first().json;
 const get = (n) => { try { const r = $(n).first().json; return r && r.statusCode === 200 && r.body ? r.body : null; } catch (e) { return null; } };
 const mark = (v, cap) => (v >= 0.8 * cap ? 'OVER' : v >= 0.5 * cap ? 'WATCH' : 'OK');
 const num = (x) => String(Number(Number(x).toFixed(4)));
+const pct = (v, cap) => Math.round((100 * v) / cap);
 const day = (t) => (t ? String(t).slice(0, 10) : 'none');
 const out = [];
 
@@ -14,9 +15,15 @@ const orCap = Number(caps.openrouter_usd) || (or && or.data && Number(or.data.li
 if (or && or.data && orCap) out.push('OpenRouter spend: $' + num(or.data.usage) + ' of $' + num(orCap) + ' · ' + mark(Number(or.data.usage), orCap));
 else out.push('OpenRouter spend: could not read');
 
+// Story #488: each Supabase free limit as "x of limit (pct%)". The limits are Supabase's (billing docs, 27 Oct 2026), not ours to tune. Billed egress has no source.
+const STORAGE_MB = 1024;
+const MAU = 50000;
 if (db && db.rows) {
   const cap = Number(caps.supabase_mb) || 500;
-  out.push('Database size: ' + num(db.db_mb) + ' of ' + cap + ' MB · ' + mark(Number(db.db_mb), cap));
+  out.push('Database size: ' + num(db.db_mb) + ' of ' + cap + ' MB (' + pct(Number(db.db_mb), cap) + '%) · ' + mark(Number(db.db_mb), cap));
+  out.push(db.storage_mb === undefined || db.storage_mb === null ? 'Storage: could not read' : 'Storage: ' + num(db.storage_mb) + ' of ' + STORAGE_MB + ' MB (' + pct(Number(db.storage_mb), STORAGE_MB) + '%) · ' + mark(Number(db.storage_mb), STORAGE_MB));
+  out.push(db.users === undefined || db.users === null ? 'Auth users: could not read' : 'Auth users: ' + db.users + ' of ' + MAU + ' (' + pct(Number(db.users), MAU) + '%) · ' + mark(Number(db.users), MAU) + ' (all users; monthly active users are fewer)');
+  out.push('Egress (limit 5 GB): no source, read the Supabase dashboard');
   out.push('Open database connections: ' + db.connections);
   out.push('Rows: ' + ['orders', 'run_log', 'rider_pings', 'order_events'].map((t) => t + ' ' + db.rows[t]).join(', '));
   if (db.ai) {   // story #253: who made the decisions today, and what Jev cost
@@ -27,6 +34,7 @@ if (db && db.rows) {
   }
   out.push('Oldest rows: ' + ['orders', 'run_log', 'rider_pings', 'order_events'].map((t) => t + ' ' + day(db.oldest && db.oldest[t])).join(', '));
 } else out.push('Database: could not read');
+out.unshift(db && db.rows ? 'Health: OK' : 'Health: UNHEALTHY (the database did not answer)');
 
 const ex = get('Read n8n errors');
 if (ex && Array.isArray(ex.data)) {
