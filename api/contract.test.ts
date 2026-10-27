@@ -264,3 +264,24 @@ Deno.test("rating: POST /orders/{id}/rating answers 200, 400, 401, 404, 409 as t
   body.score = 5;
   await assertRejects(() => checkAnswer("/orders/{id}/rating", "post", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
 });
+
+Deno.test("me: GET, PATCH and DELETE /me answer as the contract says and a wrong field is red", async () => {
+  const { handler } = await import("../supabase/functions/me/fixture.ts");
+  const call = (method: string, b?: unknown, auth = true) => handler(new Request("https://x.test/me", { method, headers: auth ? { authorization: "Bearer t" } : {}, body: b === undefined ? undefined : JSON.stringify(b) }));
+  const got = await call("GET");
+  assertEquals(got.status, 200);
+  await checkAnswer("/me", "get", got);
+  await checkAnswer("/me", "get", await call("GET", undefined, false));   // 401
+  const saved = await call("PATCH", { name: "Asha K" });
+  assertEquals(saved.status, 200);
+  await checkAnswer("/me", "patch", saved);
+  await checkAnswer("/me", "patch", await call("PATCH", {}));   // 400
+  await checkAnswer("/me", "patch", await call("PATCH", { name: "Gone" }));   // 410
+  await checkAnswer("/me", "patch", await call("PATCH", { name: "x".repeat(81) }));   // 422
+  const del = await call("DELETE");
+  assertEquals(del.status, 200);
+  await checkAnswer("/me", "delete", del);
+  const body = await (await call("GET")).json();
+  body.profile.phone = "x";   // a phone is not part of the profile
+  await assertRejects(() => checkAnswer("/me", "get", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
+});
