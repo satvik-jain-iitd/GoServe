@@ -58,8 +58,8 @@ class Profile(unittest.TestCase):
 
     def test_deleting_the_account_hides_the_profile_stops_the_pings_and_keeps_the_rest_for_the_job(self):
         r = run(PERSONAL, put(), delete(), get(), put(), final=GONE("customers") + ", " + GONE("addresses") + ", " + GONE("push_devices", "session_id") + f", (select count(*) from profiles where user_id = '{CUST}' and deleted_at is not null and name is null and email is null) as soft")
-        self.assertEqual(r["rs"][2], {"ok": True}, r)
-        self.assertEqual((r["rs"][3]["error"], r["rs"][4]["error"]), ("account_deleted", "account_deleted"), r)
+        self.assertEqual(r["rs"][1], {"ok": True}, r)
+        self.assertEqual((r["rs"][2]["error"], r["rs"][3]["error"]), ("account_deleted", "account_deleted"), r)
         self.assertEqual((r["soft"], r["push_devices"], r["customers"], r["addresses"]), (1, 0, 1, 1), r)   # soft: hidden, no pings; the personal rows wait for the purge
 
     def test_deleting_twice_is_the_same_answer(self):
