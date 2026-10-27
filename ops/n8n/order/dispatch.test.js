@@ -65,7 +65,7 @@ test('S3 prepare assign: the rule pick is assigned; "none" is not', () => {
 });
 
 test('wiring: MAIN 01 answers first, then dispatches a ready order through SUB 22', () => {
-  assert.deepEqual(next(wf.main01, 'Respond result').sort(), ['Log run', 'Push?', 'Ready?']);
+  assert.deepEqual(next(wf.main01, 'Respond result').sort(), ['Log run', 'Ready?']);
   assert.deepEqual(next(wf.main01, 'Ready?', 0), ['Call SUB 22 Dispatch']);
   assert.equal(next(wf.main01, 'Ready?', 1).length, 0);
   assert.equal(byName(wf.main01, 'Call SUB 22 Dispatch').parameters.workflowId.value, 'SUB22');

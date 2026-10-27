@@ -6,7 +6,7 @@ const path = require('path');
 const { build } = require('./build');
 const { checkLayout } = require('../lib/layout_checks');
 
-const IDS = { main01: 'MAIN1', sub11: 'SUB11', sub12: 'SUB12', sub13: 'SUB13', sub19: 'SUB19', sub20: 'SUB20', sub21: 'SUB21', sub22: 'SUB22', alert: 'ALERT1' };
+const IDS = { main01: 'MAIN1', main34: 'MAIN34', sub11: 'SUB11', sub12: 'SUB12', sub13: 'SUB13', sub19: 'SUB19', sub20: 'SUB20', sub21: 'SUB21', sub22: 'SUB22', alert: 'ALERT1' };
 const wf = build({ ids: IDS, vapidPublicKey: 'PUBKEY', vapidSubject: 'mailto:ops@example.com' });
 const src = (file) => fs.readFileSync(path.join(__dirname, 'code', file), 'utf8');
 const run = (file, json, nodes = {}) => new Function('$input', '$', 'Date', src(file))({ first: () => ({ json }), all: () => (Array.isArray(json) ? json.map((j) => ({ json: j })) : [{ json }]) },
@@ -89,23 +89,12 @@ test('wiring: SUB 20 reads targets, signs and sends one push per subscription, a
   assert.equal(w.settings.errorWorkflow, 'ALERT1');
 });
 
-test('wiring: MAIN 01 pushes after it has answered, only for a new placed order, ready or delivered', () => {
-  assert.deepEqual(next(wf.main01, 'Respond result').sort(), ['Log run', 'Push?', 'Ready?']);
-  assert.deepEqual(next(wf.main01, 'Push?', 0), ['Call SUB 20 Push']);
-  assert.equal(byName(wf.main01, 'Call SUB 20 Push').parameters.workflowId.value, 'SUB20');
-  const cond = byName(wf.main01, 'Push?').parameters.conditions.conditions[0].leftValue;
-  assert.match(cond, /already_done/);
-  assert.match(cond, /created/);
-  assert.equal(byName(wf.main01, 'Call SUB 20 Push').parameters.options.waitForSubWorkflow, false);   // the answer is out; a slow push service never holds a run
-  assert.ok(wf.main01.nodes.filter((n) => n.type !== 'n8n-nodes-base.stickyNote').length <= 24);
-});
-
-test('safety: SUB 20 accepts calls only from MAIN 01; the private key is never in the build', () => {
+test('safety: SUB 20 accepts calls only from MAIN 34 (the drain); the private key is never in the build', () => {
   assert.equal(wf.sub20.settings.callerPolicy, 'workflowsFromAList');
-  assert.equal(wf.sub20.settings.callerIds, 'MAIN1');
+  assert.equal(wf.sub20.settings.callerIds, 'MAIN34');
   const all = JSON.stringify(wf);
   assert.ok(!/BEGIN (EC )?PRIVATE KEY/.test(all));
-  assert.equal(byName(wf.main01, 'Config').parameters.assignments.assignments.find((a) => a.name === 'vapid_public_key').value, 'PUBKEY');
+  assert.equal(byName(wf.main34, 'Config').parameters.assignments.assignments.find((a) => a.name === 'vapid_public_key').value, 'PUBKEY');
 });
 
 test('names and layout', () => {
@@ -159,6 +148,6 @@ test('T4 wiring: both traces end in one write node that posts to order_trace; th
   assert.deepEqual(next(w, 'Trace none'), ['Write trace']);
   assert.equal(byName(w, 'Write trace').parameters.url, '={{ $json.supabase_url }}/rest/v1/order_trace');
   assert.equal(byName(w, 'Write trace').parameters.jsonBody, '={{ $json.rpc_body }}');
-  assert.equal(byName(wf.main01, 'Call SUB 20 Push').parameters.workflowInputs.value.order_id, '={{ $json.order.id }}');
+  assert.equal(byName(wf.main34, 'Call SUB 20 Push').parameters.workflowInputs.value.order_id, '={{ $json.order_id }}');
   assert.deepEqual(checkLayout(w, w.sections), []);
 });

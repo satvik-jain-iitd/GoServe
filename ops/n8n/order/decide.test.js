@@ -182,7 +182,7 @@ test('wiring: MAIN 01 has a decide route and logs every routed run through SUB 1
   assert.deepEqual(next('Route', 2), ['Call SUB 13 Decide']);
   assert.deepEqual(next('Route', 7), ['Respond 400']);
   assert.deepEqual(next('Call SUB 13 Decide'), ['Respond result']);
-  assert.deepEqual(next('Respond result').sort(), ['Log run', 'Push?', 'Ready?']);   // story A5: a ready order is dispatched after the answer
+  assert.deepEqual(next('Respond result').sort(), ['Log run', 'Ready?']);   // story A5: a ready order is dispatched after the answer
   assert.deepEqual(next('Log run'), ['Call SUB 14 Write logs']);
   assert.equal(byName(wf.main01, 'Call SUB 13 Decide').parameters.workflowId.value, 'SUB13');
   assert.equal(byName(wf.main01, 'Call SUB 14 Write logs').parameters.workflowId.value, 'SUB14');
