@@ -83,3 +83,16 @@ Deno.test("menu: the 400 answer is in the contract, and a wrong field in a dish 
   body.categories[0].dishes[0].protein = 18;   // not protein_g
   await assertRejects(() => checkAnswer("/menu", "get", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
 });
+
+Deno.test("quote: the 200, the 422 and the 400 answers are in the contract, and a wrong field in a line is red", async () => {
+  const { handler } = await import("../supabase/functions/quote/fixture.ts");
+  const post = (b: unknown) => handler(new Request("https://x.test/quote", { method: "POST", body: JSON.stringify(b) }));
+  const K = "7e57ab1e-0000-4000-8000-000000000001", D1 = "7e57ab1e-0000-4000-8000-0000000000d1", D2 = "7e57ab1e-0000-4000-8000-0000000000d2";
+  const base = { kitchen_id: K, address: { pin_code: "110016" } };
+  await checkAnswer("/quote", "post", await post({ ...base, lines: [{ menu_item_id: D1, qty: 2, option_ids: [] }], coupon_code: "FLAT50" }));
+  await checkAnswer("/quote", "post", await post({ ...base, lines: [{ menu_item_id: D2, qty: 1, option_ids: [] }] }));   // sold out: 422
+  await checkAnswer("/quote", "post", await post({ ...base, lines: "no" }));   // 400
+  const body = await (await post({ ...base, lines: [{ menu_item_id: D1, qty: 1, option_ids: [] }] })).json();
+  body.lines[0].price = 1;   // not unit_paise
+  await assertRejects(() => checkAnswer("/quote", "post", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
+});

@@ -53,6 +53,66 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /quote:
+    post:
+      operationId: postQuote
+      summary: The one bill. Lines, address and an optional coupon in; every rupee out.
+      x-handler: ../supabase/functions/quote/index.ts
+      x-contract-handler: ../supabase/functions/quote/fixture.ts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [kitchen_id, lines, address]
+              properties:
+                kitchen_id: { type: string, format: uuid }
+                lines:
+                  type: array
+                  maxItems: 30
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required: [menu_item_id, qty]
+                    properties:
+                      menu_item_id: { type: string, format: uuid }
+                      qty: { type: integer, minimum: 1, maximum: 20 }
+                      option_ids:
+                        type: array
+                        items: { type: string, format: uuid }
+                address:
+                  type: object
+                  required: [pin_code]
+                  properties:
+                    pin_code: { type: string, pattern: "^[0-9]{6}$" }
+                coupon_code: { type: string, maxLength: 40 }
+      responses:
+        "200":
+          description: The quote. Prices come from the catalog; a price in the request is ignored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Quote"
+        "400":
+          description: The request is malformed (no kitchen, no lines, a bad pin code or coupon, too many lines, not JSON).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: A rule refused the order (empty, sold out, quantity, add-on pick, coupon rule). error is a stable code, message is for the customer.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refusal"
+        "502":
+          description: A data source failed. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   schemas:
     Error:
@@ -64,6 +124,60 @@ components:
           const: false
         error:
           type: string
+    Refusal:
+      type: object
+      additionalProperties: false
+      required: [ok, error, message]
+      properties:
+        ok:
+          const: false
+        error: { type: string }
+        message: { type: string }
+    Quote:
+      type: object
+      additionalProperties: false
+      required: [ok, kitchen_id, lines, item_total_paise, fees, discount_paise, coupon, tax_paise, tax_mode, to_pay_paise, saved_paise]
+      properties:
+        ok:
+          const: true
+        kitchen_id: { type: string, format: uuid }
+        lines:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [menu_item_id, name, qty, unit_paise, extras_paise, line_paise, options]
+            properties:
+              menu_item_id: { type: string }
+              name: { type: string }
+              qty: { type: integer, minimum: 1 }
+              unit_paise: { type: integer, minimum: 0 }
+              extras_paise: { type: integer, minimum: 0 }
+              line_paise: { type: integer, minimum: 0 }
+              options:
+                type: array
+                items: { type: string }
+        item_total_paise: { type: integer, minimum: 0 }
+        fees:
+          type: object
+          additionalProperties: false
+          required: [delivery_paise, packaging_paise, total_paise]
+          properties:
+            delivery_paise: { type: integer, minimum: 0 }
+            packaging_paise: { type: integer, minimum: 0 }
+            total_paise: { type: integer, minimum: 0 }
+        discount_paise: { type: integer, minimum: 0 }
+        coupon:
+          type: [object, "null"]
+          additionalProperties: false
+          required: [code, title]
+          properties:
+            code: { type: string }
+            title: { type: string }
+        tax_paise: { type: integer, minimum: 0 }
+        tax_mode: { enum: [inclusive, exclusive] }
+        to_pay_paise: { type: integer, minimum: 0 }
+        saved_paise: { type: integer, minimum: 0 }
     Dish:
       type: object
       additionalProperties: false
