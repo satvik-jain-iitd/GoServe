@@ -1,0 +1,86 @@
+// Story #554: Order alerts on You (boards U1 and U2). The browser's push is stubbed; the network is answered by the test.
+// On the web the row keeps the web push (save_push). A phone wrapper (Android or iOS) that hands over a device token also registers it with /push/register.
+import { test, expect, type BrowserContext, type Page } from "@playwright/test";
+import { setup, scan as axeScan } from "./helpers";
+
+const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
+
+async function stubWebPush(context: BrowserContext) {
+  await context.addInitScript(() => {
+    Object.defineProperty(Notification, "permission", { get: () => "default", configurable: true });
+    (Notification as unknown as { requestPermission: () => Promise<string> }).requestPermission = async () => "granted";
+    const fake = { pushManager: { subscribe: async () => ({ toJSON: () => ({ endpoint: "https://push.example/abc", keys: { p256dh: "PKEY", auth: "AKEY" } }) }) } };
+    Object.defineProperty(navigator.serviceWorker, "ready", { get: () => Promise.resolve(fake), configurable: true });
+    (window as unknown as { PushManager: unknown }).PushManager = function () {};
+  });
+}
+async function registerRoute(context: BrowserContext, answer: { status: number; body: unknown } = { status: 200, body: { ok: true } }) {
+  const seen: { body: any; auth: string | undefined }[] = [];
+  await context.route("https://test.supabase.co/functions/v1/push/register", async (route) => {
+    const req = route.request();
+    if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: CORS });
+    seen.push({ body: JSON.parse(req.postData() ?? "{}"), auth: req.headers()["authorization"] });
+    return route.fulfill({ status: answer.status, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(answer.body) });
+  });
+  return seen;
+}
+const toYou = async (page: Page) => { await page.goto("/customer/"); await page.getByRole("button", { name: "You" }).click(); };
+
+test("S1 the row says Tap to turn on, a tap saves the web push and the row says On for this phone", async ({ page, context }) => {
+  await stubWebPush(context);
+  const net = await setup(context, page);
+  const seen = await registerRoute(context);
+  await toYou(page);
+  const row = page.getByRole("switch", { name: /Order alerts/ });
+  await expect(page.getByText("Tap to turn on")).toBeVisible();
+  await expect(row).not.toBeChecked();
+  await row.click();
+  await expect.poll(() => net.calls.rpc.filter((c) => c.name === "save_push").length).toBe(1);
+  await expect(page.getByText("On for this phone")).toBeVisible();
+  await expect(row).toBeChecked();
+  expect(seen).toHaveLength(0);   // a browser has no device token: /push/register is for the phone wrappers
+});
+
+test("S2 a phone wrapper that hands over a device token is registered with its platform", async ({ page, context }) => {
+  await stubWebPush(context);
+  await context.addInitScript(() => { (window as unknown as { GoServeNative: unknown }).GoServeNative = { platform: "android", pushToken: async () => "tok-a" }; });
+  await setup(context, page);
+  const seen = await registerRoute(context);
+  await toYou(page);
+  await page.getByRole("switch", { name: /Order alerts/ }).click();
+  await expect.poll(() => seen.length).toBe(1);
+  expect(seen[0].body).toEqual({ platform: "android", token: "tok-a" });
+  expect(seen[0].auth).toMatch(/^Bearer /);
+  await expect(page.getByText("On for this phone")).toBeVisible();
+});
+
+test("S3 when the device cannot be registered the row says so and stays off", async ({ page, context }) => {
+  await stubWebPush(context);
+  await context.addInitScript(() => { (window as unknown as { GoServeNative: unknown }).GoServeNative = { platform: "ios", pushToken: async () => "tok-i" }; });
+  await setup(context, page);
+  await registerRoute(context, { status: 502, body: { ok: false, error: "push_unavailable" } });
+  await toYou(page);
+  await page.getByRole("switch", { name: /Order alerts/ }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "Could not turn on alerts. Try again." })).toBeVisible();
+  await expect(page.getByRole("switch", { name: /Order alerts/ })).not.toBeChecked();
+});
+
+test("S4 blocked in the phone settings keeps the old words", async ({ page, context }) => {
+  await context.addInitScript(() => { Object.defineProperty(Notification, "permission", { get: () => "denied", configurable: true }); });
+  await setup(context, page);
+  await toYou(page);
+  await expect(page.getByText("Blocked in your phone settings.")).toBeVisible();
+});
+
+for (const t of ["day", "night"] as const) {
+  test(`S5 You with alerts off and on has no serious contrast or role violation in ${t}`, async ({ page, context }) => {
+    await context.addInitScript((v) => localStorage.setItem("gs-theme", v), t);
+    await stubWebPush(context);
+    await setup(context, page);
+    await toYou(page);
+    expect(await axeScan(page)).toEqual([]);
+    await page.getByRole("switch", { name: /Order alerts/ }).click();
+    await expect(page.getByText("On for this phone")).toBeVisible();
+    expect(await axeScan(page)).toEqual([]);
+  });
+}

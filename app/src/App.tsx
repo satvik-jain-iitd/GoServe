@@ -31,6 +31,7 @@ import { NameSheet, OtpSheet } from "./screens/OtpSheet";
 import { otpGateOn } from "./lib/otpGate";
 import { createPayment, switchToCash, simulatePaid, type PayMethod } from "./lib/payments";
 import { openGateway } from "./lib/payGateway";
+import { registerNative, wrapperToken } from "./lib/pushNative";
 import { AdminScreen } from "./screens/AdminScreen";
 import { loadDraft, saveDraft } from "./lib/draft";
 import { PlacedScreen } from "./screens/PlacedScreen";
@@ -201,7 +202,11 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     }
   }
   // One tap allows the local reminder and, where the phone can, the web push (story A7), so the customer hears about placed, ready and delivered with the app closed.
-  function allowReminder() {
+  const [alertsError, setAlertsError] = useState<string | null>(null);
+  async function allowReminder() {
+    setAlertsError(null);
+    const native = await wrapperToken(window);   // story #554: a phone wrapper also registers its device token, with its platform
+    if (native && !(await registerNative(native))) return void setAlertsError("Could not turn on alerts. Try again.");
     void enablePush({
       vapidKey: import.meta.env.VITE_VAPID_PUBLIC_KEY ?? "",
       supported: () => "serviceWorker" in navigator && "PushManager" in window,
@@ -582,7 +587,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} onYou={() => setStep("account")} />}
         {step === "account" && (
           <AccountScreen name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone} onAddress={setAddress}
-            alerts={reminder} onAlerts={allowReminder} live={openLive} onShare={shareFromAccount} onForget={forgetMe}
+            alerts={reminder} onAlerts={allowReminder} alertsError={alertsError} live={openLive} onShare={shareFromAccount} onForget={forgetMe}
             onMenu={() => setStep("menu")} onOrders={() => setStep("orders")} />
         )}
         {menu && step === "bill" && (
