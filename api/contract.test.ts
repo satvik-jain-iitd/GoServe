@@ -107,3 +107,20 @@ Deno.test("serviceability: the in-range, out-of-range and 400 answers are in the
   body.kitchens[0].eta = 20;   // not eta_min
   await assertRejects(() => checkAnswer("/serviceability", "get", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
 });
+
+Deno.test("orders: the 201, 401, 409, 422 and 400 answers are in the contract, and a wrong field in the order is red", async () => {
+  const { handler } = await import("../supabase/functions/orders/fixture.ts");
+  const K = "7e57ab1e-0000-4000-8000-000000000001", D1 = "7e57ab1e-0000-4000-8000-0000000000d1", D2 = "7e57ab1e-0000-4000-8000-0000000000d2";
+  const body = { kitchen_id: K, lines: [{ menu_item_id: D1, qty: 2, option_ids: [] }], address: { pin_code: "110016", text: "Flat 4, Green Park" }, idempotency_key: "key-0001-abcd", expected_to_pay_paise: 28000 };
+  const post = (b: unknown, auth = true) => handler(new Request("https://x.test/orders", { method: "POST", headers: auth ? { authorization: "Bearer t" } : {}, body: JSON.stringify(b) }));
+  const created = await post(body);
+  assertEquals(created.status, 201);
+  await checkAnswer("/orders", "post", created);
+  await checkAnswer("/orders", "post", await post(body, false));   // 401
+  await checkAnswer("/orders", "post", await post({ ...body, expected_to_pay_paise: 100 }));   // 409 price_changed with the new quote
+  await checkAnswer("/orders", "post", await post({ ...body, lines: [{ menu_item_id: D2, qty: 1, option_ids: [] }] }));   // 422 unknown dish
+  await checkAnswer("/orders", "post", await post({ ...body, idempotency_key: "x" }));   // 400
+  const ok = await (await post(body)).json();
+  ok.order.customer_phone = "9876543210";   // not a field of the order in the contract
+  await assertRejects(() => checkAnswer("/orders", "post", new Response(JSON.stringify(ok), { status: 201 })), Error, "additional properties");
+});
