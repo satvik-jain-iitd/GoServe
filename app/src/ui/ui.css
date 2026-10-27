@@ -12,7 +12,7 @@ body { margin: 0; background: var(--md-background); color: var(--md-on-backgroun
 .ui-btn:focus-visible, .ui-chip:focus-visible, .ui-step button:focus-visible, .ui-back:focus-visible, .ui-search:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
 
 /* App bar */
-.ui-appbar { display: flex; align-items: flex-end; gap: var(--gs-space-3); padding: var(--gs-space-2) 0 var(--gs-space-3); margin-bottom: var(--gs-space-4); border-bottom: 1px solid var(--md-outline-variant); }
+.ui-appbar { display: flex; align-items: flex-end; gap: var(--gs-space-3); padding: max(env(safe-area-inset-top), var(--gs-space-2)) 0 var(--gs-space-3); margin-bottom: var(--gs-space-4); border-bottom: 1px solid var(--md-outline-variant); }
 .ui-appbar-text { flex: 1; display: grid; gap: 2px; min-width: 0; }
 .ui-appbar h1 { margin: 0; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; }
 .ui-back { width: var(--gs-tap); height: var(--gs-tap); flex: none; display: flex; align-items: center; justify-content: center; border: 0; border-radius: var(--gs-radius-pill); background: transparent; color: var(--md-primary); font-size: 24px; line-height: 1; text-decoration: none; cursor: pointer; }
@@ -86,7 +86,7 @@ body { margin: 0; background: var(--md-background); color: var(--md-on-backgroun
 
 /* Sheet, empty, skeleton */
 .ui-sheet-back { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end; justify-content: center; background: rgb(38 53 40 / 0.5); }
-.ui-sheet { width: 100%; max-width: 32rem; max-height: 90vh; overflow-y: auto; box-sizing: border-box; padding: var(--gs-space-5) var(--gs-gutter); border-top: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s) var(--gs-radius-s) 0 0; background: var(--md-surface); color: var(--md-on-surface); animation: ui-rise 200ms ease; }
+.ui-sheet { width: 100%; max-width: 32rem; max-height: 90vh; overflow-y: auto; box-sizing: border-box; padding: var(--gs-space-5) var(--gs-gutter) max(var(--gs-space-5), env(safe-area-inset-bottom)); border-top: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s) var(--gs-radius-s) 0 0; background: var(--md-surface); color: var(--md-on-surface); animation: ui-rise 200ms ease; }
 .ui-sheet-head { display: flex; justify-content: space-between; align-items: center; gap: var(--gs-space-3); margin-bottom: var(--gs-space-4); }
 .ui-sheet-head h2, .ui-empty h2 { margin: 0; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; }
 .ui-empty { display: grid; gap: var(--gs-space-2); justify-items: center; padding: var(--gs-space-7) var(--gs-gutter); text-align: center; }
@@ -114,7 +114,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 [data-theme="night"] .ui-logo { filter: none; }
 
 /* Tab bar: the three homes (Menu, Orders, You). Only on home screens; sub-screens push over it. */
-.ui-tabs { display: flex; flex: none; padding: 0 var(--gs-space-2) env(safe-area-inset-bottom); border-top: 1px solid var(--md-outline-variant); background: var(--md-surface); }
+.ui-tabs { display: flex; flex: none; padding: 0 var(--gs-space-2) max(var(--gs-space-2), env(safe-area-inset-bottom)); border-top: 1px solid var(--md-outline-variant); background: var(--md-surface); }
 .ui-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: var(--gs-tap-big); color: var(--gs-text-muted); font: inherit; font-size: var(--gs-text-xs); font-weight: 500; text-decoration: none; background: transparent; border: 0; border-radius: var(--gs-radius-s); cursor: pointer; }
 .ui-tab svg { width: 24px; height: 24px; }
 .ui-tab.on { color: var(--md-primary); font-weight: 600; }
@@ -201,7 +201,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-dot.nonveg { border-color: var(--md-error); }
 
 /* Customer home, pin and sheets (story H10b). Boards 01, 01e, 02, 02a, 02b, 02c, 03. */
-.ui-landing { flex: 1; display: flex; flex-direction: column; padding: calc(var(--gs-space-7) + var(--gs-space-4)) var(--gs-gutter) var(--gs-space-5); overflow-y: auto; }
+.ui-landing { flex: 1; display: flex; flex-direction: column; padding: calc(var(--gs-space-7) + var(--gs-space-4) + env(safe-area-inset-top)) var(--gs-gutter) max(var(--gs-space-5), env(safe-area-inset-bottom)); overflow-y: auto; }
 .ui-landing-head { display: flex; flex-direction: column; gap: 10px; }
 .ui-landing-head .ui-logo { display: block; width: 100%; height: auto; }
 .ui-kicker { margin: 0; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); letter-spacing: 0.04em; text-transform: uppercase; color: var(--gs-text-muted); }
@@ -266,7 +266,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-ask { display: flex; flex-direction: column; align-items: stretch; margin: 0; }
 .ui-ask h3 { margin: 0; font-size: var(--gs-text-lg); }
 .ui-ask-act { display: flex; gap: var(--gs-space-2); }
-.ui-bottom { display: flex; flex-direction: column; gap: var(--gs-space-2); padding: var(--gs-space-3) var(--gs-gutter) var(--gs-space-5); }
+.ui-bottom { display: flex; flex-direction: column; gap: var(--gs-space-2); padding: var(--gs-space-3) var(--gs-gutter) max(var(--gs-space-5), env(safe-area-inset-bottom)); }
 .ui-bottom .ui-btn.big { width: 100%; }
 /* Orders and You (story H10d). Boards 08, 08e and 09. */
 .ui-center { justify-content: center; }
