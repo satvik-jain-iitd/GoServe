@@ -1,0 +1,6 @@
+# Story #337: backend v2 on Supabase Edge Functions. The project is the dev project (goserve-dev); the CI job passes --project-ref.
+project_id = "goserve-dev"
+
+# The health check is public on purpose: it answers ok and nothing else.
+[functions.health]
+verify_jwt = false
