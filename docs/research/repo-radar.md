@@ -261,3 +261,6 @@ Runs: the radar skill was run on the need "pure money math and idempotent order 
 
 ## 2026-10-27 · need: retry a slow database call in n8n (stories #532 and #541)
 Runs: no new repo needed. Tier A: n8n's own node settings (`retryOnFail`, `maxTries`, `waitBetweenTries`). Decision: set them in `build.js`, in one loop for all timer Supabase nodes (#541), with a test that walks them.
+
+## 2026-10-27 · needs: phone OTP, online payments, order tracking, claim of earlier orders, push (stories #339, #348, #352, #558, #351)
+Runs: the radar skill was run for each need. For push, `scout.py` found nothing that runs on Deno; the GitHub search showed only `gorush` and `django-push-notifications`, which are other stacks. Decision: write small functions of our own behind one seam file each (`otpGate.ts`, `payGateway.ts`, `pushNative.ts` and the matching backend files), so the owner's vendor (SMS provider, Razorpay, FCM and Apple) drops in later.

@@ -40,3 +40,19 @@ In the last column, "(test double)" means the story is built with a fake service
 | 19 | **Cloudflare for Startups.** https://www.cloudflare.com/lp/startups , the button "Apply here". | Cloudflare credits (we already use Pages and Workers). | A company under 10 years old, a live public website, a LinkedIn, X or GitHub page, a business email on the company domain, a first-time application. | The smallest tier is US$10,000 in credits for a year, for "bootstrapped or under $1M raised". | A, 0.8 (https://www.cloudflare.com/startups/). The same page also says "funded within the last 12 months"; it is unclear if an unfunded company qualifies (0.6). | Cost only |
 
 What we could not read, and why: the India SMS price (row 9), the company KYC list (row 11), FCM pricing (row 13), the Google Cloud benefits page (row 17), and any cost for DPIIT (row 16). Each is named so nobody trusts a gap.
+
+## Code seams (27 Oct 2026, stories #339, #348, #351)
+
+Each click above has a place in the code where the vendor drops in. The fake is marked `PLACEHOLDER (owner click): <service> - swap <file>, set <ENV>`. A unit test fails if the placeholder is still in place with its env var set.
+
+- Row 9 and 10, SMS or Firebase Phone Auth: code seam `app/src/lib/otpGate.ts` (`VITE_OTP_SMS=real`) and the sender in `supabase/functions/otp/index.ts`.
+- Row 11, Razorpay: code seam `app/src/lib/payGateway.ts` (`VITE_PAYMENTS_PROVIDER=razorpay`) and `supabase/functions/payments/index.ts`.
+- Row 13 and 14, FCM and Apple: code seam `app/src/lib/pushNative.ts` (`VITE_PUSH_NATIVE=real`) and `supabase/functions/push/index.ts`.
+
+## Steps for the prod release of the 27 Oct stack (owner runs them)
+
+1. Create the `pg_net` extension on the prod project.
+2. Add two vault secrets, `push_notify_url` and `push_notify_secret`, and set `PUSH_NOTIFY_SECRET` on the `push` function.
+3. Drop the constraint `kitchen_staff_one_kitchen` (story #468: one person can work at many kitchens).
+4. The deploy must never set `VITE_PAYMENTS_PLACEHOLDER` or `VITE_PAYMENTS_DEV_SECRET`. Prod `PAYMENTS_WEBHOOK_SECRET` is its own value.
+5. Schedule `purge_deleted_accounts_v2(30)` daily (F239).
