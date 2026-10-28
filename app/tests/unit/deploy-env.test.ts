@@ -12,9 +12,13 @@ describe("deploy-app.yml (the real app)", () => {
   it("does not use the dev webhook secret: prod has its own PAYMENTS_WEBHOOK_SECRET or none", () => {
     expect(text).not.toMatch(/PAYMENTS_WEBHOOK_SECRET:\s*dev|dev-secret/);
   });
-  it("does not turn the phone code or the native push seam on by itself", () => {
-    expect(text).not.toMatch(/VITE_OTP_GATE:\s*["']?1/);
+  it("does not turn the native push seam on by itself", () => {
     expect(text).not.toMatch(/VITE_PUSH_NATIVE:\s*["']?real/);
+  });
+  // Story #665 (owner, 28 Oct): the phone code is on in prod with the fixed code. The gate is allowed only together with `fixed` or `real`, never alone.
+  it("sets the phone code gate only together with the fixed or the real sender", () => {
+    expect(text).toMatch(/VITE_OTP_GATE:\s*["']?1/);
+    expect(text).toMatch(/VITE_OTP_SMS:\s*["']?(fixed|real)\b/);
   });
   it("does not turn the offers on: the order still goes through the v1 path (stories #588, #590)", () => {
     expect(text).not.toContain("VITE_OFFERS");
