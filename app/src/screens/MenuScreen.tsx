@@ -7,7 +7,7 @@ import { formatRupees } from "../lib/money";
 import { Empty, Stepper, TabBar, VegMark } from "../ui";
 
 type Props = {
-  dishes: Dish[] | null; fromCache: boolean; error: string | null;
+  dishes: Dish[] | null; fromCache: boolean; error: string | null; onRetry: () => void;
   pin: string | null; kitchenName: string; openText: string; name: string; closedText: string | null;
   qty: Record<string, number>; cartCount: number; cartTotal: number;
   onAdd: (id: string) => void; onChange: (id: string, delta: number) => void; onOpenCart: () => void;
@@ -31,12 +31,13 @@ export function MenuScreen(p: Props) {
   const sections = sectionsOf(shown);
   const closed = p.closedText !== null;
   const add = (d: Dish) => <button type="button" className="ui-btn" aria-label={`Add ${d.name}`} disabled={closed} onClick={() => p.onAdd(d.id)}>Add</button>;
+  if (p.dishes === null && p.error) return <OfflineEmpty onRetry={p.onRetry} />;   // story #637, board M6: nothing saved and no connection
   const control = (d: Dish) => ((p.qty[d.id] ?? 0) > 0 ? <Stepper label={d.name} value={p.qty[d.id]} onChange={(n) => p.onChange(d.id, n - p.qty[d.id])} /> : add(d));
   return (
     <>
       <header className="ui-head">
         <button type="button" className="ui-pin" aria-label={`Change area, pin code ${p.pin ?? ""}`} onClick={p.onChangePin}>
-          <img className={`ui-logo ui-pin-mark${land ? " ui-mark-land" : ""}`} src="/brand/pin-mark-day.png" alt="" />{p.pin}
+          <svg className={`ui-pin-svg${land ? " ui-mark-land" : ""}`} aria-hidden="true" viewBox="0 0 24 24" width="22" height="22"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z" fill="var(--md-primary)" /><circle cx="12" cy="9" r="3" fill="var(--md-on-primary)" /></svg>{p.pin}
         </button>
         <button type="button" className="ui-btn ghost icon" aria-label="Veg only" aria-pressed={vegOnly} onClick={() => setVegOnly(!vegOnly)}><VegIcon /></button>
         <button type="button" className="ui-btn ghost icon" aria-label="Filter" onClick={() => setFilterOpen(true)}><FunnelIcon /></button>
@@ -53,9 +54,8 @@ export function MenuScreen(p: Props) {
             <p className="ui-closed-main">{p.closedText}</p>
           </div>
         )}
-        {p.fromCache && <p className="notice">Showing the saved menu (offline).</p>}
-        {p.error && <p role="alert" className="error ui-pad">{p.error}</p>}
-        {p.dishes === null && !p.error && <Loading />}
+        {p.fromCache && <p role="status" className="ui-offline">No connection. Showing the menu you saw last.</p>}
+                {p.dishes === null && !p.error && <Loading />}
         {p.dishes !== null && (thali.veg || thali.nonveg) && <Hero veg={thali.veg} nonveg={thali.nonveg} closed={closed} qty={p.qty} onAdd={p.onAdd} onChange={p.onChange} />}
         {p.dishes !== null && shown.length === 0 && <div className="ui-pad"><Empty title="Nothing matches" hint="Try another word or clear the filters." /></div>}
         {sections.map((s) => (
@@ -65,7 +65,7 @@ export function MenuScreen(p: Props) {
               {s.dishes.map((d) => (
                 <article key={d.id} className="ui-tile">
                   <button type="button" className="ui-photo-btn" aria-label={`${d.name} details`} onClick={() => setDish(d)}>
-                    {d.image_url ? <img className="ui-photo" src={d.image_url} alt="" loading="lazy" /> : <span className="ui-photo" aria-hidden="true" />}
+                    <Photo src={d.image_url} cls="ui-photo" lazy />
                   </button>
                   <div className="ui-tile-body">
                     <h3>{d.veg !== undefined && <VegMark veg={d.veg} />}{d.name}</h3>
@@ -96,6 +96,46 @@ export function MenuScreen(p: Props) {
   );
 }
 
+// A photo that is missing or cannot load shows the plate, never the browser's broken-image mark (story #637).
+function Photo({ src, cls, alt = "", lazy }: { src: string | null; cls?: string; alt?: string; lazy?: boolean }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) {
+    return (
+      <span className={`${cls ?? ""} ui-ph`} aria-hidden="true">
+        <svg viewBox="0 0 48 48" width="40" height="40" fill="none" stroke="var(--md-outline)" strokeWidth="1.5"><circle cx="24" cy="24" r="18" /><circle cx="24" cy="24" r="11" /></svg>
+      </span>
+    );
+  }
+  return <img className={cls} src={src} alt={alt} loading={lazy ? "lazy" : undefined} onError={() => setFailed(true)} />;
+}
+
+// Board M6: no connection and no saved menu. The whole screen, no header, no tabs.
+function OfflineEmpty({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="ui-offline-empty">
+      <svg aria-hidden="true" viewBox="0 0 240 180" width="240" height="180" fill="none" stroke="var(--md-on-surface)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M40 118h160" stroke="var(--md-outline-variant)" />
+        <path d="M60 110c0-26 27-40 60-40s60 14 60 40z" fill="var(--md-surface-variant)" />
+        <path d="M60 110h120" />
+        <path d="M180 92l34-14" />
+        <circle cx="216" cy="77" r="4" fill="var(--md-on-surface)" />
+        <ellipse cx="120" cy="96" rx="30" ry="9" fill="var(--gs-status-cooking)" />
+        <path d="M84 118v18M156 118v18" />
+        <path d="M78 136h12M150 136h12" />
+        <path d="M120 30c-8 0-14 6-14 14" stroke="var(--md-outline)" strokeDasharray="2 4" />
+        <path d="M120 16c-16 0-28 12-28 28" stroke="var(--md-outline)" strokeDasharray="2 4" />
+        <path d="M120 2c-24 0-42 18-42 42" stroke="var(--md-outline)" strokeDasharray="2 4" />
+        <path d="M128 28l18 18M146 28l-18 18" stroke="var(--md-error)" />
+      </svg>
+      <div role="alert">
+        <p className="ui-offline-title">Could not connect to the internet.</p>
+        <p className="ui-offline-line">Check your network, then try again.</p>
+      </div>
+      <button type="button" className="ui-btn ghost" onClick={onRetry}>Try again</button>
+    </div>
+  );
+}
+
 function Loading() {
   return (
     <div aria-hidden="true">
@@ -114,7 +154,7 @@ function Hero({ veg, nonveg, closed, qty, onAdd, onChange }: { veg?: Dish; nonve
   // Story #608: the thali card has the same Add and stepper as every other dish.
   const page = (d: Dish, id: string) => (
     <div className="page" id={id} key={id}>
-      <div className="photo">{d.image_url && <img src={d.image_url} alt={d.name} />}<span className="ui-tag">Today</span></div>
+      <div className="photo"><Photo src={d.image_url} alt={d.name} /><span className="ui-tag">Today</span></div>
       <div className="body">
         <div><h3>{d.veg !== undefined && <VegMark veg={d.veg} />}{d.name}</h3><p className="price-pair"><span className="ui-price">{formatRupees(d.price_paise)}</span></p></div>
         {(qty[d.id] ?? 0) > 0
@@ -165,7 +205,7 @@ function DishSheet({ dish, closed, qty, onAdd, onClose }: { dish: Dish; closed: 
   const [n, setN] = useState(Math.max(1, qty ? 1 : 1));
   return (
     <Modal label={dish.name} onClose={onClose}>
-      {dish.image_url ? <img className="ui-dish-photo" src={dish.image_url} alt="" /> : <div className="ui-dish-photo" aria-hidden="true" />}
+      <Photo src={dish.image_url} cls="ui-dish-photo" />
       <div className="ui-dish-body">
         <div className="ui-dish-head"><h2>{dish.veg !== undefined && <VegMark veg={dish.veg} size={14} />}{dish.name}</h2><span className="ui-dish-price">{formatRupees(dish.price_paise)}</span></div>
         <p className="ui-kicker">{dish.veg === undefined ? "" : dish.veg ? "Veg" : "Non-veg"}{dish.category ? ` · ${dish.category}` : ""}</p>

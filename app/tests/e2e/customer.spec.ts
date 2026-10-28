@@ -117,15 +117,55 @@ test("S2 the menu still shows with the network off, after it was loaded once", a
   await page.reload();
   await expect(page.getByText("Butter Chicken")).toBeVisible();
   await expect(page.getByText("₹60.50")).toBeVisible();
-  await expect(page.getByText("Showing the saved menu")).toBeVisible();
+  await expect(page.getByText("No connection. Showing the menu you saw last.")).toBeVisible();
 });
 
 test("S2 with no network and no saved menu, the screen says so instead of staying blank", async ({ page, context }) => {
   const net = await mockNetwork(context);
   net.menuUp = false;
   await page.goto("/");
-  await expect(page.getByRole("alert")).toHaveText("The menu is not available. Connect once to load it.");
+  await expect(page.getByText("Could not connect to the internet.")).toBeVisible();   // story #637, board M6
 });
+
+// Story #637 (row T3), boards M5 and M6. Day and Night.
+for (const theme of ["day", "night"]) {
+  test(`S-637 ${theme}: offline with a saved menu keeps the menu, one line, no broken pictures, and the line leaves when the network is back`, async ({ page, context }) => {
+    await context.addInitScript((t) => { try { localStorage.setItem("gs-theme", t); } catch { /* the default theme shows */ } }, theme);
+    const net = await mockNetwork(context);
+    await page.goto("/");
+    await expect(page.getByText("Butter Chicken")).toBeVisible();
+    await page.evaluate(() => navigator.serviceWorker.ready);
+    net.menuUp = false;
+    await context.setOffline(true);
+    await page.reload();
+    await expect(page.getByText("Butter Chicken")).toBeVisible();
+    await expect(page.getByText("No connection. Showing the menu you saw last.")).toBeVisible();
+    await expect(page.locator(".ui-pin svg")).toBeVisible();   // the pin mark is drawn in the page, not a picture that can break
+    await expect(page.locator(".ui-pin img")).toHaveCount(0);
+    await expect(page.locator(".ui-ph").first()).toBeVisible();   // a photo that cannot load shows the plate
+    const broken = await page.evaluate(() => [...document.images].filter((i) => i.complete && i.naturalWidth === 0).length);
+    expect(broken).toBe(0);
+    net.menuUp = true;
+    await context.setOffline(false);
+    await page.evaluate(() => window.dispatchEvent(new Event("online")));
+    await expect(page.getByText("No connection. Showing the menu you saw last.")).toHaveCount(0, { timeout: 5000 });
+  });
+
+  test(`S-637 ${theme}: offline with nothing saved shows the full-screen state, and Try again loads the menu when the network is back`, async ({ page, context }) => {
+    await context.addInitScript((t) => { try { localStorage.setItem("gs-theme", t); } catch { /* the default theme shows */ } }, theme);
+    const net = await mockNetwork(context);
+    net.menuUp = false;
+    await page.goto("/");
+    await expect(page.getByText("Could not connect to the internet.")).toBeVisible();
+    await expect(page.getByText("Check your network, then try again.")).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Main" })).toHaveCount(0);   // no tabs, no header
+    await expect(page.getByRole("button", { name: /Change area/ })).toHaveCount(0);
+    net.menuUp = true;
+    await page.getByRole("button", { name: "Try again" }).click();
+    await expect(page.getByText("Butter Chicken")).toBeVisible();
+    await expect(page.getByText("Could not connect to the internet.")).toHaveCount(0);
+  });
+}
 
 test("S3 after a refresh the customer lands back on the order that is still open", async ({ page, context }) => {
   await mockNetwork(context);

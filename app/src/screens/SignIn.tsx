@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
-import { authErrorFrom, givenNameOf, linkGoogle, signedInName } from "../lib/auth";
+import { friendlyAuth, givenNameOf, linkGoogle, markTried, rememberReturn, signedInName, takeTried } from "../lib/auth";
 import { ensureSession, getClient } from "../lib/supabase";
 import { Button } from "../ui";
 
 // One line under the title: "Continue with Google", or "Signed in as <name>". No password, no email form.
-export function SignIn({ mode = "link", onGivenName }: { mode?: "link" | "signin"; onGivenName?: (name: string) => void }) {
+export function SignIn({ mode = "link", onGivenName, help }: { mode?: "link" | "signin"; onGivenName?: (name: string) => void; help?: string }) {
   const [name, setName] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(() => authErrorFrom(window.location.search, window.location.hash));
+  const [back] = useState(() => friendlyAuth(window.location.search, window.location.hash));
+  const [error, setError] = useState<string | null>(back?.message ?? null);
   useEffect(() => {
     if (error) history.replaceState(null, "", window.location.pathname);   // shown once
+    if (!back) takeTried();   // a clean return: the next error may sign in again
+    // Story #635: the Google account is already on another user: this phone becomes that user (once; a second return with the same error only shows the line).
+    if (back?.signIn && !takeTried()) { markTried(); rememberReturn(); void linkGoogle(getClient(), window.location.href.split("?")[0], "signin").then((e) => e && setError(e)); }
     let alive = true;
     ensureSession()
       .then(() => getClient().auth.getUser())
@@ -24,9 +28,10 @@ export function SignIn({ mode = "link", onGivenName }: { mode?: "link" | "signin
   return (
     <div>
       <Button variant="ghost" data-testid="google-signin"
-        onClick={async () => { await ensureSession().catch(() => {}); setError(await linkGoogle(getClient(), window.location.href.split("?")[0], mode)); }}>
+        onClick={async () => { rememberReturn(); await ensureSession().catch(() => {}); setError(await linkGoogle(getClient(), window.location.href.split("?")[0], mode)); }}>
         Continue with Google
       </Button>
+      {help && <p className="ui-google-help">{help}</p>}
       {error && <p role="alert">{error}</p>}
     </div>
   );

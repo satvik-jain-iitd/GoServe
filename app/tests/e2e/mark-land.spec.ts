@@ -2,7 +2,7 @@
 import { test, expect } from "@playwright/test";
 import { setup } from "./helpers";
 
-const mark = (page: import("@playwright/test").Page) => page.locator(".ui-pin-mark");
+const mark = (page: import("@playwright/test").Page) => page.locator(".ui-pin-svg");
 
 test("S1 right after the pin screen the mark flies once into the header", async ({ page, context }) => {
   await setup(context, page, [], { pin: null });
