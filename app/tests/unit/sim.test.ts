@@ -21,7 +21,7 @@ describe("callSim", () => {
   it("turns a refusal into its message and code, and a dead network into a plain line", async () => {
     await expect(callSim("reset", {}, deps(json(503, { ok: false, error: "kill_switch", message: "The simulator is paused." })))).rejects.toMatchObject({ message: "The simulator is paused.", code: "kill_switch" });
     await expect(callSim("status", {}, deps(async () => { throw new Error("down"); }))).rejects.toBeInstanceOf(SimError);
-    await expect(callSim("status", {}, deps(async () => { throw new Error("down"); }))).rejects.toMatchObject({ message: "No network. Check your connection and try again.", code: "network" });
+    await expect(callSim("status", {}, deps(async () => { throw new Error("down"); }))).rejects.toMatchObject({ message: "No internet. Check your internet and try again.", code: "network" });
     await expect(callSim("tick", {}, deps(json(500, "<html>")))).rejects.toMatchObject({ code: "unknown" });
   });
 });

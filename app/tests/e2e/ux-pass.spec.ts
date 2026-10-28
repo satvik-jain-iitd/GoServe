@@ -74,7 +74,7 @@ test("D6 D7 D8 D9 D13 the bill, placed and orders screens use the agreed words",
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
-  await expect(page.getByText("Pay the rider cash at the door.")).toBeVisible();
+  await expect(page.getByText("Pay the rider cash at the door.")).toHaveCount(0);   // story #659: the slip and the bar already say cash
   await expect(page.locator(".ui-slip-head").getByText("Cash", { exact: true })).toHaveCount(0);
   await expect(page.locator("header .meta").getByText("Cash", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Back to menu" }).click();

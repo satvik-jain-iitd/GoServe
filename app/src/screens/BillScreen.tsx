@@ -94,7 +94,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
                 <div className="ui-field"><label htmlFor="phone">Phone · the rider calls this</label><input id="phone" className="mono-input" type="tel" value={details.phone} inputMode="numeric" maxLength={10} autoComplete="tel-national" onChange={(e) => details.onPhone(e.target.value.replace(/\D/g, ""))} /></div>
               </>
             )}
-            <div className="ui-field"><label htmlFor="address">Address{pin ? ` · pin ${pin}` : ""}</label><textarea id="address" rows={2} value={address} maxLength={300} onChange={(e) => onAddress(e.target.value)} /></div>
+            <div className="ui-field"><label htmlFor="address">Address · food gets delivered here</label><textarea id="address" rows={2} value={address} maxLength={300} onChange={(e) => onAddress(e.target.value)} /></div>
             {pay && (
               <fieldset className="ui-pay" role="radiogroup" aria-label="How you pay">
                 <legend>How you pay</legend>
@@ -103,15 +103,16 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
                 ))}
               </fieldset>
             )}
-            <p className="ui-note">{pay && pay.value !== "cod" ? "You pay on the next screen. The kitchen starts when it is paid." : "Pay the rider cash at the door."}</p>
+            {pay && pay.value !== "cod" && <p className="ui-note">You pay on the next screen. The kitchen starts when it is paid.</p>}
             {error && <p role="alert" className="ui-field-error">{error}</p>}
           </form>
         )}
       </div>
       {!empty && (
         <div className="ui-sticky float">
+          {!ready && <p className="ui-note ui-bar-note">Add your name, phone and address to place the order.</p>}
           <button type="button" className="ui-btn bar" disabled={!ready || sending} onClick={onPlace}>
-            <span className="mono">{pay && pay.value !== "cod" ? PAY_METHODS.find((m) => m.id === pay.value)!.label : "Cash"} · {formatRupees(total)}</span><span className="verb">Place order ›</span>
+            <span className="mono">{pay && pay.value !== "cod" ? PAY_METHODS.find((m) => m.id === pay.value)!.label : "Cash"} · {formatRupees(total)}</span><span className="verb">{sending ? "Placing…" : "Place order ›"}</span>
           </button>
         </div>
       )}
