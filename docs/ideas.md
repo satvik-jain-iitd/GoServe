@@ -61,3 +61,6 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - ID273 (2026-10-28, open → design, after the owner marks the copy audit): proofread the whole customer app for the job of every word, line, icon and image (the Owner column of `docs/product/copy-audit.md`). Related: #643.
 - ID274 (2026-10-28, taken, story #655): on first open: phone number, OTP, then location permission; show the customer their own detected address; the nearest kitchen is matched on the server and never shown to the customer.
 - ID275 (2026-10-28, open, not decided): when the nearest kitchen is closed or far, deliver from another kitchen and tell the customer openly that it will take longer. The Closed sign stays for now (copy-audit row B.10).
+- ID276 (2026-10-28, taken, story #655 round 2): sign in with mobile and with Google together on the first screen, both on by default.
+- ID277 (2026-10-28, taken, story #665): a fixed OTP code (123456) until an SMS provider is clicked; the flow stays the real OTP flow so the provider is one switch later.
+- ID278 (2026-10-29, open, later): a small Edge Function proxy with a cache in front of the address lookup, which also lets us swap the lookup source without an app release (F278).
