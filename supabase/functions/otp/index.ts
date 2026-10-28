@@ -97,6 +97,15 @@ const live: Deps = {
     throw new Error("link failed");
   },
 };
-export const handler = withRunLog("otp", makeHandler(live), writeRunLog);   // story #356: one run_log row per call
+// Story #665 (owner, 28 Oct): until an SMS provider is clicked, the code is fixed. With OTP_FIXED_CODE set (six digits), `check` accepts it for any number before the
+// database check. `issue` and `sms` are untouched, so the send rules still hold. A wrong code still goes to the database. Risk, said once: anyone can sign in as any
+// number while this is set; it is the owner's call for the test phase (the privacy page already says the app is in testing).
+export const withFixedCode = (deps: Deps, fixed: string | undefined): Deps =>
+  fixed && /^[0-9]{6}$/.test(fixed)
+    ? { ...deps, check: (phone, code) => (code === fixed ? Promise.resolve({ ok: true as const, phone }) : deps.check(phone, code)) }
+    : deps;
+// The env is read when a code is checked, not at import: the test run has no env permission.
+const liveWithFixed: Deps = { ...live, check: (phone, code) => withFixedCode(live, Deno.env.get("OTP_FIXED_CODE")).check(phone, code) };
+export const handler = withRunLog("otp", makeHandler(liveWithFixed), writeRunLog);   // story #356: one run_log row per call
 
 if (import.meta.main) Deno.serve(handler);

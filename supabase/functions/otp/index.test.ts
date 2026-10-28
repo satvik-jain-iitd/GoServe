@@ -2,7 +2,7 @@
 // The rules (3 sends in 10 minutes, 5 tries, 10 minutes, one use) are in the database (scripts/test_otp.py); this handler checks the request, sends the
 // code through an injected sender, and on the right code links the phone to the caller's own user, so the guest orders stay with the account.
 import { assertEquals } from "jsr:@std/assert@1";
-import { makeHandler, type Deps } from "./index.ts";
+import { makeHandler, withFixedCode, type Deps } from "./index.ts";
 
 const sent: unknown[][] = [];
 const linked: unknown[][] = [];
@@ -118,4 +118,34 @@ Deno.test("claim: a refusal from the database keeps its code, and a failure is 5
   assertEquals([refused.status, (await refused.json()).error], [502, "claim_failed"]);
   const dead = await post(makeHandler(deps({ claim: () => Promise.reject(new Error("password=secret")) })), "claim", { guest_token: "guest-tok" }, { token: "old-tok" });
   assertEquals([dead.status, await dead.json()], [502, { ok: false, error: "otp_unavailable" }]);
+});
+
+// Story #665: until the owner clicks an SMS provider the code is fixed (env OTP_FIXED_CODE). The send rules still run; only `check` accepts the fixed code.
+Deno.test("fixed code: check accepts it for any number without the database, and a wrong code still reaches the database", async () => {
+  const asked: unknown[][] = [];
+  const base = deps({ check: async (...a) => { asked.push(a); return { ok: false, error: "wrong_code", message: "That code is not right." }; } });
+  const fixed = withFixedCode(base, "123456");
+  assertEquals(await fixed.check("9876543210", "123456"), { ok: true, phone: "9876543210" });
+  assertEquals(asked.length, 0);
+  assertEquals((await fixed.check("9876543210", "654321")).ok, false);
+  assertEquals(asked.length, 1);
+});
+
+Deno.test("fixed code: issue and sms are untouched, so the send rules hold", async () => {
+  const base = deps({ issue: async () => ({ ok: false, error: "too_many_sends", message: "m" }) });
+  const fixed = withFixedCode(base, "123456");
+  assertEquals((await fixed.issue("9876543210")).ok, false);
+});
+
+Deno.test("fixed code: no env or a code that is not six digits changes nothing", () => {
+  const base = deps();
+  assertEquals(withFixedCode(base, undefined), base);
+  assertEquals(withFixedCode(base, "12345"), base);
+});
+
+Deno.test("fixed code: a handler with it signs a number in on 123456", async () => {
+  linked.length = 0;
+  const res = await post(makeHandler(withFixedCode(deps({ check: async () => ({ ok: false, error: "wrong_code", message: "m" }) }), "123456")), "verify", { phone: "9876543210", code: "123456" });
+  assertEquals(res.status, 200);
+  assertEquals(linked.length, 1);
 });
