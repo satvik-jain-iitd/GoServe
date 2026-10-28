@@ -39,7 +39,9 @@ test("S1 rehearsal: pin, menu, two dishes, bill, place order, the demo city deli
 
   await step("1 pin and See the menu", async () => {
     await page.goto("/customer/");
-    await page.getByLabel("Your pin code").fill(PIN);
+    await page.getByRole("button", { name: "Type it by hand" }).click();   // story #668
+    await page.getByLabel("Address · food gets delivered here").fill("Flat 4, Green Park, rehearsal");
+    await page.getByLabel("Pin code").fill(PIN);
     await page.getByRole("button", { name: "See the menu" }).click();
     await page.getByRole("button", { name: /^Add / }).first().waitFor({ timeout: 20_000 });
   });

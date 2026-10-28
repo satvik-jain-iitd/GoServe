@@ -73,7 +73,7 @@ test("S6 Forget me asks first, then wipes what the phone remembers", async ({ pa
   expect(await page.evaluate(() => localStorage.getItem("gs-pin"))).toBe("110016");
   await page.getByRole("button", { name: "Forget me on this phone" }).click();
   await page.getByRole("button", { name: "Yes, forget" }).click();
-  await expect(page.getByRole("heading", { name: "Where do we deliver?" })).toBeVisible();   // after the reload the phone asks for the pin again
+  await expect(page.getByRole("heading", { name: "Where does the food go?" })).toBeVisible();   // after the reload the phone asks for the pin again
   expect(await page.evaluate(() => localStorage.getItem("gs-pin"))).toBeNull();
 });
 
