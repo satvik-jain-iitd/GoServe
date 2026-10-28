@@ -10,7 +10,7 @@ export default defineConfig({
   use: { baseURL: "http://localhost:4180" },
   projects: [
     { name: "chromium", use: { ...devices["Pixel 7"] }, testIgnore: /\.webkit\.spec\.ts$/ },
-    { name: "webkit", use: { ...devices["iPhone 13"] }, testMatch: /\.webkit\.spec\.ts$/ },   // story #616: the iPhone engine, for the few things that differ there (the switch)
+    { name: "webkit", use: { ...devices["iPhone 13"], serviceWorkers: "block" }, testMatch: /\.webkit\.spec\.ts$/ },   // story #616: the iPhone engine, for the few things that differ there (the switch). Story #646: in WebKit a request the service worker handles can skip context.route and reach the real network, so no service worker here.
   ],
   webServer: {
     // Test keys are baked into the build; the specs answer those hosts themselves.
