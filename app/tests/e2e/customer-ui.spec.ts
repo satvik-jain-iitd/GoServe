@@ -107,3 +107,15 @@ test("S7 the bill says cash at the door in plain words", async ({ page, context 
   await page.getByLabel("Address").fill("Flat 4");
   await expect(page.getByText("Pay the rider cash at the door.")).toBeVisible();
 });
+
+// Story #653 (row T3): the rider card is the same light box; its text is ink in Day and Night.
+for (const theme of ["day", "night"]) {
+  test(`S-653 ${theme}: the rider card text is ink on the box`, async ({ page, context }) => {
+    await context.addInitScript((t) => { try { localStorage.setItem("gs-theme", t); } catch { /* the default theme shows */ } }, theme);
+    const net = await setup(context, page, [order("out_for_delivery", "2020-01-01T10:05:00Z")]);
+    net.state.riderCard = { name: "Ravi", phone: "9876500000" };
+    await page.goto("/customer/");
+    await expect(page.getByTestId("rider-card")).toContainText("Ravi");
+    expect(await page.getByTestId("rider-card").evaluate((el) => getComputedStyle(el).color)).toBe("rgb(38, 53, 40)");
+  });
+}

@@ -39,7 +39,7 @@ textarea { font: inherit; padding: var(--gs-space-3); border: 1px solid var(--md
 .actions { display: flex; gap: var(--gs-space-3); justify-content: space-between; }
 .total { font-size: var(--gs-text-lg); }
 .note { color: var(--gs-text-muted); font-size: var(--gs-text-sm); }
-.notice { background: var(--md-tertiary-container); padding: var(--gs-space-3); border-radius: var(--gs-radius-m); margin: var(--gs-space-3) 0; }
+.notice { background: var(--md-tertiary-container); color: var(--md-on-tertiary-container); padding: var(--gs-space-3); border-radius: var(--gs-radius-m); margin: var(--gs-space-3) 0; }
 .error { background: var(--md-error); color: var(--md-on-error); padding: var(--gs-space-3); border-radius: var(--gs-radius-m); }
 
 /* Role switch and kitchen tickets (story #49). */
@@ -48,7 +48,9 @@ textarea { font: inherit; padding: var(--gs-space-3); border: 1px solid var(--md
 .ticket { background: var(--md-surface); border-radius: var(--gs-radius-m); padding: var(--gs-space-4); box-shadow: var(--gs-shadow-s); display: grid; gap: var(--gs-space-2); }
 .ticket-head { display: flex; justify-content: space-between; align-items: center; }
 .ticket-lines { display: grid; gap: var(--gs-space-1); }
-.badge { padding: var(--gs-space-1) var(--gs-space-3); border-radius: var(--gs-radius-pill); background: var(--md-secondary-container); font-size: var(--gs-text-sm); font-weight: 600; }
+/* Story 653, board N1: the ghost button inside the light box is ink too (lime on lime would vanish on Night). */
+.notice .ui-btn.ghost { color: var(--md-on-tertiary-container); border-color: var(--md-on-tertiary-container); }
+.badge { padding: var(--gs-space-1) var(--gs-space-3); border-radius: var(--gs-radius-pill); background: var(--md-secondary-container); color: var(--md-on-secondary-container); font-size: var(--gs-text-sm); font-weight: 600; }
 .badge.placed { background: var(--gs-status-placed); }
 .badge.accepted { background: var(--gs-status-accepted); }
 .badge.preparing { background: var(--gs-status-cooking); }
