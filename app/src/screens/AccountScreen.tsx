@@ -11,17 +11,16 @@ type Props = {
   alerts: "ask" | "on" | "off" | "none"; onAlerts: () => void; alertsError?: string | null;
   live: { label: string; no: string; onOpen: () => void } | null;
   onGivenName: (name: string) => void;   // story 527: the Google first name fills an empty name
-  onShare: () => Promise<string | null>; onForget: () => void;
+  onForget: () => void;
   onMenu: () => void; onOrders: () => void;
 };
 
 const store = (): Storage | null => { try { return window.localStorage; } catch { return null; } };
 
-export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAddress, alerts, onAlerts, alertsError, live, onGivenName, onShare, onForget, onMenu, onOrders }: Props) {
+export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAddress, alerts, onAlerts, alertsError, live, onGivenName, onForget, onMenu, onOrders }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({ name, phone, address });   // story 640: Edit opens a draft; Save applies it, Cancel drops it
   const [look, setLook] = useState<Theme>(() => readPin(store()) ?? DEFAULT_THEME);
-  const [note, setNote] = useState<string | null>(null);
   const [sure, setSure] = useState(false);
   const pick = (t: Theme) => { pinTheme(store(), document, t === DEFAULT_THEME ? null : t); setLook(t); };   // Day is the default, not a pin (#225)
   const row = (label: string, value: string, mono = false) => (<><dt className="mono">{label}</dt><dd className={mono ? "mono" : undefined}>{value || "Not saved yet"}</dd></>);
@@ -29,7 +28,6 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
     <>
       <header className="ui-head">
         <h1>You</h1>
-        <span className="meta">No account needed</span>
       </header>
       {live && <button type="button" className="ui-live" onClick={live.onOpen}><span className="tag">{live.label}</span><span className="mono">No. {live.no}</span><span className="go" aria-hidden="true">›</span></button>}
       <div className="ui-scroll ui-account">
@@ -64,14 +62,12 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
             <button type="button" className={look === "night" ? "ui-chip on" : "ui-chip"} aria-pressed={look === "night"} onClick={() => pick("night")}>Night</button>
           </div>
         </section>
-        <button type="button" className="ui-row" onClick={async () => setNote(await onShare())}><span>Use on another phone</span><span className="go" aria-hidden="true">›</span></button>
         <button type="button" className="ui-row" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}><span className="ui-row-label"><span>Send feedback</span><span className="ui-row-sub">Two lines and a screenshot. We read every note.</span></span><span className="go" aria-hidden="true">›</span></button>
         {sure ? (
           <div className="ui-row ui-row-static"><span>Forget your details on this phone?</span><span className="ui-ask-act"><button type="button" className="ui-btn" onClick={onForget}>Yes, forget</button><button type="button" className="ui-btn ghost" onClick={() => setSure(false)}>No</button></span></div>
         ) : (
           <button type="button" className="ui-row" onClick={() => setSure(true)}><span>Forget me on this phone</span><span className="go" aria-hidden="true">›</span></button>
         )}
-        {note && <p role="status" className="ui-note">{note}</p>}
         <p className="mono ui-legal"><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
         <p className="mono ui-legal">{buildLabel(import.meta.env.VITE_BUILD)}</p>
       </div>

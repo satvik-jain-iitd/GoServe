@@ -77,14 +77,14 @@ test("S6 Forget me asks first, then wipes what the phone remembers", async ({ pa
   expect(await page.evaluate(() => localStorage.getItem("gs-pin"))).toBeNull();
 });
 
-test("S7 Use on another phone copies the link", async ({ page, context }) => {
-  await context.addInitScript(() => { (window as any).__copied = ""; Object.defineProperty(navigator, "clipboard", { value: { writeText: async (t: string) => { (window as any).__copied = t; } }, configurable: true }); Object.defineProperty(navigator, "share", { value: undefined, configurable: true }); });
+// Story #666 (copy audit G.1, G.9, G.10; owner 28 Oct): the account carries the orders now, so there is no link to open on another phone and no "No account needed".
+test("S7 You has no Use on another phone row and no No account needed line", async ({ page, context }) => {
   await setup(context, page);
   await page.goto("/customer/");
   await you(page).click();
-  await page.getByRole("button", { name: "Use on another phone" }).click();
-  await expect(page.getByText("Link copied")).toBeVisible();
-  expect(await page.evaluate(() => (window as any).__copied)).toContain("join=");
+  await expect(page.getByRole("heading", { name: "You", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Use on another phone" })).toHaveCount(0);
+  await expect(page.locator("body")).not.toContainText("No account needed");
 });
 
 for (const t of ["day", "night"] as const) {
