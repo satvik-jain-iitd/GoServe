@@ -23,7 +23,7 @@ test("S2 You shows the details, and Edit delivery details changes them", async (
   await you(page).click();
   await page.getByRole("button", { name: "Edit delivery details" }).click();
   await page.getByLabel("Your name").fill("Asha Rao");
-  await page.getByRole("button", { name: "Done" }).click();
+  await page.getByRole("button", { name: "Save" }).click();
   await expect(page.getByTestId("account")).toContainText("Asha Rao");
 });
 

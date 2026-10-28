@@ -4,7 +4,7 @@ import { ensureSession, getClient } from "../lib/supabase";
 import { Button } from "../ui";
 
 // One line under the title: "Continue with Google", or "Signed in as <name>". No password, no email form.
-export function SignIn({ mode = "link", onGivenName }: { mode?: "link" | "signin"; onGivenName?: (name: string) => void }) {
+export function SignIn({ mode = "link", onGivenName, help }: { mode?: "link" | "signin"; onGivenName?: (name: string) => void; help?: string }) {
   const [name, setName] = useState<string | null>(null);
   const [back] = useState(() => friendlyAuth(window.location.search, window.location.hash));
   const [error, setError] = useState<string | null>(back?.message ?? null);
@@ -31,6 +31,7 @@ export function SignIn({ mode = "link", onGivenName }: { mode?: "link" | "signin
         onClick={async () => { rememberReturn(); await ensureSession().catch(() => {}); setError(await linkGoogle(getClient(), window.location.href.split("?")[0], mode)); }}>
         Continue with Google
       </Button>
+      {help && <p className="ui-google-help">{help}</p>}
       {error && <p role="alert">{error}</p>}
     </div>
   );
