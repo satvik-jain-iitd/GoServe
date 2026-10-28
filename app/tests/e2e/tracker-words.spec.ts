@@ -14,9 +14,11 @@ test("S1 the clock line is 12-hour and the address is in normal case", async ({ 
 });
 
 test("S2 a cancelled order says there is nothing to pay and offers Order again", async ({ page, context }) => {
-  await setup(context, page, [order("cancelled", "2020-01-01T10:01:00Z")]);
+  const net = await setup(context, page, [order("placed")]);
   await page.goto("/customer/");
-  await expect(page.getByText("Your order was cancelled. Nothing to pay.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
+  net.push("UPDATE", order("cancelled", "2020-01-01T10:01:00Z"));
+  await expect(page.getByText("Your order was cancelled. Nothing to pay.")).toBeVisible({ timeout: 5000 });
   await expect(page.getByRole("button", { name: "Order again" })).toBeVisible();
 });
 
@@ -46,8 +48,10 @@ test("S5 the Orders empty state has the new words", async ({ page, context }) =>
 });
 
 test("S6 a delivered order ends with the thank-you and no Paid tail", async ({ page, context }) => {
-  await setup(context, page, [{ ...order("delivered", new Date().toISOString(), new Date().toISOString()), paid_by: "cash" }]);
+  const net = await setup(context, page, [order("placed")]);
   await page.goto("/customer/");
-  await expect(page.getByText("Delivered. Thank you for eating with GoServe.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
+  net.push("UPDATE", { ...order("delivered", new Date().toISOString()), paid_by: "cash" });
+  await expect(page.getByText("Delivered. Thank you for eating with GoServe.")).toBeVisible({ timeout: 5000 });
   await expect(page.locator("body")).not.toContainText("Paid: cash");
 });
