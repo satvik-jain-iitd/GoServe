@@ -131,7 +131,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-live .mono { flex: 1; font-size: var(--gs-mono-sm); }
 .ui-live .go { color: var(--md-primary); font-size: 20px; line-height: 1; }
 /* Switch: a real checkbox drawn as a printed toggle */
-.ui-switch { position: relative; width: 52px; height: 32px; margin: 0; appearance: none; border: 1px solid var(--md-outline); border-radius: var(--gs-radius-pill); background: var(--md-surface); cursor: pointer; transition: background 120ms ease; }
+.ui-switch { position: relative; flex: none; width: 52px; height: 32px; margin: 0; appearance: none; border: 1px solid var(--md-outline); border-radius: var(--gs-radius-pill); background: var(--md-surface); cursor: pointer; transition: background 120ms ease; }
 .ui-switch::before { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 999px; background: var(--md-primary); transition: transform 120ms ease; }
 .ui-switch:checked { background: var(--md-primary); border-color: var(--md-primary); }
 .ui-switch:checked::before { background: var(--md-on-primary); transform: translateX(20px); }
@@ -181,8 +181,8 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-hero .page { flex: none; width: 100%; scroll-snap-align: start; scroll-margin-top: 16px; }
 .ui-hero .price-pair { display: flex; align-items: baseline; gap: var(--gs-space-2); }
 .ui-hero .price-pair .was { font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); color: var(--gs-text-muted); text-decoration: line-through; }
-.ui-seg { position: absolute; top: 12px; right: 12px; z-index: 1; display: grid; grid-template-columns: 44px 44px; overflow: hidden; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-pill); background: var(--md-surface); }
-.ui-seg a { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; text-decoration: none; color: var(--md-on-surface); }
+.ui-seg { position: absolute; top: 12px; right: 12px; z-index: 1; display: grid; grid-template-columns: 46px 46px; padding: 3px; box-sizing: border-box; overflow: hidden; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-pill); background: var(--md-surface); }
+.ui-seg a { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; border-radius: var(--gs-radius-pill); text-decoration: none; color: var(--md-on-surface); }
 .ui-seg a svg { width: 16px; height: 16px; }
 .ui-seg a.on, .ui-hero:has(#thali-nonveg:target) .ui-seg a.nonveg { background: var(--gs-cream); box-shadow: inset 0 0 0 2px var(--md-primary); }   /* story 528: cream with a ring, so the green and red marks stay readable */
 .ui-hero:has(#thali-nonveg:target) .ui-seg a.on { background: transparent; box-shadow: none; }
@@ -290,6 +290,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-row-label { display: flex; flex-direction: column; gap: 2px; padding: var(--gs-space-2) 0; }
 .ui-row-label > span:first-child { font-weight: 600; }
 .ui-row-sub { font-size: var(--gs-text-sm); color: var(--gs-text-muted); }
+.ui-row-sub.mono { font-size: 12px; text-transform: none; }   /* story 616, board K-YourKitchen: one quiet 12 px line in sentence case, not shouting capitals */
 .ui-look { display: flex; flex-direction: column; gap: var(--gs-space-2); padding: var(--gs-space-4) 0; border-bottom: 1px solid var(--md-outline-variant); }
 .ui-look h2 { margin: 0; font-size: var(--gs-mono-sm); font-weight: 400; color: var(--gs-text-muted); }
 .ui-look .ui-chips { margin: 0; }
@@ -316,12 +317,15 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 
 /* Kitchen app, boards K3 to K6 (story H11) */
 .ui-tickets { padding: 0 var(--gs-gutter) var(--gs-space-4); }
-.ui-ticket { display: flex; align-items: center; gap: var(--gs-space-3); padding: var(--gs-space-3) 0; border-bottom: 1px solid var(--md-outline-variant); }
-.ui-ticket-open { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 0; border: 0; background: none; color: inherit; text-align: left; font: inherit; cursor: pointer; }
-.ui-ticket-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: var(--gs-mono-sm); }
-.ui-ticket-big { font-size: var(--gs-text-staff); }
-.ui-ticket-wait { flex: none; font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
-.ui-ticket .ui-btn { flex: none; width: auto; min-width: 96px; }
+/* Story 618, boards K2-Tickets and K2-Cooking: one grid on New, Cooking and Ready. Left: number line (one line) + tag, then the lines at 20 px. Right: the action, 112 px, or the rider. */
+.ui-ticket { display: grid; grid-template-columns: 1fr 112px; gap: 12px; align-items: start; padding: 14px 0; border-bottom: 1px solid var(--md-outline-variant); }
+.ui-ticket-open { min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 0; border: 0; background: none; color: inherit; text-align: left; font: inherit; cursor: pointer; }
+.ui-ticket-head { display: flex; justify-content: flex-start; align-items: center; gap: 8px; white-space: nowrap; font-size: 12px; }
+.ui-ticket-head .mono { font-size: 12px; color: var(--gs-text-muted); white-space: nowrap; }
+.ui-ticket .ui-slip-lines { font-size: 20px; line-height: 1.3; text-transform: none; }
+.ui-ticket-big { font-size: 20px; }
+.ui-ticket-wait { width: 112px; display: flex; flex-direction: column; align-items: flex-end; text-align: right; font-size: 12px; color: var(--gs-text-muted); }
+.ui-ticket .ui-btn { width: 112px; min-width: 0; box-sizing: border-box; justify-content: center; }
 .ui-group { padding-top: var(--gs-space-4); }
 .ui-group h2 { margin: 0 0 var(--gs-space-2); font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); text-transform: uppercase; color: var(--gs-text-muted); }
 .ui-dish-name { display: inline-flex; align-items: center; gap: 10px; }

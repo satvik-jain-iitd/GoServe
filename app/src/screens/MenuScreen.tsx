@@ -56,7 +56,7 @@ export function MenuScreen(p: Props) {
         {p.fromCache && <p className="notice">Showing the saved menu (offline).</p>}
         {p.error && <p role="alert" className="error ui-pad">{p.error}</p>}
         {p.dishes === null && !p.error && <Loading />}
-        {p.dishes !== null && (thali.veg || thali.nonveg) && <Hero veg={thali.veg} nonveg={thali.nonveg} closed={closed} qty={p.qty} onAdd={p.onAdd} />}
+        {p.dishes !== null && (thali.veg || thali.nonveg) && <Hero veg={thali.veg} nonveg={thali.nonveg} closed={closed} qty={p.qty} onAdd={p.onAdd} onChange={p.onChange} />}
         {p.dishes !== null && shown.length === 0 && <div className="ui-pad"><Empty title="Nothing matches" hint="Try another word or clear the filters." /></div>}
         {sections.map((s) => (
           <div key={s.id} className={closed ? "ui-dim" : undefined}>
@@ -110,13 +110,16 @@ function Loading() {
   );
 }
 
-function Hero({ veg, nonveg, closed, qty, onAdd }: { veg?: Dish; nonveg?: Dish; closed: boolean; qty: Record<string, number>; onAdd: (id: string) => void }) {
+function Hero({ veg, nonveg, closed, qty, onAdd, onChange }: { veg?: Dish; nonveg?: Dish; closed: boolean; qty: Record<string, number>; onAdd: (id: string) => void; onChange: (id: string, delta: number) => void }) {
+  // Story #608: the thali card has the same Add and stepper as every other dish.
   const page = (d: Dish, id: string) => (
     <div className="page" id={id} key={id}>
       <div className="photo">{d.image_url && <img src={d.image_url} alt={d.name} />}<span className="ui-tag">Today</span></div>
       <div className="body">
         <div><h3>{d.veg !== undefined && <VegMark veg={d.veg} />}{d.name}</h3><p className="price-pair"><span className="ui-price">{formatRupees(d.price_paise)}</span></p></div>
-        <button type="button" className="ui-btn" aria-label={`Add ${d.name}`} disabled={closed} onClick={() => onAdd(d.id)}>{(qty[d.id] ?? 0) > 0 ? `Added ${qty[d.id]}` : "Add"}</button>
+        {(qty[d.id] ?? 0) > 0
+          ? <Stepper label={d.name} value={qty[d.id]} onChange={(n) => onChange(d.id, n - qty[d.id])} />
+          : <button type="button" className="ui-btn" aria-label={`Add ${d.name}`} disabled={closed} onClick={() => onAdd(d.id)}>Add</button>}
       </div>
     </div>
   );
