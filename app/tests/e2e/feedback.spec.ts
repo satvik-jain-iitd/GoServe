@@ -66,3 +66,16 @@ test("the floating button is on the console only; the role apps carry a Send fee
     await expect(page.getByRole("button", { name: "Feedback", exact: true })).toHaveCount(0);
   }
 });
+
+// Story #636 (row T3): the native select draws its chevron in the page's colour scheme; on Night it stayed black. The select takes the dark scheme on Night.
+for (const theme of ["day", "night"]) {
+  test(`S-636 ${theme}: the Feedback select follows the theme's colour scheme`, async ({ page, context }) => {
+    await context.addInitScript((t) => { try { localStorage.setItem("gs-theme", t); } catch { /* the default theme shows */ } }, theme);
+    const net = await setup(context, page, [order("accepted")]);
+    net.state.kitchen = "k-1";
+    await openFeedback(page);
+    const scheme = await page.getByLabel("What were you doing?").evaluate((el) => getComputedStyle(el).colorScheme);
+    if (theme === "night") expect(scheme).toContain("dark");
+    else expect(scheme).not.toContain("dark");
+  });
+}
