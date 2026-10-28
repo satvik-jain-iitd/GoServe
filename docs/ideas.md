@@ -58,3 +58,4 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - ID270 (2026-10-27, open, later): the flames under the tawa become the zigzag.
 - ID271 (2026-10-27, open → design, after the owner picks a launch motion): Night lamp flicker-on instead of the swing; the owner leans to flicker. Related: ID225.
 - ID272 (2026-10-27, open, later): how often the launch story plays follows how the person uses the app. Today it plays once per day on the first open.
+- ID273 (2026-10-28, open → design, after the owner marks the copy audit): proofread the whole customer app for the job of every word, line, icon and image (the Owner column of `docs/product/copy-audit.md`). Related: #643.
