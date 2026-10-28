@@ -63,3 +63,17 @@ test("S4c back from Google the customer app opens on You, not the menu (story #6
   await page.goto("/customer/");
   await expect(page.getByRole("heading", { name: "You" })).toBeVisible();
 });
+
+// Story #653 (row T3): the signed-in line and its Sign out button are ink on the light box, Day and Night (board N1). White on lime was unreadable on Night.
+for (const theme of ["day", "night"]) {
+  test(`S-653 ${theme}: the signed-in line and Sign out are ink on the box`, async ({ page, context }) => {
+    await context.addInitScript((t) => { try { localStorage.setItem("gs-theme", t); } catch { /* the default theme shows */ } }, theme);
+    await setup(context, page, []);
+    await context.route("https://test.supabase.co/auth/v1/user", (r) => r.request().method() === "OPTIONS" ? r.fulfill({ status: 204, headers: CORS }) : r.fulfill({ status: 200, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(user({ is_anonymous: false, email: "asha@example.com", user_metadata: { full_name: "Asha Rao" } })) }));
+    await page.goto("/");
+    const colour = (loc: import("@playwright/test").Locator) => loc.evaluate((el) => { const s = getComputedStyle(el); return { color: s.color, border: s.borderTopColor }; });
+    expect((await colour(page.getByTestId("signed-in"))).color).toBe("rgb(38, 53, 40)");
+    const out = await colour(page.getByRole("button", { name: "Sign out" }));
+    expect(out).toEqual({ color: "rgb(38, 53, 40)", border: "rgb(38, 53, 40)" });
+  });
+}
