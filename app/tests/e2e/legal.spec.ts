@@ -12,7 +12,7 @@ for (const [path, heading] of [["/privacy/", "Privacy policy"], ["/terms/", "Ter
     const html = await (await request.get(path)).text();
     expect(html).toContain(`<h1>${heading}</h1>`);
     expect(html).not.toContain('id="root"');
-    expect(html).toContain("klickbae8yt@gmail.com");
+    expect(html).toContain("avinturetech@gmail.com");
     expect(html).toContain('<a href="/customer/">Back to GoServe</a>');   // not the demo console at /
     await page.goto(path);
     await expect(page.getByRole("heading", { name: heading })).toBeVisible();

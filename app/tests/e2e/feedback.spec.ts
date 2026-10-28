@@ -20,7 +20,7 @@ test("S1 a report with a screenshot: words, kind of work, order, trail and pictu
   net.state.kitchen = "k-1";
   await openFeedback(page);
   await page.getByLabel("What happened?").fill("Accept button did nothing");
-  await page.getByLabel("What were you doing?").selectOption("cooking");
+  await page.getByLabel("What were you doing?").selectOption("Cooking");
   await page.getByLabel("Add a screenshot").setInputFiles({ name: "shot.png", mimeType: "image/png", buffer: PNG });
   await page.getByRole("button", { name: "Send" }).click();
   await expect(page.getByRole("dialog", { name: "Feedback" })).toHaveCount(0);   // story #642: the sheet closes
