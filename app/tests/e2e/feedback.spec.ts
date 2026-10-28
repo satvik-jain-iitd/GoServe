@@ -23,7 +23,10 @@ test("S1 a report with a screenshot: words, kind of work, order, trail and pictu
   await page.getByLabel("What were you doing?").selectOption("cooking");
   await page.getByLabel("Add a screenshot").setInputFiles({ name: "shot.png", mimeType: "image/png", buffer: PNG });
   await page.getByRole("button", { name: "Send" }).click();
-  await expect(page.getByText("Thanks, saved.")).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Feedback" })).toHaveCount(0);   // story #642: the sheet closes
+  const card = page.getByTestId("feedback-sent");
+  await expect(card).toContainText("Sent. Thank you.");
+  await expect(card).toContainText("The GoServe team reads every note. Yours makes the app better for everyone.");
   expect(net.calls.feedback).toHaveLength(1);
   const sent = net.calls.feedback[0];
   expect(sent.headers["x-gs-token"]).toBe("demo-token");
@@ -38,7 +41,7 @@ test("S2 a report without a screenshot sends no picture", async ({ page, context
   await openFeedback(page);
   await page.getByLabel("What happened?").fill("The card is hard to read");
   await page.getByRole("button", { name: "Send" }).click();
-  await expect(page.getByText("Thanks, saved.")).toBeVisible();
+  await expect(page.getByTestId("feedback-sent")).toContainText("Sent. Thank you.");
   expect("image_b64" in net.calls.feedback[0].body).toBe(false);
 });
 
@@ -49,12 +52,30 @@ test("S3 an offline report waits on the phone and is sent when the phone is back
   net.state.feedbackDown = true;
   await page.getByLabel("What happened?").fill("Lost signal in the kitchen");
   await page.getByRole("button", { name: "Send" }).click();
-  await expect(page.getByText("Saved on this phone. It will send when you are back online.")).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Feedback" })).toHaveCount(0);
+  const saved = page.getByTestId("feedback-sent");
+  await expect(saved).toContainText("Saved on this phone.");
+  await expect(saved).toContainText("It goes to the team the moment you are back online.");
   expect(net.calls.feedback).toHaveLength(0);
   net.state.feedbackDown = false;
   await page.evaluate(() => window.dispatchEvent(new Event("online")));
   await expect.poll(() => net.calls.feedback.length).toBe(1);
   expect(net.calls.feedback[0].body.text).toBe("Lost signal in the kitchen");
+});
+
+test("S4 a server failure keeps the sheet open with the words and the file, shows the error and lets the customer send again (story #642)", async ({ page, context }) => {
+  const net = await setup(context, page, [order("accepted")]);
+  net.state.kitchen = "k-1";
+  await openFeedback(page);
+  net.state.reply = { status: 500, body: { ok: false, error: "server", message: "We could not send that. Please try again." } };
+  await page.getByLabel("What happened?").fill("Nothing happens on Pay");
+  await page.getByLabel("Add a screenshot").setInputFiles({ name: "shot.png", mimeType: "image/png", buffer: PNG });
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByRole("alert")).toContainText("Please try again");
+  await expect(page.getByRole("dialog", { name: "Feedback" })).toBeVisible();
+  await expect(page.getByLabel("What happened?")).toHaveValue("Nothing happens on Pay");
+  await expect(page.getByTestId("feedback-sent")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Send" })).toBeEnabled();
 });
 
 test("the floating button is on the console only; the role apps carry a Send feedback row instead (story #242)", async ({ page, context }) => {

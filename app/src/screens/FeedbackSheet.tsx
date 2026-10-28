@@ -1,7 +1,7 @@
 // The Feedback button and its sheet (story S-B, #94). A tester tells us what went wrong in ten seconds, without leaving the app.
 // The picture is the phone's own screenshot, picked from the gallery. The words, the screen, the order and the last 20 taps go with it.
 import { useEffect, useState } from "react";
-import { buildPayload, DOING, flushQueue, pictureToBase64, queueReport, TEXT_MAX, type Doing, type Report } from "../lib/feedback";
+import { buildPayload, DOING, flushQueue, pictureToBase64, queueReport, SAVED_CARD, SENT_CARD, TEXT_MAX, type Doing, type Report } from "../lib/feedback";
 import { PlaceError } from "../lib/orders";
 import { readTrail } from "../lib/trail";
 
@@ -24,24 +24,32 @@ export function FeedbackSheet({ role, screen, order, getSession, send, preset, b
   const [doing, setDoing] = useState<Doing>("other");
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [card, setCard] = useState<{ title: string; line: string } | null>(null);   // story #642: shown after the sheet closes
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!preset) return;
     setText(preset.text);
     setDoing(preset.doing);
-    setMessage(null);
     setError(null);
     setOpen(true);
   }, [preset?.nonce]);
 
   // The You screen opens the sheet with an event (story H10d).
   useEffect(() => {
-    const show = () => { setMessage(null); setError(null); setOpen(true); };
+    const show = () => { setError(null); setOpen(true); };
     window.addEventListener("gs-feedback", show);
     return () => window.removeEventListener("gs-feedback", show);
   }, []);
+
+  // The card goes after 6 s or at the next tap anywhere.
+  useEffect(() => {
+    if (!card) return;
+    const t = window.setTimeout(() => setCard(null), 6000);
+    const away = () => setCard(null);
+    document.addEventListener("pointerdown", away);
+    return () => { window.clearTimeout(t); document.removeEventListener("pointerdown", away); };
+  }, [card]);
 
   // Reports saved while the phone was offline go out when the app opens and when the phone is back online.
   useEffect(() => {
@@ -54,20 +62,21 @@ export function FeedbackSheet({ role, screen, order, getSession, send, preset, b
   async function submit() {
     setBusy(true);
     setError(null);
-    setMessage(null);
+    setCard(null);
     try {
       const image = file ? await pictureToBase64(file) : undefined;
       const report = buildPayload({ text, doing, role, screen, session: await getSession(), order, build: BUILD, phone: phoneName(), online: navigator.onLine, now: new Date(), trail: readTrail(), image });
       try {
         await send(report);
-        setMessage("Thanks, saved.");
+        setCard(SENT_CARD);
       } catch (e) {
         if (!(e instanceof PlaceError && e.code === "network")) throw e;
         if (!queueReport(window.localStorage, report)) throw new Error("This phone has no room to keep the report. Try again when you are online.");
-        setMessage("Saved on this phone. It will send when you are back online.");
+        setCard(SAVED_CARD);
       }
       setText("");
       setFile(null);
+      setOpen(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
     } finally {
@@ -77,7 +86,7 @@ export function FeedbackSheet({ role, screen, order, getSession, send, preset, b
 
   return (
     <>
-      {button && <button type="button" className="btn small feedback-btn" onClick={() => { setOpen(true); setMessage(null); setError(null); }}>Feedback</button>}
+      {button && <button type="button" className="btn small feedback-btn" onClick={() => { setOpen(true); setError(null); }}>Feedback</button>}
       {open && (
         <div className="sheet-back">
           <div role="dialog" aria-modal="true" aria-label="Feedback" className="sheet">
@@ -94,7 +103,6 @@ export function FeedbackSheet({ role, screen, order, getSession, send, preset, b
               <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
               <span className="note">Take a screenshot with your phone buttons first, then pick it here. It is optional.</span>
             </label>
-            {message && <p role="status" className="note">{message}</p>}
             {error && <p role="alert" className="error">{error}</p>}
             <div className="demobar">
               <button type="button" className="btn" disabled={busy} onClick={submit}>{busy ? "Sending…" : "Send"}</button>
@@ -103,6 +111,7 @@ export function FeedbackSheet({ role, screen, order, getSession, send, preset, b
           </div>
         </div>
       )}
+      {card && <div role="status" className={`feedback-sent${button ? " above-btn" : ""}`} data-testid="feedback-sent"><div className="feedback-sent-title">{card.title}</div><div>{card.line}</div></div>}
     </>
   );
 }
