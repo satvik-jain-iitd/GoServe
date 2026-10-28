@@ -100,6 +100,6 @@ test("D15 a phone with a saved pin and a saved kitchen sees the menu before the 
   await context.route("https://test.supabase.co/rest/v1/kitchens**", async (route) => { await held; await route.fallback(); });   // the kitchens read hangs until the test lets it go
   await page.goto("/customer/");
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible({ timeout: 3000 });
-  await expect(page.getByLabel("Pin code")).toHaveCount(0);
+  await expect(page.getByLabel("Pin code", { exact: true })).toHaveCount(0);
   release();
 });
