@@ -37,7 +37,7 @@ describe("placeOrder", () => {
 
   it("explains a network failure in plain words", async () => {
     await expect(placeOrder(input, deps(async () => { throw new TypeError("Failed to fetch"); })))
-      .rejects.toMatchObject({ message: "No network. Check your connection and try again.", code: "network" });
+      .rejects.toMatchObject({ message: "No internet. Check your internet and try again.", code: "network" });
   });
 
   it("does not show raw server text when the answer is not the expected shape", async () => {

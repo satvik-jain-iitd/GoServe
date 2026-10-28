@@ -10,7 +10,7 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { confirmAndDelivered } from "./rehearsalEnd";
 
 const PIN = process.env.REHEARSAL_PIN ?? "110016";
-const ERROR_TEXT = /Not here yet|Closed now|Something went wrong|Could not|No network|is not set up|unavailable/i;
+const ERROR_TEXT = /Not here yet|Closed now|Something went wrong|Could not|No network|No internet|is not set up|unavailable/i;
 type Row = { step: string; pass: boolean; note: string; order: string | null; seconds: number };
 
 test("S1 rehearsal: pin, menu, two dishes, bill, place order, the demo city delivers, Yes I have it", async ({ page }, info) => {
