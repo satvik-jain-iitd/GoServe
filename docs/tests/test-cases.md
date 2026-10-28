@@ -408,3 +408,5 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | `switch.webkit.spec.ts` x30 | #646 | With the service worker blocked in the WebKit project, 30 of 30 runs pass (5 of 20 failed before). | e2e (webkit) | `app/playwright.config.ts` | pass |
 | login and Google sign-in specs | #635 | A Google sign-in failure shows plain words; the one-shot OAuth call lands on You. | e2e + unit | `app/tests/` (PR #639) | pass |
 | `kitchen-ink.spec.ts` select | #636 | The Feedback select takes the dark colour scheme on Night. | e2e | `app/tests/e2e/feedback.spec.ts` S-636 | pass |
+| `contrast.test.ts` (Day and Night, 28 pairs) | #653 | Every text and background pair the app draws reaches 4.5:1 (3:1 for stamps), computed from `tokens.css`; `.notice` and `.badge` take their text from the on-container tokens. | unit | `app/tests/unit/contrast.test.ts` | pass |
+| `login.spec.ts` S-653, `customer-ui.spec.ts` S-653 (Day and Night) | #653 | The signed-in line, the ghost Sign out and the rider card text are ink (`rgb(38, 53, 40)`) on the light box. | e2e | `app/tests/e2e/login.spec.ts`, `app/tests/e2e/customer-ui.spec.ts` | pass |
