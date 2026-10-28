@@ -287,6 +287,11 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-dl dd { margin: 0; }
 .ui-form-flush { padding: 0; }
 .ui-row-static { cursor: default; }
+/* Story 640, boards Y1 and Y2: the Google row sits 16 px under the details card, never over it; the card has no fixed height. */
+.ui-google { display: flex; flex-direction: column; gap: 6px; padding: 16px 0 12px; border-bottom: 1px solid var(--md-outline-variant); }
+.ui-google > div { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.ui-google-help { margin: 0; font-size: 13px; color: var(--gs-text-muted); }
+.ui-edit-actions { display: flex; gap: 8px; padding-top: 4px; }
 .ui-row-label { display: flex; flex-direction: column; gap: 2px; padding: var(--gs-space-2) 0; }
 .ui-row-label > span:first-child { font-weight: 600; }
 .ui-row-sub { font-size: var(--gs-text-sm); color: var(--gs-text-muted); }

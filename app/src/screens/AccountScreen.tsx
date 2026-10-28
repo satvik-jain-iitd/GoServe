@@ -19,6 +19,7 @@ const store = (): Storage | null => { try { return window.localStorage; } catch 
 
 export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAddress, alerts, onAlerts, alertsError, live, onGivenName, onShare, onForget, onMenu, onOrders }: Props) {
   const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({ name, phone, address });   // story 640: Edit opens a draft; Save applies it, Cancel drops it
   const [look, setLook] = useState<Theme>(() => readPin(store()) ?? DEFAULT_THEME);
   const [note, setNote] = useState<string | null>(null);
   const [sure, setSure] = useState(false);
@@ -37,9 +38,10 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
             <div className="ui-slip-head"><span>Delivery details</span><span>Used on your bill</span></div>
             {editing ? (
               <div className="ui-form ui-form-flush">
-                <div className="ui-field"><label htmlFor="acc-name">Your name</label><input id="acc-name" type="text" value={name} maxLength={80} onChange={(e) => onName(e.target.value)} /></div>
-                <div className="ui-field"><label htmlFor="acc-phone">Phone</label><input id="acc-phone" className="mono-input" type="tel" inputMode="numeric" maxLength={10} value={phone} onChange={(e) => onPhone(e.target.value.replace(/\D/g, ""))} /></div>
-                <div className="ui-field"><label htmlFor="acc-address">Address</label><textarea id="acc-address" rows={2} maxLength={300} value={address} onChange={(e) => onAddress(e.target.value)} /></div>
+                <div className="ui-field"><label htmlFor="acc-name">Your name</label><input id="acc-name" type="text" value={draft.name} maxLength={80} onChange={(e) => setDraft({ ...draft, name: e.target.value })} /></div>
+                <div className="ui-field"><label htmlFor="acc-phone">Phone</label><input id="acc-phone" className="mono-input" type="tel" inputMode="numeric" maxLength={10} value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value.replace(/\D/g, "") })} /></div>
+                <div className="ui-field"><label htmlFor="acc-address">Address</label><textarea id="acc-address" rows={2} maxLength={300} value={draft.address} onChange={(e) => setDraft({ ...draft, address: e.target.value })} /></div>
+                <div className="ui-edit-actions"><button type="button" className="ui-btn small" onClick={() => { onName(draft.name); onPhone(draft.phone); onAddress(draft.address); setEditing(false); }}>Save</button><button type="button" className="ui-btn ghost small" onClick={() => setEditing(false)}>Cancel</button></div>
               </div>
             ) : (
               <dl className="ui-dl" data-testid="account">
@@ -48,8 +50,8 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
             )}
           </div>
         </section>
-        <div className="ui-row ui-row-static"><SignIn onGivenName={onGivenName} /></div>
-        <button type="button" className="ui-row" onClick={() => setEditing(!editing)}><span>{editing ? "Done" : "Edit delivery details"}</span><span className="go" aria-hidden="true">›</span></button>
+        <div className="ui-google"><SignIn onGivenName={onGivenName} help="Keeps your orders on every phone." /></div>
+        {!editing && <button type="button" className="ui-row" onClick={() => { setDraft({ name, phone, address }); setEditing(true); }}><span>Edit delivery details</span><span className="go" aria-hidden="true">›</span></button>}
         <div className="ui-row ui-row-static">
           <label htmlFor="alerts" className="ui-row-label"><span>Order alerts</span><span className="ui-row-sub">{alerts === "none" ? "Blocked in your phone settings. Settings › Notifications › GoServe, then come back." : alerts === "on" ? "On for this phone" : alerts === "off" ? "Off for this phone. Tap to turn on." : "Tap to turn on"}</span></label>
           <input id="alerts" className="ui-switch" type="checkbox" role="switch" checked={alerts === "on"} disabled={alerts === "none"} onChange={onAlerts} />
