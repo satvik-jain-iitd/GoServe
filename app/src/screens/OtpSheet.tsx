@@ -2,11 +2,13 @@
 import { useEffect, useRef, useState } from "react";
 import { finishSignIn, isMobile, sendCode, sendSignInCode, showPhone, verifyCode, type OtpResult } from "../lib/otp";
 import { getClient } from "../lib/supabase";
+import { SignIn } from "./SignIn";
 
 const RESEND_S = 30;
 type Step = "number" | "code";
 
-export function OtpSheet({ phone: start, onVerified, onClose }: { phone: string; onVerified: (phone: string) => void; onClose: () => void }) {
+// `welcome` (story #667, boards O0 and O0b): the same steps as the first full screen of the app, with Google under the number and no way to close it.
+export function OtpSheet({ phone: start, onVerified, onClose, welcome = false }: { phone: string; onVerified: (phone: string) => void; onClose: () => void; welcome?: boolean }) {
   const [phone, setPhone] = useState(isMobile(start) ? start : "");
   const [step, setStep] = useState<Step>("number");
   const [mode, setMode] = useState<"link" | "signin">("link");   // signin = the returning customer (O7)
@@ -65,12 +67,32 @@ export function OtpSheet({ phone: start, onVerified, onClose }: { phone: string;
     boxes.current[Math.min(i + only.length, 5)]?.focus();
   }
 
-  return (
+  const frame = (inner: React.ReactNode) => welcome ? (
+    <main className="ui-welcome">
+      <header>
+        <h1><img className="ui-logo ui-lockup" src="/brand/lockup-day.png" alt="GoServe" width="350" height="50" /></h1>
+        <div className="ui-zigzag" aria-hidden="true" />
+        <p className="ui-welcome-kicker">Hot meals from our kitchen · cash at the door</p>
+      </header>
+      <section className="ui-slip" aria-label="Welcome"><div className="ui-slip-body">
+        <div className="ui-slip-head"><span>Welcome</span><span>Step 1 of 3</span></div>
+        {inner}
+      </div></section>
+      <p className="ui-welcome-foot">No app to install · no card needed</p>
+    </main>
+  ) : (
     <div className="ui-sheet-back">
-      <div role="dialog" aria-modal="true" aria-label="Confirm your number" className="ui-sheet">
+      <div role="dialog" aria-modal="true" aria-label="Confirm your number" className="ui-sheet">{inner}</div>
+    </div>
+  );
+  const head = (text: string) => (welcome ? <h2 className="ui-welcome-title">{text}</h2> : <div className="ui-sheet-head"><h2>{text}</h2></div>);
+
+  return frame(
+    <>
         {step === "number" ? (
           <>
-            <div className="ui-sheet-head"><h2>Your mobile number</h2></div>
+            {head(welcome ? "Where do we reach you?" : "Your mobile number")}
+            {welcome && <p className="ui-meta">Your mobile number, then a 6 digit code. The rider calls this number.</p>}
             <div className="ui-field">
               <label htmlFor="otp-phone">Mobile number</label>
               <div className="otp-phone"><span aria-hidden="true">+91</span>
@@ -78,12 +100,17 @@ export function OtpSheet({ phone: start, onVerified, onClose }: { phone: string;
                   onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "")); setError(null); }} /></div>
             </div>
             {error && <p role="alert" className="ui-field-error">{error.message}</p>}
-            <button type="button" className="ui-btn bar" disabled={!isMobile(phone) || busy || locked} onClick={() => send()}>Send code</button>
-            <button type="button" className="ui-btn ghost" onClick={onClose}>Not now</button>
+            <button type="button" className={welcome ? "ui-btn big" : "ui-btn bar"} disabled={!isMobile(phone) || busy || locked} onClick={() => send()}>Send code</button>
+            {welcome ? (
+              <>
+                <div className="ui-or" aria-hidden="true"><span /><span>or</span><span /></div>
+                <SignIn mode="signin" />
+              </>
+            ) : <button type="button" className="ui-btn ghost" onClick={onClose}>Not now</button>}
           </>
         ) : (
           <>
-            <div className="ui-sheet-head"><h2>Enter the 6 digit code</h2></div>
+            {head("Enter the 6 digit code")}
             <p className="ui-meta">Sent to {showPhone(phone)}{" "}
               <button type="button" className="ui-link" onClick={() => { setStep("number"); setMode("link"); setError(null); setPhone(""); }}>Change number</button></p>
             <div className="otp-boxes">
@@ -101,13 +128,12 @@ export function OtpSheet({ phone: start, onVerified, onClose }: { phone: string;
                 <button type="button" className="ui-btn ghost" onClick={() => { setStep("number"); setError(null); setPhone(""); }}>Use another number</button>
               </div>
             )}
-            <button type="button" className="ui-btn bar" disabled={code.length !== 6 || busy} onClick={verify}>Verify</button>
+            <button type="button" className={welcome ? "ui-btn big" : "ui-btn bar"} disabled={code.length !== 6 || busy} onClick={verify}>Verify</button>
             {wait > 0 ? <p role="timer" className="ui-meta">Resend code in 0:{String(wait).padStart(2, "0")}</p>
               : <button type="button" className="ui-btn ghost" disabled={busy || locked} onClick={() => send()}>Resend code</button>}
           </>
         )}
-      </div>
-    </div>
+    </>
   );
 }
 
