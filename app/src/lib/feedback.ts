@@ -8,6 +8,9 @@ export type Doing = (typeof DOING)[number];
 export const TEXT_MAX = 300;
 export const IMAGE_MAX_PX = 1280;
 export const IMAGE_MAX_BYTES = 1.5 * 1024 * 1024;
+// Story #642: the card after Send. Owner's words, kept in one place.
+export const SENT_CARD = { title: "Sent. Thank you.", line: "The GoServe team reads every note. Yours makes the app better for everyone." };
+export const SAVED_CARD = { title: "Saved on this phone.", line: "It goes to the team the moment you are back online." };
 const QUEUE_KEY = "gs-feedback-queue";
 const QUEUE_MAX = 5;
 
