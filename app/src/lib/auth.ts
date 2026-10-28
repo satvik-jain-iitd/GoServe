@@ -26,3 +26,22 @@ export async function linkGoogle(client: { auth: AuthLike }, redirectTo: string,
 // A failed link comes back with ?error_description=... (or in the hash). Show it once, then clear it from the address.
 export const authErrorFrom = (search: string, hash: string): string | null =>
   new URLSearchParams(search).get("error_description") ?? new URLSearchParams(hash.replace(/^#/, "")).get("error_description");
+
+// Story #635: a Google identity that is already on another user is not shown as an error: say so kindly and sign in to that user.
+// Any other failure gets our own line. The auth server's words never reach the screen.
+export const ALREADY_IN_USE = "This Google account is already in use. Signing you in.";
+export function friendlyAuth(search: string, hash: string): { message: string; signIn: boolean } | null {
+  const q = new URLSearchParams(search), h = new URLSearchParams(hash.replace(/^#/, ""));
+  const desc = q.get("error_description") ?? h.get("error_description"), code = q.get("error_code") ?? h.get("error_code");
+  if (desc === null && code === null) return null;
+  if (code === "identity_already_exists" || /already linked/i.test(desc ?? "")) return { message: ALREADY_IN_USE, signIn: true };
+  return { message: "Could not sign in with Google. Try again.", signIn: false };
+}
+
+// Back from Google the customer app opens on You (the tap came from there), not on the menu.
+const RETURN = "gs-return", TRIED = "gs-signin-tried";
+export const rememberReturn = (): void => { try { window.sessionStorage.setItem(RETURN, "account"); } catch { /* the menu opens */ } };
+export const takeReturn = (): boolean => { try { const v = window.sessionStorage.getItem(RETURN) === "account"; window.sessionStorage.removeItem(RETURN); return v; } catch { return false; } };
+// One automatic sign in per tap: if Google comes back with the same error after it, the line stays and nothing loops.
+export const takeTried = (): boolean => { try { const v = window.sessionStorage.getItem(TRIED) === "1"; window.sessionStorage.removeItem(TRIED); return v; } catch { return false; } };
+export const markTried = (): void => { try { window.sessionStorage.setItem(TRIED, "1"); } catch { /* no loop guard: one try per page load below */ } };
