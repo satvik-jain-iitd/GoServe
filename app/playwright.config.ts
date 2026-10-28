@@ -8,7 +8,10 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: "list",
   use: { baseURL: "http://localhost:4180" },
-  projects: [{ name: "chromium", use: { ...devices["Pixel 7"] } }],
+  projects: [
+    { name: "chromium", use: { ...devices["Pixel 7"] }, testIgnore: /\.webkit\.spec\.ts$/ },
+    { name: "webkit", use: { ...devices["iPhone 13"] }, testMatch: /\.webkit\.spec\.ts$/ },   // story #616: the iPhone engine, for the few things that differ there (the switch)
+  ],
   webServer: {
     // Test keys are baked into the build; the specs answer those hosts themselves.
     command:

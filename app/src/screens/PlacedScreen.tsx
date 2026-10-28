@@ -21,7 +21,7 @@ type Props = {
   asking: boolean;              // show "Was your order delivered?"
   busy: boolean;
   error: string | null;
-  reminder: "ask" | "on" | "none";
+  reminder: "ask" | "on" | "off" | "none";
   onYes: () => void;
   onNotYet: () => void;
   onAllowReminder: () => void;

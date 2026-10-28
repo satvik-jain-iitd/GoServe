@@ -68,7 +68,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
           {lines(o)}
         </button>
         {next ? <button type="button" className="ui-btn big" aria-label={`${next.label} ${shortId(o.id)}`} disabled={busyId === o.id} onClick={() => void step(o)}>{next.label}</button>
-          : <span className="mono ui-ticket-wait">{riderLine(o)}</span>}
+          : <span className="mono ui-ticket-wait">{riderLine(o).split(" · ").map((part) => <span key={part}>{part}</span>)}</span>}
       </div>
     );
   };
@@ -146,7 +146,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
           {gate ? (
             <>
               <div className="ui-row ui-row-static ui-row-tall">
-                <label htmlFor="open" className="ui-row-label"><span>Open for orders</span><span className="ui-row-sub mono">{gate.open === null ? "Could not read the kitchen." : !gate.open ? "Closed · customers see it now" : pastClose ? `Past ${gate.closesAt} · customers see "closed" till opening time` : `${gate.closesAt ? `Till ${gate.closesAt} · ` : ""}customers see "closed" on their next look`}</span></label>
+                <label htmlFor="open" className="ui-row-label"><span>Open for orders</span><span className="ui-row-sub mono">{gate.open === null ? "Could not read the kitchen." : !gate.open ? "Closed · customers see it now" : pastClose ? `Past ${gate.closesAt} · "closed" till opening time` : `${gate.closesAt ? `Till ${gate.closesAt} · off` : "Off"} shows "closed" at once`}</span></label>
                 {gate.open === null ? <button type="button" className="ui-btn ghost small" onClick={gate.retry}>Try again</button>
                   : <input id="open" className="ui-switch" type="checkbox" role="switch" checked={gate.open} onChange={() => void gate.flipOpen()} />}
               </div>
