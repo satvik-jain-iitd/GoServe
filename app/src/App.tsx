@@ -568,7 +568,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setCancelling(true);
     setConfirmError(null);
     const { data, error: failed } = await getClient().rpc("cancel_order", { p_order: placed.id, p_reason: null });
-    if (failed) setConfirmError("This order can no longer be cancelled.");
+    if (failed) setConfirmError("The kitchen has started, so this order cannot be cancelled now. Call the kitchen if you need to.");
     else if (data?.order) setOrders((cur) => mergeOrder(cur, data.order as Order));
     setCancelling(false);
   }

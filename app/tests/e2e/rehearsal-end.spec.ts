@@ -5,10 +5,10 @@ import { confirmAndDelivered } from "../live/rehearsalEnd";
 
 const fake = `<main><button id="yes">Yes, I have it</button><div id="out"></div></main>
 <script>document.getElementById("yes").onclick = () => { document.getElementById("yes").remove();
-  document.getElementById("out").innerHTML = '<h1>Delivered</h1><p>Paid: cash</p>'; };</script>`;
+  document.getElementById("out").innerHTML = '<h1>Delivered</h1><p>Delivered. Thank you for eating with GoServe.</p>'; };</script>`;
 
 test("S1 the question first, Delivered after the tap: the last step passes", async ({ page }) => {
   await page.setContent(fake);
   await confirmAndDelivered(page, { ask: 3_000, done: 3_000 });
-  await expect(page.getByText(/Paid: cash/)).toBeVisible();
+  await expect(page.getByText(/Thank you for eating with GoServe/)).toBeVisible();
 });
