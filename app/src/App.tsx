@@ -72,6 +72,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const shown = shownArea(area, clock);
   const [looking, setLooking] = useState(false);
   const [menuError, setMenuError] = useState<string | null>(null);
+  const [from, setFrom] = useState<{ lat: number; lng: number } | null>(null);   // story #668: where the customer is, when they allowed location; it picks the nearest kitchen
   const [menuTry, setMenuTry] = useState(0);   // story #637: Try again and the phone coming back online read the menu again
   useEffect(() => {
     const again = () => setMenuTry((n) => n + 1);
@@ -374,11 +375,11 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     let alive = true;
     setLooking(true);
     setAreaError(null);
-    resolveArea(pin, () => fetchKitchens(getClient()), window.localStorage)
+    resolveArea(pin, () => fetchKitchens(getClient()), window.localStorage, from ?? undefined)
       .then((found) => { if (alive) setArea(found); }, () => { if (alive) setAreaError(NO_INTERNET); })
       .finally(() => { if (alive) setLooking(false); });
     return () => { alive = false; };
-  }, [lock, pin, menuTry]);
+  }, [lock, pin, from, menuTry]);
   // The menu of the kitchen that serves the pin; a closed kitchen still shows its menu (board 02c). Reads as soon as the kitchen is known,
   // so a saved kitchen (D15, #242) shows its menu before the kitchens read answers.
   const areaKitchenId = area?.kind === "ok" ? area.kitchen.id : area?.kind === "closed" ? area.id : null;
@@ -389,7 +390,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       .then((loaded) => { if (alive) { setMenu(loaded); setMenuError(null); } }, (e: Error) => { if (alive) setMenuError(e.message); });
     return () => { alive = false; };
   }, [lock, areaKitchenId, menuTry]);
-  function choosePin(p: string) {
+  function choosePin(p: string, at?: { lat: number; lng: number }) {
+    setFrom(at ?? null);
     land.current = true;   // #525: the mark flies in once, on the first Menu after this pick
     savePin(p);
     setArea(null);
@@ -663,7 +665,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <OtpSheet welcome phone={phone} onClose={() => undefined}
       onVerified={(p) => { setPhone(p); setVerified(true); setSignedIn(true); }} />
   ) : needArea ? (
-    <AreaScreen pin={pin} area={area} busy={looking} error={areaError} onPin={choosePin} />
+    <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={(pl) => { setAddress(pl.address); choosePin(pl.pin, pl.from); }} />
   ) : (
     <>
         {step === "menu" && (
