@@ -58,7 +58,7 @@ class Privacy(unittest.TestCase):
 
     def test_the_page_says_how_to_delete_and_who_to_write_to(self):
         self.assertIn("delete", PAGE)
-        self.assertIn("klickbae8yt@gmail.com", PAGE)
+        self.assertIn("avinturetech@gmail.com", PAGE)
 
     def test_the_page_is_linked_from_the_app(self):
         self.assertIn('href="/privacy/"', (ROOT / "app/src/screens/AccountScreen.tsx").read_text())
