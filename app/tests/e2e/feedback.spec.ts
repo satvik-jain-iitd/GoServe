@@ -71,7 +71,7 @@ test("S4 a server failure keeps the sheet open with the words and the file, show
   await page.getByLabel("What happened?").fill("Nothing happens on Pay");
   await page.getByLabel("Add a screenshot").setInputFiles({ name: "shot.png", mimeType: "image/png", buffer: PNG });
   await page.getByRole("button", { name: "Send" }).click();
-  await expect(page.getByRole("alert")).toContainText("Please try again");
+  await expect(page.getByRole("alert")).toContainText("Could not send the note. Try again.");
   await expect(page.getByRole("dialog", { name: "Feedback" })).toBeVisible();
   await expect(page.getByLabel("What happened?")).toHaveValue("Nothing happens on Pay");
   await expect(page.getByTestId("feedback-sent")).toHaveCount(0);

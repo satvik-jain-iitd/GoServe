@@ -68,7 +68,7 @@ test("S2 the customer sees every step live, without a refresh, and it ends at De
   const steps: [string, string][] = [["accepted", "Accepted"], ["preparing", "Cooking"], ["ready", "Ready, rider picks up"], ["out_for_delivery", "On the way"], ["delivered", "Delivered"]];
   for (const [i, [status, label]] of steps.entries()) {
     net.push("UPDATE", order(status, `2020-01-01T10:0${i + 1}:00Z`));
-    if (label === "Delivered") await expect(page.getByRole("heading", { name: "Delivered" })).toBeVisible({ timeout: 6000 });
+    if (label === "Delivered") await expect(page.getByRole("heading", { name: "Delivered", exact: true }).first()).toBeVisible({ timeout: 6000 });
     else await expect(current).toHaveText(label, { timeout: 6000 });
   }
   await expect(page.getByText(/Thank you for eating with GoServe/)).toBeVisible();
