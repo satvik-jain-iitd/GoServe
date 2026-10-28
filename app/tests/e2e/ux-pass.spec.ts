@@ -80,7 +80,7 @@ test("D6 D7 D8 D9 D13 the bill, placed and orders screens use the agreed words",
   await page.getByRole("button", { name: "Back to menu" }).click();
   await page.getByRole("button", { name: "My orders", exact: true }).click();
   await expect(page.getByRole("heading", { name: "No orders yet" })).toBeVisible();
-  await expect(page.getByText("Your orders show here, newest first. No sign-in needed.")).toBeVisible();
+  await expect(page.getByText("Your orders will show here.")).toBeVisible();
 });
 
 test("D7 D13 the placed screen says the kitchen has the order and offers Back to menu", async ({ page, context }) => {

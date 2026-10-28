@@ -262,7 +262,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-after { display: flex; flex-direction: column; gap: var(--gs-space-2); padding: var(--gs-space-4) var(--gs-gutter) 0; }
 .ui-after p { margin: 0; }
 .ui-after .ui-timeline { margin: 0; }
-.ui-addr { font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
+.ui-addr { font-size: var(--gs-mono-sm); color: var(--gs-text-muted); text-transform: none; }   /* story 660: the address is read, not shouted */
 .ui-livemark { display: inline-flex; align-items: center; gap: 6px; color: var(--md-primary); }
 .ui-live-dot { width: 8px; height: 8px; border-radius: var(--gs-radius-pill); background: var(--md-primary); }
 .ui-ask { display: flex; flex-direction: column; align-items: stretch; margin: 0; }

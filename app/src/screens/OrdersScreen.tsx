@@ -1,17 +1,17 @@
 // "Your orders" of the Ink v3 boards 08 and 08e (story H10d, #193; stories B3, D2): the slips of this phone, newest first. A tap opens the slip.
+import { clock12 } from "../lib/clock";
 import { formatRupees } from "../lib/money";
 import { shortId, statusLabel, type Order } from "../lib/kitchen";
 import { orderSummary } from "../lib/profile";
 import { Skeleton, TabBar } from "../ui";
 
 const TAG: Record<string, string> = { placed: "placed", accepted: "placed", preparing: "", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "error" };
-const hhmm = (d: Date) => d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
 const when = (iso: string, now = new Date()) => {
   const d = new Date(iso);
   const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
-  if (d.toDateString() === now.toDateString()) return `today ${hhmm(d)}`;
-  if (d.toDateString() === yesterday.toDateString()) return `yesterday ${hhmm(d)}`;   // a 23:50 order seen at 00:10
-  return `${d.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${hhmm(d)}`;
+  if (d.toDateString() === now.toDateString()) return `today ${clock12(d)}`;
+  if (d.toDateString() === yesterday.toDateString()) return `yesterday ${clock12(d)}`;   // a 23:50 order seen at 00:10
+  return `${d.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${clock12(d)}`;
 };
 
 type Props = { orders: Order[]; loading: boolean; kitchenName: string; onOpen: (o: Order) => void; onMenu: () => void; onYou: () => void };
@@ -29,7 +29,7 @@ export function OrdersScreen({ orders, loading, kitchenName, onOpen, onMenu, onY
         {empty && (
           <div className="ui-empty">
             <h2>No orders yet</h2>
-            <p className="ui-meta">Your orders show here, newest first. No sign-in needed.</p>
+            <p className="ui-meta">Your orders will show here.</p>
             <button type="button" className="ui-btn" onClick={onMenu}>See the menu</button>
           </div>
         )}

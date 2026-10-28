@@ -1,4 +1,5 @@
 // The customer's side after placing, to the Ink v3 boards 05, 06 and 07 (story H10c, #193; stories #48 and S-C): the slip with its stamp, the tracker, the delivery question and the cash line.
+import { clock12 } from "../lib/clock";
 import { formatRupees } from "../lib/money";
 import { shortId, statusLabel, trackerSteps } from "../lib/kitchen";
 import { etaMinutes } from "../lib/profile";
@@ -53,8 +54,6 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
   return <p className="ui-wait">Waiting for payment · {mmss(Math.max(0, PAY_WINDOW_S - Math.floor((now - new Date(startedAt).getTime()) / 1000)))}</p>;
 }
 
-const hhmm = (d: Date) => d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
-const clock = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase();
 // The customer says it in his words: the kitchen's "Ready" is "Ready, rider picks up", the last step is "At your door".
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "At your door" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "error" };
@@ -103,11 +102,11 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
         )}
         <section className="ui-slip ui-slip-pad" aria-label={delivered ? "Order, delivered" : "Order"}>
           <div className="ui-slip-body">
-            <div className="ui-slip-head"><span>{head}</span><span>{delivered ? `${placed.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${hhmm(placed)}` : `No. ${shortId(order.id)}`}</span></div>
+            <div className="ui-slip-head"><span>{head}</span><span>{delivered ? `${placed.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${clock12(placed)}` : `No. ${shortId(order.id)}`}</span></div>
             <div className="ui-slip-stamp"><span className={`ui-stamp ${STAMP[status] ?? "placed"}`}>{statusLabel(status)}</span></div>
             {pay && status === "placed" && (pay.state === "ready" || pay.state === "starting" || pay.state === "waiting") && <Countdown startedAt={pay.startedAt} />}
-            {!cancelled && !delivered && <p className="ui-clock">About <b>{eta} min</b> · door by {hhmm(door)}</p>}
-            {delivered && confirmedAt && <p className="ui-clock">At your door <b>{hhmm(new Date(confirmedAt))}</b></p>}
+            {!cancelled && !delivered && <p className="ui-clock">About <b>{eta} min</b> · at your door by {clock12(door)}</p>}
+            {delivered && confirmedAt && <p className="ui-clock">At your door <b>{clock12(new Date(confirmedAt))}</b></p>}
             <div className="ui-slip-rule" />
             <div className="ui-slip-lines">
               {lines.map((l) => <div key={l.name}><span>{l.qty} × {l.name}</span><span>{formatRupees(l.paise).replace("₹", "")}</span></div>)}
@@ -127,7 +126,7 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
               <a className="ui-btn" href={`tel:${rider.phone}`} onClick={onCall}>Call {rider.name}</a>
             </div>
           )}
-          {cancelled && <p role="status"><strong>Your order was cancelled.</strong></p>}
+          {cancelled && <p role="status"><strong>Your order was cancelled. Nothing to pay.</strong></p>}
           {asking && (
             <div role="group" aria-label="Delivery check" className="ui-closed ui-ask">
               <h3>Was your order delivered?</h3>
@@ -140,7 +139,7 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
           {error && <p role="alert" className="ui-field-error">{error}</p>}
           {delivered && (
             <>
-              <p>Delivered. Thank you for eating with GoServe.{paidBy === "cash" && confirmedAt ? <> Paid: cash · confirmed {clock(confirmedAt)}</> : null}</p>
+              <p>Delivered. Thank you for eating with GoServe.</p>
             </>
           )}
           {reminder === "ask" && !delivered && !cancelled && (
@@ -149,7 +148,7 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
         </div>
       </div>
       <div className="ui-bottom">
-        {(delivered || cancelled) && <button type="button" className="ui-btn big" onClick={onMenu}>See the menu</button>}
+        {(delivered || cancelled) && <button type="button" className="ui-btn big" onClick={onMenu}>{cancelled ? "Order again" : "See the menu"}</button>}
         {status === "placed" && <button type="button" className="ui-btn ghost big" disabled={cancelling} onClick={onCancel}>Cancel order</button>}
         {kitchenPhone && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
       </div>
