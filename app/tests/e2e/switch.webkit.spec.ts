@@ -21,7 +21,15 @@ test("S1 WebKit: the knob sits inside the track, on and off, with air on both si
   expect(on.leftAir).toBeGreaterThanOrEqual(2);
   expect(on.rightAir).toBeGreaterThanOrEqual(2);
   await sw.click();
-  await expect(sw).not.toBeChecked();
+  // The flip is an RPC answered by the stub, then the screen updates. On CI's WebKit this once stayed checked for 5 s: wait for the call first and say what was seen if it fails.
+  const flips = () => net.calls.rpc.filter((c) => c.name === "set_kitchen_open").length;
+  try {
+    await expect.poll(flips, { timeout: 15_000 }).toBe(1);
+    await expect(sw).not.toBeChecked({ timeout: 15_000 });
+  } catch (e) {
+    const alerts = await page.getByRole("alert").allTextContents();
+    throw new Error(`switch did not flip: rpc calls ${JSON.stringify(net.calls.rpc.map((c) => c.name))}, alerts ${JSON.stringify(alerts)}, checked ${await sw.isChecked()}; ${String(e).split("\n")[0]}`);
+  }
   const off = await geometry();
   expect(off.leftAir).toBeGreaterThanOrEqual(2);
   expect(off.rightAir).toBeGreaterThanOrEqual(2);

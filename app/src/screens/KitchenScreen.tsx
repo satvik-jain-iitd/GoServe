@@ -68,7 +68,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
           {lines(o)}
         </button>
         {next ? <button type="button" className="ui-btn big" aria-label={`${next.label} ${shortId(o.id)}`} disabled={busyId === o.id} onClick={() => void step(o)}>{next.label}</button>
-          : <span className="mono ui-ticket-wait">{riderLine(o)}</span>}
+          : <span className="mono ui-ticket-wait">{riderLine(o).split(" · ").map((part) => <span key={part}>{part}</span>)}</span>}
       </div>
     );
   };
