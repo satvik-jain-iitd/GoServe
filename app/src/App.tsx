@@ -14,6 +14,7 @@ import { RiderGate } from "./screens/RiderGate";
 import { fetchKitchen, type KitchenCard, type RiderGateState } from "./lib/rider";
 import { KitchenGate, type KitchenGateState } from "./screens/KitchenGate";
 import { enablePush, watchSession } from "./lib/push";
+import { takeReturn } from "./lib/auth";
 import { alertsState, readOff, turnAlertsOff, writeOff, type Alerts } from "./lib/alerts";
 import { loadProfile, saveProfile } from "./lib/profile";
 import { addEvent, changeStatus, confirmDelivery, orderDeps, placeOrder, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
@@ -62,9 +63,15 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const shown = shownArea(area, clock);
   const [looking, setLooking] = useState(false);
   const [menuError, setMenuError] = useState<string | null>(null);
+  const [menuTry, setMenuTry] = useState(0);   // story #637: Try again and the phone coming back online read the menu again
+  useEffect(() => {
+    const again = () => setMenuTry((n) => n + 1);
+    window.addEventListener("online", again);
+    return () => window.removeEventListener("online", again);
+  }, []);
   // The customer app keeps an unfinished order across a refresh (story B1); the demo console and the other apps start fresh.
   const [draft0] = useState(() => (lock === "customer" ? loadDraft() : null));
-  const [step, setStep] = useState<Step>(draft0 && draft0.step !== "placed" && draft0.step !== "orders" ? draft0.step === "cart" ? "bill" : (draft0.step as Step) : "menu");   // an older draft may hold the cart step: the bill replaced it (H10c)
+  const [step, setStep] = useState<Step>(lock === "customer" && takeReturn() ? "account" : draft0 && draft0.step !== "placed" && draft0.step !== "orders" ? draft0.step === "cart" ? "bill" : (draft0.step as Step) : "menu");   // an older draft may hold the cart step: the bill replaced it (H10c)
   const [cart, setCart] = useState<Cart>(draft0?.cart ?? {});
   const [address, setAddress] = useState(draft0?.address ?? "");
   const [name, setName] = useState(draft0?.name ?? "");
@@ -305,7 +312,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
 
   useEffect(() => {
     if (lock && lock !== "customer") return;   // story H2: the kitchen, rider, ops and admin apps have nothing to sell
-    if (!lock) return void loadMenu(() => fetchMenuRows(), window.localStorage).then(setMenu, (e: Error) => setMenuError(e.message));
+    if (!lock) return void loadMenu(() => fetchMenuRows(), window.localStorage).then((m) => { setMenu(m); setMenuError(null); }, (e: Error) => setMenuError(e.message));
     if (!pin) return;
     let alive = true;
     setLooking(true);
@@ -314,7 +321,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       .then((found) => { if (alive) setArea(found); }, () => { if (alive) setAreaError("Could not look up kitchens. Connect and try again."); })
       .finally(() => { if (alive) setLooking(false); });
     return () => { alive = false; };
-  }, [lock, pin]);
+  }, [lock, pin, menuTry]);
   // The menu of the kitchen that serves the pin; a closed kitchen still shows its menu (board 02c). Reads as soon as the kitchen is known,
   // so a saved kitchen (D15, #242) shows its menu before the kitchens read answers.
   const areaKitchenId = area?.kind === "ok" ? area.kitchen.id : area?.kind === "closed" ? area.id : null;
@@ -322,9 +329,9 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     if (lock !== "customer" || !areaKitchenId) return;
     let alive = true;
     loadMenu(() => fetchMenuRows(areaKitchenId), window.localStorage, `${MENU_KEY}.${areaKitchenId}`)
-      .then((loaded) => { if (alive) setMenu(loaded); }, (e: Error) => { if (alive) setMenuError(e.message); });
+      .then((loaded) => { if (alive) { setMenu(loaded); setMenuError(null); } }, (e: Error) => { if (alive) setMenuError(e.message); });
     return () => { alive = false; };
-  }, [lock, areaKitchenId]);
+  }, [lock, areaKitchenId, menuTry]);
   function choosePin(p: string) {
     land.current = true;   // #525: the mark flies in once, on the first Menu after this pick
     savePin(p);
@@ -586,7 +593,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   ) : (
     <>
         {step === "menu" && (
-          <MenuScreen land={land.current} onLanded={() => { land.current = false; }} dishes={menu?.dishes ?? null} fromCache={menu?.fromCache ?? false} error={menuError}
+          <MenuScreen land={land.current} onLanded={() => { land.current = false; }} dishes={menu?.dishes ?? null} fromCache={menu?.fromCache ?? false} error={menuError} onRetry={() => setMenuTry((n) => n + 1)}
             pin={pin} name={name} qty={cart} cartCount={count} cartTotal={total}
             kitchenName={kitchenName}
             openText={shown?.kind === "ok" ? openTill(shown.kitchen.closes_at) : ""}

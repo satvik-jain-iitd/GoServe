@@ -35,7 +35,7 @@ describe("signedInName", () => {
   });
 });
 
-import { authErrorFrom } from "../../src/lib/auth";
+import { authErrorFrom, friendlyAuth, ALREADY_IN_USE } from "../../src/lib/auth";
 describe("authErrorFrom", () => {
   it("reads error_description from the return address, in the query or the hash", () => {
     expect(authErrorFrom("?error=server_error&error_description=Identity+is+already+linked", "")).toBe("Identity is already linked");
@@ -43,5 +43,23 @@ describe("authErrorFrom", () => {
   });
   it("is null when nothing went wrong", () => {
     expect(authErrorFrom("?join=abc", "")).toBeNull();
+  });
+});
+
+// Story #635: a Google identity that is already on another user is not an error to show: the app signs in to that user. Raw text from the auth server never reaches the screen.
+describe("friendlyAuth", () => {
+  it("an identity already linked to another user means: say so kindly and sign in to that user", () => {
+    expect(friendlyAuth("?error=server_error&error_code=identity_already_exists&error_description=Identity+is+already+linked+to+another+user", "")).toEqual({ message: ALREADY_IN_USE, signIn: true });
+    expect(friendlyAuth("", "#error=server_error&error_description=Identity+is+already+linked+to+another+user")).toEqual({ message: ALREADY_IN_USE, signIn: true });
+  });
+  it("any other failure gets our own line, never the server's words", () => {
+    expect(friendlyAuth("", "#error=access_denied&error_description=Access+denied")).toEqual({ message: "Could not sign in with Google. Try again.", signIn: false });
+    expect(JSON.stringify(friendlyAuth("?error=x&error_description=secret+db+text", ""))).not.toContain("secret");
+  });
+  it("no error in the address means nothing to show", () => {
+    expect(friendlyAuth("?join=abc", "")).toBeNull();
+  });
+  it("ALREADY_IN_USE is the line from the story", () => {
+    expect(ALREADY_IN_USE).toBe("This Google account is already in use. Signing you in.");
   });
 });

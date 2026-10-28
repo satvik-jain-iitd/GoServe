@@ -21,7 +21,7 @@ async function callApi(body: object, deps: OrderDeps, need: "order" | "decision"
   try {
     res = await deps.fetchFn(deps.url, { method: "POST", headers: { "content-type": "application/json", "x-gs-token": deps.token }, body: JSON.stringify(body) });
   } catch {
-    throw new PlaceError("No network. Check your connection and try again.", "network");
+    throw new PlaceError("No internet. Check your internet and try again.", "network");
   }
   let answer: ApiAnswer | null = null;
   try {

@@ -39,10 +39,27 @@ test("S3 an anonymous user keeps the same session and sees the button", async ({
   await expect(page.getByTestId("signed-in")).toHaveCount(0);
 });
 
-test("S4 a failed link shows the reason once and clears it from the address", async ({ page, context }) => {
+test("S4 a Google identity already on another user: the friendly line, then the app signs in to that user; the raw words never show (story #635)", async ({ page, context }) => {
   await setup(context, page, []);
-  await page.goto("/?error=server_error&error_description=Identity+is+already+linked");
-  await expect(page.getByRole("alert")).toHaveText("Identity is already linked");
+  const authorize: string[] = [];
+  await context.route(/test\.supabase\.co\/auth\/v1\/authorize/, (route) => { authorize.push(route.request().url()); return route.fulfill({ status: 200, contentType: "text/html", body: "<p>Google</p>" }); });
+  await page.goto("/?error=server_error&error_code=identity_already_exists&error_description=Identity+is+already+linked+to+another+user");
+  await expect.poll(() => authorize.length).toBe(1);
+  expect(authorize[0]).toContain("provider=google");
+  await expect(page.getByText("Identity is already linked")).toHaveCount(0);
+});
+
+test("S4b another failure from Google shows our own line once and clears the address", async ({ page, context }) => {
+  await setup(context, page, []);
+  await page.goto("/?error=access_denied&error_description=Access+denied");
+  await expect(page.getByRole("alert")).toHaveText("Could not sign in with Google. Try again.");
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId("google-signin")).toBeVisible();
+});
+
+test("S4c back from Google the customer app opens on You, not the menu (story #635)", async ({ page, context }) => {
+  await context.addInitScript(() => { try { window.sessionStorage.setItem("gs-return", "account"); } catch { /* the menu opens */ } });
+  await setup(context, page, []);
+  await page.goto("/customer/");
+  await expect(page.getByRole("heading", { name: "You" })).toBeVisible();
 });

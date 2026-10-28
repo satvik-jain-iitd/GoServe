@@ -77,6 +77,10 @@ textarea { font: inherit; padding: var(--gs-space-3); border: 1px solid var(--md
 
 /* Feedback button and sheet (story S-B). The button stays at the bottom right on every screen; the sheet opens over the page. */
 .feedback-btn { position: fixed; right: var(--gs-space-4); bottom: calc(var(--gs-space-4) + 3.5rem);   /* above the bottom bar of the cart and bill screens */ z-index: 20; box-shadow: 0 2px 8px rgb(0 0 0 / 0.25); }
+/* Story 642, board F2: the card after Send. It floats above the tab bar, so it never covers a button. */
+.feedback-sent { position: fixed; left: 20px; right: 20px; bottom: 84px; z-index: 40; max-width: 32rem; margin: 0 auto; box-sizing: border-box; padding: 16px 20px; border: 1px solid var(--md-outline-variant); border-left: 4px solid var(--md-primary); border-radius: 6px; background: var(--md-surface); color: var(--md-on-surface); box-shadow: 0 8px 24px rgb(0 0 0 / 0.25); font-size: 15px; line-height: 1.4; }
+.feedback-sent.above-btn { bottom: 9rem; }   /* the console keeps its floating Feedback button; the card sits above it */
+.feedback-sent-title { margin-bottom: 6px; font-family: var(--gs-font-display); font-size: 22px; font-weight: 800; line-height: 1.1; letter-spacing: -0.01em; color: var(--md-primary); }
 .sheet-back { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end; justify-content: center; background: rgb(0 0 0 / 0.4); }
 .sheet { width: 100%; max-width: 32rem; max-height: 90vh; overflow-y: auto; padding: var(--gs-space-5); border-radius: var(--gs-radius-l) var(--gs-radius-l) 0 0; background: var(--md-surface); color: var(--md-on-surface); }
 select { font: inherit; padding: var(--gs-space-3); border: 1px solid var(--md-outline); border-radius: var(--gs-radius-m); background: var(--md-surface); color: inherit; }
