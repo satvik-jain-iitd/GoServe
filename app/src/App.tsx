@@ -35,6 +35,7 @@ import { useOffers } from "./lib/useOffers";
 import { openOrderToResume } from "./lib/resume";
 import { SignIn } from "./screens/SignIn";
 import { NameSheet, OtpSheet } from "./screens/OtpSheet";
+import { Skeleton } from "./ui";
 import { otpGateOn } from "./lib/otpGate";
 import { createPayment, switchToCash, simulatePaid, type PayMethod } from "./lib/payments";
 import { openGateway } from "./lib/payGateway";
@@ -87,6 +88,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // Story #551: the phone code at checkout (off unless the gate is on). verified = this user already has a phone linked.
   const gate = lock === "customer" && otpGateOn(import.meta.env, window.localStorage);
   const [verified, setVerified] = useState(false);
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);   // story #667: null = not asked yet; the first screen waits so a returning customer never sees it flash
   const [otpOpen, setOtpOpen] = useState(false);
   const [nameOpen, setNameOpen] = useState(false);
   const [nameAsked, setNameAsked] = useState(false);
@@ -571,8 +573,9 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     ensureSession().then(() => getClient().auth.getUser()).then(({ data }) => {
       const p = data.user && !data.user.is_anonymous ? data.user.phone : null;
       const n = (data.user?.user_metadata?.full_name ?? data.user?.user_metadata?.name) as string | undefined;
+      if (alive) setSignedIn(!!data.user && !data.user.is_anonymous);
       if (alive && p) { setVerified(true); setPhone(p.replace(/^91/, "")); if (n) setName((cur) => cur || n); }
-    }).catch(() => {});
+    }).catch(() => { if (alive) setSignedIn(false); });
     return () => { alive = false; };
   }, [gate]);
   useEffect(() => {
@@ -655,7 +658,11 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   );
   const kitchenView = lock === "kitchen" ? <KitchenGate>{kitchenScreen}</KitchenGate> : kitchenScreen(null);
   const needArea = lock === "customer" && step !== "placed" && step !== "orders" && !(pin && (area?.kind === "ok" || area?.kind === "closed"));
-  const customerView = needArea ? (
+  // Story #667: with the phone code on, the first screen is the number and the code (or Google); nothing else shows before it.
+  const customerView = gate && signedIn === null ? <div className="ui-pad"><Skeleton lines={3} /></div> : gate && signedIn === false ? (
+    <OtpSheet welcome phone={phone} onClose={() => undefined}
+      onVerified={(p) => { setPhone(p); setVerified(true); setSignedIn(true); }} />
+  ) : needArea ? (
     <AreaScreen pin={pin} area={area} busy={looking} error={areaError} onPin={choosePin} />
   ) : (
     <>

@@ -8,6 +8,7 @@ type Otp = { sends: any[]; verifies: any[]; claims: any[]; authOtp: any[]; authV
 
 async function withOtp(context: BrowserContext, page: Page, initial: Partial<Otp> = {}) {
   const net = await setup(context, page);
+  net.state.anonymous = false;   // story #667: a customer who is signed in (Google) skips the first screen; these tests are about the sheet at checkout, which asks for the number when none is linked
   await context.addInitScript(() => { try { localStorage.setItem("gs-otp-gate", "1"); } catch { /* blocked */ } });
   const otp: Otp = { sends: [], verifies: [], claims: [], authOtp: [], authVerify: [],
     send: { status: 200, body: { ok: true, expires_in_s: 600 } }, verify: { status: 200, body: { ok: true, phone: "919876543210", user_id: SESSION } },

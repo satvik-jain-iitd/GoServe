@@ -394,3 +394,16 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 
 /* Story 659, copy audit D.8: the one line above the grey Place order button. */
 .ui-sticky .ui-bar-note { position: absolute; left: 0; right: 0; bottom: 100%; margin: 0; padding: 6px var(--gs-gutter); text-align: center; background: var(--md-background); }
+
+/* Story 667, boards O0 and O0b: the first full screen, the number and the code with Google under it. */
+.ui-welcome { min-height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; padding: var(--gs-space-7) var(--gs-gutter) var(--gs-space-5); background: var(--md-background); color: var(--md-on-background); }
+.ui-welcome header { display: flex; flex-direction: column; gap: 10px; }
+.ui-welcome h1 { margin: 0; }
+.ui-welcome .ui-lockup { display: block; width: 100%; height: auto; }
+.ui-welcome-kicker { margin: 0; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); letter-spacing: 0.04em; text-transform: uppercase; color: var(--gs-text-muted); }
+.ui-welcome .ui-slip { margin-top: 40px; }
+.ui-welcome .ui-slip-body { gap: var(--gs-space-4); }
+.ui-welcome-title { margin: 0; font-family: var(--gs-font-display); font-weight: 800; font-size: var(--gs-display-l); line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; }
+.ui-welcome-foot { margin: auto 0 0; text-align: center; font-family: var(--gs-font-mono); font-size: var(--gs-mono-xs); text-transform: uppercase; color: var(--gs-text-muted); }
+.ui-or { display: flex; align-items: center; gap: var(--gs-space-3); color: var(--gs-text-muted); font-family: var(--gs-font-mono); font-size: var(--gs-mono-xs); text-transform: uppercase; }
+.ui-or span:first-child, .ui-or span:last-child { flex: 1; height: 1px; background: var(--md-outline-variant); }
