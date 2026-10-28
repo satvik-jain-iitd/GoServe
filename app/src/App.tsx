@@ -22,6 +22,7 @@ import { confirmAt, DEFAULT_CFG, mayAsk, notYet, reaskMs, type ConfirmCfg } from
 import { fetchOrders } from "./lib/live";
 import { pushTrail } from "./lib/trail";
 import { trace } from "./lib/trace";
+import { NO_INTERNET } from "./lib/errorLines";
 import { FeedbackSheet } from "./screens/FeedbackSheet";
 import { ensureSession, fetchMenuRows, fetchRiderCard, getClient, type RiderCard } from "./lib/supabase";
 import { openTill } from "./lib/browse";
@@ -320,7 +321,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setConfirming(true);
     setConfirmError(null);
     try {
-      const { order: saved } = await confirmDelivery({ sessionId: await currentSession(), orderId: placed.id }, api());
+      const answer = await confirmDelivery({ sessionId: await currentSession(), orderId: placed.id }, api());
+      const saved = answer.order ?? { ...placed, status: "delivered", updated_at: new Date().toISOString() };   // "Already done": show the delivered state, no line
       setOrders((cur) => (cur.some((o) => o.id === saved.id) ? mergeOrder(cur, { ...cur.find((o) => o.id === saved.id)!, status: saved.status, updated_at: saved.updated_at, paid_by: saved.paid_by ?? null }) : cur));
       setPlaced({ ...placed, status: saved.status, updated_at: saved.updated_at, paid_by: saved.paid_by ?? null });
       setAsking(false);
@@ -368,7 +370,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setLooking(true);
     setAreaError(null);
     resolveArea(pin, () => fetchKitchens(getClient()), window.localStorage)
-      .then((found) => { if (alive) setArea(found); }, () => { if (alive) setAreaError("Could not look up kitchens. Connect and try again."); })
+      .then((found) => { if (alive) setArea(found); }, () => { if (alive) setAreaError(NO_INTERNET); })
       .finally(() => { if (alive) setLooking(false); });
     return () => { alive = false; };
   }, [lock, pin, menuTry]);

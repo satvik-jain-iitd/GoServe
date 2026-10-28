@@ -105,7 +105,7 @@ test("S7 the bill says cash at the door in plain words", async ({ page, context 
   await page.getByLabel("Your name").fill("Asha");
   await page.getByLabel("Phone").fill("9876543210");
   await page.getByLabel("Address").fill("Flat 4");
-  await expect(page.getByText("Pay the rider cash at the door.")).toBeVisible();
+  await expect(page.getByText("Pay the rider cash at the door.")).toHaveCount(0);   // story #659: the slip and the bar say cash
 });
 
 // Story #653 (row T3): the rider card is the same light box; its text is ink in Day and Night.

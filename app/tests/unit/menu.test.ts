@@ -24,13 +24,13 @@ describe("loadMenu", () => {
   });
 
   it("fails clearly when there is no network and no copy", async () => {
-    await expect(loadMenu(async () => { throw new Error("offline"); }, memory())).rejects.toThrow("The menu is not available. Connect once to load it.");
+    await expect(loadMenu(async () => { throw new Error("offline"); }, memory())).rejects.toThrow("No internet. Check your internet and try again.");
   });
 
   it("does not trust a broken copy", async () => {
     const storage = memory();
     storage.setItem(MENU_KEY, "{not json");
-    await expect(loadMenu(async () => { throw new Error("offline"); }, storage)).rejects.toThrow(/not available/);
+    await expect(loadMenu(async () => { throw new Error("offline"); }, storage)).rejects.toThrow(/No internet/);
   });
 
   it("does not replace a good copy with an empty menu", async () => {

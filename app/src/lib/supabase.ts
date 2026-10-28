@@ -31,7 +31,7 @@ export function ensureSession(): Promise<string> {
     const { data } = await c.auth.getSession();
     if (data.session) return data.session.user.id;
     const res = await c.auth.signInAnonymously();
-    if (res.error || !res.data.user) throw new Error("Could not start a session. Check your connection and try again.");
+    if (res.error || !res.data.user) throw new Error("Could not connect. Check your internet and try again.");
     return res.data.user.id;
   })().finally(() => { starting = null; });
   return starting;
