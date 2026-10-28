@@ -52,21 +52,18 @@ const PAIRS: [string, string, string, number][] = [
   ["tag placed", "--md-background", "--gs-text-muted", AA],
   ["pill half, chosen", "--gs-raised", "--md-on-surface", AA],
   ["stamp placed", "--md-background", "--gs-status-placed", LARGE],
-    ["stamp cooking", "--gs-status-cooking", "--md-on-tertiary", LARGE],
+    ["stamp accepted", "--md-background", "--gs-status-accepted", LARGE],
+  ["stamp cooking", "--gs-status-cooking", "--md-on-tertiary", LARGE],
   ["stamp ready", "--gs-status-ready", "--md-on-tertiary", LARGE],
   ["stamp delivered", "--md-background", "--gs-status-delivered", LARGE],
   ["stamp error", "--md-background", "--md-error", LARGE],
 ];
 
-// Found by this test, not fixed here: the accepted stamp is olive on cream in Day (2.59:1, needs 3:1). It fails on purpose until a story fixes it (F276).
-const KNOWN_BELOW: [string, "day" | "night"][] = [["stamp accepted", "day"]];
-
 describe("text on background reaches WCAG AA in Day and Night", () => {
   for (const theme of ["day", "night"] as const) {
     const vars = themeVars(theme);
-    for (const [name, bg, fg, min] of [...PAIRS, ["stamp accepted", "--md-background", "--gs-status-accepted", LARGE] as [string, string, string, number]]) {
-      const known = KNOWN_BELOW.some(([n, t]) => n === name && t === theme);
-      (known ? it.fails : it)(`${theme}: ${name}`, () => {
+    for (const [name, bg, fg, min] of PAIRS) {
+      it(`${theme}: ${name}`, () => {
         const r = ratio(colour(vars, bg), colour(vars, fg));
         expect(r, `${name} (${theme}) is ${r.toFixed(2)}:1, needs ${min}:1`).toBeGreaterThanOrEqual(min);
       });
