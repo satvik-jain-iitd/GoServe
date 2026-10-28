@@ -65,7 +65,7 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
           </div>
         </section>
         <button type="button" className="ui-row" onClick={async () => setNote(await onShare())}><span>Use on another phone</span><span className="go" aria-hidden="true">›</span></button>
-        <button type="button" className="ui-row" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}><span>Send feedback</span><span className="go" aria-hidden="true">›</span></button>
+        <button type="button" className="ui-row" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}><span className="ui-row-label"><span>Send feedback</span><span className="ui-row-sub">Two lines and a screenshot. We read every note.</span></span><span className="go" aria-hidden="true">›</span></button>
         {sure ? (
           <div className="ui-row ui-row-static"><span>Forget your details on this phone?</span><span className="ui-ask-act"><button type="button" className="ui-btn" onClick={onForget}>Yes, forget</button><button type="button" className="ui-btn ghost" onClick={() => setSure(false)}>No</button></span></div>
         ) : (

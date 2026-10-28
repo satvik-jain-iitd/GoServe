@@ -1,7 +1,7 @@
 // The Feedback button and its sheet (story S-B, #94). A tester tells us what went wrong in ten seconds, without leaving the app.
 // The picture is the phone's own screenshot, picked from the gallery. The words, the screen, the order and the last 20 taps go with it.
 import { useEffect, useState } from "react";
-import { buildPayload, DOING, flushQueue, pictureToBase64, queueReport, SAVED_CARD, SENT_CARD, TEXT_MAX, type Doing, type Report } from "../lib/feedback";
+import { buildPayload, defaultTopic, flushQueue, pictureToBase64, queueReport, SAVED_CARD, SENT_CARD, TEXT_MAX, topicsFor, type Doing, type Report } from "../lib/feedback";
 import { PlaceError } from "../lib/orders";
 import { readTrail } from "../lib/trail";
 
@@ -21,7 +21,9 @@ const phoneName = () => (navigator.userAgent.match(/\(([^)]+)\)/)?.[1] ?? "unkno
 export function FeedbackSheet({ role, screen, order, getSession, send, preset, button = true }: Props) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
-  const [doing, setDoing] = useState<Doing>("other");
+  const [topic, setTopic] = useState(() => defaultTopic(role));   // story #661: the list is per app
+  const topics = topicsFor(role);
+  const doing: Doing = topics.find((t) => t.label === topic)?.doing ?? "other";
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [card, setCard] = useState<{ title: string; line: string } | null>(null);   // story #642: shown after the sheet closes
@@ -30,7 +32,7 @@ export function FeedbackSheet({ role, screen, order, getSession, send, preset, b
   useEffect(() => {
     if (!preset) return;
     setText(preset.text);
-    setDoing(preset.doing);
+    setTopic(topics.find((t) => t.label && t.doing === preset.doing)?.label ?? defaultTopic(role));
     setError(null);
     setOpen(true);
   }, [preset?.nonce]);
@@ -65,7 +67,7 @@ export function FeedbackSheet({ role, screen, order, getSession, send, preset, b
     setCard(null);
     try {
       const image = file ? await pictureToBase64(file) : undefined;
-      const report = buildPayload({ text, doing, role, screen, session: await getSession(), order, build: BUILD, phone: phoneName(), online: navigator.onLine, now: new Date(), trail: readTrail(), image });
+      const report = buildPayload({ text, doing, topic, role, screen, session: await getSession(), order, build: BUILD, phone: phoneName(), online: navigator.onLine, now: new Date(), trail: readTrail(), image });
       try {
         await send(report);
         setCard(SENT_CARD);
@@ -95,13 +97,13 @@ export function FeedbackSheet({ role, screen, order, getSession, send, preset, b
               <textarea value={text} maxLength={TEXT_MAX} rows={4} onChange={(e) => setText(e.target.value)} />
             </label>
             <label className="field">What were you doing?
-              <select value={doing} onChange={(e) => setDoing(e.target.value as Doing)}>
-                {DOING.map((d) => <option key={d} value={d}>{d[0].toUpperCase() + d.slice(1)}</option>)}
+              <select value={topic} onChange={(e) => setTopic(e.target.value)}>
+                {topics.map((t) => <option key={t.label} value={t.label}>{t.label}</option>)}
               </select>
             </label>
-            <label className="field">Add a screenshot
+            <label className="field">Add a screenshot (optional)
               <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-              <span className="note">Take a screenshot with your phone buttons first, then pick it here. It is optional.</span>
+              <span className="note">Take one with your phone buttons first, then pick it here.</span>
             </label>
             {error && <p role="alert" className="error">{error}</p>}
             <div className="demobar">

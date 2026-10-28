@@ -61,7 +61,7 @@ test("S3 when the device cannot be registered the row says so and stays off", as
   await registerRoute(context, { status: 502, body: { ok: false, error: "push_unavailable" } });
   await toYou(page);
   await page.getByRole("switch", { name: /Order alerts/ }).click();
-  await expect(page.getByRole("alert").filter({ hasText: "Could not turn on alerts. Try again." })).toBeVisible();
+  await expect(page.getByRole("alert").filter({ hasText: "Could not turn alerts on. Try again in a minute." })).toBeVisible();
   await expect(page.getByRole("switch", { name: /Order alerts/ })).not.toBeChecked();
 });
 

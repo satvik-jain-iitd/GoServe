@@ -269,16 +269,19 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }
   // One tap allows the local reminder and, where the phone can, the web push (story A7), so the customer hears about placed, ready and delivered with the app closed.
   const [alertsError, setAlertsError] = useState<string | null>(null);
+  const ALERTS_FAILED = "Could not turn alerts on. Try again in a minute.";
   async function allowReminder() {
     setAlertsError(null);
     writeOff(window.localStorage, false);
     const native = await wrapperToken(window);   // story #554: a phone wrapper also registers its device token, with its platform
-    if (native && !(await registerNative(native))) return void setAlertsError("Could not turn on alerts. Try again.");
+    if (native && !(await registerNative(native))) return void setAlertsError(ALERTS_FAILED);
     void pushWith(() => Notification.requestPermission()).then((r) => {
       track("push_subscribe", r, typeof Notification === "undefined" ? "no_notification_api" : Notification.permission);
       if (r === "denied") return setReminder("none");
-      if (r === "unsupported" || r === "not_set_up") return void Notification.requestPermission().then((p) => setReminder(p === "granted" ? "on" : "none"), () => setReminder("none"));
-      setReminder("on");   // on, or failed to save: the permission is given, the local reminder still works
+      if (r === "unsupported") return void Notification.requestPermission().then((p) => setReminder(p === "granted" ? "on" : "none"), () => setReminder("none"));
+      if (r === "not_set_up") return void Notification.requestPermission().then((p) => (p === "granted" ? setAlertsError(ALERTS_FAILED) : setReminder("none")), () => setReminder("none"));   // story #661: permission given but the set-up did not work: say so, the switch stays off
+      if (r === "failed") return setAlertsError(ALERTS_FAILED);
+      setReminder("on");
     });
   }
   // Story #609: the switch on You always works. Off: the server row and the browser subscription go and "off" is remembered. On again: subscribe with no prompt (the permission is still granted).
@@ -295,7 +298,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     }
     writeOff(window.localStorage, false);
     const r = await pushWith(async () => "granted");
-    if (r === "failed") { writeOff(window.localStorage, true); return setAlertsError("Could not turn on alerts. Try again."); }
+    if (r === "failed") { writeOff(window.localStorage, true); return setAlertsError(ALERTS_FAILED); }
     setReminder("on");
   }
   // The browser's subscription, saved for the current session. `permission` asks (the Allow tap) or only reads (the re-save below).
