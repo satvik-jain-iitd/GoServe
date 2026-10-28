@@ -21,6 +21,7 @@ describe("the phone code gate", () => {
   it("seam: a gate that is on while the SMS sender is still the placeholder is wrong", () => {
     expect(placeholderLeft({ VITE_OTP_GATE: "1" })).toBe(true);
     expect(placeholderLeft({ VITE_OTP_GATE: "1", VITE_OTP_SMS: "fake" })).toBe(true);
+    expect(placeholderLeft({ VITE_OTP_GATE: "1", VITE_OTP_SMS: "fixed" })).toBe(true);   // story #665: the fixed code is still a placeholder, the warning stays
     expect(placeholderLeft({ VITE_OTP_GATE: "1", VITE_OTP_SMS: "real" })).toBe(false);
     expect(placeholderLeft({})).toBe(false);
   });
