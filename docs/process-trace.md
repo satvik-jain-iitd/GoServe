@@ -497,3 +497,9 @@ Rule: read this first in every session, append before saying done.
 | 450 | 2026-10-29 | coder | #196 integrations research: one table (payments, SMS code, push, maps, analytics, uptime) with pick, cost, date, tier and confidence, checked with a test. Runbook now lists MAIN 34, 0047, 0048. | #196 | reviewed |
 | 451 | 2026-10-29 | coder | Sim orders A to G on the v2 path (`sim_orders_check.py dev --v2`): all pass. Result row E-SIM-V2 in experiments.md. | #309 | reviewed |
 | 452 | 2026-10-29 | coder | One real order through the deployed dev `POST /orders`, re-send, wrong price, then the sim to delivered: PASS. Row E-SIM-V2-LIVE. | #309 | reviewed |
+| 453 | 2026-10-29 | coder | #619 layer a, live menu (PR #711, story #710): the kitchen switch and dish availability reach the phone through realtime (migration 0049). | #309 | reviewed |
+| 454 | 2026-10-29 | coder | #619 layer b, the server swaps a sold-out line (PR #713, story #712, settings table). | #309 | reviewed |
+| 455 | 2026-10-29 | coder | #619 layer c, the Bill reason block (PR #715, story #714). | #309 | reviewed |
+| 456 | 2026-10-29 | coder | #619 layer d, the admin swap-discount setting (PR #717, story #716). | #309 | reviewed |
+| 457 | 2026-10-29 | coder | #619 layer e, "Tell me when it opens" (PR #719, story #718, migration 0050, n8n Guard and Expand). | #309 | reviewed |
+| 458 | 2026-10-29 | coder | Stack retargeted bottom up after each merge (rule 19); each retarget merged origin/staging with no force. | #309 | volunteered |

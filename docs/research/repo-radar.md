@@ -270,3 +270,6 @@ Runs: `scout.py --need` found no repo. GitHub topic search (`reverse-geocoding`,
 
 ## 2026-10-29 · need: put a whole backend (migrations, functions, secrets) on a Supabase project from one script (story #677)
 Runs: `scout.py --need` found no repo; the GitHub topic search `supabase migrations` gave nothing that fits. Reused `scripts/release_db.py` (Management API call, name check, auth switch). The supabase CLI cannot be installed on this Mac (brew needs newer Command Line Tools), so the functions go through `POST /v1/projects/{ref}/functions/deploy` (multipart, read from the OpenAPI, tested on dev). Decision: a thin Python script on the API. Nothing new built beyond that.
+
+## 2026-10-29 · need: canvas by stage: lay out design artboards from a manifest with background boards sized to content, no overlaps, state prefixes
+Runs: `scout.py --need "lay out design artboards on an infinite canvas from a manifest..."`: no repos found. GitHub search "canvas layout artboards json positions auto-layout" and `topic:auto-layout topic:canvas`: Swift UI layout libraries (EasyPeasy, Cassowary, BonMot), none for the claude.ai Design canvas format (canvas.json boards, notes, order).. Result: Built from scratch: `canvas_stage.py` (stdlib), to live in ShipQuick `scripts/`. (listed by the reviewer).
