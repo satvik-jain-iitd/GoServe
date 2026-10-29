@@ -69,7 +69,7 @@ class Plan(unittest.TestCase):
 
     def test_S5_every_v2_file_names_one_object(self):
         self.assertEqual([f for f, m in V2 if m is None], [])
-        self.assertEqual(len(V2), 23)
+        self.assertEqual(len(V2), 24)   # story 619: the settings migration is the 24th
 
     def test_S6_markers(self):
         self.assertEqual(p.marker("-- c\ncreate table if not exists public.t (a int);"), "table:t")
@@ -115,7 +115,7 @@ class Main(unittest.TestCase):
         self.assertEqual(fake.writes, [])
 
     def test_S11_apply_order_and_fresh_secrets_in_the_vault_first(self):
-        fake = Fake({m for _, m in V1 if m} | {m for _, m in V2[:22]})
+        fake = Fake({m for _, m in V1 if m} | {m for _, m in V2[:-1]})
         vault = os.path.join(tempfile.mkdtemp(), "v.env")
         out = run(fake, ["--apply"], vault)
         kinds = [w[0] for w in fake.writes]
