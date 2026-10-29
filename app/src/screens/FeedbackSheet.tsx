@@ -90,25 +90,27 @@ export function FeedbackSheet({ role, screen, order, getSession, send, preset, b
     <>
       {button && <button type="button" className="btn small feedback-btn" onClick={() => { setOpen(true); setError(null); }}>Feedback</button>}
       {open && (
-        <div className="sheet-back">
-          <div role="dialog" aria-modal="true" aria-label="Feedback" className="sheet">
-            <h2>Feedback</h2>
-            <label className="field">What happened?
-              <textarea value={text} maxLength={TEXT_MAX} rows={4} onChange={(e) => setText(e.target.value)} />
-            </label>
-            <label className="field">What were you doing?
-              <select value={topic} onChange={(e) => setTopic(e.target.value)}>
-                {topics.map((t) => <option key={t.label} value={t.label}>{t.label}</option>)}
-              </select>
-            </label>
-            <label className="field">Add a screenshot (optional)
-              <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-              <span className="note">Take one with your phone buttons first, then pick it here.</span>
-            </label>
-            {error && <p role="alert" className="error">{error}</p>}
-            <div className="demobar">
-              <button type="button" className="btn" disabled={busy} onClick={submit}>{busy ? "Sending…" : "Send"}</button>
-              <button type="button" className="btn ghost" onClick={() => setOpen(false)}>Close</button>
+        <div className="ui-sheet-back">
+          <div role="dialog" aria-modal="true" aria-label="Feedback" className="ui-sheet">
+            <div className="ui-sheet-head"><h2>Feedback</h2></div>
+            <div className="ui-form ui-form-flush">
+              <div className="ui-field"><label htmlFor="fb-text">What happened?</label>
+                <textarea id="fb-text" value={text} maxLength={TEXT_MAX} rows={4} onChange={(e) => setText(e.target.value)} />
+              </div>
+              <div className="ui-field"><label htmlFor="fb-doing">What were you doing?</label>
+                <select id="fb-doing" value={topic} onChange={(e) => setTopic(e.target.value)}>
+                  {topics.map((t) => <option key={t.label} value={t.label}>{t.label}</option>)}
+                </select>
+              </div>
+              <div className="ui-field"><label htmlFor="fb-shot">Add a screenshot (optional)</label>
+                <input id="fb-shot" type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+                <span className="ui-note">Take one with your phone buttons first, then pick it here.</span>
+              </div>
+              {error && <p role="alert" className="ui-field-error">{error}</p>}
+              <div className="ui-edit-actions">
+                <button type="button" className="ui-btn" disabled={busy} onClick={submit}>{busy ? "Sending…" : "Send"}</button>
+                <button type="button" className="ui-btn ghost" onClick={() => setOpen(false)}>Close</button>
+              </div>
             </div>
           </div>
         </div>
