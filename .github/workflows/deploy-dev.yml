@@ -36,6 +36,7 @@ jobs:
           VITE_DEMO_TOKEN: ${{ secrets.VITE_DEMO_TOKEN }}
           VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
           VITE_POSTHOG_KEY: ${{ secrets.DEV_VITE_POSTHOG_KEY }}   # story #207: dev only; empty means no analytics
+          VITE_MAP_TILES: https://tile.openstreetmap.org/{z}/{x}/{y}.png   # story #691: dev only (OSM public tiles: light test use, no SLA); prod has none until the PMTiles test
           VITE_BUILD: ${{ github.sha }}
         run: |
           npm ci
