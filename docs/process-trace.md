@@ -509,3 +509,6 @@ Rule: read this first in every session, append before saying done.
 | 462 | 2026-10-29 | coder | Deploy retry (PR #732, story #731): a non-JSON answer or a dropped connection is tried 3 times, 30 s apart; `--from <key>` resumes. | #311 | reviewed |
 | 463 | 2026-10-29 | coder | CI flake of `admin-settings.spec.ts` S2 found to be a real bug and fixed (PR #734, story #733): a late load no longer overwrites what the admin typed. | #309 | reviewed |
 | 464 | 2026-10-29 | coder | Radar run for the scroll-story page at the bare address (#503): nothing to adopt; frames asked from the reviewer; no code before the owner's yes. | #310 | reviewed |
+| 465 | 2026-10-29 | coder | #503 built from the owner's yes on boards S1 to S3 (PR #743): static story page at `/`, the console moved to `/console/`, the `/ to /customer/` redirect removed. | #310 | reviewed |
+| 466 | 2026-10-29 | coder | PostHog on dev: #737 dev deploy follows staging (PR #746), #738 page views (PR #747), #739 replay with masking (PR #748), #740 error tracking (PR #749). | #203 | reviewed |
+| 467 | 2026-10-29 | coder | #254 Play closed test: runbook `docs/ops/play-closed-test.md`, the listing words, a feature graphic and four phone screenshots in `design/play/`; test run red first. | #249 | asked |

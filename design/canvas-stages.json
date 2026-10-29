@@ -184,7 +184,7 @@
     {
       "id": "final",
       "title": "Section 2 · Design final, not on prod: the owner said yes, not live yet",
-      "purpose": "Section 2 = approved, not live. Row 2a: T2 T3 (#691 rider map), merged on staging 29 Oct, live at the next release. Row 2c: L1 L2 L3 A9 (#619), merged on staging 29 Oct, live at the next release. Row 2b: coupons (VITE_OFFERS) and UPI payments (VITE_PAYMENTS_PROVIDER) are coded and tested, but the prod build does not carry the flag, so a customer does not see them. Each moves to Section 1 at the release that switches it on.",
+      "purpose": "Section 2 = approved, not live. Row 2a: T2 T3 (#691 rider map), merged on staging 29 Oct. Row 2d: S1 S2 S3 (#503 the story at the bare address), merged on staging 29 Oct (PR #743). Row 2c: L1 L2 L3 A9 (#619), merged on staging 29 Oct. Row 2b: coupons (VITE_OFFERS) and UPI payments (VITE_PAYMENTS_PROVIDER) are coded and tested, but the prod build does not carry the flag. Each moves to Section 1 at the release that switches it on.",
       "prefix": "DESIGN",
       "tint": "teal",
       "rows": [
@@ -199,6 +199,17 @@
           "notes": [
             "rider-map"
           ]
+        },
+        {
+          "id": "2d",
+          "title": "2d · Coded and merged on staging 29 Oct (#503 the bare address story, PR #743), waiting for the next release",
+          "prefix": "ON STAGING",
+          "boards": [
+            "S1-StoryHero.dc.html",
+            "S2-StoryParts.dc.html",
+            "S3-StoryDoors.dc.html"
+          ],
+          "notes": []
         },
         {
           "id": "2c",
@@ -237,7 +248,7 @@
     {
       "id": "discussion",
       "title": "Section 3 · In discussion: no decision yet",
-      "purpose": "Section 3: 02s Sunset is on hold (owner, 29 Oct). P3 Paying is a placeholder until the gateway (KYC). Row 3b: the three frames for the bare address story (#503), waiting for the owner's pick; nothing is coded before it. A board the manifest does not name lands in the Unsorted row here, so nothing is ever lost.",
+      "purpose": "Section 3: 02s Sunset is on hold (owner, 29 Oct). P3 Paying is a placeholder until the gateway (KYC). Nothing here is built until a decision. A board the manifest does not name lands in the Unsorted row here, so nothing is ever lost.",
       "prefix": "IN TALK",
       "tint": "yellow",
       "rows": [
@@ -247,16 +258,6 @@
           "boards": [
             "N-Sunset.dc.html",
             "P3-PayWaiting.dc.html"
-          ],
-          "notes": []
-        },
-        {
-          "id": "3b",
-          "title": "3b · #503 the bare address story: three frames for the owner's pick (hero, four parts, four doors; S3 on Night)",
-          "boards": [
-            "S1-StoryHero.dc.html",
-            "S2-StoryParts.dc.html",
-            "S3-StoryDoors.dc.html"
           ],
           "notes": []
         }
