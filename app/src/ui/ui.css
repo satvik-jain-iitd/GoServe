@@ -125,8 +125,8 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-tag.delivered { background: var(--gs-status-delivered); color: var(--gs-on-action); }
 .ui-tag.ready { background: var(--gs-status-ready); color: var(--md-on-tertiary); }
 .ui-tag.out { background: var(--gs-status-out-for-delivery); color: var(--gs-paper); }
-.ui-tag.placed, .ui-tag.error { background: transparent; border: 1.5px solid currentColor; padding: 2px 7px; }
-.ui-tag.placed { color: var(--gs-text-muted); }
+.ui-tag.placed, .ui-tag.accepted, .ui-tag.error { background: transparent; border: 1.5px solid currentColor; padding: 2px 7px; }
+.ui-tag.placed, .ui-tag.accepted { color: var(--gs-text-muted); }   /* canvas audit, 29 Oct 2026: board K2-Cooking shows an accepted ticket with the muted placed outline, not the filled Cooking tag */
 .ui-tag.error { color: var(--md-error); }
 .ui-live .mono { flex: 1; font-size: var(--gs-mono-sm); }
 .ui-live .go { color: var(--md-primary); font-size: 20px; line-height: 1; }
