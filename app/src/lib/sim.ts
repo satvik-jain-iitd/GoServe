@@ -1,3 +1,4 @@
+import { NO_INTERNET } from "./errorLines";
 // Story H7 (#190): the admin Simulator tab talks to n8n GS MAIN 30 (webhook gs-sim) with the simulator's own token. It never writes the database
 // itself; the database functions behind the webhook touch rows marked synthetic only (migrations 0028 to 0030).
 export class SimError extends Error {
@@ -17,7 +18,7 @@ export async function callSim(action: SimAction, params: Record<string, number |
   try {
     res = await deps.fetchFn(deps.url, { method: "POST", headers: { "content-type": "application/json", "x-gs-sim-token": deps.token }, body: JSON.stringify({ action, ...params }) });
   } catch {
-    throw new SimError("No network. Check your connection and try again.", "network");
+    throw new SimError(NO_INTERNET, "network");
   }
   let answer: SimAnswer | null = null;
   try { answer = await res.json(); } catch { answer = null; }

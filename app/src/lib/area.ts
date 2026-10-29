@@ -5,10 +5,13 @@ import { insideHours, isOpenNow } from "./hours";
 export type AreaKitchen = { id: string; name: string; pin_codes: string[]; synthetic?: boolean; lat: number | null; lng: number | null; phone?: string | null; open: boolean; active: boolean; opens_at?: string | null; closes_at?: string | null };
 export type Area = { kind: "ok"; kitchen: AreaKitchen } | { kind: "closed"; id: string; name: string; opens_at: string | null; paused?: true } | { kind: "none" };
 
+// Story #668 (owner, 28 Oct): the kitchen is the back room; the customer sees their own address, not the kitchen's. Set true to show the kitchen's name on the menu again (row C.2).
+export const SHOW_KITCHEN_NAME = false;
+
 export const isPin = (text: string): boolean => /^\d{6}$/.test(text);
 
 // Kitchens that serve the pin code: an open, active one wins. Several: the nearest to `from` when it is known, else the first by name.
-// (ponytail: the customer's coordinates are not collected yet, so the name order decides; a place can be passed in when they are.)
+// Story #668: the customer's place, when they allowed location, decides between kitchens that serve the same pin; without it the name order decides.
 export function chooseKitchen(kitchens: AreaKitchen[], pin: string, from?: { lat: number; lng: number }, now: Date = new Date()): Area {
   const serving = kitchens.filter((k) => k.pin_codes.includes(pin)).sort((a, b) => a.name.localeCompare(b.name));
   if (serving.length === 0) return { kind: "none" };
@@ -72,9 +75,9 @@ export async function fetchKitchens(client: Pick<SupabaseClient, "from">): Promi
 }
 
 // Online: ask. A kitchen that worked is remembered with its pin code, so the saved menu still opens with no network.
-export async function resolveArea(pin: string, fetchAll: () => Promise<AreaKitchen[]>, store: Storage = window.localStorage): Promise<Area> {
+export async function resolveArea(pin: string, fetchAll: () => Promise<AreaKitchen[]>, store: Storage = window.localStorage, from?: { lat: number; lng: number }): Promise<Area> {
   try {
-    const area = chooseKitchen(await fetchAll(), pin);
+    const area = chooseKitchen(await fetchAll(), pin, from);
     if (area.kind === "ok") {
       try { store.setItem(KITCHEN_KEY, JSON.stringify({ pin, kitchen: area.kitchen })); } catch { /* not remembered */ }
     }

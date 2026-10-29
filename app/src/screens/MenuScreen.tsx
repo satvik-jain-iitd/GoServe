@@ -1,5 +1,6 @@
 // The menu of the Ink v3 boards 02, 02a, 02b, 02c and 03 (story H10b, #193): header, greeting, thali hero, sections, filter sheet, dish sheet.
 import { useEffect, useState } from "react";
+import { SHOW_KITCHEN_NAME } from "../lib/area";
 import { filterDishes } from "../lib/browse";
 import { greeting, sectionsOf, thalisOf } from "../lib/home";
 import { creditLicence, creditLine, type Dish } from "../lib/menu";
@@ -45,7 +46,7 @@ export function MenuScreen(p: Props) {
       <div className="ui-scroll" aria-busy={p.dishes === null && !p.error ? true : undefined} aria-label={p.dishes === null && !p.error ? "Loading the menu" : undefined}>
         <div className="ui-greet">
           <h1>{greeting(new Date().getHours(), p.name)}</h1>
-          {p.kitchenName ? <h2 className="ui-greet-line">{p.kitchenName}{p.openText ? ` · ${p.openText}` : ""}</h2> : null}
+          {(SHOW_KITCHEN_NAME ? p.kitchenName : "") || p.openText ? <h2 className="ui-greet-line">{[SHOW_KITCHEN_NAME ? p.kitchenName : "", p.openText].filter(Boolean).join(" · ")}</h2> : null}
           <div className="ui-zigzag" aria-hidden="true" />
         </div>
         {closed && (

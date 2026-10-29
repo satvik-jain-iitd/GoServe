@@ -22,6 +22,7 @@ import { confirmAt, DEFAULT_CFG, mayAsk, notYet, reaskMs, type ConfirmCfg } from
 import { fetchOrders } from "./lib/live";
 import { pushTrail } from "./lib/trail";
 import { trace } from "./lib/trace";
+import { NO_INTERNET } from "./lib/errorLines";
 import { FeedbackSheet } from "./screens/FeedbackSheet";
 import { ensureSession, fetchMenuRows, fetchRiderCard, getClient, type RiderCard } from "./lib/supabase";
 import { openTill } from "./lib/browse";
@@ -29,8 +30,16 @@ import { AccountScreen } from "./screens/AccountScreen";
 import { currentSession, scopeFor, joinCode, joinLink, joinSession, rememberJoin, resetSession } from "./lib/session";
 import { MenuScreen } from "./screens/MenuScreen";
 import { BillScreen } from "./screens/BillScreen";
+import { OFFERS_ON } from "./lib/quote";
+import { useOffers } from "./lib/useOffers";
 import { openOrderToResume } from "./lib/resume";
 import { SignIn } from "./screens/SignIn";
+import { NameSheet, OtpSheet } from "./screens/OtpSheet";
+import { Skeleton } from "./ui";
+import { otpGateOn } from "./lib/otpGate";
+import { createPayment, switchToCash, simulatePaid, type PayMethod } from "./lib/payments";
+import { openGateway } from "./lib/payGateway";
+import { registerNative, wrapperToken } from "./lib/pushNative";
 import { AdminScreen } from "./screens/AdminScreen";
 import { loadDraft, saveDraft } from "./lib/draft";
 import { PlacedScreen } from "./screens/PlacedScreen";
@@ -63,6 +72,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const shown = shownArea(area, clock);
   const [looking, setLooking] = useState(false);
   const [menuError, setMenuError] = useState<string | null>(null);
+  const [from, setFrom] = useState<{ lat: number; lng: number } | null>(null);   // story #668: where the customer is, when they allowed location; it picks the nearest kitchen
   const [menuTry, setMenuTry] = useState(0);   // story #637: Try again and the phone coming back online read the menu again
   useEffect(() => {
     const again = () => setMenuTry((n) => n + 1);
@@ -76,6 +86,21 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [address, setAddress] = useState(draft0?.address ?? "");
   const [name, setName] = useState(draft0?.name ?? "");
   const [phone, setPhone] = useState(draft0?.phone ?? "");
+  // Story #551: the phone code at checkout (off unless the gate is on). verified = this user already has a phone linked.
+  const gate = lock === "customer" && otpGateOn(import.meta.env, window.localStorage);
+  const [verified, setVerified] = useState(false);
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);   // story #667: null = not asked yet; the first screen waits so a returning customer never sees it flash
+  const [otpOpen, setOtpOpen] = useState(false);
+  const [nameOpen, setNameOpen] = useState(false);
+  const [nameAsked, setNameAsked] = useState(false);
+  const [pendingPlace, setPendingPlace] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  // Story #552: how you pay. cod = today's cash order. UPI or Card: the order is placed, then Pay now makes the payment (the state machine lives here).
+  const [payMethod, setPayMethod] = useState<PayMethod>("cod");
+  const [payState, setPayState] = useState<"ready" | "starting" | "waiting" | "failed" | null>(null);
+  const [payError, setPayError] = useState<string | null>(null);
+  const [payStart, setPayStart] = useState<string | null>(null);
+  const payRef = useRef("");
   useEffect(() => {
     if (lock === "customer") saveDraft({ step: step === "account" ? "menu" : step, cart, address, name, phone });
   }, [lock, step, cart, address, name, phone]);
@@ -148,7 +173,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     document.addEventListener("visibilitychange", seen);
     return () => document.removeEventListener("visibilitychange", seen);
   }, [live.loading]);
-  const [reminder, setReminder] = useState<Alerts>(() => alertsState(typeof Notification === "undefined" ? undefined : Notification.permission, readOff(window.localStorage)));   // story 609: on, off (by the customer), ask, or none (blocked)
+  const [reminder, setReminder] = useState<Alerts>(() => alertsState(typeof Notification === "undefined" ? undefined : Notification.permission, readOff(window.localStorage)));   // story #609: on, off (by the customer), ask, or none (blocked)
   // The tracker goes back to the menu when the order it showed has left the list (the other device reset the demo).
   const trackedSeen = useRef(false);
   useEffect(() => {
@@ -162,6 +187,32 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }, [orders, placed]);
 
   const tracked = placed ? orders.find((o) => o.id === placed.id) ?? { status: placed.status, created_at: placedAt, updated_at: placed.updated_at, paid_by: placed.paid_by ?? null } : null;
+  // Story #552: paid when the order row says so; a waiting payment that the database moved back to cash (it expired) is failed; a refresh of an online order waits without a clock.
+  const trackedPay = tracked as { payment_method?: string | null; paid_at?: string | null } | null;
+  const paidNow = !!trackedPay?.paid_at;
+  const resumedOnline = payState === null && trackedPay?.payment_method === "online" && !paidNow;
+  useEffect(() => {
+    if (payState === "waiting" && trackedPay?.payment_method === "cod") setPayState("failed");
+  }, [payState, trackedPay?.payment_method]);
+  async function payNow() {
+    if (!placed) return;
+    const before = payState === "failed" ? "failed" : "ready";
+    setPayState("starting");
+    setPayError(null);
+    const made = await createPayment(placed.id);
+    if (!made.ok) { setPayState(before); setPayError(made.message); return; }
+    payRef.current = made.provider_order_id;
+    await openGateway(made, import.meta.env).catch(() => undefined);
+    setPayState("waiting");
+  }
+  async function payCash() {
+    if (!placed) return;
+    setPayError(null);
+    const r = await switchToCash(placed.id);
+    if (!r.ok) return void setPayError(r.message);
+    setPayState(null);
+    setPayMethod("cod");
+  }
   useEffect(() => {
     if (!tracked || demo) return void setAsking(false);
     const check = () => {
@@ -220,17 +271,23 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     }
   }
   // One tap allows the local reminder and, where the phone can, the web push (story A7), so the customer hears about placed, ready and delivered with the app closed.
-  function allowReminder() {
+  const [alertsError, setAlertsError] = useState<string | null>(null);
+  const ALERTS_FAILED = "Could not turn alerts on. Try again in a minute.";
+  async function allowReminder() {
+    setAlertsError(null);
     writeOff(window.localStorage, false);
+    const native = await wrapperToken(window);   // story #554: a phone wrapper also registers its device token, with its platform
+    if (native && !(await registerNative(native))) return void setAlertsError(ALERTS_FAILED);
     void pushWith(() => Notification.requestPermission()).then((r) => {
       track("push_subscribe", r, typeof Notification === "undefined" ? "no_notification_api" : Notification.permission);
       if (r === "denied") return setReminder("none");
-      if (r === "unsupported" || r === "not_set_up") return void Notification.requestPermission().then((p) => setReminder(p === "granted" ? "on" : "none"), () => setReminder("none"));
-      setReminder("on");   // on, or failed to save: the permission is given, the local reminder still works
+      if (r === "unsupported") return void Notification.requestPermission().then((p) => setReminder(p === "granted" ? "on" : "none"), () => setReminder("none"));
+      if (r === "not_set_up") return void Notification.requestPermission().then((p) => (p === "granted" ? setAlertsError(ALERTS_FAILED) : setReminder("none")), () => setReminder("none"));   // story #661: permission given but the set-up did not work: say so, the switch stays off
+      if (r === "failed") return setAlertsError(ALERTS_FAILED);
+      setReminder("on");
     });
   }
   // Story #609: the switch on You always works. Off: the server row and the browser subscription go and "off" is remembered. On again: subscribe with no prompt (the permission is still granted).
-  const [alertsError, setAlertsError] = useState<string | null>(null);
   async function toggleAlerts() {
     if (reminder === "ask" || reminder === "none") return allowReminder();
     setAlertsError(null);
@@ -244,7 +301,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     }
     writeOff(window.localStorage, false);
     const r = await pushWith(async () => "granted");
-    if (r === "failed") { writeOff(window.localStorage, true); return setAlertsError("Could not turn on alerts. Try again."); }
+    if (r === "failed") { writeOff(window.localStorage, true); return setAlertsError(ALERTS_FAILED); }
     setReminder("on");
   }
   // The browser's subscription, saved for the current session. `permission` asks (the Allow tap) or only reads (the re-save below).
@@ -270,7 +327,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setConfirming(true);
     setConfirmError(null);
     try {
-      const { order: saved } = await confirmDelivery({ sessionId: await currentSession(), orderId: placed.id }, api());
+      const answer = await confirmDelivery({ sessionId: await currentSession(), orderId: placed.id }, api());
+      const saved = answer.order ?? { ...placed, status: "delivered", updated_at: new Date().toISOString() };   // "Already done": show the delivered state, no line
       setOrders((cur) => (cur.some((o) => o.id === saved.id) ? mergeOrder(cur, { ...cur.find((o) => o.id === saved.id)!, status: saved.status, updated_at: saved.updated_at, paid_by: saved.paid_by ?? null }) : cur));
       setPlaced({ ...placed, status: saved.status, updated_at: saved.updated_at, paid_by: saved.paid_by ?? null });
       setAsking(false);
@@ -317,11 +375,11 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     let alive = true;
     setLooking(true);
     setAreaError(null);
-    resolveArea(pin, () => fetchKitchens(getClient()), window.localStorage)
-      .then((found) => { if (alive) setArea(found); }, () => { if (alive) setAreaError("Could not look up kitchens. Connect and try again."); })
+    resolveArea(pin, () => fetchKitchens(getClient()), window.localStorage, from ?? undefined)
+      .then((found) => { if (alive) setArea(found); }, () => { if (alive) setAreaError(NO_INTERNET); })
       .finally(() => { if (alive) setLooking(false); });
     return () => { alive = false; };
-  }, [lock, pin, menuTry]);
+  }, [lock, pin, from, menuTry]);
   // The menu of the kitchen that serves the pin; a closed kitchen still shows its menu (board 02c). Reads as soon as the kitchen is known,
   // so a saved kitchen (D15, #242) shows its menu before the kitchens read answers.
   const areaKitchenId = area?.kind === "ok" ? area.kitchen.id : area?.kind === "closed" ? area.id : null;
@@ -332,7 +390,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       .then((loaded) => { if (alive) { setMenu(loaded); setMenuError(null); } }, (e: Error) => { if (alive) setMenuError(e.message); });
     return () => { alive = false; };
   }, [lock, areaKitchenId, menuTry]);
-  function choosePin(p: string) {
+  function choosePin(p: string, at?: { lat: number; lng: number }) {
+    setFrom(at ?? null);
     land.current = true;   // #525: the mark flies in once, on the first Menu after this pick
     savePin(p);
     setArea(null);
@@ -484,18 +543,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }
   const openOrderNow = orders.find((o) => !["delivered", "cancelled"].includes(o.status));
   const openLive = openOrderNow ? { label: statusLabel(openOrderNow.status), no: shortId(openOrderNow.id), onOpen: () => openOrder(openOrderNow) } : null;
-  // "Use on another phone": the link that joins this session, shared or copied.
-  async function shareFromAccount(): Promise<string | null> {
-    let link: string | null = null;
-    try {
-      link = await shareLink();
-      if (navigator.share) { await navigator.share({ url: link }); return null; }
-      await navigator.clipboard.writeText(link);
-      return "Link copied. Open it on the other phone.";
-    } catch {
-      return link ? `Copy this link by hand: ${link}` : "Could not make the link. Try again.";   // no share, no clipboard (private mode): the link itself
-    }
-  }
   // "Forget me on this phone": what this phone remembers is wiped and the session ends.
   async function forgetMe() {
     try { await getClient().auth.signOut(); } catch { /* offline: the local wipe still runs */ }
@@ -505,7 +552,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
 
   const lines = useMemo(() => cartLines(cart, menu?.dishes ?? []), [cart, menu]);
   const kitchenName = area?.kind === "ok" ? area.kitchen.name : area?.kind === "closed" ? area.name : "";
-  const total = cartTotal(lines);
+  const offers = useOffers(OFFERS_ON && lock === "customer" && step === "bill", area?.kind === "ok" ? area.kitchen.id : null, pin, toOrderItems(cart));   // story #588
+  const total = offers.quote ? offers.quote.to_pay_paise : cartTotal(lines);
   const count = lines.reduce((n, l) => n + l.qty, 0);
 
   const [cancelling, setCancelling] = useState(false);
@@ -515,13 +563,34 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setCancelling(true);
     setConfirmError(null);
     const { data, error: failed } = await getClient().rpc("cancel_order", { p_order: placed.id, p_reason: null });
-    if (failed) setConfirmError("This order can no longer be cancelled.");
+    if (failed) setConfirmError("The kitchen has started, so this order cannot be cancelled now. Call the kitchen if you need to.");
     else if (data?.order) setOrders((cur) => mergeOrder(cur, data.order as Order));
     setCancelling(false);
   }
 
+  // Story #551: a guest confirms a phone number before the order goes; the continuation runs once the sheets are closed (so it sees the new name and phone).
+  useEffect(() => {
+    if (!gate) return;
+    let alive = true;
+    ensureSession().then(() => getClient().auth.getUser()).then(({ data }) => {
+      const p = data.user && !data.user.is_anonymous ? data.user.phone : null;
+      const n = (data.user?.user_metadata?.full_name ?? data.user?.user_metadata?.name) as string | undefined;
+      if (alive) setSignedIn(!!data.user && !data.user.is_anonymous);
+      if (alive && p) { setVerified(true); setPhone(p.replace(/^91/, "")); if (n) setName((cur) => cur || n); }
+    }).catch(() => { if (alive) setSignedIn(false); });
+    return () => { alive = false; };
+  }, [gate]);
+  useEffect(() => {
+    if (!pendingPlace || otpOpen || nameOpen) return;
+    if (!name.trim() && !nameAsked) return void setNameOpen(true);
+    setPendingPlace(false);
+    void place();
+  }, [pendingPlace, otpOpen, nameOpen, nameAsked, name]);   // eslint-disable-line react-hooks/exhaustive-deps
+
   async function place() {
     if (lock && lock !== "customer") return;   // story H2: only the customer app and the demo console place orders
+    if (gate && !verified) { setOtpOpen(true); return; }
+    if (gate && !name.trim() && !nameAsked) { setPendingPlace(true); return; }
     pushTrail("place order");
     setSending(true);
     setError(null);
@@ -548,6 +617,9 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       setConfirmError(null);
       notYetCount.current = 0;
       setStep("placed");
+      setPayState(lock === "customer" && payMethod !== "cod" ? "ready" : null);
+      setPayStart(new Date().toISOString());
+      setPayError(null);
       setCart({});
       keyRef.current = null;
     } catch (e) {
@@ -588,8 +660,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   );
   const kitchenView = lock === "kitchen" ? <KitchenGate>{kitchenScreen}</KitchenGate> : kitchenScreen(null);
   const needArea = lock === "customer" && step !== "placed" && step !== "orders" && !(pin && (area?.kind === "ok" || area?.kind === "closed"));
-  const customerView = needArea ? (
-    <AreaScreen pin={pin} area={area} busy={looking} error={areaError} onPin={choosePin} />
+  // Story #667: with the phone code on, the first screen is the number and the code (or Google); nothing else shows before it.
+  const customerView = gate && signedIn === null ? <div className="ui-pad"><Skeleton lines={3} /></div> : gate && signedIn === false ? (
+    <OtpSheet welcome phone={phone} onClose={() => undefined}
+      onVerified={(p) => { setPhone(p); setVerified(true); setSignedIn(true); }} />
+  ) : needArea ? (
+    <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={(pl) => { setAddress(pl.address); choosePin(pl.pin, pl.from); }} />
   ) : (
     <>
         {step === "menu" && (
@@ -604,12 +680,13 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} onYou={() => setStep("account")} />}
         {step === "account" && (
           <AccountScreen onGivenName={(n) => setName((v) => v || n)} name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone} onAddress={setAddress}
-            alerts={reminder} onAlerts={toggleAlerts} alertsError={alertsError} live={openLive} onShare={shareFromAccount} onForget={forgetMe}
+            alerts={reminder} onAlerts={toggleAlerts} alertsError={alertsError} live={openLive} onForget={forgetMe}
             onMenu={() => setStep("menu")} onOrders={() => setStep("orders")} />
         )}
         {menu && step === "bill" && (
-          <BillScreen lines={lines} total={total} kitchenName={kitchenName} pin={pin} address={address} onAddress={setAddress}
-            details={lock === "customer" ? { name, phone, onName: setName, onPhone: setPhone } : undefined} sending={sending} error={error}
+          <BillScreen lines={lines} total={total} offers={offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove } : undefined} kitchenName={kitchenName} pin={pin} address={address} onAddress={setAddress}
+            details={lock === "customer" ? { name, phone, onName: setName, onPhone: setPhone, gate } : undefined}
+            pay={lock === "customer" ? { value: payMethod, onChange: setPayMethod } : undefined} sending={sending} error={error}
             onBack={() => setStep("menu")} onPlace={place} />
         )}
         {step === "placed" && placed && (
@@ -619,7 +696,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             address={tracked && "address" in tracked ? tracked.address : address.trim()}
             confirmedAt={tracked && tracked.status === "delivered" ? tracked.updated_at : null}
             asking={asking} busy={confirming} error={confirmError} reminder={reminder}
-            onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} onCall={() => void tapCall(getClient(), placed.id)} />
+            onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} pay={paidNow || payState || resumedOnline ? { state: paidNow ? "paid" : payState ?? "waiting", method: payMethod === "cod" ? "upi" : payMethod, startedAt: payState ? payStart : null, error: payError, onPay: payNow, onCash: payCash, onSimulate: () => void simulatePaid(import.meta.env.VITE_PAYMENTS_DEV_SECRET ?? "", payRef.current) } : undefined}
+            onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} onCall={() => void tapCall(getClient(), placed.id)} />
         )}
     </>
   );
@@ -638,6 +716,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
           </button>
         ))}
       </nav>}
+      {otpOpen && <OtpSheet phone={phone} onClose={() => setOtpOpen(false)}
+        onVerified={(p) => { setPhone(p); setVerified(true); setOtpOpen(false); setToast("Number confirmed"); setTimeout(() => setToast(null), 2500); setPendingPlace(true); }} />}
+      {nameOpen && <NameSheet onDone={(n) => { if (n) setName(n); setNameAsked(true); setNameOpen(false); }} />}
+      {toast && <p role="status" className="otp-toast">{toast}</p>}
       {demo && <p role="status" className="notice"><strong>Offline demo</strong></p>}
       {!lock && <DemoBar onReset={reset} getLink={shareLink} autoOn={auto || demo} autoNote={autoNote} onAuto={toggleAuto} />}
       {role === "kitchen" && !framed && kitchenView}
