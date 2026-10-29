@@ -45,7 +45,9 @@ import { openGateway } from "./lib/payGateway";
 import { registerNative, wrapperToken } from "./lib/pushNative";
 import { AdminScreen } from "./screens/AdminScreen";
 import { loadDraft, saveDraft } from "./lib/draft";
-import { PlacedScreen } from "./screens/PlacedScreen";
+import { PlacedScreen, type Track } from "./screens/PlacedScreen";
+import { readPinPoint, readRider, watchRider, type LatLng } from "./lib/riderTrack";
+import type { Point } from "./lib/riderMap";
 import { KitchenScreen } from "./screens/KitchenScreen";
 import { RiderScreen } from "./screens/RiderScreen";
 import { useOps } from "./lib/useOps";
@@ -573,6 +575,29 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     return () => { alive = false; };
   }, [placed?.id, riderStatus, demo]);
 
+  // Story #691 (boards T2, T3): On the way, the rider's place comes from the order_tracking row (read now, again on every realtime event and every 30 s, the ping rhythm).
+  const [riderPoint, setRiderPoint] = useState<Point | null>(null);
+  const [youPoint, setYouPoint] = useState<LatLng | null>(null);
+  const onTheWay = !!placed && !demo && riderStatus === "out_for_delivery";
+  useEffect(() => {
+    if (!onTheWay || !placed) return void setRiderPoint(null);
+    const c = getClient();
+    let alive = true;
+    const read = () => void readRider(c, placed.id).then((p) => { if (alive && p) setRiderPoint(p); }).catch(() => undefined);   // a failed read keeps the last place
+    read();
+    const stop = watchRider(c, placed.id, read);
+    const tick = setInterval(read, 30_000);
+    return () => { alive = false; stop(); clearInterval(tick); };
+  }, [placed?.id, onTheWay]);
+  useEffect(() => {
+    if (!onTheWay || !pin) return void setYouPoint(null);
+    let alive = true;
+    void readPinPoint(getClient(), pin).then((p) => { if (alive) setYouPoint(p); }).catch(() => undefined);
+    return () => { alive = false; };
+  }, [pin, onTheWay]);
+  const kitchenPoint = area?.kind === "ok" && area.kitchen.lat !== null && area.kitchen.lng !== null ? { lat: area.kitchen.lat, lng: area.kitchen.lng } : null;
+  const riderTrack: Track | undefined = onTheWay && riderPoint && youPoint && kitchenPoint ? { kitchen: kitchenPoint, you: youPoint, rider: riderPoint, name: rider?.name ?? "Your rider", phone: rider?.phone ?? null } : undefined;
+
   // A tap on a slip of "Your orders" opens it as the tracker or the delivered screen (story H10d).
   function openOrder(o: Order) {
     setPlaced({ id: o.id, status: o.status, total_paise: o.total_paise, updated_at: o.updated_at, paid_by: o.paid_by ?? null });
@@ -753,7 +778,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             confirmedAt={tracked && tracked.status === "delivered" ? tracked.updated_at : null}
             asking={asking} busy={confirming} error={confirmError} reminder={reminder}
             onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} pay={paidNow || payState || resumedOnline ? { state: paidNow ? "paid" : payState ?? "waiting", method: payMethod === "cod" ? "upi" : payMethod, startedAt: payState ? payStart : null, error: payError, onPay: payNow, onCash: payCash, onSimulate: () => void simulatePaid(import.meta.env.VITE_PAYMENTS_DEV_SECRET ?? "", payRef.current) } : undefined}
-            onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} onCall={() => void tapCall(getClient(), placed.id)} />
+            onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} track={riderTrack} onCall={() => void tapCall(getClient(), placed.id)} />
         )}
     </>
   );
