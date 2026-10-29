@@ -4,6 +4,7 @@ Dry run by default: it only reads and prints the plan. --apply writes. It refuse
 The prod address comes from SUPABASE_GOSERVE_PROD_URL, the token from SUPABASE_ACCESS_TOKEN (vault 02_databases.env).
 Usage: release_db.py [--apply]   (the owner says yes before --apply)"""
 import glob, json, os, sys, urllib.request
+import vault   # story: the keys live in ~/Desktop/Secrets/goserve/goserve.env; the shell environment is only an override
 
 DEV_REF = "tmxyizmkpwwfyazvrfhw"  # goserve-dev: never touched here
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -13,7 +14,7 @@ APP_TABLES = {"kitchens", "menu_items", "orders", "order_events", "decision_log"
 
 def _call(method, ref, path, body=None):
     req = urllib.request.Request(f"{API}/{ref}{path}", method=method, data=json.dumps(body).encode() if body is not None else None,
-                                 headers={"Authorization": f"Bearer {os.environ['SUPABASE_ACCESS_TOKEN']}", "Content-Type": "application/json", "User-Agent": "goserve-release"})
+                                 headers={"Authorization": f"Bearer {vault.setting(os.environ, 'SUPABASE_ACCESS_TOKEN', '02_databases.env')}", "Content-Type": "application/json", "User-Agent": "goserve-release"})
     body = urllib.request.urlopen(req).read()
     return json.loads(body) if body.strip() else {}   # some calls (set secrets) answer 2xx with nothing
 
@@ -43,7 +44,7 @@ def migration_files():
 
 
 def main(argv, env=os.environ):
-    ref = ref_from_url(env["SUPABASE_GOSERVE_PROD_URL"])
+    ref = ref_from_url(vault.setting(env, "SUPABASE_GOSERVE_PROD_URL", "02_databases.env"))
     if ref == DEV_REF:
         sys.exit("Refused: this is goserve-dev. This script is for the production project only.")
     name = project_name(ref)   # the owner's yes goes to a NAME, not only a ref

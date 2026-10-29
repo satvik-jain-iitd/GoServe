@@ -7,6 +7,7 @@ Fresh secrets are written to the vault file 05_goserve_prod_functions.env first,
 import glob, json, os, re, secrets, sys, time, tomllib, urllib.error, urllib.request, uuid
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import vault as gsvault   # the keys live in ~/Desktop/Secrets/goserve/goserve.env; the shell environment is only an override
 import release_db   # one place for the API call, the project name and the dev ref
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -113,7 +114,7 @@ def multipart(meta, files):
 def deploy(ref, name):
     body, ctype = multipart({"name": name, "entrypoint_path": f"{name}/index.ts", "verify_jwt": verify_jwt(name)}, function_files(name))
     req = urllib.request.Request(f"{release_db.API}/{ref}/functions/deploy?slug={name}", data=body, method="POST",
-                                 headers={"Authorization": f"Bearer {os.environ['SUPABASE_ACCESS_TOKEN']}", "Content-Type": ctype, "User-Agent": "goserve-release"})
+                                 headers={"Authorization": f"Bearer {gsvault.setting(os.environ, 'SUPABASE_ACCESS_TOKEN', '02_databases.env')}", "Content-Type": ctype, "User-Agent": "goserve-release"})
     try:
         return json.load(urllib.request.urlopen(req, timeout=120))
     except urllib.error.HTTPError as e:
@@ -168,7 +169,7 @@ def checks(url, anon):
 
 
 def main(argv, env=os.environ):
-    url = env["SUPABASE_GOSERVE_PROD_URL"]
+    url = gsvault.setting(env, "SUPABASE_GOSERVE_PROD_URL", "02_databases.env")
     ref = release_db.ref_from_url(url)
     try:
         name = release_db.project_name(ref) if ref != release_db.DEV_REF else ""
@@ -214,7 +215,7 @@ def main(argv, env=os.environ):
     if not release_db.get_auth(ref).get("external_anonymous_users_enabled"):
         release_db.set_auth(ref)
         print("anonymous sign-in switched on")
-    if not checks(url, env["SUPABASE_GOSERVE_PROD_ANON_KEY"]):
+    if not checks(url, gsvault.setting(env, "SUPABASE_GOSERVE_PROD_ANON_KEY", "02_databases.env")):
         sys.exit("Checks failed. Look at the prod project before going on.")
     print("done")
 
