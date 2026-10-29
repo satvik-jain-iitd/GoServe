@@ -8,8 +8,9 @@ class DeployDev(unittest.TestCase):
     def setUp(self):
         self.text = open(WF).read()
 
-    def test_s1_push_to_dev_deploys_to_vercel(self):
-        self.assertRegex(self.text, r"branches: \[dev\]")
+    def test_s1_push_to_staging_deploys_to_vercel(self):   # story #737: merges go to staging since 28 Oct, so the dev app follows staging
+        self.assertRegex(self.text, r"branches: \[staging\]")
+        self.assertNotRegex(self.text, r"branches: \[dev\]")
         for s in ("VERCEL_TOKEN", "VERCEL_ORG_ID", "VERCEL_PROJECT_ID"):
             self.assertIn(f"secrets.{s}", self.text)
         self.assertRegex(self.text, r"vercel(@\S+)? deploy --prebuilt --prod")
