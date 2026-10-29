@@ -91,3 +91,10 @@ test('D8 (#693) every taken row carries its outbox id, and Sent ids lists exactl
   assert.deepEqual(sent(out), [{ supabase_url: 'u', rpc_body: { p_ids: [7, 9] } }]);
   assert.deepEqual(sent([]), []);
 });
+
+test('D9 (#718) a kitchen_open row has no order; Expand rows passes its kind and kitchen on, and an old row still says kind order', () => {
+  const cfg = { supabase_url: 'u', kill_switch: false, vapid_public_key: 'PUB', vapid_subject: 'mailto:a@b.c' };
+  const rows = [{ id: 3, order_id: null, session_id: 's1', status: 'open', kind: 'kitchen_open', kitchen_id: 'k1' }, { id: 4, order_id: 'o2', session_id: 's2', status: 'ready' }];
+  const out = runCode('push_drain_expand.js', { statusCode: 200, body: { rows } }, { Tick: cfg });
+  assert.deepEqual(out.map((x) => [x.outbox_id, x.order_id, x.status, x.kind, x.kitchen_id]), [[3, null, 'open', 'kitchen_open', 'k1'], [4, 'o2', 'ready', 'order', null]]);
+});
