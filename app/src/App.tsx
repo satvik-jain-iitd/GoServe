@@ -613,6 +613,21 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     window.location.reload();
   }
 
+  // Story #771 (Google Play): "Delete my account". The database function deletes this person's data and the login; then this phone is wiped like Forget me.
+  // The toast is shown after the reload, so the flag waits in sessionStorage (localStorage is cleared).
+  async function deleteAccount(): Promise<string | null> {
+    const { data, error: failed } = await getClient().rpc("delete_my_account");
+    if (failed) return "Could not delete the account. Check your connection and try again.";
+    if (data && data.ok === false) return String(data.message ?? "Could not delete the account.");
+    try { await getClient().auth.signOut(); } catch { /* the login is already gone on the server */ }
+    try { window.localStorage.clear(); window.sessionStorage.setItem("gs-account-deleted", "1"); } catch { /* blocked storage: nothing to wipe */ }
+    window.location.reload();
+    return null;
+  }
+  useEffect(() => {
+    try { if (window.sessionStorage.getItem("gs-account-deleted")) { window.sessionStorage.removeItem("gs-account-deleted"); setToast("Account deleted"); setTimeout(() => setToast(null), 4000); } } catch { /* blocked storage */ }
+  }, []);
+
   const lines = useMemo(() => cartLines(cart, menu?.dishes ?? []), [cart, menu]);
   const kitchenName = area?.kind === "ok" ? area.kitchen.name : area?.kind === "closed" ? area.name : "";
   // Story #619, board L3: a dish the customer chose to swap goes to the server with swap true; the server puts its own alternative in its place.
@@ -761,7 +776,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} onYou={() => setStep("account")} />}
         {step === "account" && (
           <AccountScreen onGivenName={(n) => setName((v) => v || n)} name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone} onAddress={setAddress}
-            alerts={reminder} onAlerts={toggleAlerts} alertsError={alertsError} live={openLive} onForget={forgetMe}
+            alerts={reminder} onAlerts={toggleAlerts} alertsError={alertsError} live={openLive} onForget={forgetMe} onDeleteAccount={deleteAccount}
             onMenu={() => setStep("menu")} onOrders={() => setStep("orders")} />
         )}
         {menu && step === "bill" && (

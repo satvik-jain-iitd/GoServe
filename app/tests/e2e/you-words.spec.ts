@@ -47,7 +47,7 @@ test("S4 a customer's pick goes out as a stored kind and as the words the custom
 test("S5 the privacy and terms pages carry the new contact address", async ({ page }) => {
   for (const path of ["/privacy/", "/terms/"]) {
     await page.goto(path);
-    await expect(page.getByText("avinturetech@gmail.com")).toBeVisible();
+    await expect(page.getByText("avinturetech@gmail.com").first()).toBeVisible();   // #771: the privacy page names it in the delete section too
     await expect(page.locator("body")).not.toContainText("klickbae8yt@gmail.com");
   }
 });
