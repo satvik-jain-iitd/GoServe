@@ -1,0 +1,118 @@
+// Story #207: product analytics (PostHog) is off unless a key is set, sends six named events, and no name, phone or address. Story #738 adds the page views.
+import { describe, expect, it, vi } from "vitest";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { EVENTS, capture, initAnalytics, reportUncaught, resetAnalytics } from "../../src/lib/analytics";
+
+const fakePosthog = () => ({ init: vi.fn(), capture: vi.fn(), captureException: vi.fn() });
+const store = () => { const m = new Map<string, string>(); return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) }; };
+
+describe("analytics", () => {
+  it("S1 without a key nothing is loaded and capture does nothing", async () => {
+    resetAnalytics();
+    const load = vi.fn();
+    await initAnalytics({}, load as never, store());
+    capture("order_placed");
+    expect(load).not.toHaveBeenCalled();
+  });
+
+  it("S2 with a key: EU host by default, autocapture off, no profiles for anonymous people, the person-free settings stay", async () => {
+    resetAnalytics();
+    const ph = fakePosthog();
+    await initAnalytics({ VITE_POSTHOG_KEY: "phc_test" }, (async () => ph) as never, store());
+    const [key, cfg] = ph.init.mock.calls[0];
+    expect(key).toBe("phc_test");
+    expect(cfg).toMatchObject({ api_host: "https://eu.i.posthog.com", autocapture: false, person_profiles: "identified_only", persistence: "localStorage" });
+  });
+
+  it("S2b (story #738) web analytics: one page view per history change, page leave on close, the 2026-08-30 defaults", async () => {
+    resetAnalytics();
+    const ph = fakePosthog();
+    await initAnalytics({ VITE_POSTHOG_KEY: "phc_test" }, (async () => ph) as never, store());
+    expect(ph.init.mock.calls[0][1]).toMatchObject({ capture_pageview: "history_change", capture_pageleave: true, defaults: "2026-08-30" });
+  });
+
+  it("S2c (story #739) session replay is on with every input masked; surveys stay off", async () => {
+    resetAnalytics();
+    const ph = fakePosthog();
+    await initAnalytics({ VITE_POSTHOG_KEY: "phc_test" }, (async () => ph) as never, store());
+    expect(ph.init.mock.calls[0][1]).toMatchObject({ disable_session_recording: false, session_recording: { maskAllInputs: true }, disable_surveys: true });
+  });
+
+  it("S2d (story #740) the SDK captures exceptions by itself", async () => {
+    resetAnalytics();
+    const ph = fakePosthog();
+    await initAnalytics({ VITE_POSTHOG_KEY: "phc_test" }, (async () => ph) as never, store());
+    expect(ph.init.mock.calls[0][1]).toMatchObject({ capture_exceptions: true });
+  });
+
+  it("S8 (story #740) an error React could not recover from is sent with its message, and still reaches the console; without a key nothing is sent", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    resetAnalytics();
+    const ph = fakePosthog();
+    await initAnalytics({ VITE_POSTHOG_KEY: "phc_test" }, (async () => ph) as never, store());
+    const err = new Error("component threw");
+    reportUncaught(err, { componentStack: "at Bill" });
+    await Promise.resolve(); await Promise.resolve();
+    expect(ph.captureException).toHaveBeenCalledWith(err, { componentStack: "at Bill" });
+    expect(log).toHaveBeenCalled();
+    resetAnalytics();
+    reportUncaught(new Error("no key"), {});
+    await Promise.resolve();
+    expect(ph.captureException).toHaveBeenCalledTimes(1);
+    log.mockRestore();
+  });
+
+  it("S9 (story #740) the page's root hands uncaught errors to reportUncaught", () => {
+    expect(readFileSync(join(__dirname, "../../src/main.tsx"), "utf8")).toMatch(/onUncaughtError:\s*reportUncaught/);
+  });
+
+  it("S3 the host comes from VITE_POSTHOG_INGEST", async () => {
+    resetAnalytics();
+    const ph = fakePosthog();
+    await initAnalytics({ VITE_POSTHOG_KEY: "k", VITE_POSTHOG_INGEST: "https://x.example" }, (async () => ph) as never, store());
+    expect(ph.init.mock.calls[0][1].api_host).toBe("https://x.example");
+  });
+
+  it("S4 the six events, and capture sends the name and its props", async () => {
+    expect([...EVENTS]).toEqual(["first_open", "code_ok", "address_set", "order_placed", "delivered_yes", "feedback_sent"]);
+    resetAnalytics();
+    const ph = fakePosthog();
+    await initAnalytics({ VITE_POSTHOG_KEY: "k" }, (async () => ph) as never, store());
+    capture("order_placed", { items_count: 2 });
+    await Promise.resolve();
+    expect(ph.capture).toHaveBeenCalledWith("order_placed", { items_count: 2 });
+  });
+
+  it("S5 first_open is sent once per phone", async () => {
+    resetAnalytics();
+    const ph = fakePosthog();
+    const s = store();
+    await initAnalytics({ VITE_POSTHOG_KEY: "k" }, (async () => ph) as never, s);
+    await initAnalytics({ VITE_POSTHOG_KEY: "k" }, (async () => ph) as never, s);
+    await Promise.resolve();
+    expect(ph.capture.mock.calls.filter((c) => c[0] === "first_open")).toHaveLength(1);
+  });
+
+  it("S6 every capture( in the source uses a listed event and no personal prop", () => {
+    const files: string[] = [];
+    const walk = (d: string) => readdirSync(d).forEach((f) => { const p = join(d, f); statSync(p).isDirectory() ? walk(p) : /\.tsx?$/.test(f) && files.push(p); });
+    walk(join(__dirname, "../../src"));
+    const used: string[] = [];
+    for (const f of files) {
+      for (const m of readFileSync(f, "utf8").matchAll(/\bcapture\(\s*"([a-z_]+)"([^)]*)\)/g)) {
+        used.push(m[1]);
+        expect(m[2], `${f} sends a personal prop`).not.toMatch(/\b(name|phone|address|email)\b/);
+      }
+    }
+    expect(used.length).toBeGreaterThanOrEqual(5);
+    for (const u of used) expect(EVENTS as readonly string[]).toContain(u);
+  });
+
+  it("S7 only the dev deploy carries the key; the prod deploy does not (dev only for now)", () => {
+    const dev = readFileSync(join(__dirname, "../../../.github/workflows/deploy-dev.yml"), "utf8");
+    const prod = readFileSync(join(__dirname, "../../../.github/workflows/deploy-app.yml"), "utf8");
+    expect(dev).toContain("VITE_POSTHOG_KEY");
+    expect(prod).not.toContain("POSTHOG");
+  });
+});

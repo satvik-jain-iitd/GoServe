@@ -6,7 +6,7 @@ const tracker = (page: Page) => page.locator("[aria-current=step]");
 
 test("S1 in airplane mode Autopilot plays the whole order story from local data, under an Offline demo banner", async ({ page, context }) => {
   const net = await setup(context, page);
-  await page.goto("/");
+  await page.goto("/console/");
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();   // the menu is saved for offline use
   const readsBefore = net.calls.orderReads.length;
   await context.setOffline(true);
@@ -22,7 +22,7 @@ test("S1 in airplane mode Autopilot plays the whole order story from local data,
 
 test("S1 the other screens follow the same local story: kitchen card, rider list, ops suggestion", async ({ page, context }) => {
   await setup(context, page);
-  await page.goto("/");
+  await page.goto("/console/");
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
   await context.setOffline(true);
   await page.getByRole("button", { name: "Autopilot" }).click();
@@ -37,7 +37,7 @@ test("S1 the other screens follow the same local story: kitchen card, rider list
 
 test("S1 tapping Autopilot again leaves the demo and clears the sample order", async ({ page, context }) => {
   await setup(context, page);
-  await page.goto("/");
+  await page.goto("/console/");
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
   await context.setOffline(true);
   await page.getByRole("button", { name: "Autopilot" }).click();
@@ -49,7 +49,7 @@ test("S1 tapping Autopilot again leaves the demo and clears the sample order", a
 
 test("S2 online, Autopilot moves the order by itself and each step is sent as the kitchen or the rider", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Autopilot" }).click();
   await expect.poll(() => net.calls.status.length, { timeout: 10000 }).toBe(6);
   expect(net.calls.status.map((c) => [c.body.action, c.body.actor, c.body.to_status ?? c.body.event])).toEqual([
@@ -64,7 +64,7 @@ test("S2 online, Autopilot moves the order by itself and each step is sent as th
 
 test("S2 online with no order, Autopilot says to place one first and sends nothing", async ({ page, context }) => {
   const net = await setup(context, page);
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Autopilot" }).click();
   await expect(page.getByText("Place an order first.")).toBeVisible();
   await page.waitForTimeout(800);
@@ -73,7 +73,7 @@ test("S2 online with no order, Autopilot says to place one first and sends nothi
 
 test("S2 tapping Autopilot again stops it", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Autopilot" }).click();
   await expect.poll(() => net.calls.status.length, { timeout: 5000 }).toBeGreaterThanOrEqual(1);
   await page.getByRole("button", { name: "Autopilot" }).click();
@@ -86,7 +86,7 @@ test("S1 online but the server cannot be reached and there is no order: Autopilo
   test.setTimeout(40000);
   await setup(context, page);
   await context.route("https://test.supabase.co/rest/v1/orders**", (route) => route.abort());   // wifi on, internet dead
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Autopilot" }).click();
   await expect(page.getByText("Offline demo")).toBeVisible({ timeout: 15000 });   // the library retries a dead network for about 7 seconds first
   await expect(page.getByRole("heading", { name: "Delivered" })).toBeVisible({ timeout: 8000 });
@@ -95,7 +95,7 @@ test("S1 online but the server cannot be reached and there is no order: Autopilo
 test("S1 if the server cannot be reached while Autopilot runs, it falls back to the offline story", async ({ page, context }) => {
   await setup(context, page, [order("placed")]);
   await context.route("https://orders.test/**", (route) => route.abort());   // the network fails after the page is up
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Autopilot" }).click();
   await expect(page.getByText("Offline demo")).toBeVisible({ timeout: 5000 });
   await expect(page.getByRole("heading", { name: "Delivered" })).toBeVisible({ timeout: 8000 });
@@ -104,7 +104,7 @@ test("S1 if the server cannot be reached while Autopilot runs, it falls back to 
 test("S2 online, a refused step (kill switch) stops Autopilot after one call and shows the reason", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
   net.state.reply = { status: 503, body: { ok: false, error: "kill_switch", message: "Orders are paused. Please try again soon." } };
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Autopilot" }).click();
   await expect.poll(() => net.calls.status.length, { timeout: 5000 }).toBe(1);
   await page.waitForTimeout(1200);   // four more steps would have gone by
@@ -118,7 +118,7 @@ test("S1 the offline story never asks the server for a decision, even if the pho
   await context.route("https://orders.test/**", (route) => route.abort());   // the first step fails, so the story goes offline
   const asked: string[] = [];
   page.on("request", (r) => { if (r.url().startsWith("https://orders.test") && (r.postData() ?? "").includes('"decide"')) asked.push(r.url()); });
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Autopilot" }).click();
   await expect(page.getByText("Offline demo")).toBeVisible({ timeout: 5000 });
   await page.getByRole("button", { name: "Ops" }).click();

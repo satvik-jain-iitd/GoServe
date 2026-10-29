@@ -12,16 +12,18 @@ type Props = {
   live: { label: string; no: string; onOpen: () => void } | null;
   onGivenName: (name: string) => void;   // story 527: the Google first name fills an empty name
   onForget: () => void;
+  onDeleteAccount: () => Promise<string | null>;   // story #771: deletes the account on the server; the answer is a message when it was refused, null when it worked
   onMenu: () => void; onOrders: () => void;
 };
 
 const store = (): Storage | null => { try { return window.localStorage; } catch { return null; } };
 
-export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAddress, alerts, onAlerts, alertsError, live, onGivenName, onForget, onMenu, onOrders }: Props) {
+export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAddress, alerts, onAlerts, alertsError, live, onGivenName, onForget, onDeleteAccount, onMenu, onOrders }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({ name, phone, address });   // story 640: Edit opens a draft; Save applies it, Cancel drops it
   const [look, setLook] = useState<Theme>(() => readPin(store()) ?? DEFAULT_THEME);
   const [sure, setSure] = useState(false);
+  const [deleting, setDeleting] = useState<null | { busy: boolean; error: string | null }>(null);   // story #771: the confirm sheet
   const pick = (t: Theme) => { pinTheme(store(), document, t === DEFAULT_THEME ? null : t); setLook(t); };   // Day is the default, not a pin (#225)
   const row = (label: string, value: string, mono = false) => (<><dt className="mono">{label}</dt><dd className={mono ? "mono" : undefined}>{value || "Not saved yet"}</dd></>);
   return (
@@ -31,7 +33,7 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
       </header>
       {live && <button type="button" className="ui-live" onClick={live.onOpen}><span className="tag">{live.label}</span><span className="mono">No. {live.no}</span><span className="go" aria-hidden="true">›</span></button>}
       <div className="ui-scroll ui-account">
-        <section className="ui-slip" aria-label="Delivery details">
+        <section className="ui-slip ph-no-capture" aria-label="Delivery details">
           <div className="ui-slip-body">
             <div className="ui-slip-head"><span>Delivery details</span><span>Used on your bill</span></div>
             {editing ? (
@@ -68,9 +70,23 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
         ) : (
           <button type="button" className="ui-row" onClick={() => setSure(true)}><span>Forget me on this phone</span><span className="go" aria-hidden="true">›</span></button>
         )}
+        <button type="button" className="ui-row" onClick={() => setDeleting({ busy: false, error: null })}><span>Delete my account</span><span className="go" aria-hidden="true">›</span></button>
         <p className="mono ui-legal"><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
         <p className="mono ui-legal">{buildLabel(import.meta.env.VITE_BUILD)}</p>
       </div>
+      {deleting && (
+        <div className="ui-sheet-back">
+          <div role="dialog" aria-modal="true" aria-label="Delete your account?" className="ui-sheet">
+            <div className="ui-sheet-head"><h2>Delete your account?</h2></div>
+            <p>Your orders, saved details and Google link are deleted. This cannot be undone.</p>
+            {deleting.error && <p role="alert" className="ui-field-error">{deleting.error}</p>}
+            <div className="ui-edit-actions">
+              <button type="button" className="ui-btn danger" disabled={deleting.busy} onClick={async () => { setDeleting({ busy: true, error: null }); const err = await onDeleteAccount(); if (err) setDeleting({ busy: false, error: err }); }}>{deleting.busy ? "Deleting…" : "Delete"}</button>
+              <button type="button" className="ui-btn ghost" disabled={deleting.busy} onClick={() => setDeleting(null)}>Keep it</button>
+            </div>
+          </div>
+        </div>
+      )}
       <TabBar current="you" onMenu={onMenu} onOrders={onOrders} onYou={() => undefined} />
     </>
   );

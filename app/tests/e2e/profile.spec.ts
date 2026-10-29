@@ -37,7 +37,7 @@ test("S2 next time the details are filled in already", async ({ page, context })
 
 test("S3 the demo console at / still needs only the address", async ({ page, context }) => {
   await setup(context, page);
-  await page.goto("/");
+  await page.goto("/console/");
   await toCart(page);
   await page.getByLabel("Address").fill("Flat 4");
   await expect(page.getByLabel("Your name")).toHaveCount(0);
@@ -84,7 +84,7 @@ test("S7 a signed-in customer can sign out and goes back to a fresh anonymous se
     : r.fulfill({ status: 200, headers: { "access-control-allow-origin": "*", "content-type": "application/json" }, body: JSON.stringify({ id: SESSION, aud: "authenticated", role: "authenticated", is_anonymous: false, email: "asha@example.com", user_metadata: { full_name: "Asha Rao" }, app_metadata: {}, created_at: "2026-10-22T10:00:00Z" }) }));
   const logout: string[] = [];
   await context.route("https://test.supabase.co/auth/v1/logout**", (r) => { logout.push(r.request().url()); return r.fulfill({ status: 204, headers: { "access-control-allow-origin": "*" }, body: "" }); });
-  await page.goto("/");   // #224: the customer app has no sign-in line; the demo console keeps it
+  await page.goto("/console/");   // #224: the customer app has no sign-in line; the demo console keeps it
   await expect(page.getByTestId("signed-in")).toHaveText("Signed in as Asha Rao");
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect.poll(() => logout.length).toBe(1);

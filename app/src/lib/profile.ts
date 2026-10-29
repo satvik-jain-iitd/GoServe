@@ -4,7 +4,7 @@ import type { Order } from "./kitchen";
 
 export type Profile = { name: string; phone: string; address: string };
 
-export const isPhone = (text: string): boolean => /^\d{10}$/.test(text);
+export const isPhone = (text: string): boolean => /^[6-9]\d{9}$/.test(text);   // story #187: the database rule (migration 0048) and the sign-in sheet
 
 // Cooking 15 minutes, then 1.5 minutes a kilometre, never under 20. The distance is not known yet (the customer's place is not collected),
 // so the answer is the minimum until it is. (ponytail: pass km when coordinates exist.)

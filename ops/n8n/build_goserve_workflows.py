@@ -12,7 +12,7 @@ How to run:
   python3 ops/n8n/build_goserve_workflows.py
 
 It reads the n8n API key, the GoServe bot token, and the owner chat id from
-~/Desktop/Secrets/04_integrations.env (keys N8N_API_KEY, GOSERVE_BOT_TOKEN,
+~/Desktop/Secrets/goserve/goserve.env, then 04_integrations.env (keys N8N_API_KEY, GOSERVE_BOT_TOKEN,
 GOSERVE_TELEGRAM_CHAT_ID). It talks to https://n8n.LinkRight.in.
 
 Note: the public n8n API marks workflow "tags" as read-only, so the tag is
@@ -28,7 +28,7 @@ import json, os, re, urllib.request, urllib.error
 SEC = "/Users/satvikjain/Desktop/Secrets"
 BASE = "https://n8n.LinkRight.in/api/v1"
 
-env = open(os.path.join(SEC, "04_integrations.env")).read()
+env = "".join(open(p).read() + "\n" for p in (os.path.join(SEC, "goserve", "goserve.env"), os.path.join(SEC, "04_integrations.env")) if os.path.exists(p))   # goserve.env first (owner, 29 Oct 2026), then the old file
 KEY = re.search(r"^N8N_API_KEY=(\S+)", env, re.M).group(1)
 CHAT = re.search(r"^GOSERVE_TELEGRAM_CHAT_ID=(\S+)", env, re.M).group(1)
 

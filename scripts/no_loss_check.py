@@ -4,6 +4,7 @@
 Then every order goes placed, accepted, preparing, ready, and each step is sent twice. Then it counts the rows.
 It WRITES to goserve-dev (one anonymous user, 20 orders, their events). Dev only. Clean up with scripts/clear_dev.py.
 Run: python3 scripts/no_loss_check.py   Prints: orders=20 duplicates=0 chains_ok=20 lost=0"""
+import vault as gsvault
 import json, os, re, socket, ssl, sys, time, urllib.error, urllib.request, uuid
 from urllib.parse import urlparse
 
@@ -21,7 +22,7 @@ def verify(orders: list, events: list, sent: int) -> dict:
 
 
 def vault(f, k):
-    return re.search(r"^" + k + r"=(\S+)", open(os.path.expanduser("~/Desktop/Secrets/" + f)).read(), re.M).group(1)
+    return re.search(r"^" + k + r"=(\S+)", gsvault.read(f), re.M).group(1)
 
 
 def main() -> int:

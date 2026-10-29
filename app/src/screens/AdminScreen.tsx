@@ -73,7 +73,7 @@ export function AdminScreen() {
       <header className="ui-head"><h1>{head.h}</h1><span className="meta">{head.meta}</span></header>
       {error && <p role="alert" className="ui-note error">{error}</p>}
       {tab === "orders" && ordersView}
-      {tab === "numbers" && <div className="ui-scroll"><AdminNumbers live={count.live} kitchens={kitchens} /><div className="ui-pad"><AdminDecisions /></div></div>}
+      {tab === "numbers" && <div className="ui-scroll"><AdminNumbers live={count.live} kitchens={kitchens} settings /><div className="ui-pad"><AdminDecisions /></div></div>}
       {tab === "city" && cityScreen}
       {tab === "sim" && <div className="ui-scroll"><AdminSim /></div>}
       <Tabs current={tab} onPick={(t) => { setError(null); setTab(t); }} tabs={[{ key: "orders", label: "Orders", icon: "orders", badge: count.live }, { key: "city", label: "City", icon: "city" }, { key: "numbers", label: "Numbers", icon: "numbers" }, { key: "sim", label: "Simulator", icon: "sim" }]} />

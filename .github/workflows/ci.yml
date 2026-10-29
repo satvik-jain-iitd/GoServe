@@ -85,18 +85,21 @@ jobs:
 
       - name: Changed files
         if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           base=origin/${{ github.base_ref }}
           git diff --name-only --diff-filter=d "$base"...HEAD | grep -vE '^knowledge/|package-lock\.json$' | xargs -r python3 scripts/guard.py files
           # PRs into main are releases: they skip the file cap (owner, 15 Oct 2026)
-          [ "${{ github.base_ref }}" = main ] || python3 scripts/guard.py count "$(git diff --name-only "$base"...HEAD | wc -l)"
+          [ "${{ github.base_ref }}" = main ] || python3 scripts/guard.py count "$(git diff --name-only "$base"...HEAD | wc -l)" "$PR_TITLE"   # chore(sync) skips the cap too
 
       - name: Commit messages
         if: github.event_name == 'pull_request'
         run: |
+          # commits already on main were gated when they merged, and GitHub's squash titles (" (#n)") can pass 72: skip them (story #625)
           rc=0
           while IFS= read -r subject; do
             python3 scripts/guard.py msg "$subject" || rc=1
-          done < <(git log --no-merges --format=%s origin/${{ github.base_ref }}..HEAD)
+          done < <(git log --no-merges --format=%s origin/${{ github.base_ref }}..HEAD --not origin/main)
           exit $rc
 

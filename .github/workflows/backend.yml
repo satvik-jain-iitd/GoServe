@@ -1,0 +1,58 @@
+name: Backend
+
+# Story #337 (E27). Backend v2 lives in supabase/ (functions) and api/ (the OpenAPI contract) on the staging branch. Every pull request that touches them runs the Deno tests, among them the contract test (story #338: a wrong field is red); a push to staging
+# deploys the functions to the DEV project (goserve-dev) and checks that health answers. Prod is the owner's step, never a CI job.
+# The token is the repository secret SUPABASE_ACCESS_TOKEN (the owner adds the value). Without it the deploy job stops with a clear message.
+on:
+  pull_request:
+    paths: ["supabase/**", "api/**", ".github/workflows/backend.yml"]
+  push:
+    branches: [staging]
+    paths: ["supabase/**", "api/**", ".github/workflows/backend.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DEV_PROJECT: tmxyizmkpwwfyazvrfhw   # goserve-dev
+
+jobs:
+  test:
+    name: Functions and contract (deno test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Test every function and the contract
+        run: deno test --allow-read api supabase/functions
+
+  deploy:
+    name: Deploy to dev and check health
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: The token is set
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN" || { echo "The secret SUPABASE_ACCESS_TOKEN is not set. The owner adds it in the repository settings."; exit 1; }
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Deploy the functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: supabase functions deploy --project-ref "$DEV_PROJECT"
+      - name: Health answers
+        run: |
+          for i in 1 2 3 4 5; do
+            out=$(curl -fsS "https://$DEV_PROJECT.supabase.co/functions/v1/health" || true)
+            echo "$out" | grep -q '"ok":true' && { echo "health: $out"; exit 0; }
+            sleep 5
+          done
+          echo "health did not answer ok"; exit 1

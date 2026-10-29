@@ -22,7 +22,8 @@ def plan(env: str, payload: dict) -> str:
 
 
 def vault(name: str) -> str:
-    for f in pathlib.Path("~/Desktop/Secrets").expanduser().glob("*.env"):
+    root = pathlib.Path("~/Desktop/Secrets").expanduser()
+    for f in sorted((root / "goserve").glob("*.env")) + sorted(root.glob("*.env")):   # the goserve folder first (owner, 29 Oct 2026), then the old shared files
         m = re.search(rf"^{name}=(\S+)", f.read_text(), re.M)
         if m:
             return m.group(1)

@@ -6,7 +6,7 @@ import { clientPlatform } from "./lib/platform";
 import { riderRefused, savePlatform, tapCall } from "./lib/signals";
 import { useLiveOrders } from "./lib/useLiveOrders";
 import { loadMenu, MENU_KEY, type Dish } from "./lib/menu";
-import { fetchKitchens, forgetArea, loadArea, loadPin, closedLine, openingText, resolveArea, savePin, shownArea, type Area } from "./lib/area";
+import { fetchKitchens, forgetArea, loadArea, loadPin, closedCopy, openingText, resolveArea, savePin, shownArea, type Area } from "./lib/area";
 import { AreaScreen } from "./screens/AreaScreen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { AdminGate } from "./screens/AdminGate";
@@ -17,6 +17,7 @@ import { enablePush, watchSession } from "./lib/push";
 import { takeReturn } from "./lib/auth";
 import { alertsState, readOff, turnAlertsOff, writeOff, type Alerts } from "./lib/alerts";
 import { loadProfile, saveProfile } from "./lib/profile";
+import { capture } from "./lib/analytics";
 import { addEvent, changeStatus, confirmDelivery, orderDeps, placeOrder, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
 import { confirmAt, DEFAULT_CFG, mayAsk, notYet, reaskMs, type ConfirmCfg } from "./lib/confirm";
 import { fetchOrders } from "./lib/live";
@@ -31,6 +32,8 @@ import { currentSession, scopeFor, joinCode, joinLink, joinSession, rememberJoin
 import { MenuScreen } from "./screens/MenuScreen";
 import { BillScreen } from "./screens/BillScreen";
 import { OFFERS_ON } from "./lib/quote";
+import { watchMenu } from "./lib/liveMenu";
+import { ordersV2On, placeOrderV2, PriceChanged, v2Deps } from "./lib/ordersV2";
 import { useOffers } from "./lib/useOffers";
 import { openOrderToResume } from "./lib/resume";
 import { SignIn } from "./screens/SignIn";
@@ -42,7 +45,9 @@ import { openGateway } from "./lib/payGateway";
 import { registerNative, wrapperToken } from "./lib/pushNative";
 import { AdminScreen } from "./screens/AdminScreen";
 import { loadDraft, saveDraft } from "./lib/draft";
-import { PlacedScreen } from "./screens/PlacedScreen";
+import { PlacedScreen, type Track } from "./screens/PlacedScreen";
+import { readPinPoint, readRider, watchRider, type LatLng } from "./lib/riderTrack";
+import type { Point } from "./lib/riderMap";
 import { KitchenScreen } from "./screens/KitchenScreen";
 import { RiderScreen } from "./screens/RiderScreen";
 import { useOps } from "./lib/useOps";
@@ -88,6 +93,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [phone, setPhone] = useState(draft0?.phone ?? "");
   // Story #551: the phone code at checkout (off unless the gate is on). verified = this user already has a phone linked.
   const gate = lock === "customer" && otpGateOn(import.meta.env, window.localStorage);
+  const ordersV2 = lock === "customer" && ordersV2On(import.meta.env, window.localStorage);   // story #590: POST /orders instead of the v1 webhook
   const [verified, setVerified] = useState(false);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);   // story #667: null = not asked yet; the first screen waits so a returning customer never sees it flash
   const [otpOpen, setOtpOpen] = useState(false);
@@ -274,18 +280,35 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [alertsError, setAlertsError] = useState<string | null>(null);
   const ALERTS_FAILED = "Could not turn alerts on. Try again in a minute.";
   async function allowReminder() {
+    let ok = false;
     setAlertsError(null);
     writeOff(window.localStorage, false);
     const native = await wrapperToken(window);   // story #554: a phone wrapper also registers its device token, with its platform
     if (native && !(await registerNative(native))) return void setAlertsError(ALERTS_FAILED);
-    void pushWith(() => Notification.requestPermission()).then((r) => {
+    await pushWith(() => Notification.requestPermission()).then((r) => {
       track("push_subscribe", r, typeof Notification === "undefined" ? "no_notification_api" : Notification.permission);
       if (r === "denied") return setReminder("none");
       if (r === "unsupported") return void Notification.requestPermission().then((p) => setReminder(p === "granted" ? "on" : "none"), () => setReminder("none"));
       if (r === "not_set_up") return void Notification.requestPermission().then((p) => (p === "granted" ? setAlertsError(ALERTS_FAILED) : setReminder("none")), () => setReminder("none"));   // story #661: permission given but the set-up did not work: say so, the switch stays off
       if (r === "failed") return setAlertsError(ALERTS_FAILED);
+      ok = true;
       setReminder("on");
     });
+    return ok;
+  }
+  // Story #718 (board L1): a closed kitchen offers one push when it opens. Alerts are allowed first when they are not on yet.
+  const [tellMe, setTellMe] = useState<"idle" | "busy" | "done">("idle");
+  const [tellMeError, setTellMeError] = useState<string | null>(null);
+  async function tellMeWhenOpen() {
+    if (shown?.kind !== "closed") return;
+    setTellMe("busy");
+    setTellMeError(null);
+    const allowed = reminder === "on" || (await allowReminder());
+    const { data, error } = allowed ? await getClient().rpc("open_alert_add_v2", { p_kitchen: shown.id }) : { data: null, error: null };
+    const ans = data as { ok?: boolean; message?: string } | null;
+    if (allowed && !error && ans?.ok) return setTellMe("done");
+    setTellMe("idle");
+    setTellMeError(ans?.message ?? (allowed ? "Could not set that up. Try again." : "Allow alerts first."));
   }
   // Story #609: the switch on You always works. Off: the server row and the browser subscription go and "off" is remembered. On again: subscribe with no prompt (the permission is still granted).
   async function toggleAlerts() {
@@ -324,6 +347,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     if (!placed) return;
     pushTrail("customer: yes, delivered");
     track("delivered_answer", "yes");
+    capture("delivered_yes");
     setConfirming(true);
     setConfirmError(null);
     try {
@@ -390,10 +414,26 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       .then((loaded) => { if (alive) { setMenu(loaded); setMenuError(null); } }, (e: Error) => { if (alive) setMenuError(e.message); });
     return () => { alive = false; };
   }, [lock, areaKitchenId, menuTry]);
+  // Story #619: the kitchen's switch, its hours and its dishes follow live. Any change reads the kitchen and the menu again, quietly (no loading screen).
+  const [liveTick, setLiveTick] = useState(0);
+  useEffect(() => {
+    if (lock !== "customer" || !areaKitchenId) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const stop = watchMenu(getClient(), areaKitchenId, () => { clearTimeout(timer); timer = setTimeout(() => setLiveTick((n) => n + 1), 300); });   // one change often writes two rows
+    return () => { clearTimeout(timer); stop(); };
+  }, [lock, areaKitchenId]);
+  useEffect(() => {
+    if (liveTick === 0 || lock !== "customer" || !pin || !areaKitchenId) return;
+    let alive = true;
+    resolveArea(pin, () => fetchKitchens(getClient()), window.localStorage, from ?? undefined).then((found) => { if (alive) setArea(found); }, () => undefined);
+    loadMenu(() => fetchMenuRows(areaKitchenId), window.localStorage, `${MENU_KEY}.${areaKitchenId}`).then((loaded) => { if (alive) { setMenu(loaded); setMenuError(null); } }, () => undefined);
+    return () => { alive = false; };
+  }, [liveTick]);   // eslint-disable-line react-hooks/exhaustive-deps
   function choosePin(p: string, at?: { lat: number; lng: number }) {
     setFrom(at ?? null);
     land.current = true;   // #525: the mark flies in once, on the first Menu after this pick
     savePin(p);
+    capture("address_set", { from: at ? "location" : "typed" });
     setArea(null);
     setMenu(null);
     setMenuError(null);
@@ -535,6 +575,29 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     return () => { alive = false; };
   }, [placed?.id, riderStatus, demo]);
 
+  // Story #691 (boards T2, T3): On the way, the rider's place comes from the order_tracking row (read now, again on every realtime event and every 30 s, the ping rhythm).
+  const [riderPoint, setRiderPoint] = useState<Point | null>(null);
+  const [youPoint, setYouPoint] = useState<LatLng | null>(null);
+  const onTheWay = !!placed && !demo && riderStatus === "out_for_delivery";
+  useEffect(() => {
+    if (!onTheWay || !placed) return void setRiderPoint(null);
+    const c = getClient();
+    let alive = true;
+    const read = () => void readRider(c, placed.id).then((p) => { if (alive && p) setRiderPoint(p); }).catch(() => undefined);   // a failed read keeps the last place
+    read();
+    const stop = watchRider(c, placed.id, read);
+    const tick = setInterval(read, 30_000);
+    return () => { alive = false; stop(); clearInterval(tick); };
+  }, [placed?.id, onTheWay]);
+  useEffect(() => {
+    if (!onTheWay || !pin) return void setYouPoint(null);
+    let alive = true;
+    void readPinPoint(getClient(), pin).then((p) => { if (alive) setYouPoint(p); }).catch(() => undefined);
+    return () => { alive = false; };
+  }, [pin, onTheWay]);
+  const kitchenPoint = area?.kind === "ok" && area.kitchen.lat !== null && area.kitchen.lng !== null ? { lat: area.kitchen.lat, lng: area.kitchen.lng } : null;
+  const riderTrack: Track | undefined = onTheWay && riderPoint && youPoint && kitchenPoint ? { kitchen: kitchenPoint, you: youPoint, rider: riderPoint, name: rider?.name ?? "Your rider", phone: rider?.phone ?? null } : undefined;
+
   // A tap on a slip of "Your orders" opens it as the tracker or the delivered screen (story H10d).
   function openOrder(o: Order) {
     setPlaced({ id: o.id, status: o.status, total_paise: o.total_paise, updated_at: o.updated_at, paid_by: o.paid_by ?? null });
@@ -550,10 +613,40 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     window.location.reload();
   }
 
+  // Story #771 (Google Play): "Delete my account". The database function deletes this person's data and the login; then this phone is wiped like Forget me.
+  // The toast is shown after the reload, so the flag waits in sessionStorage (localStorage is cleared).
+  async function deleteAccount(): Promise<string | null> {
+    const { data, error: failed } = await getClient().rpc("delete_my_account");
+    if (failed) return "Could not delete the account. Check your connection and try again.";
+    if (data && data.ok === false) return String(data.message ?? "Could not delete the account.");
+    try { await getClient().auth.signOut(); } catch { /* the login is already gone on the server */ }
+    try { window.localStorage.clear(); window.sessionStorage.setItem("gs-account-deleted", "1"); } catch { /* blocked storage: nothing to wipe */ }
+    window.location.reload();
+    return null;
+  }
+  useEffect(() => {
+    try { if (window.sessionStorage.getItem("gs-account-deleted")) { window.sessionStorage.removeItem("gs-account-deleted"); setToast("Account deleted"); setTimeout(() => setToast(null), 4000); } } catch { /* blocked storage */ }
+  }, []);
+
   const lines = useMemo(() => cartLines(cart, menu?.dishes ?? []), [cart, menu]);
   const kitchenName = area?.kind === "ok" ? area.kitchen.name : area?.kind === "closed" ? area.name : "";
-  const offers = useOffers(OFFERS_ON && lock === "customer" && step === "bill", area?.kind === "ok" ? area.kitchen.id : null, pin, toOrderItems(cart));   // story #588
+  // Story #619, board L3: a dish the customer chose to swap goes to the server with swap true; the server puts its own alternative in its place.
+  const [swapped, setSwapped] = useState<string[]>([]);
+  const orderItems = useMemo(() => toOrderItems(cart).map((i) => (swapped.includes(i.menu_item_id) ? { ...i, swap: true } : i)), [cart, swapped]);
+  const offers = useOffers(OFFERS_ON && lock === "customer" && step === "bill", area?.kind === "ok" ? area.kitchen.id : null, pin, orderItems);   // story #588
   const total = offers.quote ? offers.quote.to_pay_paise : cartTotal(lines);
+  const dead = lines.find((l) => l.dish.available === false && !swapped.includes(l.dish.id));   // the first dish in the bill that is sold out
+  const canSwap = ordersV2 && OFFERS_ON;   // the swap is priced by POST /quote and ordered by POST /orders
+  const takeOut = (id: string) => { setCart((c) => changeQty(c, id, -(c[id] ?? 0))); setSwapped((s) => s.filter((x) => x !== id)); };
+  // No alternative (or no way to ask): the item goes out, the rest of the bill is kept, and the menu opens with the dish stamped Sold out.
+  useEffect(() => {
+    if (step !== "bill" || !dead) return;
+    if (offers.alt === null || !canSwap) { takeOut(dead.dish.id); setStep("menu"); }
+  }, [step, dead?.dish.id, offers.alt, canSwap]);   // eslint-disable-line react-hooks/exhaustive-deps
+  // After a swap the Bill shows the lines the server priced: the new dish instead of the sold-out one.
+  const billLines = offers.quote?.swaps?.length && offers.quote.lines
+    ? offers.quote.lines.map((l) => ({ dish: { id: l.menu_item_id, name: l.name, price_paise: l.unit_paise, image_url: null, image_credit: null }, qty: l.qty, line_paise: l.line_paise }))
+    : lines;
   const count = lines.reduce((n, l) => n + l.qty, 0);
 
   const [cancelling, setCancelling] = useState(false);
@@ -595,7 +688,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setSending(true);
     setError(null);
     try {
-      const items = toOrderItems(cart);
+      const items = orderItems;
       const fingerprint = JSON.stringify([items, address.trim()]);
       if (keyRef.current?.fingerprint !== fingerprint) keyRef.current = { fingerprint, key: crypto.randomUUID() };
       const sessionId = await currentSession();
@@ -603,11 +696,11 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         setError("Could not save your details. Try again.");
         return;
       }
-      const { order, confirm } = await placeOrder(
-        { sessionId, key: keyRef.current.key, items, address: address.trim() },
-        api(),
-      );
+      const { order, confirm } = ordersV2 && areaKitchenId
+        ? await placeOrderV2({ kitchenId: areaKitchenId, pin: pin ?? "", items, address: address.trim(), key: keyRef.current.key, expectedPaise: total, code: offers.code, none: offers.none }, v2Deps())
+        : await placeOrder({ sessionId, key: keyRef.current.key, items, address: address.trim() }, api());
       setPlaced(order);
+      capture("order_placed", { items_count: lines.length });
       setPlacedLines(lines.map((l) => ({ name: l.dish.name, qty: l.qty, paise: l.line_paise })));
       if (!demo) void savePlatform(getClient(), order.id, clientPlatform(navigator.userAgent));   // story H14: the iPhone share of orders
       setConfirmCfg(confirm);
@@ -623,6 +716,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       setCart({});
       keyRef.current = null;
     } catch (e) {
+      if (e instanceof PlaceError && e.code === "sold_out") setLiveTick((n) => n + 1);   // story #619: read the menu again, the Bill then names the dish
+      if (e instanceof PriceChanged) offers.replace(e.quote);   // the Bill shows the new To pay; nothing is ordered until the customer taps again
       pushTrail(`error: ${e instanceof Error ? e.message : "place failed"}`);
       setError(e instanceof PlaceError || e instanceof Error ? e.message : "Something went wrong. Please try again.");
     } finally {
@@ -673,18 +768,19 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             pin={pin} name={name} qty={cart} cartCount={count} cartTotal={total}
             kitchenName={kitchenName}
             openText={shown?.kind === "ok" ? openTill(shown.kitchen.closes_at) : ""}
-            closedText={shown?.kind === "closed" ? closedLine(shown.opens_at, shown.paused === true) : null}
+            closed={shown?.kind === "closed" ? closedCopy(shown.opens_at, shown.paused === true) : null}
+            tellMe={tellMe} tellMeError={tellMeError} onTellMe={tellMeWhenOpen}
             onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
             onChangePin={changeArea} onOrders={() => setStep("orders")} onYou={() => setStep("account")} />
         )}
         {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} onYou={() => setStep("account")} />}
         {step === "account" && (
           <AccountScreen onGivenName={(n) => setName((v) => v || n)} name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone} onAddress={setAddress}
-            alerts={reminder} onAlerts={toggleAlerts} alertsError={alertsError} live={openLive} onForget={forgetMe}
+            alerts={reminder} onAlerts={toggleAlerts} alertsError={alertsError} live={openLive} onForget={forgetMe} onDeleteAccount={deleteAccount}
             onMenu={() => setStep("menu")} onOrders={() => setStep("orders")} />
         )}
         {menu && step === "bill" && (
-          <BillScreen lines={lines} total={total} offers={offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove } : undefined} kitchenName={kitchenName} pin={pin} address={address} onAddress={setAddress}
+          <BillScreen lines={billLines} total={total} soldOut={dead && step === "bill" ? { id: dead.dish.id, name: dead.dish.name, alt: offers.alt, canSwap, onSwap: () => setSwapped((s) => [...s, dead.dish.id]), onRemove: () => takeOut(dead.dish.id) } : undefined} offers={offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove } : undefined} kitchenName={kitchenName} pin={pin} address={address} onAddress={setAddress}
             details={lock === "customer" ? { name, phone, onName: setName, onPhone: setPhone, gate } : undefined}
             pay={lock === "customer" ? { value: payMethod, onChange: setPayMethod } : undefined} sending={sending} error={error}
             onBack={() => setStep("menu")} onPlace={place} />
@@ -697,7 +793,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             confirmedAt={tracked && tracked.status === "delivered" ? tracked.updated_at : null}
             asking={asking} busy={confirming} error={confirmError} reminder={reminder}
             onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} pay={paidNow || payState || resumedOnline ? { state: paidNow ? "paid" : payState ?? "waiting", method: payMethod === "cod" ? "upi" : payMethod, startedAt: payState ? payStart : null, error: payError, onPay: payNow, onCash: payCash, onSimulate: () => void simulatePaid(import.meta.env.VITE_PAYMENTS_DEV_SECRET ?? "", payRef.current) } : undefined}
-            onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} onCall={() => void tapCall(getClient(), placed.id)} />
+            onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} track={riderTrack} onCall={() => void tapCall(getClient(), placed.id)} />
         )}
     </>
   );
@@ -729,7 +825,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       {role === "admin" && !framed && <AdminScreen />}
       <FeedbackSheet role={lock ?? "console"} button={!lock} screen={`${window.location.pathname}${lock ? "" : ` (${role} tab)`}`}
         order={placed ? { id: placed.id, status: orders.find((o) => o.id === placed.id)?.status ?? placed.status } : orders[0] ? { id: orders[0].id, status: orders[0].status } : null}
-        getSession={currentSession} send={(r) => sendFeedback(r, api())} preset={preset} />
+        getSession={currentSession} send={async (r) => { const id = await sendFeedback(r, api()); capture("feedback_sent"); return id; }} preset={preset} />
       {role === "split" && (
         <div className="panes">
           <div>{customerView}</div>

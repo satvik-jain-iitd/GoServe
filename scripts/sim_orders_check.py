@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Story #284 (epic E16): prove that programmed kitchens and riders move real orders. Dev only. Run: python3 scripts/sim_orders_check.py dev
-Reads SUPABASE_GOSERVE_DEV_* from ~/Desktop/Secrets/02_databases.env. It seeds the dream city, makes orders through place_order (the same path the app uses),
+Reads SUPABASE_GOSERVE_DEV_* from ~/Desktop/Secrets/goserve/goserve.env (SUPABASE_ACCESS_TOKEN from 02_databases.env). It seeds the dream city, makes orders through place_order (the same path the app uses),
 calls sim_tick by hand and reads order_events. Pass marks (fixed before the run):
   A one order placed on pin 110092 reaches delivered within 150 ticks, with exactly these events once each: placed, accepted, preparing, ready, assigned, picked_up, delivered;
   B 100 orders with reject_pct 12 and sold_out_pct 8: the cancelled share is between 10 and 30 percent, each with a reason;
@@ -10,14 +10,16 @@ calls sim_tick by hand and reads order_events. Pass marks (fixed before the run)
   F riders are free in Delhi: with rider_flip_pct 100 the riders go offline and come back online, at least one lands more than 3 km from where it left, and a rider
     that is the only one online, 3 km or more from the other kitchens, gets the order of the kitchen it is near.
 """
+import vault as gsvault
 import json, os, re, sys, time, urllib.request, uuid
 
+V2 = "--v2" in sys.argv   # place the orders with place_order_v2 instead of place_order
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import kitchen_restore
 
 if (sys.argv[1] if len(sys.argv) > 1 else "dev") != "dev":
     sys.exit("dev only")
-vault = open(os.path.expanduser("~/Desktop/Secrets/02_databases.env")).read()
+vault = gsvault.read("02_databases.env")
 URL = re.search(r"^SUPABASE_GOSERVE_DEV_URL=(\S+)", vault, re.M).group(1)
 KEY = re.search(r"^SUPABASE_GOSERVE_DEV_SERVICE_ROLE_KEY=(\S+)", vault, re.M).group(1)
 H = {"apikey": KEY, "Authorization": f"Bearer {KEY}", "Content-Type": "application/json"}
@@ -53,7 +55,7 @@ def knobs(**k):
 
 
 def place(kitchen, pin=None, n=0):
-    dishes = get(f"menu_items?select=id&kitchen_id=eq.{kitchen}&available=eq.true&limit=1")
+    dishes = get(f"menu_items?select=id,price_paise&kitchen_id=eq.{kitchen}&available=eq.true&limit=1")
     row = get(f"kitchens?select=open,opens_at,closes_at&id=eq.{kitchen}")
     if isinstance(row, list) and row:
         kitchen_restore.remember(SAVED, kitchen, row[0])
@@ -61,7 +63,13 @@ def place(kitchen, pin=None, n=0):
     sess = str(uuid.uuid4())
     if pin:
         call("POST", "/rest/v1/customers", {"user_id": sess, "name": "Check Customer", "phone": "9999900000", "address": "Test lane", "pin_code": pin}, {"Prefer": "return=minimal"})
-    s, a = rpc("place_order", {"p_session": sess, "p_key": f"chk-{sess[:8]}-{n}", "p_items": [{"menu_item_id": dishes[0]["id"], "qty": 1}], "p_address": "Test lane, Delhi"})
+    key = f"chk-{sess[:8]}-{n}"
+    if V2:   # story #350: the same checks, with the orders placed by place_order_v2 (the transaction behind POST /orders)
+        price = dishes[0]["price_paise"]
+        s, a = rpc("place_order_v2", {"p_session": sess, "p_key": key, "p_kitchen": kitchen, "p_lines": [{"menu_item_id": dishes[0]["id"], "qty": 1, "option_ids": []}],
+                                      "p_address": "Test lane, Delhi", "p_item_total": price, "p_bill": {"to_pay_paise": price}})
+        return a["order"]["id"] if s < 400 and a.get("ok") else None
+    s, a = rpc("place_order", {"p_session": sess, "p_key": key, "p_items": [{"menu_item_id": dishes[0]["id"], "qty": 1}], "p_address": "Test lane, Delhi"})
     return a["order"]["id"] if s < 400 else None
 
 

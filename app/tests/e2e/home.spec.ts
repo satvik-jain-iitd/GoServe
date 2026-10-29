@@ -67,7 +67,7 @@ test("S5 a closed kitchen shows its menu with Add switched off and says when it 
   await page.goto("/customer/");
   await typePlace(page, "110016");
   await page.getByRole("button", { name: "See the menu" }).click();
-  await expect(page.getByText("Closed now. Opens at 10:00 am. You can look at the menu.")).toBeVisible();
+  await expect(page.getByText("Kitchen closed. Opens at 10:00 am.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeDisabled();
 });
 

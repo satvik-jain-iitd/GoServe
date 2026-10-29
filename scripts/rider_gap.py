@@ -2,6 +2,7 @@
 """Story #252 / experiment E-TWA-1: with the rider app open and the screen off, how long is the longest wait between two pings?
 Run: python3 scripts/rider_gap.py dev|prod [--minutes 20] [--yes-prod]      (read only: it reads rider_pings through the service key in the vault)
 Prints the pings of the last N minutes per rider, the longest gap in seconds, and PASS when no gap is over 60 s (the story's line)."""
+import vault as gsvault
 import json, os, re, sys, urllib.request
 from datetime import datetime, timedelta, timezone
 
@@ -26,7 +27,7 @@ def main():
     if env != "DEV" and "--yes-prod" not in sys.argv:
         sys.exit("prod needs the owner's yes: add --yes-prod")
     minutes = int(sys.argv[sys.argv.index("--minutes") + 1]) if "--minutes" in sys.argv else 20
-    vault = open(os.path.expanduser("~/Desktop/Secrets/02_databases.env")).read()
+    vault = gsvault.read("02_databases.env")
     url = re.search(rf"^SUPABASE_GOSERVE_{env}_URL=(\S+)", vault, re.M).group(1)
     key = re.search(rf"^SUPABASE_GOSERVE_{env}_SERVICE_ROLE_KEY=(\S+)", vault, re.M).group(1)
     since = (datetime.now(timezone.utc) - timedelta(minutes=minutes)).strftime("%Y-%m-%dT%H:%M:%SZ")
