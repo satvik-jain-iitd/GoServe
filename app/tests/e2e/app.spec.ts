@@ -2,12 +2,12 @@
 import { test, expect } from "@playwright/test";
 
 test("the app opens and shows the role nav (#242: no title above the screens)", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/console/");
   await expect(page.getByRole("navigation", { name: "Screen" })).toBeVisible();
 });
 
 test("the manifest is linked and served", async ({ page, request }) => {
-  await page.goto("/");
+  await page.goto("/console/");
   const href = await page.locator('link[rel="manifest"]').getAttribute("href");
   expect(href).toBeTruthy();
   const res = await request.get(href as string);
@@ -16,7 +16,7 @@ test("the manifest is linked and served", async ({ page, request }) => {
 });
 
 test("a service worker registers", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/console/");
   const registered = await page.evaluate(async () => {
     const reg = await navigator.serviceWorker.ready;
     return !!reg.active;
@@ -25,7 +25,7 @@ test("a service worker registers", async ({ page }) => {
 });
 
 test("the app shell loads offline after the first visit", async ({ page, context }) => {
-  await page.goto("/");
+  await page.goto("/console/");
   await page.evaluate(() => navigator.serviceWorker.ready);
   await context.setOffline(true);
   await page.reload();

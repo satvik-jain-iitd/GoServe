@@ -53,7 +53,7 @@ test("S5 a known pin code goes straight to the menu, and Change area goes back t
 
 test("S6 the demo console at / still shows the menu with no pin code question", async ({ page, context }) => {
   await setup(context, page, [], { pin: null });
-  await page.goto("/");
+  await page.goto("/console/");
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Where does the food go?" })).toHaveCount(0);
 });

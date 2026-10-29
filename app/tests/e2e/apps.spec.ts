@@ -32,7 +32,7 @@ test("S2 the rider app, the ops app and the customer app each open on their own 
 
 test("S2 the demo console at / is unchanged: five tabs and the demo tools", async ({ page, context }) => {
   await setup(context, page);
-  await page.goto("/");
+  await page.goto("/console/");
   for (const name of ["Customer", "Kitchen", "Rider", "Split", "Ops"]) await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Reset demo" })).toBeVisible();
 });
@@ -100,8 +100,8 @@ test("S2 the first HTML of each role page already links its own manifest and tit
   }
 });
 
-test("S2 the root page keeps the default manifest (the demo console)", async ({ request }) => {
-  const html = await (await request.get("/")).text();
+test("S2 the console page keeps the default manifest (the demo console, moved from the root by story #503)", async ({ request }) => {
+  const html = await (await request.get("/console/")).text();
   expect(html).toContain('href="/manifest.webmanifest"');
   expect(html).not.toContain("/manifests/");
 });

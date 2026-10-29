@@ -3,7 +3,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { ID, SESSION, order, setup } from "./helpers";
 
 const openKitchen = async (page: Page) => {
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Kitchen" }).click();
   await expect(page.getByRole("heading", { name: "New", exact: true })).toBeVisible();   // H11: the New tab of the Ink boards
 };
@@ -77,7 +77,7 @@ test("an order the rider has taken leaves the kitchen list", async ({ page, cont
 
 test("the customer menu is one tap away and keeps the cart while you look at the kitchen", async ({ page, context }) => {
   await setup(context, page);
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: "Kitchen" }).click();
   await expect(page.getByRole("heading", { name: "New", exact: true })).toBeVisible();

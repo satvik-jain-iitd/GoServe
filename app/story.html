@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#e4e6d9" />
+    <meta name="description" content="GoServe: one hot thali, cooked today by a home kitchen near your pin code, paid in cash at the door." />
+    <link rel="icon" href="/icons/icon-192.png" />
+    <title>GoServe</title>
+    <link rel="preload" href="/fonts/bricolage-grotesque-latin-1.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/anek-latin-latin-0.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/src/styles/fonts.css" />
+    <link rel="stylesheet" href="/src/styles/tokens.css" />
+    <link rel="stylesheet" href="/src/ui/ui.css" />
+    <!-- Story #503, boards S1, S2, S3. One static page: no app, no script but the theme switch below (same rule as index.html: Day, or the pin from You > Look). -->
+    <script>
+      (function () {
+        var p = null;
+        try { p = localStorage.getItem("gs-theme"); } catch (e) {}
+        var t = p === "day" || p === "night" ? p : "day";
+        document.documentElement.setAttribute("data-theme", t);
+        var m = document.querySelector('meta[name="theme-color"]');
+        if (m) m.setAttribute("content", t === "night" ? "#0b1220" : "#e4e6d9");
+      })();
+    </script>
+    <style>
+      body { margin: 0; background: var(--md-background); color: var(--md-on-background); font-family: var(--gs-font); }
+      main { max-width: 28rem; margin: 0 auto; }
+      section.story { box-sizing: border-box; min-height: 100dvh; padding: 20px; display: flex; flex-direction: column; }
+      .mono { font-family: var(--gs-font-mono); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gs-text-muted); }
+      .mono.small { font-size: 11px; }
+      .display { margin: 0; font-family: var(--gs-font-display); font-weight: 800; line-height: 0.95; letter-spacing: -0.02em; text-transform: uppercase; color: var(--md-on-background); }
+      h1 { margin: 0; }
+      .lede { margin: 0; font-size: 16px; line-height: 1.4; max-width: 34ch; }
+      .hero-head { display: flex; flex-direction: column; gap: 10px; }
+      .hero-head p, .hero-line p, .hero-cta p { margin: 0; }
+      .hero-line { margin-top: 48px; display: flex; flex-direction: column; gap: 16px; }
+      .hero-line .display { font-size: 40px; }
+      .hero-cta { margin-top: 32px; display: flex; flex-direction: column; gap: 12px; }
+      .hero-cta .ui-btn { text-align: center; text-decoration: none; }
+      .hero-cta p { text-align: center; }
+      .hero-doors { margin-top: auto; padding-top: 32px; display: flex; flex-direction: column; gap: 8px; }
+      .hero-doors p { margin: 0; }
+      .hero-doors .row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+      .hero-doors .ui-chip { justify-content: center; text-decoration: none; }
+      .hero-doors .more { margin-top: 8px; text-align: center; }
+      .parts-head { display: flex; flex-direction: column; gap: 10px; }
+      .parts-head p { margin: 0; }
+      .parts-head .display { font-size: 32px; }
+      .parts { margin-top: 16px; display: flex; flex-direction: column; }
+      .part { display: flex; gap: 12px; padding: 14px 0; border-top: 1px solid var(--md-outline-variant); }
+      .part .num { font-family: var(--gs-font-mono); font-size: 12px; color: var(--gs-text-muted); padding-top: 4px; min-width: 24px; }
+      .part h3 { margin: 0; font-family: var(--gs-font-display); font-weight: 800; font-size: 20px; line-height: 1.05; letter-spacing: -0.01em; text-transform: uppercase; }
+      .part p { margin: 6px 0 0 0; font-size: 14px; line-height: 1.4; color: var(--gs-text-muted); }
+      .parts-end { margin: auto 0 0 0; text-align: center; }
+      .doors { margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
+      .door { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 72px; padding: 12px 16px; box-sizing: border-box; border: 1px solid var(--md-outline-variant); border-radius: 6px; background: var(--md-surface); color: var(--md-on-surface); text-decoration: none; }
+      .door b { display: block; font-family: var(--gs-font-display); font-weight: 800; font-size: 20px; line-height: 1; letter-spacing: -0.01em; text-transform: uppercase; }
+      .door small { display: block; margin-top: 4px; font-size: 13px; color: var(--gs-text-muted); }
+      .door .path { font-family: var(--gs-font-mono); font-size: 12px; color: var(--gs-text-muted); white-space: nowrap; }
+      .door.main { background: var(--md-primary); border-color: var(--md-primary); color: var(--md-on-primary); }
+      .door.main small, .door.main .path { color: var(--md-on-primary); opacity: 0.85; }
+      .door:focus-visible { outline: 2px solid var(--md-primary); outline-offset: 2px; }
+      .today { margin-top: 32px; display: flex; flex-direction: column; gap: 6px; }
+      .today p { margin: 0; }
+      .today .body { font-size: 14px; line-height: 1.4; color: var(--gs-text-muted); }
+      .foot { margin: auto 0 0 0; padding-top: 32px; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="story" aria-label="GoServe">
+        <header class="hero-head">
+          <h1><img class="ui-logo ui-lockup" src="/brand/lockup-day.png" alt="GoServe" width="350" height="50" style="display: block; width: 100%; height: auto" /></h1>
+          <div class="ui-zigzag" aria-hidden="true"></div>
+          <p class="mono">Home kitchens · your pin code · cash at the door</p>
+        </header>
+        <div class="hero-line" role="group" aria-label="The one line">
+          <h2 class="display">One hot thali. <br />Cooked today. <br />Paid at the door.</h2>
+          <p class="lede">A home kitchen near your pin code cooks the day's plate. Our own rider carries it a short way. No app to install. No card. You pay cash when it arrives.</p>
+        </div>
+        <div class="hero-cta" role="group" aria-label="Start">
+          <a href="/customer/" class="ui-btn big">See today's thali</a>
+          <p class="mono">Type your pin code. Order in one tap.</p>
+        </div>
+        <div class="hero-doors" role="group" aria-label="The other doors">
+          <p class="mono small">Not a customer? Your door is below.</p>
+          <div class="row">
+            <a href="/kitchen/" class="ui-chip">Kitchen</a>
+            <a href="/rider/" class="ui-chip">Rider</a>
+            <a href="/admin/" class="ui-chip">Admin</a>
+          </div>
+          <p class="mono small more">Scroll to see how it works</p>
+        </div>
+      </section>
+
+      <section class="story" aria-label="How it works">
+        <header class="parts-head">
+          <p class="mono">How it works</p>
+          <h2 class="display">Four parts. <br />One hot plate.</h2>
+          <div class="ui-zigzag" aria-hidden="true"></div>
+        </header>
+        <div class="parts" role="group" aria-label="The four parts">
+          <div class="part"><span class="num">01</span><div><h3>Home kitchens in your pin code</h3><p>A real kitchen, a short way from you. Type your pin code and see the plate it cooks today. One veg, one non-veg.</p></div></div>
+          <div class="part"><span class="num">02</span><div><h3>One app. Four hands.</h3><p>Customer, kitchen, rider and ops run on one app. The kitchen sees the ticket, the rider sees the job, you see the slip: cooking, ready, on the way.</p></div></div>
+          <div class="part"><span class="num">03</span><div><h3>Cash first</h3><p>No card, no wallet, no sign in. You pay the rider at the door. UPI comes later, as a choice, never a must.</p></div></div>
+          <div class="part"><span class="num">04</span><div><h3>Our own riders</h3><p>No gig fleet. Our rider knows your lane and brings the plate hot. You can call them from the slip.</p></div></div>
+        </div>
+        <p class="mono small parts-end">Scroll for your door</p>
+      </section>
+
+      <section class="story" aria-label="Pick your door">
+        <header class="parts-head">
+          <p class="mono">Pick your door</p>
+          <h2 class="display">Which hand <br />are you?</h2>
+          <div class="ui-zigzag" aria-hidden="true"></div>
+        </header>
+        <nav class="doors" aria-label="The four apps">
+          <a href="/customer/" class="door main"><span><b>I want food</b><small>See today's thali in your pin code and order it.</small></span><span class="path">/customer/</span></a>
+          <a href="/kitchen/" class="door"><span><b>I cook</b><small>Tickets in, food out. Our kitchen staff only.</small></span><span class="path">/kitchen/</span></a>
+          <a href="/rider/" class="door"><span><b>I ride</b><small>One job, one screen. Our riders only.</small></span><span class="path">/rider/</span></a>
+          <a href="/admin/" class="door"><span><b>I run the city</b><small>Orders, kitchens, riders and the numbers. Admin only.</small></span><span class="path">/admin/</span></a>
+        </nav>
+        <div class="today" role="group" aria-label="Where we are">
+          <p class="mono small">Today</p>
+          <p class="body">One kitchen, one pin code, our own riders. A test phase: the sign-in code is fixed. We grow one pin code at a time.</p>
+        </div>
+        <p class="mono small foot">GoServe · home kitchens, cash at the door</p>
+      </section>
+    </main>
+  </body>
+</html>
