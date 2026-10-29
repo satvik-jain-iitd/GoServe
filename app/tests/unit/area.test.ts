@@ -103,16 +103,16 @@ describe("openingText (story A6)", () => {
   });
 });
 
-import { closedLine } from "../../src/lib/area";
+import { closedCopy } from "../../src/lib/area";
 import { creditLicence, creditLine } from "../../src/lib/menu";
 
 describe("the menu's closed line and the photo credit (story #274)", () => {
   it("says one line, with or without an opening time", () => {
-    expect(closedLine("11:00:00")).toBe("Closed now. Opens at 11:00 am. You can look at the menu.");
-    expect(closedLine(null)).toBe("Closed now. You can look at the menu.");
+    expect(closedCopy("11:00:00")).toEqual({ main: "Kitchen closed. Opens at 11:00 am.", sub: "Your bill is kept. Order from 11:00 am." });
+    expect(closedCopy(null)).toEqual({ main: "Kitchen closed.", sub: "Your bill is kept. Please look again soon." });
     expect(openingText("A", "07:30:00", true)).toBe("A is closed for a little while. Please look again soon.");   // the pin screen says the same
     expect(openingText("A", "07:30:00")).toBe("A is closed right now. It opens at 7:30 am.");
-    expect(closedLine("07:30:00", true)).toBe("Closed for a little while. Please look again soon. You can look at the menu.");   // #452: no opening time in the middle of the day
+    expect(closedCopy("07:30:00", true).main).toBe("Kitchen closed.");   // #452: no opening time in the middle of the day
   });
   it("drops the File: name from the credit", () => {
     expect(creditLine("File:Butter chicken.jpg, Wikimedia Commons, CC BY-SA 4.0")).toBe("Photo: Wikimedia Commons, CC BY-SA 4.0");
