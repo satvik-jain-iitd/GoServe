@@ -1,6 +1,7 @@
 // Story #468: one person can own one kitchen and work in another. GET /staff/mine lists the caller's kitchens with their roles; POST /staff and DELETE /staff
 // let an admin add or remove ONE membership without touching the others. The caller is read from the bearer token; the admin check and every rule are in the database.
 import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
+import { withCors } from "../_shared/cors.ts";
 
 type Refusal = { ok: false; error: string; message: string };
 export type Deps = {
@@ -63,6 +64,6 @@ const live: Deps = (() => {
     remove: (actor, kitchen, user) => rpc("staff_remove_v2", { p_actor: actor, p_kitchen: kitchen, p_user: user }),
   };
 })();
-export const handler = withRunLog("staff", makeHandler(live), writeRunLog);   // story #356: one run_log row per call
+export const handler = withCors(withRunLog("staff", makeHandler(live), writeRunLog));   // story #356: one run_log row per call
 
 if (import.meta.main) Deno.serve(handler);

@@ -2,6 +2,7 @@
 // The data source is injected so the tests need no network; the real one reads menu_items with the caller's key under row level security.
 import { buildMenu, type DishRow } from "./menu.ts";
 import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
+import { withCors } from "../_shared/cors.ts";
 
 export type Deps = { rows: (kitchenId: string) => Promise<DishRow[]>; now: () => Date };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -31,6 +32,6 @@ const live: Deps = {
     return await res.json();
   },
 };
-export const handler = withRunLog("menu", makeHandler(live), writeRunLog);   // story #356: one run_log row per call
+export const handler = withCors(withRunLog("menu", makeHandler(live), writeRunLog));   // story #356: one run_log row per call
 
 if (import.meta.main) Deno.serve(handler);

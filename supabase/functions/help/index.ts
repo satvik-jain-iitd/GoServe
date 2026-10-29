@@ -1,5 +1,6 @@
 // Story #355: GET /help. The topics with their questions and answers, from the faq table. The database orders them and leaves out what is switched off.
 import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
+import { withCors } from "../_shared/cors.ts";
 
 export type Topic = { topic: string; items: { question: string; answer: string }[] };
 export type Deps = { topics: () => Promise<Topic[]> };
@@ -22,6 +23,6 @@ const live: Deps = {
     return (await res.json()).topics;
   },
 };
-export const handler = withRunLog("help", makeHandler(live), writeRunLog);   // story #356: one run_log row per call
+export const handler = withCors(withRunLog("help", makeHandler(live), writeRunLog));   // story #356: one run_log row per call
 
 if (import.meta.main) Deno.serve(handler);

@@ -5,6 +5,7 @@
 // The rules (3 sends in 10 minutes, 5 tries, 10 minutes, one use) are in the database. On the right code the phone is linked to the CALLER's own user,
 // so the user id does not change and the guest orders stay with the account. A phone that already belongs to another user answers phone_in_use.
 import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
+import { withCors } from "../_shared/cors.ts";
 
 type Refusal = { ok: false; error: string; message: string };
 export type Deps = {
@@ -106,6 +107,6 @@ export const withFixedCode = (deps: Deps, fixed: string | undefined): Deps =>
     : deps;
 // The env is read when a code is checked, not at import: the test run has no env permission.
 const liveWithFixed: Deps = { ...live, check: (phone, code) => withFixedCode(live, Deno.env.get("OTP_FIXED_CODE")).check(phone, code) };
-export const handler = withRunLog("otp", makeHandler(liveWithFixed), writeRunLog);   // story #356: one run_log row per call
+export const handler = withCors(withRunLog("otp", makeHandler(liveWithFixed), writeRunLog));   // story #356: one run_log row per call
 
 if (import.meta.main) Deno.serve(handler);

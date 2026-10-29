@@ -4,6 +4,7 @@
 // The same idempotency key answers the same order. The data sources are injected so the tests need no network.
 import { live as liveQuote, parse, runQuote, type Deps as QuoteDeps } from "../quote/index.ts";
 import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
+import { withCors } from "../_shared/cors.ts";
 
 type Placed = { ok: true; created: boolean; order: Record<string, unknown> } | { ok: false; error: string; message: string };
 export type Deps = QuoteDeps & {
@@ -89,6 +90,6 @@ const live: Deps = {
     return await res.json();
   },
 };
-export const handler = withRunLog("orders", makeHandler(live), writeRunLog);   // story #356: one run_log row per call
+export const handler = withCors(withRunLog("orders", makeHandler(live), writeRunLog));   // story #356: one run_log row per call
 
 if (import.meta.main) Deno.serve(handler);
