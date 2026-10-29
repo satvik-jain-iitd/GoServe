@@ -28,7 +28,8 @@
       "prefix": "DESIGN",
       "tint": "teal",
       "rows": [
-        {"id": "2a", "title": "2a · Approved 29 Oct, being coded (#619 closed and sold out, #691 rider map)", "prefix": "DESIGN", "boards": ["L1-ClosedLive.dc.html", "L2-SoldOut.dc.html", "L3-BillReason.dc.html", "A9-Settings.dc.html", "T2-OnTheWayMap.dc.html", "T3-MapOffline.dc.html"], "notes": ["closed-live", "rider-map"]},
+        {"id": "2a", "title": "2a · Approved 29 Oct, being coded (#691 rider map)", "prefix": "DESIGN", "boards": ["T2-OnTheWayMap.dc.html", "T3-MapOffline.dc.html"], "notes": ["rider-map"]},
+        {"id": "2c", "title": "2c · Coded and merged on staging 29 Oct (#619 closed and sold out), waiting for the next release", "prefix": "ON STAGING", "boards": ["L1-ClosedLive.dc.html", "L2-SoldOut.dc.html", "L3-BillReason.dc.html", "A9-Settings.dc.html"], "notes": ["closed-live"]},
         {"id": "2b", "title": "2b · Coded and tested on staging, the prod build does not carry the flag (coupons, UPI payments)", "prefix": "ON STAGING", "boards": ["C1-BillOffers.dc.html", "C2-BillCode.dc.html", "P1-BillCash.dc.html", "P2-BillUpi.dc.html", "P2b-PlacedPay.dc.html", "P4-PayFailed.dc.html", "P5-Paid.dc.html"], "notes": ["offers", "how-pay"]}
       ]
     },
