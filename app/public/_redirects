@@ -1,2 +1,1 @@
-# Story H2: on the real site the root is the customer app. The demo console stays for tests and local work.
-/  /customer/  302
+# Story #503: the bare address is the scroll story with four doors (story.html). It no longer redirects to /customer/. The demo console moved to /console/.

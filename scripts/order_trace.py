@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Story #484: what happened to order X? Read-only. Usage: order_trace.py <order id prefix> [prod|dev]
 Prints the order's own events (db) and every order_trace line (app, sw, n8n, sim) in time order. Secrets come from ~/Desktop/Secrets and are never printed."""
+import vault as gsvault
 import json, os, sys, urllib.request
 
 
@@ -13,7 +14,7 @@ def timeline(events, trace):
 
 
 def vault(file, key):
-    for line in open(os.path.expanduser(f"~/Desktop/Secrets/{file}")):
+    for line in gsvault.read(file).splitlines():
         if line.startswith(key + "="):
             return line.split("=", 1)[1].strip()
 

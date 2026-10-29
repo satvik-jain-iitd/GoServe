@@ -9,7 +9,8 @@ import { Empty, Stepper, TabBar, VegMark } from "../ui";
 
 type Props = {
   dishes: Dish[] | null; fromCache: boolean; error: string | null; onRetry: () => void;
-  pin: string | null; kitchenName: string; openText: string; name: string; closedText: string | null;
+  pin: string | null; kitchenName: string; openText: string; name: string; closed: { main: string; sub: string } | null;
+  tellMe: "idle" | "busy" | "done"; tellMeError: string | null; onTellMe: () => void;   // #718: ask for one push when the closed kitchen opens
   qty: Record<string, number>; cartCount: number; cartTotal: number;
   onAdd: (id: string) => void; onChange: (id: string, delta: number) => void; onOpenCart: () => void;
   land: boolean; onLanded: () => void;   // #525: true only for the first Menu after the pin screen
@@ -28,12 +29,13 @@ export function MenuScreen(p: Props) {
   const [dish, setDish] = useState<Dish | null>(null);
   const all = p.dishes ?? [];
   const shown = filterDishes(all, { vegOnly, query });
-  const thali = thalisOf(shown);
+  const thali = thalisOf(shown.filter((d) => d.available !== false));   // a sold-out thali is not today's thali
   const sections = sectionsOf(shown);
-  const closed = p.closedText !== null;
+  const closed = p.closed !== null;
   const add = (d: Dish) => <button type="button" className="ui-btn" aria-label={`Add ${d.name}`} disabled={closed} onClick={() => p.onAdd(d.id)}>Add</button>;
   if (p.dishes === null && p.error) return <OfflineEmpty onRetry={p.onRetry} />;   // story #637, board M6: nothing saved and no connection
-  const control = (d: Dish) => ((p.qty[d.id] ?? 0) > 0 ? <Stepper label={d.name} value={p.qty[d.id]} onChange={(n) => p.onChange(d.id, n - p.qty[d.id])} /> : add(d));
+  const control = (d: Dish) => d.available === false ? <span className="ui-stamp placed small" aria-label="Sold out for today">Sold out</span>
+    : (p.qty[d.id] ?? 0) > 0 && !closed ? <Stepper label={d.name} value={p.qty[d.id]} onChange={(n) => p.onChange(d.id, n - p.qty[d.id])} /> : add(d);
   return (
     <>
       <header className="ui-head">
@@ -52,7 +54,14 @@ export function MenuScreen(p: Props) {
         {closed && (
           <div className="ui-closed">
             <span className="ui-stamp placed small">Closed</span>
-            <p className="ui-closed-main">{p.closedText}</p>
+            <div><p className="ui-closed-main">{p.closed?.main}</p><p className="ui-closed-sub">{p.closed?.sub}</p></div>
+          </div>
+        )}
+        {closed && (
+          <div className="ui-closed-ask">
+            {p.tellMe === "done" ? <p role="status">We will tell you when it opens.</p>
+              : <button type="button" className="ui-btn small" disabled={p.tellMe === "busy"} onClick={p.onTellMe}>Tell me when it opens</button>}
+            {p.tellMeError && <p role="alert" className="ui-closed-sub">{p.tellMeError}</p>}
           </div>
         )}
         {p.fromCache && <p role="status" className="ui-offline">No connection. Showing the menu you saw last.</p>}
@@ -60,11 +69,11 @@ export function MenuScreen(p: Props) {
         {p.dishes !== null && (thali.veg || thali.nonveg) && <Hero veg={thali.veg} nonveg={thali.nonveg} closed={closed} qty={p.qty} onAdd={p.onAdd} onChange={p.onChange} />}
         {p.dishes !== null && shown.length === 0 && <div className="ui-pad"><Empty title="Nothing matches" hint="Try another word or clear the filters." /></div>}
         {sections.map((s) => (
-          <div key={s.id} className={closed ? "ui-dim" : undefined}>
+          <div key={s.id}>
             <div className="ui-section"><h2 id={s.id}>{s.title}</h2></div>
             <div className="ui-list">
               {s.dishes.map((d) => (
-                <article key={d.id} className="ui-tile">
+                <article key={d.id} className={d.available === false ? "ui-tile sold" : "ui-tile"}>
                   <button type="button" className="ui-photo-btn" aria-label={`${d.name} details`} onClick={() => setDish(d)}>
                     <Photo src={d.image_url} cls="ui-photo" lazy />
                   </button>
@@ -79,7 +88,7 @@ export function MenuScreen(p: Props) {
           </div>
         ))}
       </div>
-      {p.cartCount > 0 && !closed && (
+      {p.cartCount > 0 && (
         <div className="ui-sticky float">
           <button type="button" className="ui-btn bar" aria-label={`View bill (${p.cartCount}) · ${formatRupees(p.cartTotal)}`} onClick={p.onOpenCart}>
             <span className="mono">{p.cartCount} {p.cartCount === 1 ? "item" : "items"} · {formatRupees(p.cartTotal)}</span><span className="verb">View bill ›</span>
@@ -158,7 +167,7 @@ function Hero({ veg, nonveg, closed, qty, onAdd, onChange }: { veg?: Dish; nonve
       <div className="photo"><Photo src={d.image_url} alt={d.name} /><span className="ui-tag">Today</span></div>
       <div className="body">
         <div><h3>{d.veg !== undefined && <VegMark veg={d.veg} />}{d.name}</h3><p className="price-pair"><span className="ui-price">{formatRupees(d.price_paise)}</span></p></div>
-        {(qty[d.id] ?? 0) > 0
+        {(qty[d.id] ?? 0) > 0 && !closed
           ? <Stepper label={d.name} value={qty[d.id]} onChange={(n) => onChange(d.id, n - qty[d.id])} />
           : <button type="button" className="ui-btn" aria-label={`Add ${d.name}`} disabled={closed} onClick={() => onAdd(d.id)}>Add</button>}
       </div>

@@ -23,7 +23,7 @@ type Calls = { riderWrites: { method: string; body: any }[]; customerWrites: { m
 export async function setup(context: BrowserContext, page: Page, initial: object[] = [], { pin = "110016" as string | null } = {}) {
   if (pin) await context.addInitScript((p) => { try { if (!window.localStorage.getItem("gs-pin")) window.localStorage.setItem("gs-pin", p); } catch { /* blocked */ } }, pin);
   const calls: Calls = { riderWrites: [], customerWrites: [], menuReads: [], menuWrites: [], uploads: [], kitchenWrites: [], signups: 0, status: [], decide: [], health: [], feedback: [], confirm: [], rpc: [], orderReads: [], staffReads: [], riderReads: [], sim: [], engine: [] };
-  const state = { rpcError: null as null | { name: string; message: string }, confirmCfg: { confirm_after_ready_min: 3, confirm_after_place_min: 8 }, confirmDone: false, confirmAt: null as null | string, feedbackDown: false, orders: initial, reply: null as null | { status: number; body: unknown }, menuUp: true, kitchen: null as null | string, staffOther: null as null | string, otherRider: false, rider: { user_id: SESSION, name: "Rider", online: true, lat: null, lng: null } as null | { online: boolean; [k: string]: unknown }, customer: null as null | object, numbers: [] as object[], admin: false, people: [] as object[], kitchens: [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: true, active: true, opens_at: "00:00:00", closes_at: "23:59:00" }] as object[], menu: [{ id: "d1", name: "Butter Chicken", price_paise: 32000, image_url: null, image_credit: null }] as object[], riderCard: null as null | { name: string; phone: string }, anonymous: true, riders: null as null | object[], ridersFail: false, decisions: [] as object[], runs: [] as object[], runCount: 0, sim: { enabled: false, kitchens: 10, riders: 40, riders_online: 29, dishes: 137, knobs: { reject_pct: 5, sold_out_pct: 3, delay_pct: 10, rider_drop_pct: 2 } as Record<string, number | boolean | undefined> }, engine: { engine: "rules", version: 1, by: "system", changed_at: "2026-10-25T04:00:00Z" }, engineReply: null as null | { status: number; body: unknown } };
+  const state = { swapPct: 10, swapDelayMs: 0, tracking: null as null | { rider_lat: number | null; rider_lng: number | null; updated_at: string }, pinPoint: { pin: "110016", lat: 28.59, lng: 77.26 } as null | { pin: string; lat: number; lng: number }, openAlert: { ok: true } as object, deleteReply: { ok: true } as object, rpcError: null as null | { name: string; message: string }, confirmCfg: { confirm_after_ready_min: 3, confirm_after_place_min: 8 }, confirmDone: false, confirmAt: null as null | string, feedbackDown: false, orders: initial, reply: null as null | { status: number; body: unknown }, menuUp: true, kitchen: null as null | string, staffOther: null as null | string, otherRider: false, rider: { user_id: SESSION, name: "Rider", online: true, lat: null, lng: null } as null | { online: boolean; [k: string]: unknown }, customer: null as null | object, numbers: [] as object[], admin: false, people: [] as object[], kitchens: [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: true, active: true, opens_at: "00:00:00", closes_at: "23:59:00" }] as object[], menu: [{ id: "d1", name: "Butter Chicken", price_paise: 32000, image_url: null, image_credit: null }] as object[], riderCard: null as null | { name: string; phone: string }, anonymous: true, riders: null as null | object[], ridersFail: false, decisions: [] as object[], runs: [] as object[], runCount: 0, sim: { enabled: false, kitchens: 10, riders: 40, riders_online: 29, dishes: 137, knobs: { reject_pct: 5, sold_out_pct: 3, delay_pct: 10, rider_drop_pct: 2 } as Record<string, number | boolean | undefined> }, engine: { engine: "rules", version: 1, by: "system", changed_at: "2026-10-25T04:00:00Z" }, engineReply: null as null | { status: number; body: unknown } };
   const json = (route: any, status: number, body: unknown) => route.fulfill({ status, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(body) });
   await context.route("https://test.supabase.co/**", async (route) => {
     const req = route.request();
@@ -37,6 +37,16 @@ export async function setup(context: BrowserContext, page: Page, initial: object
       const name = req.url().split("/rest/v1/rpc/")[1].split("?")[0];
       calls.rpc.push({ name, body: JSON.parse(req.postData() ?? "{}") });
       if (state.rpcError && state.rpcError.name === name) return json(route, 400, { message: state.rpcError.message });   // #466: one database function refuses with this code
+      if (name === "swap_discount_get_v2" && state.swapDelayMs) await new Promise((r) => setTimeout(r, state.swapDelayMs));   // a slow load
+      if (name === "swap_discount_get_v2") return json(route, 200, { pct: state.swapPct, updated_by: "owner@goserve.test", updated_at: "2026-10-29T14:10:00Z" });   // #619 layer d, board A9
+      if (name === "swap_discount_set_v2") {
+        const p = JSON.parse(req.postData() ?? "{}").p_pct;
+        if (!Number.isInteger(p) || p < 0 || p > 50) return json(route, 200, { ok: false, error: "invalid_percent", message: "Pick a whole number from 0 to 50." });
+        state.swapPct = p;
+        return json(route, 200, { ok: true });
+      }
+      if (name === "delete_my_account") return json(route, 200, state.deleteReply);   // #771: the You screen deletes the account
+      if (name === "open_alert_add_v2") return json(route, 200, state.openAlert);   // #619 layer d, board L1
       if (name === "is_admin") return json(route, 200, state.admin);   // A2: the admin screen asks once
       if (name === "admin_people") return json(route, 200, state.people);
       if (name === "order_rider") return json(route, 200, state.riderCard ? [state.riderCard] : []);   // D2: the rider card
@@ -83,6 +93,8 @@ export async function setup(context: BrowserContext, page: Page, initial: object
       const limit = Number(new URL(req.url()).searchParams.get("limit") ?? rows.length);   // like PostgREST: only the first rows come back
       return json(route, 200, rows.slice(0, limit));
     }
+    if (req.url().includes("/rest/v1/order_tracking")) return json(route, 200, state.tracking ? [{ order_id: ID, status: "out_for_delivery", ...state.tracking }] : []);   // #691: the rider's place
+    if (req.url().includes("/rest/v1/pin_points")) return json(route, 200, state.pinPoint ? [state.pinPoint] : []);
     if (req.url().includes("/rest/v1/orders")) {
       calls.orderReads.push(req.url());
       return json(route, 200, state.orders);
@@ -161,24 +173,36 @@ export async function setup(context: BrowserContext, page: Page, initial: object
     return json(route, r.status, r.body);
   });
   // Events pushed before the screen has joined the channel (or just after) wait, like a real event that is sent after the subscription.
+  // Story #619: more than one channel can be open (orders, and the kitchen's menu). Each join keeps its own list of what the screen asked to hear.
   const SETTLE_MS = 1500;   // the client needs a moment to bind the join answer; an event sent sooner is dropped
-  let joinedAt = 0;
-  let bindings: { event: string }[] = [];   // what the screen asked to hear; the server answers with the same list, numbered
-  let sendNow: (type: string, record: object) => void = () => {};
-  const waiting: [string, object][] = [];
-  const push = (type: "INSERT" | "UPDATE" | "DELETE", record: object) => (joinedAt ? setTimeout(() => sendNow(type, record), Math.max(0, joinedAt + SETTLE_MS - Date.now())) : waiting.push([type, record]));
+  const sockets: { topic: string; bindings: { event: string; table?: string }[]; send: (m: unknown) => void; joinedAt: number }[] = [];
+  const waiting: [string, object, string][] = [];
+  const deliver = (type: string, record: object, table: string) => {
+    const hits = sockets.filter((c) => Date.now() >= c.joinedAt + SETTLE_MS && c.bindings.some((b) => (b.table ?? "orders") === table));
+    for (const c of hits) {
+      const idx = c.bindings.findIndex((b) => (b.table ?? "orders") === table && (type === "DELETE" ? b.event === "DELETE" : b.event !== "DELETE"));
+      if (idx < 0) continue;
+      c.send([null, null, c.topic, "postgres_changes", { ids: [idx + 1],
+        data: { schema: "public", table, commit_timestamp: new Date().toISOString(), type, record: type === "DELETE" ? {} : record, old_record: type === "DELETE" ? record : {}, columns: [], errors: null } }]);
+    }
+    return hits.length > 0;
+  };
+  const flush = () => { for (const w of waiting.splice(0)) if (!deliver(w[0], w[1], w[2])) waiting.push(w); };
+  const push = (type: "INSERT" | "UPDATE" | "DELETE", record: object, table: "orders" | "kitchens" | "menu_items" | "order_tracking" = "orders") => {
+    if (!deliver(type, record, table)) { waiting.push([type, record, table]); setTimeout(flush, SETTLE_MS + 50); }
+  };
   await page.routeWebSocket(/realtime\/v1\/websocket/, (ws) => {
-    let topic = "";
-    sendNow = (type, record) => ws.send(JSON.stringify([null, null, topic, "postgres_changes", { ids: [bindings.findIndex((b) => (type === "DELETE" ? b.event === "DELETE" : b.event !== "DELETE")) + 1],
-      data: { schema: "public", table: "orders", commit_timestamp: new Date().toISOString(), type, record: type === "DELETE" ? {} : record, old_record: type === "DELETE" ? record : {}, columns: [], errors: null } }]));
+    // One socket carries every channel (supabase-js multiplexes), so each join is kept by its topic.
+    const send = (m: unknown) => ws.send(JSON.stringify(m));
     ws.onMessage((raw) => {
       const [join_ref, ref, t, event, payload] = JSON.parse(String(raw));
       if (event === "phx_join") {
-        topic = t;
-        bindings = payload?.config?.postgres_changes ?? [];
+        const bindings: { event: string; table?: string }[] = payload?.config?.postgres_changes ?? [];
+        const at = sockets.findIndex((c) => c.topic === t);
+        const me = { topic: t, bindings, send, joinedAt: Date.now() };
+        if (at >= 0) sockets[at] = me; else sockets.push(me);
         ws.send(JSON.stringify([join_ref, ref, t, "phx_reply", { status: "ok", response: { postgres_changes: bindings.map((b, i) => ({ id: i + 1, ...b })) } }]));
-        joinedAt = Date.now();
-        setTimeout(() => waiting.splice(0).forEach(([type, record]) => sendNow(type, record)), SETTLE_MS);
+        setTimeout(flush, SETTLE_MS + 50);   // a timer may fire a millisecond early: the margin keeps the event from waiting for ever
       } else if (event === "heartbeat") {
         ws.send(JSON.stringify([null, ref, "phoenix", "phx_reply", { status: "ok", response: {} }]));
       }

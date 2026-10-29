@@ -3,9 +3,10 @@
 It WRITES to goserve-dev (one anonymous user, one order, its events, one decision, run rows) and may spend about $0.00002 on one Jev call. Dev only: the address comes from the dev vault names.
 Needs the workflows active and the vault (04_integrations.env demo token, 02_databases.env dev keys). Clean up afterwards with scripts/clear_dev.py.
 Run: python3 scripts/live_check.py"""
+import vault as gsvault
 import json, os, re, time, urllib.request, urllib.error, uuid
 def vault(f,k):
-    m=re.search(r'^'+k+r'=(\S+)',open(os.path.expanduser('~/Desktop/Secrets/'+f)).read(),re.M); return m.group(1)
+    m=re.search(r'^'+k+r'=(\S+)',gsvault.read(f),re.M); return m.group(1)
 URL='https://n8n.linkright.in/webhook/gs-order'; TOKEN=vault('04_integrations.env','GOSERVE_DEMO_TOKEN')
 SB=vault('02_databases.env','SUPABASE_GOSERVE_DEV_URL'); SK=vault('02_databases.env','SUPABASE_GOSERVE_DEV_SERVICE_ROLE_KEY'); ANON=vault('02_databases.env','SUPABASE_GOSERVE_DEV_ANON_KEY')
 def post(body, token=TOKEN):

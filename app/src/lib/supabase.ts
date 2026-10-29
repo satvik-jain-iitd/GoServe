@@ -15,7 +15,7 @@ export const getClient = (): SupabaseClient => {
 const MENU_TIMEOUT_MS = 4000;
 export async function fetchMenuRows(kitchenId?: string): Promise<Dish[]> {
   if (navigator.onLine === false) throw new Error("offline");
-  let q = getClient().from("menu_items").select("id, name, price_paise, image_url, image_credit, veg, category").eq("available", true);
+  let q = getClient().from("menu_items").select("id, name, price_paise, image_url, image_credit, veg, category, available");   // story #619: a sold-out dish comes too, with its flag
   if (kitchenId) q = q.eq("kitchen_id", kitchenId);
   const { data, error } = await q.order("name")
     .retry(false).abortSignal(AbortSignal.timeout(MENU_TIMEOUT_MS));

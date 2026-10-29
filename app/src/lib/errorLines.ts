@@ -16,6 +16,7 @@ export function customerLine(action: CustomerAction, code: string, message: stri
   if (code === "zone_closed") return "We are very busy right now. Please try again in a few minutes.";
   if (code === "session_order_cap") return "That is the most orders one phone can place today.";
   if (action === "feedback") return "Could not send the note. Try again.";
+  if (code === "sold_out" || code === "dish_sold_out") return BILL;   // story #619: a dish went sold out; the Bill says which and offers the way out
   if (message === "The order is not valid." || message === "The order is missing something.") return BILL;
   if (action === "confirm" && message !== "Only the customer can confirm.") return DELIVERED;
   return GENERIC;

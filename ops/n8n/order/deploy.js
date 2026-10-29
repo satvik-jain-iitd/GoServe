@@ -1,10 +1,12 @@
 // Deploys the GS order workflows to n8n. Default is a DRY RUN: it only reads and prints the plan.
 //   node ops/n8n/order/deploy.js            plan only (reads the workflow list and the credential list)
 //   node ops/n8n/order/deploy.js --apply    create missing workflows (inactive), then PUT the real content
+//   --from sub15                            start the deploy at that workflow (after a stop); earlier ones are left as they are
 //   --env prod                              the PROD copy (nine workflows, `PROD` in the name, own webhook path, prod address, credential and token)
 // It never activates, deletes or touches any other workflow. Deploy order: ERR 00, SUB 11 to 17 and 91, then MAIN 01 and MAIN 90 (rulebook 95.16).
 // Secrets come from ~/Desktop/Secrets (N8N_API_KEY, GOSERVE_TELEGRAM_CHAT_ID, SUPABASE_GOSERVE_DEV_URL, GOSERVE_DEMO_TOKEN) and are never written to the repo.
 const fs = require('fs');
+const gsvault = require('../lib/vault');   // goserve.env first, then the old file (owner, 29 Oct 2026)
 const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
@@ -26,23 +28,43 @@ const VAPID_CREDENTIAL = 'GoServe VAPID';   // JWT Auth (ES256) holding the VAPI
 // PUT /workflows/{id} accepts only these keys (rulebook 113).
 const payload = (w) => ({ name: w.name, nodes: w.nodes, connections: w.connections, settings: w.settings });
 
-function vault(file, key) {
-  const m = fs.readFileSync(path.join(os.homedir(), 'Desktop/Secrets', file), 'utf8').match(new RegExp('^' + key + '=(\\S+)', 'm'));
-  return m ? m[1] : null;
+const vault = (file, key) => gsvault.get(file, key);
+
+// One call to the n8n API. The shared box sometimes answers a Cloudflare HTML page (520) or drops the connection: that is tried again, 3 tries, 30 s apart.
+// A JSON answer is final, good or a refusal.
+function makeCall(fetchFn, apiKey, { tries = 3, waitMs = 30000, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
+  return async (method, p, body) => {
+    for (let n = 1; ; n++) {
+      let res, json;
+      try {
+        res = await fetchFn(BASE + p, { method, headers: { 'X-N8N-API-KEY': apiKey, 'Content-Type': 'application/json', 'User-Agent': 'curl/8.7.1' }, body: body && JSON.stringify(body) });
+        json = await res.json();
+      } catch (e) {
+        if (n >= tries) throw new Error(method + ' ' + p + ' -> answer was not JSON (' + String(e.message).slice(0, 80) + ') after ' + tries + ' tries');
+        console.log('  ' + method + ' ' + p + ': not a JSON answer, trying again in ' + waitMs / 1000 + ' s (' + n + ' of ' + tries + ')');
+        await sleep(waitMs);
+        continue;
+      }
+      if (!res.ok) throw new Error(method + ' ' + p + ' -> ' + res.status + ' ' + JSON.stringify(json).slice(0, 200));
+      return json;
+    }
+  };
 }
+
+const resumeFrom = (order, from) => {
+  if (!from) return order;
+  if (!order.includes(from)) throw new Error('--from ' + from + ' is not one of: ' + order.join(', '));
+  return order.slice(order.indexOf(from));
+};
 
 async function main() {
   const apply = process.argv.includes('--apply');
   const env = process.argv.includes('--env') ? process.argv[process.argv.indexOf('--env') + 1] : 'dev';
   if (!ENVS[env]) throw new Error('unknown --env ' + env + ' (dev or prod)');
   const E = ENVS[env], ORD = orderFor(env), NM = namesFor(env);
+  const todo = resumeFrom(ORD, process.argv.includes('--from') ? process.argv[process.argv.indexOf('--from') + 1] : undefined);   // refuses a wrong name before any call
   const apiKey = vault('04_integrations.env', 'N8N_API_KEY');
-  const call = async (method, p, body) => {
-    const res = await fetch(BASE + p, { method, headers: { 'X-N8N-API-KEY': apiKey, 'Content-Type': 'application/json', 'User-Agent': 'curl/8.7.1' }, body: body && JSON.stringify(body) });
-    const json = await res.json();
-    if (!res.ok) throw new Error(method + ' ' + p + ' -> ' + res.status + ' ' + JSON.stringify(json).slice(0, 200));
-    return json;
-  };
+  const call = makeCall(fetch, apiKey);
   const wfs = (await call('GET', '/workflows?limit=250')).data;
   const creds = (await call('GET', '/credentials?limit=250')).data;
   const credential = creds.find((c) => c.name === E.credential);
@@ -72,13 +94,13 @@ async function main() {
   let token = vault('04_integrations.env', E.tokenVar);
   if (!token) {   // saved to the vault at once (rule A6)
     token = crypto.randomBytes(24).toString('hex');
-    fs.appendFileSync(path.join(os.homedir(), 'Desktop/Secrets/04_integrations.env'),
+    gsvault.append('04_integrations.env',
       '\n# GoServe ' + env + ' demo token for the n8n order webhook, ' + new Date().toISOString() + '. Low value by design (ADR-009); rotate each release.\n' + E.tokenVar + '=' + token + '\n');
   }
   let simToken = vault('04_integrations.env', E.simTokenVar);   // H5: the simulator's own token, never the demo token
   if (!simToken) {
     simToken = crypto.randomBytes(24).toString('hex');
-    fs.appendFileSync(path.join(os.homedir(), 'Desktop/Secrets/04_integrations.env'),
+    gsvault.append('04_integrations.env',
       '\n# GoServe ' + env + ' simulator token for the n8n gs-sim webhook (story H5), ' + new Date().toISOString() + '. Admin only; rotate each release.\n' + E.simTokenVar + '=' + simToken + '\n');
   }
   for (const k of ORD) {   // shells first, so every workflow knows the others' ids
@@ -87,7 +109,7 @@ async function main() {
   const n8nApiCredential = creds.find((c) => c.name === 'GoServe n8n API');   // made by the owner; without it the n8n error line of the report says "could not read"
   if (!n8nApiCredential) console.log('  note: credential "GoServe n8n API" not found; the report will say "n8n errors: could not read"');
   const built = build({ ids, token, simToken, anonKey: vault('02_databases.env', E.anonVar), env, n8nApiCredential: n8nApiCredential && { id: n8nApiCredential.id, name: n8nApiCredential.name }, uptimerobotKey: vault('04_integrations.env', 'UPTIMEROBOT_API_KEY') || undefined, driveFolderId: vault('04_integrations.env', E.driveVar), supabaseUrl: vault('02_databases.env', E.urlVar), credential: { id: credential.id, name: E.credential }, vapidCredential: { id: vapidCredential.id, name: VAPID_CREDENTIAL }, vapidPublicKey: vault('04_integrations.env', 'GOSERVE_VAPID_PUBLIC_KEY'), vapidSubject: vault('04_integrations.env', 'GOSERVE_VAPID_SUBJECT'), openrouterCredential: { id: jevCredential.id, name: JEV_CREDENTIAL }, chatId: vault('04_integrations.env', 'GOSERVE_TELEGRAM_CHAT_ID') });
-  for (const k of ORD) {
+  for (const k of todo) {
     await call('PUT', '/workflows/' + ids[k], payload(built[k]));
     const back = await call('GET', '/workflows/' + ids[k]);
     // Never activates: a workflow may only be active if it already was (the owner activated it).
@@ -97,4 +119,4 @@ async function main() {
 }
 
 if (require.main === module) main().catch((e) => { console.error(e.message); process.exit(1); });
-module.exports = { payload, NAMES, ORDER, ENVS, namesFor, orderFor };
+module.exports = { makeCall, resumeFrom, payload, NAMES, ORDER, ENVS, namesFor, orderFor };

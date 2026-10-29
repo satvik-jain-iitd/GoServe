@@ -17,10 +17,10 @@ const byName = (w, n) => w.nodes.find((x) => x.name === n);
 const next = (w, from, out = 0) => (w.connections[from]?.main[out] || []).map((x) => x.node);
 const SESSION = '7e57ab1e-0000-4000-8000-0000000000a1';
 
-test('S1 guard: only placed, ready, out_for_delivery and delivered are pushed; the kill switch and a bad session are refused', () => {
+test('S1 guard: only placed, ready, out_for_delivery, delivered and open (a kitchen opened) are pushed; the kill switch and a bad session are refused', () => {
   const good = { kill_switch: false, supabase_url: 'u', session_id: SESSION, status: 'ready', vapid_public_key: 'PUB', vapid_subject: 'mailto:a@b.c' };
   assert.deepEqual(run('guard_push.js', good).rpc_body, { p_session: SESSION });
-  for (const status of ['placed', 'ready', 'out_for_delivery', 'delivered']) assert.equal(run('guard_push.js', { ...good, status }).ok, true, status);
+  for (const status of ['placed', 'ready', 'out_for_delivery', 'delivered', 'open']) assert.equal(run('guard_push.js', { ...good, status }).ok, true, status);   // open = a kitchen opened (story #718)
   for (const status of ['accepted', 'preparing', 'cancelled', 'nonsense', undefined]) {
     const r = run('guard_push.js', { ...good, status });
     assert.deepEqual([r.ok, r.status_code, r.error], [false, 200, 'not_pushed'], String(status));   // not an error: nothing to send

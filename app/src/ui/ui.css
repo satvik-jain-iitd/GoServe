@@ -125,8 +125,8 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-tag.delivered { background: var(--gs-status-delivered); color: var(--gs-on-action); }
 .ui-tag.ready { background: var(--gs-status-ready); color: var(--md-on-tertiary); }
 .ui-tag.out { background: var(--gs-status-out-for-delivery); color: var(--gs-paper); }
-.ui-tag.placed, .ui-tag.error { background: transparent; border: 1.5px solid currentColor; padding: 2px 7px; }
-.ui-tag.placed { color: var(--gs-text-muted); }
+.ui-tag.placed, .ui-tag.accepted, .ui-tag.error { background: transparent; border: 1.5px solid currentColor; padding: 2px 7px; }
+.ui-tag.placed, .ui-tag.accepted { color: var(--gs-text-muted); }   /* canvas audit, 29 Oct 2026: board K2-Cooking shows an accepted ticket with the muted placed outline, not the filled Cooking tag */
 .ui-tag.error { color: var(--md-error); }
 .ui-live .mono { flex: 1; font-size: var(--gs-mono-sm); }
 .ui-live .go { color: var(--md-primary); font-size: 20px; line-height: 1; }
@@ -223,7 +223,6 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-scroll { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
 .ui-list { display: flex; flex-direction: column; padding: 0 var(--gs-gutter); }
 .ui-pad { padding: 0 var(--gs-gutter); }
-.ui-dim { opacity: 0.7; }
 .ui-greet-line { margin: 0; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); font-weight: 400; text-transform: uppercase; color: var(--gs-text-muted); }
 .ui-greet .ui-greet-line { color: var(--gs-text-muted); }
 .ui-photo-btn { display: block; padding: 0; border: 0; background: transparent; cursor: pointer; }
@@ -231,6 +230,23 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-closed { display: grid; grid-template-columns: auto 1fr; gap: var(--gs-space-3); align-items: center; margin: var(--gs-space-3) var(--gs-gutter) 0; padding: var(--gs-space-2) var(--gs-space-3); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); }
 .ui-closed p { margin: 0; }
 .ui-closed-main { font-size: var(--gs-text-sm); font-weight: 600; }
+.ui-inline { display: inline-flex; align-items: center; gap: var(--gs-space-2); flex: none; }
+.ui-pct { box-sizing: border-box; width: 64px; min-height: 44px; padding: 0 var(--gs-space-2); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); text-align: right; }
+.ui-swap { display: flex; flex-direction: column; gap: var(--gs-space-3); margin: var(--gs-space-3) var(--gs-gutter) 0; padding: var(--gs-space-3) var(--gs-space-4); border: 1px solid var(--md-error); border-radius: var(--gs-radius-s); }
+.ui-swap p { margin: 0; }
+.ui-swap-reason { font-weight: 600; color: var(--md-error); }
+.ui-swap-try { font-weight: 600; }
+.ui-swap-price { font-size: var(--gs-text-sm); }
+.ui-swap-price .was { color: var(--gs-text-muted); text-decoration: line-through; }
+.ui-swap-actions { display: flex; gap: var(--gs-space-2); }
+.ui-swap-actions .ui-btn { flex: 1; min-height: 44px; justify-content: center; }
+.ui-closed-ask { display: flex; flex-direction: column; align-items: flex-start; gap: var(--gs-space-2); padding: 0 var(--gs-space-4) var(--gs-space-3); }
+.ui-closed-ask p { margin: 0; }
+.ui-closed-sub { font-size: var(--gs-text-xs); color: var(--gs-text-muted); }
+/* story 619, board L2: a dish that is sold out keeps its card, greyed, with a Sold out stamp in place of Add */
+.ui-tile.sold .ui-photo { opacity: 0.45; filter: grayscale(1); }
+.ui-tile.sold .ui-price { color: var(--gs-text-muted); }
+.ui-tile.sold .ui-stamp { color: var(--gs-text-muted); border-color: var(--gs-text-muted); }
 .ui-sheet.ui-sheet-flush { max-height: 92dvh; display: flex; flex-direction: column; padding: 0; }
 .ui-sheet-flush > .ui-sheet-head { margin: 0; padding: var(--gs-space-5) var(--gs-gutter) var(--gs-space-2); }
 .ui-sheet-flush > .ui-search { width: auto; margin: 0 var(--gs-gutter) var(--gs-space-2); }
@@ -407,3 +423,18 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-welcome-foot { margin: auto 0 0; text-align: center; font-family: var(--gs-font-mono); font-size: var(--gs-mono-xs); text-transform: uppercase; color: var(--gs-text-muted); }
 .ui-or { display: flex; align-items: center; gap: var(--gs-space-3); color: var(--gs-text-muted); font-family: var(--gs-font-mono); font-size: var(--gs-mono-xs); text-transform: uppercase; }
 .ui-or span:first-child, .ui-or span:last-child { flex: 1; height: 1px; background: var(--md-outline-variant); }
+/* story 691, boards T2 and T3: the rider on a map */
+.ui-mapcard { margin: var(--gs-space-3) 0 0; border: 1px solid var(--md-outline-variant); border-radius: 6px; overflow: hidden; background: var(--md-surface); }
+.ui-map { position: relative; }
+.ui-map[data-offline="true"] .ui-map-box { opacity: 0.55; filter: grayscale(1); }
+.ui-map-box { height: 220px; background: var(--md-surface-variant, var(--md-surface)); }
+.ui-map-credit { position: absolute; right: 6px; bottom: 4px; z-index: 500; font-size: 10px; color: var(--gs-text-muted); background: var(--md-surface); padding: 1px 4px; border-radius: 3px; }
+.ui-map-line { display: flex; align-items: center; gap: var(--gs-space-2); padding: 10px var(--gs-space-3); border-top: 1px solid var(--md-outline-variant); font-size: var(--gs-text-sm); }
+.ui-map-line.offline { border-top: 3px solid var(--gs-warm-yellow); gap: var(--gs-space-3); }
+.ui-chip-warn { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 6px; background: var(--gs-warm-yellow); color: var(--gs-ink-green); font-family: var(--gs-font-mono); font-size: 12px; font-weight: 500; text-transform: uppercase; white-space: nowrap; }
+.gs-pin-wrap { background: transparent; border: 0; }
+.gs-pin { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 999px; background: var(--md-surface); border: 2px solid var(--md-on-surface); color: var(--md-on-surface); font-family: var(--gs-font-mono); font-size: 10px; box-sizing: border-box; }
+.gs-pin.rider { background: var(--md-primary); border-color: var(--md-surface); box-shadow: 0 0 0 7px color-mix(in srgb, var(--md-primary) 25%, transparent); animation: gs-pulse 2s ease-out infinite; }
+.gs-route { stroke: var(--md-primary); fill: none; }
+@keyframes gs-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--md-primary) 45%, transparent); } 100% { box-shadow: 0 0 0 14px color-mix(in srgb, var(--md-primary) 0%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .gs-pin.rider { animation: none; } }

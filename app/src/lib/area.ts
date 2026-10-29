@@ -40,9 +40,11 @@ export const openingClock = (t: string): string => {
 export const openingText = (name: string, opensAt: string | null, paused = false): string =>
   paused ? `${name} is closed for a little while. Please look again soon.` : opensAt ? `${name} is closed right now. It opens at ${openingClock(opensAt)}.` : `${name} is closed right now. Please try again later.`;
 
-// The menu's one closed line (story #274).
-export const closedLine = (opensAt: string | null, paused = false): string =>
-  paused ? "Closed for a little while. Please look again soon. You can look at the menu." : opensAt ? `Closed now. Opens at ${openingClock(opensAt)}. You can look at the menu.` : "Closed now. You can look at the menu.";
+// The menu's closed state (boards L1, story #619): the one fact and the one next step. A kitchen switched off, or with no opening time, has no time to name.
+export const closedCopy = (opensAt: string | null, paused = false): { main: string; sub: string } =>
+  opensAt && !paused
+    ? { main: `Kitchen closed. Opens at ${openingClock(opensAt)}.`, sub: `Your bill is kept. Order from ${openingClock(opensAt)}.` }
+    : { main: "Kitchen closed.", sub: "Your bill is kept. Please look again soon." };
 
 const PIN_KEY = "gs-pin";
 const KITCHEN_KEY = "gs-kitchen";

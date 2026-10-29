@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
@@ -22,6 +23,14 @@ const rolePages = (): Plugin => ({
       if (page === html) throw new Error(`role-pages: could not change the manifest link for ${role}`);
       this.emitFile({ type: "asset", fileName: `${role}/index.html`, source: page });
     }
+    // Story #503: the bare address is the static story page (story.html), not the app. The demo console that lived there moves to /console/.
+    for (const page of ["console", "health", "styleguide"]) this.emitFile({ type: "asset", fileName: `${page}/index.html`, source: html });   // the pages that are the app with no role, once served by the fallback of "/"
+    const story = bundle["story.html"];
+    if (!story || story.type !== "asset") throw new Error("role-pages: story.html is not in the bundle");
+    index.source = String(story.source)
+      .replace(/<link rel="manifest"[^>]*>/, "")                   // the story is not an installable app
+      .replace(/<script id="vite-plugin-pwa:register-sw"[^>]*><\/script>/, "");   // and it runs no script but the theme switch
+    delete bundle["story.html"];
   },
 });
 
@@ -34,5 +43,6 @@ const pushWorker = (): Plugin => ({
 });
 
 export default defineConfig({
+  build: { rollupOptions: { input: { main: resolve(__dirname, "index.html"), story: resolve(__dirname, "story.html") } } },
   plugins: [react(), rolePages(), pushWorker(), VitePWA({ registerType: "autoUpdate", manifest, includeAssets: ["icons/*", "fonts/*"], workbox: { importScripts: ["push-sw.js"] } })],
 });

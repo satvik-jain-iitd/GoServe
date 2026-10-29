@@ -37,7 +37,7 @@ test("S3 a closed kitchen with an opening time says one line", async ({ page, co
   net.state.menu = [DISH];
   net.state.kitchens = [KITCHEN({ opens_at: "11:00:00" })];
   await page.goto("/customer/");
-  await expect(page.getByText("Closed now. Opens at 11:00 am. You can look at the menu.", { exact: true })).toBeVisible();
+  await expect(page.getByText("Kitchen closed. Opens at 11:00 am.", { exact: true })).toBeVisible();
   await expect(page.getByText("Please try again later")).toHaveCount(0);
   await expect(page.getByText("Look at the menu now")).toHaveCount(0);
 });
@@ -47,7 +47,7 @@ test("S3 a closed kitchen with no opening time says one line", async ({ page, co
   net.state.menu = [DISH];
   net.state.kitchens = [KITCHEN({})];
   await page.goto("/customer/");
-  await expect(page.getByText("Closed now. You can look at the menu.", { exact: true })).toBeVisible();
+  await expect(page.getByText("Kitchen closed.", { exact: true })).toBeVisible();
 });
 
 test("S4 the admin Numbers tiles keep their own class and the menu keeps the grid", async ({ page, context }) => {

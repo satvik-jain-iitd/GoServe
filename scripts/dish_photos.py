@@ -6,6 +6,7 @@ licences cc0, pdm and by are accepted: all three allow commercial use and none i
 row per dish to `dish_photos` (title, creator, licence, source page, date) and deletes any other file under dream/. That keeps the bucket at 12 pictures (owner, 25 Oct).
 sim_seed (migration 0038) puts the photo on the dish in all ten kitchens again after every Reset.
 """
+import vault as gsvault
 import io, json, os, re, subprocess, sys, time, urllib.error, urllib.request
 from datetime import date
 from pathlib import Path
@@ -45,7 +46,7 @@ def webp_bytes(img):
 
 
 def _secret(file, key):
-    return re.search(rf"^{key}=(\S+)", open(os.path.expanduser(f"~/Desktop/Secrets/{file}")).read(), re.M).group(1)
+    return re.search(rf"^{key}=(\S+)", gsvault.read(file), re.M).group(1)
 
 
 def main():

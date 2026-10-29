@@ -2,7 +2,7 @@
 """Repo guard (PLAN.md 9.1, CLAUDE.md rule 13). Stdlib only.
   guard.py files <paths...>   secrets, files over 500KB, merge markers, unclosed code blocks
   guard.py msg <message>      Conventional Commits, short subject
-  guard.py count <n>          PR size, max 50 files
+  guard.py count <n> [title]  PR size, max 50 files (a title starting chore(sync) skips the cap)
 Used by .pre-commit-config.yaml and by CI."""
 import os, re, sys
 
@@ -55,7 +55,9 @@ def check_message(msg):
     return None
 
 
-def check_count(n):
+def check_count(n, title=""):
+    if title.startswith("chore(sync)"):   # a sync of main into staging: the code was reviewed on main, the cap does not apply (reviewer, 28 Oct 2026, story #621)
+        return None
     return f"PR changes {n} files, max {MAX_FILES}" if n > MAX_FILES else None
 
 
@@ -66,7 +68,7 @@ if __name__ == "__main__":
     elif cmd == "msg":
         errs = [e for e in [check_message(args[0])] if e]
     elif cmd == "count":
-        errs = [e for e in [check_count(int(args[0]))] if e]
+        errs = [e for e in [check_count(int(args[0]), args[1] if len(args) > 1 else "")] if e]
     else:
         sys.exit(f"unknown command {cmd}")
     print("\n".join(errs))
