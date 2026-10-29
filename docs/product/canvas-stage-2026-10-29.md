@@ -26,3 +26,10 @@ Open: the owner's word on 01 Pin code (row 5 as a redesign, or row 4); the histo
 - K2, K3 and M3 are decided after the arrangement, not before.
 - Canvas contrast: text must be readable on its background. The rule is on the ShipQuick design process page.
 - The mistakes row holds the old wrong screen. The corrected screen stays in Production (row 1).
+
+## Open questions for the owner (not decided; coder, 29 Oct 2026)
+The arrangement above stands as the reviewer placed it. These four are the owner's to answer. Nothing moves until he does.
+1. **01 Pin code.** Today it sits in row 5 (Mistakes, fixed). It was replaced by O0 and A1 to A3 in #655 as a redesign, not because it was wrong. Should it stay in row 5, or move to row 4 (Rejected, replaced by a later pick)?
+2. **K2 and K3 (kitchen New and Cooking).** They sit in row 1 with the fixed grid, and the older K3 and K3b sit in row 5. Do you agree with this split, or do you want K2 and K3 placed differently once you see the whole canvas?
+3. **M3 (the earlier 3x pill).** Today it sits in row 4, replaced by option A. Keep it in row 4, or does it belong in row 5?
+4. **History walk.** The brief asks for deleted boards to be recovered from the canvas history, each with a one-line decision and a date. The coder cannot open old versions of the canvas, so this needs the reviewer's editor access. Which deleted boards do you want back, and should the recovered ones go to row 4 or row 5?
