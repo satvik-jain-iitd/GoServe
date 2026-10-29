@@ -1,6 +1,6 @@
 // Story #345: POST /quote. Lines + address + optional coupon in, the one bill out. The data sources are injected so the tests need no network.
 // Prices come from the catalog, never from the request. Reads use the project's own URL; rules come from the versioned params row `quote_rules`.
-import { quote, DEFAULT_RULES, MAX_QTY, type Catalog, type Coupon, type Rules } from "./quote.ts";
+import { quote, pickAlternative, DEFAULT_RULES, DEFAULT_SWAP_PCT, MAX_QTY, type Catalog, type Coupon, type MenuRow, type Rules } from "./quote.ts";
 import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
 
 export type Offer = { code: string; title: string; saves_paise: number };
@@ -12,13 +12,16 @@ export type Deps = {
   coupons: (session: string | null) => Promise<Coupon[]>;   // story #346: every coupon valid now (the database decides); story #579: plus this customer's own
   validate: (menuItemId: string, optionIds: string[]) => Promise<{ ok: true } | { ok: false; error: string; message: string }>;
   firstOrder: (kitchenId: string) => Promise<boolean>;
+  // story #619 layer b (optional, so a caller without them just has no alternatives): every dish of the kitchen, and the admin's swap discount percent
+  menu?: (kitchenId: string) => Promise<MenuRow[]>;
+  swapPct?: () => Promise<number>;
 };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_LINES = 30;
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const bad = () => json(400, { ok: false, error: "invalid_request" });
 
-type Line = { menu_item_id: string; qty: number; option_ids: string[] };
+type Line = { menu_item_id: string; qty: number; option_ids: string[]; swap?: boolean };
 export function parse(b: any): { kitchen: string; lines: Line[]; code: string | null; none: boolean } | null {
   if (!b || typeof b !== "object" || !UUID.test(b.kitchen_id) || !Array.isArray(b.lines) || b.lines.length > MAX_LINES) return null;
   if (typeof b.address?.pin_code !== "string" || !/^\d{6}$/.test(b.address.pin_code)) return null;
@@ -29,7 +32,7 @@ export function parse(b: any): { kitchen: string; lines: Line[]; code: string | 
   for (const l of b.lines) {
     const ids = l?.option_ids ?? [];
     if (!UUID.test(l?.menu_item_id) || !Array.isArray(ids) || ids.length > 20 || !ids.every((i: unknown) => typeof i === "string" && UUID.test(i))) return null;
-    lines.push({ menu_item_id: l.menu_item_id, qty: l.qty, option_ids: ids });
+    lines.push({ menu_item_id: l.menu_item_id, qty: l.qty, option_ids: ids, ...(l.swap === true ? { swap: true } : {}) });
   }
   return { kitchen: b.kitchen_id, lines, code: b.coupon_code ? b.coupon_code.trim().toUpperCase() : null, none: b.no_coupon === true };
 }
@@ -39,6 +42,14 @@ export async function runQuote(deps: Deps, q: { kitchen: string; lines: Line[]; 
   const catalog = await deps.catalog(q.kitchen, q.lines.map((l) => l.menu_item_id), q.lines.flatMap((l) => l.option_ids));
   const checks = new Map<string, Awaited<ReturnType<Deps["validate"]>>>();
   for (const l of q.lines) if (catalog.dishes[l.menu_item_id] && l.option_ids.every((o) => catalog.options[o])) checks.set(l.menu_item_id + l.option_ids.join(), await deps.validate(l.menu_item_id, l.option_ids));
+  // story #619 layer b: only when a requested dish is sold out do we read the whole menu and the percent, and check the pick can be ordered with no add-ons
+  const soldOut = q.lines.map((l) => catalog.dishes[l.menu_item_id]).filter((d) => d && !d.available);
+  const menu = soldOut.length && deps.menu ? await deps.menu(q.kitchen) : [];
+  const swap_pct = soldOut.length && deps.swapPct ? Math.min(50, Math.max(0, Math.floor(await deps.swapPct()))) : DEFAULT_SWAP_PCT;
+  for (const d of soldOut) {
+    const alt = pickAlternative(d, menu, swap_pct);
+    if (alt) checks.set(alt.menu_item_id, await deps.validate(alt.menu_item_id, []));
+  }
   const typed = q.code ? await deps.coupon(q.code, session) : null;
   if (q.code && !typed) return { ok: false, error: "coupon_invalid", message: `${q.code} is not a valid code.` };
   // A pick for an option the catalog does not know is refused by the same code the database function uses.
@@ -47,11 +58,11 @@ export async function runQuote(deps: Deps, q: { kitchen: string; lines: Line[]; 
   // Story #346: try every valid coupon on this cart. The ones that apply are the offers; the best saving is applied (a tie: the smaller code), unless the customer typed a code.
   const list = await deps.coupons(session);
   const first = list.some((c) => c.first_order_only) || typed?.first_order_only ? await deps.firstOrder(q.kitchen) : false;
-  const input = { lines: q.lines, first_order: first };
+  const input = { lines: q.lines, first_order: first, menu, swap_pct };
   const offers: Offer[] = [];
   for (const c of list) {
     const r = quote(input, catalog, rules, c, validate);
-    if (r.ok && r.discount_paise > 0) offers.push({ code: c.code, title: c.title, saves_paise: r.discount_paise });
+    if (r.ok && r.discount_paise - (r.swap_discount_paise ?? 0) > 0) offers.push({ code: c.code, title: c.title, saves_paise: r.discount_paise - (r.swap_discount_paise ?? 0) });   // the swap discount is not a coupon
   }
   offers.sort((a, b) => b.saves_paise - a.saves_paise || (a.code < b.code ? -1 : 1));
   const chosen = q.none ? null : typed ?? list.find((c) => c.code === offers[0]?.code) ?? null;
@@ -67,7 +78,9 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
   if (!q) return bad();
   try {
     const out = await runQuote(deps, q, await deps.session(req));
-    return json(out.ok ? 200 : 422, out.ok ? { ...out, kitchen_id: q.kitchen } : out);
+    if (!out.ok) return json(422, out);
+    const { effective: _effective, ...shown } = out;   // the lines to order are for POST /orders, not for the screen
+    return json(200, { ...shown, kitchen_id: q.kitchen });
   } catch {
     return json(502, { ok: false, error: "quote_unavailable" });   // no detail: a database message must never reach an app
   }
@@ -91,7 +104,7 @@ const rpc = async (fn: string, body: Record<string, unknown>) => {   // the coup
 };
 export const live: Deps = {
   catalog: async (kitchenId, dishIds, optionIds) => {
-    const dishes = await get(`menu_items?select=id,name,price_paise,available&kitchen_id=eq.${kitchenId}&id=in.(${dishIds.join(",") || "null"})`, anon());
+    const dishes = await get(`menu_items?select=id,name,price_paise,available,veg&kitchen_id=eq.${kitchenId}&id=in.(${dishIds.join(",") || "null"})`, anon());
     const options = optionIds.length ? await get(`options?select=id,name,price_paise&id=in.(${optionIds.join(",")})`, anon()) : [];
     return { dishes: Object.fromEntries(dishes.map((d: any) => [d.id, d])), options: Object.fromEntries(options.map((o: any) => [o.id, o])) };
   },
@@ -114,6 +127,14 @@ export const live: Deps = {
   coupon: async (code, session) => (await rpc("coupon_by_code_v2", { p_code: code, p_session: session })) as Coupon | null,
   coupons: async (session) => (await rpc("coupons_for_session_v2", { p_session: session })) as Coupon[],
   firstOrder: async () => false,
+  menu: async (kitchenId) => await get(`menu_items?select=id,name,price_paise,available,veg&kitchen_id=eq.${kitchenId}`, anon()) as MenuRow[],
+  swapPct: async () => {   // the admin's setting (migration 20261029100000); the default stands if it cannot be read
+    try {
+      const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;   // settings is not public to read
+      const rows = await get("settings?select=value&name=eq.swap_discount_pct&limit=1", headers(key));
+      return rows.length && Number.isFinite(Number(rows[0].value)) ? Number(rows[0].value) : DEFAULT_SWAP_PCT;
+    } catch { return DEFAULT_SWAP_PCT; }
+  },
 };
 export const handler = withRunLog("quote", makeHandler(live), writeRunLog);   // story #356: one run_log row per call
 
