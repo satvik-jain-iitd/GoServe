@@ -2,9 +2,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { EVENTS, capture, initAnalytics, resetAnalytics } from "../../src/lib/analytics";
+import { EVENTS, capture, initAnalytics, reportUncaught, resetAnalytics } from "../../src/lib/analytics";
 
-const fakePosthog = () => ({ init: vi.fn(), capture: vi.fn() });
+const fakePosthog = () => ({ init: vi.fn(), capture: vi.fn(), captureException: vi.fn() });
 const store = () => { const m = new Map<string, string>(); return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) }; };
 
 describe("analytics", () => {
@@ -37,6 +37,34 @@ describe("analytics", () => {
     const ph = fakePosthog();
     await initAnalytics({ VITE_POSTHOG_KEY: "phc_test" }, (async () => ph) as never, store());
     expect(ph.init.mock.calls[0][1]).toMatchObject({ disable_session_recording: false, session_recording: { maskAllInputs: true }, disable_surveys: true });
+  });
+
+  it("S2d (story #740) the SDK captures exceptions by itself", async () => {
+    resetAnalytics();
+    const ph = fakePosthog();
+    await initAnalytics({ VITE_POSTHOG_KEY: "phc_test" }, (async () => ph) as never, store());
+    expect(ph.init.mock.calls[0][1]).toMatchObject({ capture_exceptions: true });
+  });
+
+  it("S8 (story #740) an error React could not recover from is sent with its message, and still reaches the console; without a key nothing is sent", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    resetAnalytics();
+    const ph = fakePosthog();
+    await initAnalytics({ VITE_POSTHOG_KEY: "phc_test" }, (async () => ph) as never, store());
+    const err = new Error("component threw");
+    reportUncaught(err, { componentStack: "at Bill" });
+    await Promise.resolve(); await Promise.resolve();
+    expect(ph.captureException).toHaveBeenCalledWith(err, { componentStack: "at Bill" });
+    expect(log).toHaveBeenCalled();
+    resetAnalytics();
+    reportUncaught(new Error("no key"), {});
+    await Promise.resolve();
+    expect(ph.captureException).toHaveBeenCalledTimes(1);
+    log.mockRestore();
+  });
+
+  it("S9 (story #740) the page's root hands uncaught errors to reportUncaught", () => {
+    expect(readFileSync(join(__dirname, "../../src/main.tsx"), "utf8")).toMatch(/onUncaughtError:\s*reportUncaught/);
   });
 
   it("S3 the host comes from VITE_POSTHOG_INGEST", async () => {
