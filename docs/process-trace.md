@@ -503,3 +503,5 @@ Rule: read this first in every session, append before saying done.
 | 456 | 2026-10-29 | coder | #619 layer d, the admin swap-discount setting (PR #717, story #716). | #309 | reviewed |
 | 457 | 2026-10-29 | coder | #619 layer e, "Tell me when it opens" (PR #719, story #718, migration 0050, n8n Guard and Expand). | #309 | reviewed |
 | 458 | 2026-10-29 | coder | Stack retargeted bottom up after each merge (rule 19); each retarget merged origin/staging with no force. | #309 | volunteered |
+| 459 | 2026-10-29 | coder | Radar run for the live rider map (PR #723): Leaflet over MapLibre by size, OSM tiles on dev only, PMTiles for prod after a size test. | #181 | reviewed |
+| 460 | 2026-10-29 | coder | #691 built from boards T2 and T3 (PR #724): map card On the way, offline state, no migration, tiles only in the dev deploy. | #181 | reviewed |
