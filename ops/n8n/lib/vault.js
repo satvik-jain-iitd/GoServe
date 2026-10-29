@@ -1,5 +1,5 @@
-// The GoServe vault reader for the n8n scripts (owner, 29 Oct 2026). Every GoServe key lives in ~/Desktop/Secrets/goserve/goserve.env; the older shared files still
-// hold copies until the owner removes them. Look in goserve.env first, then in the old file. Nothing here prints a value.
+// The GoServe vault reader for the n8n scripts (owner, 29 Oct 2026). Every GoServe key lives in ~/Desktop/Secrets/goserve/goserve.env; the older shared files no longer hold
+// GoServe keys (the owner removed the copies on 29 Oct 2026), only the account-level ones (SUPABASE_ACCESS_TOKEN, UPTIMEROBOT_API_KEY). Look in goserve.env first, then in the old file. Nothing here prints a value.
 const fs = require('fs');
 const os = require('os');
 const path = require('path');

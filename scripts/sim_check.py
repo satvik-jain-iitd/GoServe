@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Story H5 (#188): prove the synthetic city on a database. Read-only except the two calls under test (sim_seed, sim_reset).
 Run: python3 scripts/sim_check.py dev        (prod only after the owner's "yes sim prod")
-It reads SUPABASE_GOSERVE_<ENV>_URL and SUPABASE_GOSERVE_<ENV>_SERVICE_ROLE_KEY from ~/Desktop/Secrets/02_databases.env and prints:
+It reads SUPABASE_GOSERVE_<ENV>_URL and SUPABASE_GOSERVE_<ENV>_SERVICE_ROLE_KEY from ~/Desktop/Secrets/goserve/goserve.env (SUPABASE_ACCESS_TOKEN from 02_databases.env) and prints:
 the real row counts before, the seed answer twice (same ids both times), the counts after reset, and the seconds each call took.
 Pass mark (fixed before the run): seed twice gives the same kitchen ids; reset leaves the real counts exactly as before.
 """

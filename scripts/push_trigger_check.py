@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Story #563 (layer 2 of #351): prove on the DEV project that an order change reaches /push/notify and gives one send per device.
-Run: python3 scripts/push_trigger_check.py dev   (dev only; reads SUPABASE_GOSERVE_DEV_* and SUPABASE_ACCESS_TOKEN from ~/Desktop/Secrets/02_databases.env)
+Run: python3 scripts/push_trigger_check.py dev   (dev only; reads SUPABASE_GOSERVE_DEV_* and SUPABASE_ACCESS_TOKEN from ~/Desktop/Secrets/goserve/goserve.env (SUPABASE_ACCESS_TOKEN from 02_databases.env))
 Setup it keeps on dev (a dev value, nothing real): the function secret PUSH_NOTIFY_SECRET on the `push` function, and the vault secrets push_notify_url and
 push_notify_secret in the dev database. Then, with FakePush on the function: 1. a customer with an Android and an iOS token; 2. an order for them;
 3. the kitchen accepts it; 4. pg_net's answer says 200 and sent 2; 5. a repeat of the same status asks nothing more. It deletes everything it made, except the setup."""

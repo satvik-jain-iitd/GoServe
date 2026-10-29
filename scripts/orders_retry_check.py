@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Story #537: prove on the DEV project, through the deployed `orders` function, that a retry with a known key returns the existing order after the dish sold out.
-Run: python3 scripts/orders_retry_check.py dev   (dev only; reads SUPABASE_GOSERVE_DEV_* from ~/Desktop/Secrets/02_databases.env)
+Run: python3 scripts/orders_retry_check.py dev   (dev only; reads SUPABASE_GOSERVE_DEV_* from ~/Desktop/Secrets/goserve/goserve.env (SUPABASE_ACCESS_TOKEN from 02_databases.env))
 It makes a guest, a test kitchen and a dish, places an order, sells the dish out, sends the same key again, then a NEW key. It deletes everything it made."""
 import vault as gsvault
 import json, os, re, sys, urllib.error, urllib.request, uuid

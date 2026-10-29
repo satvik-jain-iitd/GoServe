@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Story #354: prove on the DEV project, through the deployed `orders` function, that a delivered order is rated once, with food and rider scores stored.
-Run: python3 scripts/ratings_check.py dev   (dev only; reads SUPABASE_GOSERVE_DEV_* from ~/Desktop/Secrets/02_databases.env)
+Run: python3 scripts/ratings_check.py dev   (dev only; reads SUPABASE_GOSERVE_DEV_* from ~/Desktop/Secrets/goserve/goserve.env (SUPABASE_ACCESS_TOKEN from 02_databases.env))
 It makes a guest, a test kitchen, a dish and a rider, places an order, tries to rate it too early, walks it to delivered, rates it, rates it again, and reads the stored row.
 It deletes everything it made."""
 import vault as gsvault
