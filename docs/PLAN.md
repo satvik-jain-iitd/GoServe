@@ -120,6 +120,7 @@ If any item is missing, the story goes back to the Backlog and the issue is fixe
 4. Ponytail review: nothing speculative added.
 5. The issue is closed by the PR.
 6. A journal entry is written.
+7. A story that changes a live screen names the board it updated in the PR body; the reviewer checks the board before approving (canvas audit, 29 Oct 2026).
 
 ---
 
