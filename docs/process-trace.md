@@ -489,3 +489,4 @@ Rule: read this first in every session, append before saying done.
 | 442 | 2026-10-29 | coder | Docs story #675: these rows, the radar run for the address lookup, learnings, follow-ups F277 to F284, discussion bullets, ideas. | #675 | reviewed |
 | 443 | 2026-10-29 | coder | Wrote the owner-run script for backend v2 on prod (#677, PR #678) and this runbook. Tried on dev only: markers, deploy of health and otp through the Management API. Nothing run on prod. | #677, #679 | reviewed |
 | 444 | 2026-10-29 | coder | Prod run of #677 stopped at orders (missing quote files). Fixed in #681 (PR to staging), all 13 functions deployed to dev. | #681 | reviewed |
+| 445 | 2026-10-29 | coder | Fix for the second prod run: an empty 2xx body is no error in release_db._call (#685, PR #686). Release PR to main for the app paths (PR #687, branch release/sitting-5). | #685 | reviewed |
