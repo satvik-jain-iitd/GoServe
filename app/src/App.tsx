@@ -278,18 +278,35 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [alertsError, setAlertsError] = useState<string | null>(null);
   const ALERTS_FAILED = "Could not turn alerts on. Try again in a minute.";
   async function allowReminder() {
+    let ok = false;
     setAlertsError(null);
     writeOff(window.localStorage, false);
     const native = await wrapperToken(window);   // story #554: a phone wrapper also registers its device token, with its platform
     if (native && !(await registerNative(native))) return void setAlertsError(ALERTS_FAILED);
-    void pushWith(() => Notification.requestPermission()).then((r) => {
+    await pushWith(() => Notification.requestPermission()).then((r) => {
       track("push_subscribe", r, typeof Notification === "undefined" ? "no_notification_api" : Notification.permission);
       if (r === "denied") return setReminder("none");
       if (r === "unsupported") return void Notification.requestPermission().then((p) => setReminder(p === "granted" ? "on" : "none"), () => setReminder("none"));
       if (r === "not_set_up") return void Notification.requestPermission().then((p) => (p === "granted" ? setAlertsError(ALERTS_FAILED) : setReminder("none")), () => setReminder("none"));   // story #661: permission given but the set-up did not work: say so, the switch stays off
       if (r === "failed") return setAlertsError(ALERTS_FAILED);
+      ok = true;
       setReminder("on");
     });
+    return ok;
+  }
+  // Story #718 (board L1): a closed kitchen offers one push when it opens. Alerts are allowed first when they are not on yet.
+  const [tellMe, setTellMe] = useState<"idle" | "busy" | "done">("idle");
+  const [tellMeError, setTellMeError] = useState<string | null>(null);
+  async function tellMeWhenOpen() {
+    if (shown?.kind !== "closed") return;
+    setTellMe("busy");
+    setTellMeError(null);
+    const allowed = reminder === "on" || (await allowReminder());
+    const { data, error } = allowed ? await getClient().rpc("open_alert_add_v2", { p_kitchen: shown.id }) : { data: null, error: null };
+    const ans = data as { ok?: boolean; message?: string } | null;
+    if (allowed && !error && ans?.ok) return setTellMe("done");
+    setTellMe("idle");
+    setTellMeError(ans?.message ?? (allowed ? "Could not set that up. Try again." : "Allow alerts first."));
   }
   // Story #609: the switch on You always works. Off: the server row and the browser subscription go and "off" is remembered. On again: subscribe with no prompt (the permission is still granted).
   async function toggleAlerts() {
@@ -712,6 +729,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             kitchenName={kitchenName}
             openText={shown?.kind === "ok" ? openTill(shown.kitchen.closes_at) : ""}
             closed={shown?.kind === "closed" ? closedCopy(shown.opens_at, shown.paused === true) : null}
+            tellMe={tellMe} tellMeError={tellMeError} onTellMe={tellMeWhenOpen}
             onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
             onChangePin={changeArea} onOrders={() => setStep("orders")} onYou={() => setStep("account")} />
         )}
