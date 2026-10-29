@@ -10,7 +10,7 @@ import { styleguideOn } from "./ui/flag";
 import { roleFromPath, roleTitle } from "./lib/roles";
 import { applyTheme } from "./lib/theme";
 import { watchForUpdates } from "./lib/updates";
-import { initAnalytics } from "./lib/analytics";
+import { initAnalytics, reportUncaught } from "./lib/analytics";
 
 // The address picks the app (story #83). Each role page is a static file with its own manifest link and title (see vite.config.ts), so the install
 // uses the right start address. The title is set here too, for the dev server where those static pages do not exist.
@@ -23,7 +23,8 @@ const role = roleFromPath(path);
 if (role) document.title = roleTitle(role);
 if (role === "customer") void initAnalytics(import.meta.env);   // story #207: only when VITE_POSTHOG_KEY is set (dev builds)
 
-createRoot(document.getElementById("root")!).render(
+// Story #740: an error React cannot recover from also reaches PostHog error tracking (dev builds); the console line stays.
+createRoot(document.getElementById("root")!, { onUncaughtError: reportUncaught }).render(
   <StrictMode>
     {path.replace(/\/$/, "") === "/health" ? <HealthScreen /> : styleguideOn(path, import.meta.env.VITE_STYLEGUIDE) ? <Styleguide /> : <App lock={role ?? undefined} />}
   </StrictMode>,
