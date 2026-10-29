@@ -11,7 +11,7 @@ Owner: you run it. The reviewer reads the script first.
 
 ## What `--apply` does, in order
 1. The missing v2 migrations, one file at a time. It stops at the first error and names the file.
-2. All 13 functions, with their `_shared` files.
+2. All 13 functions, with every function file (some import a sibling, like `quote`).
 3. Secrets: `OTP_FIXED_CODE=123456`, a fresh `PAYMENTS_WEBHOOK_SECRET`, a fresh `PUSH_NOTIFY_SECRET`. The fresh ones are made by the script and written first to `~/Desktop/Secrets/05_goserve_prod_functions.env`. The dev values are never used.
 4. The push pair in the database vault (`push_notify_url`, `push_notify_secret`).
 5. Anonymous sign-in on, if it was off.
