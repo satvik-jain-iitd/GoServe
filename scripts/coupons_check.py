@@ -3,11 +3,12 @@
 and that GET /coupons lists the valid ones only.
 Run: python3 scripts/coupons_check.py dev   (dev only; reads SUPABASE_GOSERVE_DEV_* and SUPABASE_ACCESS_TOKEN from ~/Desktop/Secrets/02_databases.env)
 It makes a test kitchen, one dish and four coupons (three valid, one switched off), asks POST /quote with no code and with a typed code, and GET /coupons. It deletes everything it made."""
+import vault as gsvault
 import json, os, re, sys, urllib.error, urllib.request, uuid
 
 if (sys.argv[1] if len(sys.argv) > 1 else "dev") != "dev":
     sys.exit("dev only")
-vault = open(os.path.expanduser("~/Desktop/Secrets/02_databases.env")).read()
+vault = gsvault.read("02_databases.env")
 get = lambda k: re.search(rf"^{k}=(\S+)", vault, re.M).group(1)
 URL, ANON, SERVICE, MGMT = get("SUPABASE_GOSERVE_DEV_URL"), get("SUPABASE_GOSERVE_DEV_ANON_KEY"), get("SUPABASE_GOSERVE_DEV_SERVICE_ROLE_KEY"), get("SUPABASE_ACCESS_TOKEN")
 REF = "tmxyizmkpwwfyazvrfhw"

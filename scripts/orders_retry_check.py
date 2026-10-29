@@ -2,11 +2,12 @@
 """Story #537: prove on the DEV project, through the deployed `orders` function, that a retry with a known key returns the existing order after the dish sold out.
 Run: python3 scripts/orders_retry_check.py dev   (dev only; reads SUPABASE_GOSERVE_DEV_* from ~/Desktop/Secrets/02_databases.env)
 It makes a guest, a test kitchen and a dish, places an order, sells the dish out, sends the same key again, then a NEW key. It deletes everything it made."""
+import vault as gsvault
 import json, os, re, sys, urllib.error, urllib.request, uuid
 
 if (sys.argv[1] if len(sys.argv) > 1 else "dev") != "dev":
     sys.exit("dev only")
-vault = open(os.path.expanduser("~/Desktop/Secrets/02_databases.env")).read()
+vault = gsvault.read("02_databases.env")
 get = lambda k: re.search(rf"^{k}=(\S+)", vault, re.M).group(1)
 URL, ANON, SERVICE, MGMT = get("SUPABASE_GOSERVE_DEV_URL"), get("SUPABASE_GOSERVE_DEV_ANON_KEY"), get("SUPABASE_GOSERVE_DEV_SERVICE_ROLE_KEY"), get("SUPABASE_ACCESS_TOKEN")
 REF = "tmxyizmkpwwfyazvrfhw"

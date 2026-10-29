@@ -5,12 +5,13 @@ It reads SUPABASE_GOSERVE_<ENV>_URL and SUPABASE_GOSERVE_<ENV>_SERVICE_ROLE_KEY 
 the real row counts before, the seed answer twice (same ids both times), the counts after reset, and the seconds each call took.
 Pass mark (fixed before the run): seed twice gives the same kitchen ids; reset leaves the real counts exactly as before.
 """
+import vault as gsvault
 import json, os, re, sys, time, urllib.request
 
 env = (sys.argv[1] if len(sys.argv) > 1 else "dev").upper()
 if env != "DEV" and "--yes-prod" not in sys.argv:
     sys.exit("prod needs the owner's yes: add --yes-prod")
-vault = open(os.path.expanduser("~/Desktop/Secrets/02_databases.env")).read()
+vault = gsvault.read("02_databases.env")
 URL = re.search(rf"^SUPABASE_GOSERVE_{env}_URL=(\S+)", vault, re.M).group(1)
 KEY = re.search(rf"^SUPABASE_GOSERVE_{env}_SERVICE_ROLE_KEY=(\S+)", vault, re.M).group(1)
 H = {"apikey": KEY, "Authorization": f"Bearer {KEY}", "Content-Type": "application/json"}

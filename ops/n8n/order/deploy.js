@@ -6,6 +6,7 @@
 // It never activates, deletes or touches any other workflow. Deploy order: ERR 00, SUB 11 to 17 and 91, then MAIN 01 and MAIN 90 (rulebook 95.16).
 // Secrets come from ~/Desktop/Secrets (N8N_API_KEY, GOSERVE_TELEGRAM_CHAT_ID, SUPABASE_GOSERVE_DEV_URL, GOSERVE_DEMO_TOKEN) and are never written to the repo.
 const fs = require('fs');
+const gsvault = require('../lib/vault');   // goserve.env first, then the old file (owner, 29 Oct 2026)
 const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
@@ -27,10 +28,7 @@ const VAPID_CREDENTIAL = 'GoServe VAPID';   // JWT Auth (ES256) holding the VAPI
 // PUT /workflows/{id} accepts only these keys (rulebook 113).
 const payload = (w) => ({ name: w.name, nodes: w.nodes, connections: w.connections, settings: w.settings });
 
-function vault(file, key) {
-  const m = fs.readFileSync(path.join(os.homedir(), 'Desktop/Secrets', file), 'utf8').match(new RegExp('^' + key + '=(\\S+)', 'm'));
-  return m ? m[1] : null;
-}
+const vault = (file, key) => gsvault.get(file, key);
 
 // One call to the n8n API. The shared box sometimes answers a Cloudflare HTML page (520) or drops the connection: that is tried again, 3 tries, 30 s apart.
 // A JSON answer is final, good or a refusal.
@@ -96,13 +94,13 @@ async function main() {
   let token = vault('04_integrations.env', E.tokenVar);
   if (!token) {   // saved to the vault at once (rule A6)
     token = crypto.randomBytes(24).toString('hex');
-    fs.appendFileSync(path.join(os.homedir(), 'Desktop/Secrets/04_integrations.env'),
+    gsvault.append('04_integrations.env',
       '\n# GoServe ' + env + ' demo token for the n8n order webhook, ' + new Date().toISOString() + '. Low value by design (ADR-009); rotate each release.\n' + E.tokenVar + '=' + token + '\n');
   }
   let simToken = vault('04_integrations.env', E.simTokenVar);   // H5: the simulator's own token, never the demo token
   if (!simToken) {
     simToken = crypto.randomBytes(24).toString('hex');
-    fs.appendFileSync(path.join(os.homedir(), 'Desktop/Secrets/04_integrations.env'),
+    gsvault.append('04_integrations.env',
       '\n# GoServe ' + env + ' simulator token for the n8n gs-sim webhook (story H5), ' + new Date().toISOString() + '. Admin only; rotate each release.\n' + E.simTokenVar + '=' + simToken + '\n');
   }
   for (const k of ORD) {   // shells first, so every workflow knows the others' ids
