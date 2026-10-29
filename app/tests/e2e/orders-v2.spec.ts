@@ -72,7 +72,7 @@ test("S3 a refusal shows our line, not the server's words", async ({ page, conte
   await start(context, page, [{ status: 422, body: { ok: false, error: "sold_out", message: "Butter Chicken is sold out." } }]);
   await toBill(page);
   await page.getByRole("button", { name: /Place order/ }).click();
-  await expect(page.getByText("Something went wrong. Please try again.")).toBeVisible();
+  await expect(page.getByText("Something in the bill did not go through. Check it and try again.")).toBeVisible();
   await expect(page.getByText("Butter Chicken is sold out.")).toHaveCount(0);
 });
 

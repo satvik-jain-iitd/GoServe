@@ -3,14 +3,18 @@
 import { getClient } from "./supabase";
 
 export type Offer = { code: string; title: string; saves_paise: number };
+// Story #619 layer c: the server's one alternative for a sold-out dish; discount_paise is per unit.
+export type Alternative = { menu_item_id: string; name: string; price_paise: number; discount_paise: number };
 export type Quote = {
   item_total_paise: number; fees: { delivery_paise: number; packaging_paise: number; total_paise: number };
   discount_paise: number; coupon: { code: string; title: string } | null; tax_paise: number; tax_mode: "inclusive" | "exclusive"; to_pay_paise: number; offers: Offer[];
+  lines?: { menu_item_id: string; name: string; qty: number; unit_paise: number; line_paise: number }[];   // the priced lines; after a swap the new dish is here
+  swap_discount_paise?: number; swaps?: { from: string; to: string; discount_paise: number }[];   // only after a swap (layer b); discount_paise includes the swap discount
 };
-export type QuoteResult = { ok: true; quote: Quote } | { ok: false; error: string; message: string };
+export type QuoteResult = { ok: true; quote: Quote } | { ok: false; error: string; message: string; alternative?: Alternative | null };
 export const OFFERS_ON = import.meta.env.VITE_OFFERS === "1";
 
-export async function fetchQuote(input: { kitchenId: string; pin: string; items: { menu_item_id: string; qty: number }[]; code: string | null; none?: boolean }): Promise<QuoteResult> {
+export async function fetchQuote(input: { kitchenId: string; pin: string; items: { menu_item_id: string; qty: number; swap?: boolean }[]; code: string | null; none?: boolean }): Promise<QuoteResult> {
   const down: QuoteResult = { ok: false, error: "network", message: "Could not reach GoServe. Try again." };
   try {
     const token = (await getClient().auth.getSession()).data.session?.access_token ?? import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -20,7 +24,7 @@ export async function fetchQuote(input: { kitchenId: string; pin: string; items:
     });
     const a = await res.json().catch(() => null);
     if (res.ok && a?.ok && Number.isInteger(a.to_pay_paise)) return { ok: true, quote: { ...a, offers: Array.isArray(a.offers) ? a.offers : [] } };
-    if (a?.ok === false && typeof a.error === "string" && typeof a.message === "string") return { ok: false, error: a.error, message: a.message };
+    if (a?.ok === false && typeof a.error === "string" && typeof a.message === "string") return { ok: false, error: a.error, message: a.message, ...(a.alternative !== undefined ? { alternative: a.alternative } : {}) };
     return down;   // a 502 or anything outside the contract: no detail is shown
   } catch {
     return down;
