@@ -66,6 +66,28 @@ test('D6 (#532) Take queue retries a slow call: 3 tries, 5 s apart, 20 s timeout
   assert.equal(take.waitBetweenTries, 5000);
   assert.equal(take.parameters.options.timeout, 20000);
   assert.equal(take.continueOnFail, undefined);   // rulebook B7: a failed take stops the run, it never carries on
-  const others = wf.main34.nodes.filter((n) => n.name !== 'Take queue' && n.type === 'n8n-nodes-base.httpRequest');
-  assert.deepEqual(others, []);   // Take queue is the only HTTP node in MAIN 34
+  const others = wf.main34.nodes.filter((n) => !['Take queue', 'Mark sent'].includes(n.name) && n.type === 'n8n-nodes-base.httpRequest');
+  assert.deepEqual(others, []);   // Take queue and (story #693) Mark sent are the only HTTP nodes in MAIN 34
+});
+
+test('D7 (#693) Mark sent comes after SUB 20: Call SUB 20 Push, Sent ids, Mark sent, one write to push_outbox_sent with the stored credential', () => {
+  const m = wf.main34;
+  assert.deepEqual(next(m, 'Call SUB 20 Push'), ['Sent ids']);
+  assert.deepEqual(next(m, 'Sent ids'), ['Mark sent']);
+  assert.equal(byName(m, 'Call SUB 20 Push').alwaysOutputData, true);   // the next node runs even if SUB 20 hands back nothing
+  const http = byName(m, 'Mark sent');
+  assert.equal(http.parameters.url, '={{ $json.supabase_url }}/rest/v1/rpc/push_outbox_sent');
+  assert.ok(http.credentials && http.credentials.httpCustomAuth);
+  assert.equal(http.continueOnFail, undefined);   // a failed mark stops the run: the rows come back after 2 minutes, never lost
+});
+
+test('D8 (#693) every taken row carries its outbox id, and Sent ids lists exactly those ids; no rows, no call', () => {
+  const cfg = { supabase_url: 'u', kill_switch: false, vapid_public_key: 'PUB', vapid_subject: 'mailto:a@b.c' };
+  const rows = [{ id: 7, order_id: 'o1', session_id: 's1', status: 'ready' }, { id: 9, order_id: 'o2', session_id: 's2', status: 'delivered' }];
+  const out = runCode('push_drain_expand.js', { statusCode: 200, body: { rows } }, { Tick: cfg });
+  assert.deepEqual(out.map((x) => x.outbox_id), [7, 9]);
+  const sent = (items) => new Function('$', fs.readFileSync(path.join(__dirname, 'code', 'push_drain_sent.js'), 'utf8'))(
+    (n) => (n === 'Tick' ? { first: () => ({ json: cfg }) } : { all: () => items.map((json) => ({ json })) })).map((x) => x.json);
+  assert.deepEqual(sent(out), [{ supabase_url: 'u', rpc_body: { p_ids: [7, 9] } }]);
+  assert.deepEqual(sent([]), []);
 });

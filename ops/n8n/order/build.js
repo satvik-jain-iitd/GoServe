@@ -715,14 +715,18 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
       ['session_id', '={{ $json.session_id }}', 'string'], ['order_id', '={{ $json.order_id }}', 'string'], ['status', '={{ $json.status }}', 'string'],
       ['vapid_public_key', '={{ $json.vapid_public_key }}', 'string'], ['vapid_subject', '={{ $json.vapid_subject }}', 'string'],
       ['kill_switch', '={{ $json.kill_switch }}', 'boolean'], ['supabase_url', '={{ $json.supabase_url }}', 'string']], true, 'each'),
+    codeNode('gs-main34-09', 'Sent ids', code('push_drain_sent.js')),
+    rpcCall('gs-main34-10', 'Mark sent', 'push_outbox_sent'),
   ];
-  const e34 = [['Every 30 seconds', 'Config'], ['Config', 'Kill switch?'], ['Kill switch?', 'Paused', 0], ['Kill switch?', 'Tick', 1], ['Tick', 'Take queue'], ['Take queue', 'Expand rows'], ['Expand rows', 'Call SUB 20 Push']];
+  Object.assign(n34.find((x) => x.name === 'Call SUB 20 Push'), { alwaysOutputData: true });   // story #693: Sent ids runs even if SUB 20 hands back nothing
+  const e34 = [['Every 30 seconds', 'Config'], ['Config', 'Kill switch?'], ['Kill switch?', 'Paused', 0], ['Kill switch?', 'Tick', 1], ['Tick', 'Take queue'], ['Take queue', 'Expand rows'], ['Expand rows', 'Call SUB 20 Push'], ['Call SUB 20 Push', 'Sent ids'], ['Sent ids', 'Mark sent']];
   const s34 = [
     { name: 'CLOCK', what: 'Runs every 30 seconds.', needs: 'Nothing.', nodes: ['Every 30 seconds'], color: 4 },
     { name: 'CONFIG', what: 'The kill switch stops the schedule itself. The database address and the VAPID public key and contact.', needs: 'Config keys: kill_switch, supabase_url, env, vapid_public_key, vapid_subject.', nodes: ['Config'], color: 5 },
     { name: 'GATE', what: 'Kill switch on: stop here.', needs: 'Config: kill_switch.', nodes: ['Kill switch?', 'Paused'], color: 5 },
     { name: 'TAKE', what: 'Take the queued pushes once. The database queued one for every order that reached placed, ready, picked up or delivered, by any path.', needs: 'Credential "GoServe Supabase dev". Function push_outbox_take.', nodes: ['Tick', 'Take queue', 'Expand rows'], color: 6 },
     { name: 'SEND', what: 'Call SUB 20 once for each queued push. An empty queue ends the run quietly. Successful runs are not saved.', needs: 'SUB 20 id.', nodes: ['Call SUB 20 Push'], color: 6 },
+    { name: 'MARK', what: 'Tell the database which pushes SUB 20 finished. Rows not marked come back after 2 minutes, at most 3 times (story #534).', needs: 'Credential "GoServe Supabase dev". Function push_outbox_sent.', nodes: ['Sent ids', 'Mark sent'], color: 6 },
   ];
   const main34 = finish('GS MAIN 34 Push drain', n34, e34, s34, quiet);
 
