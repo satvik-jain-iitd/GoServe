@@ -2,7 +2,7 @@
 import { test, expect } from "@playwright/test";
 
 test("S1 demo path: menu, order, kitchen, AI suggestion, delivered, reset", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/console/");
   const dishes = page.getByRole("button", { name: /^Add / });
   await dishes.first().waitFor({ timeout: 20_000 });
   await dishes.nth(0).click();

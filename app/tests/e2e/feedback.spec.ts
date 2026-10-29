@@ -6,7 +6,7 @@ import { ID, order, setup } from "./helpers";
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
 
 const openFeedback = async (page: Page) => {   // #242: the floating button lives on the console; the kitchen tab there shows the session's orders
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Kitchen", exact: true }).click();
   await page.getByRole("button", { name: "Cooking", exact: true }).click();   // H11: an accepted ticket is on the Cooking tab
   await expect(page.getByText("No. 0f0f0f0f")).toBeVisible();
@@ -30,7 +30,7 @@ test("S1 a report with a screenshot: words, kind of work, order, trail and pictu
   expect(net.calls.feedback).toHaveLength(1);
   const sent = net.calls.feedback[0];
   expect(sent.headers["x-gs-token"]).toBe("demo-token");
-  expect(sent.body).toMatchObject({ action: "feedback", role: "console", screen: "/ (kitchen tab)", order_id: ID, doing: "cooking", text: "Accept button did nothing" });
+  expect(sent.body).toMatchObject({ action: "feedback", role: "console", screen: "/console/ (kitchen tab)", order_id: ID, doing: "cooking", text: "Accept button did nothing" });
   expect(sent.body.image_b64.length).toBeGreaterThan(20);
   expect(sent.body.context.trail.map((t: { line: string }) => t.line).join(" ")).toMatch(/preparing/);
 });
@@ -80,7 +80,7 @@ test("S4 a server failure keeps the sheet open with the words and the file, show
 
 test("the floating button is on the console only; the role apps carry a Send feedback row instead (story #242)", async ({ page, context }) => {
   await setup(context, page);
-  await page.goto("/");
+  await page.goto("/console/");
   await expect(page.getByRole("button", { name: "Feedback", exact: true })).toBeVisible();
   for (const path of ["/customer/", "/kitchen/", "/rider/"]) {
     await page.goto(path);
