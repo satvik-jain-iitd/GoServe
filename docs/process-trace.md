@@ -512,3 +512,6 @@ Rule: read this first in every session, append before saying done.
 | 465 | 2026-10-29 | coder | #503 built from the owner's yes on boards S1 to S3 (PR #743): static story page at `/`, the console moved to `/console/`, the `/ to /customer/` redirect removed. | #310 | reviewed |
 | 466 | 2026-10-29 | coder | PostHog on dev: #737 dev deploy follows staging (PR #746), #738 page views (PR #747), #739 replay with masking (PR #748), #740 error tracking (PR #749). | #203 | reviewed |
 | 467 | 2026-10-29 | coder | #254 Play closed test: runbook `docs/ops/play-closed-test.md`, the listing words, a feature graphic and four phone screenshots in `design/play/`; test run red first. | #249 | asked |
+| 468 | 2026-10-29 | coder | Vault move: `scripts/vault.py` and `ops/n8n/lib/vault.js` read `~/Desktop/Secrets/goserve/goserve.env` first, about 25 readers switched (story #765, PR #766); tests `scripts/test_vault.py` (6) and `ops/n8n/order/vault.test.js` (4). | #311 | reviewed |
+| 469 | 2026-10-29 | coder | Feedback sheet and ticket tag use the shared `ui-sheet`, `ui-btn` and `ui-tag` classes (stories #759, #760; PRs #761, #762); veg data fix migration `0051` (PR #754). | #309 | reviewed |
+| 470 | 2026-10-29 | coder | The reviewer removed the GoServe copies from the shared secret files; docstrings and Run lines now name goserve.env (story #767, PR #768). | #311 | asked |
