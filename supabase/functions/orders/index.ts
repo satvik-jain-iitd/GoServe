@@ -47,11 +47,11 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
     const prior = await deps.existing(session, key);
     if (prior) return json(200, { ok: true, created: false, order: Object.fromEntries(ORDER_FIELDS.map((f) => [f, prior[f]])) });
     const out = await runQuote(deps, q, session);
-    if (!out.ok) return json(422, out.error === "dish_sold_out" ? { ...out, error: "sold_out" } : out);
+    if (!out.ok) return json(422, out.error === "dish_sold_out" ? { ...out, error: "sold_out" } : out);   // story #619: the refusal carries the server's alternative
     const quote = { ...out, kitchen_id: q.kitchen };
     if (out.to_pay_paise !== expected) return json(409, { ok: false, error: "price_changed", message: "A price changed. Check the bill again.", quote });
-    const { ok: _ok, lines: _lines, offers: _offers, ...bill } = out;   // the offers are for the screen, not for the order
-    const res = await deps.place(session, key, q.kitchen, q.lines, text.trim(), out.item_total_paise, { ...bill, lines: out.lines });
+    const { ok: _ok, lines: _lines, offers: _offers, effective, ...bill } = out;   // the offers are for the screen, not for the order; story #619: a swap orders the lines after the swap, not the sold-out one
+    const res = await deps.place(session, key, q.kitchen, effective ?? q.lines, text.trim(), out.item_total_paise, { ...bill, lines: out.lines });
     if (!res.ok) return json(res.error === "price_changed" ? 409 : 422, { ok: false, error: res.error, message: res.message });
     const order = Object.fromEntries(ORDER_FIELDS.map((f) => [f, res.order[f]]));
     return json(res.created ? 201 : 200, { ok: true, created: res.created, order });

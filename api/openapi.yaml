@@ -82,6 +82,7 @@ paths:
                       option_ids:
                         type: array
                         items: { type: string, format: uuid }
+                      swap: { type: boolean, description: "On a sold-out dish: replace it with the server's one alternative at the same quantity, with the swap discount. On a dish that is on sale it does nothing." }
                 address:
                   type: object
                   required: [pin_code]
@@ -179,6 +180,7 @@ paths:
                       option_ids:
                         type: array
                         items: { type: string, format: uuid }
+                      swap: { type: boolean, description: "On a sold-out dish: replace it with the server's one alternative at the same quantity, with the swap discount. On a dish that is on sale it does nothing." }
                 address:
                   type: object
                   required: [pin_code, text]
@@ -1107,6 +1109,16 @@ components:
           const: false
         error: { type: string }
         message: { type: string }
+        alternative:
+          description: "On a sold-out dish (dish_sold_out, sold_out): the server's one alternative (same veg flag, available now, nearest price, a tie goes to the lowest id), or null when there is none. discount_paise is per unit."
+          type: [object, "null"]
+          additionalProperties: false
+          required: [menu_item_id, name, price_paise, discount_paise]
+          properties:
+            menu_item_id: { type: string }
+            name: { type: string }
+            price_paise: { type: integer, minimum: 0 }
+            discount_paise: { type: integer, minimum: 0 }
     Quote:
       type: object
       additionalProperties: false
@@ -1152,6 +1164,18 @@ components:
         tax_mode: { enum: [inclusive, exclusive] }
         to_pay_paise: { type: integer, minimum: 0 }
         saved_paise: { type: integer, minimum: 0 }
+        swap_discount_paise: { type: integer, minimum: 0, description: "Only after a swap: the part of discount_paise that is the swap discount." }
+        swaps:
+          description: "Only after a swap: what was swapped for what. The lines above already show the new dish."
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [from, to, discount_paise]
+            properties:
+              from: { type: string }
+              to: { type: string }
+              discount_paise: { type: integer, minimum: 0 }
         offers:
           description: "Every valid coupon that applies to this cart, best saving first (a tie: the smaller code). The first one is applied unless the customer typed a code."
           type: array
