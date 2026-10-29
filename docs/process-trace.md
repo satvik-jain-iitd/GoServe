@@ -505,3 +505,7 @@ Rule: read this first in every session, append before saying done.
 | 458 | 2026-10-29 | coder | Stack retargeted bottom up after each merge (rule 19); each retarget merged origin/staging with no force. | #309 | volunteered |
 | 459 | 2026-10-29 | coder | Radar run for the live rider map (PR #723): Leaflet over MapLibre by size, OSM tiles on dev only, PMTiles for prod after a size test. | #181 | reviewed |
 | 460 | 2026-10-29 | coder | #691 built from boards T2 and T3 (PR #724): map card On the way, offline state, no migration, tiles only in the dev deploy. | #181 | reviewed |
+| 461 | 2026-10-29 | owner | Ran the prod rollout (~15:30 IST): `deploy.js --env prod --apply` (27 PROD workflows, MAIN 34 and SUB 20 included), then migrations 0047, 0048, 0049, settings, settings_admin, 0050, then `supabase functions deploy quote`. Checks: push_outbox sent_at not null 5, push_dead 0, settings rows 1. | #309 | asked |
+| 462 | 2026-10-29 | coder | Deploy retry (PR #732, story #731): a non-JSON answer or a dropped connection is tried 3 times, 30 s apart; `--from <key>` resumes. | #311 | reviewed |
+| 463 | 2026-10-29 | coder | CI flake of `admin-settings.spec.ts` S2 found to be a real bug and fixed (PR #734, story #733): a late load no longer overwrites what the admin typed. | #309 | reviewed |
+| 464 | 2026-10-29 | coder | Radar run for the scroll-story page at the bare address (#503): nothing to adopt; frames asked from the reviewer; no code before the owner's yes. | #310 | reviewed |
