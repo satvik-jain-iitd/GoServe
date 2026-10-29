@@ -2,9 +2,10 @@
 import { test, expect } from "@playwright/test";
 import { scan, setup } from "./helpers";
 
-async function toSettings(page: import("@playwright/test").Page, context: import("@playwright/test").BrowserContext) {
+async function toSettings(page: import("@playwright/test").Page, context: import("@playwright/test").BrowserContext, slowMs = 0) {
   const net = await setup(context, page);
   net.state.admin = true;
+  net.state.swapDelayMs = slowMs;
   await page.goto("/admin/");
   await page.getByRole("button", { name: "Numbers", exact: true }).click();
   return net;
@@ -38,4 +39,14 @@ test("S4 the Settings row has no serious contrast or role violation", async ({ p
   await toSettings(page, context);
   await expect(page.getByLabel("Sold-out swap discount, percent")).toBeVisible();
   expect(await scan(page)).toEqual([]);
+});
+
+test("S5 a slow load never overwrites what the admin has already typed (the CI flake of S2)", async ({ page, context }) => {
+  const net = await toSettings(page, context, 1500);
+  await page.getByLabel("Sold-out swap discount, percent").fill("15");   // typed before the load answers
+  await expect(page.getByText(/^Now 10% · /)).toBeVisible({ timeout: 5000 });   // the load has answered now
+  await expect(page.getByLabel("Sold-out swap discount, percent")).toHaveValue("15");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText(/^Now 15% · /)).toBeVisible();
+  expect(net.calls.rpc.filter((c) => c.name === "swap_discount_set_v2").map((c) => c.body)).toEqual([{ p_pct: 15 }]);
 });

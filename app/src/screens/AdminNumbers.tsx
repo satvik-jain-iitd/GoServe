@@ -11,7 +11,7 @@ function SwapSettings() {
   const [now, setNow] = useState<SwapSetting | null>(null);
   const [text, setText] = useState("");
   const [line, setLine] = useState<string | null>(null);
-  useEffect(() => { readSwapSetting(getClient()).then((s) => { setNow(s); setText(String(s.pct)); }, () => setLine("Could not load the setting. Try again.")); }, []);
+  useEffect(() => { readSwapSetting(getClient()).then((s) => { setNow(s); setText((typed) => (typed === "" ? String(s.pct) : typed)); }, () => setLine("Could not load the setting. Try again.")); }, []);
   async function save() {
     const problem = swapPctProblem(text);
     if (problem) return void setLine(problem);
