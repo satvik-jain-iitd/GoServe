@@ -31,7 +31,7 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
       </header>
       {live && <button type="button" className="ui-live" onClick={live.onOpen}><span className="tag">{live.label}</span><span className="mono">No. {live.no}</span><span className="go" aria-hidden="true">›</span></button>}
       <div className="ui-scroll ui-account">
-        <section className="ui-slip" aria-label="Delivery details">
+        <section className="ui-slip ph-no-capture" aria-label="Delivery details">
           <div className="ui-slip-body">
             <div className="ui-slip-head"><span>Delivery details</span><span>Used on your bill</span></div>
             {editing ? (

@@ -145,7 +145,7 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
         <div className="ui-after">
           {status === "placed" && <p>The kitchen has your order. This page updates on its own.</p>}
           {!delivered && !cancelled && <Timeline steps={steps.map((x) => STEP_WORDS[x.status] ?? x.label)} current={steps.findIndex((x) => x.state === "current")} label="Order progress" />}
-          {!delivered && !cancelled && address && <p className="mono ui-addr">{address}</p>}
+          {!delivered && !cancelled && address && <p className="mono ui-addr ph-no-capture">{address}</p>}
           {track && status === "out_for_delivery" && <MapCard t={track} />}
           {rider && !(track && status === "out_for_delivery") && (
             <div className="notice" data-testid="rider-card">

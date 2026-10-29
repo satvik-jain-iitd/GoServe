@@ -111,7 +111,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
           </section>
         )}
         {!empty && (
-          <form className="ui-form" onSubmit={(e) => e.preventDefault()}>
+          <form className="ui-form ph-no-capture" onSubmit={(e) => e.preventDefault()}>
             {details && !details.gate && (
               <>
                 <div className="ui-field"><label htmlFor="name">Your name</label><input id="name" type="text" value={details.name} maxLength={80} autoComplete="name" onChange={(e) => details.onName(e.target.value)} /></div>

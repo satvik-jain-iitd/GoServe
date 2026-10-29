@@ -1,5 +1,5 @@
 // Story #207: product analytics with PostHog. Off unless VITE_POSTHOG_KEY is set (dev only for now), so prod and every test send nothing.
-// Six events only. A prop never carries a name, phone or address. Autocapture and session replay are off. Page views are on (story #738): one per history change, and a page leave on close; the app has one page per role app, so this is web analytics (visitors, paths, devices), not a per-screen trail.
+// Six events only. A prop never carries a name, phone or address. Autocapture is off. Session replay is on (story #739) with every input masked; the places that show a name, a phone or an address carry the class ph-no-capture. Page views are on (story #738): one per history change, and a page leave on close; the app has one page per role app, so this is web analytics (visitors, paths, devices), not a per-screen trail.
 export const EVENTS = ["first_open", "code_ok", "address_set", "order_placed", "delivered_yes", "feedback_sent"] as const;
 export type EventName = (typeof EVENTS)[number];
 type Env = { VITE_POSTHOG_KEY?: string; VITE_POSTHOG_INGEST?: string };
@@ -13,7 +13,7 @@ export async function initAnalytics(env: Env, load: () => Promise<Ph> = () => im
   const key = env.VITE_POSTHOG_KEY;
   ready = load().then((ph) => {
     ph.init(key, { api_host: env.VITE_POSTHOG_INGEST || "https://eu.i.posthog.com", autocapture: false, capture_pageview: "history_change", capture_pageleave: true, defaults: "2026-08-30",
-      disable_session_recording: true, disable_surveys: true, person_profiles: "identified_only", persistence: "localStorage" });
+      disable_session_recording: false, session_recording: { maskAllInputs: true }, disable_surveys: true, person_profiles: "identified_only", persistence: "localStorage" });
     return ph;
   });
   const s = store ?? (() => { try { return window.localStorage; } catch { return undefined; } })();
