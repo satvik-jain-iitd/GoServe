@@ -3,6 +3,7 @@
 // notify is guarded by our own secret (PUSH_NOTIFY_SECRET) in the x-push-secret header. A token the push service says is dead is forgotten.
 import { pushFromEnv, type Platform, type Push } from "../_shared/push.ts";
 import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
+import { withCors } from "../_shared/cors.ts";
 
 type Refusal = { ok: false; error: string; message: string };
 export type Deps = {
@@ -83,6 +84,6 @@ const live = async (): Promise<Deps> => ({
   forget: async (token) => { await rpc("push_device_forget_v2", { p_token: token }); },
   secret: () => Deno.env.get("PUSH_NOTIFY_SECRET") ?? "",
 });
-export const handler = withRunLog("push", async (req) => makeHandler(await live())(req), writeRunLog);   // story #356: one run_log row per call
+export const handler = withCors(withRunLog("push", async (req) => makeHandler(await live())(req), writeRunLog));   // story #356: one run_log row per call
 
 if (import.meta.main) Deno.serve(handler);
