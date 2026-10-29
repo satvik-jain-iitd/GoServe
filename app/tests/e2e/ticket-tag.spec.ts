@@ -2,16 +2,18 @@
 import { test, expect } from "@playwright/test";
 import { order, setup } from "./helpers";
 
-test("S1 the Accepted tag on a kitchen ticket is outlined, not filled", async ({ page, context }) => {
+test("S1 the Accepted tag on a kitchen ticket is outlined in the placed colour, not filled", async ({ page, context }) => {
   await setup(context, page, [order("accepted")]);
   await page.goto("/console/");
   await page.getByRole("button", { name: "Kitchen", exact: true }).click();
   await page.getByRole("button", { name: "Cooking", exact: true }).click();   // an accepted ticket is on the Cooking tab
   const tag = page.locator(".ui-ticket .ui-tag.accepted");
   await expect(tag).toHaveText("Accepted");
-  const css = await tag.evaluate((el) => { const s = getComputedStyle(el); return { bg: s.backgroundColor, border: s.borderTopWidth }; });
+  const css = await tag.evaluate((el) => { const s = getComputedStyle(el); return { bg: s.backgroundColor, border: s.borderTopWidth, color: s.color }; });
   expect(css.bg).toBe("rgba(0, 0, 0, 0)");
   expect(parseFloat(css.border)).toBeGreaterThan(0);
+  const placed = await page.evaluate(() => { const d = document.createElement('span'); d.className = 'ui-tag placed'; document.body.appendChild(d); const c = getComputedStyle(d).color; d.remove(); return c; });
+  expect(css.color).toBe(placed);   // board K2-Cooking: the same muted outline as a placed tag
 });
 
 test("S2 the placed tag is unchanged: outlined and muted", async ({ page, context }) => {
