@@ -14,6 +14,8 @@ A personal developer account made after 13 Nov 2023 must run a closed test with 
 ## Steps
 Each step is one thing to do. Do them in order.
 
+0. **Owner.** Open **All apps** and write down the apps already on this account. Open none of them. Every later step is inside the new GoServe app only (owner, 29 Oct 2026: other published apps must not be disturbed at all).
+
 1. **Owner.** Open the Play Console and choose **Create app**. Name: `GoServe: home kitchen thali`. Default language: English (India). App or game: App. Free or paid: Free. Accept the two declarations.
 2. **Owner.** Open **Dashboard**, and finish the tasks it lists, in this order (the next steps say what to type).
 3. **Privacy policy.** Under **Policy and programs > App content > Privacy policy**, paste `https://goserve-app.pages.dev/privacy/`.
@@ -52,9 +54,10 @@ After the first upload Google signs the app with its own key. The Digital Asset 
 4. Install the app from the Play link on a phone. It opens full screen, with no address bar.
 
 ## The publishing step stays by hand
-`build-apk.yml` can send the bundle to Play with a service account (`PLAY_SERVICE_ACCOUNT_JSON`). It is optional. Without the secret the step is skipped. For the first release the upload is by hand (step 12).
+`build-apk.yml` can send the bundle to Play with a service account (`PLAY_SERVICE_ACCOUNT_JSON`). It is optional. The Play step is pinned to `in.goserve.customer` and the **internal** track, and it is off: without the secret it is skipped, and no secret is set. For the first release the upload is by hand (step 12).
 
 ## What not to do
+- Never edit, pause or release any other app on this account. If a Play service account is ever made, give it app-level access to GoServe (`in.goserve.customer`) only, never account-wide.
 - Do not type the keystore or its passwords anywhere in chat.
 - Do not apply for production before the 14 days and 12 testers are met.
 - Do not change the package name `in.goserve.customer` after the first upload.
