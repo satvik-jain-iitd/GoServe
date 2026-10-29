@@ -3,7 +3,7 @@ import type { Line } from "../lib/cart";
 import { formatRupees } from "../lib/money";
 import { isPhone } from "../lib/profile";
 import { PAY_METHODS, type PayMethod } from "../lib/payments";
-import type { Quote } from "../lib/quote";
+import type { Alternative, Quote } from "../lib/quote";
 import { useState } from "react";
 
 type Props = {
@@ -11,6 +11,7 @@ type Props = {
   address: string; onAddress: (v: string) => void;
   details?: { name: string; phone: string; onName: (v: string) => void; onPhone: (v: string) => void; gate?: boolean };   // the customer app also asks who and which phone (story B3)
   offers?: { quote: Quote; codeError: string | null; onApply: (code: string) => void; onRemove: () => void };   // story #588: the quote's bill and the Offers block (boards C1, C2)
+  soldOut?: { id: string; name: string; alt: Alternative | null | undefined; canSwap: boolean; onSwap: () => void; onRemove: () => void };   // story #619, board L3: the first dish in the bill that is sold out
   pay?: { value: PayMethod; onChange: (v: PayMethod) => void };   // story #552: how you pay (the customer app only)
   sending: boolean; error: string | null;
   onBack: () => void; onPlace: () => void;
@@ -23,11 +24,11 @@ export const BackChevron = ({ label, onClick }: { label: string; onClick: () => 
   </button>
 );
 
-export function BillScreen({ lines, total, kitchenName, pin, address, onAddress, details, offers, pay, sending, error, onBack, onPlace }: Props) {
+export function BillScreen({ lines, total, kitchenName, pin, address, onAddress, details, offers, soldOut, pay, sending, error, onBack, onPlace }: Props) {
   const [typed, setTyped] = useState("");
   const q = offers?.quote;
   const empty = lines.length === 0;
-  const ready = !empty && address.trim().length > 0 && (!details || details.gate || (details.name.trim().length > 0 && isPhone(details.phone)));   // story #551: with the phone code on, the sheets ask the number and the name
+  const ready = !empty && !soldOut && address.trim().length > 0 && (!details || details.gate || (details.name.trim().length > 0 && isPhone(details.phone)));   // story #551: with the phone code on, the sheets ask the number and the name
   const head = [kitchenName, pin].filter(Boolean).join(" · ");
   return (
     <>
@@ -47,11 +48,14 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
               </div>
             ) : (
               <div className="ui-slip-lines">
-                {lines.map(({ dish, qty, line_paise }) => <div key={dish.id}><span>{qty} × {dish.name}</span><span>{plain(line_paise)}</span></div>)}
+                {lines.map(({ dish, qty, line_paise }) => soldOut?.id === dish.id
+                  ? <div key={dish.id} style={{ color: "var(--gs-text-muted)", textDecoration: "line-through" }}><span>{qty} × {dish.name}</span><span>{plain(line_paise)}</span></div>
+                  : <div key={dish.id}><span>{qty} × {dish.name}</span><span>{plain(line_paise)}</span></div>)}
                 <div><span>Delivery</span><span>{q && q.fees.delivery_paise > 0 ? plain(q.fees.delivery_paise) : "Free"}</span></div>
                 {q && q.fees.packaging_paise > 0 && <div><span>Packaging</span><span>{plain(q.fees.packaging_paise)}</span></div>}
                 {q && q.tax_mode === "exclusive" && q.tax_paise > 0 && <div><span>Tax</span><span>{plain(q.tax_paise)}</span></div>}
-                {q && q.coupon && q.discount_paise > 0 && <div><span>Discount · {q.coupon.code}</span><span>−{plain(q.discount_paise)}</span></div>}
+                {q && q.coupon && q.discount_paise - (q.swap_discount_paise ?? 0) > 0 && <div><span>Discount · {q.coupon.code}</span><span>−{plain(q.discount_paise - (q.swap_discount_paise ?? 0))}</span></div>}
+                {q && (q.swap_discount_paise ?? 0) > 0 && <div><span>Swap discount</span><span>−{plain(q.swap_discount_paise!)}</span></div>}
               </div>
             )}
             <div className="ui-slip-rule" />
@@ -59,6 +63,26 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
             {!empty && <button type="button" className="ui-btn ghost ui-add-more" onClick={onBack}>+ Add more</button>}
           </div>
         </section>
+        {soldOut && (
+          <div role="alert" className="ui-swap">
+            <p className="ui-swap-reason">{soldOut.name} is sold out.</p>
+            {soldOut.alt && soldOut.canSwap && (
+              <>
+                <div className="ui-swap-alt">
+                  <div>
+                    <p className="ui-swap-try">Try {soldOut.alt.name} instead</p>
+                    <p className="ui-swap-price"><span className="mono">{formatRupees(soldOut.alt.price_paise - soldOut.alt.discount_paise)}</span> <span className="mono was">{formatRupees(soldOut.alt.price_paise)}</span> · {Math.round((100 * soldOut.alt.discount_paise) / Math.max(1, soldOut.alt.price_paise))}% off from us, sorry for the trouble</p>
+                  </div>
+                </div>
+                <div className="ui-swap-actions">
+                  <button type="button" className="ui-btn" onClick={soldOut.onSwap}>Swap it in</button>
+                  <button type="button" className="ui-btn ghost" onClick={soldOut.onRemove}>Take it out</button>
+                </div>
+              </>
+            )}
+            {!(soldOut.alt && soldOut.canSwap) && <div className="ui-swap-actions"><button type="button" className="ui-btn ghost" onClick={soldOut.onRemove}>Take it out</button></div>}
+          </div>
+        )}
         {offers && (offers.quote.offers.length > 0 || offers.quote.coupon) && (
           <section aria-label="Offers" style={{ margin: "16px 20px 0 20px", display: "flex", flexDirection: "column", gap: 8 }}>
             <h2 style={{ margin: "0 0 4px 0", fontFamily: "'DM Mono', monospace", fontSize: 12, fontWeight: 400, textTransform: "uppercase", color: "var(--gs-text-muted)" }}>Offers</h2>
@@ -112,7 +136,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
         <div className="ui-sticky float">
           {!ready && <p className="ui-note ui-bar-note">Add your name, phone and address to place the order.</p>}
           <button type="button" className="ui-btn bar" disabled={!ready || sending} onClick={onPlace}>
-            <span className="mono">{pay && pay.value !== "cod" ? PAY_METHODS.find((m) => m.id === pay.value)!.label : "Cash"} · {formatRupees(total)}</span><span className="verb">{sending ? "Placing…" : "Place order ›"}</span>
+            <span className="mono">{pay && pay.value !== "cod" ? PAY_METHODS.find((m) => m.id === pay.value)!.label : "Cash"} · {formatRupees(total)}</span><span className="verb">{sending ? "Placing…" : soldOut ? "Fix the bill first" : "Place order ›"}</span>
           </button>
         </div>
       )}

@@ -24,7 +24,7 @@ export const v2Deps = (): V2Deps => ({
   token: async () => (await getClient().auth.getSession()).data.session?.access_token ?? import.meta.env.VITE_SUPABASE_ANON_KEY,
 });
 
-export type PlaceV2Input = { kitchenId: string; pin: string; items: { menu_item_id: string; qty: number }[]; address: string; key: string; expectedPaise: number; code: string | null; none: boolean };
+export type PlaceV2Input = { kitchenId: string; pin: string; items: { menu_item_id: string; qty: number; swap?: boolean }[]; address: string; key: string; expectedPaise: number; code: string | null; none: boolean };
 
 export async function placeOrderV2(input: PlaceV2Input, deps: V2Deps): Promise<{ order: PlacedOrder; created: boolean; confirm: ConfirmCfg }> {
   let res: Response;

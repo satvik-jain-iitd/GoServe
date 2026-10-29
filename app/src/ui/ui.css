@@ -230,6 +230,14 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-closed { display: grid; grid-template-columns: auto 1fr; gap: var(--gs-space-3); align-items: center; margin: var(--gs-space-3) var(--gs-gutter) 0; padding: var(--gs-space-2) var(--gs-space-3); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); }
 .ui-closed p { margin: 0; }
 .ui-closed-main { font-size: var(--gs-text-sm); font-weight: 600; }
+.ui-swap { display: flex; flex-direction: column; gap: var(--gs-space-3); margin: var(--gs-space-3) var(--gs-gutter) 0; padding: var(--gs-space-3) var(--gs-space-4); border: 1px solid var(--md-error); border-radius: var(--gs-radius-s); }
+.ui-swap p { margin: 0; }
+.ui-swap-reason { font-weight: 600; color: var(--md-error); }
+.ui-swap-try { font-weight: 600; }
+.ui-swap-price { font-size: var(--gs-text-sm); }
+.ui-swap-price .was { color: var(--gs-text-muted); text-decoration: line-through; }
+.ui-swap-actions { display: flex; gap: var(--gs-space-2); }
+.ui-swap-actions .ui-btn { flex: 1; min-height: 44px; justify-content: center; }
 .ui-closed-sub { font-size: var(--gs-text-xs); color: var(--gs-text-muted); }
 /* story 619, board L2: a dish that is sold out keeps its card, greyed, with a Sold out stamp in place of Add */
 .ui-tile.sold .ui-photo { opacity: 0.45; filter: grayscale(1); }
