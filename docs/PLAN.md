@@ -29,7 +29,7 @@ Rules:
 - One feature branch per story. The name must say what the feature does.
 - **Two accounts:** Claude works as the development account (`klickbae8yt-star`): it commits, pushes and opens every PR. `satvik-jain-iitd` reviews and merges every PR. Claude never merges.
 - PR feat → dev: opened by the development account, self-reviewed with a checklist comment, CI green, then reviewed and merged by the owner.
-- PR → main at each increment: **code only** (owner, 13 Oct 2026). The development account cuts `release/<name>` from `main`, takes only the run-critical paths from `dev`, and opens the PR with the demo notes. **The owner merges.** Never merge `dev` into `main` directly (that would bring the docs). `ops/ai/` (offline tools, for example the Laya data generator) is left out of every release: those tools stay on `dev`.
+- PR → main at each increment: **code only** (owner, 13 Oct 2026). The development account cuts `release/<name>` from `main`, takes only the run-critical paths from `dev` or `staging` (`.github`, `.gitignore`, `app`, `ops` without `ops/ai`, `scripts`, `site`, `supabase`, `api`, `design/tokens.json`, `design/brand`; `supabase/` and `api/` added by the owner on 29 Oct 2026, release #774), and opens the PR with the demo notes. **The owner merges.** Never merge `dev` into `main` directly (that would bring the docs). `ops/ai/` (offline tools, for example the Laya data generator) is left out of every release: those tools stay on `dev`.
 
   ```bash
   git checkout -b release/<name> origin/main
