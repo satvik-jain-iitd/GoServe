@@ -21,3 +21,6 @@ If SUB 20 fails part-way through a batch, the rows it did send are not marked. T
 - [ ] Place a test order. One push arrives, not two.
 - [ ] `select count(*) from push_outbox where sent_at is not null` grows.
 - [ ] `select count(*) from order_trace where event = 'push_dead'` stays 0.
+
+## Done (owner, 29 Oct 2026, about 15:30 IST)
+`deploy.js --env prod --apply` updated all 27 PROD workflows in one run (the first try stopped on a Cloudflare 520 page; a shell loop of 5 tries, 60 s apart, finished it). Then 0047, 0048, 0049, `20261029100000_settings`, `20261029110000_settings_admin` and 0050 through `apply_migration.py`, each answered `[]`. Then `supabase functions deploy quote` on prod (quote reads the settings). Checks after: `push_outbox` rows with `sent_at` set: 5 (Mark sent works on prod); `push_dead`: 0; settings rows: 1.
