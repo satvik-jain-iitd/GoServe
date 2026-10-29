@@ -2,6 +2,7 @@
 """Story A1 (#148): prove migration 0013 on a real database. Everything runs in one transaction that is rolled back; nothing stays.
 Each check runs as a given user (role authenticated, auth.uid() set) and records true or false. Prints one line per check and exits 1 on any false.
 Usage: check_city_model.py dev   (needs SUPABASE_ACCESS_TOKEN). Refuses prod."""
+import vault as gsvault
 import json, os, sys, urllib.request
 
 DEV_REF = "tmxyizmkpwwfyazvrfhw"
@@ -542,7 +543,7 @@ NEAR_NAMES = ["#272: a free rider 400 m away beats one 3 km away even with more 
 
 def run(ref: str, query: str):
     req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/database/query", data=json.dumps({"query": query}).encode(),
-                                 headers={"Authorization": f"Bearer {os.environ['SUPABASE_ACCESS_TOKEN']}", "Content-Type": "application/json", "User-Agent": "goserve-check"})
+                                 headers={"Authorization": f"Bearer {gsvault.setting(os.environ, 'SUPABASE_ACCESS_TOKEN', '02_databases.env')}", "Content-Type": "application/json", "User-Agent": "goserve-check"})
     return json.load(urllib.request.urlopen(req))
 
 

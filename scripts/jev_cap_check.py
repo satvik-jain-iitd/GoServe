@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Story #253: prove migration 0039 (the daily Jev cap) on the dev database. One DO block, rolled back by its own final error; nothing stays.
 Usage: jev_cap_check.py dev   (needs SUPABASE_ACCESS_TOKEN). Refuses prod."""
+import vault as gsvault
 import json, os, re, sys, urllib.error, urllib.request
 
 DEV_REF = "tmxyizmkpwwfyazvrfhw"
@@ -46,7 +47,7 @@ def main() -> int:
     if sys.argv[1:] != ["dev"]:
         print("usage: jev_cap_check.py dev"); return 2
     req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{DEV_REF}/database/query", data=json.dumps({"query": SQL}).encode(),
-                                 headers={"Authorization": f"Bearer {os.environ['SUPABASE_ACCESS_TOKEN']}", "Content-Type": "application/json", "User-Agent": "goserve-tests"})
+                                 headers={"Authorization": f"Bearer {gsvault.setting(os.environ, 'SUPABASE_ACCESS_TOKEN', '02_databases.env')}", "Content-Type": "application/json", "User-Agent": "goserve-tests"})
     try:
         out = urllib.request.urlopen(req).read().decode()
     except urllib.error.HTTPError as e:

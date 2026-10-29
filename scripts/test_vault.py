@@ -47,6 +47,31 @@ class Vault(unittest.TestCase):
         (self.sec / "goserve" / "goserve.env").write_text("# KEY=commented\nKEY=real\n")
         self.assertEqual(self.vault.get("KEY", "02_databases.env"), "real")
 
+    def test_the_prod_scripts_read_the_vault_when_the_shell_has_no_keys(self):   # story: prod_backend_v2.py failed with KeyError once the keys left the shared files
+        (self.sec / "goserve" / "goserve.env").write_text("SUPABASE_GOSERVE_PROD_URL=https://prodprodprodprodprod.supabase.co\nSUPABASE_GOSERVE_PROD_ANON_KEY=anon-from-vault\n")
+        (self.sec / "02_databases.env").write_text("SUPABASE_ACCESS_TOKEN=token-from-vault\n")
+        import importlib, release_db, prod_backend_v2
+        importlib.reload(release_db); importlib.reload(prod_backend_v2)
+        class Stop(Exception): pass
+        seen = []
+        def stop(url): seen.append(url); raise Stop()
+        for mod in (release_db, prod_backend_v2):
+            target = prod_backend_v2.release_db if mod is prod_backend_v2 else release_db
+            orig, target.ref_from_url = target.ref_from_url, stop
+            try:
+                with self.assertRaises(Stop):
+                    mod.main([], {})   # an empty environment: the vault supplies the address
+            finally:
+                target.ref_from_url = orig
+        self.assertEqual(seen, ["https://prodprodprodprodprod.supabase.co"] * 2)
+
+    def test_a_key_in_the_environment_overrides_the_vault(self):
+        (self.sec / "goserve" / "goserve.env").write_text("KEY=file\n")
+        self.assertEqual(self.vault.setting({"KEY": "env"}, "KEY", "02_databases.env"), "env")
+        self.assertEqual(self.vault.setting({}, "KEY", "02_databases.env"), "file")
+        with self.assertRaises(KeyError):
+            self.vault.setting({}, "NOPE", "02_databases.env")
+
 
 if __name__ == "__main__":
     unittest.main()
