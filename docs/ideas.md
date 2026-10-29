@@ -64,3 +64,4 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - ID276 (2026-10-28, taken, story #655 round 2): sign in with mobile and with Google together on the first screen, both on by default.
 - ID277 (2026-10-28, taken, story #665): a fixed OTP code (123456) until an SMS provider is clicked; the flow stays the real OTP flow so the provider is one switch later.
 - ID278 (2026-10-29, open, later): a small Edge Function proxy with a cache in front of the address lookup, which also lets us swap the lookup source without an app release (F278).
+- ID279 and ID280 (29 Oct, logged by the reviewer in the vault): the glove frames and the pin ending of the launch animatic (F285, F286).
