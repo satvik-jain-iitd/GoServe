@@ -5,6 +5,15 @@ import type { TrailEntry } from "./trail";
 
 export const DOING = ["ordering", "cooking", "delivering", "watching ops", "installing", "other"] as const;
 export type Doing = (typeof DOING)[number];
+// Story #661: the list is per app. The customer sees four choices in his words; the staff apps keep the full list, blank at first. The stored kind stays one of DOING (the database allows only those); the chosen words go in context.topic.
+export type Topic = { label: string; doing: Doing };
+export const CUSTOMER_TOPICS: Topic[] = [
+  { label: "Ordering", doing: "ordering" }, { label: "Tracking my order", doing: "delivering" },
+  { label: "Paying the rider", doing: "delivering" }, { label: "Something else", doing: "other" },
+];
+export const STAFF_TOPICS: Topic[] = [{ label: "", doing: "other" }, ...DOING.map((d) => ({ label: d[0].toUpperCase() + d.slice(1), doing: d }))];
+export const topicsFor = (role: string): Topic[] => (role === "customer" ? CUSTOMER_TOPICS : STAFF_TOPICS);
+export const defaultTopic = (role: string): string => (role === "customer" ? "Something else" : "");
 export const TEXT_MAX = 300;
 export const IMAGE_MAX_PX = 1280;
 export const IMAGE_MAX_BYTES = 1.5 * 1024 * 1024;
@@ -20,7 +29,7 @@ export type Report = {
 };
 type BuildInput = {
   text: string; doing: Doing; role: string; screen: string; session: string; order: { id: string; status: string } | null; build: string;
-  phone: string; online: boolean; now: Date; trail: TrailEntry[]; image?: string;
+  phone: string; online: boolean; now: Date; trail: TrailEntry[]; image?: string; topic?: string;
 };
 
 export function buildPayload(i: BuildInput): Report {
@@ -28,7 +37,7 @@ export function buildPayload(i: BuildInput): Report {
   if (!text) throw new Error("Please tell us what happened.");
   const report: Report = {
     action: "feedback", session_id: i.session, role: i.role, screen: i.screen, order_id: i.order?.id ?? "", doing: i.doing, text,
-    context: { order_status: i.order?.status ?? "", build: i.build, phone: i.phone, online: i.online, at: i.now.toISOString(), trail: i.trail },
+    context: { ...(i.topic ? { topic: i.topic } : {}), order_status: i.order?.status ?? "", build: i.build, phone: i.phone, online: i.online, at: i.now.toISOString(), trail: i.trail },
   };
   if (i.image) report.image_b64 = i.image;
   return report;

@@ -12,7 +12,7 @@ test("S1 the menu shows the kitchen with its closing time, sections, a veg toggl
   const net = await setup(context, page);
   net.state.menu = MENU;
   await page.goto("/customer/");
-  await expect(page.getByRole("heading", { name: /Hauz Khas Kitchen/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Open till/ })).toBeVisible();   // story #668: the kitchen is not named on the menu
   await expect(page.getByText("Open till 11:59 pm")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Sweet" })).toBeVisible();
   await page.getByRole("button", { name: "Veg only" }).click();
@@ -105,7 +105,7 @@ test("S7 the bill says cash at the door in plain words", async ({ page, context 
   await page.getByLabel("Your name").fill("Asha");
   await page.getByLabel("Phone").fill("9876543210");
   await page.getByLabel("Address").fill("Flat 4");
-  await expect(page.getByText("Pay the rider cash at the door.")).toBeVisible();
+  await expect(page.getByText("Pay the rider cash at the door.")).toHaveCount(0);   // story #659: the slip and the bar say cash
 });
 
 // Story #653 (row T3): the rider card is the same light box; its text is ink in Day and Night.

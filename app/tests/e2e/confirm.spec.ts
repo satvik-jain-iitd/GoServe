@@ -55,7 +55,7 @@ test("S3 Yes closes the order: Paid cash, and the server got the Yes once", asyn
   net.push("INSERT", order("ready", now(), now()));
   await expect(prompt(page)).toBeVisible({ timeout: 8000 });
   await page.getByRole("button", { name: "Yes, I have it" }).click();
-  await expect(page.getByText(/Paid: cash · confirmed/)).toBeVisible();
+  await expect(page.getByText("Delivered. Thank you for eating with GoServe.")).toBeVisible();   // story #660: no Paid tail
   await expect(prompt(page)).toHaveCount(0);
   expect(net.calls.confirm).toHaveLength(1);
   expect(net.calls.confirm[0].body).toMatchObject({ action: "confirm", order_id: ID });
@@ -70,7 +70,7 @@ test("S4 a second Yes is not an error", async ({ page, context }) => {
   net.push("INSERT", order("ready", now(), now()));
   await expect(prompt(page)).toBeVisible({ timeout: 8000 });
   await page.getByRole("button", { name: "Yes, I have it" }).click();
-  await expect(page.getByText(/Paid: cash · confirmed/)).toBeVisible();
+  await expect(page.getByText("Delivered. Thank you for eating with GoServe.")).toBeVisible();   // story #660: no Paid tail
   await expect(page.getByRole("alert")).toHaveCount(0);
 });
 
@@ -111,6 +111,21 @@ test("S6 a double tap on a kitchen step: the second answer already_done is not s
   await page.getByRole("button", { name: "Accept 0f0f0f0f" }).click();
   await expect(page.getByText("Already done.")).toHaveCount(0);
   await expect(page.getByRole("alert")).toHaveCount(0);
+});
+
+test("S5 a live event with the same moment and no paid_by after the Yes does not take the Paid line away (story #601, night run 2)", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.confirmCfg = { confirm_after_ready_min: 0.03, confirm_after_place_min: 8 };
+  const at = new Date(Date.now() + 60_000).toISOString();
+  net.state.confirmAt = at;
+  await placeOrder(page);
+  net.push("INSERT", order("ready", now(), now()));
+  await expect(prompt(page)).toBeVisible({ timeout: 8000 });
+  await page.getByRole("button", { name: "Yes, I have it" }).click();
+  await expect(page.getByText("Delivered. Thank you for eating with GoServe.")).toBeVisible();   // story #660: no Paid tail
+  net.push("UPDATE", { ...order("delivered", at, now()), paid_by: null });
+  await page.waitForTimeout(2500);   // the event is held until the screen has joined the channel, then sent
+  await expect(page.getByText("Delivered. Thank you for eating with GoServe.")).toBeVisible();   // story #660: no Paid tail
 });
 
 test("#501 a hidden app never asks; the question comes when the app is visible again", async ({ page, context }) => {

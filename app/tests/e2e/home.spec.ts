@@ -1,6 +1,6 @@
 // Story H10b (#193): the Ink v3 pin screen, menu, thali hero, Filter sheet, Dish sheet and the closed and loading states (boards 01, 01e, 02, 02a, 02b, 02c, 03).
 import { test, expect } from "@playwright/test";
-import { setup, scan as axeScan } from "./helpers";
+import { setup, scan as axeScan, typePlace } from "./helpers";
 
 const MENU = [
   { id: "t1", name: "Veg Thali", price_paise: 18000, image_url: null, image_credit: null, veg: true, category: "Thali" },
@@ -65,7 +65,7 @@ test("S5 a closed kitchen shows its menu with Add switched off and says when it 
   net.state.menu = MENU;
   net.state.kitchens = [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: false, active: true, lat: null, lng: null, opens_at: "10:00:00" }];
   await page.goto("/customer/");
-  await page.getByLabel("Your pin code").fill("110016");
+  await typePlace(page, "110016");
   await page.getByRole("button", { name: "See the menu" }).click();
   await expect(page.getByText("Closed now. Opens at 10:00 am. You can look at the menu.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeDisabled();
@@ -87,9 +87,9 @@ test("S6 while the menu loads the page says it is busy; the saved pin is on the 
 test("S7 a pin code that no kitchen serves marks the field and keeps the button", async ({ page, context }) => {
   await setup(context, page, [], { pin: null });
   await page.goto("/customer/");
-  await page.getByLabel("Your pin code").fill("110099");
+  await typePlace(page, "110099");
   await page.getByRole("button", { name: "See the menu" }).click();
-  await expect(page.getByLabel("Your pin code")).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByLabel("Pin code")).toHaveAttribute("aria-invalid", "true");
 });
 
 for (const t of ["day", "night"] as const) {

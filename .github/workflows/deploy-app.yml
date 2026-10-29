@@ -41,6 +41,8 @@ jobs:
           VITE_SIM_TOKEN: ${{ secrets.PROD_VITE_SIM_TOKEN }}
           VITE_ENGINE_URL: ${{ secrets.PROD_VITE_ENGINE_URL }}
           VITE_VAPID_PUBLIC_KEY: ${{ secrets.PROD_VITE_VAPID_PUBLIC_KEY }}
+          VITE_OTP_GATE: "1"   # story #665 (owner, 28 Oct): the phone code is on in prod, with the fixed code until an SMS provider is clicked
+          VITE_OTP_SMS: fixed
           VITE_BUILD: ${{ github.sha }}
         run: |
           npm ci

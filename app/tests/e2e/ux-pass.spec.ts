@@ -1,6 +1,6 @@
 // Story #242: every app shows only its board, every word says what a customer, rider, cook or admin would say, and the menu opens at once for a saved pin.
 import { test, expect } from "@playwright/test";
-import { order, setup } from "./helpers";
+import { order, setup, typePlace } from "./helpers";
 
 const SAVED_KITCHEN = { id: "k-1", name: "Hauz Khas Kitchen", pin_codes: ["110016"], lat: null, lng: null, phone: null, open: true, active: true, opens_at: null, closes_at: null };
 
@@ -59,11 +59,11 @@ test("D3 D11 D12 the staff apps have a Send feedback row that opens the sheet, a
 test("D4 D5 the pin screen has one button and plain words", async ({ page, context }) => {
   await setup(context, page, [], { pin: null });
   await page.goto("/customer/");
-  await expect(page.getByRole("button", { name: "See the menu" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Use my location" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Track an order" })).toHaveCount(0);
   await expect(page.getByText("We serve a few pin codes for now.")).toHaveCount(0);
   await expect(page.getByText("Cash only")).toHaveCount(0);
-  await page.getByLabel("Your pin code").fill("110099");
+  await typePlace(page, "110099");
   await page.getByRole("button", { name: "See the menu" }).click();
   await expect(page.getByText("Not here yet. We do not deliver to 110099 yet.")).toBeVisible();
 });
@@ -74,13 +74,13 @@ test("D6 D7 D8 D9 D13 the bill, placed and orders screens use the agreed words",
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
-  await expect(page.getByText("Pay the rider cash at the door.")).toBeVisible();
+  await expect(page.getByText("Pay the rider cash at the door.")).toHaveCount(0);   // story #659: the slip and the bar already say cash
   await expect(page.locator(".ui-slip-head").getByText("Cash", { exact: true })).toHaveCount(0);
   await expect(page.locator("header .meta").getByText("Cash", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Back to menu" }).click();
   await page.getByRole("button", { name: "My orders", exact: true }).click();
   await expect(page.getByRole("heading", { name: "No orders yet" })).toBeVisible();
-  await expect(page.getByText("Your orders show here, newest first. No sign-in needed.")).toBeVisible();
+  await expect(page.getByText("Your orders will show here.")).toBeVisible();
 });
 
 test("D7 D13 the placed screen says the kitchen has the order and offers Back to menu", async ({ page, context }) => {
@@ -100,6 +100,6 @@ test("D15 a phone with a saved pin and a saved kitchen sees the menu before the 
   await context.route("https://test.supabase.co/rest/v1/kitchens**", async (route) => { await held; await route.fallback(); });   // the kitchens read hangs until the test lets it go
   await page.goto("/customer/");
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible({ timeout: 3000 });
-  await expect(page.getByLabel("Your pin code")).toHaveCount(0);
+  await expect(page.getByLabel("Pin code", { exact: true })).toHaveCount(0);
   release();
 });

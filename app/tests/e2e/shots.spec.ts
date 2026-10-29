@@ -1,6 +1,6 @@
 // Fit-check screenshots for the PR (stories H10b to H10d): SHOTS=docs/mvp25/h10b-shots npx playwright test shots. Skipped in normal runs.
 import { test } from "@playwright/test";
-import { order, SESSION, setup } from "./helpers";
+import { order, SESSION, setup, typePlace } from "./helpers";
 
 const OUT = process.env.SHOTS;
 const MENU = [
@@ -21,14 +21,14 @@ for (const theme of ["day", "night"] as const) {
     const net = await setup(context, page, [], { pin: null });
     net.state.menu = MENU;
     await page.goto("/customer/");
-    await page.getByRole("heading", { name: "Where do we deliver?" }).waitFor();
+    await page.getByRole("heading", { name: "Where does the food go?" }).waitFor();
     await page.waitForTimeout(600);
     await shot("Main");
-    await page.getByLabel("Your pin code").fill("110099");
+    await typePlace(page, "110099");
     await page.getByRole("button", { name: "See the menu" }).click();
     await page.getByText("We are not in 110099").waitFor();
     await shot("S-NoKitchen");
-    await page.getByLabel("Your pin code").fill("110016");
+    await typePlace(page, "110016");
     await page.getByRole("button", { name: "See the menu" }).click();
     await page.getByRole("button", { name: "Add Dal Makhani" }).waitFor();
     await page.waitForTimeout(900);
@@ -51,7 +51,7 @@ for (const theme of ["day", "night"] as const) {
     net.state.menu = MENU;
     net.state.kitchens = [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: false, active: true, lat: null, lng: null, opens_at: "11:00:00" }];
     await page.goto("/customer/");
-    await page.getByLabel("Your pin code").fill("110016");
+    await typePlace(page, "110016");
     await page.getByRole("button", { name: "See the menu" }).click();
     await page.getByRole("button", { name: "Add Dal Makhani" }).waitFor();
     await page.waitForTimeout(900);

@@ -1,6 +1,6 @@
 // Story B2 (#158): pin code to kitchen to menu.
 import { describe, expect, it } from "vitest";
-import { chooseKitchen, isPin, loadPin, savePin, shownArea, type AreaKitchen } from "../../src/lib/area";
+import { chooseKitchen, isPin, loadPin, resolveArea, savePin, shownArea, SHOW_KITCHEN_NAME, type AreaKitchen } from "../../src/lib/area";
 import { MENU_KEY, loadMenu } from "../../src/lib/menu";
 
 const k = (id: string, name: string, pins: string[], over: Partial<AreaKitchen> = {}): AreaKitchen => ({ id, name, pin_codes: pins, lat: null, lng: null, open: true, active: true, opens_at: null, ...over });
@@ -122,5 +122,18 @@ describe("the menu's closed line and the photo credit (story #274)", () => {
     expect(creditLicence('"Masala dosa" by Jane Doe, CC BY 2.0')).toEqual({ before: '"Masala dosa" by Jane Doe, ', label: "CC BY 2.0", href: "https://creativecommons.org/licenses/by/2.0/" });
     expect(creditLicence("Jane Doe, CC0")).toBeNull();
     expect(creditLicence("Wikimedia Commons, CC BY-SA 4.0")).toBeNull();
+  });
+});
+
+// Story #668: the customer's coordinates decide between kitchens that serve the same pin code; the kitchen is never named on the first screens.
+describe("kitchen by location", () => {
+  const near = k("near", "Near", ["110016"], { lat: 28.55, lng: 77.2 } as never), far = k("far", "Far", ["110016"], { lat: 28.7, lng: 77.1 } as never);
+  const store = { getItem: () => null, setItem: () => undefined } as unknown as Storage;
+  it("resolveArea passes the place on: the nearest open kitchen that serves the pin wins", async () => {
+    expect(await resolveArea("110016", async () => [far, near], store, { lat: 28.56, lng: 77.21 })).toEqual({ kind: "ok", kitchen: expect.objectContaining({ id: "near" }) });
+    expect(await resolveArea("110016", async () => [far, near], store, { lat: 28.69, lng: 77.11 })).toEqual({ kind: "ok", kitchen: expect.objectContaining({ id: "far" }) });
+  });
+  it("the kitchen name stays out of the menu header (the owner's direction of 28 Oct; the flag is one line)", () => {
+    expect(SHOW_KITCHEN_NAME).toBe(false);
   });
 });

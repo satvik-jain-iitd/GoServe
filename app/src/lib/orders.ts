@@ -1,4 +1,5 @@
 import { DEFAULT_CFG, type ConfirmCfg } from "./confirm";
+import { customerLine, NO_INTERNET, type CustomerAction } from "./errorLines";
 import type { Decision, Rider } from "./ops";
 
 // Placing an order: one call to the n8n webhook with the demo token (ADR-009, docs/integrations/n8n-order-workflows.md).
@@ -13,7 +14,7 @@ export type PlacedOrder = { id: string; status: string; total_paise: number; upd
 export type OrderDeps = { url: string; token: string; fetchFn: typeof fetch };
 export const orderDeps = (): OrderDeps => ({ url: import.meta.env.VITE_ORDER_URL, token: import.meta.env.VITE_DEMO_TOKEN, fetchFn: fetch.bind(window) });
 
-type ApiAnswer = { ok?: boolean; created?: boolean; order?: PlacedOrder; decision?: Decision; id?: string; already_done?: boolean; confirm_after_ready_min?: number; confirm_after_place_min?: number; error?: string; message?: string };
+type ApiAnswer = { ok?: boolean; created?: boolean; order?: PlacedOrder; decision?: Decision; id?: string; already_done?: boolean; confirm_after_ready_min?: number; confirm_after_place_min?: number; error?: string; message?: string; opens_at?: string };
 
 // One call to the webhook. `need` names the part of the answer the caller must get; anything else becomes a plain message.
 async function callApi(body: object, deps: OrderDeps, need: "order" | "decision" | "id" = "order"): Promise<ApiAnswer> {
@@ -21,7 +22,7 @@ async function callApi(body: object, deps: OrderDeps, need: "order" | "decision"
   try {
     res = await deps.fetchFn(deps.url, { method: "POST", headers: { "content-type": "application/json", "x-gs-token": deps.token }, body: JSON.stringify(body) });
   } catch {
-    throw new PlaceError("No internet. Check your internet and try again.", "network");
+    throw new PlaceError(NO_INTERNET, "network");
   }
   let answer: ApiAnswer | null = null;
   try {
@@ -30,7 +31,16 @@ async function callApi(body: object, deps: OrderDeps, need: "order" | "decision"
     answer = null;
   }
   if (res.ok && answer?.ok && answer[need]) return answer;
-  if (answer && answer.ok === false && typeof answer.message === "string") throw new PlaceError(answer.message, answer.error ?? "unknown");
+  // The customer's calls (place, confirm, feedback) show our line for every refusal (story #659). The staff calls keep the server's line.
+  const kind = (body as { action?: string }).action;
+  const mine = kind === "place" || kind === "confirm" || kind === "feedback" ? (kind as CustomerAction) : null;
+  const refused = answer && answer.ok === false && typeof answer.message === "string";
+  if (mine) {
+    const code = refused ? answer!.error ?? "unknown" : "unknown";
+    const line = customerLine(mine, code, refused ? answer!.message! : "", answer?.opens_at);
+    throw new PlaceError(line ?? "Already done.", code);
+  }
+  if (refused) throw new PlaceError(answer!.message!, answer!.error ?? "unknown");
   throw new PlaceError("Something went wrong. Please try again.", "unknown");
 }
 
@@ -43,9 +53,14 @@ export async function placeOrder(input: PlaceInput, deps: OrderDeps): Promise<{ 
 }
 
 // The customer's Yes: the order closes as delivered and paid by cash. A second Yes is not an error (alreadyDone).
-export async function confirmDelivery(input: { sessionId: string; orderId: string }, deps: OrderDeps): Promise<{ order: PlacedOrder; alreadyDone: boolean }> {
-  const a = await callApi({ action: "confirm", session_id: input.sessionId, order_id: input.orderId }, deps);
-  return { order: a.order as PlacedOrder, alreadyDone: a.already_done === true };
+export async function confirmDelivery(input: { sessionId: string; orderId: string }, deps: OrderDeps): Promise<{ order: PlacedOrder | null; alreadyDone: boolean }> {
+  try {
+    const a = await callApi({ action: "confirm", session_id: input.sessionId, order_id: input.orderId }, deps);
+    return { order: a.order as PlacedOrder, alreadyDone: a.already_done === true };
+  } catch (e) {
+    if (e instanceof PlaceError && e.code === "already_done") return { order: null, alreadyDone: true };   // an earlier Yes went through: the order is delivered, no line
+    throw e;
+  }
 }
 
 export type StatusInput = { sessionId: string; orderId: string; to: string; actor: "customer" | "kitchen" | "rider" | "ops" };
