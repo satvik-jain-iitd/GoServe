@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Story #340: prove on the DEV project, through the deployed `me` function, that a customer keeps a name and email, deletes the account, and the purge job removes the rest.
-Run: python3 scripts/profile_check.py dev   (dev only; reads SUPABASE_GOSERVE_DEV_* and SUPABASE_ACCESS_TOKEN from ~/Desktop/Secrets/02_databases.env)
+Run: python3 scripts/profile_check.py dev   (dev only; reads SUPABASE_GOSERVE_DEV_* and SUPABASE_ACCESS_TOKEN from ~/Desktop/Secrets/goserve/goserve.env (SUPABASE_ACCESS_TOKEN from 02_databases.env))
 It makes a guest with a saved detail row, a test kitchen and an order; GET, PATCH and DELETE /me; then ages the deleted_at of THIS user only and runs the purge job.
 It deletes what it made (the purge deletes the login itself)."""
 import vault as gsvault

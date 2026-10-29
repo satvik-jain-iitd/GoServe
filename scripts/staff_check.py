@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Story #468: prove on the DEV project, through the deployed `staff` function, that one person can work in two kitchens and acts only in the ones they belong to.
-Run: python3 scripts/staff_check.py dev   (dev only; reads SUPABASE_GOSERVE_DEV_* and SUPABASE_ACCESS_TOKEN from ~/Desktop/Secrets/02_databases.env)
+Run: python3 scripts/staff_check.py dev   (dev only; reads SUPABASE_GOSERVE_DEV_* and SUPABASE_ACCESS_TOKEN from ~/Desktop/Secrets/goserve/goserve.env (SUPABASE_ACCESS_TOKEN from 02_databases.env))
 It makes two kitchens A and B, a staff person of A, an admin and an order in B. It tries the order as the A-only person, adds them to B as the admin, lists their kitchens,
 accepts the order, removes the one membership, and tries to add as a non-admin. It deletes everything it made."""
 import vault as gsvault

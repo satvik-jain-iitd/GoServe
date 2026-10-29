@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Story #284 (epic E16): prove that programmed kitchens and riders move real orders. Dev only. Run: python3 scripts/sim_orders_check.py dev
-Reads SUPABASE_GOSERVE_DEV_* from ~/Desktop/Secrets/02_databases.env. It seeds the dream city, makes orders through place_order (the same path the app uses),
+Reads SUPABASE_GOSERVE_DEV_* from ~/Desktop/Secrets/goserve/goserve.env (SUPABASE_ACCESS_TOKEN from 02_databases.env). It seeds the dream city, makes orders through place_order (the same path the app uses),
 calls sim_tick by hand and reads order_events. Pass marks (fixed before the run):
   A one order placed on pin 110092 reaches delivered within 150 ticks, with exactly these events once each: placed, accepted, preparing, ready, assigned, picked_up, delivered;
   B 100 orders with reject_pct 12 and sold_out_pct 8: the cancelled share is between 10 and 30 percent, each with a reason;

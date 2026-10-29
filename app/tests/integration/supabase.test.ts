@@ -1,5 +1,5 @@
 // Story #44, S1-S3, against goserve-dev. Skipped when the dev keys are not set (CI has none).
-// Run: set -a; . ~/Desktop/Secrets/02_databases.env; set +a; npm run test:integration
+// Run: set -a; . ~/Desktop/Secrets/goserve/goserve.env; . ~/Desktop/Secrets/02_databases.env; set +a; npm run test:integration   (goserve.env holds the GoServe keys; 02_databases.env keeps SUPABASE_ACCESS_TOKEN)
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, describe, expect, it } from "vitest";
 

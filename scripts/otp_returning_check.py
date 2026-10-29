@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Story #558 (layer 2 of #339): prove on the DEV project that a returning customer signs in with their number and the orders of a new guest session move over.
-Run: python3 scripts/otp_returning_check.py dev   (dev only; reads SUPABASE_GOSERVE_DEV_* and SUPABASE_ACCESS_TOKEN from ~/Desktop/Secrets/02_databases.env)
+Run: python3 scripts/otp_returning_check.py dev   (dev only; reads SUPABASE_GOSERVE_DEV_* and SUPABASE_ACCESS_TOKEN from ~/Desktop/Secrets/goserve/goserve.env (SUPABASE_ACCESS_TOKEN from 02_databases.env))
 It sets a TEST OTP in the dev Auth config for one hour (Management API: external_phone_enabled, sms_test_otp, sms_test_otp_valid_until), then:
   1. a guest A links a test phone (the first-visit path of layer 1); 2. a new guest B places an order; 3. B's person signs in with Supabase's own phone OTP and
   holds A's session; 4. claim_guest_orders_v2(B, A) moves the order; 5. A's own token reads that order. It deletes everything it made.

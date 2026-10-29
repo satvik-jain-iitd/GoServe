@@ -1,5 +1,6 @@
 """The GoServe vault reader (owner, 29 Oct 2026). Every GoServe key lives in ~/Desktop/Secrets/goserve/goserve.env; the older shared files
-(02_databases.env, 04_integrations.env, ...) still hold copies until the owner removes them. Look in goserve.env first, then in the old file.
+(02_databases.env, 04_integrations.env, ...) no longer hold GoServe keys (the owner removed the copies on 29 Oct 2026; the backup is goserve/backup-2026-10-29/).
+They keep the account-level keys (SUPABASE_ACCESS_TOKEN, UPTIMEROBOT_API_KEY). Look in goserve.env first, then in the old file, so a key of either kind is found.
 Nothing here prints a value."""
 import os, re
 

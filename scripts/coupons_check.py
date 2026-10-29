@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Story #346: prove on the DEV project, through the deployed functions, that a quote with several valid coupons applies the best one and returns the list,
 and that GET /coupons lists the valid ones only.
-Run: python3 scripts/coupons_check.py dev   (dev only; reads SUPABASE_GOSERVE_DEV_* and SUPABASE_ACCESS_TOKEN from ~/Desktop/Secrets/02_databases.env)
+Run: python3 scripts/coupons_check.py dev   (dev only; reads SUPABASE_GOSERVE_DEV_* and SUPABASE_ACCESS_TOKEN from ~/Desktop/Secrets/goserve/goserve.env (SUPABASE_ACCESS_TOKEN from 02_databases.env))
 It makes a test kitchen, one dish and four coupons (three valid, one switched off), asks POST /quote with no code and with a typed code, and GET /coupons. It deletes everything it made."""
 import vault as gsvault
 import json, os, re, sys, urllib.error, urllib.request, uuid
