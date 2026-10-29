@@ -3,6 +3,7 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_URL: string;
   readonly VITE_SUPABASE_ANON_KEY: string;
   readonly VITE_ORDER_URL: string;
+  readonly VITE_ORDERS_V2?: string;   // story #590: off in every deploy until the switch
   readonly VITE_POSTHOG_KEY?: string;   // story #207: dev builds only
   readonly VITE_POSTHOG_INGEST?: string;
   readonly VITE_STYLEGUIDE?: string;

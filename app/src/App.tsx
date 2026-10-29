@@ -32,6 +32,7 @@ import { currentSession, scopeFor, joinCode, joinLink, joinSession, rememberJoin
 import { MenuScreen } from "./screens/MenuScreen";
 import { BillScreen } from "./screens/BillScreen";
 import { OFFERS_ON } from "./lib/quote";
+import { ordersV2On, placeOrderV2, PriceChanged, v2Deps } from "./lib/ordersV2";
 import { useOffers } from "./lib/useOffers";
 import { openOrderToResume } from "./lib/resume";
 import { SignIn } from "./screens/SignIn";
@@ -89,6 +90,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [phone, setPhone] = useState(draft0?.phone ?? "");
   // Story #551: the phone code at checkout (off unless the gate is on). verified = this user already has a phone linked.
   const gate = lock === "customer" && otpGateOn(import.meta.env, window.localStorage);
+  const ordersV2 = lock === "customer" && ordersV2On(import.meta.env, window.localStorage);   // story #590: POST /orders instead of the v1 webhook
   const [verified, setVerified] = useState(false);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);   // story #667: null = not asked yet; the first screen waits so a returning customer never sees it flash
   const [otpOpen, setOtpOpen] = useState(false);
@@ -606,10 +608,9 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         setError("Could not save your details. Try again.");
         return;
       }
-      const { order, confirm } = await placeOrder(
-        { sessionId, key: keyRef.current.key, items, address: address.trim() },
-        api(),
-      );
+      const { order, confirm } = ordersV2 && areaKitchenId
+        ? await placeOrderV2({ kitchenId: areaKitchenId, pin: pin ?? "", items, address: address.trim(), key: keyRef.current.key, expectedPaise: total, code: offers.code, none: offers.none }, v2Deps())
+        : await placeOrder({ sessionId, key: keyRef.current.key, items, address: address.trim() }, api());
       setPlaced(order);
       capture("order_placed", { items_count: lines.length });
       setPlacedLines(lines.map((l) => ({ name: l.dish.name, qty: l.qty, paise: l.line_paise })));
@@ -627,6 +628,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       setCart({});
       keyRef.current = null;
     } catch (e) {
+      if (e instanceof PriceChanged) offers.replace(e.quote);   // the Bill shows the new To pay; nothing is ordered until the customer taps again
       pushTrail(`error: ${e instanceof Error ? e.message : "place failed"}`);
       setError(e instanceof PlaceError || e instanceof Error ? e.message : "Something went wrong. Please try again.");
     } finally {

@@ -20,7 +20,8 @@ export function useOffers(on: boolean, kitchenId: string | null, pin: string | n
     return () => { live = false; };
   }, [on, kitchenId, pin, key, code, none]);   // eslint-disable-line react-hooks/exhaustive-deps
   return {
-    quote, codeError,
+    quote, codeError, code, none,
+    replace: (q: Quote) => setQuote(q),   // story #590: the order came back with a new price
     apply: (c: string) => { setCodeError(null); setPick({ key, code: c.trim().toUpperCase(), none: false }); },
     remove: () => { setCodeError(null); setPick({ key, code: null, none: true }); },
   };
