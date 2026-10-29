@@ -1,4 +1,4 @@
-// Story #207: product analytics (PostHog) is off unless a key is set, sends six named events, and no name, phone or address.
+// Story #207: product analytics (PostHog) is off unless a key is set, sends six named events, and no name, phone or address. Story #738 adds the page views.
 import { describe, expect, it, vi } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -16,13 +16,20 @@ describe("analytics", () => {
     expect(load).not.toHaveBeenCalled();
   });
 
-  it("S2 with a key: EU host by default, autocapture, page views and session replay off, no profiles for anonymous people", async () => {
+  it("S2 with a key: EU host by default, autocapture off, no profiles for anonymous people, the person-free settings stay", async () => {
     resetAnalytics();
     const ph = fakePosthog();
     await initAnalytics({ VITE_POSTHOG_KEY: "phc_test" }, (async () => ph) as never, store());
     const [key, cfg] = ph.init.mock.calls[0];
     expect(key).toBe("phc_test");
-    expect(cfg).toMatchObject({ api_host: "https://eu.i.posthog.com", autocapture: false, capture_pageview: false, capture_pageleave: false, disable_session_recording: true, person_profiles: "identified_only" });
+    expect(cfg).toMatchObject({ api_host: "https://eu.i.posthog.com", autocapture: false, person_profiles: "identified_only", persistence: "localStorage" });
+  });
+
+  it("S2b (story #738) web analytics: one page view per history change, page leave on close, the 2026-08-30 defaults", async () => {
+    resetAnalytics();
+    const ph = fakePosthog();
+    await initAnalytics({ VITE_POSTHOG_KEY: "phc_test" }, (async () => ph) as never, store());
+    expect(ph.init.mock.calls[0][1]).toMatchObject({ capture_pageview: "history_change", capture_pageleave: true, defaults: "2026-08-30" });
   });
 
   it("S3 the host comes from VITE_POSTHOG_INGEST", async () => {
