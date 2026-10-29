@@ -19,8 +19,8 @@ Customer, kitchen, rider and admin run on one React codebase as a web app. A new
 **The system decides. People cook and ride.**
 Which kitchen, which rider, when to start cooking, which order is about to be late. Small, fast decision models answer in milliseconds for a fraction of a cent ([Jev, the five decisions](https://github.com/satvik-jain-iitd/GoServe/blob/dev/docs/ai/JEV_D1_D5_CONTRACT.md)). Every decision is logged. From those logs we fine-tune [Laya](https://github.com/satvik-jain-iitd/GoServe/blob/dev/docs/ai/LAYA_PLAN.md), an open 395M-parameter decision model, so the cost per decision goes to zero as orders grow.
 
-**No login. No card. No app to install.**
-A customer types a pin code and orders. Name, phone and address stay on the phone ([ADR-016](https://github.com/satvik-jain-iitd/GoServe/blob/dev/docs/decisions/ADR-016-zero-login-for-now.md)). Cash at the door today; payments after the food licence.
+**A phone number and a code. Or Google. No card. No app to install.**
+A customer opens the app, signs in with a phone number and a code (a fixed test code for now, until an SMS provider is set up) or with Google, says where the food goes, and orders. Cash at the door today; payments after the food licence.
 
 **Built lean, built fast, built in the open.**
 Free tiers, one small server, a two-person loop: a founder and AI coding agents, with every line reviewed by a second agent and merged by a human. Fourteen days from the first brief to a live system with 292 logged steps, 19 architecture decisions and 585 tests ([the trace](https://github.com/satvik-jain-iitd/GoServe/blob/dev/docs/process-trace.md)).
@@ -47,11 +47,11 @@ Free tiers, one small server, a two-person loop: a founder and AI coding agents,
 
 ## What already works
 
-- **For a customer.** Type a pin code once; the menu opens at once every time after. Add dishes, see the bill, place the order. The order page updates on its own: placed, accepted, cooking, ready, on the way, delivered, with the rider's name and a Call button. Cash at the door; tap Yes when the food is in hand. Your orders, newest first. Day and Night look. No login, no app store.
+- **For a customer.** Sign in with a phone number and a code, or with Google; say where the food goes (your location or by hand); the menu opens at once every time after. Add dishes, see the bill, place the order. The order page updates on its own: placed, accepted, cooking, ready, on the way, delivered, with the rider's name and a Call button. Cash at the door; tap Yes when the food is in hand. Your orders, newest first. Day and Night look. No app store.
 - **For a cook.** Sign in with the kitchen's Google account. New tickets to accept, Cooking tickets to start and mark ready, the open switch, the dishes with Sold out and Back in stock. A ready ticket names the rider who is coming and the minutes away. A ticket the customer cancels after cooking started shows Cancelled for a minute, so nobody keeps cooking. Today: the day's cash and one Confirm hand-over per rider.
 - **For a rider.** Online or offline, one delivery at a time: pick up, on the way, arriving, delivered. Today lists the deliveries and the cash in hand; the day ends at the kitchen's closing time, so a 23:30 delivery does not vanish at midnight. Once the kitchen confirms the hand-over, both screens show the same number.
 - **For the admin.** Every order live, one tap to the order with its calls, timeline and a cancel with a reason. The city: every kitchen with its hours, pin codes, staff and menu, add a kitchen or a person, remove one. The riders, online or off. The day's numbers per kitchen. A 30-second poll keeps it fresh.
-- **Behind it.** Supabase (Postgres, row level security, 27 migrations), n8n workflows for the order API and dispatch, web push, a Telegram bot for errors, feedback and the daily pilot card, the decision models, and 585 tests that run on every pull request.
+- **Behind it.** Supabase (Postgres, row level security, 69 migrations), n8n workflows for the order API and dispatch, web push, a Telegram bot for errors, feedback and the daily pilot card, the decision models, and 585 tests that run on every pull request.
 
 ## Where we are today
 
