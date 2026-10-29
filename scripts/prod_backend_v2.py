@@ -97,13 +97,8 @@ def verify_jwt(name):
 
 
 def function_files(name):
-    """Every .ts file the function needs (its own folder and _shared), no tests, as paths relative to supabase/functions."""
-    out = []
-    for d in (name, "_shared"):
-        for p in sorted(glob.glob(os.path.join(FUNCS, d, "**", "*.ts"), recursive=True)):
-            if not p.endswith(".test.ts"):
-                out.append(os.path.relpath(p, FUNCS))
-    return out
+    """Every .ts file under supabase/functions, no tests, as paths relative to it: a function may import a sibling (orders and coupons use quote/); the bundler takes what the entrypoint imports."""
+    return [os.path.relpath(p, FUNCS) for p in sorted(glob.glob(os.path.join(FUNCS, "**", "*.ts"), recursive=True)) if not p.endswith(".test.ts")]
 
 
 def multipart(meta, files):

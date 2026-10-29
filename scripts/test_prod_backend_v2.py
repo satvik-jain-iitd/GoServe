@@ -87,6 +87,12 @@ class Functions(unittest.TestCase):
         self.assertIn("_shared/runlog.ts", files)
         self.assertFalse([f for f in files if f.endswith(".test.ts")])
 
+    def test_S7b_orders_and_coupons_get_the_quote_files_they_import(self):   # prod run, 29 Oct: orders stopped, "could not find quote/index.ts"
+        for n in ("orders", "coupons"):
+            files = p.function_files(n)
+            self.assertIn("quote/index.ts", files)
+            self.assertIn("quote/quote.ts", files)
+
     def test_S8_verify_jwt_follows_config(self):
         self.assertEqual([n for n in p.function_names() if not p.verify_jwt(n)], ["health", "payments", "push"])
 
