@@ -60,6 +60,10 @@ class Privacy(unittest.TestCase):
         for words in ("use my location", "openstreetmap", "we do not keep the place"):
             self.assertIn(words, PAGE)
 
+    def test_the_page_says_which_steps_the_test_app_counts(self):   # story #207: PostHog on the dev build, six steps, no name, phone, address or screen recording
+        for words in ("test version of the app only", "no name, phone number or address", "do not record your screen"):
+            self.assertIn(words, PAGE)
+
     def test_the_page_says_how_to_delete_and_who_to_write_to(self):
         self.assertIn("delete", PAGE)
         self.assertIn("avinturetech@gmail.com", PAGE)

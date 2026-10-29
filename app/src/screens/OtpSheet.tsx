@@ -1,5 +1,6 @@
 // The phone code sheets of the Ink journeys boards O1 to O9 (story #551): number, code with a resend timer, the contract's errors, a number that is already used, the name.
 import { useEffect, useRef, useState } from "react";
+import { capture } from "../lib/analytics";
 import { finishSignIn, isMobile, sendCode, sendSignInCode, showPhone, verifyCode, type OtpResult } from "../lib/otp";
 import { getClient } from "../lib/supabase";
 import { SignIn } from "./SignIn";
@@ -47,7 +48,7 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false }:
     setError(null);
     const r = mode === "signin" ? await finishSignIn(phone, code, guest.current) : await verifyCode(phone, code);
     setBusy(false);
-    if (r.ok) onVerified(phone);
+    if (r.ok) { capture("code_ok"); onVerified(phone); }
     else setError(r);
   }
   async function signInInstead() {

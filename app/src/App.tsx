@@ -17,6 +17,7 @@ import { enablePush, watchSession } from "./lib/push";
 import { takeReturn } from "./lib/auth";
 import { alertsState, readOff, turnAlertsOff, writeOff, type Alerts } from "./lib/alerts";
 import { loadProfile, saveProfile } from "./lib/profile";
+import { capture } from "./lib/analytics";
 import { addEvent, changeStatus, confirmDelivery, orderDeps, placeOrder, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
 import { confirmAt, DEFAULT_CFG, mayAsk, notYet, reaskMs, type ConfirmCfg } from "./lib/confirm";
 import { fetchOrders } from "./lib/live";
@@ -324,6 +325,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     if (!placed) return;
     pushTrail("customer: yes, delivered");
     track("delivered_answer", "yes");
+    capture("delivered_yes");
     setConfirming(true);
     setConfirmError(null);
     try {
@@ -394,6 +396,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setFrom(at ?? null);
     land.current = true;   // #525: the mark flies in once, on the first Menu after this pick
     savePin(p);
+    capture("address_set", { from: at ? "location" : "typed" });
     setArea(null);
     setMenu(null);
     setMenuError(null);
@@ -608,6 +611,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         api(),
       );
       setPlaced(order);
+      capture("order_placed", { items_count: lines.length });
       setPlacedLines(lines.map((l) => ({ name: l.dish.name, qty: l.qty, paise: l.line_paise })));
       if (!demo) void savePlatform(getClient(), order.id, clientPlatform(navigator.userAgent));   // story H14: the iPhone share of orders
       setConfirmCfg(confirm);
@@ -729,7 +733,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       {role === "admin" && !framed && <AdminScreen />}
       <FeedbackSheet role={lock ?? "console"} button={!lock} screen={`${window.location.pathname}${lock ? "" : ` (${role} tab)`}`}
         order={placed ? { id: placed.id, status: orders.find((o) => o.id === placed.id)?.status ?? placed.status } : orders[0] ? { id: orders[0].id, status: orders[0].status } : null}
-        getSession={currentSession} send={(r) => sendFeedback(r, api())} preset={preset} />
+        getSession={currentSession} send={async (r) => { const id = await sendFeedback(r, api()); capture("feedback_sent"); return id; }} preset={preset} />
       {role === "split" && (
         <div className="panes">
           <div>{customerView}</div>
