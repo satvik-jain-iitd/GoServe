@@ -3,7 +3,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { ID, SESSION, decisionOf, order, setup } from "./helpers";
 
 const openOps = async (page: Page) => {
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Ops" }).click();
   await expect(page.getByRole("heading", { name: "Ops" })).toBeVisible();
 };

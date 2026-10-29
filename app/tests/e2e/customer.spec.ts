@@ -41,7 +41,7 @@ async function mockNetwork(context: BrowserContext): Promise<Net> {
 
 test("S1 order path: add 2 dishes, see the bill, place the order (cash on delivery)", async ({ page, context }) => {
   const net = await mockNetwork(context);
-  await page.goto("/");
+  await page.goto("/console/");
   await expect(page.getByRole("navigation", { name: "Screen" })).toBeVisible();
   await expect(page.getByText("Butter Chicken")).toBeVisible();
   await expect(page.getByText("₹320", { exact: true })).toBeVisible();
@@ -71,7 +71,7 @@ test("S1 order path: add 2 dishes, see the bill, place the order (cash on delive
 
 test("S1 the address is required before the bill", async ({ page, context }) => {
   await mockNetwork(context);
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
   await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
@@ -81,7 +81,7 @@ test("S1 the address is required before the bill", async ({ page, context }) => 
 
 test("S1 quantity buttons change the bill", async ({ page, context }) => {
   await mockNetwork(context);
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Add Samosa (2 pieces)" }).click();
   await page.getByRole("button", { name: "More Samosa (2 pieces)" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
@@ -92,7 +92,7 @@ test("S1 quantity buttons change the bill", async ({ page, context }) => {
 test("S1 a refused order shows the reason, and the retry sends the same order key", async ({ page, context }) => {
   const net = await mockNetwork(context);
   net.orderReply = { status: 503, body: { ok: false, error: "kill_switch", message: "Orders are paused. Please try again soon." } };
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Address").fill("Flat 4");
@@ -109,7 +109,7 @@ test("S1 a refused order shows the reason, and the retry sends the same order ke
 
 test("S2 the menu still shows with the network off, after it was loaded once", async ({ page, context }) => {
   const net = await mockNetwork(context);
-  await page.goto("/");
+  await page.goto("/console/");
   await expect(page.getByText("Butter Chicken")).toBeVisible();
   await page.evaluate(() => navigator.serviceWorker.ready);
   net.menuUp = false;
@@ -123,7 +123,7 @@ test("S2 the menu still shows with the network off, after it was loaded once", a
 test("S2 with no network and no saved menu, the screen says so instead of staying blank", async ({ page, context }) => {
   const net = await mockNetwork(context);
   net.menuUp = false;
-  await page.goto("/");
+  await page.goto("/console/");
   await expect(page.getByText("Could not connect to the internet.")).toBeVisible();   // story #637, board M6
 });
 
@@ -132,7 +132,7 @@ for (const theme of ["day", "night"]) {
   test(`S-637 ${theme}: offline with a saved menu keeps the menu, one line, no broken pictures, and the line leaves when the network is back`, async ({ page, context }) => {
     await context.addInitScript((t) => { try { localStorage.setItem("gs-theme", t); } catch { /* the default theme shows */ } }, theme);
     const net = await mockNetwork(context);
-    await page.goto("/");
+    await page.goto("/console/");
     await expect(page.getByText("Butter Chicken")).toBeVisible();
     await page.evaluate(() => navigator.serviceWorker.ready);
     net.menuUp = false;
@@ -155,7 +155,7 @@ for (const theme of ["day", "night"]) {
     await context.addInitScript((t) => { try { localStorage.setItem("gs-theme", t); } catch { /* the default theme shows */ } }, theme);
     const net = await mockNetwork(context);
     net.menuUp = false;
-    await page.goto("/");
+    await page.goto("/console/");
     await expect(page.getByText("Could not connect to the internet.")).toBeVisible();
     await expect(page.getByText("Check your network, then try again.")).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Main" })).toHaveCount(0);   // no tabs, no header

@@ -46,7 +46,7 @@ test("S3 after the order is placed the cart is empty again on the next visit", a
 
 test("S4 the demo console at / does not keep a draft", async ({ page, context }) => {
   await setup(context, page);
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.reload();
   await expect(page.getByRole("button", { name: /View bill/ })).toHaveCount(0);

@@ -3,7 +3,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { order, setup } from "./helpers";
 
 const open = async (page: Page, role: "Kitchen" | "Rider") => {
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: role }).click();
   await expect(page.getByRole("heading", { name: role === "Rider" ? /^Deliver/ : "New", exact: true })).toBeVisible();   // H11: the rider's Job tab, the kitchen's New tab
 };

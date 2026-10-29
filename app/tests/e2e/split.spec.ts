@@ -13,7 +13,7 @@ async function placeOne(page: Page) {
 
 test("S1 split view shows the customer and the kitchen side by side", async ({ page, context }) => {
   const net = await setup(context, page);
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Split" }).click();
   await expect(page.getByRole("heading", { name: "New", exact: true })).toBeVisible();   // H11: the kitchen pane opens on New
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
@@ -29,7 +29,7 @@ test("S1 split view shows the customer and the kitchen side by side", async ({ p
 
 test("S2 a second device opens the link, joins the session and sees its orders", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
-  await page.goto(`/?join=${OTHER}`);
+  await page.goto(`/console/?join=${OTHER}`);
   await page.getByRole("button", { name: "Kitchen" }).click();
   await expect(page.getByText("No. 0f0f0f0f")).toBeVisible();
   expect(net.calls.rpc).toContainEqual({ name: "join_session", body: { p_session: OTHER } });
@@ -43,7 +43,7 @@ test("S2 a second device opens the link, joins the session and sees its orders",
 test("S2 the share link carries this device's session", async ({ page, context }) => {
   await setup(context, page);
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Copy link for a second device" }).click();
   await expect(page.getByText("Link copied.")).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(new RegExp(`\\?join=${SESSION}$`));
@@ -51,7 +51,7 @@ test("S2 the share link carries this device's session", async ({ page, context }
 
 test("S3 reset asks first, then clears this session and returns to the menu", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Kitchen" }).click();
   await expect(page.getByText("No. 0f0f0f0f")).toBeVisible();
   await page.getByRole("button", { name: "Reset demo" }).click();
@@ -66,7 +66,7 @@ test("S3 reset asks first, then clears this session and returns to the menu", as
 
 test("S3 saying no keeps everything", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Kitchen" }).click();
   await page.getByRole("button", { name: "Reset demo" }).click();
   await page.getByRole("button", { name: "No, keep" }).click();
@@ -76,7 +76,7 @@ test("S3 saying no keeps everything", async ({ page, context }) => {
 
 test("S3 when the other device resets, this one clears too", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Kitchen" }).click();
   await expect(page.getByText("No. 0f0f0f0f")).toBeVisible();
   net.push("DELETE", { id: "0f0f0f0f-1111-4222-8333-444444444444" });
@@ -85,7 +85,7 @@ test("S3 when the other device resets, this one clears too", async ({ page, cont
 
 test("S3 when the other device resets, the customer tracker goes back to the menu", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
-  await page.goto("/");
+  await page.goto("/console/");
   await placeOne(page);
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   net.push("UPDATE", order("accepted", "2020-01-01T10:01:00Z"));   // proves the tracker reads the list

@@ -3,7 +3,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { ID, SESSION, order, setup } from "./helpers";
 
 const openRider = async (page: Page) => {
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Rider" }).click();
   await expect(page.getByRole("heading", { name: /^Deliver/ })).toBeVisible();   // H11: "Delivery" with a job in hand, "Deliveries" without
 };
@@ -54,7 +54,7 @@ test("S1 Arriving was already sent (the page was reloaded): it is treated as don
 
 test("S2 the customer sees every step live, without a refresh, and it ends at Delivered", async ({ page, context }) => {
   const net = await setup(context, page);
-  await page.goto("/");
+  await page.goto("/console/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Address").fill("Flat 4, Green Park");
