@@ -20,6 +20,14 @@ class Readme(unittest.TestCase):
             self.assertFalse(stale in README, stale)
         self.assertIsNone(re.search(r"\bslips?\b", README), "a customer says order, not slip (#242)")
 
+    def test_says_how_a_customer_signs_in_today(self):   # first open (#665 to #668): a number and a code, or Google
+        self.assertFalse("No login" in README)
+        for words in ("phone number", "Google", "code"):
+            self.assertTrue(words in README, words)
+
+    def test_the_migration_count_is_not_a_stale_number(self):
+        self.assertFalse("27 migrations" in README)
+
 
 if __name__ == "__main__":
     unittest.main()
