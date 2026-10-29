@@ -6,7 +6,7 @@ import { clientPlatform } from "./lib/platform";
 import { riderRefused, savePlatform, tapCall } from "./lib/signals";
 import { useLiveOrders } from "./lib/useLiveOrders";
 import { loadMenu, MENU_KEY, type Dish } from "./lib/menu";
-import { fetchKitchens, forgetArea, loadArea, loadPin, closedLine, openingText, resolveArea, savePin, shownArea, type Area } from "./lib/area";
+import { fetchKitchens, forgetArea, loadArea, loadPin, closedCopy, openingText, resolveArea, savePin, shownArea, type Area } from "./lib/area";
 import { AreaScreen } from "./screens/AreaScreen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { AdminGate } from "./screens/AdminGate";
@@ -32,6 +32,7 @@ import { currentSession, scopeFor, joinCode, joinLink, joinSession, rememberJoin
 import { MenuScreen } from "./screens/MenuScreen";
 import { BillScreen } from "./screens/BillScreen";
 import { OFFERS_ON } from "./lib/quote";
+import { watchMenu } from "./lib/liveMenu";
 import { ordersV2On, placeOrderV2, PriceChanged, v2Deps } from "./lib/ordersV2";
 import { useOffers } from "./lib/useOffers";
 import { openOrderToResume } from "./lib/resume";
@@ -394,6 +395,21 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       .then((loaded) => { if (alive) { setMenu(loaded); setMenuError(null); } }, (e: Error) => { if (alive) setMenuError(e.message); });
     return () => { alive = false; };
   }, [lock, areaKitchenId, menuTry]);
+  // Story #619: the kitchen's switch, its hours and its dishes follow live. Any change reads the kitchen and the menu again, quietly (no loading screen).
+  const [liveTick, setLiveTick] = useState(0);
+  useEffect(() => {
+    if (lock !== "customer" || !areaKitchenId) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const stop = watchMenu(getClient(), areaKitchenId, () => { clearTimeout(timer); timer = setTimeout(() => setLiveTick((n) => n + 1), 300); });   // one change often writes two rows
+    return () => { clearTimeout(timer); stop(); };
+  }, [lock, areaKitchenId]);
+  useEffect(() => {
+    if (liveTick === 0 || lock !== "customer" || !pin || !areaKitchenId) return;
+    let alive = true;
+    resolveArea(pin, () => fetchKitchens(getClient()), window.localStorage, from ?? undefined).then((found) => { if (alive) setArea(found); }, () => undefined);
+    loadMenu(() => fetchMenuRows(areaKitchenId), window.localStorage, `${MENU_KEY}.${areaKitchenId}`).then((loaded) => { if (alive) { setMenu(loaded); setMenuError(null); } }, () => undefined);
+    return () => { alive = false; };
+  }, [liveTick]);   // eslint-disable-line react-hooks/exhaustive-deps
   function choosePin(p: string, at?: { lat: number; lng: number }) {
     setFrom(at ?? null);
     land.current = true;   // #525: the mark flies in once, on the first Menu after this pick
@@ -679,7 +695,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             pin={pin} name={name} qty={cart} cartCount={count} cartTotal={total}
             kitchenName={kitchenName}
             openText={shown?.kind === "ok" ? openTill(shown.kitchen.closes_at) : ""}
-            closedText={shown?.kind === "closed" ? closedLine(shown.opens_at, shown.paused === true) : null}
+            closed={shown?.kind === "closed" ? closedCopy(shown.opens_at, shown.paused === true) : null}
             onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
             onChangePin={changeArea} onOrders={() => setStep("orders")} onYou={() => setStep("account")} />
         )}

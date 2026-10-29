@@ -161,24 +161,36 @@ export async function setup(context: BrowserContext, page: Page, initial: object
     return json(route, r.status, r.body);
   });
   // Events pushed before the screen has joined the channel (or just after) wait, like a real event that is sent after the subscription.
+  // Story #619: more than one channel can be open (orders, and the kitchen's menu). Each join keeps its own list of what the screen asked to hear.
   const SETTLE_MS = 1500;   // the client needs a moment to bind the join answer; an event sent sooner is dropped
-  let joinedAt = 0;
-  let bindings: { event: string }[] = [];   // what the screen asked to hear; the server answers with the same list, numbered
-  let sendNow: (type: string, record: object) => void = () => {};
-  const waiting: [string, object][] = [];
-  const push = (type: "INSERT" | "UPDATE" | "DELETE", record: object) => (joinedAt ? setTimeout(() => sendNow(type, record), Math.max(0, joinedAt + SETTLE_MS - Date.now())) : waiting.push([type, record]));
+  const sockets: { topic: string; bindings: { event: string; table?: string }[]; send: (m: unknown) => void; joinedAt: number }[] = [];
+  const waiting: [string, object, string][] = [];
+  const deliver = (type: string, record: object, table: string) => {
+    const hits = sockets.filter((c) => Date.now() >= c.joinedAt + SETTLE_MS && c.bindings.some((b) => (b.table ?? "orders") === table));
+    for (const c of hits) {
+      const idx = c.bindings.findIndex((b) => (b.table ?? "orders") === table && (type === "DELETE" ? b.event === "DELETE" : b.event !== "DELETE"));
+      if (idx < 0) continue;
+      c.send([null, null, c.topic, "postgres_changes", { ids: [idx + 1],
+        data: { schema: "public", table, commit_timestamp: new Date().toISOString(), type, record: type === "DELETE" ? {} : record, old_record: type === "DELETE" ? record : {}, columns: [], errors: null } }]);
+    }
+    return hits.length > 0;
+  };
+  const flush = () => { for (const w of waiting.splice(0)) if (!deliver(w[0], w[1], w[2])) waiting.push(w); };
+  const push = (type: "INSERT" | "UPDATE" | "DELETE", record: object, table: "orders" | "kitchens" | "menu_items" = "orders") => {
+    if (!deliver(type, record, table)) { waiting.push([type, record, table]); setTimeout(flush, SETTLE_MS + 50); }
+  };
   await page.routeWebSocket(/realtime\/v1\/websocket/, (ws) => {
-    let topic = "";
-    sendNow = (type, record) => ws.send(JSON.stringify([null, null, topic, "postgres_changes", { ids: [bindings.findIndex((b) => (type === "DELETE" ? b.event === "DELETE" : b.event !== "DELETE")) + 1],
-      data: { schema: "public", table: "orders", commit_timestamp: new Date().toISOString(), type, record: type === "DELETE" ? {} : record, old_record: type === "DELETE" ? record : {}, columns: [], errors: null } }]));
+    // One socket carries every channel (supabase-js multiplexes), so each join is kept by its topic.
+    const send = (m: unknown) => ws.send(JSON.stringify(m));
     ws.onMessage((raw) => {
       const [join_ref, ref, t, event, payload] = JSON.parse(String(raw));
       if (event === "phx_join") {
-        topic = t;
-        bindings = payload?.config?.postgres_changes ?? [];
+        const bindings: { event: string; table?: string }[] = payload?.config?.postgres_changes ?? [];
+        const at = sockets.findIndex((c) => c.topic === t);
+        const me = { topic: t, bindings, send, joinedAt: Date.now() };
+        if (at >= 0) sockets[at] = me; else sockets.push(me);
         ws.send(JSON.stringify([join_ref, ref, t, "phx_reply", { status: "ok", response: { postgres_changes: bindings.map((b, i) => ({ id: i + 1, ...b })) } }]));
-        joinedAt = Date.now();
-        setTimeout(() => waiting.splice(0).forEach(([type, record]) => sendNow(type, record)), SETTLE_MS);
+        setTimeout(flush, SETTLE_MS + 50);   // a timer may fire a millisecond early: the margin keeps the event from waiting for ever
       } else if (event === "heartbeat") {
         ws.send(JSON.stringify([null, ref, "phoenix", "phx_reply", { status: "ok", response: {} }]));
       }
