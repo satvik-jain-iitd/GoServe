@@ -61,6 +61,14 @@ class ReleaseDb(unittest.TestCase):
         with self.assertRaises(SystemExit):
             release_db.main(["--apply"], {"SUPABASE_GOSERVE_PROD_URL": URL})
 
+    def test_an_empty_2xx_body_is_not_an_error(self):   # story #685: the secrets POST answers 201 with nothing in it
+        import io, unittest.mock as mock
+        os.environ.setdefault("SUPABASE_ACCESS_TOKEN", "t")
+        with mock.patch("urllib.request.urlopen", return_value=io.BytesIO(b"")):
+            self.assertEqual(release_db._call("POST", PROD, "/secrets", [{"name": "A", "value": "b"}]), {})
+        with mock.patch("urllib.request.urlopen", return_value=io.BytesIO(b'{"a": 1}')):
+            self.assertEqual(release_db._call("GET", PROD, "/x"), {"a": 1})
+
     def test_migrations_are_listed_in_order(self):
         names = [os.path.basename(p) for p in release_db.migration_files()]
         self.assertEqual(names, sorted(names))

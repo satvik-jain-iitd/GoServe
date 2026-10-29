@@ -14,7 +14,8 @@ APP_TABLES = {"kitchens", "menu_items", "orders", "order_events", "decision_log"
 def _call(method, ref, path, body=None):
     req = urllib.request.Request(f"{API}/{ref}{path}", method=method, data=json.dumps(body).encode() if body is not None else None,
                                  headers={"Authorization": f"Bearer {os.environ['SUPABASE_ACCESS_TOKEN']}", "Content-Type": "application/json", "User-Agent": "goserve-release"})
-    return json.load(urllib.request.urlopen(req))
+    body = urllib.request.urlopen(req).read()
+    return json.loads(body) if body.strip() else {}   # some calls (set secrets) answer 2xx with nothing
 
 
 def sql(ref, query):
