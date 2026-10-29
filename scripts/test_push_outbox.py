@@ -66,5 +66,36 @@ class PushOutbox(unittest.TestCase):
         self.assertEqual(r[-1]["body"], "Asha has picked up your order.", r)
 
 
+    # Story #534: a row taken but never marked sent goes back after 2 minutes, at most 3 times, then it is dead-lettered with a trace row.
+    AGE = "update push_outbox set taken_at = now() - interval '3 minutes'"
+
+    def test_a_row_taken_a_moment_ago_is_not_offered_again(self):
+        r = run(SUB, PLACE, "select push_outbox_take(10)", "select jsonb_array_length(push_outbox_take(10)->'rows') as soon")
+        self.assertEqual(r[-1]["soon"], 0, r)
+
+    def test_a_row_taken_but_not_sent_is_offered_again_after_two_minutes(self):
+        r = run(SUB, PLACE, "select push_outbox_take(10)", self.AGE, "select jsonb_array_length(push_outbox_take(10)->'rows') as later")
+        self.assertEqual(r[-1]["later"], 1, r)   # one statement sees one snapshot: the count of re-offers is read in the next test
+
+    def test_each_reoffer_is_counted(self):
+        r = run(SUB, PLACE, "select push_outbox_take(10)", self.AGE, "select push_outbox_take(10)", "select reoffers as n from push_outbox")
+        self.assertEqual(r[-1]["n"], 1, r)
+
+    def test_a_row_marked_sent_is_never_offered_again(self):
+        r = run(SUB, PLACE, "select push_outbox_sent(array(select (x->>'id')::bigint from jsonb_array_elements(push_outbox_take(10)->'rows') x))",
+                self.AGE, "select jsonb_array_length(push_outbox_take(10)->'rows') as later")
+        self.assertEqual(r[-1]["later"], 0, r)
+
+    def test_after_three_reoffers_the_row_is_dead_lettered_and_a_trace_row_says_so(self):
+        again = ["select push_outbox_take(10)", self.AGE]
+        r = run(SUB, PLACE, *again * 4, "select push_outbox_take(10)", "select (select dead_at is not null from push_outbox) as dead, "
+                "(select count(*) from order_trace where event = 'push_dead') as traced, (select count(*) from push_outbox where dead_at is null and sent_at is null) as waiting")
+        self.assertEqual((r[-1]["dead"], r[-1]["traced"], r[-1]["waiting"]), (True, 1, 0), r)
+
+    def test_a_customer_cannot_mark_a_row_sent(self):
+        for who in ("set local role anon", "set local role authenticated"):
+            self.assertIn("permission denied", str(run(who, "select push_outbox_sent(array[1]::bigint[])")), who)
+
+
 if __name__ == "__main__":
     unittest.main()
