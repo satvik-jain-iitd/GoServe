@@ -496,3 +496,4 @@ Rule: read this first in every session, append before saying done.
 | 449 | 2026-10-29 | coder | #187 validation rules: table, 18 database tests, 5 Edge Function tests, app mirror tests, migration 0048 (customers and orders.address rules), the Bill phone rule fixed. | #187 | reviewed |
 | 450 | 2026-10-29 | coder | #196 integrations research: one table (payments, SMS code, push, maps, analytics, uptime) with pick, cost, date, tier and confidence, checked with a test. Runbook now lists MAIN 34, 0047, 0048. | #196 | reviewed |
 | 451 | 2026-10-29 | coder | Sim orders A to G on the v2 path (`sim_orders_check.py dev --v2`): all pass. Result row E-SIM-V2 in experiments.md. | #309 | reviewed |
+| 452 | 2026-10-29 | coder | One real order through the deployed dev `POST /orders`, re-send, wrong price, then the sim to delivered: PASS. Row E-SIM-V2-LIVE. | #309 | reviewed |
