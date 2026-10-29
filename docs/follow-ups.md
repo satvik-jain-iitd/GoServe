@@ -289,3 +289,5 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F287 | UptimeRobot monitor on prod `/functions/v1/health`, keyword `"ok":true`. | owner click | open |
 | F288 | Roll the PostHog personal API key (scope `query:read`). | owner click | open |
 | F289 | Every new story must be attached to its epic at creation (sub-issues API, database id, JSON body); the roadmap script should list open stories with no parent. Stories #679, #681, #683, #685, #688, #695 were made without a parent. | reviewer to name the epics | open |
+| F290 | The orders v2 answer carries no confirm times (`confirm_after_ready_min`, `confirm_after_place_min`), so the app uses its defaults on the v2 path. Add them when the kitchen ETA story lands (reviewer, 29 Oct). | #590 | open |
+| F291 | Repo secret `DEV_VITE_POSTHOG_KEY` (value: `POSTHOG_PROJECT_TOKEN` in vault `04_integrations.env`) is not set yet; the dev build sends no analytics until it is. Owner step (asked by the reviewer). | #207 | waiting on the owner |

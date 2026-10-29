@@ -8,6 +8,24 @@ Rules: `object_action`, snake_case. Never a name, phone or address in a property
 `distinct_id`: the device session id for customers (the same id the orders carry), the Google user id for staff.
 Demo mode and e2e send nothing.
 
+## What ships first (story #207, 29 Oct 2026)
+
+Six events only, in `app/src/lib/analytics.ts` (`EVENTS`). The rest of this page stays the plan.
+The SDK loads only when `VITE_POSTHOG_KEY` is set. Today that is the dev build (repo secret `DEV_VITE_POSTHOG_KEY`); the prod deploy does not carry it.
+Host from `VITE_POSTHOG_INGEST` (default `https://eu.i.posthog.com`). Autocapture, page views and session replay are off. No profile for an anonymous person.
+A test scans the source: every `capture("...")` uses a name in this list and no prop is named name, phone, address or email.
+
+| Event | Fires when | Props |
+|---|---|---|
+| `first_open` | the customer app opens on a phone that never sent it | |
+| `code_ok` | the sign-in code is accepted | |
+| `address_set` | an address is picked (location or typed) | from: location or typed |
+| `order_placed` | the server said yes | items_count |
+| `delivered_yes` | the customer taps Yes on "Was your order delivered?" | |
+| `feedback_sent` | Send feedback succeeded | |
+
+Older plan names map to these: `app_opened` is `first_open`, `delivery_confirmed` with answer yes is `delivered_yes`.
+
 ## Customer
 
 | Event | Fires when | Props | Why |
