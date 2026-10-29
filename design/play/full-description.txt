@@ -1,0 +1,22 @@
+One hot thali. Cooked today. Paid at the door.
+
+GoServe brings the day's plate from a home kitchen near your pin code. Our own rider carries it a short way. You pay cash when it arrives.
+
+How it works
+- Type your pin code and see the plate the kitchen cooks today. One veg, one non-veg.
+- Add it to your bill and place the order. No card. No wallet.
+- Watch it on the slip: cooking, ready, on the way. Call the rider from the slip.
+- Pay the rider at the door.
+
+Home kitchens in your pin code
+A real kitchen, a short way from you.
+
+Cash first
+No card, no wallet. UPI comes later, as a choice, never a must.
+
+Our own riders
+No gig fleet. Our rider knows your lane and brings the plate hot.
+
+This is a test version. We start with one kitchen and one pin code and grow one pin code at a time. The sign-in code is fixed during the test.
+
+Privacy: https://goserve-app.pages.dev/privacy/
