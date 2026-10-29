@@ -64,6 +64,13 @@ class Privacy(unittest.TestCase):
         for words in ("test version of the app only", "no name, phone number or address", "do not record your screen"):
             self.assertIn(words, PAGE)
 
+    def test_the_page_has_a_delete_section_with_the_in_app_path_and_the_drive_caveat(self):   # story #771: Google Play wants a web link and an in-app path
+        self.assertIn('id="delete"', PAGE)
+        for words in ("delete my account", "cannot be undone", "private google drive folder and team chat"):
+            self.assertIn(words, PAGE)
+        for old in ("draft", "lawyer-checked"):
+            self.assertNotIn(old, PAGE)
+
     def test_the_page_says_how_to_delete_and_who_to_write_to(self):
         self.assertIn("delete", PAGE)
         self.assertIn("avinturetech@gmail.com", PAGE)
