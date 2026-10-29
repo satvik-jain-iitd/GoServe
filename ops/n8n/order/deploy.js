@@ -1,6 +1,7 @@
 // Deploys the GS order workflows to n8n. Default is a DRY RUN: it only reads and prints the plan.
 //   node ops/n8n/order/deploy.js            plan only (reads the workflow list and the credential list)
 //   node ops/n8n/order/deploy.js --apply    create missing workflows (inactive), then PUT the real content
+//   --from sub15                            start the deploy at that workflow (after a stop); earlier ones are left as they are
 //   --env prod                              the PROD copy (nine workflows, `PROD` in the name, own webhook path, prod address, credential and token)
 // It never activates, deletes or touches any other workflow. Deploy order: ERR 00, SUB 11 to 17 and 91, then MAIN 01 and MAIN 90 (rulebook 95.16).
 // Secrets come from ~/Desktop/Secrets (N8N_API_KEY, GOSERVE_TELEGRAM_CHAT_ID, SUPABASE_GOSERVE_DEV_URL, GOSERVE_DEMO_TOKEN) and are never written to the repo.
@@ -31,18 +32,41 @@ function vault(file, key) {
   return m ? m[1] : null;
 }
 
+// One call to the n8n API. The shared box sometimes answers a Cloudflare HTML page (520) or drops the connection: that is tried again, 3 tries, 30 s apart.
+// A JSON answer is final, good or a refusal.
+function makeCall(fetchFn, apiKey, { tries = 3, waitMs = 30000, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
+  return async (method, p, body) => {
+    for (let n = 1; ; n++) {
+      let res, json;
+      try {
+        res = await fetchFn(BASE + p, { method, headers: { 'X-N8N-API-KEY': apiKey, 'Content-Type': 'application/json', 'User-Agent': 'curl/8.7.1' }, body: body && JSON.stringify(body) });
+        json = await res.json();
+      } catch (e) {
+        if (n >= tries) throw new Error(method + ' ' + p + ' -> answer was not JSON (' + String(e.message).slice(0, 80) + ') after ' + tries + ' tries');
+        console.log('  ' + method + ' ' + p + ': not a JSON answer, trying again in ' + waitMs / 1000 + ' s (' + n + ' of ' + tries + ')');
+        await sleep(waitMs);
+        continue;
+      }
+      if (!res.ok) throw new Error(method + ' ' + p + ' -> ' + res.status + ' ' + JSON.stringify(json).slice(0, 200));
+      return json;
+    }
+  };
+}
+
+const resumeFrom = (order, from) => {
+  if (!from) return order;
+  if (!order.includes(from)) throw new Error('--from ' + from + ' is not one of: ' + order.join(', '));
+  return order.slice(order.indexOf(from));
+};
+
 async function main() {
   const apply = process.argv.includes('--apply');
   const env = process.argv.includes('--env') ? process.argv[process.argv.indexOf('--env') + 1] : 'dev';
   if (!ENVS[env]) throw new Error('unknown --env ' + env + ' (dev or prod)');
   const E = ENVS[env], ORD = orderFor(env), NM = namesFor(env);
+  const todo = resumeFrom(ORD, process.argv.includes('--from') ? process.argv[process.argv.indexOf('--from') + 1] : undefined);   // refuses a wrong name before any call
   const apiKey = vault('04_integrations.env', 'N8N_API_KEY');
-  const call = async (method, p, body) => {
-    const res = await fetch(BASE + p, { method, headers: { 'X-N8N-API-KEY': apiKey, 'Content-Type': 'application/json', 'User-Agent': 'curl/8.7.1' }, body: body && JSON.stringify(body) });
-    const json = await res.json();
-    if (!res.ok) throw new Error(method + ' ' + p + ' -> ' + res.status + ' ' + JSON.stringify(json).slice(0, 200));
-    return json;
-  };
+  const call = makeCall(fetch, apiKey);
   const wfs = (await call('GET', '/workflows?limit=250')).data;
   const creds = (await call('GET', '/credentials?limit=250')).data;
   const credential = creds.find((c) => c.name === E.credential);
@@ -87,7 +111,7 @@ async function main() {
   const n8nApiCredential = creds.find((c) => c.name === 'GoServe n8n API');   // made by the owner; without it the n8n error line of the report says "could not read"
   if (!n8nApiCredential) console.log('  note: credential "GoServe n8n API" not found; the report will say "n8n errors: could not read"');
   const built = build({ ids, token, simToken, anonKey: vault('02_databases.env', E.anonVar), env, n8nApiCredential: n8nApiCredential && { id: n8nApiCredential.id, name: n8nApiCredential.name }, uptimerobotKey: vault('04_integrations.env', 'UPTIMEROBOT_API_KEY') || undefined, driveFolderId: vault('04_integrations.env', E.driveVar), supabaseUrl: vault('02_databases.env', E.urlVar), credential: { id: credential.id, name: E.credential }, vapidCredential: { id: vapidCredential.id, name: VAPID_CREDENTIAL }, vapidPublicKey: vault('04_integrations.env', 'GOSERVE_VAPID_PUBLIC_KEY'), vapidSubject: vault('04_integrations.env', 'GOSERVE_VAPID_SUBJECT'), openrouterCredential: { id: jevCredential.id, name: JEV_CREDENTIAL }, chatId: vault('04_integrations.env', 'GOSERVE_TELEGRAM_CHAT_ID') });
-  for (const k of ORD) {
+  for (const k of todo) {
     await call('PUT', '/workflows/' + ids[k], payload(built[k]));
     const back = await call('GET', '/workflows/' + ids[k]);
     // Never activates: a workflow may only be active if it already was (the owner activated it).
@@ -97,4 +121,4 @@ async function main() {
 }
 
 if (require.main === module) main().catch((e) => { console.error(e.message); process.exit(1); });
-module.exports = { payload, NAMES, ORDER, ENVS, namesFor, orderFor };
+module.exports = { makeCall, resumeFrom, payload, NAMES, ORDER, ENVS, namesFor, orderFor };
