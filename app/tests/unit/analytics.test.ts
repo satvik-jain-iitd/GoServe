@@ -32,6 +32,13 @@ describe("analytics", () => {
     expect(ph.init.mock.calls[0][1]).toMatchObject({ capture_pageview: "history_change", capture_pageleave: true, defaults: "2026-08-30" });
   });
 
+  it("S2c (story #739) session replay is on with every input masked; surveys stay off", async () => {
+    resetAnalytics();
+    const ph = fakePosthog();
+    await initAnalytics({ VITE_POSTHOG_KEY: "phc_test" }, (async () => ph) as never, store());
+    expect(ph.init.mock.calls[0][1]).toMatchObject({ disable_session_recording: false, session_recording: { maskAllInputs: true }, disable_surveys: true });
+  });
+
   it("S3 the host comes from VITE_POSTHOG_INGEST", async () => {
     resetAnalytics();
     const ph = fakePosthog();
