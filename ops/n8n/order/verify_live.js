@@ -6,7 +6,8 @@ const { ENVS, namesFor, orderFor } = require('./deploy');
 const env = process.argv.includes('--env') ? process.argv[process.argv.indexOf('--env') + 1] : 'dev';   // dev or prod
 const E = ENVS[env], ORD = orderFor(env), NM = namesFor(env);
 const { checkLayout } = require('../lib/layout_checks');
-const key=fs.readFileSync(path.join(os.homedir(),'Desktop/Secrets/04_integrations.env'),'utf8').match(/^N8N_API_KEY=(\S+)/m)[1];
+const gsvault=require('../lib/vault');   // goserve.env first, then the old file (owner, 29 Oct 2026)
+const key=gsvault.get('04_integrations.env','N8N_API_KEY');
 // The User-Agent is the same one deploy.js sends. A plain Node fetch also answered 200 on 15 Oct 2026, so it may not be needed; it stays so the two scripts behave alike
 // if the host ever starts to refuse the default Node agent. Remove it from both together, and run this script to prove it.
 const call=async p=>(await fetch('https://n8n.linkright.in/api/v1'+p,{headers:{'X-N8N-API-KEY':key,'User-Agent':'curl/8.7.1'}})).json();
@@ -15,7 +16,7 @@ const call=async p=>(await fetch('https://n8n.linkright.in/api/v1'+p,{headers:{'
   const ids={}; for(const k of ORD) ids[k]=list.find(w=>w.name===NM[k]).id;
   if(env==='prod') ids.alert=list.find(w=>w.name==='GS ERR 00 Alert').id;   // the shared alert
   // Build with the same deploy-time values as deploy.js (token, database address, credential ids, chat id), so only real drift shows. They stay in memory and are never printed.
-  const vault=(file,k)=>{const m=fs.readFileSync(path.join(os.homedir(),'Desktop/Secrets',file),'utf8').match(new RegExp('^'+k+'=(\\S+)','m'));return m?m[1]:null;};
+  const vault=(file,k)=>gsvault.get(file,k);
   const creds=(await call('/credentials?limit=250')).data;
   const cred=(name)=>{const c=creds.find(x=>x.name===name);return {id:c.id,name};};
   const b=build({ids,env,driveFolderId:vault('04_integrations.env',E.driveVar),token:vault('04_integrations.env',E.tokenVar),supabaseUrl:vault('02_databases.env',E.urlVar),credential:cred(E.credential),vapidCredential:cred('GoServe VAPID'),vapidPublicKey:vault('04_integrations.env','GOSERVE_VAPID_PUBLIC_KEY'),vapidSubject:vault('04_integrations.env','GOSERVE_VAPID_SUBJECT'),openrouterCredential:cred('GoServe OpenRouter'),chatId:vault('04_integrations.env','GOSERVE_TELEGRAM_CHAT_ID')});

@@ -3,11 +3,12 @@
 Reads SUPABASE_GOSERVE_DEV_* from ~/Desktop/Secrets/02_databases.env. It makes two anonymous users, links a test phone to the first with the Auth admin API
 (the call the otp function makes), and checks: the user id does not change, the user is no longer anonymous, the old session still refreshes, and a second user
 cannot take the same phone (users_phone_key, which the function answers as phone_in_use). It deletes both users at the end. Dev only."""
+import vault as gsvault
 import json, os, re, sys, urllib.error, urllib.request
 
 if (sys.argv[1] if len(sys.argv) > 1 else "dev") != "dev":
     sys.exit("dev only")
-vault = open(os.path.expanduser("~/Desktop/Secrets/02_databases.env")).read()
+vault = gsvault.read("02_databases.env")
 get = lambda k: re.search(rf"^{k}=(\S+)", vault, re.M).group(1)
 URL, ANON, SERVICE = get("SUPABASE_GOSERVE_DEV_URL"), get("SUPABASE_GOSERVE_DEV_ANON_KEY"), get("SUPABASE_GOSERVE_DEV_SERVICE_ROLE_KEY")
 PHONE = "919999900123"

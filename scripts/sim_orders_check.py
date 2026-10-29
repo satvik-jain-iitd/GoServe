@@ -10,6 +10,7 @@ calls sim_tick by hand and reads order_events. Pass marks (fixed before the run)
   F riders are free in Delhi: with rider_flip_pct 100 the riders go offline and come back online, at least one lands more than 3 km from where it left, and a rider
     that is the only one online, 3 km or more from the other kitchens, gets the order of the kitchen it is near.
 """
+import vault as gsvault
 import json, os, re, sys, time, urllib.request, uuid
 
 V2 = "--v2" in sys.argv   # place the orders with place_order_v2 instead of place_order
@@ -18,7 +19,7 @@ import kitchen_restore
 
 if (sys.argv[1] if len(sys.argv) > 1 else "dev") != "dev":
     sys.exit("dev only")
-vault = open(os.path.expanduser("~/Desktop/Secrets/02_databases.env")).read()
+vault = gsvault.read("02_databases.env")
 URL = re.search(r"^SUPABASE_GOSERVE_DEV_URL=(\S+)", vault, re.M).group(1)
 KEY = re.search(r"^SUPABASE_GOSERVE_DEV_SERVICE_ROLE_KEY=(\S+)", vault, re.M).group(1)
 H = {"apikey": KEY, "Authorization": f"Bearer {KEY}", "Content-Type": "application/json"}

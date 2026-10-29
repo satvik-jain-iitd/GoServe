@@ -28,7 +28,7 @@ import json, os, re, urllib.request, urllib.error
 SEC = "/Users/satvikjain/Desktop/Secrets"
 BASE = "https://n8n.LinkRight.in/api/v1"
 
-env = open(os.path.join(SEC, "04_integrations.env")).read()
+env = "".join(open(p).read() + "\n" for p in (os.path.join(SEC, "goserve", "goserve.env"), os.path.join(SEC, "04_integrations.env")) if os.path.exists(p))   # goserve.env first (owner, 29 Oct 2026), then the old file
 KEY = re.search(r"^N8N_API_KEY=(\S+)", env, re.M).group(1)
 CHAT = re.search(r"^GOSERVE_TELEGRAM_CHAT_ID=(\S+)", env, re.M).group(1)
 

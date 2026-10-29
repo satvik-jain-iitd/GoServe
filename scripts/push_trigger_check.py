@@ -4,11 +4,12 @@ Run: python3 scripts/push_trigger_check.py dev   (dev only; reads SUPABASE_GOSER
 Setup it keeps on dev (a dev value, nothing real): the function secret PUSH_NOTIFY_SECRET on the `push` function, and the vault secrets push_notify_url and
 push_notify_secret in the dev database. Then, with FakePush on the function: 1. a customer with an Android and an iOS token; 2. an order for them;
 3. the kitchen accepts it; 4. pg_net's answer says 200 and sent 2; 5. a repeat of the same status asks nothing more. It deletes everything it made, except the setup."""
+import vault as gsvault
 import json, os, re, secrets, sys, time, urllib.error, urllib.request, uuid
 
 if (sys.argv[1] if len(sys.argv) > 1 else "dev") != "dev":
     sys.exit("dev only")
-vault = open(os.path.expanduser("~/Desktop/Secrets/02_databases.env")).read()
+vault = gsvault.read("02_databases.env")
 get = lambda k: re.search(rf"^{k}=(\S+)", vault, re.M).group(1)
 URL, ANON, SERVICE, MGMT = get("SUPABASE_GOSERVE_DEV_URL"), get("SUPABASE_GOSERVE_DEV_ANON_KEY"), get("SUPABASE_GOSERVE_DEV_SERVICE_ROLE_KEY"), get("SUPABASE_ACCESS_TOKEN")
 REF = "tmxyizmkpwwfyazvrfhw"

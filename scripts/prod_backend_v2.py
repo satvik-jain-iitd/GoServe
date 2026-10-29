@@ -12,7 +12,7 @@ import release_db   # one place for the API call, the project name and the dev r
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, "..")
 FUNCS = os.path.join(ROOT, "supabase", "functions")
-VAULT = os.path.expanduser("~/Desktop/Secrets/05_goserve_prod_functions.env")
+VAULT = next((p for p in (os.path.expanduser("~/Desktop/Secrets/goserve/05_goserve_prod_functions.env"), os.path.expanduser("~/Desktop/Secrets/05_goserve_prod_functions.env")) if os.path.exists(p)), os.path.expanduser("~/Desktop/Secrets/goserve/05_goserve_prod_functions.env"))   # the goserve folder first (owner, 29 Oct 2026)
 FIXED_CODE = "123456"   # public by design for the test phase (#665)
 FRESH = ("PAYMENTS_WEBHOOK_SECRET", "PUSH_NOTIFY_SECRET")   # never the dev value: generated here
 SUPERSEDED = {"0023_one_kitchen_per_staff.sql"}   # its index is dropped by the v2 staff_many_kitchens migration, so a good prod does not have it

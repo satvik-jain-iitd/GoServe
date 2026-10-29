@@ -5,11 +5,12 @@ It sets a TEST OTP in the dev Auth config for one hour (Management API: external
   1. a guest A links a test phone (the first-visit path of layer 1); 2. a new guest B places an order; 3. B's person signs in with Supabase's own phone OTP and
   holds A's session; 4. claim_guest_orders_v2(B, A) moves the order; 5. A's own token reads that order. It deletes everything it made.
 The dev Auth config keeps phone sign-in on afterwards (no SMS provider is set, only the test number works)."""
+import vault as gsvault
 import datetime, json, os, re, sys, urllib.error, urllib.request, uuid
 
 if (sys.argv[1] if len(sys.argv) > 1 else "dev") != "dev":
     sys.exit("dev only")
-vault = open(os.path.expanduser("~/Desktop/Secrets/02_databases.env")).read()
+vault = gsvault.read("02_databases.env")
 get = lambda k: re.search(rf"^{k}=(\S+)", vault, re.M).group(1)
 URL, ANON, SERVICE, MGMT = get("SUPABASE_GOSERVE_DEV_URL"), get("SUPABASE_GOSERVE_DEV_ANON_KEY"), get("SUPABASE_GOSERVE_DEV_SERVICE_ROLE_KEY"), get("SUPABASE_ACCESS_TOKEN")
 REF = "tmxyizmkpwwfyazvrfhw"

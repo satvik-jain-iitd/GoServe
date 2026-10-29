@@ -16,6 +16,7 @@ and its two halves; order-to-door; share late by more than 10 minutes over the 3
 Decision rule written in experiments.md E9 (sharpened here, see the note in the result): median mismatch down 30 % or more AND P90 order-to-door up no more than
 60 s, on every seed.
 """
+import vault as gsvault
 import json, math, os, random, re, statistics, sys, time, urllib.error, urllib.request
 
 STEP = 10          # world clock, seconds
@@ -205,7 +206,7 @@ def main(argv):
     seeds = [int(x) for x in (argv[argv.index("--seeds") + 1] if "--seeds" in argv else "1,2,3").split(",")]
     hours = float(argv[argv.index("--hours") + 1]) if "--hours" in argv else 2.0
     loads = [float(x) for x in (argv[argv.index("--loads") + 1] if "--loads" in argv else "1").split(",")]
-    vault = open(os.path.expanduser("~/Desktop/Secrets/02_databases.env")).read()
+    vault = gsvault.read("02_databases.env")
     url = re.search(r"^SUPABASE_GOSERVE_DEV_URL=(\S+)", vault, re.M).group(1)
     key = re.search(r"^SUPABASE_GOSERVE_DEV_SERVICE_ROLE_KEY=(\S+)", vault, re.M).group(1)
     global BAND

@@ -3,11 +3,12 @@
 Run: python3 scripts/staff_check.py dev   (dev only; reads SUPABASE_GOSERVE_DEV_* and SUPABASE_ACCESS_TOKEN from ~/Desktop/Secrets/02_databases.env)
 It makes two kitchens A and B, a staff person of A, an admin and an order in B. It tries the order as the A-only person, adds them to B as the admin, lists their kitchens,
 accepts the order, removes the one membership, and tries to add as a non-admin. It deletes everything it made."""
+import vault as gsvault
 import json, os, re, sys, urllib.error, urllib.request, uuid
 
 if (sys.argv[1] if len(sys.argv) > 1 else "dev") != "dev":
     sys.exit("dev only")
-vault = open(os.path.expanduser("~/Desktop/Secrets/02_databases.env")).read()
+vault = gsvault.read("02_databases.env")
 get = lambda k: re.search(rf"^{k}=(\S+)", vault, re.M).group(1)
 URL, ANON, SERVICE, MGMT = get("SUPABASE_GOSERVE_DEV_URL"), get("SUPABASE_GOSERVE_DEV_ANON_KEY"), get("SUPABASE_GOSERVE_DEV_SERVICE_ROLE_KEY"), get("SUPABASE_ACCESS_TOKEN")
 REF = "tmxyizmkpwwfyazvrfhw"

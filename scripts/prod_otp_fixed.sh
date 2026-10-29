@@ -5,6 +5,8 @@
 set -euo pipefail
 # shellcheck disable=SC1090
 source "$HOME/Desktop/Secrets/02_databases.env"
+# shellcheck disable=SC1090
+[ -f "$HOME/Desktop/Secrets/goserve/goserve.env" ] && source "$HOME/Desktop/Secrets/goserve/goserve.env"   # goserve.env last, so its values win (owner, 29 Oct 2026)
 REF=$(printf '%s' "$SUPABASE_GOSERVE_PROD_URL" | sed -E 's#https://([^.]+)\..*#\1#')
 echo "prod project ref: $REF"
 echo "1. supabase secrets set OTP_FIXED_CODE=123456 --project-ref $REF"
