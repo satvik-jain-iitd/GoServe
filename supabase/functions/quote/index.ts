@@ -2,6 +2,7 @@
 // Prices come from the catalog, never from the request. Reads use the project's own URL; rules come from the versioned params row `quote_rules`.
 import { quote, pickAlternative, DEFAULT_RULES, DEFAULT_SWAP_PCT, MAX_QTY, type Catalog, type Coupon, type MenuRow, type Rules } from "./quote.ts";
 import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
+import { withCors } from "../_shared/cors.ts";
 
 export type Offer = { code: string; title: string; saves_paise: number };
 export type Deps = {
@@ -136,6 +137,6 @@ export const live: Deps = {
     } catch { return DEFAULT_SWAP_PCT; }
   },
 };
-export const handler = withRunLog("quote", makeHandler(live), writeRunLog);   // story #356: one run_log row per call
+export const handler = withCors(withRunLog("quote", makeHandler(live), writeRunLog));   // story #356: one run_log row per call
 
 if (import.meta.main) Deno.serve(handler);

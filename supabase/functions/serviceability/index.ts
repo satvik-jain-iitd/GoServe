@@ -3,6 +3,7 @@
 // The data source is injected so the tests need no network; the real one reads kitchens with the project's anon key (kitchens are public to read).
 import { serviceability, type KitchenRow } from "./serviceability.ts";
 import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
+import { withCors } from "../_shared/cors.ts";
 
 export type Deps = { kitchens: () => Promise<KitchenRow[]>; now: () => Date };
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
@@ -33,6 +34,6 @@ const live: Deps = {
     return await res.json();
   },
 };
-export const handler = withRunLog("serviceability", makeHandler(live), writeRunLog);   // story #356: one run_log row per call
+export const handler = withCors(withRunLog("serviceability", makeHandler(live), writeRunLog));   // story #356: one run_log row per call
 
 if (import.meta.main) Deno.serve(handler);

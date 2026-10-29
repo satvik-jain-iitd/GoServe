@@ -382,6 +382,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 /* Phone code sheets (story 551, boards O1 to O9). */
 .otp-phone { display: flex; align-items: center; gap: var(--gs-space-2); }
 .otp-phone span { font-family: var(--gs-font-mono); color: var(--gs-text-muted); }
+.otp-phone span, .otp-phone input { font-size: var(--gs-text-lg); }   /* story 785: the number is as big as the +91, and 16px or more so iOS Safari does not zoom */
 .otp-phone input { flex: 1; min-height: var(--gs-tap); }
 .otp-boxes { display: flex; gap: var(--gs-space-2); margin: var(--gs-space-3) 0; }
 .otp-boxes input { width: 100%; min-width: 0; min-height: var(--gs-tap); text-align: center; font-size: var(--gs-text-lg, 1.25rem); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius, 6px); background: var(--md-surface); color: var(--md-on-surface); }

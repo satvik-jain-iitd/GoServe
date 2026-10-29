@@ -5,6 +5,7 @@
 // read the caller's own token here (401 without it), and the webhook is proved by its HMAC signature (400 without a good one). Do not add a route that trusts the caller without one of these.
 import { gatewayFromEnv, type Gateway } from "../_shared/gateway.ts";
 import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
+import { withCors } from "../_shared/cors.ts";
 
 type Refusal = { ok: false; error: string; message: string };
 export type Deps = {
@@ -91,6 +92,6 @@ const live = async (): Promise<Deps> => ({
   switchCash: (order, session) => rpc("payment_switch_to_cash_v2", { p_order: order, p_session: session }),
   secret: () => Deno.env.get("PAYMENTS_WEBHOOK_SECRET") ?? "",
 });
-export const handler = withRunLog("payments", async (req) => makeHandler(await live())(req), writeRunLog);   // story #356: one run_log row per call
+export const handler = withCors(withRunLog("payments", async (req) => makeHandler(await live())(req), writeRunLog));   // story #356: one run_log row per call
 
 if (import.meta.main) Deno.serve(handler);

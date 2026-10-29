@@ -2,6 +2,7 @@
 // The caller is read from the bearer token; nobody can name another user. The rules (a good name, a real email, a deleted account) are in the database.
 // DELETE hides the profile and stops the pings at once; the purge job (purge_deleted_accounts_v2, run later) removes the personal rows and the login.
 import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
+import { withCors } from "../_shared/cors.ts";
 
 type Refusal = { ok: false; error: string; message: string };
 export type Deps = {
@@ -59,6 +60,6 @@ const live: Deps = (() => {
     remove: (user) => rpc("account_delete_v2", { p_user: user }),
   };
 })();
-export const handler = withRunLog("me", makeHandler(live), writeRunLog);   // story #356: one run_log row per call
+export const handler = withCors(withRunLog("me", makeHandler(live), writeRunLog));   // story #356: one run_log row per call
 
 if (import.meta.main) Deno.serve(handler);
