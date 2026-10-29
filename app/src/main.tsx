@@ -10,6 +10,7 @@ import { styleguideOn } from "./ui/flag";
 import { roleFromPath, roleTitle } from "./lib/roles";
 import { applyTheme } from "./lib/theme";
 import { watchForUpdates } from "./lib/updates";
+import { initAnalytics } from "./lib/analytics";
 
 // The address picks the app (story #83). Each role page is a static file with its own manifest link and title (see vite.config.ts), so the install
 // uses the right start address. The title is set here too, for the dev server where those static pages do not exist.
@@ -20,6 +21,7 @@ applyTheme(store, document);   // Day or Night; index.html already did it for th
 const path = window.location.pathname;
 const role = roleFromPath(path);
 if (role) document.title = roleTitle(role);
+if (role === "customer") void initAnalytics(import.meta.env);   // story #207: only when VITE_POSTHOG_KEY is set (dev builds)
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

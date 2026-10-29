@@ -35,6 +35,7 @@ jobs:
           VITE_ORDER_URL: ${{ secrets.VITE_ORDER_URL }}
           VITE_DEMO_TOKEN: ${{ secrets.VITE_DEMO_TOKEN }}
           VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
+          VITE_POSTHOG_KEY: ${{ secrets.DEV_VITE_POSTHOG_KEY }}   # story #207: dev only; empty means no analytics
           VITE_BUILD: ${{ github.sha }}
         run: |
           npm ci
