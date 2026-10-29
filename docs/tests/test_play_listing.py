@@ -47,6 +47,14 @@ class PlayListing(unittest.TestCase):
             self.assertEqual(png_size(s), (1080, 1920), s.name)
             self.assertLess(s.stat().st_size, 500 * 1024, f"{s.name} is over the 500 KB repo limit")
 
+    def test_the_data_safety_table_matches_the_app_and_names_the_deletion_link(self):   # story #771
+        text = RUNBOOK.read_text()
+        self.assertIn("https://goserve-app.pages.dev/privacy/#delete", text)
+        for row in ("| App activity, app interactions |", "| App info and performance, diagnostics |"):
+            line = next(l for l in text.splitlines() if l.startswith(row))
+            for must in ("Collected, optional", "app functions", "Not shared", "feedback"):
+                self.assertIn(must.lower(), line.lower(), row)
+
 
 if __name__ == "__main__":
     unittest.main()
