@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Story 822: a pull request that touches app/src cannot merge until it names the board the screen was checked against, points at the render,
-and (when an accepted screen picture changed) says which board the new look matches and which story asked for it. Stdlib only.
+"""Story 822: a pull request that touches app/src cannot merge until it points at the render. When it touches app/src/screens, ui or styles, or an accepted
+screen picture changed, it also names the board the screen was checked against and the date the owner approved it; and for every changed picture it says
+which board the new look matches and which story asked for it. Stdlib only.
   check_screen_change.py --body-file <f> --base <ref> [--repo <path>] [--head <branch>]   CI: the pull request description
   check_screen_change.py --local [--base <ref>]                                            the Mac, before a push: reads the commit messages since the base
 The failure prints the exact lines to add. It never points at a rule file."""
 import argparse, os, re, subprocess, sys
 
-SCREEN_PATHS = ("app/src/",)                       # a change here can move a screen
+SRC = "app/src/"                                    # any change here must point at its render
+SCREEN_PATHS = ("app/src/screens/", "app/src/ui/", "app/src/styles/")   # a change here names the board too; so does a changed picture (a fact beats a path guess)
 BASELINE = "app/tests/e2e/screens-baseline/"        # the accepted pictures (story 821)
 PLACEHOLDER = re.compile(r"^<.*>$")
 
@@ -39,14 +41,15 @@ def check(body, changed, base_name="dev", head_name=""):
     """Returns (ok, lines to print)."""
     if base_name == "main" or head_name == "main":
         return True, ["base or head is main (a dev -> main promotion or a main -> dev back-merge): screen check skipped"]
-    touched = [p for p in changed if p.startswith(SCREEN_PATHS)]
+    touched = [p for p in changed if p.startswith(SRC)]
     if not touched:
         return True, ["no app/src path touched: screen check skipped"]
     pictures = sorted(os.path.basename(p) for p in changed if p.startswith(BASELINE))
     todo = []
-    if not field(body, "Design board"):
+    needs_board = bool(pictures) or any(p.startswith(SCREEN_PATHS) for p in touched)
+    if needs_board and not field(body, "Design board"):
         todo.append("Design board: <the name of the board on the canvas this screen was checked against>")
-    if not field(body, "Approved"):
+    if needs_board and not field(body, "Approved"):
         todo.append("Approved: <the date the owner approved that board, for example 31 Oct 2026>")
     render = field(body, "Render")
     if not render.startswith("http"):
@@ -57,7 +60,8 @@ def check(body, changed, base_name="dev", head_name=""):
         if not board or not story:
             todo.append(f"Screen changed: {pic} | <the board this new look matches> | <#story that asked for the change>")
     if not todo:
-        return True, [f"screen check ok: board {field(body, 'Design board')} (approved {field(body, 'Approved')}), {len(pictures)} picture(s) changed and named"]
+        board = f"board {field(body, 'Design board')} (approved {field(body, 'Approved')}), " if needs_board else ""
+        return True, [f"screen check ok: {board}render named, {len(pictures)} picture(s) changed and named"]
     lines = [f"SCREEN CHECK FAILED. This pull request changes app/src ({len(touched)} file(s), for example {touched[0]}),",
              "so its description must carry these lines. Add them to the pull request description (not a comment), then re-run the Guard job:", ""]
     lines += [f"  {t}" for t in todo]

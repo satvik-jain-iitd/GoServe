@@ -38,6 +38,23 @@ class Check(unittest.TestCase):
         ok, _ = c.check(GOOD + "Screen changed: menu.png | O1 | #803\n", [SRC, PIC])
         self.assertFalse(ok)
 
+    def test_s6_a_logic_only_change_needs_the_render_and_nothing_more(self):
+        ok, _ = c.check("Render: https://github.com/o/r/actions/runs/1\n", ["app/src/lib/otp.ts"])
+        self.assertTrue(ok)
+        ok, out = c.check("", ["app/src/lib/otp.ts"])
+        self.assertFalse(ok)
+        self.assertEqual([l.strip().split(":")[0] for l in out if l.startswith("  ")], ["Render"])
+
+    def test_s6b_a_changed_picture_asks_for_the_board_even_from_a_logic_file(self):
+        ok, out = c.check("Render: https://github.com/o/r/actions/runs/1\n", ["app/src/lib/otp.ts", PIC])
+        self.assertFalse(ok)
+        self.assertIn("Design board: <", "\n".join(out))
+
+    def test_s6c_screens_ui_and_styles_ask_for_the_board(self):
+        for path in ("app/src/screens/A.tsx", "app/src/ui/ui.css", "app/src/styles/tokens.css"):
+            ok, _ = c.check("Render: https://github.com/o/r/actions/runs/1\n", [path])
+            self.assertFalse(ok, path)
+
     def test_s4_tests_and_supabase_only_is_not_asked(self):
         for path in ("app/tests/unit/x.test.ts", "supabase/functions/otp/index.ts"):
             ok, out = c.check("", [path])
