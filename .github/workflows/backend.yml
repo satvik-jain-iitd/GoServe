@@ -1,13 +1,13 @@
 name: Backend
 
-# Story #337 (E27). Backend v2 lives in supabase/ (functions) and api/ (the OpenAPI contract) on the staging branch. Every pull request that touches them runs the Deno tests, among them the contract test (story #338: a wrong field is red); a push to staging
+# Story #337 (E27). Backend v2 lives in supabase/ (functions) and api/ (the OpenAPI contract) on the dev branch. Every pull request that touches them runs the Deno tests, among them the contract test (story #338: a wrong field is red); a push to dev
 # deploys the functions to the DEV project (goserve-dev) and checks that health answers. Prod is the owner's step, never a CI job.
 # The token is the repository secret SUPABASE_ACCESS_TOKEN (the owner adds the value). Without it the deploy job stops with a clear message.
 on:
   pull_request:
     paths: ["supabase/**", "api/**", ".github/workflows/backend.yml"]
   push:
-    branches: [staging]
+    branches: [dev]
     paths: ["supabase/**", "api/**", ".github/workflows/backend.yml"]
   workflow_dispatch:
 

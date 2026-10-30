@@ -18,4 +18,9 @@ describe("deploy-dev.yml (the dev app)", () => {
   it("carries the decision engine URL, same as prod", () => {
     expect(text).toMatch(/VITE_ENGINE_URL:/);
   });
+  // The pre-prod branch was renamed from staging to dev (owner, 30 Oct 2026). A trigger left on the
+  // old name deploys nothing and says nothing, so the branch name is checked here.
+  it("deploys from the dev branch", () => {
+    expect(text).toMatch(/branches:\s*\[dev\]/);
+  });
 });

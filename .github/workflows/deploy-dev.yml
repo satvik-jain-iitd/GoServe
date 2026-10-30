@@ -2,7 +2,7 @@ name: Deploy app to Vercel (dev)
 
 on:
   push:
-    branches: [staging]
+    branches: [dev]
     paths:
       - "app/**"
       - "design/tokens.json"
