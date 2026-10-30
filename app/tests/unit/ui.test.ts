@@ -83,6 +83,16 @@ describe("css rules", () => {
     }
     expect(readFileSync(resolve(__dirname, "../../src/styles/tokens.css"), "utf8")).toMatch(/--gs-tap:\s*44px/);
   });
+  // Story #796 (owner, 30 Oct): after #794 the number box stopped filling its row. It is a field a real customer types their own number into.
+  it("S3 the phone number box fills its row and is at least 44 px tall", () => {
+    const rule = css.match(/(?:^|\n)([^\n{]*\.otp-phone input[^\n{]*)\{([^}]*)\}/);
+    expect(rule, ".otp-phone input").toBeTruthy();
+    const body = css.match(/(?:^|\n)[^\n{]*\.otp-phone input[^\n{]*\{([^}]*)\}/g)!.join(" ");
+    expect(body).toMatch(/width:\s*100%/);
+    expect(body).toMatch(/min-height:\s*var\(--gs-tap\)/);
+    expect(body).toMatch(/box-sizing:\s*border-box/);
+  });
+
   it("S3 the big button is at least 56 px for one-thumb staff screens", () => {
     expect(css).toMatch(/\.ui-btn\.big \{[^}]*min-height:\s*var\(--gs-tap-big\)/);
     expect(readFileSync(resolve(__dirname, "../../src/styles/tokens.css"), "utf8")).toMatch(/--gs-tap-big:\s*56px/);
