@@ -2,6 +2,7 @@
 """Story S-M5 (#132): prove the 0011 policies on a real database. Everything runs in one transaction that is rolled back; nothing stays.
 A staff user reads the kitchen's order (placed by another session); a user without a staff row reads zero; the staff table shows each user only their own row.
 Usage: check_kitchen_staff.py dev   (needs SUPABASE_ACCESS_TOKEN). Refuses prod."""
+import vault as gsvault
 import json, os, sys, urllib.request
 
 DEV_REF = "tmxyizmkpwwfyazvrfhw"
@@ -25,7 +26,7 @@ rollback;"""
 
 def run(ref: str, query: str):
     req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/database/query", data=json.dumps({"query": query}).encode(),
-                                 headers={"Authorization": f"Bearer {os.environ['SUPABASE_ACCESS_TOKEN']}", "Content-Type": "application/json", "User-Agent": "goserve-check"})
+                                 headers={"Authorization": f"Bearer {gsvault.setting(os.environ, 'SUPABASE_ACCESS_TOKEN', '02_databases.env')}", "Content-Type": "application/json", "User-Agent": "goserve-check"})
     return json.load(urllib.request.urlopen(req))
 
 

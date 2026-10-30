@@ -4,6 +4,7 @@ place one order by their pin code (every order is sent twice, like a retry). Eve
 Prints: orders=N lost=N duplicates=N wrong_kitchen=N unassigned=N. It fails on any loss, duplicate or wrong kitchen.
 `--riders` also fails when an order has no rider; rider assignment arrives with layer A5, so before that unassigned is only reported.
 Usage: city_check.py dev [--riders]   (needs SUPABASE_ACCESS_TOKEN). Refuses prod."""
+import vault as gsvault
 import json, os, sys, urllib.request
 
 DEV_REF = "tmxyizmkpwwfyazvrfhw"
@@ -72,7 +73,7 @@ def passed(r: dict, need_riders: bool) -> bool:
 
 def run(ref: str, query: str):
     req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/database/query", data=json.dumps({"query": query}).encode(),
-                                 headers={"Authorization": f"Bearer {os.environ['SUPABASE_ACCESS_TOKEN']}", "Content-Type": "application/json", "User-Agent": "goserve-city"})
+                                 headers={"Authorization": f"Bearer {gsvault.setting(os.environ, 'SUPABASE_ACCESS_TOKEN', '02_databases.env')}", "Content-Type": "application/json", "User-Agent": "goserve-city"})
     return json.load(urllib.request.urlopen(req))
 
 

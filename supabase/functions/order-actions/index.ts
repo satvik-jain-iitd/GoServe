@@ -3,6 +3,7 @@
 // This handler only checks the request and maps the answer to a status code. The data source is injected so the tests need no network.
 import { gatewayFromEnv } from "../_shared/gateway.ts";
 import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
+import { withCors } from "../_shared/cors.ts";
 
 export type Answer = { ok: true; order: Record<string, unknown> } | { ok: false; error: string; message: string };
 export type Deps = {
@@ -57,6 +58,6 @@ live.refundAfterCancel = async (orderId) => {
   await (await gatewayFromEnv()).refund(target.payment.provider_payment_id, target.payment.amount_paise);
   await rpc("payment_refunded_v2", { p_order: orderId });
 };
-export const handler = withRunLog("order-actions", makeHandler(live), writeRunLog);   // story #356: one run_log row per call
+export const handler = withCors(withRunLog("order-actions", makeHandler(live), writeRunLog));   // story #356: one run_log row per call
 
 if (import.meta.main) Deno.serve(handler);

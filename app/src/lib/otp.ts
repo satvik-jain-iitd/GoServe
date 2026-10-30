@@ -1,10 +1,12 @@
 // Story #551: the phone code at checkout. /otp/send and /otp/verify link the number to the guest's own user; a number that belongs to someone else
 // (phone_in_use) can sign in with Supabase's own phone sign-in, and /otp/claim then moves the guest's orders to that account (story #558).
-// The words of a refusal are the server's (the contract's); only a lost network gets our own line.
+// The words of a refusal are the server's (the contract's). A server fault with an error word but no message gets our line for that word (story #786); only a lost network, or an answer that is not JSON, gets the network line.
 import { getClient } from "./supabase";
 
 export type OtpResult = { ok: true; phone?: string } | { ok: false; error: string; message: string };
 const NETWORK: OtpResult = { ok: false, error: "network", message: "Could not reach GoServe. Try again." };
+const FAULTS: Record<string, string> = { otp_unavailable: "Codes are down for a moment. Try again in a minute." };
+const FAULT = "Something went wrong on our side. Try again in a minute.";
 export const toPhone = (digits: string) => `+91${digits}`;
 export const showPhone = (d: string) => `+91 ${d.slice(0, 5)} ${d.slice(5)}`;
 export const isMobile = (d: string) => /^[6-9]\d{9}$/.test(d);
@@ -17,8 +19,8 @@ async function call(route: "send" | "verify" | "claim", body: object, token?: st
     });
     const a = await res.json().catch(() => null);
     if (res.ok && a?.ok) return { ok: true, phone: typeof a.phone === "string" ? a.phone : undefined };
-    if (a?.ok === false && typeof a.error === "string" && typeof a.message === "string") return { ok: false, error: a.error, message: a.message };
-    return NETWORK;   // a 502 or anything outside the contract: no detail is shown
+    if (a?.ok === false && typeof a.error === "string") return { ok: false, error: a.error, message: typeof a.message === "string" ? a.message : FAULTS[a.error] ?? FAULT };
+    return NETWORK;   // not JSON, or JSON outside the contract: the line says we could not reach the server
   } catch {
     return NETWORK;
   }

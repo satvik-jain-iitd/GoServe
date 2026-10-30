@@ -4,6 +4,7 @@ Dry run by default: it only prints the counts. --apply deletes. It refuses any p
 `--ref` only exists to catch a mistake: production is never allowed.
 Events are frozen except while the transaction sets goserve.reset (migration 0006), the same door reset_session uses.
 Needs SUPABASE_ACCESS_TOKEN (vault 02_databases.env). Usage: clear_dev.py [--apply] [--ref <ref>]"""
+import vault as gsvault
 import json, os, sys, urllib.request
 
 DEV_REF = "tmxyizmkpwwfyazvrfhw"  # goserve-dev
@@ -14,7 +15,7 @@ def sql(ref, query):
     req = urllib.request.Request(
         f"https://api.supabase.com/v1/projects/{ref}/database/query",
         data=json.dumps({"query": query}).encode(),
-        headers={"Authorization": f"Bearer {os.environ['SUPABASE_ACCESS_TOKEN']}", "Content-Type": "application/json", "User-Agent": "goserve-clear-dev"},
+        headers={"Authorization": f"Bearer {gsvault.setting(os.environ, 'SUPABASE_ACCESS_TOKEN', '02_databases.env')}", "Content-Type": "application/json", "User-Agent": "goserve-clear-dev"},
     )
     return json.load(urllib.request.urlopen(req))
 
