@@ -8,6 +8,8 @@ import { SignIn } from "./SignIn";
 const RESEND_S = 30;
 type Step = "number" | "code";
 
+// Story #802: a number that already has an account takes the sign-in path from the first send, so the customer types one number and one code.
+// The phone_in_use choices below stay for the race where the number is claimed between the send and the verify.
 // `welcome` (story #667, boards O0 and O0b): the same steps as the first full screen of the app, with Google under the number and no way to close it.
 export function OtpSheet({ phone: start, onVerified, onClose, welcome = false }: { phone: string; onVerified: (phone: string) => void; onClose: () => void; welcome?: boolean }) {
   const [phone, setPhone] = useState(isMobile(start) ? start : "");
@@ -35,7 +37,15 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false }:
   async function send(m = mode) {
     setBusy(true);
     setError(null);
-    const ok = fail(m === "signin" ? await sendSignInCode(phone) : await sendCode(phone));
+    let r = m === "signin" ? await sendSignInCode(phone) : await sendCode(phone);
+    // Story #802: the server says this number already has an account, so the sign-in sender owns the code. One SMS, not ours and then theirs,
+    // and nobody is told their own number belongs to someone else. The guest's token is kept now, so /otp/claim can move their orders after.
+    if (r.ok && r.signIn) {
+      guest.current = (await getClient().auth.getSession()).data.session?.access_token ?? "";
+      setMode("signin");
+      r = await sendSignInCode(phone);
+    }
+    const ok = fail(r);
     setBusy(false);
     if (!ok) return;
     setDigits(Array(6).fill(""));

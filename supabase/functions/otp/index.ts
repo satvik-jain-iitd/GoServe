@@ -3,7 +3,10 @@
 // owner can read it with the service key. The real sender is one function and one env var (OTP_SMS_PROVIDER), added when the owner picks and clicks the
 // provider (docs/product/founder-checklist.md). Until then this endpoint cannot log a real customer in.
 // The rules (3 sends in 10 minutes, 5 tries, 10 minutes, one use) are in the database. On the right code the phone is linked to the CALLER's own user,
-// so the user id does not change and the guest orders stay with the account. A phone that already belongs to another user answers phone_in_use.
+// so the user id does not change and the guest orders stay with the account.
+// Story #802: a number that already has an account is answered `sign_in: true` on BOTH routes, before a code is issued or a correct one is consumed.
+// The customer then gets one code, from Supabase's own phone sign-in, and /otp/claim moves their guest orders over. Before this, a correct code was
+// spent on a link that could not succeed, the customer was told their own number belonged to someone else, and a second SMS was needed.
 import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
 import { withCors } from "../_shared/cors.ts";
 
@@ -14,12 +17,16 @@ export type Deps = {
   sms: (phone: string, code: string) => Promise<void>;
   check: (phone: string, code: string) => Promise<{ ok: true; phone: string } | Refusal>;
   link: (userId: string, phone: string) => Promise<{ ok: true } | Refusal>;
+  // story #802: who already owns this number, in the stored form (91 plus ten digits). null means nobody.
+  owner: (phone: string) => Promise<string | null>;
   // story #558, the returning customer: who a token belongs to, and the one database move of a guest's orders to the signed-in account
   identify: (token: string) => Promise<{ id: string; anonymous: boolean } | null>;
   claim: (from: string, to: string) => Promise<{ ok: true; orders: number } | Refusal>;
 };
 const STATUS: Record<string, number> = { invalid_phone: 400, too_many_sends: 429, too_many_attempts: 429, wrong_code: 422, code_expired: 422, no_code: 422, phone_in_use: 409, not_signed_in: 403, not_a_guest: 409, same_user: 400, claim_failed: 502 };
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+// Indian mobiles are stored as 91 plus the ten digits, in otp_codes and in Supabase Auth (migration 20261027210000_otp.sql).
+export const stored = (digits: string) => "91" + digits;
 const refuse = (r: Refusal) => json(STATUS[r.error] ?? 422, { ok: false, error: r.error, message: r.message });
 
 export const makeHandler = (deps: Deps) => async (req: Request): Promise<Response> => {
@@ -50,6 +57,10 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
     const user = await deps.session(req);
     if (!user) return json(401, { ok: false, error: "unauthorized", message: "Sign in first." });
     if (bad) return json(400, { ok: false, error: "invalid_request" });
+    // Story #802: whoever already holds this number decides the path. Our own code is for a number the caller may keep; a number held by
+    // someone else can only be proved by signing in to that account, so no code of ours is issued and none is consumed to find that out.
+    const holder = await deps.owner(stored(b.phone));
+    if (holder && holder !== user) return json(200, { ok: true, sign_in: true });
     if (route === "send") {
       const issued = await deps.issue(b.phone);
       if (!issued.ok) return refuse(issued);
@@ -87,6 +98,8 @@ const live: Deps = {
     const token = (req.headers.get("authorization") ?? "").replace(/^Bearer /i, "");
     return token ? ((await identify(token))?.id ?? null) : null;
   },
+  // Story #802: one indexed read of auth.users, through a security definer function the service role alone may call.
+  owner: async (phone) => (await rpc("otp_phone_owner", { p_phone: phone })) || null,
   issue: (phone) => rpc("otp_send_v2", { p_phone: phone }),
   // FakeSms: delivers nothing. Swap this one line for the provider's sender when the owner clicks.
   sms: async () => {},
@@ -94,7 +107,8 @@ const live: Deps = {
   link: async (userId, phone) => {
     const res = await fetch(`${url()}/auth/v1/admin/users/${userId}`, { method: "PUT", headers: { apikey: service(), authorization: `Bearer ${service()}`, "content-type": "application/json" }, body: JSON.stringify({ phone, phone_confirm: true }) });
     if (res.ok) return { ok: true };
-    if ((await res.text()).includes("users_phone_key")) return { ok: false, error: "phone_in_use", message: "This number is already used by another account." };
+    // Reachable only in a race, now that /otp/send and /otp/verify answer sign_in first. The old line told the number's own owner it belonged to someone else.
+    if ((await res.text()).includes("users_phone_key")) return { ok: false, error: "phone_in_use", message: "This number already has a GoServe account." };
     throw new Error("link failed");
   },
 };
@@ -103,7 +117,7 @@ const live: Deps = {
 // number while this is set; it is the owner's call for the test phase (the privacy page already says the app is in testing).
 export const withFixedCode = (deps: Deps, fixed: string | undefined): Deps =>
   fixed && /^[0-9]{6}$/.test(fixed)
-    ? { ...deps, check: (phone, code) => (code === fixed ? Promise.resolve({ ok: true as const, phone }) : deps.check(phone, code)) }
+    ? { ...deps, check: (phone, code) => (code === fixed ? Promise.resolve({ ok: true as const, phone: stored(phone) }) : deps.check(phone, code)) }
     : deps;
 // The env is read when a code is checked, not at import: the test run has no env permission.
 const liveWithFixed: Deps = { ...live, check: (phone, code) => withFixedCode(live, Deno.env.get("OTP_FIXED_CODE")).check(phone, code) };

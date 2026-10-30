@@ -327,11 +327,16 @@ paths:
                 phone: { type: string, pattern: "^[6-9][0-9]{9}$" }
       responses:
         "200":
-          description: The code was sent (to the sender; never in this answer).
+          description: >-
+            Either the code was sent (to the sender; never in this answer), or this number already has an
+            account, so the sign-in path owns the code and nothing was issued here (story #802). The client
+            then asks Supabase's own phone sign-in for the one code the customer receives.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OtpSent"
+                oneOf:
+                  - $ref: "#/components/schemas/OtpSent"
+                  - $ref: "#/components/schemas/OtpSignIn"
         "400":
           description: The request is malformed (no phone, a code that is not six digits, not JSON) or the phone is not an Indian mobile number (invalid_phone).
           content:
@@ -376,11 +381,16 @@ paths:
                 code: { type: string, pattern: "^[0-9]{6}$" }
       responses:
         "200":
-          description: The code is right. The phone is linked to the caller's user, so the user id and the guest orders stay. The client refreshes its session to see the phone.
+          description: >-
+            Either the code is right and the phone is linked to the caller's user, so the user id and the
+            guest orders stay (the client refreshes its session to see the phone), or this number already has
+            an account, so the sign-in path owns it and the code was NOT checked or consumed (story #802).
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OtpVerified"
+                oneOf:
+                  - $ref: "#/components/schemas/OtpVerified"
+                  - $ref: "#/components/schemas/OtpSignIn"
         "400":
           description: The request is malformed (no phone, a code that is not six digits, not JSON) or the phone is not an Indian mobile number (invalid_phone).
           content:
@@ -1278,6 +1288,15 @@ components:
         ok:
           const: true
         expires_in_s: { type: integer, minimum: 1 }
+    OtpSignIn:
+      type: object
+      additionalProperties: false
+      required: [ok, sign_in]
+      properties:
+        ok:
+          const: true
+        sign_in:
+          const: true
     OtpVerified:
       type: object
       additionalProperties: false

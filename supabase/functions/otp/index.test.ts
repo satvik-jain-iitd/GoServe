@@ -11,6 +11,7 @@ const deps = (o: Partial<Deps> = {}): Deps => ({
   session: async (req) => (req.headers.get("authorization") ? "u1" : null),
   issue: async () => ({ ok: true, code: "482913", expires_in_s: 600 }),
   sms: async (...a) => { sent.push(a); },
+  owner: async () => null,
   check: async () => ({ ok: true, phone: "919876543210" }),
   link: async (...a) => { linked.push(a); return { ok: true }; },
   identify: async (token) => (token === "guest-tok" ? { id: "g1", anonymous: true } : token === "old-tok" ? { id: "u-old", anonymous: false } : null),
@@ -125,7 +126,7 @@ Deno.test("fixed code: check accepts it for any number without the database, and
   const asked: unknown[][] = [];
   const base = deps({ check: async (...a) => { asked.push(a); return { ok: false, error: "wrong_code", message: "That code is not right." }; } });
   const fixed = withFixedCode(base, "123456");
-  assertEquals(await fixed.check("9876543210", "123456"), { ok: true, phone: "9876543210" });
+  assertEquals(await fixed.check("9876543210", "123456"), { ok: true, phone: "919876543210" });   // story #802: the same form the database and Supabase Auth store
   assertEquals(asked.length, 0);
   assertEquals((await fixed.check("9876543210", "654321")).ok, false);
   assertEquals(asked.length, 1);
@@ -148,4 +149,46 @@ Deno.test("fixed code: a handler with it signs a number in on 123456", async () 
   const res = await post(makeHandler(withFixedCode(deps({ check: async () => ({ ok: false, error: "wrong_code", message: "m" }) }), "123456")), "verify", { phone: "9876543210", code: "123456" });
   assertEquals(res.status, 200);
   assertEquals(linked.length, 1);
+});
+
+// Story #802: a number that already has an account takes the sign-in path, and it is decided before a code is sent or consumed.
+// Before this, a correct code was spent on a link that could not succeed, and the customer needed a second SMS.
+Deno.test("send: a number that already belongs to another user asks for sign-in, and no code is issued or sent", async () => {
+  sent.length = 0;
+  const issued: unknown[][] = [];
+  const h = makeHandler(deps({ owner: async () => "u-other", issue: async (...a) => { issued.push(a); return { ok: true, code: "482913", expires_in_s: 600 }; } }));
+  const res = await post(h, "send", { phone: "9876543210" });
+  assertEquals([res.status, await res.json()], [200, { ok: true, sign_in: true }]);
+  assertEquals([issued.length, sent.length], [0, 0]);
+});
+
+Deno.test("send: a number the caller already owns, or nobody owns, gets our own code as before", async () => {
+  for (const owner of [async () => null, async () => "u1"] as const) {
+    sent.length = 0;
+    const res = await post(makeHandler(deps({ owner })), "send", { phone: "9876543210" });
+    assertEquals([res.status, await res.json()], [200, { ok: true, expires_in_s: 600 }]);
+    assertEquals(sent, [["919876543210", "482913"]]);
+  }
+});
+
+Deno.test("verify: a number owned by another user is answered before the code is checked, so a correct code is never consumed", async () => {
+  const asked: unknown[][] = [];
+  const h = makeHandler(deps({ owner: async () => "u-other", check: async (...a) => { asked.push(a); return { ok: true, phone: "919876543210" }; } }));
+  const res = await post(h, "verify", { phone: "9876543210", code: "482913" });
+  assertEquals([res.status, await res.json()], [200, { ok: true, sign_in: true }]);
+  assertEquals(asked.length, 0);
+});
+
+Deno.test("the owner lookup is asked for the stored form of the number, not the ten digits", async () => {
+  const asked: string[] = [];
+  await post(makeHandler(deps({ owner: async (p) => { asked.push(p); return null; } })), "send", { phone: "9876543210" });
+  await post(makeHandler(deps({ owner: async (p) => { asked.push(p); return null; } })), "verify", { phone: "9876543210", code: "482913" });
+  assertEquals(asked, ["919876543210", "919876543210"]);
+});
+
+Deno.test("a lookup that fails is 502 otp_unavailable, and nothing is sent or consumed", async () => {
+  sent.length = 0;
+  const res = await post(makeHandler(deps({ owner: () => Promise.reject(new Error("password=secret")) })), "send", { phone: "9876543210" });
+  assertEquals([res.status, await res.json()], [502, { ok: false, error: "otp_unavailable" }]);
+  assertEquals(sent.length, 0);
 });
