@@ -312,3 +312,24 @@ Decision: **adopt nothing, borrow one idea.** Two reasons, neither about the sco
 The idea borrowed, from SuperTokens' passwordless recipe: their flow is two calls, `createCode` then `consumeCode`, and it is `consumeCode` that reports `createdNewUser`. The new-or-returning fact is only told **after** the caller has proved they hold the code. That is exactly the shape #807 needs, and it is the opposite of what our `/otp/send` does today. Tier A for "their API is shaped that way" (their own API reference), confidence 0.9. Whether their `createCode` is itself enumeration-safe is **not** documented: searched and not found, confidence 0.4, so it is not cited as proof of anything.
 Read: the SuperTokens passwordless and bot-detection doc pages (their brute-force note is about bots, not enumeration); the four repos' GitHub metadata. Not read in depth: the three READMEs, because the adopt question was already closed by rule 14 before fit mattered.
 Nothing new is built from scratch here beyond the change inside the function we already have (`supabase/functions/otp`).
+
+### Radar run 2026-10-31 | need: visual regression testing: render app screens in CI, diff against committed baselines, show the pictures on the pull request | formula 2026-10-25.1
+
+| Repo | Score | Verdict | Stars | Vel/day | Lic | Pushed | Issues 90d (active/closed) | Contrib | Downloads/mo | HN pts | Flags |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| [reg-viz/reg-cli](https://github.com/reg-viz/reg-cli) | 61 | watch | 427 | 0.1e | MIT | 1d | 6/4 | 19 | 864769 | 0 |  |
+| [argos-ci/argos](https://github.com/argos-ci/argos) | 44 | skip | 653 | 0.2e | MIT | 1d | 7/7 | 15 | 42 | 2 |  |
+| [lost-pixel/lost-pixel](https://github.com/lost-pixel/lost-pixel) | 0 (raw 37) | ignore | 1676 | 0.9e | MIT | 192d | 0/0 | 23 | 133028 | 102 | archived; no push for 192 days |
+
+Vel/day: m = measured from our snapshots, e = estimate (average since creation, first visit).
+Issues 90d: counted from the 300 most recently updated issues (pull requests excluded); busy repos are a sample.
+Score parts: fit 20, velocity 15, maintenance 15, responsiveness 10, adoption 15, bus_factor 10, hygiene 10, mentions 5. Thresholds: smoke-test >= 70, watch >= 55.
+Tier: GitHub API = A for counts; HN = C for talk; downloads = B. Confidence of the ranking: 0.6 until calibrated on 20 repos.
+Fit is keyword overlap only. Read the top 3 READMEs before trusting fit.
+
+## 2026-10-31 · need: nothing in this repo looks at a screen; render each board's screen and put the picture where a reviewer sees it (follow-up F306, ShipQuick feedback #146)
+Runs: `scout.py --need "visual regression testing: render app screens in CI, diff against committed baseline images, attach the pictures to the pull request"`: **no repos found**. GitHub `topic:visual-regression-testing` and `topic:visual-testing topic:playwright` found the field: lost-pixel, argos, reg-cli, Visual-Regression-Tracker, loki, storycap, cypress-image-snapshot, differencify. The three that fit a Playwright project were scored (table above): reg-cli 61 watch, argos 44 skip, lost-pixel **0, ignore: archived, no push for 192 days** though it has 1676 stars and 133k downloads a month, which is the clearest case yet for judging behaviour over stars.
+Decision: **adopt nothing, use what is installed.** Playwright is already this project's e2e runner (`app/package.json`, `@playwright/test ^1.64.0`) and ships `expect(page).toHaveScreenshot()`: baseline PNGs committed beside the spec, a diff image written on failure, a threshold per assertion. Ponytail rung 5, an already-installed dependency covers the need, so reg-cli's extra report UI and argos's hosted service both lose to zero new dependencies.
+The one real risk with a committed baseline is font rendering, and this project is already safe from it: the fonts are **self-hosted** (`app/public/fonts/*.woff2`, `app/src/styles/fonts.css`), not fetched from Google at run time, so a CI render does not depend on a network font arriving in time. The remaining drift is the browser version, which `@playwright/test` pins.
+What is still to build, and it is small: a screens list, one spec that walks it, and a CI step that uploads the PNGs as an artefact so a reviewer sees the screen without building the branch. That last part is the half that actually fixes F306; the baseline diff is the half that keeps it fixed.
+Not read in depth: the three READMEs, because the adopt question was closed by "it is already installed", not by fit.
