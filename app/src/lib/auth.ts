@@ -38,9 +38,11 @@ export function friendlyAuth(search: string, hash: string): { message: string; s
   return { message: "Could not sign in with Google. Try again.", signIn: false };
 }
 
-// Back from Google the customer app opens on You (the tap came from there), not on the menu.
+// Back from Google the app opens the screen the tap came from. Story #801: the welcome screen (O0, story #667) shows the same button to a
+// first-time customer, and they came for the menu, not for an empty account page, so every caller says where it is and the default is the menu.
+export type ReturnScreen = "account" | "menu";
 const RETURN = "gs-return", TRIED = "gs-signin-tried";
-export const rememberReturn = (): void => { try { window.sessionStorage.setItem(RETURN, "account"); } catch { /* the menu opens */ } };
+export const rememberReturn = (to: ReturnScreen): void => { try { window.sessionStorage.setItem(RETURN, to); } catch { /* the menu opens */ } };
 export const takeReturn = (): boolean => { try { const v = window.sessionStorage.getItem(RETURN) === "account"; window.sessionStorage.removeItem(RETURN); return v; } catch { return false; } };
 // One automatic sign in per tap: if Google comes back with the same error after it, the line stays and nothing loops.
 export const takeTried = (): boolean => { try { const v = window.sessionStorage.getItem(TRIED) === "1"; window.sessionStorage.removeItem(TRIED); return v; } catch { return false; } };
