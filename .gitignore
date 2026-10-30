@@ -51,3 +51,4 @@ ops/android/**/*.idsig
 ops/android/**/*.jks
 ops/android/**/*.keystore
 supabase/.temp/
+screens-out/

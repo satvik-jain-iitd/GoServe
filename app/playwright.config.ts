@@ -7,6 +7,10 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: "list",
+  // Story 821: the accepted screen pictures sit in one folder with no operating system in the name (they are made on the CI machine). 10 pixels
+  // may differ: enough for a stray anti-aliased edge, far below a changed letter, a padding or a colour (a ratio such as 0.1 percent let a typo through).
+  snapshotPathTemplate: "{testDir}/screens-baseline/{arg}{ext}",
+  expect: { toHaveScreenshot: { maxDiffPixels: 10, animations: "disabled" } },
   use: { baseURL: "http://localhost:4180" },
   projects: [
     { name: "chromium", use: { ...devices["Pixel 7"] }, testIgnore: /\.webkit\.spec\.ts$/ },
