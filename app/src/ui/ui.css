@@ -382,6 +382,9 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 /* Phone code sheets (story 551, boards O1 to O9). */
 /* Stories 785 and 793: the number field has no +91 (India only; the app adds +91 when it signs in, the otp function adds 91). 17px is over the 16px where iOS Safari zooms on focus. */
 .otp-phone input { font-size: var(--gs-text-lg); }   /* Story 796: the box itself comes from the .ui-form input rule above (full width, 44 px, border); only the size is its own. */
+/* Story 803 (board O0): on the welcome screen the 48 px bordered box is the wrapper and the input fills it. This selector is more specific than the shared input rule, so it does not depend on source order. */
+.otp-phone.otp-box { display: flex; align-items: center; box-sizing: border-box; height: 48px; border: 1px solid var(--md-outline-variant); border-radius: 6px; background: var(--md-surface); }
+.otp-phone.otp-box input { height: 44px; min-height: 0; border: 0; background: transparent; padding: 0 12px; font-family: var(--gs-font-mono); font-size: 18px; }
 .otp-boxes { display: flex; gap: var(--gs-space-2); margin: var(--gs-space-3) 0; }
 .otp-boxes input { width: 100%; min-width: 0; min-height: var(--gs-tap); text-align: center; font-size: var(--gs-text-lg, 1.25rem); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius, 6px); background: var(--md-surface); color: var(--md-on-surface); }
 .otp-choices { display: flex; flex-direction: column; gap: var(--gs-space-2); margin: var(--gs-space-3) 0; }

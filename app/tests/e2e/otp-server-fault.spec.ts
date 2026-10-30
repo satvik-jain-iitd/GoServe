@@ -14,7 +14,7 @@ async function sendWith(context: BrowserContext, page: Page, answer: { status: n
     return route.fulfill({ status: answer.status, headers: { ...CORS, "content-type": answer.text ? "text/plain" : "application/json" }, body: answer.text ?? JSON.stringify(answer.body) });
   });
   await page.goto("/customer/");
-  await page.getByLabel("Mobile number").fill("9876543210");
+  await page.getByLabel("Mobile", { exact: true }).fill("9876543210");
   await page.getByRole("button", { name: "Send code" }).click();
   return page.getByRole("alert");
 }
