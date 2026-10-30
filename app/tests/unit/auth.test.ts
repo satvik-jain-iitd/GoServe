@@ -1,6 +1,8 @@
 // Story S-M1 (#117): Sign in with Google is linked to the anonymous user, so the session id never changes (ADR-010, ADR-016).
 import { describe, expect, it, vi } from "vitest";
-import { linkGoogle, signedInName } from "../../src/lib/auth";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { linkGoogle, rememberReturn, signedInName, takeReturn } from "../../src/lib/auth";
 
 describe("linkGoogle", () => {
   it("links a Google identity to the current user and comes back to the same page", async () => {
@@ -61,5 +63,43 @@ describe("friendlyAuth", () => {
   });
   it("ALREADY_IN_USE is the line from the story", () => {
     expect(ALREADY_IN_USE).toBe("This Google account is already in use. Signing you in.");
+  });
+});
+
+// Story #801: back from Google the app opens the screen the tap came from. The welcome screen (#667) shows the same button to a
+// first-time customer, and they came for the menu, not for an empty account page.
+describe("where Google comes back to (story #801)", () => {
+  const withStorage = (fn: () => void) => {
+    const store = new Map<string, string>();
+    (globalThis as any).window = { sessionStorage: { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v), removeItem: (k: string) => void store.delete(k) } };
+    try { fn(); } finally { delete (globalThis as any).window; }
+  };
+
+  it("a tap on You comes back to You", () => {
+    withStorage(() => { rememberReturn("account"); expect(takeReturn()).toBe(true); });
+  });
+  it("a tap on the welcome screen comes back to the menu", () => {
+    withStorage(() => { rememberReturn("menu"); expect(takeReturn()).toBe(false); });
+  });
+  it("the choice is read once, so a later visit is not steered by it", () => {
+    withStorage(() => { rememberReturn("account"); expect(takeReturn()).toBe(true); expect(takeReturn()).toBe(false); });
+  });
+  it("no choice stored opens the menu", () => {
+    withStorage(() => { expect(takeReturn()).toBe(false); });
+  });
+
+  // The wiring is the bug: SignIn called rememberReturn() on every tap, whatever screen it sat on.
+  const src = (p: string) => readFileSync(resolve(__dirname, "../../src", p), "utf8");
+  it("SignIn always says where it is, and defaults to the menu", () => {
+    const t = src("screens/SignIn.tsx");
+    expect(t).toMatch(/returnTo\s*=\s*"menu"/);                 // the default is the safe one
+    expect(t).not.toMatch(/rememberReturn\(\s*\)/);             // never the old no-argument call
+    for (const m of t.matchAll(/rememberReturn\(([^)]*)\)/g)) expect(m[1].trim()).toBe("returnTo");
+  });
+  it("only You asks to come back to You", () => {
+    expect(src("screens/AccountScreen.tsx")).toMatch(/returnTo="account"/);
+    for (const p of ["screens/OtpSheet.tsx", "screens/KitchenGate.tsx", "screens/RiderGate.tsx", "screens/AdminScreen.tsx", "App.tsx"]) {
+      expect(src(p), p).not.toMatch(/returnTo="account"/);
+    }
   });
 });
