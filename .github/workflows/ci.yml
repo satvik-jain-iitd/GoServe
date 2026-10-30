@@ -103,3 +103,15 @@ jobs:
           done < <(git log --no-merges --format=%s origin/${{ github.base_ref }}..HEAD --not origin/main)
           exit $rc
 
+
+  # ShipQuick's review_merge.sh merges only when a check named exactly `gate` is SUCCESS. This is the one name for the three checks above.
+  gate:
+    name: gate
+    if: always()
+    needs: [site, app, guard]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every check passed
+        run: |
+          echo '${{ toJSON(needs) }}'
+          [ "${{ needs.site.result }}${{ needs.app.result }}${{ needs.guard.result }}" = successsuccesssuccess ]
