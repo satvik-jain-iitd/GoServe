@@ -271,7 +271,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-muted { color: var(--gs-text-muted); }
 .ui-add-more { justify-self: start; width: auto; min-height: var(--gs-tap); padding: 0 var(--gs-space-4); font-size: var(--gs-text-sm); }
 .ui-form { display: flex; flex-direction: column; gap: var(--gs-space-4); padding: var(--gs-space-4) var(--gs-gutter) var(--gs-space-5); }
-.ui-form input, .ui-form textarea { box-sizing: border-box; width: 100%; min-height: var(--gs-tap); padding: 10px 12px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font: inherit; resize: none; }
+.ui-form input, .ui-form textarea, .otp-phone input { box-sizing: border-box; width: 100%; min-height: var(--gs-tap); padding: 10px 12px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font: inherit; resize: none; }
 .ui-form .mono-input { font-family: var(--gs-font-mono); }
 .ui-form input:focus-visible, .ui-form textarea:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
 .ui-form .ui-field { gap: 4px; }
@@ -381,7 +381,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 
 /* Phone code sheets (story 551, boards O1 to O9). */
 /* Stories 785 and 793: the number field has no +91 (India only; the app adds +91 when it signs in, the otp function adds 91). 17px is over the 16px where iOS Safari zooms on focus. */
-.otp-phone input { font-size: var(--gs-text-lg); }
+.otp-phone input { font-size: var(--gs-text-lg); }   /* Story 796: the box itself comes from the .ui-form input rule above (full width, 44 px, border); only the size is its own. */
 .otp-boxes { display: flex; gap: var(--gs-space-2); margin: var(--gs-space-3) 0; }
 .otp-boxes input { width: 100%; min-width: 0; min-height: var(--gs-tap); text-align: center; font-size: var(--gs-text-lg, 1.25rem); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius, 6px); background: var(--md-surface); color: var(--md-on-surface); }
 .otp-choices { display: flex; flex-direction: column; gap: var(--gs-space-2); margin: var(--gs-space-3) 0; }
