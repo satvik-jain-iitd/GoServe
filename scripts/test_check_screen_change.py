@@ -55,8 +55,20 @@ class Check(unittest.TestCase):
             ok, _ = c.check("Render: https://github.com/o/r/actions/runs/1\n", [path])
             self.assertFalse(ok, path)
 
-    def test_s4_tests_and_supabase_only_is_not_asked(self):
-        for path in ("app/tests/unit/x.test.ts", "supabase/functions/otp/index.ts"):
+    def test_s8_a_picture_only_change_is_asked_and_names_the_picture(self):
+        ok, out = c.check("", [PIC])
+        self.assertFalse(ok)
+        text = "\n".join(out)
+        self.assertIn("welcome.png", text)
+        self.assertIn("replaces accepted screen pictures", text)
+        self.assertNotIn("changes app/src", text)
+
+    def test_s8b_the_same_change_with_board_date_render_and_row_passes(self):
+        ok, out = c.check(GOOD + "Screen changed: welcome.png | O0-Welcome | #803\n", [PIC])
+        self.assertTrue(ok, out)
+
+    def test_s4_tests_other_than_the_pictures_and_supabase_are_not_asked(self):
+        for path in ("app/tests/unit/x.test.ts", "app/tests/e2e/screens.spec.ts", "supabase/functions/otp/index.ts"):
             ok, out = c.check("", [path])
             self.assertTrue(ok)
             self.assertIn("skipped", out[0])

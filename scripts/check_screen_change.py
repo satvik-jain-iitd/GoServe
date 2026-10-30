@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Story 822: a pull request that touches app/src cannot merge until it points at the render. When it touches app/src/screens, ui or styles, or an accepted
+"""Story 822: a pull request that touches app/src, or replaces an accepted screen picture on its own, cannot merge until it points at the render. When it touches app/src/screens, ui or styles, or an accepted
 screen picture changed, it also names the board the screen was checked against and the date the owner approved it; and for every changed picture it says
 which board the new look matches and which story asked for it. Stdlib only.
   check_screen_change.py --body-file <f> --base <ref> [--repo <path>] [--head <branch>]   CI: the pull request description
@@ -42,9 +42,9 @@ def check(body, changed, base_name="dev", head_name=""):
     if base_name == "main" or head_name == "main":
         return True, ["base or head is main (a dev -> main promotion or a main -> dev back-merge): screen check skipped"]
     touched = [p for p in changed if p.startswith(SRC)]
-    if not touched:
-        return True, ["no app/src path touched: screen check skipped"]
     pictures = sorted(os.path.basename(p) for p in changed if p.startswith(BASELINE))
+    if not touched and not pictures:
+        return True, ["no app/src path and no screen picture touched: screen check skipped"]
     todo = []
     needs_board = bool(pictures) or any(p.startswith(SCREEN_PATHS) for p in touched)
     if needs_board and not field(body, "Design board"):
@@ -62,7 +62,8 @@ def check(body, changed, base_name="dev", head_name=""):
     if not todo:
         board = f"board {field(body, 'Design board')} (approved {field(body, 'Approved')}), " if needs_board else ""
         return True, [f"screen check ok: {board}render named, {len(pictures)} picture(s) changed and named"]
-    lines = [f"SCREEN CHECK FAILED. This pull request changes app/src ({len(touched)} file(s), for example {touched[0]}),",
+    what = f"changes app/src ({len(touched)} file(s), for example {touched[0]})" if touched else f"replaces accepted screen pictures ({', '.join(pictures)}) and no app/src file"
+    lines = [f"SCREEN CHECK FAILED. This pull request {what},",
              "so its description must carry these lines. Add them to the pull request description (not a comment), then re-run the Guard job:", ""]
     lines += [f"  {t}" for t in todo]
     if pictures:
