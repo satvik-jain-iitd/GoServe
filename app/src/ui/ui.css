@@ -380,10 +380,8 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 [data-theme="night"] select { color-scheme: dark; }   /* story 636: the native chevron is drawn in the colour scheme; on Night it was black on the dark surface */
 
 /* Phone code sheets (story 551, boards O1 to O9). */
-.otp-phone { display: flex; align-items: center; gap: var(--gs-space-2); }
-.otp-phone span { font-family: var(--gs-font-mono); color: var(--gs-text-muted); }
-.otp-phone span, .otp-phone input { font-size: var(--gs-text-lg); }   /* story 785: the number is as big as the +91, and 16px or more so iOS Safari does not zoom */
-.otp-phone input { flex: 1; min-height: var(--gs-tap); }
+/* Stories 785 and 793: the number field has no +91 (India only; the app adds +91 when it signs in, the otp function adds 91). 17px is over the 16px where iOS Safari zooms on focus. */
+.otp-phone input { font-size: var(--gs-text-lg); }
 .otp-boxes { display: flex; gap: var(--gs-space-2); margin: var(--gs-space-3) 0; }
 .otp-boxes input { width: 100%; min-width: 0; min-height: var(--gs-tap); text-align: center; font-size: var(--gs-text-lg, 1.25rem); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius, 6px); background: var(--md-surface); color: var(--md-on-surface); }
 .otp-choices { display: flex; flex-direction: column; gap: var(--gs-space-2); margin: var(--gs-space-3) 0; }
