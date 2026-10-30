@@ -5,7 +5,7 @@ import { Button } from "../ui";
 
 // One line under the title: "Continue with Google", or "Signed in as <name>". No password, no email form.
 // `returnTo` is the screen Google comes back to (story #801). Only You asks for "account"; everywhere else the menu is right.
-export function SignIn({ mode = "link", returnTo = "menu", onGivenName, help }: { mode?: "link" | "signin"; returnTo?: ReturnScreen; onGivenName?: (name: string) => void; help?: string }) {
+export function SignIn({ mode = "link", returnTo = "menu", big, onGivenName, help }: { mode?: "link" | "signin"; returnTo?: ReturnScreen; big?: boolean; onGivenName?: (name: string) => void; help?: string }) {
   const [name, setName] = useState<string | null>(null);
   const [back] = useState(() => friendlyAuth(window.location.search, window.location.hash));
   const [error, setError] = useState<string | null>(back?.message ?? null);
@@ -28,7 +28,7 @@ export function SignIn({ mode = "link", returnTo = "menu", onGivenName, help }: 
   );
   return (
     <div>
-      <Button variant="ghost" data-testid="google-signin"
+      <Button variant="ghost" size={big ? "big" : undefined} data-testid="google-signin"
         onClick={async () => { rememberReturn(returnTo); await ensureSession().catch(() => {}); setError(await linkGoogle(getClient(), window.location.href.split("?")[0], mode)); }}>
         Continue with Google
       </Button>

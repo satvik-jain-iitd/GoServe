@@ -6,7 +6,7 @@ test("S1 the typed mobile number is 16px or more", async ({ page, context }) => 
   await setup(context, page);
   await context.addInitScript(() => { try { localStorage.setItem("gs-otp-gate", "1"); } catch { /* blocked */ } });
   await page.goto("/customer/");
-  const input = page.getByLabel("Mobile number");
+  const input = page.getByLabel("Mobile", { exact: true });
   await input.fill("9876543210");
   const size = (sel: string) => page.locator(sel).evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
   expect(await size("#otp-phone")).toBeGreaterThanOrEqual(16);
@@ -23,7 +23,7 @@ test("S2 no +91 is shown in the phone field, and a typed 10 digit number is sent
     return route.fulfill({ status: 200, headers: { ...cors, "content-type": "application/json" }, body: JSON.stringify({ ok: true, expires_in_s: 600 }) });
   });
   await page.goto("/customer/");
-  const input = page.getByLabel("Mobile number");
+  const input = page.getByLabel("Mobile", { exact: true });
   await expect(input).toBeVisible();
   expect(await page.locator(".ui-field", { has: input }).innerText()).not.toContain("+91");
   await input.fill("7678296693");

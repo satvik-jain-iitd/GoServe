@@ -95,9 +95,9 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false }:
             {head(welcome ? "Where do we reach you?" : "Your mobile number")}
             {welcome && <p className="ui-meta">Your mobile number, then a 6 digit code. The rider calls this number.</p>}
             <div className="ui-field">
-              <label htmlFor="otp-phone">Mobile number</label>
-              <div className="otp-phone">
-                <input id="otp-phone" className="mono-input" type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={10} value={phone}
+              <label htmlFor="otp-phone">{welcome ? "Mobile" : "Mobile number"}</label>
+              <div className={welcome ? "otp-phone otp-box" : "otp-phone"}>
+                <input id="otp-phone" className="mono-input" type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={10} value={phone} placeholder={welcome ? "10 digit number" : undefined}
                   onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "")); setError(null); }} /></div>
             </div>
             {error && <p role="alert" className="ui-field-error">{error.message}</p>}
@@ -105,7 +105,7 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false }:
             {welcome ? (
               <>
                 <div className="ui-or" aria-hidden="true"><span /><span>or</span><span /></div>
-                <SignIn mode="signin" />
+                <SignIn mode="signin" big />
               </>
             ) : <button type="button" className="ui-btn ghost" onClick={onClose}>Not now</button>}
           </>
