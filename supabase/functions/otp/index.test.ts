@@ -125,7 +125,7 @@ Deno.test("fixed code: check accepts it for any number without the database, and
   const asked: unknown[][] = [];
   const base = deps({ check: async (...a) => { asked.push(a); return { ok: false, error: "wrong_code", message: "That code is not right." }; } });
   const fixed = withFixedCode(base, "123456");
-  assertEquals(await fixed.check("9876543210", "123456"), { ok: true, phone: "9876543210" });
+  assertEquals(await fixed.check("9876543210", "123456"), { ok: true, phone: "919876543210" });   // story #802a: the same form the database and Supabase Auth store
   assertEquals(asked.length, 0);
   assertEquals((await fixed.check("9876543210", "654321")).ok, false);
   assertEquals(asked.length, 1);
