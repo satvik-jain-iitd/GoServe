@@ -96,10 +96,10 @@ class Workflows(unittest.TestCase):
     def read(self, name):
         return open(os.path.join(WF, name)).read()
 
-    def test_story_close_runs_on_a_merged_pr_into_the_three_code_and_doc_branches(self):
+    def test_story_close_runs_on_a_merged_pr_into_the_code_and_doc_branches(self):
         t = self.read("story-close.yml")
         self.assertRegex(t, r"pull_request:\s*\n\s*types:\s*\[closed\]")
-        self.assertRegex(t, r"branches:\s*\[dev, staging, documents\]")
+        self.assertRegex(t, r"branches:\s*\[dev, documents\]")   # story #797: staging was renamed back to dev
         self.assertIn("github.event.pull_request.merged == true", t)
         self.assertIn("scripts/story_close.py", t)
         self.assertRegex(t, r"permissions:\s*\n\s*issues:\s*write")
