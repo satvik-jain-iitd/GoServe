@@ -69,7 +69,7 @@ class Plan(unittest.TestCase):
 
     def test_S5_every_v2_file_names_one_object(self):
         self.assertEqual([f for f, m in V2 if m is None], [])
-        self.assertEqual(len(V2), 25)   # story 619: the settings migration is the 24th, its admin functions the 25th
+        self.assertEqual(len(V2), 26)   # story 619: the settings migration is the 24th, its admin functions the 25th; story #802: otp_phone_owner is the 26th
 
     def test_S6_markers(self):
         self.assertEqual(p.marker("-- c\ncreate table if not exists public.t (a int);"), "table:t")
