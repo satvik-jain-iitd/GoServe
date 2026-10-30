@@ -2,6 +2,7 @@
 // Which one is best for a cart is the quote's job (POST /quote returns `offers`). The service key reads, because the coupon functions are not public.
 import type { Coupon } from "../quote/quote.ts";
 import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
+import { withCors } from "../_shared/cors.ts";
 
 export type Deps = { list: () => Promise<Coupon[]> };
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
@@ -23,6 +24,6 @@ const live: Deps = {
     return await res.json();
   },
 };
-export const handler = withRunLog("coupons", makeHandler(live), writeRunLog);   // story #356: one run_log row per call
+export const handler = withCors(withRunLog("coupons", makeHandler(live), writeRunLog));   // story #356: one run_log row per call
 
 if (import.meta.main) Deno.serve(handler);

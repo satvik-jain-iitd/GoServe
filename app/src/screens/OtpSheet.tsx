@@ -96,7 +96,7 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false }:
             {welcome && <p className="ui-meta">Your mobile number, then a 6 digit code. The rider calls this number.</p>}
             <div className="ui-field">
               <label htmlFor="otp-phone">Mobile number</label>
-              <div className="otp-phone"><span aria-hidden="true">+91</span>
+              <div className="otp-phone">
                 <input id="otp-phone" className="mono-input" type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={10} value={phone}
                   onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "")); setError(null); }} /></div>
             </div>

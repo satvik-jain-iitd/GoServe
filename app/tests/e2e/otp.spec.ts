@@ -128,13 +128,13 @@ test("S5 too many codes locks the resend and says why", async ({ page, context }
   expect(otp.sends).toHaveLength(1);
 });
 
-test("S6 a number the server cannot reach says so in plain words", async ({ page, context }) => {
+test("S6 a server that cannot send the code says so in plain words, not that the network is lost (story #786)", async ({ page, context }) => {
   await withOtp(context, page, { send: { status: 502, body: { ok: false, error: "otp_unavailable" } } });
   await toBill(page);
   await page.getByRole("button", { name: /Place order/ }).click();
   await dialog(page).getByLabel("Mobile number").fill("9876543210");
   await dialog(page).getByRole("button", { name: "Send code" }).click();
-  await expect(dialog(page).getByRole("alert")).toHaveText("Could not reach GoServe. Try again.");
+  await expect(dialog(page).getByRole("alert")).toHaveText("Codes are down for a moment. Try again in a minute.");
 });
 
 test("S7 a number already used offers Sign in with this number: Supabase's own code, then the guest orders move", async ({ page, context }) => {

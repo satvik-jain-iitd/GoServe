@@ -24,3 +24,11 @@ def read(old_file):
 def get(key, old_file):
     m = re.search(r"^" + re.escape(key) + r"=(\S+)", read(old_file), re.M)
     return m.group(1) if m else None
+
+
+def setting(env, key, old_file):
+    """One key for a script: the environment wins (an override or a test), else the vault. A key that is nowhere is a KeyError that names it."""
+    value = env.get(key) or get(key, old_file)
+    if not value:
+        raise KeyError(f"{key} is in neither the environment nor ~/Desktop/Secrets/goserve/goserve.env")
+    return value
