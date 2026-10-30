@@ -37,6 +37,14 @@ jobs:
           VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
           VITE_POSTHOG_KEY: ${{ secrets.DEV_VITE_POSTHOG_KEY }}   # story #207: dev only; empty means no analytics
           VITE_MAP_TILES: https://tile.openstreetmap.org/{z}/{x}/{y}.png   # story #691: dev only (OSM public tiles: light test use, no SLA); prod has none until the PMTiles test
+          # Story #797: dev turns on the same features prod has on, so checking something on dev
+          # means something real. The sim and engine URLs reuse prod's secrets (owner, 30 Oct
+          # 2026) — shared n8n endpoints, not environment-sensitive data.
+          VITE_OTP_GATE: "1"
+          VITE_OTP_SMS: fixed
+          VITE_SIM_URL: ${{ secrets.PROD_VITE_SIM_URL }}
+          VITE_SIM_TOKEN: ${{ secrets.PROD_VITE_SIM_TOKEN }}
+          VITE_ENGINE_URL: ${{ secrets.PROD_VITE_ENGINE_URL }}
           VITE_BUILD: ${{ github.sha }}
         run: |
           npm ci
