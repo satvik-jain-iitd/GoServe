@@ -290,3 +290,25 @@ Result: nothing to adopt. Build as one static HTML file with the app's tokens, n
 
 ## 2026-10-29 · need: the Play Store listing pictures (feature graphic 1024 by 500, four phone screenshots 1080 by 1920) and the closed-test runbook (story #254)
 Runs: no new tool needed. Reused Playwright (already the app's test tool) for the screenshots and the graphic, the brand lockup and fonts from `app/public`, and Pillow (already on this Mac) only to shrink the PNGs under the repo's 500 KB file limit. The Play steps come from the Play Console Help page on testing requirements for new personal accounts (Tier A, Google, read 29 Oct 2026). Built from scratch: two small scripts in `ops/play/`.
+
+### Radar run 2026-10-31 | need: passwordless phone OTP login without user enumeration | formula 2026-10-25.1
+
+| Repo | Score | Verdict | Stars | Vel/day | Lic | Pushed | Issues 90d (active/closed) | Contrib | Downloads/mo | HN pts | Flags |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| [supertokens/supertokens-core](https://github.com/supertokens/supertokens-core) | 64 | watch | 15339 | 6.2e | NOASSERTION | 3d | 75/60 | 38 | - | 232 |  |
+| [teamhanko/hanko](https://github.com/teamhanko/hanko) | 53 | skip | 9053 | 5.4e | AGPL-3.0 | 2d | 25/12 | 53 | - | 2 | AGPL: fine to run, not to embed |
+| [logto-io/logto](https://github.com/logto-io/logto) | 51 | skip | 14823 | 7.6e | MPL-2.0 | 1d | 127/84 | 100 | 38 | 121 |  |
+| [authgear/authgear-server](https://github.com/authgear/authgear-server) | 45 | skip | 2135 | 0.9e | Apache-2.0 | 2d | 17/7 | 46 | - | 0 |  |
+
+Vel/day: m = measured from our snapshots, e = estimate (average since creation, first visit).
+Issues 90d: counted from the 300 most recently updated issues (pull requests excluded); busy repos are a sample.
+Score parts: fit 20, velocity 15, maintenance 15, responsiveness 10, adoption 15, bus_factor 10, hygiene 10, mentions 5. Thresholds: smoke-test >= 70, watch >= 55.
+Tier: GitHub API = A for counts; HN = C for talk; downloads = B. Confidence of the ranking: 0.6 until calibrated on 20 repos.
+Fit is keyword overlap only. Read the top 3 READMEs before trusting fit.
+
+## 2026-10-31 · need: a phone code sign-in that never says whether the number already has an account (story #807)
+Runs: `scout.py --need "phone OTP sign in that never reveals whether a number is already registered..."` and again with the shorter `"passwordless phone OTP login without user enumeration"`: **no repos found** both times (the scorer's search finds nothing for this wording). GitHub topic searches then found the real candidates: `topic:passwordless topic:phone` → supertokens-core, logto, hanko, authgear; `topic:user-enumeration` → only offensive tools (o365enum, vortex, onedrive_user_enum), nothing to build with; `topic:otp topic:authentication` → authenticator apps, not servers. Those four were then scored by name (`--repos`, table above): supertokens-core 64 watch, hanko 53 skip (AGPL, fine to run, not to embed), logto 51 skip, authgear 45 skip. Nothing reaches the 70 that would earn a smoke test.
+Decision: **adopt nothing, borrow one idea.** Two reasons, neither about the scores. First, rule 14: the owner named Supabase and Supabase Auth is what this app runs on; replacing the auth server is not what #807 asks for, it is a migration. Second, the story is one endpoint's answer shape, perhaps forty lines of Deno, against adopting a whole auth service.
+The idea borrowed, from SuperTokens' passwordless recipe: their flow is two calls, `createCode` then `consumeCode`, and it is `consumeCode` that reports `createdNewUser`. The new-or-returning fact is only told **after** the caller has proved they hold the code. That is exactly the shape #807 needs, and it is the opposite of what our `/otp/send` does today. Tier A for "their API is shaped that way" (their own API reference), confidence 0.9. Whether their `createCode` is itself enumeration-safe is **not** documented: searched and not found, confidence 0.4, so it is not cited as proof of anything.
+Read: the SuperTokens passwordless and bot-detection doc pages (their brute-force note is about bots, not enumeration); the four repos' GitHub metadata. Not read in depth: the three READMEs, because the adopt question was already closed by rule 14 before fit mattered.
+Nothing new is built from scratch here beyond the change inside the function we already have (`supabase/functions/otp`).
