@@ -1,0 +1,10 @@
+# The screens every pull request renders and compares with the accepted picture (story 821, ShipQuick kit name: docs/screens.txt).
+# One screen per line:  name | path to open | viewport (WxH) | setup step
+# Setup steps are the ones the e2e harness already uses; they are named in app/tests/e2e/screens.spec.ts: welcome, menu, bill, account, orders.
+# Adding a screen means adding a line here, never a new spec. Blank lines and lines starting with # are ignored.
+# Not listed because the harness cannot reach them yet: the code sheet (step 2 of the welcome screen), the placed and tracker screens, rider and kitchen apps.
+welcome | /customer/ | 412x915 | welcome
+menu    | /customer/ | 412x915 | menu
+bill    | /customer/ | 412x915 | bill
+account | /customer/ | 412x915 | account
+orders  | /customer/ | 412x915 | orders

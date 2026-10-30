@@ -68,6 +68,20 @@ jobs:
 
       - name: End-to-end tests (build included)
         run: npm run test:e2e
+        env:
+          SCREENS_OUT: ${{ github.workspace }}/app/screens-out
+
+      # Story 821: the screen renders and, when a screen changed, the diff images, on every run, pass or fail. The reviewer looks at these instead of building the branch.
+      - name: Upload the screen renders and diffs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screens
+          path: |
+            app/screens-out
+            app/test-results
+          if-no-files-found: ignore
+          retention-days: 14
 
   guard:
     name: Guard (secrets, size, markers, commit messages, PR size)
