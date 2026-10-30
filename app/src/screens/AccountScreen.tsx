@@ -50,7 +50,7 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
             )}
           </div>
         </section>
-        <div className="ui-google"><SignIn onGivenName={onGivenName} help="Keeps your orders on every phone." /></div>
+        <div className="ui-google"><SignIn returnTo="account" onGivenName={onGivenName} help="Keeps your orders on every phone." /></div>
         {!editing && <button type="button" className="ui-row" onClick={() => { setDraft({ name, phone, address }); setEditing(true); }}><span>Edit delivery details</span><span className="go" aria-hidden="true">›</span></button>}
         <div className="ui-row ui-row-static">
           <label htmlFor="alerts" className="ui-row-label"><span>Order alerts</span><span className="ui-row-sub">{alerts === "none" ? "Blocked in your phone settings. Settings › Notifications › GoServe, then come back." : alerts === "on" ? "On for this phone" : alerts === "off" ? "Off for this phone. Tap to turn on." : "Tap to turn on"}</span></label>
