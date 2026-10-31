@@ -333,3 +333,24 @@ Decision: **adopt nothing, use what is installed.** Playwright is already this p
 The one real risk with a committed baseline is font rendering, and this project is already safe from it: the fonts are **self-hosted** (`app/public/fonts/*.woff2`, `app/src/styles/fonts.css`), not fetched from Google at run time, so a CI render does not depend on a network font arriving in time. The remaining drift is the browser version, which `@playwright/test` pins.
 What is still to build, and it is small: a screens list, one spec that walks it, and a CI step that uploads the PNGs as an artefact so a reviewer sees the screen without building the branch. That last part is the half that actually fixes F306; the baseline diff is the half that keeps it fixed.
 Not read in depth: the three READMEs, because the adopt question was closed by "it is already installed", not by fit.
+
+### Radar run 2026-10-31 | need: dark store locations and serviceability geofences of Blinkit Zepto Swiggy Instamart | formula 2026-10-25.1
+
+| Repo | Score | Verdict | Stars | Vel/day | Lic | Pushed | Issues 90d (active/closed) | Contrib | Downloads/mo | HN pts | Flags |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| [jatin-dot-py/darkstores](https://github.com/jatin-dot-py/darkstores) | 0 (raw 33) | ignore | 49 | 0.2e | none | 36d | 0/0 | 3 | - | 0 | no licence |
+
+Vel/day: m = measured from our snapshots, e = estimate (average since creation, first visit).
+Issues 90d: counted from the 300 most recently updated issues (pull requests excluded); busy repos are a sample.
+Score parts: fit 20, velocity 15, maintenance 15, responsiveness 10, adoption 15, bus_factor 10, hygiene 10, mentions 5. Thresholds: smoke-test >= 70, watch >= 55.
+Tier: GitHub API = A for counts; HN = C for talk; downloads = B. Confidence of the ranking: 0.6 until calibrated on 20 repos.
+Fit is keyword overlap only. Read the top 3 READMEs before trusting fit.
+
+## 2026-10-31 · need: how a quick-commerce app decides which store serves an address, and can we reuse anything (owner asked after a reel he saw)
+Runs: `scout.py --repos jatin-dot-py/darkstores` (the one repo the searches turned up): **0, ignore, no licence**, 49 stars, 3 contributors, last push 36 days ago. Not adoptable. Its value is not the code: the author swept a grid of spoofed coordinates against the platforms' own serviceability APIs and wrote down what came back.
+What that evidence says, and it beats every explainer we read:
+- **Zepto returns `servicableGeofence`, a polygon** for each store's delivery area. So the question they answer is "is this point inside the shape", not "how far is the store". Tier B (observed behaviour of their own API, reported by a third party), confidence 0.8.
+- **Blinkit returns `promise_time_state.DistanceInMeter`, the road distance** to the nearest dark store, not the straight-line distance. Tier B, confidence 0.8.
+- The popular "the address becomes a hex cell and the cell maps to a store" claim comes from one Substack analysis and a Medium post that itself says "likely H3, quadtrees". That is the author's inference, not a company statement. Tier C, confidence 0.3. The owner's reel appears to repeat it as fact.
+- Uber's H3 is real and well documented (Tier A, their own engineering blog, confidence 0.9) but it answers a question we do not have: which of hundreds of stores covers a cell. With a handful of kitchens an exact distance or a point-in-polygon test is both cheaper and exact.
+Decision: adopt nothing. Borrow the shape of the answer: a per-kitchen service **polygon** we own and the owner draws, with road distance used for the time promise, never a straight line. PostGIS 3.3.7 is available on our own Supabase project (checked against the dev project's `pg_available_extensions`, Tier A), so `ST_Contains` and `ST_DWithin` need no new dependency; there is no `h3` extension there and we do not need one yet. `kitchens.lat`, `kitchens.lng` and `kitchens.radius_m` already exist (story #342) and the customer app simply does not use them.
