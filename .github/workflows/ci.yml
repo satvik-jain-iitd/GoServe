@@ -107,6 +107,19 @@ jobs:
           # PRs into main are releases: they skip the file cap (owner, 15 Oct 2026)
           [ "${{ github.base_ref }}" = main ] || python3 scripts/guard.py count "$(git diff --name-only "$base"...HEAD | wc -l)" "$PR_TITLE"   # chore(sync) skips the cap too
 
+      # Story 822: a pull request that touches app/src names its board, its render and every changed screen picture. The description is read live,
+      # not from the event, so editing it and re-running this job is enough.
+      - name: Screen change
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          gh pr view "$PR_NUMBER" --json body --jq .body > "$RUNNER_TEMP/pr-body.txt"
+          python3 scripts/check_screen_change.py --body-file "$RUNNER_TEMP/pr-body.txt" --base "origin/$BASE_REF" --head "$HEAD_REF"
+
       - name: Commit messages
         if: github.event_name == 'pull_request'
         run: |
