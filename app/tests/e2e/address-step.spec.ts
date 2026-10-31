@@ -24,7 +24,7 @@ test("S2 with location allowed the address is found, can be fixed, and the menu 
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Use my location" }).click();
   await expect(page.getByRole("heading", { name: "Is this right?" })).toBeVisible();
-  await expect(page.getByLabel("Address · food gets delivered here")).toHaveValue("B-12, Lajpat Nagar II, Lajpat Nagar, New Delhi");
+  await expect(page.getByLabel("Address · food gets delivered here")).toHaveValue("B-12, Lajpat Nagar II, Lajpat Nagar, New Delhi, Delhi");
   await expect(page.getByLabel("Pin code")).toHaveValue("110016");
   await page.getByLabel("Address · food gets delivered here").fill("B-12, Lajpat Nagar II, near the park gate");
   await page.getByRole("button", { name: "See the menu" }).click();
@@ -70,4 +70,22 @@ test("S5 a pin code no kitchen serves says so on the same screen", async ({ page
   await page.getByLabel("Pin code").fill("110099");
   await page.getByRole("button", { name: "See the menu" }).click();
   await expect(page.getByText("Not here yet. We do not deliver to 110099 yet.")).toBeVisible();
+});
+
+test("S5 a pin that contradicts its own state is not filled in: the address shows the city and the state, and the customer types the pin (story 827)", async ({ page, context }) => {
+  // OpenStreetMap holds a Gurgaon object tagged 110058 (a Delhi pin) beside state Haryana.
+  const GURGAON = { address: { road: "Sector 13 Road", city: "Gurugram", state: "Haryana", postcode: "110058", country: "India" } };
+  await setup(context, page, [], { pin: null });
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 28.4595, longitude: 77.0266 });
+  await context.route("https://nominatim.openstreetmap.org/reverse**", (route) => route.fulfill({ status: 200, headers: { "access-control-allow-origin": "*", "content-type": "application/json" }, body: JSON.stringify(GURGAON) }));
+  await page.goto("/customer/");
+  await page.getByRole("button", { name: "Use my location" }).click();
+  await expect(page.getByRole("heading", { name: "Is this right?" })).toBeVisible();
+  await expect(page.getByLabel("Address · food gets delivered here")).toHaveValue("Sector 13 Road, Gurugram, Haryana");
+  await expect(page.getByLabel("Pin code")).toHaveValue("");
+  await expect(page.getByRole("alert")).toHaveCount(0);   // an empty pin is asked for, not shown as an error
+  await expect(page.getByRole("button", { name: "See the menu" })).toBeDisabled();
+  await page.getByLabel("Pin code").fill("122004");
+  await expect(page.getByRole("button", { name: "See the menu" })).toBeEnabled();
 });
