@@ -1,7 +1,7 @@
 // Story S-M5 (#132): a kitchen worker signed in with the kitchen's Google account sees every order of the kitchen, no join link.
 // Supabase is answered by the test; the real policy is checked on dev (scripts/check_kitchen_staff.sql notes in docs/tests/test-cases.md).
 import { test, expect } from "@playwright/test";
-import { order, setup } from "./helpers";
+import { order, scan, setup } from "./helpers";
 
 test("S1 a staff user on /kitchen/ reads the orders of the kitchen, not of one session", async ({ page, context }) => {
   const net = await setup(context, page, [{ ...order("placed"), session_id: "7e57ab1e-0000-4000-8000-0000000000c3", kitchen_id: "k-1" }]);
@@ -38,4 +38,35 @@ test("S5 on /rider/ even a kitchen staff user reads only the orders assigned to 
   await expect(page.getByRole("heading", { name: /^Deliver/ })).toBeVisible();
   await expect.poll(() => net.calls.orderReads.some((u) => u.includes("rider_id=eq."))).toBe(true);
   expect(net.calls.orderReads.some((u) => u.includes("kitchen_id=eq."))).toBe(false);
+});
+
+// Story #849 (board K-Account, approved 2026-11-04): the Today tab says which Google account is signed in, with Sign out beside it, at the top.
+test("S6 (#849) the kitchen tab starts with Signed in as, the email and Sign out, above the open switch", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.kitchen = "k-1";
+  net.state.userEmail = "sunita.devi@gmail.com";
+  await page.goto("/kitchen/");
+  await page.getByRole("button", { name: "Today", exact: true }).click();
+  const row = page.getByTestId("signed-in-row");
+  await expect(row).toContainText("Signed in as");
+  await expect(row).toContainText("sunita.devi@gmail.com");
+  const out = row.getByRole("button", { name: "Sign out" });
+  await expect(out).toBeVisible();
+  const outY = (await out.boundingBox())!.y, openY = (await page.getByRole("switch", { name: "Open for orders" }).boundingBox())!.y;
+  expect(outY).toBeLessThan(openY);   // at the top, not at the bottom
+  await expect(page.getByRole("button", { name: "Sign out" })).toHaveCount(1);   // the old row at the bottom is gone, one way out
+  expect(await scan(page)).toEqual([]);
+});
+
+test("S7 (#849) Sign out ends the session and the kitchen app asks for a Google sign-in again", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.kitchen = "k-1";
+  net.state.userEmail = "sunita.devi@gmail.com";
+  const logout: string[] = [];
+  await context.route("https://test.supabase.co/auth/v1/logout**", (r) => { logout.push(r.request().method()); net.state.anonymous = true; net.state.kitchen = null; return r.fallback(); });
+  await page.goto("/kitchen/");
+  await page.getByRole("button", { name: "Today", exact: true }).click();
+  await page.getByTestId("signed-in-row").getByRole("button", { name: "Sign out" }).click();
+  await expect(page.getByTestId("google-signin")).toBeVisible();
+  expect(logout).toEqual(["POST"]);
 });
