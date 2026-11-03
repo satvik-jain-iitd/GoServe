@@ -6,7 +6,7 @@ const tab = (page: Page, name: string) => page.getByRole("button", { name, exact
 const ORDER = (over: object = {}) => ({ ...order("placed"), kitchen_id: "k-1", customer_name: "Asha", customer_phone: "9876543210", cancel_reason: null, ...over });
 
 test("S1 no Google sign-in sees Sign in to run the city; a signed-in account that is not an admin sees the gate", async ({ page, context }) => {
-  const net = await setup(context, page);
+  const net = await setup(context, page, [], { guest: true });
   await page.goto("/admin/");
   await expect(page.getByRole("heading", { name: "Sign in to run the city" })).toBeVisible();
   await expect(page.getByTestId("google-signin")).toBeVisible();

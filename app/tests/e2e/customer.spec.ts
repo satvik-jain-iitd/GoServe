@@ -25,6 +25,7 @@ async function mockNetwork(context: BrowserContext): Promise<Net> {
       return reply(route, 200, { access_token: JWT, token_type: "bearer", expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: "r",
         user: { id: SESSION, aud: "authenticated", role: "authenticated", is_anonymous: true, app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() } });
     }
+    if (req.url().includes("/auth/v1/user")) return reply(route, 200, { id: SESSION, aud: "authenticated", role: "authenticated", is_anonymous: false, app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() });   // story 829: a customer on the menu is signed in
     if (req.url().includes("/rest/v1/kitchens")) return reply(route, 200, [{ id: "k-1", name: "Hauz Khas Kitchen", pin_codes: ["110016"], lat: null, lng: null, open: true, active: true }]);
     if (req.url().includes("/rest/v1/menu_items")) return net.menuUp ? reply(route, 200, MENU) : route.abort("internetdisconnected");
     return reply(route, 404, {});

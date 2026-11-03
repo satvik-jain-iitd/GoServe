@@ -11,3 +11,11 @@ export const otpGateOn = (env: Env, storage?: Pick<Storage, "getItem">): boolean
 
 // The gate is on for everyone but the sender is still the placeholder: a customer would wait for a code that never comes.
 export const placeholderLeft = (env: Env): boolean => env.VITE_OTP_GATE === "1" && env.VITE_OTP_SMS !== "real";
+
+// Story 829: the phone code login is a switch the admin flips (settings row otp_login_on). The phone's own override wins (tests, a dev phone), then the
+// setting, then VITE_OTP_GATE, then off. `setting` is null when it could not be read: the app never waits on it and never shows a half screen.
+export const otpLoginOn = (setting: boolean | null, env: Env, storage?: Pick<Storage, "getItem">): boolean => {
+  try { if (storage?.getItem("gs-otp-gate") === "1") return true; } catch { /* blocked storage: no override */ }
+  return setting ?? env.VITE_OTP_GATE === "1";
+};
+

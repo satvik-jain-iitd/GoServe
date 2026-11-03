@@ -9,7 +9,8 @@ const RESEND_S = 30;
 type Step = "number" | "code";
 
 // `welcome` (story #667, boards O0 and O0b): the same steps as the first full screen of the app, with Google under the number and no way to close it.
-export function OtpSheet({ phone: start, onVerified, onClose, welcome = false }: { phone: string; onVerified: (phone: string) => void; onClose: () => void; welcome?: boolean }) {
+// `googleOnly` (story 829, board O0g-B-GoogleFirst): the phone code switch is off, so the welcome screen is one tap: Continue with Google, nothing else.
+export function OtpSheet({ phone: start, onVerified, onClose, welcome = false, googleOnly = false }: { phone: string; onVerified: (phone: string) => void; onClose: () => void; welcome?: boolean; googleOnly?: boolean }) {
   const [phone, setPhone] = useState(isMobile(start) ? start : "");
   const [step, setStep] = useState<Step>("number");
   const [mode, setMode] = useState<"link" | "signin">("link");   // signin = the returning customer (O7)
@@ -87,6 +88,16 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false }:
     </div>
   );
   const head = (text: string) => (welcome ? <h2 className="ui-welcome-title">{text}</h2> : <div className="ui-sheet-head"><h2>{text}</h2></div>);
+
+  if (welcome && googleOnly) {
+    return frame(
+      <>
+        {head("One tap and you are in")}
+        <p className="ui-meta">No password, no code to wait for.</p>
+        <SignIn mode="signin" big filled help="We ask for your mobile number on the bill, so the rider can call you." />
+      </>,
+    );
+  }
 
   return frame(
     <>

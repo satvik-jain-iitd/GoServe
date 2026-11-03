@@ -21,7 +21,7 @@ test("S3 the customer app never switches to the kitchen view, even for a staff u
 });
 
 test("S4 the kitchen, rider and ops apps start a Google sign-in, not a link", async ({ page, context }) => {
-  await setup(context, page, []);
+  await setup(context, page, [], { guest: true });
   const hits: string[] = [];
   await context.route("https://test.supabase.co/auth/v1/**", (r) => { hits.push(new URL(r.request().url()).pathname); return r.fallback(); });
   await context.route("https://test.supabase.co/auth/v1/authorize**", (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<h1>Google</h1>" }));   // supabase-js sends the browser to /auth/v1/authorize

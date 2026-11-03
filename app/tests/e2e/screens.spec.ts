@@ -16,11 +16,12 @@ const screens: Screen[] = readFileSync(resolve(import.meta.dirname, "../../../do
   });
 
 const NINE = new Date(2026, 9, 27, 9, 0, 0);   // the greeting depends on the clock
-const gateOn = (context: BrowserContext) => context.addInitScript(() => { try { localStorage.setItem("gs-otp-gate", "1"); } catch { /* blocked */ } });
 
 // The steps below are the ones the other specs already use to reach these screens.
+// Story 829: `welcome` is the front door as production shows it (phone code switch off: Google only); `welcome-phone` is the same door with the switch on.
 const STEPS: Record<string, (context: BrowserContext, page: Page, path: string) => Promise<void>> = {
-  welcome: async (context, page, path) => { await setup(context, page); await gateOn(context); await page.goto(path); await expect(page.getByLabel("Mobile", { exact: true })).toBeVisible(); },
+  welcome: async (context, page, path) => { await setup(context, page, [], { guest: true }); await page.goto(path); await expect(page.getByRole("heading", { name: "One tap and you are in" })).toBeVisible(); },
+  "welcome-phone": async (context, page, path) => { const net = await setup(context, page, [], { guest: true }); net.state.otpLogin = true; await page.goto(path); await expect(page.getByLabel("Mobile", { exact: true })).toBeVisible(); },
   menu: async (context, page, path) => { await setup(context, page); await page.goto(path); await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible(); },
   bill: async (context, page, path) => {
     await setup(context, page); await page.goto(path);
@@ -28,7 +29,8 @@ const STEPS: Record<string, (context: BrowserContext, page: Page, path: string) 
     await page.getByRole("button", { name: /View bill/ }).click();
     await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
   },
-  account: async (context, page, path) => { await setup(context, page); await page.goto(path); await page.getByRole("button", { name: "Account" }).click(); await expect(page.getByTestId("account")).toBeVisible(); },
+  account: async (context, page, path) => { const net = await setup(context, page); net.state.phoneUser = true; await page.goto(path);   // story 829: signed in by phone code (no Google name), so You shows the Google row as in the accepted picture
+    await page.getByRole("button", { name: "Account" }).click(); await expect(page.getByTestId("account")).toBeVisible(); },
   orders: async (context, page, path) => { await setup(context, page); await page.goto(path); await page.getByRole("button", { name: "My orders" }).click(); await page.waitForLoadState("networkidle"); },
 };
 

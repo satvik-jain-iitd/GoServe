@@ -6,7 +6,7 @@ import { setup } from "./helpers";
 const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
 
 async function firstOpen(context: BrowserContext, page: Page, verify: { status: number; body: unknown } = { status: 200, body: { ok: true, phone: "919876543210" } }) {
-  const net = await setup(context, page);
+  const net = await setup(context, page, [], { guest: true });
   await context.addInitScript(() => { try { localStorage.setItem("gs-otp-gate", "1"); } catch { /* blocked */ } });
   const calls = { sends: [] as unknown[], verifies: [] as unknown[] };
   await context.route("https://test.supabase.co/functions/v1/otp/*", async (route) => {
@@ -69,9 +69,10 @@ test("S4 a customer who is already signed in goes straight on", async ({ page, c
   await expect(title(page)).toHaveCount(0);
 });
 
-test("S5 with the phone code off the first screen is the menu, as before", async ({ page, context }) => {
-  await setup(context, page);
+test("S5 with the phone code off the first screen is one tap, Google only, and the menu stays behind it (story 829)", async ({ page, context }) => {
+  await setup(context, page, [], { guest: true });
   await page.goto("/customer/");
-  await expect(page.getByText("Butter Chicken")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "One tap and you are in" })).toBeVisible();
+  await expect(page.getByText("Butter Chicken")).toHaveCount(0);
   await expect(title(page)).toHaveCount(0);
 });

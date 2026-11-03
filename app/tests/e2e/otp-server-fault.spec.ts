@@ -6,7 +6,7 @@ import { setup } from "./helpers";
 const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
 
 async function sendWith(context: BrowserContext, page: Page, answer: { status: number; body?: unknown; abort?: boolean; text?: string }) {
-  await setup(context, page);
+  await setup(context, page, [], { guest: true });
   await context.addInitScript(() => { try { localStorage.setItem("gs-otp-gate", "1"); } catch { /* blocked */ } });
   await context.route("https://test.supabase.co/functions/v1/otp/*", async (route) => {
     if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: CORS });

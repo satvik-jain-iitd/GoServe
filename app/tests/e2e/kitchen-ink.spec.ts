@@ -68,7 +68,7 @@ test("S5 an account that is not kitchen staff sees the gate with Check again", a
 });
 
 test("S6 a phone with no Google sign-in sees Sign in to cook", async ({ page, context }) => {
-  await setup(context, page);
+  await setup(context, page, [], { guest: true });
   await page.goto("/kitchen/");
   await expect(page.getByRole("heading", { name: "Sign in to cook" })).toBeVisible();
   await expect(page.getByTestId("google-signin")).toBeVisible();
@@ -77,7 +77,7 @@ test("S6 a phone with no Google sign-in sees Sign in to cook", async ({ page, co
 for (const theme of ["day", "night"] as const) {
   test(`S7 the kitchen screens have no serious contrast or role violation in ${theme}`, async ({ page, context }) => {
     await context.addInitScript((v) => localStorage.setItem("gs-theme", v), theme);
-    const net = await setup(context, page, [order("placed"), { ...order("preparing"), id: "0b0b0b0b-0000-0000-0000-000000000000" }]);
+    const net = await setup(context, page, [order("placed"), { ...order("preparing"), id: "0b0b0b0b-0000-0000-0000-000000000000" }], { guest: true });
     net.state.kitchen = "k-1";
     await page.goto("/kitchen/");
     await expect(page.getByText("No. 0f0f0f0f")).toBeVisible();

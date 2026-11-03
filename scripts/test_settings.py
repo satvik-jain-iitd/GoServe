@@ -26,10 +26,26 @@ class Settings(unittest.TestCase):
             r = run(f"update settings set value = '{v}'::jsonb where name = 'swap_discount_pct'")
             self.assertIn("violates", str(r), v)
 
-    def test_nobody_but_the_service_role_can_read_or_write(self):
+    def test_nobody_but_the_service_role_can_write(self):
         for who in ("set local role anon", "set local role authenticated"):
-            self.assertIn("permission denied", str(run(who, "select * from settings")), who)
             self.assertIn("permission denied", str(run(who, "update settings set value = '50'::jsonb")), who)
+            self.assertIn("permission denied", str(run(who, "insert into settings (name, value) values ('x', '1'::jsonb)")), who)
+
+    # Story 829: one row is public (the phone code switch), so a customer's app can read it and hear a flip. Nothing else is.
+    def test_a_customer_reads_the_phone_code_switch_and_nothing_else(self):
+        for who in ("set local role anon", "set local role authenticated"):
+            r = run(who, "create temp table seen as select name from settings", "reset role", "select name from seen order by name")
+            self.assertEqual([x["name"] for x in r], ["otp_login_on"], (who, r))
+
+    def test_the_phone_code_switch_starts_off_and_holds_only_a_boolean(self):
+        r = run("select value from settings where name = 'otp_login_on'")
+        self.assertEqual(r[-1]["value"], False, r)
+        for v in ("1", '"yes"', "null"):
+            self.assertIn("violates", str(run(f"update settings set value = '{v}'::jsonb where name = 'otp_login_on'")), v)
+
+    def test_the_settings_table_is_in_the_realtime_publication(self):
+        r = sql("select count(*) as c from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'settings'")
+        self.assertEqual(r[0]["c"], 1)
 
     def test_a_name_is_one_row(self):
         self.assertIn("duplicate key", str(run("insert into settings (name, value) values ('swap_discount_pct', '5'::jsonb)")))
@@ -66,6 +82,20 @@ class Settings(unittest.TestCase):
     def test_the_signed_out_cannot_call_them(self):
         for call in ("swap_discount_get_v2()", "swap_discount_set_v2(30)"):
             self.assertIn("permission denied", str(run("set local role anon", f"select {call}")), call)
+
+
+    def test_an_admin_flips_the_phone_code_switch_and_it_is_stamped(self):
+        r = run(f"insert into admins (user_id) values ('{self.ADMIN}')", self.as_user(self.ADMIN, "create temp table g as select otp_login_set_v2(true) as v"),
+                "select v from g", "select value, updated_by from settings where name = 'otp_login_on'")
+        self.assertEqual(r[-1]["value"], True, r)
+        self.assertEqual(r[-1]["updated_by"], self.ADMIN, r)
+
+    def test_a_customer_cannot_flip_or_read_the_switch_through_the_functions(self):
+        for call in ("otp_login_set_v2(true)", "otp_login_get_v2()"):
+            r = run(self.as_user(self.NOBODY, f"select {call}"))
+            self.assertIn("not_admin", str(r), call)
+        r = run("select value from settings where name = 'otp_login_on'")
+        self.assertEqual(r[-1]["value"], False, r)
 
 
 if __name__ == "__main__":
