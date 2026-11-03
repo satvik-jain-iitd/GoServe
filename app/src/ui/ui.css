@@ -454,3 +454,6 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-details > summary::after { content: "\203A"; position: absolute; right: var(--gs-space-2); top: 50%; transform: translateY(-50%); font-size: var(--gs-display-m); }
 .ui-details[open] > summary::after { transform: translateY(-50%) rotate(90deg); }
 .ui-details > summary:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
+
+/* Story 850: the red words of "Remove this kitchen" (board K-Account) use the error token, no new colour. */
+.ui-danger-text { color: var(--md-error); font-weight: 600; }

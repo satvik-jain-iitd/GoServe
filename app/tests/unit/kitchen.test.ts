@@ -1,6 +1,6 @@
 // Story #49: the kitchen list and its next-step buttons. Pure data in, pure data out.
 import { describe, expect, it } from "vitest";
-import { kitchenOrders, mergeOrder, nextStep, shortId, statusLabel, type Order, newTickets, cookingTickets, readyTickets, deliveredToday, outsideHours, staffLabel } from "../../src/lib/kitchen";
+import { kitchenOrders, mergeOrder, nextStep, shortId, statusLabel, type Order, newTickets, cookingTickets, readyTickets, deliveredToday, outsideHours, staffLabel, removeKitchen, removeShown } from "../../src/lib/kitchen";
 
 const o = (id: string, status: string, created_at: string, updated_at = created_at): Order => ({
   id, status, created_at, updated_at, session_id: "s1", address: "Flat 4", total_paise: 100, items: [{ menu_item_id: "d1", name: "Butter Chicken", qty: 1, price_paise: 100 }],
@@ -185,5 +185,27 @@ describe("minutesAway", () => {
   });
   it("never says 0: the rider at the door is 1 minute", () => {
     expect(minutesAway({ lat: 28.5535, lng: 77.1935, updated_at: "2026-10-25T11:59:00Z" }, kitchen, now)).toBe(1);
+  });
+});
+
+// Story #850 (board K-Account): "Remove this kitchen". The row shows only when the build flag is on; the data path is one database function.
+describe("remove this kitchen", () => {
+  it("the row shows only when the build flag is 1", () => {
+    expect(removeShown("1")).toBe(true);
+    expect(removeShown(undefined)).toBe(false);
+    expect(removeShown("0")).toBe(false);
+  });
+  const client = (reply: { data: unknown; error: { message: string } | null }, calls: unknown[][] = []) => ({ rpc: async (...a: unknown[]) => { calls.push(a); return reply; } }) as never;
+  it("calls kitchen_remove_v2 with the kitchen and says nothing when it worked", async () => {
+    const calls: unknown[][] = [];
+    expect(await removeKitchen(client({ data: { ok: true, staff: 2 }, error: null }, calls), "k-1")).toBeNull();
+    expect(calls).toEqual([["kitchen_remove_v2", { p_kitchen: "k-1" }]]);
+  });
+  it("shows the line the database gives when there are orders to finish", async () => {
+    expect(await removeKitchen(client({ data: { ok: false, error: "orders_open", message: "Finish the orders on your tickets first, then remove the kitchen." }, error: null }), "k-1")).toBe("Finish the orders on your tickets first, then remove the kitchen.");
+  });
+  it("says plainly when the account does not work there, and when anything else goes wrong", async () => {
+    expect(await removeKitchen(client({ data: null, error: { message: "not_allowed" } }), "k-1")).toBe("Only the staff of this kitchen can remove it.");
+    expect(await removeKitchen(client({ data: null, error: { message: "fetch failed" } }), "k-1")).toBe("Could not remove the kitchen. Try again.");
   });
 });

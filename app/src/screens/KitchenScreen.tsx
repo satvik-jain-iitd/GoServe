@@ -1,6 +1,6 @@
 // The kitchen app on the Ink v3 boards K3 to K6 (story H11, #194): New tickets, Cooking, the Kitchen tab, and one ticket (K4) over the tabs.
 import { useEffect, useRef, useState } from "react";
-import { cashByRider, cookingTickets, deliveredToday, hhmm, justCancelled, minutesAway, newTickets, nextStep, outsideHours, readyTickets, shortId, staffLabel, type Order } from "../lib/kitchen";
+import { cashByRider, cookingTickets, deliveredToday, hhmm, justCancelled, minutesAway, newTickets, nextStep, outsideHours, readyTickets, removeShown, shortId, staffLabel, type Order } from "../lib/kitchen";
 import { listRiders, type RiderListRow } from "../lib/admin";
 import { getClient } from "../lib/supabase";
 import { formatRupees } from "../lib/money";
@@ -163,6 +163,15 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
               {handoverError && <p role="alert" className="ui-note error">{handoverError}</p>}
               <DishList kitchenId={gate.kitchenId} />
               <button type="button" className="ui-row" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}><span>Send feedback</span><span className="go" aria-hidden="true">›</span></button>
+              {removeShown(import.meta.env.VITE_KITCHEN_REMOVE) && (
+                <section className="ui-group" aria-label="Leaving GoServe">
+                  <h2>Leaving GoServe <span className="mono">Asks twice</span></h2>
+                  <button type="button" className="ui-row ui-row-tall">{/* the confirm sheet comes with its frame (story 850); until then the tap opens nothing */}
+                    <span className="ui-row-label"><span className="ui-danger-text">Remove this kitchen</span><span className="ui-row-sub mono">Customers stop seeing it today. Orders already placed finish.</span></span>
+                    <span className="go" aria-hidden="true">›</span>
+                  </button>
+                </section>
+              )}
             </>
           ) : <p className="ui-meta ui-pad">The open switch and the dishes are on the kitchen app, after a Google sign-in.</p>}
         </div>
