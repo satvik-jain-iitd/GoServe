@@ -20,6 +20,10 @@ describe("deploy-app.yml (the real app)", () => {
     expect(text).toMatch(/VITE_OTP_GATE:\s*["']?1/);
     expect(text).toMatch(/VITE_OTP_SMS:\s*["']?(fixed|real)\b/);
   });
+  // Story 844: the same wall from the other side. The real app is built from prod secrets only.
+  it("references no DEV_ secret at all", () => {
+    expect(text).not.toMatch(/secrets\.DEV_/);
+  });
   it("does not turn the offers on: the order still goes through the v1 path (stories #588, #590)", () => {
     expect(text).not.toContain("VITE_OFFERS");
   });
