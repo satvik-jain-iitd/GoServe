@@ -311,6 +311,8 @@ Runs: `scout.py --need "phone OTP sign in that never reveals whether a number is
 Decision: **adopt nothing, borrow one idea.** Two reasons, neither about the scores. First, rule 14: the owner named Supabase and Supabase Auth is what this app runs on; replacing the auth server is not what #807 asks for, it is a migration. Second, the story is one endpoint's answer shape, perhaps forty lines of Deno, against adopting a whole auth service.
 The idea borrowed, from SuperTokens' passwordless recipe: their flow is two calls, `createCode` then `consumeCode`, and it is `consumeCode` that reports `createdNewUser`. The new-or-returning fact is only told **after** the caller has proved they hold the code. That is exactly the shape #807 needs, and it is the opposite of what our `/otp/send` does today. Tier A for "their API is shaped that way" (their own API reference), confidence 0.9. Whether their `createCode` is itself enumeration-safe is **not** documented: searched and not found, confidence 0.4, so it is not cited as proof of anything.
 Read: the SuperTokens passwordless and bot-detection doc pages (their brute-force note is about bots, not enumeration); the four repos' GitHub metadata. Not read in depth: the three READMEs, because the adopt question was already closed by rule 14 before fit mattered.
+
+**Rule 0 step skipped, on purpose:** the radar skill says read the top three READMEs. This run did not. The reason is rule 14: the owner named Supabase, so the adopt question was shut before fit mattered, and reading three auth-server READMEs would have re-decided a question that is not open. Recorded as an exception, not left out quietly.
 Nothing new is built from scratch here beyond the change inside the function we already have (`supabase/functions/otp`).
 
 ### Radar run 2026-10-31 | need: visual regression testing: render app screens in CI, diff against committed baselines, show the pictures on the pull request | formula 2026-10-25.1
@@ -333,6 +335,8 @@ Decision: **adopt nothing, use what is installed.** Playwright is already this p
 The one real risk with a committed baseline is font rendering, and this project is already safe from it: the fonts are **self-hosted** (`app/public/fonts/*.woff2`, `app/src/styles/fonts.css`), not fetched from Google at run time, so a CI render does not depend on a network font arriving in time. The remaining drift is the browser version, which `@playwright/test` pins.
 What is still to build, and it is small: a screens list, one spec that walks it, and a CI step that uploads the PNGs as an artefact so a reviewer sees the screen without building the branch. That last part is the half that actually fixes F306; the baseline diff is the half that keeps it fixed.
 Not read in depth: the three READMEs, because the adopt question was closed by "it is already installed", not by fit.
+
+**Rule 0 step skipped, on purpose:** the radar skill says read the top three READMEs. This run did not. The winner was already a dependency of this repository, so the adopt question was shut by "it is already installed". Recorded as an exception, not left out quietly.
 
 ### Radar run 2026-10-31 | need: dark store locations and serviceability geofences of Blinkit Zepto Swiggy Instamart | formula 2026-10-25.1
 
