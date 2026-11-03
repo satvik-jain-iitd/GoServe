@@ -1,5 +1,5 @@
 // Story H7 (#190): the admin Simulator tab talks to n8n GS MAIN 30 (webhook gs-sim) with the simulator token, never to the database.
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CLEAR_WORD, KNOB_DEFAULTS, SEED_DEFAULTS, callSim, clearAll, clearShown, groupLine, SimError, tickLine } from "../../src/lib/sim";
 
 const deps = (res: () => Promise<Response>, seen: { url?: string; init?: RequestInit } = {}) => ({
@@ -74,5 +74,16 @@ describe("Clear everything", () => {
     await expect(clearAll(nobody as never)).rejects.toMatchObject({ message: "Only an admin can clear the city.", code: "not_admin" });
     const down = { rpc: async () => ({ data: null, error: { message: "fetch failed" } }) };
     await expect(clearAll(down as never)).rejects.toMatchObject({ code: "unknown" });
+  });
+  // Story #869: an admin reads the true reason when the call fails, and the full error goes to the console.
+  it("shows the message and the code of the database error, and keeps the plain line for not_admin", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const jwt = { message: "JWT expired", code: "PGRST301", details: null, hint: null };
+    await expect(clearAll({ rpc: async () => ({ data: null, error: jwt }) } as never)).rejects.toMatchObject({ message: "JWT expired (PGRST301)", code: "PGRST301" });
+    expect(spy).toHaveBeenCalledWith("sim_clear_all failed", jwt);
+    await expect(clearAll({ rpc: async () => ({ data: null, error: { message: "TypeError: Failed to fetch" } }) } as never)).rejects.toMatchObject({ message: "TypeError: Failed to fetch", code: "unknown" });
+    await expect(clearAll({ rpc: async () => ({ data: null, error: { message: "not_admin", code: "42501" } }) } as never)).rejects.toMatchObject({ message: "Only an admin can clear the city.", code: "not_admin" });
+    await expect(clearAll({ rpc: async () => ({ data: null, error: { message: "", code: "" } }) } as never)).rejects.toMatchObject({ message: "Something went wrong. Please try again." });
+    spy.mockRestore();
   });
 });
