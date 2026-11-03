@@ -41,13 +41,16 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           test -n "$SUPABASE_ACCESS_TOKEN" || { echo "The secret SUPABASE_ACCESS_TOKEN is not set. The owner adds it in the repository settings."; exit 1; }
+      # Story 835: the CLI is pinned. With `latest` the dev deploy stopped on 2 Nov (CLI 3.0.0 asks before a multi-function deploy) and nobody was told.
+      # Pinned on 3 Nov 2026 to the version that failed; move it on purpose, in its own pull request.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 3.0.0
       - name: Deploy the functions
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        run: supabase functions deploy --project-ref "$DEV_PROJECT"
+        # --yes: a run with no terminal cannot answer the confirmation. Follow-up: --project-ref is deprecated and goes in the CLI's v4; use --remote "$DEV_PROJECT" then.
+        run: supabase functions deploy --yes --project-ref "$DEV_PROJECT"
       - name: Health answers
         run: |
           for i in 1 2 3 4 5; do
