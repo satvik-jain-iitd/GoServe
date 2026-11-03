@@ -40,6 +40,8 @@ Standing rules, every session:
     - **Both sessions push as `klickbae8yt-star`**, so GitHub cannot tell them apart: this rule is what tells them apart. An approval that says "author and approver were one session" is honest, not allowed.
     - **The one exception** is the owner saying so in that message, written in the pull request as a decision on the record.
 
+22. **How often, really? (owner, 4 Nov 2026, GoServe only, not ShipQuick).** Before any feature, screen or data-model change is proposed, write one line: how often this will happen in the real world with real kitchens, riders and customers (never, once a year, every week, every order), and whether a configuration we already have covers it (another Google account, a setting, a row, a flag). A case that is rare and has an easy configuration is not built; the configuration is written down as the answer. The line goes in the story at Ready, under `Practically:`. Example, 4 Nov 2026: one person working in two kitchens is rare in a pilot of a few kitchens and a second Google account for the second kitchen costs two minutes and keeps the kitchens' emails and alerts apart, so the kitchen chooser and switcher are not built; the error for a Google account already on a kitchen must name that kitchen.
+
 ## Radar first (owner, 25 Oct 2026, strictest rule)
 
 Before any new component, script, skill, workflow or tool in this project: run the `radar` skill (`radar@agi`) on the need, read the top 3 READMEs, record the run in `docs/research/repo-radar.md`, reuse or borrow first. Build from scratch only when the run found nothing, and say so. No radar run, no new code. Full text: `~/.claude/CLAUDE.md` section 2, rule 0.
