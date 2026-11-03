@@ -1,6 +1,39 @@
 -- Story #848 (epic E32), board A-Sim-Groups, approved 2026-11-04. The admin Simulator seeds the kitchens and the riders as two groups.
 -- sim_seed takes p.part: 'kitchens' or 'riders' seeds that group only; missing or anything else seeds both, so the old Seed still works.
 -- Same body as migration 0038 plus the part switch. sim_status also says how many kitchens and riders are real, and whether Clear is allowed here.
+-- The file starts with the new function on purpose: scripts/prod_backend_v2.py names a file by the first object it makes, and sim_seed already exists.
+
+-- "Clear everything" (board A-Sim-Clear, dev only). The owner, 4 Nov 2026: remove all kitchens, riders, dishes and orders, the hand-made ones too;
+-- the run log and the decision log stay, every row. Their kitchen and order keys are set to null so the rows outlive the kitchen (decision_log.kitchen_id was NOT NULL).
+-- Accounts, settings, params, feedback, coupons, dish_photos and pin_points stay. It is a function the signed-in admin calls, never the simulator token,
+-- and it refuses unless the settings row clear_allowed is true. That row is set by hand on dev and never on prod; this migration does not insert it.
+alter table decision_log alter column kitchen_id drop not null;
+
+create or replace function sim_clear_all()
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_orders integer; v_dishes integer; v_riders integer; v_kitchens integer;
+begin
+  if not is_admin() then raise exception 'not_admin' using errcode = '42501'; end if;
+  if not coalesce((select (value #>> '{}')::boolean from settings where name = 'clear_allowed'), false) then
+    return jsonb_build_object('ok', false, 'error', 'clear_not_allowed', 'message', 'Clear everything is switched off on this database.');
+  end if;
+  perform set_config('goserve.reset', 'on', true);   -- this transaction only: order_events are frozen except for this
+  update decision_log set kitchen_id = null, order_id = null where kitchen_id is not null or order_id is not null;
+  update run_log set kitchen_id = null where kitchen_id is not null;
+  update feedback set kitchen_id = null, order_id = null where kitchen_id is not null or order_id is not null;
+  update params set kitchen_id = null where kitchen_id is not null;
+  delete from order_events;
+  with gone as (delete from orders returning 1) select count(*) into v_orders from gone;
+  delete from rider_pings;
+  with gone as (delete from riders returning 1) select count(*) into v_riders from gone;
+  with gone as (delete from menu_items returning 1) select count(*) into v_dishes from gone;
+  delete from kitchen_staff;
+  with gone as (delete from kitchens returning 1) select count(*) into v_kitchens from gone;
+  return jsonb_build_object('ok', true, 'kitchens', v_kitchens, 'riders', v_riders, 'dishes', v_dishes, 'orders', v_orders);
+end $$;
+
+revoke all on function sim_clear_all() from public, anon;
+grant execute on function sim_clear_all() to authenticated;
 
 create or replace function sim_seed(p jsonb default '{}'::jsonb)
 returns jsonb language plpgsql security definer set search_path = public as $$
@@ -88,35 +121,3 @@ returns jsonb language sql stable security definer set search_path = public as $
     'kitchens_real', (select count(*) from kitchens where not synthetic), 'riders_real', (select count(*) from riders where not synthetic),
     'clear_allowed', coalesce((select (value #>> '{}')::boolean from settings where name = 'clear_allowed'), false))
 $$;
-
--- "Clear everything" (board A-Sim-Clear, dev only). The owner, 4 Nov 2026: remove all kitchens, riders, dishes and orders, the hand-made ones too;
--- the run log and the decision log stay, every row. Their kitchen and order keys are set to null so the rows outlive the kitchen (decision_log.kitchen_id was NOT NULL).
--- Accounts, settings, params, feedback, coupons, dish_photos and pin_points stay. It is a function the signed-in admin calls, never the simulator token,
--- and it refuses unless the settings row clear_allowed is true. That row is set by hand on dev and never on prod; this migration does not insert it.
-alter table decision_log alter column kitchen_id drop not null;
-
-create or replace function sim_clear_all()
-returns jsonb language plpgsql security definer set search_path = public as $$
-declare v_orders integer; v_dishes integer; v_riders integer; v_kitchens integer;
-begin
-  if not is_admin() then raise exception 'not_admin' using errcode = '42501'; end if;
-  if not coalesce((select (value #>> '{}')::boolean from settings where name = 'clear_allowed'), false) then
-    return jsonb_build_object('ok', false, 'error', 'clear_not_allowed', 'message', 'Clear everything is switched off on this database.');
-  end if;
-  perform set_config('goserve.reset', 'on', true);   -- this transaction only: order_events are frozen except for this
-  update decision_log set kitchen_id = null, order_id = null where kitchen_id is not null or order_id is not null;
-  update run_log set kitchen_id = null where kitchen_id is not null;
-  update feedback set kitchen_id = null, order_id = null where kitchen_id is not null or order_id is not null;
-  update params set kitchen_id = null where kitchen_id is not null;
-  delete from order_events;
-  with gone as (delete from orders returning 1) select count(*) into v_orders from gone;
-  delete from rider_pings;
-  with gone as (delete from riders returning 1) select count(*) into v_riders from gone;
-  with gone as (delete from menu_items returning 1) select count(*) into v_dishes from gone;
-  delete from kitchen_staff;
-  with gone as (delete from kitchens returning 1) select count(*) into v_kitchens from gone;
-  return jsonb_build_object('ok', true, 'kitchens', v_kitchens, 'riders', v_riders, 'dishes', v_dishes, 'orders', v_orders);
-end $$;
-
-revoke all on function sim_clear_all() from public, anon;
-grant execute on function sim_clear_all() to authenticated;
