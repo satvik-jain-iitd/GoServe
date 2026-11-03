@@ -148,3 +148,16 @@ test('#454 the knobs action passes demo only when it is a real boolean', () => {
     assert.equal('demo' in p, false);
   }
 });
+
+test('#848 the token check lets seed_kitchens and seed_riders through', () => {
+  for (const a of ['seed_kitchens', 'seed_riders']) assert.equal(run('sim_token.js', { headers: { 'x-gs-sim-token': 'S' }, body: { action: a }, sim_token: 'S' }).action, a);
+  assert.equal(run('sim_token.js', { headers: { 'x-gs-sim-token': 'S' }, body: { action: 'clear' }, sim_token: 'S' }).action, 'bad');   // Clear everything never goes through n8n or the sim token
+});
+
+test('#848 the guard maps the two seed groups to sim_seed with a part, and refuses clear', () => {
+  const k = run('guard_sim.js', { action: 'seed_kitchens', body: {}, kill_switch: false, supabase_url: 'u' });
+  assert.deepEqual(k, { ok: true, supabase_url: 'u', rpc_fn: 'sim_seed', rpc_body: { p: { part: 'kitchens' } } });
+  const r = run('guard_sim.js', { action: 'seed_riders', body: { riders_per_kitchen: 9999, online_pct: -5 }, kill_switch: false, supabase_url: 'u' });
+  assert.deepEqual(r, { ok: true, supabase_url: 'u', rpc_fn: 'sim_seed', rpc_body: { p: { part: 'riders', riders_per_kitchen: 20, online_pct: 0 } } });
+  assert.equal(run('guard_sim.js', { action: 'clear', body: {}, kill_switch: false, supabase_url: 'u' }).status_code, 400);
+});
