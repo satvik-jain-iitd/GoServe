@@ -61,11 +61,30 @@ describe("Clear everything", () => {
     expect(clearShown(undefined, { ok: true, clear_allowed: true })).toBe(false);
     expect(clearShown("1", null)).toBe(false);
   });
-  it("calls the sim_clear_all function with the admin's client, never the webhook, and returns the counts", async () => {
-    const calls: string[] = [];
-    const c = { rpc: async (name: string) => { calls.push(name); return { data: { ok: true, kitchens: 16, riders: 33, dishes: 120, orders: 41 }, error: null }; } };
-    expect(await clearAll(c as never)).toEqual({ ok: true, kitchens: 16, riders: 33, dishes: 120, orders: 41 });
-    expect(calls).toEqual(["sim_clear_all"]);
+  const slice = (o: object) => ({ data: { ok: true, done: false, logs_detached: 0, orders: 0, kitchens: 0, riders: 0, dishes: 0, ...o }, error: null });
+  it("calls sim_clear_all with the admin's client, never the webhook, slice after slice until done, and adds the counts up", async () => {
+    const calls: unknown[][] = [];
+    const answers = [slice({ logs_detached: 500 }), slice({ logs_detached: 120 }), slice({ orders: 500 }), slice({ orders: 41 }), slice({ done: true, kitchens: 16, riders: 33, dishes: 120 })];
+    const c = { rpc: async (...a: unknown[]) => { calls.push(a); return answers.shift(); } };
+    const seen: object[] = [];
+    expect(await clearAll(c as never, (t) => seen.push({ ...t }))).toEqual({ ok: true, kitchens: 16, riders: 33, dishes: 120, orders: 541 });
+    expect(calls).toHaveLength(5);
+    expect(calls[0]).toEqual(["sim_clear_all", { p_limit: 500 }]);
+    expect(seen.map((t) => (t as { orders: number }).orders)).toEqual([0, 0, 500, 541, 541]);   // the screen can say "541 orders gone" after each slice
+  });
+  it("stops with the true reason when a slice fails, and does not call again", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    let n = 0;
+    const c = { rpc: async () => (++n === 1 ? slice({ orders: 500 }) : { data: null, error: { message: "canceling statement due to statement timeout", code: "57014" } }) };
+    await expect(clearAll(c as never)).rejects.toMatchObject({ message: "canceling statement due to statement timeout (57014)", code: "57014" });
+    expect(n).toBe(2);
+    spy.mockRestore();
+  });
+  it("gives up with a plain line when slices keep coming back empty and never say done", async () => {
+    let n = 0;
+    const c = { rpc: async () => { n++; return slice({}); } };
+    await expect(clearAll(c as never)).rejects.toMatchObject({ code: "no_progress" });
+    expect(n).toBeLessThan(10);
   });
   it("turns a refusal into a plain line", async () => {
     const off = { rpc: async () => ({ data: { ok: false, error: "clear_not_allowed", message: "Clear everything is switched off on this database." }, error: null }) };

@@ -38,16 +38,28 @@ export const groupLine = (synthetic: number | undefined, real: number | undefine
 export const CLEAR_WORD = "CLEAR";
 export const clearShown = (flag: string | undefined, state: SimAnswer | null): boolean => flag === "1" && state?.clear_allowed === true;
 export type ClearAnswer = { ok: true; kitchens: number; riders: number; dishes: number; orders: number };
-export async function clearAll(c: Pick<SupabaseClient, "rpc">): Promise<ClearAnswer> {
-  const { data, error } = await c.rpc("sim_clear_all");
-  if (error) {
-    console.error("sim_clear_all failed", error);   // story 869: the full error is readable in the browser
-    if (error.message?.includes("not_admin")) throw new SimError("Only an admin can clear the city.", "not_admin");
-    // An admin sees the true reason, for example "JWT expired (PGRST301)" (rule 20), not a generic line.
-    throw new SimError(error.message ? `${error.message}${error.code ? ` (${error.code})` : ""}` : "Something went wrong. Please try again.", error.code || "unknown");
+export const CLEAR_SLICE = 500;   // rows one call may touch; the database clamps it again (story 873)
+const EMPTY_SLICES = 3;           // slices in a row that did nothing and did not say done: something is wrong, stop
+/** Clear in slices (story 873, "future me bhi chale chahe data badh bhi jaye"): each call does one slice and says whether it is done; call again until it is.
+ * onProgress gets the running totals after every slice. Any error stops the loop with its true reason (story 869). */
+export async function clearAll(c: Pick<SupabaseClient, "rpc">, onProgress?: (t: ClearAnswer) => void): Promise<ClearAnswer> {
+  const total: ClearAnswer = { ok: true, kitchens: 0, riders: 0, dishes: 0, orders: 0 };
+  let idle = 0;
+  for (;;) {
+    const { data, error } = await c.rpc("sim_clear_all", { p_limit: CLEAR_SLICE });
+    if (error) {
+      console.error("sim_clear_all failed", error);   // story 869: the full error is readable in the browser
+      if (error.message?.includes("not_admin")) throw new SimError("Only an admin can clear the city.", "not_admin");
+      // An admin sees the true reason, for example "JWT expired (PGRST301)" (rule 20), not a generic line.
+      throw new SimError(error.message ? `${error.message}${error.code ? ` (${error.code})` : ""}` : "Something went wrong. Please try again.", error.code || "unknown");
+    }
+    if (data?.ok !== true) throw new SimError(typeof data?.message === "string" ? data.message : "Something went wrong. Please try again.", data?.error ?? "unknown");
+    total.kitchens += data.kitchens ?? 0; total.riders += data.riders ?? 0; total.dishes += data.dishes ?? 0; total.orders += data.orders ?? 0;
+    onProgress?.({ ...total });
+    if (data.done !== false) return total;
+    idle = (data.logs_detached ?? 0) + (data.orders ?? 0) === 0 ? idle + 1 : 0;
+    if (idle >= EMPTY_SLICES) throw new SimError("Clear everything stopped: it is not making progress. Try again, and tell the developer if it repeats.", "no_progress");
   }
-  if (data?.ok === true) return data as ClearAnswer;
-  throw new SimError(typeof data?.message === "string" ? data.message : "Something went wrong. Please try again.", data?.error ?? "unknown");
 }
 
 export const countsLine = (a: SimAnswer): string => `${a.kitchens ?? 0} kitchens · ${a.riders ?? 0} riders (${a.riders_online ?? 0} online) · ${a.dishes ?? 0} dishes`;

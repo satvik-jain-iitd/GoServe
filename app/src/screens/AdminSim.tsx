@@ -43,7 +43,7 @@ export function AdminSim() {
   };
   const clear = async () => {
     setClearing(false); setWord("");
-    await run(async () => ({ ...(await clearAll(getClient())) }), (a) => `Cleared: ${a.kitchens} kitchens, ${a.riders} riders, ${a.dishes} dishes, ${a.orders} orders.`, () => counts({ ok: true, kitchens: 0, kitchens_open: 0, kitchens_real: 0, riders: 0, riders_online: 0, riders_real: 0, dishes: 0 }));
+    await run(async () => ({ ...(await clearAll(getClient(), (t) => setNote(`Clearing… ${t.orders.toLocaleString("en-IN")} orders gone`))) }), (a) => `Cleared: ${a.kitchens} kitchens, ${a.riders} riders, ${a.dishes} dishes, ${a.orders} orders.`, () => counts({ ok: true, kitchens: 0, kitchens_open: 0, kitchens_real: 0, riders: 0, riders_online: 0, riders_real: 0, dishes: 0 }));
   };
   const knobField = (f: { key: Exclude<keyof Knobs, "demo">; label: string }) => (
     <div key={f.key} className="ui-field"><label htmlFor={`sim-${f.key}`}>{f.label}</label>
