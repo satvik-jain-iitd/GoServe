@@ -47,3 +47,14 @@ export const takeReturn = (): boolean => { try { const v = window.sessionStorage
 // One automatic sign in per tap: if Google comes back with the same error after it, the line stays and nothing loops.
 export const takeTried = (): boolean => { try { const v = window.sessionStorage.getItem(TRIED) === "1"; window.sessionStorage.removeItem(TRIED); return v; } catch { return false; } };
 export const markTried = (): void => { try { window.sessionStorage.setItem(TRIED, "1"); } catch { /* no loop guard: one try per page load below */ } };
+
+// Story 842: a tap on Continue with Google leaves a note on the phone. Back from Google with no session and no error in the address, the screen would stay silent
+// (the owner's sign-out then sign-in loop on a phone showed the welcome screen again and nothing else). The note lets the screen say so. It is in localStorage, not
+// session storage, because the sign-in can come back in another browser context on a phone. It ends at the first completed sign-in, and after ten minutes.
+const STARTED = "gs-google-started";
+export const DID_NOT_FINISH = "Google sign-in did not finish. Try again.";
+export const markGoogleStarted = (): void => { try { window.localStorage.setItem(STARTED, String(Date.now())); } catch { /* no note: no message, never an error */ } };
+export const clearGoogleStarted = (): void => { try { window.localStorage.removeItem(STARTED); } catch { /* blocked */ } };
+export const takeGoogleStarted = (now = Date.now()): boolean => {
+  try { const at = Number(window.localStorage.getItem(STARTED)); window.localStorage.removeItem(STARTED); return Number.isFinite(at) && at > 0 && now - at < 10 * 60_000; } catch { return false; }
+};

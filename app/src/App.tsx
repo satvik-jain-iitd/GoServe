@@ -14,7 +14,7 @@ import { RiderGate } from "./screens/RiderGate";
 import { fetchKitchen, type KitchenCard, type RiderGateState } from "./lib/rider";
 import { KitchenGate, type KitchenGateState } from "./screens/KitchenGate";
 import { enablePush, watchSession } from "./lib/push";
-import { takeReturn } from "./lib/auth";
+import { clearGoogleStarted, takeReturn } from "./lib/auth";
 import { alertsState, readOff, turnAlertsOff, writeOff, type Alerts } from "./lib/alerts";
 import { loadProfile, saveProfile } from "./lib/profile";
 import { capture } from "./lib/analytics";
@@ -680,6 +680,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       const p = data.user && !data.user.is_anonymous ? data.user.phone : null;
       const n = (data.user?.user_metadata?.full_name ?? data.user?.user_metadata?.name) as string | undefined;
       if (alive) setSignedIn(!!data.user && !data.user.is_anonymous);
+      if (data.user && !data.user.is_anonymous) clearGoogleStarted();   // story 842: a completed sign-in ends the note SignIn left
       if (alive && p) { setVerified(true); setPhone(p.replace(/^91/, "")); if (n) setName((cur) => cur || n); }
     }).catch(() => { if (alive) setSignedIn(false); });
     return () => { alive = false; };

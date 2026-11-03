@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { friendlyAuth, givenNameOf, linkGoogle, markTried, rememberReturn, signedInName, takeTried, type ReturnScreen } from "../lib/auth";
+import { clearGoogleStarted, DID_NOT_FINISH, friendlyAuth, givenNameOf, linkGoogle, markGoogleStarted, markTried, rememberReturn, signedInName, takeGoogleStarted, takeTried, type ReturnScreen } from "../lib/auth";
 import { ensureSession, getClient } from "../lib/supabase";
 import { Button } from "../ui";
 
@@ -8,6 +8,7 @@ import { Button } from "../ui";
 export function SignIn({ mode = "link", returnTo = "menu", big, filled, onGivenName, help }: { mode?: "link" | "signin"; returnTo?: ReturnScreen; big?: boolean; filled?: boolean; onGivenName?: (name: string) => void; help?: string }) {
   const [name, setName] = useState<string | null>(null);
   const [back] = useState(() => friendlyAuth(window.location.search, window.location.hash));
+  const [started] = useState(() => takeGoogleStarted());   // story 842: the person tapped Continue with Google before this page loaded
   const [error, setError] = useState<string | null>(back?.message ?? null);
   useEffect(() => {
     if (error) history.replaceState(null, "", window.location.pathname);   // shown once
@@ -17,19 +18,27 @@ export function SignIn({ mode = "link", returnTo = "menu", big, filled, onGivenN
     let alive = true;
     ensureSession()
       .then(() => getClient().auth.getUser())
-      .then(({ data }) => { if (!alive) return; setName(signedInName(data.user)); const given = givenNameOf(data.user); if (given) onGivenName?.(given); })
+      .then(({ data }) => {
+        if (!alive) return;
+        const user = data.user;
+        const who = signedInName(user);
+        setName(who);
+        if (who) clearGoogleStarted();
+        else if (started && !back) setError(DID_NOT_FINISH);   // sent to Google, back with no session and no error: say so
+        const given = givenNameOf(user); if (given) onGivenName?.(given);
+      })
       .catch(() => {});
     return () => { alive = false; };
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   if (name) return (
     <p className="notice"><span data-testid="signed-in">Signed in as {name}</span>{" "}
-      <Button variant="ghost" onClick={async () => { await getClient().auth.signOut(); window.location.reload(); }}>Sign out</Button>
+      <Button variant="ghost" onClick={async () => { clearGoogleStarted(); await getClient().auth.signOut(); window.location.reload(); }}>Sign out</Button>
     </p>
   );
   return (
     <div className={big ? "ui-google-stack" : undefined}>
       <Button variant={filled ? "primary" : "ghost"} size={big ? "big" : undefined} data-testid="google-signin"
-        onClick={async () => { rememberReturn(returnTo); await ensureSession().catch(() => {}); setError(await linkGoogle(getClient(), window.location.href.split("?")[0], mode)); }}>
+        onClick={async () => { rememberReturn(returnTo); markGoogleStarted(); await ensureSession().catch(() => {}); setError(await linkGoogle(getClient(), window.location.href.split("?")[0], mode)); }}>
         Continue with Google
       </Button>
       {help && <p className="ui-google-help">{help}</p>}

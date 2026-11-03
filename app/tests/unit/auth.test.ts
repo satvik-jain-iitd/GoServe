@@ -103,3 +103,28 @@ describe("where Google comes back to (story #801)", () => {
     }
   });
 });
+
+// Story 842: the note a tap on Continue with Google leaves, so a return with no session can say so.
+describe("the Google started note", () => {
+  const mem = () => { const m = new Map<string, string>(); return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), removeItem: (k: string) => void m.delete(k) }; };
+  it("is taken once, within ten minutes, and only after a tap", async () => {
+    const { markGoogleStarted, takeGoogleStarted } = await import("../../src/lib/auth");
+    const ls = mem();
+    vi.stubGlobal("window", { localStorage: ls });
+    expect(takeGoogleStarted()).toBe(false);
+    markGoogleStarted();
+    expect(takeGoogleStarted()).toBe(true);
+    expect(takeGoogleStarted()).toBe(false);
+    markGoogleStarted();
+    expect(takeGoogleStarted(Date.now() + 11 * 60_000)).toBe(false);
+    vi.unstubAllGlobals();
+  });
+  it("is silent when storage is blocked", async () => {
+    const { markGoogleStarted, takeGoogleStarted, clearGoogleStarted } = await import("../../src/lib/auth");
+    vi.stubGlobal("window", { localStorage: { getItem: () => { throw new Error("blocked"); }, setItem: () => { throw new Error("blocked"); }, removeItem: () => { throw new Error("blocked"); } } });
+    expect(() => markGoogleStarted()).not.toThrow();
+    expect(() => clearGoogleStarted()).not.toThrow();
+    expect(takeGoogleStarted()).toBe(false);
+    vi.unstubAllGlobals();
+  });
+});
