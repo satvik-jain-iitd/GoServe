@@ -3,6 +3,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { setup, scan as axeScan } from "./helpers";
 
 const open = async (page: Page) => { await page.goto("/admin/"); await page.getByRole("button", { name: "Simulator", exact: true }).click(); };
+const openRows = async (page: Page) => { await page.getByText("Kitchen scenario", { exact: true }).click(); await page.getByText("Rider scenario", { exact: true }).click(); };   // #848: the scenario numbers sit in two rows that open
 
 test("S1 the tab asks the webhook for the status and shows the counts, the switch and the synthetic-only line", async ({ page, context }) => {
   const net = await setup(context, page);
@@ -21,6 +22,7 @@ test("S2 (#848) Seed the riders posts the rider numbers and shows the new counts
   const net = await setup(context, page);
   net.state.admin = true;
   await open(page);
+  await page.getByText("Rider scenario", { exact: true }).click();
   await page.getByLabel("Riders per kitchen").fill("6");
   await page.getByRole("button", { name: "Seed the riders" }).click();
   await expect(page.getByTestId("sim-counts")).toHaveText("10 kitchens · 60 riders (42 online) · 137 dishes");
@@ -73,13 +75,14 @@ test("S6 (#284) the four scenario knobs show their values and Save posts them", 
   const net = await setup(context, page);
   net.state.admin = true;
   await open(page);
+  await openRows(page);
   await expect(page.getByLabel("Kitchen turns the order away %")).toHaveValue("5");
   await expect(page.getByLabel("Item sold out %")).toHaveValue("3");
   await expect(page.getByLabel("Kitchen is slow %")).toHaveValue("10");
   await expect(page.getByLabel("Rider drops out %")).toHaveValue("2");
   await page.getByLabel("Kitchen turns the order away %").fill("12");
   await page.getByLabel("Rider drops out %").fill("30");
-  await page.getByRole("button", { name: "Save the scenario" }).click();
+  await page.getByRole("button", { name: "Save the rider scenario" }).click();
   await expect(page.getByRole("status")).toContainText("Scenario saved.");
   expect(net.calls.sim.find((c) => c.body.action === "knobs")!.body).toEqual({ action: "knobs", reject_pct: 12, sold_out_pct: 3, delay_pct: 10, rider_drop_pct: 30 });
   expect(await axeScan(page)).toEqual([]);
@@ -111,6 +114,7 @@ for (const theme of ["day", "night"]) {
     const net = await setup(context, page);
     net.state.admin = true;
     await open(page);
+    await openRows(page);
     await expect(page.getByLabel("Riders per kitchen")).toBeVisible();
     const m = await page.evaluate(() => {
       const px = (token: string) => { const d = document.createElement("div"); d.style.cssText = `position:absolute;visibility:hidden;height:var(${token})`; document.body.append(d); const h = d.getBoundingClientRect().height; d.remove(); return h; };
@@ -121,10 +125,10 @@ for (const theme of ["day", "night"]) {
       return {
         tap: px("--gs-tap"), big: px("--gs-tap-big"), s2: px("--gs-space-2"), s4: px("--gs-space-4"),
         inputH: box(input("sim-riders_per_kitchen")).height, radius: getComputedStyle(input("sim-riders_per_kitchen")).borderTopLeftRadius,
-        seedH: box(btn("Seed the riders")).height, saveH: box(btn("Save the scenario")).height, tickH: box(btn("Tick now")).height, resetH: box(btn("Reset the city")).height,
+        seedH: box(btn("Seed the riders")).height, saveH: box(btn("Save the rider scenario")).height, tickH: box(btn("Tick now")).height, resetH: box(btn("Reset the city")).height,
         fieldToField: gap(input("sim-riders_per_kitchen"), document.getElementById("sim-online_pct")!.previousElementSibling!),
         lastFieldToSeed: gap(input("sim-online_pct"), btn("Seed the riders")),
-        lastFieldToSave: gap(input("sim-rider_drop_pct"), btn("Save the scenario")),
+        lastFieldToSave: gap(input("sim-rider_drop_pct"), btn("Save the rider scenario")),
         tickToSeed: gap(btn("Tick now"), document.querySelector('[aria-label="Kitchens"]')!),
       };
     });
@@ -207,4 +211,28 @@ test("S13 (#848) a refusal from the database shows its line and the city stays",
   await page.getByRole("dialog").getByRole("button", { name: "Clear everything" }).click();
   await expect(page.getByRole("alert")).toContainText("Clear everything is switched off on this database.");
   await expect(page.getByTestId("sim-counts")).toHaveText("10 kitchens · 40 riders (29 online) · 137 dishes");
+});
+
+test("S14 (#848) the scenario numbers sit in two rows inside their groups; each row shows its numbers as one line and opens to its fields and one Save", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.admin = true;
+  await open(page);
+  const kitchens = page.getByRole("region", { name: "Kitchens" });
+  const riders = page.getByRole("region", { name: "Riders" });
+  await expect(kitchens.getByText("Turns away 5% · sold out 3% · slow 10%")).toBeVisible();
+  await expect(riders.getByText("4 per kitchen · 70% online · drops out 2%")).toBeVisible();
+  await expect(page.getByLabel("Kitchen is slow %")).toBeHidden();   // closed until the row is opened
+  await expect(page.getByLabel("Rider drops out %")).toBeHidden();
+  await expect(page.getByRole("region", { name: "Scenario" })).toHaveCount(0);   // the mixed Scenario section is gone
+  await kitchens.getByText("Kitchen scenario", { exact: true }).click();
+  await expect(kitchens.getByLabel("Kitchen is slow %")).toBeVisible();
+  await expect(kitchens.getByLabel("Rider drops out %")).toHaveCount(0);
+  await riders.getByText("Rider scenario", { exact: true }).click();
+  await expect(riders.getByLabel("Rider drops out %")).toBeVisible();
+  await expect(riders.getByLabel("Riders per kitchen")).toBeVisible();
+  await kitchens.getByLabel("Kitchen is slow %").fill("20");
+  await kitchens.getByRole("button", { name: "Save the kitchen scenario" }).click();
+  await expect(page.getByRole("status")).toContainText("Scenario saved.");
+  expect(net.calls.sim.find((c) => c.body.action === "knobs")!.body).toEqual({ action: "knobs", reject_pct: 5, sold_out_pct: 3, delay_pct: 20, rider_drop_pct: 2 });
+  expect(await axeScan(page)).toEqual([]);
 });

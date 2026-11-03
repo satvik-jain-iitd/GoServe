@@ -45,6 +45,10 @@ export function AdminSim() {
     setClearing(false); setWord("");
     await run(async () => ({ ...(await clearAll(getClient())) }), (a) => `Cleared: ${a.kitchens} kitchens, ${a.riders} riders, ${a.dishes} dishes, ${a.orders} orders.`, () => counts({ ok: true, kitchens: 0, kitchens_open: 0, kitchens_real: 0, riders: 0, riders_online: 0, riders_real: 0, dishes: 0 }));
   };
+  const knobField = (f: { key: Exclude<keyof Knobs, "demo">; label: string }) => (
+    <div key={f.key} className="ui-field"><label htmlFor={`sim-${f.key}`}>{f.label}</label>
+      <input id={`sim-${f.key}`} className="mono-input" type="number" inputMode="numeric" min={0} max={100} value={knobs[f.key]} onChange={(e) => setKnobs({ ...knobs, [f.key]: Math.min(100, Math.max(0, Number(e.target.value) || 0)) })} /></div>
+  );
   const demo = (on: boolean) => run(() => callSim("knobs", { demo: on }, simDeps()), (a) => (a.knobs?.demo ? "Demo mode is on. The city stays steady and quick." : "Demo mode is off. Your old numbers are back."), (a) => { if (a.knobs) setKnobs(a.knobs); });
   const toggle = (on: boolean) => run(() => callSim(on ? "enable" : "disable", {}, simDeps()), (a) => (a.enabled ? "The city moves every minute." : "The city stands still."), (a) => counts({ ok: true, enabled: a.enabled }));
   const tick = () => run(() => callSim("tick", {}, simDeps()), tickLine, () => undefined);
@@ -67,33 +71,37 @@ export function AdminSim() {
       <section className="ui-group" aria-label="Kitchens">
         <h2>Kitchens</h2>
         <p className="ui-meta">{state ? groupLine(state.kitchens, state.kitchens_real) : ""}</p>
+        <details className="ui-details">
+          <summary><span>Kitchen scenario</span><span className="ui-meta">{`Turns away ${knobs.reject_pct}% · sold out ${knobs.sold_out_pct}% · slow ${knobs.delay_pct}%`}</span></summary>
+          <div className="ui-form ui-form-flush">
+            {KNOBS.filter((f) => f.key !== "rider_drop_pct").map(knobField)}
+            <div className="ui-form-acts"><button type="button" className="ui-btn big" disabled={busy} onClick={() => void saveKnobs()}>Save the kitchen scenario</button></div>
+            <p className="ui-meta">Orders are placed by people, never by the simulator. These numbers say how often a programmed kitchen turns one away or runs slow.</p>
+          </div>
+        </details>
         <div className="ui-form ui-form-flush">
-        <p className="ui-meta">{`Turns away ${knobs.reject_pct}% · sold out ${knobs.sold_out_pct}% · slow ${knobs.delay_pct}%`}</p>
-        <div className="ui-form-acts"><button type="button" className="ui-btn big" disabled={busy} onClick={() => void seedKitchens()}>Seed the kitchens</button></div>
-        <p className="ui-meta">Ten Delhi kitchens, menus and photos. Riders stay.</p>
+          <div className="ui-form-acts"><button type="button" className="ui-btn big" disabled={busy} onClick={() => void seedKitchens()}>Seed the kitchens</button></div>
+          <p className="ui-meta">Ten Delhi kitchens, menus and photos. Riders stay.</p>
         </div>
       </section>
       <section className="ui-group" aria-label="Riders">
         <h2>Riders</h2>
         <p className="ui-meta">{state ? groupLine(state.riders, state.riders_real) : ""}</p>
+        <details className="ui-details">
+          <summary><span>Rider scenario</span><span className="ui-meta">{`${form.riders_per_kitchen} per kitchen · ${form.online_pct}% online · drops out ${knobs.rider_drop_pct}%`}</span></summary>
+          <div className="ui-form ui-form-flush">
+            {FIELDS.map((f) => (
+              <div key={f.key} className="ui-field"><label htmlFor={`sim-${f.key}`}>{f.label}</label>
+                <input id={`sim-${f.key}`} className="mono-input" type="number" inputMode="numeric" min={f.min} max={f.max} value={form[f.key]} onChange={(e) => setForm({ ...form, [f.key]: Math.min(f.max, Math.max(f.min, Number(e.target.value) || 0)) })} /></div>
+            ))}
+            {KNOBS.filter((f) => f.key === "rider_drop_pct").map(knobField)}
+            <div className="ui-form-acts"><button type="button" className="ui-btn big" disabled={busy} onClick={() => void saveKnobs()}>Save the rider scenario</button></div>
+            <p className="ui-meta">Riders per kitchen and the online share are used the next time you seed the riders. The drop-out number is saved with the scenario.</p>
+          </div>
+        </details>
         <div className="ui-form ui-form-flush">
-        {FIELDS.map((f) => (
-          <div key={f.key} className="ui-field"><label htmlFor={`sim-${f.key}`}>{f.label}</label>
-            <input id={`sim-${f.key}`} className="mono-input" type="number" inputMode="numeric" min={f.min} max={f.max} value={form[f.key]} onChange={(e) => setForm({ ...form, [f.key]: Math.min(f.max, Math.max(f.min, Number(e.target.value) || 0)) })} /></div>
-        ))}
-        <div className="ui-form-acts"><button type="button" className="ui-btn big ghost" disabled={busy} onClick={() => void seedRiders()}>Seed the riders</button></div>
-        <p className="ui-meta">Investor demos only. Real riders: add in City.</p>
-        </div>
-      </section>
-      <section className="ui-group" aria-label="Scenario">
-        <h2>Scenario</h2>
-        <div className="ui-form ui-form-flush">
-        {KNOBS.map((f) => (
-          <div key={f.key} className="ui-field"><label htmlFor={`sim-${f.key}`}>{f.label}</label>
-            <input id={`sim-${f.key}`} className="mono-input" type="number" inputMode="numeric" min={0} max={100} value={knobs[f.key]} onChange={(e) => setKnobs({ ...knobs, [f.key]: Math.min(100, Math.max(0, Number(e.target.value) || 0)) })} /></div>
-        ))}
-        <div className="ui-form-acts"><button type="button" className="ui-btn big" disabled={busy} onClick={() => void saveKnobs()}>Save the scenario</button></div>
-        <p className="ui-meta">Orders are placed by people, never by the simulator. These numbers say how often a programmed kitchen turns one away or runs slow, and how often a rider drops out.</p>
+          <div className="ui-form-acts"><button type="button" className="ui-btn big ghost" disabled={busy} onClick={() => void seedRiders()}>Seed the riders</button></div>
+          <p className="ui-meta">Investor demos only. Real riders: add in City.</p>
         </div>
       </section>
       <section className="ui-group" aria-label="Start over">

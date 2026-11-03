@@ -448,3 +448,9 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-btn.danger-fill { background: var(--md-error); color: var(--md-on-error); }
 .ui-row-pair { display: flex; gap: var(--gs-space-3); }
 .ui-row-pair > .ui-btn { flex: 1; }
+/* Story 848: a scenario row that opens (board A-Sim-Groups): name and one line of numbers, a chevron on the right. */
+.ui-details > summary { display: flex; flex-direction: column; gap: 2px; padding: var(--gs-space-3) var(--gs-space-6) var(--gs-space-3) 0; border-bottom: 1px solid var(--md-outline-variant); cursor: pointer; position: relative; list-style: none; font-weight: 600; min-height: var(--gs-tap); justify-content: center; }
+.ui-details > summary::-webkit-details-marker { display: none; }
+.ui-details > summary::after { content: "\203A"; position: absolute; right: var(--gs-space-2); top: 50%; transform: translateY(-50%); font-size: var(--gs-display-m); }
+.ui-details[open] > summary::after { transform: translateY(-50%) rotate(90deg); }
+.ui-details > summary:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
