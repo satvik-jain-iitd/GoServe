@@ -40,7 +40,12 @@ export const clearShown = (flag: string | undefined, state: SimAnswer | null): b
 export type ClearAnswer = { ok: true; kitchens: number; riders: number; dishes: number; orders: number };
 export async function clearAll(c: Pick<SupabaseClient, "rpc">): Promise<ClearAnswer> {
   const { data, error } = await c.rpc("sim_clear_all");
-  if (error) throw new SimError(error.message?.includes("not_admin") ? "Only an admin can clear the city." : "Something went wrong. Please try again.", error.message?.includes("not_admin") ? "not_admin" : "unknown");
+  if (error) {
+    console.error("sim_clear_all failed", error);   // story 869: the full error is readable in the browser
+    if (error.message?.includes("not_admin")) throw new SimError("Only an admin can clear the city.", "not_admin");
+    // An admin sees the true reason, for example "JWT expired (PGRST301)" (rule 20), not a generic line.
+    throw new SimError(error.message ? `${error.message}${error.code ? ` (${error.code})` : ""}` : "Something went wrong. Please try again.", error.code || "unknown");
+  }
   if (data?.ok === true) return data as ClearAnswer;
   throw new SimError(typeof data?.message === "string" ? data.message : "Something went wrong. Please try again.", data?.error ?? "unknown");
 }
