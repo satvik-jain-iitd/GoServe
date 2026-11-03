@@ -27,7 +27,7 @@ export function SignIn({ mode = "link", returnTo = "menu", big, filled, onGivenN
     </p>
   );
   return (
-    <div>
+    <div className={big ? "ui-google-stack" : undefined}>
       <Button variant={filled ? "primary" : "ghost"} size={big ? "big" : undefined} data-testid="google-signin"
         onClick={async () => { rememberReturn(returnTo); await ensureSession().catch(() => {}); setError(await linkGoogle(getClient(), window.location.href.split("?")[0], mode)); }}>
         Continue with Google

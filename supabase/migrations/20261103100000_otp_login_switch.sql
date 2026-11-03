@@ -7,7 +7,11 @@ grant select on settings to anon, authenticated;
 
 alter table settings add constraint settings_otp_login_on_rule check (name <> 'otp_login_on' or jsonb_typeof(value) = 'boolean');
 insert into settings (name, value) values ('otp_login_on', 'false'::jsonb) on conflict (name) do nothing;
-alter publication supabase_realtime add table settings;
+do $$ begin
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'settings') then
+    alter publication supabase_realtime add table settings;
+  end if;
+end $$;
 
 -- The admin reads and flips it through two functions that check is_admin() themselves, the same rules as swap_discount_*_v2.
 create function otp_login_get_v2() returns jsonb

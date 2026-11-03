@@ -27,6 +27,11 @@ test("S1 with the switch off the welcome screen is Continue with Google only, an
   await expect(google).not.toHaveClass(/\bghost\b/);
   await expect(page.getByText("We ask for your mobile number on the bill, so the rider can call you.")).toBeVisible();
   await expect(page.getByText("Step 1 of 3")).toBeVisible();
+  // Board O0g-B: every child of the slip sits on one 16 px gap, the line under the button too (it was 4 px when the line lived inside the button's own box).
+  const help = page.getByText("We ask for your mobile number on the bill, so the rider can call you.");
+  const gap = (await help.boundingBox())!.y - (await google.boundingBox().then((b) => b!.y + b!.height));
+  expect(gap).toBeGreaterThanOrEqual(15);
+  expect(gap).toBeLessThanOrEqual(18);   // the line's own half-leading is a pixel or two
   await noPhoneParts(page);
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toHaveCount(0);
 });
