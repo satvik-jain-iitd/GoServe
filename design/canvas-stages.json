@@ -1,6 +1,6 @@
 {
   "canvas": "https://claude.ai/artifact/6faaULE7F6FDCSQw8YvPuW",
-  "arranged": "2026-10-29",
+  "arranged": "2026-11-04",
   "tints": {
     "sage": "#BFCFB4",
     "teal": "#CFD998",
@@ -178,20 +178,11 @@
           "notes": [
             "how-admin"
           ]
-        }
-      ]
-    },
-    {
-      "id": "final",
-      "title": "Section 2 · Design final, not on prod: the owner said yes, not live yet",
-      "purpose": "Section 2 = approved, not live. Row 2a: T2 T3 (#691 rider map), merged on staging 29 Oct. Row 2d: S1 S2 S3 (#503 the story at the bare address), merged on staging 29 Oct (PR #743). Row 2c: L1 L2 L3 A9 (#619), merged on staging 29 Oct. Row 2b: coupons (VITE_OFFERS) and UPI payments (VITE_PAYMENTS_PROVIDER) are coded and tested, but the prod build does not carry the flag. Each moves to Section 1 at the release that switches it on.",
-      "prefix": "DESIGN",
-      "tint": "teal",
-      "rows": [
+        },
         {
-          "id": "2a",
-          "title": "2a · Coded and merged on staging 29 Oct (#691 rider map), waiting for the next release",
-          "prefix": "ON STAGING",
+          "id": "1j",
+          "title": "1j · Rider map on the tracker (#691), live since release #774",
+          "prefix": "LIVE",
           "boards": [
             "T2-OnTheWayMap.dc.html",
             "T3-MapOffline.dc.html"
@@ -201,9 +192,9 @@
           ]
         },
         {
-          "id": "2d",
-          "title": "2d · Coded and merged on staging 29 Oct (#503 the bare address story, PR #743), waiting for the next release",
-          "prefix": "ON STAGING",
+          "id": "1l",
+          "title": "1l · The story at the bare address (#503), live since release #774",
+          "prefix": "LIVE",
           "boards": [
             "S1-StoryHero.dc.html",
             "S2-StoryParts.dc.html",
@@ -212,9 +203,9 @@
           "notes": []
         },
         {
-          "id": "2c",
-          "title": "2c · Coded and merged on staging 29 Oct (#619 closed and sold out), waiting for the next release",
-          "prefix": "ON STAGING",
+          "id": "1k",
+          "title": "1k · Closed and sold out (#619), live since release #774",
+          "prefix": "LIVE",
           "boards": [
             "L1-ClosedLive.dc.html",
             "L2-SoldOut.dc.html",
@@ -223,6 +214,25 @@
           ],
           "notes": [
             "closed-live"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "final",
+      "title": "Section 2 · Design final, not on prod: the owner said yes, not live yet",
+      "purpose": "Section 2: the owner said yes. Row 2b is coded behind a flag the prod build does not carry (coupons, UPI). Row 2e is approved and not built yet, one story each. Row 2f is coded and live on the dev link only. A board moves to Section 1 when the release that carries it ships.",
+      "prefix": "DESIGN",
+      "tint": "teal",
+      "rows": [
+        {
+          "id": "2e",
+          "title": "2e · Design final, not built yet: the code has not caught up (one story each)",
+          "prefix": "DESIGN",
+          "boards": [
+            "R-PickUp-PinLine.dc.html",
+            "Menu-DishLine.dc.html",
+            "A-Order-Delivery.dc.html"
           ]
         },
         {
@@ -242,13 +252,22 @@
             "offers",
             "how-pay"
           ]
+        },
+        {
+          "id": "2f",
+          "title": "2f · Google first on the welcome (#829, PR #833): on the dev link since 3 Nov, waiting for the next release",
+          "prefix": "ON STAGING",
+          "boards": [
+            "O0g-B-GoogleFirst.dc.html"
+          ],
+          "notes": []
         }
       ]
     },
     {
       "id": "discussion",
       "title": "Section 3 · In discussion: no decision yet",
-      "purpose": "Section 3: 02s Sunset is on hold (owner, 29 Oct). P3 Paying is a placeholder until the gateway (KYC). Nothing here is built until a decision. A board the manifest does not name lands in the Unsorted row here, so nothing is ever lost.",
+      "purpose": "Section 3: 02s Sunset is on hold (owner, 29 Oct). P3 Paying is a placeholder until the gateway (KYC). Row 3b holds the bug sprint frames of 4 Nov: nothing is built until the owner says yes per frame; a yes moves the frame to Section 2. A board the manifest does not name lands in the Unsorted row here, so nothing is ever lost.",
       "prefix": "IN TALK",
       "tint": "yellow",
       "rows": [
@@ -260,6 +279,18 @@
             "P3-PayWaiting.dc.html"
           ],
           "notes": []
+        },
+        {
+          "id": "3b",
+          "title": "3b · Bug sprint, 4 Nov 2026: three frames for the owner's pick (Simulator split and Clear everything, the kitchen's account row)",
+          "boards": [
+            "A-Sim-Groups.dc.html",
+            "A-Sim-Clear.dc.html",
+            "K-Account.dc.html"
+          ],
+          "notes": [
+            "sprint-frames"
+          ]
         }
       ]
     },
@@ -272,12 +303,15 @@
       "rows": [
         {
           "id": "4a",
-          "title": "4a · The pill options (A chosen) and the earlier pill",
+          "title": "4a · The pill options (A chosen), the earlier pill, and welcome option A (rejected 3 Nov: basic, nothing new)",
           "boards": [
             "M4-PillOptions.dc.html",
-            "M3-VegPill.dc.html"
+            "M3-VegPill.dc.html",
+            "O0g-A-GoogleOnly.dc.html"
           ],
-          "notes": []
+          "notes": [
+            "o0-option-a-rejected"
+          ]
         }
       ]
     },
