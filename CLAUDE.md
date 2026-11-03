@@ -33,6 +33,13 @@ Standing rules, every session:
     - **An error a customer can see must be true for that customer**, in their own words, with the way out next to it. "This number is already used by another account" shown to the owner of the number is a lie, and lies like it are bugs, not copy nits.
     - **Before a story closes, answer in the PR**: what happens on the hundredth customer, on a bad network, on a second device, and after a week away? No answer means the story is not done.
 
+21. **Maker and checker are never the same session** (owner, 3 Nov 2026: "main chahta ye hun ki ek maker checker process ho. Jo banda build krta hai us cheez ko wahi banda verify na kare. Same with agents."). The session that pushed any commit on a branch does not review, approve or merge that branch.
+    - **It holds for every kind of change**: code, documents, boards, records, configuration. The second pair of eyes is about the change, not the file type.
+    - **The two sessions are named by their tab**: `goserve-dev` builds, `goserve-qa` reviews and merges. A session that built a branch hands it to the other one and waits. Records the reviewer wants kept are written out for the builder to commit.
+    - **Every pull request body carries `Built by: goserve-dev` or `Built by: goserve-qa`**, so a check can later compare it with the session that merges. The gate script is ShipQuick's (feedback #149), not GoServe's.
+    - **Both sessions push as `klickbae8yt-star`**, so GitHub cannot tell them apart: this rule is what tells them apart. An approval that says "author and approver were one session" is honest, not allowed.
+    - **The one exception** is the owner saying so in that message, written in the pull request as a decision on the record.
+
 ## Radar first (owner, 25 Oct 2026, strictest rule)
 
 Before any new component, script, skill, workflow or tool in this project: run the `radar` skill (`radar@agi`) on the need, read the top 3 READMEs, record the run in `docs/research/repo-radar.md`, reuse or borrow first. Build from scratch only when the run found nothing, and say so. No radar run, no new code. Full text: `~/.claude/CLAUDE.md` section 2, rule 0.
