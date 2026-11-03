@@ -133,8 +133,8 @@ test('H7 fix: a database refusal on a sim call is still a 502 with no raw text, 
   assert.equal(run('shape.js', { statusCode: 200, body: { riders: [{ id: 'r1' }] } }).riders.length, 1);
 });
 
-test('H7 fix: the 400 text of MAIN 30 names all six actions', () => {
-  assert.match(byName(wf.main30, 'Respond 400').parameters.responseBody, /seed, reset, tick, enable, disable or status/);
+test('H7 fix: the 400 text of MAIN 30 names every action the guard accepts', () => {
+  assert.match(byName(wf.main30, 'Respond 400').parameters.responseBody, /seed, seed_kitchens, seed_riders, reset, tick, enable, disable, status or knobs\./);
 });
 
 // ---- Story #454: demo mode is one more key on the knobs action; a call without it must not touch the switch ----
