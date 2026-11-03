@@ -30,6 +30,22 @@ The slip that lives outside the app.
 - Material motion values, Android layout and insets: not read yet (the gaps in the Android note).
 - Nothing here is measured on a phone. Each rule is a hypothesis until a screen shows it.
 
+## The owner's design feedback, dated
+
+Kept here the same day he says it, and sent to ShipQuick so every project gets it.
+
+**3 November 2026, story #829, the welcome screen with one button.** He picked board
+`O0g-B-GoogleFirst` and rejected `O0g-A-GoogleOnly`. His reason, in his own words: A looked basic, the
+sign-in screen most apps already have, exactly as it is. Nothing new. Not engaging enough for the
+customer, because the messages around the button did not feel personalised.
+
+The rule this leaves behind:
+
+8. **On a screen whose job is one action, the copy is the design.** When a screen has one button, the
+   words around it are everything else on it. Options put to the owner must differ in their words, not
+   only in their layout. Text that could be pasted into any other app unchanged is the default, and the
+   default is not a design. Sent to ShipQuick as feedback #148.
+
 ## Not in this page
 
 - The design is not drawn. Per the owner's rule of 29 Oct: two or three frames first, his feedback, then screens, two or three at a time.
