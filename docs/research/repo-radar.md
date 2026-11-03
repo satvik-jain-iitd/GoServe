@@ -290,3 +290,67 @@ Result: nothing to adopt. Build as one static HTML file with the app's tokens, n
 
 ## 2026-10-29 · need: the Play Store listing pictures (feature graphic 1024 by 500, four phone screenshots 1080 by 1920) and the closed-test runbook (story #254)
 Runs: no new tool needed. Reused Playwright (already the app's test tool) for the screenshots and the graphic, the brand lockup and fonts from `app/public`, and Pillow (already on this Mac) only to shrink the PNGs under the repo's 500 KB file limit. The Play steps come from the Play Console Help page on testing requirements for new personal accounts (Tier A, Google, read 29 Oct 2026). Built from scratch: two small scripts in `ops/play/`.
+
+### Radar run 2026-10-31 | need: passwordless phone OTP login without user enumeration | formula 2026-10-25.1
+
+| Repo | Score | Verdict | Stars | Vel/day | Lic | Pushed | Issues 90d (active/closed) | Contrib | Downloads/mo | HN pts | Flags |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| [supertokens/supertokens-core](https://github.com/supertokens/supertokens-core) | 64 | watch | 15339 | 6.2e | NOASSERTION | 3d | 75/60 | 38 | - | 232 |  |
+| [teamhanko/hanko](https://github.com/teamhanko/hanko) | 53 | skip | 9053 | 5.4e | AGPL-3.0 | 2d | 25/12 | 53 | - | 2 | AGPL: fine to run, not to embed |
+| [logto-io/logto](https://github.com/logto-io/logto) | 51 | skip | 14823 | 7.6e | MPL-2.0 | 1d | 127/84 | 100 | 38 | 121 |  |
+| [authgear/authgear-server](https://github.com/authgear/authgear-server) | 45 | skip | 2135 | 0.9e | Apache-2.0 | 2d | 17/7 | 46 | - | 0 |  |
+
+Vel/day: m = measured from our snapshots, e = estimate (average since creation, first visit).
+Issues 90d: counted from the 300 most recently updated issues (pull requests excluded); busy repos are a sample.
+Score parts: fit 20, velocity 15, maintenance 15, responsiveness 10, adoption 15, bus_factor 10, hygiene 10, mentions 5. Thresholds: smoke-test >= 70, watch >= 55.
+Tier: GitHub API = A for counts; HN = C for talk; downloads = B. Confidence of the ranking: 0.6 until calibrated on 20 repos.
+Fit is keyword overlap only. Read the top 3 READMEs before trusting fit.
+
+## 2026-10-31 · need: a phone code sign-in that never says whether the number already has an account (story #807)
+Runs: `scout.py --need "phone OTP sign in that never reveals whether a number is already registered..."` and again with the shorter `"passwordless phone OTP login without user enumeration"`: **no repos found** both times (the scorer's search finds nothing for this wording). GitHub topic searches then found the real candidates: `topic:passwordless topic:phone` → supertokens-core, logto, hanko, authgear; `topic:user-enumeration` → only offensive tools (o365enum, vortex, onedrive_user_enum), nothing to build with; `topic:otp topic:authentication` → authenticator apps, not servers. Those four were then scored by name (`--repos`, table above): supertokens-core 64 watch, hanko 53 skip (AGPL, fine to run, not to embed), logto 51 skip, authgear 45 skip. Nothing reaches the 70 that would earn a smoke test.
+Decision: **adopt nothing, borrow one idea.** Two reasons, neither about the scores. First, rule 14: the owner named Supabase and Supabase Auth is what this app runs on; replacing the auth server is not what #807 asks for, it is a migration. Second, the story is one endpoint's answer shape, perhaps forty lines of Deno, against adopting a whole auth service.
+The idea borrowed, from SuperTokens' passwordless recipe: their flow is two calls, `createCode` then `consumeCode`, and it is `consumeCode` that reports `createdNewUser`. The new-or-returning fact is only told **after** the caller has proved they hold the code. That is exactly the shape #807 needs, and it is the opposite of what our `/otp/send` does today. Tier A for "their API is shaped that way" (their own API reference), confidence 0.9. Whether their `createCode` is itself enumeration-safe is **not** documented: searched and not found, confidence 0.4, so it is not cited as proof of anything.
+Read: the SuperTokens passwordless and bot-detection doc pages (their brute-force note is about bots, not enumeration); the four repos' GitHub metadata. Not read in depth: the three READMEs, because the adopt question was already closed by rule 14 before fit mattered.
+Nothing new is built from scratch here beyond the change inside the function we already have (`supabase/functions/otp`).
+
+### Radar run 2026-10-31 | need: visual regression testing: render app screens in CI, diff against committed baselines, show the pictures on the pull request | formula 2026-10-25.1
+
+| Repo | Score | Verdict | Stars | Vel/day | Lic | Pushed | Issues 90d (active/closed) | Contrib | Downloads/mo | HN pts | Flags |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| [reg-viz/reg-cli](https://github.com/reg-viz/reg-cli) | 61 | watch | 427 | 0.1e | MIT | 1d | 6/4 | 19 | 864769 | 0 |  |
+| [argos-ci/argos](https://github.com/argos-ci/argos) | 44 | skip | 653 | 0.2e | MIT | 1d | 7/7 | 15 | 42 | 2 |  |
+| [lost-pixel/lost-pixel](https://github.com/lost-pixel/lost-pixel) | 0 (raw 37) | ignore | 1676 | 0.9e | MIT | 192d | 0/0 | 23 | 133028 | 102 | archived; no push for 192 days |
+
+Vel/day: m = measured from our snapshots, e = estimate (average since creation, first visit).
+Issues 90d: counted from the 300 most recently updated issues (pull requests excluded); busy repos are a sample.
+Score parts: fit 20, velocity 15, maintenance 15, responsiveness 10, adoption 15, bus_factor 10, hygiene 10, mentions 5. Thresholds: smoke-test >= 70, watch >= 55.
+Tier: GitHub API = A for counts; HN = C for talk; downloads = B. Confidence of the ranking: 0.6 until calibrated on 20 repos.
+Fit is keyword overlap only. Read the top 3 READMEs before trusting fit.
+
+## 2026-10-31 · need: nothing in this repo looks at a screen; render each board's screen and put the picture where a reviewer sees it (follow-up F306, ShipQuick feedback #146)
+Runs: `scout.py --need "visual regression testing: render app screens in CI, diff against committed baseline images, attach the pictures to the pull request"`: **no repos found**. GitHub `topic:visual-regression-testing` and `topic:visual-testing topic:playwright` found the field: lost-pixel, argos, reg-cli, Visual-Regression-Tracker, loki, storycap, cypress-image-snapshot, differencify. The three that fit a Playwright project were scored (table above): reg-cli 61 watch, argos 44 skip, lost-pixel **0, ignore: archived, no push for 192 days** though it has 1676 stars and 133k downloads a month, which is the clearest case yet for judging behaviour over stars.
+Decision: **adopt nothing, use what is installed.** Playwright is already this project's e2e runner (`app/package.json`, `@playwright/test ^1.64.0`) and ships `expect(page).toHaveScreenshot()`: baseline PNGs committed beside the spec, a diff image written on failure, a threshold per assertion. Ponytail rung 5, an already-installed dependency covers the need, so reg-cli's extra report UI and argos's hosted service both lose to zero new dependencies.
+The one real risk with a committed baseline is font rendering, and this project is already safe from it: the fonts are **self-hosted** (`app/public/fonts/*.woff2`, `app/src/styles/fonts.css`), not fetched from Google at run time, so a CI render does not depend on a network font arriving in time. The remaining drift is the browser version, which `@playwright/test` pins.
+What is still to build, and it is small: a screens list, one spec that walks it, and a CI step that uploads the PNGs as an artefact so a reviewer sees the screen without building the branch. That last part is the half that actually fixes F306; the baseline diff is the half that keeps it fixed.
+Not read in depth: the three READMEs, because the adopt question was closed by "it is already installed", not by fit.
+
+### Radar run 2026-10-31 | need: dark store locations and serviceability geofences of Blinkit Zepto Swiggy Instamart | formula 2026-10-25.1
+
+| Repo | Score | Verdict | Stars | Vel/day | Lic | Pushed | Issues 90d (active/closed) | Contrib | Downloads/mo | HN pts | Flags |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| [jatin-dot-py/darkstores](https://github.com/jatin-dot-py/darkstores) | 0 (raw 33) | ignore | 49 | 0.2e | none | 36d | 0/0 | 3 | - | 0 | no licence |
+
+Vel/day: m = measured from our snapshots, e = estimate (average since creation, first visit).
+Issues 90d: counted from the 300 most recently updated issues (pull requests excluded); busy repos are a sample.
+Score parts: fit 20, velocity 15, maintenance 15, responsiveness 10, adoption 15, bus_factor 10, hygiene 10, mentions 5. Thresholds: smoke-test >= 70, watch >= 55.
+Tier: GitHub API = A for counts; HN = C for talk; downloads = B. Confidence of the ranking: 0.6 until calibrated on 20 repos.
+Fit is keyword overlap only. Read the top 3 READMEs before trusting fit.
+
+## 2026-10-31 · need: how a quick-commerce app decides which store serves an address, and can we reuse anything (owner asked after a reel he saw)
+Runs: `scout.py --repos jatin-dot-py/darkstores` (the one repo the searches turned up): **0, ignore, no licence**, 49 stars, 3 contributors, last push 36 days ago. Not adoptable. Its value is not the code: the author swept a grid of spoofed coordinates against the platforms' own serviceability APIs and wrote down what came back.
+What that evidence says, and it beats every explainer we read:
+- **Zepto returns `servicableGeofence`, a polygon** for each store's delivery area. So the question they answer is "is this point inside the shape", not "how far is the store". Tier B (observed behaviour of their own API, reported by a third party), confidence 0.8.
+- **Blinkit returns `promise_time_state.DistanceInMeter`, the road distance** to the nearest dark store, not the straight-line distance. Tier B, confidence 0.8.
+- The popular "the address becomes a hex cell and the cell maps to a store" claim comes from one Substack analysis and a Medium post that itself says "likely H3, quadtrees". That is the author's inference, not a company statement. Tier C, confidence 0.3. The owner's reel appears to repeat it as fact.
+- Uber's H3 is real and well documented (Tier A, their own engineering blog, confidence 0.9) but it answers a question we do not have: which of hundreds of stores covers a cell. With a handful of kitchens an exact distance or a point-in-polygon test is both cheaper and exact.
+Decision: adopt nothing. Borrow the shape of the answer: a per-kitchen service **polygon** we own and the owner draws, with road distance used for the time promise, never a straight line. PostGIS 3.3.7 is available on our own Supabase project (checked against the dev project's `pg_available_extensions`, Tier A), so `ST_Contains` and `ST_DWithin` need no new dependency; there is no `h3` extension there and we do not need one yet. `kitchens.lat`, `kitchens.lng` and `kitchens.radius_m` already exist (story #342) and the customer app simply does not use them.
