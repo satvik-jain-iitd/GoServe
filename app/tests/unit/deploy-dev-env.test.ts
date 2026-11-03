@@ -18,6 +18,23 @@ describe("deploy-dev.yml (the dev app)", () => {
   it("carries the decision engine URL, same as prod", () => {
     expect(text).toMatch(/VITE_ENGINE_URL:/);
   });
+  // Story 844: the simulator and the engine webhooks choose a DATABASE (n8n has gs-sim and gs-sim-prod, gs-engine and gs-engine-prod). The dev app once
+  // reused prod's secrets "because the endpoint is shared", and the dev admin's Seed, Reset and Tick went to production. A prod secret never builds dev.
+  it("references no PROD_ secret at all", () => {
+    expect(text).not.toMatch(/secrets\.PROD_/);
+  });
+  it("builds the sim and engine webhooks from the dev secrets", () => {
+    expect(text).toMatch(/VITE_SIM_URL:\s*\$\{\{\s*secrets\.DEV_VITE_SIM_URL\s*\}\}/);
+    expect(text).toMatch(/VITE_SIM_TOKEN:\s*\$\{\{\s*secrets\.DEV_VITE_SIM_TOKEN\s*\}\}/);
+    expect(text).toMatch(/VITE_ENGINE_URL:\s*\$\{\{\s*secrets\.DEV_VITE_ENGINE_URL\s*\}\}/);
+  });
+  it("refuses to build when a dev webhook secret is missing, instead of falling back to prod", () => {
+    expect(text).toMatch(/DEV_VITE_SIM_URL[\s\S]*are not set/);
+    expect(text).toMatch(/exit 1/);
+  });
+  it("refuses a dev webhook address that names a prod copy, even if someone pasted it into the dev secret", () => {
+    expect(text).toMatch(/\*-prod\*/);
+  });
   // The pre-prod branch was renamed from staging to dev (owner, 30 Oct 2026). A trigger left on the
   // old name deploys nothing and says nothing, so the branch name is checked here.
   it("deploys from the dev branch", () => {
