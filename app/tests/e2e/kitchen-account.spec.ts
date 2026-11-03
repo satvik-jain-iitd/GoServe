@@ -70,3 +70,23 @@ test("S7 (#849) Sign out ends the session and the kitchen app asks for a Google 
   await expect(page.getByTestId("google-signin")).toBeVisible();
   expect(logout).toEqual(["POST"]);
 });
+
+// Story #850 (board K-Account): the Remove this kitchen row, behind the build flag. The confirm sheet waits for its frame, so the tap opens nothing yet.
+test("S8 (#850) the Today tab ends with Leaving GoServe and a red Remove this kitchen row; tapping it calls nothing until its sheet exists", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.kitchen = "k-1";
+  await page.goto("/kitchen/");
+  await page.getByRole("button", { name: "Today", exact: true }).click();
+  const section = page.getByRole("region", { name: "Leaving GoServe" });
+  await expect(section).toContainText("Asks twice");
+  const row = section.getByRole("button", { name: /Remove this kitchen/ });
+  await expect(row).toContainText("Customers stop seeing it today. Orders already placed finish.");
+  const red = await row.locator(".ui-danger-text").evaluate((el) => getComputedStyle(el).color);
+  const error = await page.evaluate(() => { const d = document.createElement("div"); d.style.color = "var(--md-error)"; document.body.append(d); const c = getComputedStyle(d).color; d.remove(); return c; });
+  expect(red).toBe(error);   // red is the error token, not a new colour
+  const rowY = (await row.boundingBox())!.y, outY = (await page.getByTestId("signed-in-row").boundingBox())!.y;
+  expect(rowY).toBeGreaterThan(outY);   // at the bottom
+  await row.click();
+  expect(net.calls.rpc.filter((r) => r.name === "kitchen_remove_v2")).toEqual([]);
+  expect(await scan(page)).toEqual([]);
+});
