@@ -21,12 +21,12 @@
     "row4",
     "row5"
   ],
-  "start_here": "HOW TO READ THIS CANVAS. Five sections top to bottom, each on its own coloured board with its title: 1 Production (on prod today), 2 Design final not on prod, 3 In discussion, 4 Rejected, 5 Mistakes fixed. Inside Section 1 the rows follow the customer's journey left to right (first open and address, menu to order, after the order, You and alerts and feedback, no connection and Night, the code states), then kitchen, rider, admin. Every board's name starts with its state: LIVE, ON STAGING (coded, flag off on prod), DESIGN (approved, not coded), IN TALK, REJECTED, OLD (the wrong version; its fix is named in the section note), UNSORTED (not placed yet). Green notes are story notes next to the boards they describe. The layout is generated from design/canvas-stages.json by canvas_stage.py; a board moves by editing that file, never by dragging.",
+  "start_here": "HOW TO READ THIS CANVAS. Five sections top to bottom, each on its own coloured board with its title: 1 Production (on prod today), 2 Design final not on prod, 3 In discussion, 4 Rejected, 5 Mistakes fixed. Inside Section 1 the rows follow the customer's journey left to right (first open and address, menu to order, after the order, You and alerts and feedback, no connection and Night), then kitchen, rider, admin. Every board's name starts with its state: LIVE, ON STAGING (coded, flag off on prod), DESIGN (approved, not coded), IN TALK, REJECTED, OLD (the wrong version; its fix is named in the section note), UNSORTED (not placed yet). Green notes are story notes next to the boards they describe. The layout is generated from design/canvas-stages.json by canvas_stage.py; a board moves by editing that file, never by dragging.",
   "sections": [
     {
       "id": "production",
       "title": "Section 1 · Production: what is on prod today (release #687, 29 Oct 2026)",
-      "purpose": "Section 1 = the prod build. Rows follow the customer from the first open to the order, then after the order, You, alerts, feedback, no connection and Night, the code states at checkout; then the kitchen, the rider, the admin. A board moves to Section 5 the day a newer version replaces it on prod. Fixes made on the same board (the Menu pill, option A) leave no old board.",
+      "purpose": "Section 1 = the prod build. Rows follow the customer from the first open to the order, then after the order, You, alerts, feedback, no connection and Night at checkout; then the kitchen, the rider, the admin. A board moves to Section 5 the day a newer version replaces it on prod. Fixes made on the same board (the Menu pill, option A) leave no old board.",
       "prefix": "LIVE",
       "tint": "sage",
       "rows": [
@@ -108,24 +108,6 @@
             "menu-offline-empty",
             "night-contrast",
             "how-blue"
-          ]
-        },
-        {
-          "id": "1f",
-          "title": "1f · Customer · the phone code at checkout, every state",
-          "boards": [
-            "O1-Number.dc.html",
-            "O2-NumberError.dc.html",
-            "O3-Code.dc.html",
-            "O4-CodeError.dc.html",
-            "O5-CodeResend.dc.html",
-            "O6-CodeLocked.dc.html",
-            "O7-InUse.dc.html",
-            "O8-Confirmed.dc.html",
-            "O9-Name.dc.html"
-          ],
-          "notes": [
-            "how-otp"
           ]
         },
         {
@@ -221,7 +203,7 @@
     {
       "id": "final",
       "title": "Section 2 · Design final, not on prod: the owner said yes, not live yet",
-      "purpose": "Section 2: the owner said yes. Row 2b is coded behind a flag the prod build does not carry (coupons, UPI). Row 2e is approved and not built yet, one story each. Row 2f is coded and live on the dev link only. A board moves to Section 1 when the release that carries it ships.",
+      "purpose": "Section 2: the owner said yes. Row 2b is coded behind a flag the prod build does not carry (coupons, UPI). Rows 2e and 2g are approved and not built yet, one story each. Row 2f is coded and live on the dev link only. A board moves to Section 1 when the release that carries it ships.",
       "prefix": "DESIGN",
       "tint": "teal",
       "rows": [
@@ -261,13 +243,25 @@
             "O0g-B-GoogleFirst.dc.html"
           ],
           "notes": []
+        },
+        {
+          "id": "2g",
+          "title": "2g · Bug sprint, approved 4 Nov 2026: Simulator in two groups with Clear everything (S1, S2), the kitchen's account row and Remove this kitchen (K6); not coded yet",
+          "boards": [
+            "A-Sim-Groups.dc.html",
+            "A-Sim-Clear.dc.html",
+            "K-Account.dc.html"
+          ],
+          "notes": [
+            "sprint-frames"
+          ]
         }
       ]
     },
     {
       "id": "discussion",
       "title": "Section 3 · In discussion: no decision yet",
-      "purpose": "Section 3: 02s Sunset is on hold (owner, 29 Oct). P3 Paying is a placeholder until the gateway (KYC). Row 3b holds the bug sprint frames of 4 Nov: nothing is built until the owner says yes per frame; a yes moves the frame to Section 2. A board the manifest does not name lands in the Unsorted row here, so nothing is ever lost.",
+      "purpose": "Section 3: 02s Sunset is on hold (owner, 29 Oct). P3 Paying is a placeholder until the gateway (KYC). Row 3c holds the phone-code states, on hold until the SMS integration (owner, 3 Nov). Nothing here is built until a decision. A board the manifest does not name lands in the Unsorted row here, so nothing is ever lost.",
       "prefix": "IN TALK",
       "tint": "yellow",
       "rows": [
@@ -281,15 +275,21 @@
           "notes": []
         },
         {
-          "id": "3b",
-          "title": "3b · Bug sprint, 4 Nov 2026: three frames for the owner's pick (Simulator split and Clear everything, the kitchen's account row)",
+          "id": "3c",
+          "title": "3c · The phone code at checkout, every state (O1 to O9): on hold until the SMS integration (owner, 3 Nov 2026)",
           "boards": [
-            "A-Sim-Groups.dc.html",
-            "A-Sim-Clear.dc.html",
-            "K-Account.dc.html"
+            "O1-Number.dc.html",
+            "O2-NumberError.dc.html",
+            "O3-Code.dc.html",
+            "O4-CodeError.dc.html",
+            "O5-CodeResend.dc.html",
+            "O6-CodeLocked.dc.html",
+            "O7-InUse.dc.html",
+            "O8-Confirmed.dc.html",
+            "O9-Name.dc.html"
           ],
           "notes": [
-            "sprint-frames"
+            "how-otp"
           ]
         }
       ]
