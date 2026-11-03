@@ -145,6 +145,10 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
           {todayLine}
           {gate ? (
             <>
+              <div className="ui-row ui-row-static ui-row-tall" data-testid="signed-in-row">
+                <span className="ui-row-label"><span>Signed in as</span><span className="ui-row-sub mono">{gate.email ?? "This Google account"}</span></span>
+                <button type="button" className="ui-btn ghost small" onClick={gate.signOut}>Sign out</button>
+              </div>
               <div className="ui-row ui-row-static ui-row-tall">
                 <label htmlFor="open" className="ui-row-label"><span>Open for orders</span><span className="ui-row-sub mono">{gate.open === null ? "Could not read the kitchen." : !gate.open ? "Closed · customers see it now" : pastClose ? `Past ${gate.closesAt} · "closed" till opening time` : `${gate.closesAt ? `Till ${gate.closesAt} · off` : "Off"} shows "closed" at once`}</span></label>
                 {gate.open === null ? <button type="button" className="ui-btn ghost small" onClick={gate.retry}>Try again</button>
@@ -159,7 +163,6 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
               {handoverError && <p role="alert" className="ui-note error">{handoverError}</p>}
               <DishList kitchenId={gate.kitchenId} />
               <button type="button" className="ui-row" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}><span>Send feedback</span><span className="go" aria-hidden="true">›</span></button>
-              <button type="button" className="ui-row" onClick={gate.signOut}><span>Sign out</span><span className="go" aria-hidden="true">›</span></button>
             </>
           ) : <p className="ui-meta ui-pad">The open switch and the dishes are on the kitchen app, after a Google sign-in.</p>}
         </div>

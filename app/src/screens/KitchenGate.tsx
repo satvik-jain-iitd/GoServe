@@ -6,18 +6,19 @@ import { ensureSession, getClient } from "../lib/supabase";
 import { SignIn } from "./SignIn";
 import { Skeleton, StaffLanding } from "../ui";
 
-export type KitchenGateState = { kitchenId: string; name: string; open: boolean | null; opensAt: string | null; closesAt: string | null; lat: number | null; lng: number | null; flipOpen: () => Promise<void>; retry: () => void; signOut: () => void };   // open null: the row could not be read
+export type KitchenGateState = { kitchenId: string; name: string; open: boolean | null; opensAt: string | null; closesAt: string | null; lat: number | null; lng: number | null; email: string | null; flipOpen: () => Promise<void>; retry: () => void; signOut: () => void };   // open null: the row could not be read
 type Row = { name: string; open: boolean | null; opens_at: string | null; closes_at: string | null; lat: number | null; lng: number | null };
 
 export function KitchenGate({ children }: { children: (gate: KitchenGateState) => ReactNode }) {
   const [kitchenId, setKitchenId] = useState<string | null | undefined>(undefined);   // undefined: still loading
   const [row, setRow] = useState<Row | null>(null);
   const [anonymous, setAnonymous] = useState(true);
+  const [email, setEmail] = useState<string | null>(null);   // story 849: the Google account shown on the Today tab
   const [error, setError] = useState<string | null>(null);
   const [tries, setTries] = useState(0);
   useEffect(() => {
     ensureSession().then(async (id) => {
-      try { const { data } = await getClient().auth.getUser(); setAnonymous(data.user?.is_anonymous !== false); } catch { /* unknown: treat as not signed in */ }
+      try { const { data } = await getClient().auth.getUser(); setAnonymous(data.user?.is_anonymous !== false); setEmail(data.user?.email ?? null); } catch { /* unknown: treat as not signed in */ }
       const k = await myKitchen(getClient(), id);
       if (k) {
         const { data, error } = await getClient().from("kitchens").select("name, open, opens_at, closes_at, lat, lng").eq("id", k).limit(1);
@@ -57,7 +58,7 @@ export function KitchenGate({ children }: { children: (gate: KitchenGateState) =
   return (
     <>
       {error && <p role="alert" className="ui-note error">{error}</p>}
-      {children({ kitchenId, name: row.name, open: row.open, opensAt: hhmmOf(row.opens_at), closesAt: hhmmOf(row.closes_at), lat: row.lat, lng: row.lng, flipOpen, retry: () => setTries((n) => n + 1), signOut })}
+      {children({ kitchenId, name: row.name, open: row.open, opensAt: hhmmOf(row.opens_at), closesAt: hhmmOf(row.closes_at), lat: row.lat, lng: row.lng, email, flipOpen, retry: () => setTries((n) => n + 1), signOut })}
     </>
   );
 }
