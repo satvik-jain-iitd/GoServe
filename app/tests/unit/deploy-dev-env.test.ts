@@ -35,6 +35,9 @@ describe("deploy-dev.yml (the dev app)", () => {
   it("refuses a dev webhook address that names a prod copy, even if someone pasted it into the dev secret", () => {
     expect(text).toMatch(/\*-prod\*/);
   });
+  it("draws Clear everything in a dev build only (story 848)", () => {
+    expect(text).toMatch(/VITE_SIM_CLEAR:\s*"1"/);
+  });
   // The pre-prod branch was renamed from staging to dev (owner, 30 Oct 2026). A trigger left on the
   // old name deploys nothing and says nothing, so the branch name is checked here.
   it("deploys from the dev branch", () => {
