@@ -29,7 +29,8 @@ const STEPS: Record<string, (context: BrowserContext, page: Page, path: string) 
     await page.getByRole("button", { name: /View bill/ }).click();
     await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
   },
-  account: async (context, page, path) => { await setup(context, page); await page.goto(path); await page.getByRole("button", { name: "Account" }).click(); await expect(page.getByTestId("account")).toBeVisible(); },
+  account: async (context, page, path) => { const net = await setup(context, page); net.state.phoneUser = true; await page.goto(path);   // story 829: signed in by phone code (no Google name), so You shows the Google row as in the accepted picture
+    await page.getByRole("button", { name: "Account" }).click(); await expect(page.getByTestId("account")).toBeVisible(); },
   orders: async (context, page, path) => { await setup(context, page); await page.goto(path); await page.getByRole("button", { name: "My orders" }).click(); await page.waitForLoadState("networkidle"); },
 };
 
