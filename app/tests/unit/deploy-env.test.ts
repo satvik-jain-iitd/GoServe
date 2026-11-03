@@ -30,4 +30,7 @@ describe("deploy-app.yml (the real app)", () => {
   it("never turns Clear everything on in the real app (story 848)", () => {
     expect(text).not.toContain("VITE_SIM_CLEAR");
   });
+  it("never turns the Remove this kitchen row on in the real app (story 850)", () => {
+    expect(text).not.toContain("VITE_KITCHEN_REMOVE");
+  });
 });
