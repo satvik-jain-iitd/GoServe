@@ -21,7 +21,7 @@ test("S1 a customer phone that once signed in with Google sees no Signed in line
 });
 
 test("S2 the kitchen app and the rider app still offer Google sign-in at their gate", async ({ page, context }) => {
-  const net = await setup(context, page);
+  const net = await setup(context, page, [], { guest: true });
   net.state.rider = null;
   await page.goto("/kitchen/");
   await expect(page.getByTestId("google-signin")).toBeVisible();

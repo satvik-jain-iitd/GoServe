@@ -39,7 +39,8 @@ import { openOrderToResume } from "./lib/resume";
 import { SignIn } from "./screens/SignIn";
 import { NameSheet, OtpSheet } from "./screens/OtpSheet";
 import { Skeleton } from "./ui";
-import { otpGateOn } from "./lib/otpGate";
+import { otpLoginOn } from "./lib/otpGate";
+import { watchOtpSwitch } from "./lib/otpSwitch";
 import { createPayment, switchToCash, simulatePaid, type PayMethod } from "./lib/payments";
 import { openGateway } from "./lib/payGateway";
 import { registerNative, wrapperToken } from "./lib/pushNative";
@@ -91,8 +92,18 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [address, setAddress] = useState(draft0?.address ?? "");
   const [name, setName] = useState(draft0?.name ?? "");
   const [phone, setPhone] = useState(draft0?.phone ?? "");
-  // Story #551: the phone code at checkout (off unless the gate is on). verified = this user already has a phone linked.
-  const gate = lock === "customer" && otpGateOn(import.meta.env, window.localStorage);
+  // Story #551: the phone code at checkout. verified = this user already has a phone linked.
+  // Story 829: the phone code is a switch the admin flips (settings row otp_login_on), off until an SMS provider is live. The login wall (Google, or the code) shows to
+  // a signed-out customer either way. otpSetting: undefined = not read yet, null = could not be read (then VITE_OTP_GATE, then off).
+  const [otpSetting, setOtpSetting] = useState<boolean | null | undefined>(undefined);
+  useEffect(() => {
+    if (lock !== "customer") return;
+    const giveUp = setTimeout(() => setOtpSetting((cur) => (cur === undefined ? null : cur)), 4000);   // a slow network never holds the first screen
+    const stop = watchOtpSwitch(getClient(), setOtpSetting);
+    return () => { clearTimeout(giveUp); stop(); };
+  }, [lock]);
+  const wall = lock === "customer";   // the customer app's front door: a signed-out customer meets Google (or the phone code) before the menu
+  const gate = lock === "customer" && otpSetting !== undefined && otpLoginOn(otpSetting, import.meta.env, window.localStorage);
   const ordersV2 = lock === "customer" && ordersV2On(import.meta.env, window.localStorage);   // story #590: POST /orders instead of the v1 webhook
   const [verified, setVerified] = useState(false);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);   // story #667: null = not asked yet; the first screen waits so a returning customer never sees it flash
@@ -663,7 +674,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
 
   // Story #551: a guest confirms a phone number before the order goes; the continuation runs once the sheets are closed (so it sees the new name and phone).
   useEffect(() => {
-    if (!gate) return;
+    if (!gate && !wall) return;
     let alive = true;
     ensureSession().then(() => getClient().auth.getUser()).then(({ data }) => {
       const p = data.user && !data.user.is_anonymous ? data.user.phone : null;
@@ -672,7 +683,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       if (alive && p) { setVerified(true); setPhone(p.replace(/^91/, "")); if (n) setName((cur) => cur || n); }
     }).catch(() => { if (alive) setSignedIn(false); });
     return () => { alive = false; };
-  }, [gate]);
+  }, [gate, wall]);
   useEffect(() => {
     if (!pendingPlace || otpOpen || nameOpen) return;
     if (!name.trim() && !nameAsked) return void setNameOpen(true);
@@ -756,8 +767,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const kitchenView = lock === "kitchen" ? <KitchenGate>{kitchenScreen}</KitchenGate> : kitchenScreen(null);
   const needArea = lock === "customer" && step !== "placed" && step !== "orders" && !(pin && (area?.kind === "ok" || area?.kind === "closed"));
   // Story #667: with the phone code on, the first screen is the number and the code (or Google); nothing else shows before it.
-  const customerView = gate && signedIn === null ? <div className="ui-pad"><Skeleton lines={3} /></div> : gate && signedIn === false ? (
-    <OtpSheet welcome phone={phone} onClose={() => undefined}
+  const customerView = wall && (signedIn === null || otpSetting === undefined) ? <div className="ui-pad"><Skeleton lines={3} /></div> : wall && signedIn === false ? (
+    <OtpSheet welcome googleOnly={!gate} phone={phone} onClose={() => undefined}
       onVerified={(p) => { setPhone(p); setVerified(true); setSignedIn(true); }} />
   ) : needArea ? (
     <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={(pl) => { setAddress(pl.address); choosePin(pl.pin, pl.from); }} />

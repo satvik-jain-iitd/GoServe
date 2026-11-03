@@ -19,7 +19,7 @@ async function watchReturn(context: BrowserContext, page: Page) {
 }
 
 test("S1 a tap on Google on the welcome screen comes back to the menu", async ({ page, context }) => {
-  await setup(context, page);
+  await setup(context, page, [], { guest: true });
   await context.addInitScript(() => { try { localStorage.setItem("gs-otp-gate", "1"); } catch { /* blocked */ } });
   const written = await watchReturn(context, page);
   await page.goto("/customer/");
@@ -28,7 +28,8 @@ test("S1 a tap on Google on the welcome screen comes back to the menu", async ({
 });
 
 test("S2 a tap on Google on You comes back to You", async ({ page, context }) => {
-  await setup(context, page);
+  const net = await setup(context, page);
+  net.state.phoneUser = true;   // story 829: signed in by phone code, so You still offers Google
   const written = await watchReturn(context, page);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Account" }).click();

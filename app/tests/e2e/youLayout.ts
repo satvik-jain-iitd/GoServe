@@ -6,6 +6,7 @@ import { setup } from "./helpers";
 export async function youLayout(page: Page, context: BrowserContext, theme: "day" | "night") {
   await context.addInitScript((t) => { try { localStorage.setItem("gs-theme", t); } catch { /* the default theme shows */ } }, theme);
   const net = await setup(context, page);
+  net.state.phoneUser = true;   // story 829: behind the login wall a customer is signed in; one who came by phone code has no Google name, so You still offers Google
   net.state.customer = { user_id: "u", name: "Rahul Verma", phone: "9876543210", address: "B-12, Lajpat Nagar II, near the park gate", pin_code: "110024" };
   await page.goto("/customer/");
   await page.getByRole("button", { name: "You" }).click();

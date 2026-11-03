@@ -42,7 +42,8 @@ test("S3 a name the customer already typed is never overwritten by Google", asyn
 });
 
 test("S4 the Continue with Google button is on You, and not on Menu or Orders", async ({ page, context }) => {
-  await setup(context, page);
+  const net = await setup(context, page);
+  net.state.phoneUser = true;   // story 829: behind the wall a customer is signed in; one who came by phone code has no Google name
   await page.goto("/customer/");
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
   await expect(page.getByTestId("google-signin")).toHaveCount(0);

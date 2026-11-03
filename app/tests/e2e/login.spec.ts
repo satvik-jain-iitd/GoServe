@@ -33,7 +33,7 @@ test("S2 a signed-in user sees the name and no button", async ({ page, context }
 });
 
 test("S3 an anonymous user keeps the same session and sees the button", async ({ page, context }) => {
-  await setup(context, page, []);
+  await setup(context, page, [], { guest: true });
   await page.goto("/console/");
   await expect(page.getByTestId("google-signin")).toBeVisible();
   await expect(page.getByTestId("signed-in")).toHaveCount(0);
@@ -50,7 +50,7 @@ test("S4 a Google identity already on another user: the friendly line, then the 
 });
 
 test("S4b another failure from Google shows our own line once and clears the address", async ({ page, context }) => {
-  await setup(context, page, []);
+  await setup(context, page, [], { guest: true });
   await page.goto("/console/?error=access_denied&error_description=Access+denied");
   await expect(page.getByRole("alert")).toHaveText("Could not sign in with Google. Try again.");
   await expect(page).toHaveURL(/\/$/);

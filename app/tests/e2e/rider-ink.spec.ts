@@ -72,7 +72,7 @@ test("S5 an account that is not a rider sees the gate with Check again and Sign 
 for (const theme of ["day", "night"] as const) {
   test(`S6 the rider screens have no serious contrast or role violation in ${theme}`, async ({ page, context }) => {
     await context.addInitScript((v) => localStorage.setItem("gs-theme", v), theme);
-    const net = await setup(context, page, [{ ...order("ready"), rider_id: SESSION, customer_name: "Rahul Verma", customer_phone: "9876543210" }]);
+    const net = await setup(context, page, [{ ...order("ready"), rider_id: SESSION, customer_name: "Rahul Verma", customer_phone: "9876543210" }], { guest: true });
     await page.goto("/rider/");
     await expect(page.getByText("Collect cash")).toBeVisible();
     const scan = async () => expect(await axeScan(page, ["wcag2a", "wcag2aa"])).toEqual([]);
@@ -99,7 +99,7 @@ for (const theme of ["day", "night"] as const) {
 }
 
 test("S7 a phone with no Google sign-in sees Sign in to ride", async ({ page, context }) => {
-  const net = await setup(context, page);
+  const net = await setup(context, page, [], { guest: true });
   net.state.rider = null;
   await page.goto("/rider/");
   await expect(page.getByRole("heading", { name: "Sign in to ride" })).toBeVisible();

@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test";
 import { setup } from "./helpers";
 
 test("S1 the welcome screen carries the board's label, hint, box and Google button", async ({ page, context }) => {
-  await setup(context, page);
+  await setup(context, page, [], { guest: true });
   await context.addInitScript(() => { try { localStorage.setItem("gs-otp-gate", "1"); } catch { /* blocked */ } });
   await page.goto("/customer/");
   const input = page.getByLabel("Mobile", { exact: true });
