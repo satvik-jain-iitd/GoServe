@@ -236,3 +236,18 @@ test("S14 (#848) the scenario numbers sit in two rows inside their groups; each 
   expect(net.calls.sim.find((c) => c.body.action === "knobs")!.body).toEqual({ action: "knobs", reject_pct: 5, sold_out_pct: 3, delay_pct: 20, rider_drop_pct: 2 });
   expect(await axeScan(page)).toEqual([]);
 });
+
+test("S15 (#873) Clear everything calls the function again until it says done, with the slice size, and shows the totals of all slices", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.admin = true;
+  net.state.clearSlices = 3;   // two slices that are not done, then the last
+  await open(page);
+  await page.getByRole("button", { name: "Clear everything" }).click();
+  await page.getByLabel("Type CLEAR to go on").fill("CLEAR");
+  await page.getByRole("dialog").getByRole("button", { name: "Clear everything" }).click();
+  await expect(page.getByRole("status")).toContainText("Cleared: 16 kitchens, 42 riders, 137 dishes, 41 orders.");   // 20 + 20 + 1 orders
+  const calls = net.calls.rpc.filter((r) => r.name === "sim_clear_all");
+  expect(calls).toHaveLength(3);
+  expect(calls.every((c) => c.body.p_limit === 500)).toBe(true);
+  expect(net.calls.sim.map((c) => c.body.action)).toEqual(["status"]);
+});
