@@ -27,4 +27,7 @@ describe("deploy-app.yml (the real app)", () => {
   it("does not turn the offers on: the order still goes through the v1 path (stories #588, #590)", () => {
     expect(text).not.toContain("VITE_OFFERS");
   });
+  it("never turns Clear everything on in the real app (story 848)", () => {
+    expect(text).not.toContain("VITE_SIM_CLEAR");
+  });
 });

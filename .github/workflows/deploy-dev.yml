@@ -62,6 +62,7 @@ jobs:
           VITE_SIM_URL: ${{ secrets.DEV_VITE_SIM_URL }}
           VITE_SIM_TOKEN: ${{ secrets.DEV_VITE_SIM_TOKEN }}
           VITE_ENGINE_URL: ${{ secrets.DEV_VITE_ENGINE_URL }}
+          VITE_SIM_CLEAR: "1"   # story 848: the Clear everything button is drawn in a dev build only (the database must also allow it)
           VITE_BUILD: ${{ github.sha }}
         run: |
           npm ci

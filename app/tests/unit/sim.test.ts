@@ -1,6 +1,6 @@
 // Story H7 (#190): the admin Simulator tab talks to n8n GS MAIN 30 (webhook gs-sim) with the simulator token, never to the database.
 import { describe, expect, it } from "vitest";
-import { KNOB_DEFAULTS, SEED_DEFAULTS, callSim, SimError, tickLine } from "../../src/lib/sim";
+import { CLEAR_WORD, KNOB_DEFAULTS, SEED_DEFAULTS, callSim, clearAll, clearShown, groupLine, SimError, tickLine } from "../../src/lib/sim";
 
 const deps = (res: () => Promise<Response>, seen: { url?: string; init?: RequestInit } = {}) => ({
   url: "https://n8n.test/webhook/gs-sim", token: "sim-token",
@@ -34,5 +34,45 @@ describe("the #284 numbers", () => {
   it("the tick line says what the orders did", () => {
     expect(tickLine({ ok: true, riders_moved: 3, orders: { accepted: 2, cancelled: 1, delivered: 1, dropped: 0 } })).toContain("Orders: 2 accepted, 1 turned away, 1 delivered, 0 riders dropped.");
     expect(tickLine({ ok: true, riders_moved: 3 })).not.toContain("Orders:");
+  });
+});
+
+// Story #848 (board A-Sim-Groups, A-Sim-Clear): two seed groups, and Clear everything through the admin's own session.
+describe("the two seed groups", () => {
+  it("seed_kitchens and seed_riders go to the webhook with the simulator token", async () => {
+    const seen: { url?: string; init?: RequestInit } = {};
+    await callSim("seed_kitchens", {}, deps(json(200, { ok: true, kitchens: 10 }), seen));
+    expect(JSON.parse(seen.init?.body as string)).toEqual({ action: "seed_kitchens" });
+    await callSim("seed_riders", { riders_per_kitchen: 3, online_pct: 70 }, deps(json(200, { ok: true, riders: 30 }), seen));
+    expect(JSON.parse(seen.init?.body as string)).toEqual({ action: "seed_riders", riders_per_kitchen: 3, online_pct: 70 });
+  });
+  it("a group line says how many are synthetic and how many are real", () => {
+    expect(groupLine(10, 6)).toBe("10 synthetic · 6 real");
+    expect(groupLine(undefined, undefined)).toBe("0 synthetic · 0 real");
+  });
+});
+
+describe("Clear everything", () => {
+  it("is the typed word CLEAR", () => expect(CLEAR_WORD).toBe("CLEAR"));
+  it("shows only when the dev build flag is on AND the database says it is allowed", () => {
+    expect(clearShown("1", { ok: true, clear_allowed: true })).toBe(true);
+    expect(clearShown("1", { ok: true, clear_allowed: false })).toBe(false);
+    expect(clearShown("1", { ok: true })).toBe(false);
+    expect(clearShown(undefined, { ok: true, clear_allowed: true })).toBe(false);
+    expect(clearShown("1", null)).toBe(false);
+  });
+  it("calls the sim_clear_all function with the admin's client, never the webhook, and returns the counts", async () => {
+    const calls: string[] = [];
+    const c = { rpc: async (name: string) => { calls.push(name); return { data: { ok: true, kitchens: 16, riders: 33, dishes: 120, orders: 41 }, error: null }; } };
+    expect(await clearAll(c as never)).toEqual({ ok: true, kitchens: 16, riders: 33, dishes: 120, orders: 41 });
+    expect(calls).toEqual(["sim_clear_all"]);
+  });
+  it("turns a refusal into a plain line", async () => {
+    const off = { rpc: async () => ({ data: { ok: false, error: "clear_not_allowed", message: "Clear everything is switched off on this database." }, error: null }) };
+    await expect(clearAll(off as never)).rejects.toMatchObject({ message: "Clear everything is switched off on this database.", code: "clear_not_allowed" });
+    const nobody = { rpc: async () => ({ data: null, error: { message: "not_admin" } }) };
+    await expect(clearAll(nobody as never)).rejects.toMatchObject({ message: "Only an admin can clear the city.", code: "not_admin" });
+    const down = { rpc: async () => ({ data: null, error: { message: "fetch failed" } }) };
+    await expect(clearAll(down as never)).rejects.toMatchObject({ code: "unknown" });
   });
 });

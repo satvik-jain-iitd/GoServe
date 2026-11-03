@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { NO_INTERNET } from "./errorLines";
 // Story H7 (#190): the admin Simulator tab talks to n8n GS MAIN 30 (webhook gs-sim) with the simulator's own token. It never writes the database
 // itself; the database functions behind the webhook touch rows marked synthetic only (migrations 0028 to 0030).
@@ -6,11 +7,11 @@ export class SimError extends Error {
     super(message);
   }
 }
-export type SimAction = "status" | "seed" | "reset" | "tick" | "enable" | "disable" | "knobs";
+export type SimAction = "status" | "seed" | "seed_kitchens" | "seed_riders" | "reset" | "tick" | "enable" | "disable" | "knobs";
 export type SimDeps = { url: string; token: string; fetchFn: typeof fetch };
 export type Knobs = { reject_pct: number; sold_out_pct: number; delay_pct: number; rider_drop_pct: number; demo?: boolean };
 export type OrderTick = { accepted?: number; cancelled?: number; delivered?: number; dropped?: number };
-export type SimAnswer = { ok: boolean; knobs?: Knobs; orders?: OrderTick | number; enabled?: boolean; kitchens?: number; kitchens_open?: number; riders?: number; riders_online?: number; dishes?: number; riders_moved?: number; kitchens_flipped?: number; dishes_flipped?: number; riders_flipped?: number; skipped?: string; error?: string; message?: string };
+export type SimAnswer = { ok: boolean; knobs?: Knobs; orders?: OrderTick | number; enabled?: boolean; kitchens?: number; kitchens_open?: number; riders?: number; riders_online?: number; dishes?: number; riders_moved?: number; kitchens_flipped?: number; dishes_flipped?: number; riders_flipped?: number; kitchens_real?: number; riders_real?: number; clear_allowed?: boolean; orders_gone?: number; skipped?: string; error?: string; message?: string };
 export const simDeps = (): SimDeps => ({ url: import.meta.env.VITE_SIM_URL, token: import.meta.env.VITE_SIM_TOKEN, fetchFn: fetch.bind(window) });
 
 export async function callSim(action: SimAction, params: Record<string, number | string | boolean>, deps: SimDeps): Promise<SimAnswer> {
@@ -30,6 +31,20 @@ export async function callSim(action: SimAction, params: Record<string, number |
 // What the tab shows. The seed loads the fixed Delhi list (migration 0034), so only the riders are a choice. The knobs start where the database starts (0036).
 export const SEED_DEFAULTS = { riders_per_kitchen: 4, online_pct: 70 };
 export const KNOB_DEFAULTS: Knobs = { reject_pct: 5, sold_out_pct: 3, delay_pct: 10, rider_drop_pct: 2 };
+export const groupLine = (synthetic: number | undefined, real: number | undefined): string => `${synthetic ?? 0} synthetic · ${real ?? 0} real`;
+
+// Story #848 (board A-Sim-Clear): Clear everything is the admin's own call to the database, never the webhook and never the simulator token.
+// It shows only in a dev build (VITE_SIM_CLEAR=1) AND when the database says this one is allowed (settings row clear_allowed, set by hand on dev).
+export const CLEAR_WORD = "CLEAR";
+export const clearShown = (flag: string | undefined, state: SimAnswer | null): boolean => flag === "1" && state?.clear_allowed === true;
+export type ClearAnswer = { ok: true; kitchens: number; riders: number; dishes: number; orders: number };
+export async function clearAll(c: Pick<SupabaseClient, "rpc">): Promise<ClearAnswer> {
+  const { data, error } = await c.rpc("sim_clear_all");
+  if (error) throw new SimError(error.message?.includes("not_admin") ? "Only an admin can clear the city." : "Something went wrong. Please try again.", error.message?.includes("not_admin") ? "not_admin" : "unknown");
+  if (data?.ok === true) return data as ClearAnswer;
+  throw new SimError(typeof data?.message === "string" ? data.message : "Something went wrong. Please try again.", data?.error ?? "unknown");
+}
+
 export const countsLine = (a: SimAnswer): string => `${a.kitchens ?? 0} kitchens · ${a.riders ?? 0} riders (${a.riders_online ?? 0} online) · ${a.dishes ?? 0} dishes`;
 export const tickLine = (a: SimAnswer): string => {
   if (a.skipped) return "Tick: the city is off, nothing moved.";

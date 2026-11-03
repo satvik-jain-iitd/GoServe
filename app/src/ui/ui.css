@@ -442,3 +442,9 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .gs-route { stroke: var(--md-primary); fill: none; }
 @keyframes gs-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--md-primary) 45%, transparent); } 100% { box-shadow: 0 0 0 14px color-mix(in srgb, var(--md-primary) 0%, transparent); } }
 @media (prefers-reduced-motion: reduce) { .gs-pin.rider { animation: none; } }
+
+/* Story 848: the red buttons of Clear everything (board A-Sim-Clear). Error colour on the page, white (day) or ink (night) on the error fill, both over 4.5:1. */
+.ui-btn.danger { color: var(--md-error); border-color: var(--md-error); }
+.ui-btn.danger-fill { background: var(--md-error); color: var(--md-on-error); }
+.ui-row-pair { display: flex; gap: var(--gs-space-3); }
+.ui-row-pair > .ui-btn { flex: 1; }
