@@ -1,6 +1,6 @@
 // The founder's app on the Ink v3 boards A1 to A4 and A8 (story H12, #195; story A2): the gate, Orders, City (the kitchen, staff and menu tools until the A5 to A7 layer), Numbers, Simulator (H7, #190).
 import { useCallback, useEffect, useState } from "react";
-import { isAdmin, listKitchens, listPeople, listRiders, type KitchenRow, type Person, type RiderListRow } from "../lib/admin";
+import { isAdmin, listInvites, listKitchens, listPeople, listRiders, type Invite, type KitchenRow, type Person, type RiderListRow } from "../lib/admin";
 import { ensureSession, getClient } from "../lib/supabase";
 import { AdminCity } from "./AdminCity";
 import { AdminDecisions } from "./AdminDecisions";
@@ -24,6 +24,7 @@ export function AdminScreen() {
   const onCount = useCallback((live: number, total: number) => setCount({ live, total }), []);
   const [kitchens, setKitchens] = useState<KitchenRow[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
+  const [invites, setInvites] = useState<Invite[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -36,6 +37,7 @@ export function AdminScreen() {
       if (!ok) return;
       setKitchens(await listKitchens(c));
       setPeople(await listPeople(c));
+      setInvites(await listInvites(c).catch(() => []));   // story 875: a failed read must not hide the city
       setRiders(await listRiders(c).catch(() => null));   // unreadable stays visible as unreadable, not as "all offline"
     } catch {
       setError("Could not load. Check your connection and try again.");
@@ -66,7 +68,7 @@ export function AdminScreen() {
   const head = tab === "orders" ? { h: "Orders", meta: `Today · ${count.total}` } : tab === "city" ? { h: "City", meta: "Delhi" } : tab === "sim" ? { h: "Simulator", meta: "Synthetic city" } : { h: "Numbers", meta: `Today · ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` };
   const ordersView = <AdminOrders kitchens={kitchens} onError={setError} open={openOrder} onOpen={setOpenOrder} onCount={onCount} />;
   if (tab === "orders" && openOrder) return <>{error && <p role="alert" className="ui-note error">{error}</p>}{ordersView}</>;   // A4 sits over the tabs
-  const cityScreen = <AdminCity kitchens={kitchens} people={people} riders={riders} onError={setError} reload={load} view={cityView} onView={setCityView} />;
+  const cityScreen = <AdminCity kitchens={kitchens} people={people} invites={invites} riders={riders} onError={setError} reload={load} view={cityView} onView={setCityView} />;
   if (tab === "city" && cityView.kind !== "list") return <>{error && <p role="alert" className="ui-note error">{error}</p>}{cityScreen}</>;   // A6 and A7 sit over the tabs
   return (
     <>

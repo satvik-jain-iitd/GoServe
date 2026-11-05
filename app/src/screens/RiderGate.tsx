@@ -1,5 +1,6 @@
 // The rider app's door on the Ink v3 boards R1 and R2 (story H11, #194; story A5): sign in, the gate, and while online the location every 30 seconds.
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { claimInvites } from "../lib/admin";
 import { getRider, sendLocation, setOnline, shouldSendLocation, type RiderGateState, type RiderRow } from "../lib/rider";
 import { ensureSession, getClient } from "../lib/supabase";
 import { SignIn } from "./SignIn";
@@ -15,8 +16,11 @@ export function RiderGate({ children }: { children: (gate: RiderGateState) => Re
   useEffect(() => {
     ensureSession().then(async (id) => {
       setUid(id);
-      try { const { data } = await getClient().auth.getUser(); setAnonymous(data.user?.is_anonymous !== false); } catch { /* unknown: treat as not signed in */ }
-      setRider(await getRider(getClient(), id));
+      let guest = true;
+      try { const { data } = await getClient().auth.getUser(); guest = data.user?.is_anonymous !== false; setAnonymous(guest); } catch { /* unknown: treat as not signed in */ }
+      let r = await getRider(getClient(), id);
+      if (!r && !guest && (await claimInvites(getClient())) > 0) r = await getRider(getClient(), id);   // story 875: an invite the sign-up trigger missed
+      setRider(r);
     }, () => setRider(null))
       .catch(() => { setError("Could not load your rider details. Check your connection."); setRider(null); });
   }, []);

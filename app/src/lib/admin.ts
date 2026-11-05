@@ -17,7 +17,7 @@ export function parsePins(text: string): { pins: string[]; bad: string[] } {
 }
 
 const MESSAGES: Record<string, string> = {
-  no_such_user: "No Google user has that email yet. Ask them to open the app and sign in with Google once.",
+  no_such_user: "No admin account has that email yet. Ask them to sign in to the admin app with Google once, then add them.",   // a cook or rider with no account becomes an invite (story 875); only an admin must exist first
   last_admin: "This is the last admin. Add another admin first.",
   not_allowed: "Not allowed.",
   invalid_kind: "Pick a role, and a kitchen for kitchen staff.",
@@ -31,8 +31,11 @@ const MESSAGES: Record<string, string> = {
   menu_items_price_positive: "The price must be more than zero.",
   menu_items_name_unique: "This kitchen already has a dish with this name.",
 };
-export const adminMessage = (error: { message?: string } | null): string | null =>
-  !error ? null : Object.entries(MESSAGES).find(([code]) => error.message?.includes(code))?.[1] ?? "That did not work. Try again.";
+export const adminMessage = (error: { message?: string; details?: string } | null): string | null => {
+  if (!error) return null;
+  if (error.message?.includes("already_staff") && error.details) return `This person already works for ${error.details}. Remove them there first.`;   // story 875: the database names the kitchen
+  return Object.entries(MESSAGES).find(([code]) => error.message?.includes(code))?.[1] ?? "That did not work. Try again.";
+};
 
 type Client = Pick<SupabaseClient, "from" | "rpc">;
 export const isAdmin = async (c: Client): Promise<boolean> => {
@@ -57,8 +60,29 @@ export async function listPeople(c: Client): Promise<Person[]> {
   if (error) throw error;
   return (data ?? []) as Person[];
 }
-export const addPerson = async (c: Client, email: string, kind: PersonKind, kitchen: string | null) =>
-  adminMessage((await c.rpc("admin_add_person", { p_email: email.trim(), p_kind: kind, p_kitchen: kind === "kitchen" ? kitchen : null })).error);
+/** invited true: the email has no account yet, so the database kept an invite that turns into the row on the first Google sign-in (story 875). */
+export async function addPerson(c: Client, email: string, kind: PersonKind, kitchen: string | null): Promise<{ error: string | null; invited: boolean }> {
+  const { data, error } = await c.rpc("admin_add_person", { p_email: email.trim(), p_kind: kind, p_kitchen: kind === "kitchen" ? kitchen : null });
+  return error ? { error: adminMessage(error), invited: false } : { error: null, invited: (data as { invited?: boolean } | null)?.invited === true };
+}
+export type Invite = { id: string; email: string; kind: "kitchen" | "rider"; kitchen_id: string | null; kitchen_name: string | null; created_at: string };
+export async function listInvites(c: Client): Promise<Invite[]> {
+  const { data, error } = await c.rpc("admin_invites");
+  if (error) throw error;
+  return (data ?? []) as Invite[];
+}
+export const cancelInvite = async (c: Client, id: string) => adminMessage((await c.rpc("admin_cancel_invite", { p_id: id })).error);
+/** The link an invited person opens: the kitchen app for a cook, the rider app for a rider. */
+export const inviteLink = (kind: "kitchen" | "rider", origin: string): string => `${origin.replace(/\/$/, "")}/${kind}/`;
+/** The gate's safety check (story 875): how many waiting invites this signed-in account just claimed. Any failure is 0 and the gate carries on. */
+export async function claimInvites(c: Client): Promise<number> {
+  try {
+    const { data, error } = await c.rpc("claim_my_invites");
+    return error || typeof data !== "number" ? 0 : data;
+  } catch {
+    return 0;
+  }
+}
 export const removePerson = async (c: Client, p: Person) => adminMessage((await c.rpc("admin_remove_person", { p_kind: p.kind, p_user: p.user_id, p_kitchen: p.kitchen_id })).error);
 
 // Menu (story A3). Prices are typed in rupees and kept in paise.
