@@ -136,3 +136,14 @@ describe("invites list, cancel and claim (story 875)", () => {
     expect(await claimInvites({ rpc: async () => { throw new Error("offline"); } } as never)).toBe(0);
   });
 });
+
+// Story 880: removing a rider.
+describe("adminMessage when the network is gone or a rider cannot be removed (story 880)", () => {
+  it("says there is no connection, not a bare failure", () => {
+    expect(adminMessage({ message: "TypeError: Failed to fetch" })).toBe("No connection. Check the network and try again.");
+    expect(adminMessage({ message: "NetworkError when attempting to fetch resource." })).toBe("No connection. Check the network and try again.");
+  });
+  it("a foreign key refusal says the rider still has orders and what to do", () => {
+    expect(adminMessage({ message: 'update or delete on table "riders" violates foreign key constraint "orders_rider_id_fkey" on table "orders"' })).toBe("This rider still has orders on record. Try again after the update, or ask the builder.");
+  });
+});

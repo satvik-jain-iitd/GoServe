@@ -65,6 +65,12 @@ export async function setup(context: BrowserContext, page: Page, initial: object
         if (state.inviteOnAdd) state.invites.push({ id: `i-${state.invites.length + 1}`, email: String(p.p_email).toLowerCase(), kind: p.p_kind, kitchen_id: p.p_kitchen, kitchen_name: (state.kitchens as any[]).find((k) => k.id === p.p_kitchen)?.name ?? null, created_at: "2026-11-04T10:00:00Z" });
         return json(route, 200, { invited: state.inviteOnAdd });
       }
+      if (name === "admin_remove_person") {   // story 880: the person and the rider row go
+        const p = JSON.parse(req.postData() ?? "{}");
+        state.people = state.people.filter((x: any) => x.user_id !== p.p_user);
+        if (state.riders) state.riders = state.riders.filter((x: any) => x.user_id !== p.p_user);
+        return route.fulfill({ status: 204, headers: CORS, body: "" });
+      }
       if (name === "admin_invites") return json(route, 200, state.invites);
       if (name === "admin_cancel_invite") { state.invites = state.invites.filter((i: any) => i.id !== JSON.parse(req.postData() ?? "{}").p_id); return route.fulfill({ status: 204, headers: CORS, body: "" }); }
       if (name === "claim_my_invites") {   // story 875: the gate's safety check; a granted invite makes the staff or rider row appear

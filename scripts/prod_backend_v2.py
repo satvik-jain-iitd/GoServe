@@ -41,6 +41,7 @@ MARKERS = [   # (kind, regex): the first create or alter in a file names one obj
     ("function", r"create\s+(?:or\s+replace\s+)?function\s+(?:public\.)?(\w+)\s*\(((?:[^()]|\([^()]*\))*)\)"),
     ("index", r"create\s+(?:unique\s+)?index\s+(?:if\s+not\s+exists\s+)?(\w+)"),
     ("policy", r"create\s+policy\s+(\w+)"),
+    ("constraint", r"alter\s+table\s+(?:if\s+exists\s+)?(?:public\.)?\w+\s+add\s+constraint\s+(\w+)"),
     ("column", r"alter\s+table\s+(?:if\s+exists\s+)?(?:public\.)?(\w+)\s+add\s+column\s+(?:if\s+not\s+exists\s+)?(\w+)"),
 ]
 
@@ -81,7 +82,8 @@ PRESENT_SQL = ("select 'table:' || table_name as m from information_schema.table
                "union all select 'column:' || table_name || '.' || column_name from information_schema.columns where table_schema = 'public' "
                "union all select 'function:' || p.proname || '/' || p.pronargs from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' "
                "union all select 'index:' || indexname from pg_indexes where schemaname = 'public' "
-               "union all select 'policy:' || policyname from pg_policies")
+               "union all select 'policy:' || policyname from pg_policies "
+               "union all select 'constraint:' || conname from pg_constraint where connamespace = 'public'::regnamespace")
 
 
 def present(ref):
