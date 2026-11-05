@@ -33,6 +33,8 @@ const MESSAGES: Record<string, string> = {
 };
 export const adminMessage = (error: { message?: string; details?: string } | null): string | null => {
   if (!error) return null;
+  if (/failed to fetch|networkerror|load failed|network request failed/i.test(error.message ?? "")) return "No connection. Check the network and try again.";   // story 880: offline is not a database refusal
+  if (/violates foreign key constraint "orders_rider/i.test(error.message ?? "")) return "This rider still has orders on record. Try again after the update, or ask the builder.";   // story 880: the old rule, before the migration reaches a database
   if (error.message?.includes("already_staff") && error.details) return `This person already works for ${error.details}. Remove them there first.`;   // story 875: the database names the kitchen
   return Object.entries(MESSAGES).find(([code]) => error.message?.includes(code))?.[1] ?? "That did not work. Try again.";
 };

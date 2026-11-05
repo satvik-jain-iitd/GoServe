@@ -69,13 +69,14 @@ class Plan(unittest.TestCase):
 
     def test_S5_every_v2_file_names_one_object(self):
         self.assertEqual([f for f, m in V2 if m is None], [])
-        self.assertEqual(len(V2), 31)   # story 875: staff_invites is the 31st; story 873: sim_clear_all in slices is the 30th; story 850: kitchen_remove is the 29th; story 848: sim_groups is the 28th; story 619: the settings migration is the 24th, its admin functions the 25th; story #802a: otp_repair_phone_form is the 26th; story 829: the phone code switch is the 27th
+        self.assertEqual(len(V2), 32)   # story 880: rider_remove_keeps_orders is the 32nd; story 875: staff_invites is the 31st; story 873: sim_clear_all in slices is the 30th; story 850: kitchen_remove is the 29th; story 848: sim_groups is the 28th; story 619: the settings migration is the 24th, its admin functions the 25th; story #802a: otp_repair_phone_form is the 26th; story 829: the phone code switch is the 27th
 
     def test_S6_markers(self):
         self.assertEqual(p.marker("-- c\ncreate table if not exists public.t (a int);"), "table:t")
         self.assertEqual(p.marker("create or replace function f(a text, b numeric(10,2) default 1) returns int as $$ x $$"), "function:f/2")
         self.assertEqual(p.marker("create function g() returns int as $$ x $$"), "function:g/0")
         self.assertEqual(p.marker("alter table orders add column if not exists bill jsonb;"), "column:orders.bill")
+        self.assertEqual(p.marker("alter table orders drop constraint a_fkey;\nalter table orders add constraint a_new foreign key (x) references y (z);"), "constraint:a_new")   # story 880
         self.assertIsNone(p.marker("update t set a = 1;"))
 
 
