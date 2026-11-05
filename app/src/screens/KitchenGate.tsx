@@ -1,5 +1,6 @@
 // The kitchen app's door on the Ink v3 boards K1 and K2 (story H11, #194; story H3): only a kitchen's staff see its tickets. The gate also holds the open switch.
 import { useEffect, useState, type ReactNode } from "react";
+import { claimInvites } from "../lib/admin";
 import { hhmmOf } from "../lib/kitchen";
 import { myKitchen } from "../lib/session";
 import { ensureSession, getClient } from "../lib/supabase";
@@ -18,8 +19,10 @@ export function KitchenGate({ children }: { children: (gate: KitchenGateState) =
   const [tries, setTries] = useState(0);
   useEffect(() => {
     ensureSession().then(async (id) => {
-      try { const { data } = await getClient().auth.getUser(); setAnonymous(data.user?.is_anonymous !== false); setEmail(data.user?.email ?? null); } catch { /* unknown: treat as not signed in */ }
-      const k = await myKitchen(getClient(), id);
+      let guest = true;
+      try { const { data } = await getClient().auth.getUser(); guest = data.user?.is_anonymous !== false; setAnonymous(guest); setEmail(data.user?.email ?? null); } catch { /* unknown: treat as not signed in */ }
+      let k = await myKitchen(getClient(), id);
+      if (!k && !guest && (await claimInvites(getClient())) > 0) k = await myKitchen(getClient(), id);   // story 875: an invite the sign-up trigger missed
       if (k) {
         const { data, error } = await getClient().from("kitchens").select("name, open, opens_at, closes_at, lat, lng").eq("id", k).limit(1);
         const r = data?.[0] as Partial<Row> | undefined;

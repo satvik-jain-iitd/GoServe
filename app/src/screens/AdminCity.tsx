@@ -1,22 +1,26 @@
 // The City of the admin app on the Ink v3 boards A5 (city), A6 (one kitchen) and A7 (add a kitchen) (story H12, #195; stories A2, A3, A5).
 import { useState } from "react";
-import { addKitchen, addPerson, parsePins, removePerson, type KitchenRow, type Person, type PersonKind, type RiderListRow } from "../lib/admin";
+import { addKitchen, addPerson, cancelInvite, inviteLink, parsePins, removePerson, type Invite, type KitchenRow, type Person, type PersonKind, type RiderListRow } from "../lib/admin";
 import { kitchenProblem } from "../lib/validate";
 import { getClient } from "../lib/supabase";
 import { AdminMenu } from "./AdminMenu";
 
 type View = { kind: "list" } | { kind: "kitchen"; id: string } | { kind: "add" };
-type Props = { kitchens: KitchenRow[]; people: Person[]; riders: RiderListRow[] | null; onError: (m: string | null) => void; reload: () => Promise<void>; view: View; onView: (v: View) => void };
+type Props = { kitchens: KitchenRow[]; people: Person[]; invites: Invite[]; riders: RiderListRow[] | null; onError: (m: string | null) => void; reload: () => Promise<void>; view: View; onView: (v: View) => void };
 const EMPTY = { name: "", address: "", phone: "", pins: "", opensAt: "", closesAt: "" };
 const hhmm = (t: string | null | undefined) => (t ? t.slice(0, 5) : null);
 /** Open (serving), Closed (the switch is off today), Off (taken out of the system, active false). */
 const stateOf = (k: KitchenRow): [string, string] => (!k.active ? ["Off", "error"] : k.open ? ["Open", "ready"] : ["Closed", "placed"]);
+const day = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" });
 const BACK = <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>;
 
-export function AdminCity({ kitchens, people, riders, onError, reload, view, onView }: Props) {
+export function AdminCity({ kitchens, people, invites, riders, onError, reload, view, onView }: Props) {
   const [form, setForm] = useState(EMPTY);
   const [addingPerson, setAddingPerson] = useState(false);
   const [who, setWho] = useState<{ email: string; kind: PersonKind; kitchen: string }>({ email: "", kind: "kitchen", kitchen: "" });
+  const [invited, setInvited] = useState<{ email: string; kind: "kitchen" | "rider" } | null>(null);   // story 875: the "Invite ready" box
+  const [shareNote, setShareNote] = useState<string | null>(null);
+  const invitesOf = (id: string) => invites.filter((i) => i.kind === "kitchen" && i.kitchen_id === id);
   const staffOf = (id: string) => people.filter((p) => p.kind === "kitchen" && p.kitchen_id === id);
   const firstName = (p: Person) => (p.email ?? p.user_id).split("@")[0];
 
@@ -29,10 +33,35 @@ export function AdminCity({ kitchens, people, riders, onError, reload, view, onV
     if (!failed) { setForm(EMPTY); await reload(); onView({ kind: "list" }); }
   };
   const submitPerson = async () => {
-    const failed = await addPerson(getClient(), who.email, who.kind, who.kitchen || null);
+    setInvited(null);
+    setShareNote(null);
+    const { error: failed, invited: wasInvited } = await addPerson(getClient(), who.email, who.kind, who.kitchen || null);
     onError(failed);
-    if (!failed) { setWho({ ...who, email: "" }); setAddingPerson(false); await reload(); }
+    if (failed) return;
+    if (wasInvited && who.kind !== "admin") setInvited({ email: who.email.trim().toLowerCase(), kind: who.kind });   // the form stays open, with the box under it (board A-AddPerson-Invite)
+    else { setWho({ ...who, email: "" }); setAddingPerson(false); }
+    await reload();
   };
+  const share = async () => {
+    if (!invited) return;
+    const url = inviteLink(invited.kind, window.location.origin);
+    const text = invited.kind === "kitchen" ? "Open this link and tap Continue with Google to start in your kitchen on GoServe." : "Open this link and tap Continue with Google to start riding with GoServe.";
+    if (typeof navigator.share === "function") {
+      try { await navigator.share({ title: "GoServe", text, url }); return; } catch (e) { if (e instanceof DOMException && e.name === "AbortError") return; /* the sheet failed: copy instead */ }
+    }
+    try { await navigator.clipboard.writeText(url); setShareNote("Link copied."); } catch { setShareNote(`Copy this link: ${url}`); }   // clipboard blocked: show it instead
+  };
+  const cancel = async (i: Invite) => {
+    const failed = await cancelInvite(getClient(), i.id);
+    onError(failed);
+    if (!failed) await reload();
+  };
+  const inviteRow = (i: Invite) => (   // board A-Kitchen-Invite
+    <div key={i.id} className="ui-row ui-row-static">
+      <span className="ui-row-label"><span className="mono ui-invite-email">{i.email}</span><span className="ui-row-sub mono">Invited {day(i.created_at)} · not signed in yet</span></span>
+      <span className="ui-row-acts"><span className="ui-tag placed">Invited</span><button type="button" className="ui-btn ghost small" aria-label={`Cancel invite for ${i.email}`} onClick={() => void cancel(i)}>Cancel</button></span>
+    </div>
+  );
   const remove = async (p: Person) => {
     if (!window.confirm(`Remove ${p.email ?? p.user_id}? They lose access at once.`)) return;   // one tap less than a mistake
     const failed = await removePerson(getClient(), p);
@@ -78,9 +107,10 @@ export function AdminCity({ kitchens, people, riders, onError, reload, view, onV
         <div className="ui-row ui-row-static"><span>Phone</span><span className="mono ui-row-sub">{k.phone ?? "Not set"}</span></div>
         <div className="ui-row ui-row-static"><span>Address</span><span className="ui-row-sub ui-right">{k.address ?? "Not set"}</span></div>
         <section className="ui-group" aria-label="Staff">
-          <h2>Staff <span className="mono">{staffOf(k.id).length}</span></h2>
-          {staffOf(k.id).length === 0 && <p className="ui-meta">No staff yet. Add a person from the City tab.</p>}
+          <h2>Staff <span className="mono">{staffOf(k.id).length}{invitesOf(k.id).length > 0 && ` · ${invitesOf(k.id).length} invited`}</span></h2>
+          {staffOf(k.id).length === 0 && invitesOf(k.id).length === 0 && <p className="ui-meta">No staff yet. Add a person from the City tab.</p>}
           {staffOf(k.id).map((p) => <div key={p.user_id} className="ui-row ui-row-static"><span className="ui-row-label"><span>{firstName(p)}</span><span className="ui-row-sub mono">{p.email ?? p.user_id}</span></span>{removeButton(p)}</div>)}
+          {invitesOf(k.id).map(inviteRow)}
         </section>
         <AdminMenu kitchenId={k.id} onError={onError} />
       </div>
@@ -99,7 +129,7 @@ export function AdminCity({ kitchens, people, riders, onError, reload, view, onV
         <h2>Kitchens <span className="mono">{open} open · {kitchens.length - open} closed</span></h2>
         {kitchens.map((x) => (
           <button key={x.id} type="button" className="ui-row" aria-label={`Open kitchen ${x.name}`} onClick={() => onView({ kind: "kitchen", id: x.id })}>
-            <span className="ui-row-label"><span>{x.name}</span><span className="ui-row-sub mono">{[...x.pin_codes, ...staffOf(x.id).map(firstName)].join(" · ") || "No pin code yet"}</span></span>
+            <span className="ui-row-label"><span>{x.name}</span><span className="ui-row-sub mono">{[...x.pin_codes, ...staffOf(x.id).map(firstName), ...(invitesOf(x.id).length ? [`${invitesOf(x.id).length} invited`] : [])].join(" · ") || "No pin code yet"}</span></span>
             <span className={`ui-tag ${stateOf(x)[1]}`}>{stateOf(x)[0]}</span>
           </button>
         ))}
@@ -114,6 +144,7 @@ export function AdminCity({ kitchens, people, riders, onError, reload, view, onV
             <span className="ui-row-acts">{r.person && removeButton(r.person)}{riders && <span className={`ui-tag ${r.online ? "ready" : "placed"}`}>{r.online ? "Online" : "Offline"}</span>}</span>
           </div>
         ))}
+        {invites.filter((i) => i.kind === "rider").map(inviteRow)}
         {people.filter((p) => p.kind === "admin").map((p) => <div key={p.user_id} className="ui-row ui-row-static"><span className="ui-row-label"><span>{firstName(p)}</span><span className="ui-row-sub mono">Admin · {p.email ?? p.user_id}</span></span>{removeButton(p)}</div>)}
         {!addingPerson && <div className="ui-pad-y"><button type="button" className="ui-btn ghost" onClick={() => { onError(null); setAddingPerson(true); }}>+ Add a person</button></div>}
         {addingPerson && (
@@ -121,7 +152,15 @@ export function AdminCity({ kitchens, people, riders, onError, reload, view, onV
             <div className="ui-field"><label htmlFor="p-email">Email</label><input id="p-email" type="email" value={who.email} onChange={(e) => setWho({ ...who, email: e.target.value })} /></div>
             <div className="ui-field"><label htmlFor="p-role">Role</label><select id="p-role" value={who.kind} onChange={(e) => setWho({ ...who, kind: e.target.value as PersonKind })}><option value="kitchen">Kitchen staff</option><option value="rider">Rider</option><option value="admin">Admin</option></select></div>
             {who.kind === "kitchen" && <div className="ui-field"><label htmlFor="p-kitchen">Kitchen</label><select id="p-kitchen" value={who.kitchen} onChange={(e) => setWho({ ...who, kitchen: e.target.value })}><option value="">Pick a kitchen</option>{kitchens.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></div>}
-            <div className="ui-form-acts"><button type="button" className="ui-btn big" onClick={() => void submitPerson()}>Add person</button><button type="button" className="ui-btn ghost big" onClick={() => setAddingPerson(false)}>Not now</button></div>
+            <div className="ui-form-acts"><button type="button" className="ui-btn big" onClick={() => void submitPerson()}>Add person</button><button type="button" className="ui-btn ghost big" onClick={() => { setAddingPerson(false); setInvited(null); }}>Not now</button></div>
+            {invited && (   // board A-AddPerson-Invite
+              <div role="status" className="ui-invite">
+                <p className="ui-invite-title">Invite ready for {invited.email}</p>
+                <p className="ui-meta">They open the {invited.kind} link and tap Continue with Google once. Nothing to install. {invited.kind === "kitchen" ? "Their kitchen" : "Their deliveries"} open on that first sign-in.</p>
+                <div className="ui-invite-link"><span className="mono">{inviteLink(invited.kind, window.location.origin).replace(/^https?:\/\//, "")}</span><button type="button" className="ui-btn ghost small" onClick={() => void share()}>Share the link</button></div>
+                {shareNote && <p className="ui-meta" role="status">{shareNote}</p>}
+              </div>
+            )}
           </div>
         )}
       </section>

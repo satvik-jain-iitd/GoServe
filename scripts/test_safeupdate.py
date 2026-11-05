@@ -7,7 +7,7 @@
 import glob, os, re, unittest
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-CALLED_BY_THE_APP = ["sim_clear_all", "kitchen_remove_v2"]
+CALLED_BY_THE_APP = ["sim_clear_all", "kitchen_remove_v2", "admin_add_person", "admin_cancel_invite", "claim_my_invites"]
 
 
 def latest_body(name):
