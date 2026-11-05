@@ -53,7 +53,7 @@ export function AdminScreen() {
             <>
               <h2 className="ui-slip-title">Sign in to run the city</h2>
               <p className="ui-meta">Only the admin accounts on the list can sign in. No password, no form.</p>
-              <SignIn mode="signin" />
+              <SignIn mode="signin" big filled />
             </>
           ) : (
             <>

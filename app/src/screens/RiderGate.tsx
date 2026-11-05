@@ -46,7 +46,7 @@ export function RiderGate({ children }: { children: (gate: RiderGateState) => Re
             <>
               <h2 className="ui-slip-title">Sign in to ride</h2>
               <p className="ui-meta">Only riders the admin has added can sign in. No password, no form.</p>
-              <SignIn mode="signin" />
+              <SignIn mode="signin" big filled />
             </>
           ) : (
             <>
