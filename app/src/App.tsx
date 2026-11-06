@@ -7,6 +7,7 @@ import { riderRefused, savePlatform, tapCall } from "./lib/signals";
 import { useLiveOrders } from "./lib/useLiveOrders";
 import { loadMenu, MENU_KEY, type Dish } from "./lib/menu";
 import { fetchKitchens, forgetArea, loadArea, loadPin, closedCopy, openingText, resolveArea, savePin, shownArea, type Area } from "./lib/area";
+import { dropFor } from "./lib/locate";
 import { AreaScreen } from "./screens/AreaScreen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { AdminGate } from "./screens/AdminGate";
@@ -78,6 +79,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const shown = shownArea(area, clock);
   const [looking, setLooking] = useState(false);
   const [menuError, setMenuError] = useState<string | null>(null);
+  const [fixAddress, setFixAddress] = useState<string | null>(null);   // story #910: the address the fix belongs to; a hand edit after it clears the drop point
   const [from, setFrom] = useState<{ lat: number; lng: number } | null>(null);   // story #668: where the customer is, when they allowed location; it picks the nearest kitchen
   const [menuTry, setMenuTry] = useState(0);   // story #637: Try again and the phone coming back online read the menu again
   useEffect(() => {
@@ -709,7 +711,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         return;
       }
       const { order, confirm } = ordersV2 && areaKitchenId
-        ? await placeOrderV2({ kitchenId: areaKitchenId, pin: pin ?? "", items, address: address.trim(), key: keyRef.current.key, expectedPaise: total, code: offers.code, none: offers.none, drop: from }, v2Deps())
+        ? await placeOrderV2({ kitchenId: areaKitchenId, pin: pin ?? "", items, address: address.trim(), key: keyRef.current.key, expectedPaise: total, code: offers.code, none: offers.none, drop: dropFor(from, fixAddress, address) }, v2Deps())
         : await placeOrder({ sessionId, key: keyRef.current.key, items, address: address.trim() }, api());
       setPlaced(order);
       capture("order_placed", { items_count: lines.length });
@@ -772,7 +774,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <OtpSheet welcome googleOnly={!gate} phone={phone} onClose={() => undefined}
       onVerified={(p) => { setPhone(p); setVerified(true); setSignedIn(true); }} />
   ) : needArea ? (
-    <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={(pl) => { setAddress(pl.address); choosePin(pl.pin, pl.from); }} />
+    <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={(pl) => { setAddress(pl.address); setFixAddress(pl.located ?? null); choosePin(pl.pin, pl.from); }} />
   ) : (
     <>
         {step === "menu" && (

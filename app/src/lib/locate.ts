@@ -52,3 +52,7 @@ export const currentFix = (): Promise<Fix> =>
     if (!("geolocation" in navigator)) return reject(new Error("no_geolocation"));
     navigator.geolocation.getCurrentPosition((p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: Number.isFinite(p.coords.accuracy) ? p.coords.accuracy : null }), reject, { enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 });
   });
+
+// Story #910: the drop point follows the address. The fix is kept only while the address is still the one the location found; a hand edit clears it.
+export const dropFor = (from: Place | null, located: string | null, address: string): Place | null =>
+  from && located !== null && address.trim() === located.trim() ? from : null;

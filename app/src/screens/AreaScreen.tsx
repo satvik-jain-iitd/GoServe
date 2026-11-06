@@ -5,7 +5,7 @@ import { isPin } from "../lib/area";
 import type { Area } from "../lib/area";
 import { currentPlace, reverseAddress, type Place } from "../lib/locate";
 
-type Props = { pin: string | null; address: string; area: Area | null; busy: boolean; error: string | null; onPlace: (p: { pin: string; address: string; from?: Place }) => void };
+type Props = { pin: string | null; address: string; area: Area | null; busy: boolean; error: string | null; onPlace: (p: { pin: string; address: string; from?: Place; located?: string }) => void };
 type Mode = "ask" | "found" | "hand";
 
 export function AreaScreen({ pin, address: start, area, busy, error, onPlace }: Props) {
@@ -13,6 +13,7 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace }: 
   const [address, setAddress] = useState(start);
   const [text, setText] = useState(pin ?? "");
   const [place, setPlace] = useState<Place | undefined>(undefined);
+  const [located, setLocated] = useState<string | undefined>(undefined);   // story #910: the address the location found, to tell a hand edit from it
   const [finding, setFinding] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const none = area?.kind === "none";
@@ -26,6 +27,7 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace }: 
       const found = await reverseAddress(here.lat, here.lng);
       if (!found) throw new Error("not_found");
       setPlace(here);
+      setLocated(found.address);
       setAddress(found.address);
       setText(found.pin);
       setMode("found");
@@ -53,7 +55,7 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace }: 
       </div>
       {none && <p className="ui-note">A pin code next to yours may work.</p>}
       {busy && <p role="status" className="ui-note">Finding your kitchen…</p>}
-      <button type="button" className="ui-btn big" disabled={busy || !ready} onClick={() => onPlace({ pin: text, address: address.trim(), from: place })}>See the menu</button>
+      <button type="button" className="ui-btn big" disabled={busy || !ready} onClick={() => onPlace({ pin: text, address: address.trim(), from: place, located })}>See the menu</button>
     </>
   );
 

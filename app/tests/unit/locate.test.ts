@@ -1,6 +1,6 @@
 // Story #668 (boards A1 to A3): the customer's own address from the phone's location, through OpenStreetMap's reverse lookup (no key). Any failure means "type it by hand".
 import { describe, expect, it } from "vitest";
-import { addressFrom, reverseAddress } from "../../src/lib/locate";
+import { addressFrom, reverseAddress, dropFor } from "../../src/lib/locate";
 
 const NOMINATIM = { display_name: "B-12, Lajpat Nagar II, Lajpat Nagar, South Delhi, New Delhi, Delhi, 110024, India", address: { house_number: "B-12", road: "Lajpat Nagar II", suburb: "Lajpat Nagar", city: "New Delhi", state: "Delhi", postcode: "110024", country: "India" } };
 
@@ -49,5 +49,25 @@ describe("reverseAddress", () => {
   it("is null when the network or the service fails", async () => {
     expect(await reverseAddress(1, 2, async () => { throw new Error("offline"); })).toBeNull();
     expect(await reverseAddress(1, 2, async () => new Response("no", { status: 429 }))).toBeNull();
+  });
+});
+
+// Story #910: the drop point follows the address. A hand edit after a location fix clears the fix; the same address keeps it; a new fix brings its own address.
+describe("dropFor", () => {
+  const fix = { lat: 28.5677, lng: 77.2432 };
+  it("keeps the fix while the address is the one the location found", () => {
+    expect(dropFor(fix, "B-12, Lajpat Nagar II", "B-12, Lajpat Nagar II")).toEqual(fix);
+    expect(dropFor(fix, "B-12, Lajpat Nagar II", "  B-12, Lajpat Nagar II  ")).toEqual(fix);
+  });
+  it("clears the fix when the customer typed a different address", () => {
+    expect(dropFor(fix, "B-12, Lajpat Nagar II", "B-12, Lajpat Nagar II, near the park gate")).toBeNull();
+  });
+  it("is null with no fix, or with no located address", () => {
+    expect(dropFor(null, null, "Flat 4")).toBeNull();
+    expect(dropFor(fix, null, "Flat 4")).toBeNull();
+  });
+  it("a second location from another place carries its own fix and its own address", () => {
+    const again = { lat: 28.6, lng: 77.3 };
+    expect(dropFor(again, "C-4, Hauz Khas", "C-4, Hauz Khas")).toEqual(again);
   });
 });
