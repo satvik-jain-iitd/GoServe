@@ -20,6 +20,7 @@ export function AdminCity({ kitchens, people, invites, riders, onError, reload, 
   const [who, setWho] = useState<{ email: string; kind: PersonKind; kitchen: string }>({ email: "", kind: "kitchen", kitchen: "" });
   const [invited, setInvited] = useState<{ email: string; kind: "kitchen" | "rider" } | null>(null);   // story 875: the "Invite ready" box
   const [shareNote, setShareNote] = useState<string | null>(null);
+  const [addError, setAddError] = useState<string | null>(null);   // story 885: the add-person line sits under the form, next to its button
   const invitesOf = (id: string) => invites.filter((i) => i.kind === "kitchen" && i.kitchen_id === id);
   const staffOf = (id: string) => people.filter((p) => p.kind === "kitchen" && p.kitchen_id === id);
   const firstName = (p: Person) => (p.email ?? p.user_id).split("@")[0];
@@ -35,8 +36,10 @@ export function AdminCity({ kitchens, people, invites, riders, onError, reload, 
   const submitPerson = async () => {
     setInvited(null);
     setShareNote(null);
+    setAddError(null);
+    onError(null);
     const { error: failed, invited: wasInvited } = await addPerson(getClient(), who.email, who.kind, who.kitchen || null);
-    onError(failed);
+    setAddError(failed);
     if (failed) return;
     if (wasInvited && who.kind !== "admin") setInvited({ email: who.email.trim().toLowerCase(), kind: who.kind });   // the form stays open, with the box under it (board A-AddPerson-Invite)
     else { setWho({ ...who, email: "" }); setAddingPerson(false); }
@@ -152,7 +155,8 @@ export function AdminCity({ kitchens, people, invites, riders, onError, reload, 
             <div className="ui-field"><label htmlFor="p-email">Email</label><input id="p-email" type="email" value={who.email} onChange={(e) => setWho({ ...who, email: e.target.value })} /></div>
             <div className="ui-field"><label htmlFor="p-role">Role</label><select id="p-role" value={who.kind} onChange={(e) => setWho({ ...who, kind: e.target.value as PersonKind })}><option value="kitchen">Kitchen staff</option><option value="rider">Rider</option><option value="admin">Admin</option></select></div>
             {who.kind === "kitchen" && <div className="ui-field"><label htmlFor="p-kitchen">Kitchen</label><select id="p-kitchen" value={who.kitchen} onChange={(e) => setWho({ ...who, kitchen: e.target.value })}><option value="">Pick a kitchen</option>{kitchens.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></div>}
-            <div className="ui-form-acts"><button type="button" className="ui-btn big" onClick={() => void submitPerson()}>Add person</button><button type="button" className="ui-btn ghost big" onClick={() => { setAddingPerson(false); setInvited(null); }}>Not now</button></div>
+            <div className="ui-form-acts"><button type="button" className="ui-btn big" onClick={() => void submitPerson()}>Add person</button><button type="button" className="ui-btn ghost big" onClick={() => { setAddingPerson(false); setInvited(null); setAddError(null); }}>Not now</button></div>
+            {addError && <p role="alert" className="ui-note error">{addError}</p>}
             {invited && (   // board A-AddPerson-Invite
               <div role="status" className="ui-invite">
                 <p className="ui-invite-title">Invite ready for {invited.email}</p>
