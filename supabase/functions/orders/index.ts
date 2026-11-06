@@ -10,7 +10,7 @@ type Placed = { ok: true; created: boolean; order: Record<string, unknown> } | {
 export type Deps = QuoteDeps & {
   existing: (session: string, key: string) => Promise<Record<string, unknown> | null>;   // story #537: the order this caller already made with this key
   rate: (order: string, session: string, food: number, rider: number | null, comment: string | null) => Promise<{ ok: true } | { ok: false; error: string; message: string }>;   // story #354
-  place: (session: string, key: string, kitchen: string, lines: unknown, address: string, itemTotal: number, bill: Record<string, unknown>) => Promise<Placed>;
+  place: (session: string, key: string, kitchen: string, lines: unknown, address: string, itemTotal: number, bill: Record<string, unknown>, drop: Drop | null) => Promise<Placed>;
 };
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const bad = () => json(400, { ok: false, error: "invalid_request" });
@@ -30,6 +30,11 @@ async function rateOrder(deps: Deps, req: Request, id: string, b: any): Promise<
     return json(502, { ok: false, error: "order_unavailable" });   // no detail: a database message must never reach an app
   }
 }
+
+// Story #905: the customer app's device fix, saved on the order. A missing or bad fix is null and never refuses the order.
+type Drop = { lat: number; lng: number };
+const dropOf = (a: { lat?: unknown; lng?: unknown } | undefined): Drop | null =>
+  typeof a?.lat === "number" && typeof a?.lng === "number" && Math.abs(a.lat) <= 90 && Math.abs(a.lng) <= 180 ? { lat: a.lat, lng: a.lng } : null;
 
 export const makeHandler = (deps: Deps) => async (req: Request): Promise<Response> => {
   if (req.method !== "POST") return new Response(null, { status: 405, headers: { allow: "POST" } });
@@ -52,7 +57,7 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
     const quote = { ...out, kitchen_id: q.kitchen };
     if (out.to_pay_paise !== expected) return json(409, { ok: false, error: "price_changed", message: "A price changed. Check the bill again.", quote });
     const { ok: _ok, lines: _lines, offers: _offers, effective, ...bill } = out;   // the offers are for the screen, not for the order; story #619: a swap orders the lines after the swap, not the sold-out one
-    const res = await deps.place(session, key, q.kitchen, effective ?? q.lines, text.trim(), out.item_total_paise, { ...bill, lines: out.lines });
+    const res = await deps.place(session, key, q.kitchen, effective ?? q.lines, text.trim(), out.item_total_paise, { ...bill, lines: out.lines }, dropOf(b?.address));
     if (!res.ok) return json(res.error === "price_changed" ? 409 : 422, { ok: false, error: res.error, message: res.message });
     const order = Object.fromEntries(ORDER_FIELDS.map((f) => [f, res.order[f]]));
     return json(res.created ? 201 : 200, { ok: true, created: res.created, order });
@@ -80,11 +85,11 @@ const live: Deps = {
     if (!res.ok) throw new Error("rate failed");
     return await res.json();
   },
-  place: async (session, key, kitchen, lines, address, itemTotal, bill) => {
+  place: async (session, key, kitchen, lines, address, itemTotal, bill, drop) => {
     const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const res = await fetch(`${Deno.env.get("SUPABASE_URL")}/rest/v1/rpc/place_order_v2`, {
       method: "POST", headers: { apikey: service, authorization: `Bearer ${service}`, "content-type": "application/json" },
-      body: JSON.stringify({ p_session: session, p_key: key, p_kitchen: kitchen, p_lines: lines, p_address: address, p_item_total: itemTotal, p_bill: bill }),
+      body: JSON.stringify({ p_session: session, p_key: key, p_kitchen: kitchen, p_lines: lines, p_address: address, p_item_total: itemTotal, p_bill: bill, p_drop_lat: drop?.lat ?? null, p_drop_lng: drop?.lng ?? null }),
     });
     if (!res.ok) throw new Error("place failed");
     return await res.json();

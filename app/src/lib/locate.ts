@@ -44,3 +44,11 @@ export const currentPlace = (): Promise<Place> =>
     if (!("geolocation" in navigator)) return reject(new Error("no_geolocation"));
     navigator.geolocation.getCurrentPosition((p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }), reject, { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 });
   });
+
+// Story #905: the admin stands at the kitchen, so this asks for the best fix and keeps its accuracy in metres.
+export type Fix = Place & { accuracy: number | null };
+export const currentFix = (): Promise<Fix> =>
+  new Promise((resolve, reject) => {
+    if (!("geolocation" in navigator)) return reject(new Error("no_geolocation"));
+    navigator.geolocation.getCurrentPosition((p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: Number.isFinite(p.coords.accuracy) ? p.coords.accuracy : null }), reject, { enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 });
+  });

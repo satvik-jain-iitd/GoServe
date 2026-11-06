@@ -709,7 +709,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         return;
       }
       const { order, confirm } = ordersV2 && areaKitchenId
-        ? await placeOrderV2({ kitchenId: areaKitchenId, pin: pin ?? "", items, address: address.trim(), key: keyRef.current.key, expectedPaise: total, code: offers.code, none: offers.none }, v2Deps())
+        ? await placeOrderV2({ kitchenId: areaKitchenId, pin: pin ?? "", items, address: address.trim(), key: keyRef.current.key, expectedPaise: total, code: offers.code, none: offers.none, drop: from }, v2Deps())
         : await placeOrder({ sessionId, key: keyRef.current.key, items, address: address.trim() }, api());
       setPlaced(order);
       capture("order_placed", { items_count: lines.length });
