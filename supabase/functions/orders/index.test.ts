@@ -152,3 +152,19 @@ Deno.test("rating: refusals keep their code (404, 409, 422); no login is 401; a 
 Deno.test("rating: placing an order still works at /orders", async () => {
   assertEquals((await post(makeHandler(deps()), body())).status, 201);
 });
+
+// Story #905: the order keeps the customer's drop point. A good fix is passed to the DB; a missing or bad one is passed as null, and never refuses the order.
+Deno.test("a drop point in the address reaches the DB as lat and lng", async () => {
+  placed.length = 0;
+  const b = body({ address: { pin_code: "110016", text: "Flat 4, Green Park", lat: 28.5677, lng: 77.2432 } });
+  assertEquals((await post(makeHandler(deps()), b)).status, 201);
+  assertEquals(placed[0][7], { lat: 28.5677, lng: 77.2432 });
+});
+
+Deno.test("no drop point, or a bad one, reaches the DB as null and the order still goes", async () => {
+  for (const address of [{ pin_code: "110016", text: "Flat 4" }, { pin_code: "110016", text: "Flat 4", lat: 91, lng: 77 }, { pin_code: "110016", text: "Flat 4", lat: "x", lng: 77 }, { pin_code: "110016", text: "Flat 4", lat: 28.5 }]) {
+    placed.length = 0;
+    assertEquals((await post(makeHandler(deps()), body({ address }))).status, 201);
+    assertEquals(placed[0][7], null);
+  }
+});
