@@ -21,7 +21,7 @@ describe("linkGoogle in sign-in mode (story S-M5)", () => {
     const signInWithOAuth = vi.fn().mockResolvedValue({ data: {}, error: null });
     const linkIdentity = vi.fn();
     await expect(linkGoogle({ auth: { linkIdentity, signInWithOAuth } }, "https://x/kitchen/", "signin")).resolves.toBeNull();
-    expect(signInWithOAuth).toHaveBeenCalledWith({ provider: "google", options: { redirectTo: "https://x/kitchen/" } });
+    expect(signInWithOAuth).toHaveBeenCalledWith({ provider: "google", options: { redirectTo: "https://x/kitchen/", queryParams: { prompt: "select_account" } } });
     expect(linkIdentity).not.toHaveBeenCalled();
   });
 });
