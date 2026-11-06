@@ -474,3 +474,8 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-menu-empty-note { margin: var(--gs-space-3) var(--gs-gutter) 0; color: var(--gs-text-muted); font-size: var(--gs-text-xs); }
 .ui-menu-empty-foot { padding: var(--gs-space-3) var(--gs-gutter); }
 .ui-menu-empty-foot .ui-btn { width: 100%; min-height: var(--gs-tap-big); }
+
+/* Story 892, board K7: the three rows of the Remove this kitchen sheet. */
+.ui-remove-rows { display: flex; flex-direction: column; gap: var(--gs-space-3); margin-bottom: var(--gs-space-4); }
+.ui-remove-rows p { display: grid; grid-template-columns: 5.5rem 1fr; gap: var(--gs-space-3); margin: 0; }
+.ui-remove-rows strong { font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); text-transform: uppercase; }
