@@ -45,6 +45,9 @@ test("S2 the section carries its caption; Keep it open closes the sheet and noth
   expect(removes(net)).toEqual([]);
   const section = page.getByRole("region", { name: "Leaving GoServe" });
   await expect(section).toContainText("Customers stop seeing it today. It stays in the city list as Closed.");
+  const red = await section.locator(".ui-danger-text").evaluate((el) => getComputedStyle(el).color);
+  const error = await page.evaluate(() => { const d = document.createElement("div"); d.style.color = "var(--md-error)"; document.body.append(d); const c = getComputedStyle(d).color; d.remove(); return c; });
+  expect(red).toBe(error);   // red is the error token, not a new colour
 });
 
 test("S3 with open orders the database refuses and the sheet says so in the admin's words; the kitchen stays", async ({ page, context }) => {
