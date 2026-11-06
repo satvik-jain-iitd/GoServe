@@ -18,8 +18,10 @@ const readCopy = (storage: KeyValue, key: string): Dish[] | null => {
 
 // One saved copy per key: the customer app uses one key per kitchen (story B2).
 export async function loadMenu(fetchRows: () => Promise<Dish[]>, storage: KeyValue, key: string = MENU_KEY): Promise<{ dishes: Dish[]; fromCache: boolean }> {
+  let answered = false;
   try {
     const dishes = await fetchRows();
+    answered = true;
     if (dishes.length > 0) {   // an empty answer never replaces a good copy
       storage.setItem(key, JSON.stringify(dishes));
       return { dishes, fromCache: false };
@@ -29,6 +31,7 @@ export async function loadMenu(fetchRows: () => Promise<Dish[]>, storage: KeyVal
   }
   const saved = readCopy(storage, key);
   if (saved) return { dishes: saved, fromCache: true };
+  if (answered) return { dishes: [], fromCache: false };   // story #891: the server answered and has no dishes. That is a real answer, not "no internet".
   throw new Error(NOT_AVAILABLE);
 }
 

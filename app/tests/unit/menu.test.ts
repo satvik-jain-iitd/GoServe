@@ -33,6 +33,11 @@ describe("loadMenu", () => {
     await expect(loadMenu(async () => { throw new Error("offline"); }, storage)).rejects.toThrow(/No internet/);
   });
 
+  it("an empty answer with nothing saved is a real answer, not a miss (story #891)", async () => {
+    const r = await loadMenu(async () => [], memory());
+    expect(r).toEqual({ dishes: [], fromCache: false });
+  });
+
   it("does not replace a good copy with an empty menu", async () => {
     const storage = memory();
     await loadMenu(async () => dishes, storage);

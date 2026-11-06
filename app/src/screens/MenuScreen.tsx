@@ -67,7 +67,19 @@ export function MenuScreen(p: Props) {
         {p.fromCache && <p role="status" className="ui-offline">No connection. Showing the menu you saw last.</p>}
                 {p.dishes === null && !p.error && <Loading />}
         {p.dishes !== null && (thali.veg || thali.nonveg) && <Hero veg={thali.veg} nonveg={thali.nonveg} closed={closed} qty={p.qty} onAdd={p.onAdd} onChange={p.onChange} />}
-        {p.dishes !== null && shown.length === 0 && <div className="ui-pad"><Empty title="Nothing matches" hint="Try another word or clear the filters." /></div>}
+        {p.dishes !== null && all.length === 0 && !p.error && (
+          <div className="ui-menu-empty" data-testid="menu-empty">
+            <span className="ui-stamp placed small">Soon</span>
+            <h2>No dishes on the menu yet.</h2>
+            <p>{p.kitchenName || "This kitchen"} is still adding its dishes. Nothing to order right now.</p>
+            {p.tellMe === "done" ? <p role="status">We will tell you when the menu is ready.</p>
+              : <button type="button" className="ui-btn ghost" disabled={p.tellMe === "busy"} onClick={p.onTellMe}>Tell me when the menu is ready</button>}
+            {p.tellMeError && <p role="alert" className="ui-meta">{p.tellMeError}</p>}
+            <p className="mono">Your internet is fine. The kitchen has nothing listed yet.</p>
+            <button type="button" className="ui-btn ghost" onClick={p.onChangePin}>Try another pin code</button>
+          </div>
+        )}
+        {p.dishes !== null && all.length > 0 && shown.length === 0 && <div className="ui-pad"><Empty title="Nothing matches" hint="Try another word or clear the filters." /></div>}
         {sections.map((s) => (
           <div key={s.id}>
             <div className="ui-section"><h2 id={s.id}>{s.title}</h2></div>
