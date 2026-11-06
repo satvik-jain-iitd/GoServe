@@ -9,6 +9,10 @@ jobs:
   site:
     name: Site (lint, typecheck, unit, e2e, build)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble   # browsers and their system libraries are in the image; no apt on the runner (story #895)
+      options: --ipc=host
     defaults:
       run:
         working-directory: site
@@ -30,9 +34,6 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium webkit
-
       - name: End-to-end tests
         run: npm run test:e2e
 
@@ -42,6 +43,10 @@ jobs:
   app:
     name: App (typecheck, unit, e2e, build)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble   # browsers and their system libraries are in the image; no apt on the runner (story #895)
+      options: --ipc=host
     defaults:
       run:
         working-directory: app
@@ -63,9 +68,6 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium webkit
-
       - name: End-to-end tests (build included)
         run: npm run test:e2e
         env:
@@ -86,6 +88,7 @@ jobs:
   guard:
     name: Guard (secrets, size, markers, commit messages, PR size)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -137,6 +140,7 @@ jobs:
     if: always()
     needs: [site, app, guard]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Every check passed
         run: |
