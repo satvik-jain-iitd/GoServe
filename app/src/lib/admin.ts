@@ -85,6 +85,13 @@ export async function claimInvites(c: Client): Promise<number> {
     return 0;
   }
 }
+/** Story #900: the admin removes a kitchen (deactivate, never delete). null when it worked, else a line in the admin's words. The database refuses while orders are open. */
+export async function removeKitchen(c: Client, kitchenId: string): Promise<string | null> {
+  const { data, error } = await c.rpc("kitchen_remove_v2", { p_kitchen: kitchenId });
+  if (error) return error.message?.includes("not_allowed") ? "Only an admin can remove a kitchen." : "Could not remove the kitchen. Try again.";
+  if (data?.ok === true) return null;
+  return data?.error === "orders_open" ? "This kitchen still has orders to finish. Remove it when they are done." : "Could not remove the kitchen. Try again.";
+}
 export const removePerson = async (c: Client, p: Person) => adminMessage((await c.rpc("admin_remove_person", { p_kind: p.kind, p_user: p.user_id, p_kitchen: p.kitchen_id })).error);
 
 // Menu (story A3). Prices are typed in rupees and kept in paise.

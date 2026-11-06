@@ -108,13 +108,3 @@ export const minutesAway = (rider: Point & { updated_at: string }, kitchen: Poin
   if (now.getTime() - Date.parse(rider.updated_at) > freshMs) return null;
   return Math.max(1, Math.round((kmBetween(rider, kitchen) / speedKmh) * 60));   // ponytail: one Delhi scooter speed (A64); a real ETA needs the road, not the crow
 };
-
-// Story #850 (board K-Account): "Remove this kitchen". The row shows only in a build made with VITE_KITCHEN_REMOVE=1; the confirm sheet comes with its own frame.
-// The data path is one database function: it switches the kitchen off for customers, drops its staff rows, and refuses while orders are still to finish.
-export const removeShown = (flag: string | undefined): boolean => flag === "1";
-/** null when the kitchen was removed, else a line to show. */
-export async function removeKitchen(c: Pick<SupabaseClient, "rpc">, kitchenId: string): Promise<string | null> {
-  const { data, error } = await c.rpc("kitchen_remove_v2", { p_kitchen: kitchenId });
-  if (error) return error.message?.includes("not_allowed") ? "Only the staff of this kitchen can remove it." : "Could not remove the kitchen. Try again.";
-  return data?.ok === true ? null : typeof data?.message === "string" ? data.message : "Could not remove the kitchen. Try again.";
-}

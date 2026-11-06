@@ -11,9 +11,9 @@ describe("deploy-dev.yml (the dev app)", () => {
     expect(text).toMatch(/VITE_OTP_GATE:\s*["']?1/);
     expect(text).toMatch(/VITE_OTP_SMS:\s*["']?(fixed|real)\b/);
   });
-  // Story #898: the owner tests Remove this kitchen on dev. Prod stays off (deploy-env.test.ts asserts it).
-  it("turns the Remove this kitchen row on, dev only", () => {
-    expect(text).toMatch(/VITE_KITCHEN_REMOVE:\s*["']1["']/);
+  // Story #900: removing a kitchen is the admin's job now; no build carries the kitchen-app flag (the dev flag of #898 is gone).
+  it("no longer carries the Remove this kitchen flag", () => {
+    expect(text).not.toContain("VITE_KITCHEN_REMOVE");
   });
   it("carries the sim webhook, same as prod", () => {
     expect(text).toMatch(/VITE_SIM_URL:/);

@@ -1,6 +1,6 @@
 // The City of the admin app on the Ink v3 boards A5 (city), A6 (one kitchen) and A7 (add a kitchen) (story H12, #195; stories A2, A3, A5).
 import { useState } from "react";
-import { addKitchen, addPerson, cancelInvite, inviteLink, parsePins, removePerson, type Invite, type KitchenRow, type Person, type PersonKind, type RiderListRow } from "../lib/admin";
+import { addKitchen, addPerson, cancelInvite, inviteLink, parsePins, removeKitchen, removePerson, type Invite, type KitchenRow, type Person, type PersonKind, type RiderListRow } from "../lib/admin";
 import { kitchenProblem } from "../lib/validate";
 import { getClient } from "../lib/supabase";
 import { AdminMenu } from "./AdminMenu";
@@ -20,6 +20,7 @@ export function AdminCity({ kitchens, people, invites, riders, onError, reload, 
   const [who, setWho] = useState<{ email: string; kind: PersonKind; kitchen: string }>({ email: "", kind: "kitchen", kitchen: "" });
   const [invited, setInvited] = useState<{ email: string; kind: "kitchen" | "rider" } | null>(null);   // story 875: the "Invite ready" box
   const [shareNote, setShareNote] = useState<string | null>(null);
+  const [removing, setRemoving] = useState(false);   // story 900, board A8: the confirm sheet of Remove this kitchen
   const [addError, setAddError] = useState<string | null>(null);   // story 885: the add-person line sits under the form, next to its button
   const invitesOf = (id: string) => invites.filter((i) => i.kind === "kitchen" && i.kitchen_id === id);
   const staffOf = (id: string) => people.filter((p) => p.kind === "kitchen" && p.kitchen_id === id);
@@ -116,7 +117,17 @@ export function AdminCity({ kitchens, people, invites, riders, onError, reload, 
           {invitesOf(k.id).map(inviteRow)}
         </section>
         <AdminMenu kitchenId={k.id} onError={onError} />
+        {k.active && (
+          <section className="ui-group" aria-label="Leaving GoServe">
+            <h2>Leaving GoServe <span className="mono">Asks twice</span></h2>
+            <button type="button" className="ui-row ui-row-tall" onClick={() => setRemoving(true)}>
+              <span className="ui-row-label"><span className="ui-danger-text">Remove this kitchen</span><span className="ui-row-sub mono">Customers stop seeing it today. It stays in the city list as Closed.</span></span>
+              <span className="go" aria-hidden="true">›</span>
+            </button>
+          </section>
+        )}
       </div>
+      {removing && <RemoveSheet kitchen={k} onClose={() => setRemoving(false)} onRemoved={reload} />}
       {k.phone && <div className="ui-bottom"><a className="ui-btn big" href={`tel:${k.phone}`}>Call {k.name}</a></div>}
     </>
   );
@@ -167,6 +178,38 @@ export function AdminCity({ kitchens, people, invites, riders, onError, reload, 
             )}
           </div>
         )}
+      </section>
+    </div>
+  );
+}
+
+// Story 900, board A8 (moved from the kitchen app, story 892): ask 1 of 2 is this sheet (type REMOVE); ask 2 is the database, which refuses while orders are open and says so here.
+function RemoveSheet({ kitchen, onClose, onRemoved }: { kitchen: KitchenRow; onClose: () => void; onRemoved: () => Promise<void> }) {
+  const [word, setWord] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const go = async () => {
+    setBusy(true);
+    setError(null);
+    const line = await removeKitchen(getClient(), kitchen.id);
+    setBusy(false);
+    if (line) return setError(line);
+    onClose();
+    await onRemoved();   // the city list is read again; the kitchen shows as Off
+  };
+  return (
+    <div className="ui-sheet-back" onClick={onClose}>
+      <section role="dialog" aria-modal="true" aria-label={`Remove ${kitchen.name}?`} className="ui-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="ui-sheet-head"><h2>Remove {kitchen.name}?</h2><span className="mono">Ask 1 of 2</span></div>
+        <div className="ui-remove-rows">
+          <p><strong>Stops</strong><span>new orders, the menu, every staff sign-in to this kitchen</span></p>
+          <p><strong>Finishes</strong><span>orders already placed, today's slips and cash</span></p>
+          <p><strong>Stays</strong><span>past orders, bills and numbers; the kitchen in this list, marked Closed</span></p>
+        </div>
+        <div className="ui-field"><label htmlFor="remove-word">Type REMOVE to go on</label><input id="remove-word" type="text" autoCapitalize="characters" autoComplete="off" value={word} onChange={(e) => setWord(e.target.value)} /></div>
+        {error && <p role="alert" className="ui-note error">{error}</p>}
+        <button type="button" className="ui-btn big danger" disabled={word !== "REMOVE" || busy} onClick={() => void go()}>Remove kitchen</button>
+        <button type="button" className="ui-btn ghost big" onClick={onClose}>Keep it open</button>
       </section>
     </div>
   );
