@@ -54,3 +54,36 @@ test("S2 an order placed from a typed address carries no drop point", async ({ p
   expect(orders[0].address.lat).toBeUndefined();
   expect(orders[0].address.lng).toBeUndefined();
 });
+
+test("S3 location used, then the address typed over on the same screen: the order carries no drop point", async ({ page, context }) => {
+  const orders = await start(context, page);
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 28.5677, longitude: 77.2432 });
+  await page.goto("/customer/");
+  await page.getByRole("button", { name: "Use my location" }).click();
+  await expect(page.getByRole("heading", { name: "Is this right?" })).toBeVisible();
+  await page.getByLabel("Address · food gets delivered here").fill("C-4, Hauz Khas, near the metro");
+  await page.getByRole("button", { name: "See the menu" }).click();
+  await orderFromBill(page);
+  expect(orders).toHaveLength(1);
+  expect(orders[0].address.text).toBe("C-4, Hauz Khas, near the metro");
+  expect(orders[0].address.lat).toBeUndefined();
+});
+
+test("S4 location used, the address kept on the screen, then changed on the Bill: the order carries no drop point", async ({ page, context }) => {
+  const orders = await start(context, page);
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 28.5677, longitude: 77.2432 });
+  await page.goto("/customer/");
+  await page.getByRole("button", { name: "Use my location" }).click();
+  await page.getByRole("button", { name: "See the menu" }).click();
+  await page.getByRole("button", { name: "Add Butter Chicken" }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
+  await page.getByLabel("Address").fill("Flat 9, somewhere else");
+  await page.getByLabel("Your name").fill("Asha");
+  await page.getByLabel("Phone").fill("9876543210");
+  await page.getByRole("button", { name: /Place order/ }).click();
+  await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
+  expect(orders[0].address.text).toBe("Flat 9, somewhere else");
+  expect(orders[0].address.lat).toBeUndefined();
+});
