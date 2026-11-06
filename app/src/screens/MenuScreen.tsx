@@ -95,6 +95,7 @@ export function MenuScreen(p: Props) {
                   </button>
                   <div className="ui-tile-body">
                     <h3>{d.veg !== undefined && <VegMark veg={d.veg} />}{d.name}</h3>
+                    {d.description && <p className="ui-meta">{d.description}</p>}
                     <p className="ui-price">{formatRupees(d.price_paise)}</p>
                   </div>
                   {control(d)}
@@ -190,15 +191,17 @@ function Hero({ veg, nonveg, closed, qty, onAdd, onChange }: { veg?: Dish; nonve
       </div>
     </div>
   );
+  // Story 779: the switch follows the page that is showing, so a swipe moves the tint too (the owner, 3 Nov: it did not follow the swipe).
+  const [side, setSide] = useState<"veg" | "nonveg">("veg");
   return (
     <section className="ui-hero" aria-label="Today's thali">
       {veg && nonveg && (
         <nav className="ui-seg" aria-label="Veg or non-veg thali">
-          <a href="#thali-veg" className="on" aria-label="Veg thali"><VegMark veg /></a>
-          <a href="#thali-nonveg" className="nonveg" aria-label="Non-veg thali"><VegMark veg={false} /></a>
+          <a href="#thali-veg" className={side === "veg" ? "on" : ""} aria-label="Veg thali"><VegMark veg /></a>
+          <a href="#thali-nonveg" className={side === "nonveg" ? "nonveg on" : "nonveg"} aria-label="Non-veg thali"><VegMark veg={false} /></a>
         </nav>
       )}
-      <div className="pager">{veg && page(veg, "thali-veg")}{nonveg && page(nonveg, "thali-nonveg")}</div>
+      <div className="pager" onScroll={(e) => { const el = e.currentTarget; if (veg && nonveg) setSide(el.scrollLeft > el.clientWidth / 2 ? "nonveg" : "veg"); }}>{veg && page(veg, "thali-veg")}{nonveg && page(nonveg, "thali-nonveg")}</div>
     </section>
   );
 }
@@ -236,6 +239,7 @@ function DishSheet({ dish, closed, qty, onAdd, onClose }: { dish: Dish; closed: 
       <div className="ui-dish-body">
         <div className="ui-dish-head"><h2>{dish.veg !== undefined && <VegMark veg={dish.veg} size={14} />}{dish.name}</h2><span className="ui-dish-price">{formatRupees(dish.price_paise)}</span></div>
         <p className="ui-kicker">{dish.veg === undefined ? "" : dish.veg ? "Veg" : "Non-veg"}{dish.category ? ` · ${dish.category}` : ""}</p>
+        {dish.description && <p className="ui-meta">{dish.description}</p>}
         {dish.image_credit && <CreditLine credit={dish.image_credit} />}
         <div className="ui-dish-count"><span className="ui-kicker">How many</span><Stepper label={dish.name} value={n} min={1} onChange={setN} /></div>
       </div>

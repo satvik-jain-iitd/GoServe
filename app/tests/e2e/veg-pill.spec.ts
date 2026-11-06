@@ -10,7 +10,7 @@ const MENU = [
 ];
 
 for (const theme of ["day", "night"]) {
-  test(`S1 ${theme}: the chosen half is filled with the raised surface and D-shaped by the pill, no ring, the other mark at 60%`, async ({ page, context }) => {
+  test(`S1 ${theme}: the chosen half is filled with its tint (green veg, red non-veg; story 779) and D-shaped by the pill, no ring, the other mark at 60%`, async ({ page, context }) => {
     const net = await setup(context, page);
     net.state.menu = MENU;
     await page.addInitScript((t) => { try { window.localStorage.setItem("gs-theme", t); } catch { /* the default theme shows */ } }, theme);
@@ -32,10 +32,14 @@ for (const theme of ["day", "night"]) {
         inset: a.getBoundingClientRect().top - p.getBoundingClientRect().top - parseFloat(ps.borderTopWidth),
       };
     });
+    const tints: string[] = [];
     for (const [chosen, other, click] of [["Veg thali", "Non-veg thali", null], ["Non-veg thali", "Veg thali", "Non-veg thali"]] as const) {
       if (click) await pill.getByRole("link", { name: click }).click();
+      await expect.poll(async () => (await look(chosen)).background, "the tint follows the page that shows").not.toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
       const on = await look(chosen), off = await look(other);
-      expect(on.background).toBe(raised);
+      expect(on.background).not.toBe(raised);              // story 779: the fill is the tint, not the plain raised surface
+      expect(on.background).not.toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
+      tints.push(on.background);
       expect(on.shadow).toBe("none");                    // no ring
       expect(on.radius).toBe(0);                          // the half has no round corner of its own: the pill's clip shapes it
       expect(on.pillClip).toBe("hidden");
@@ -46,5 +50,6 @@ for (const theme of ["day", "night"]) {
       expect(off.background).not.toBe(raised);
       expect(off.markOpacity).toBeCloseTo(0.6, 2);
     }
+    expect(tints[0], "veg and non-veg tints differ").not.toBe(tints[1]);
   });
 }
