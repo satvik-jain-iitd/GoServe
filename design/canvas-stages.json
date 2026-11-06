@@ -255,6 +255,17 @@
           "notes": [
             "sprint-frames"
           ]
+        },
+        {
+          "id": "2h",
+          "title": "2h · Pending invite, approved 5 Nov 2026 (\"baki sab theek h\"): add a person by email before the first sign-in (I1, I2); not coded yet",
+          "boards": [
+            "A-AddPerson-Invite.dc.html",
+            "A-Kitchen-Invite.dc.html"
+          ],
+          "notes": [
+            "invite-frames"
+          ]
         }
       ]
     },
