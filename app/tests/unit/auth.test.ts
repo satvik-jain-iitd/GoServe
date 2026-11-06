@@ -26,6 +26,26 @@ describe("linkGoogle in sign-in mode (story S-M5)", () => {
   });
 });
 
+describe("linkGoogle strips the address fragment (story #842)", () => {
+  // After a Google return the page is /customer/#. GoTrue joins redirect_to + "#" + tokens, so a kept "#" makes "##access_token" and the return is lost.
+  it("hands GoTrue the address without its #, in both modes", async () => {
+    const linkIdentity = vi.fn().mockResolvedValue({ data: {}, error: null });
+    const signInWithOAuth = vi.fn().mockResolvedValue({ data: {}, error: null });
+    await linkGoogle({ auth: { linkIdentity, signInWithOAuth } }, "https://x/customer/#");
+    expect(linkIdentity.mock.calls[0][0].options.redirectTo).toBe("https://x/customer/");
+    await linkGoogle({ auth: { linkIdentity, signInWithOAuth } }, "https://x/customer/#", "signin");
+    expect(signInWithOAuth.mock.calls[0][0].options.redirectTo).toBe("https://x/customer/");
+  });
+  it("asks Google for its account chooser when signing in, not when linking (acceptance 8)", async () => {
+    const linkIdentity = vi.fn().mockResolvedValue({ data: {}, error: null });
+    const signInWithOAuth = vi.fn().mockResolvedValue({ data: {}, error: null });
+    await linkGoogle({ auth: { linkIdentity, signInWithOAuth } }, "https://x/kitchen/", "signin");
+    expect(signInWithOAuth.mock.calls[0][0].options.queryParams).toEqual({ prompt: "select_account" });
+    await linkGoogle({ auth: { linkIdentity, signInWithOAuth } }, "https://x/customer/");
+    expect(linkIdentity.mock.calls[0][0].options.queryParams).toBeUndefined();
+  });
+});
+
 describe("signedInName", () => {
   it("is null for an anonymous user", () => {
     expect(signedInName({ is_anonymous: true, user_metadata: {} })).toBeNull();

@@ -18,7 +18,10 @@ export const givenNameOf = (u: UserLike): string | null => {
 // that may already exist, because linking fails when that Google account belongs to another user.
 type AuthLike = Pick<SupabaseClient["auth"], "linkIdentity"> & Partial<Pick<SupabaseClient["auth"], "signInWithOAuth">>;
 export async function linkGoogle(client: { auth: AuthLike }, redirectTo: string, mode: "link" | "signin" = "link"): Promise<string | null> {
-  const args = { provider: "google" as const, options: { redirectTo } };
+  // Story #842: GoTrue builds the return as redirectTo + "#" + tokens. A kept "#" (supabase-js leaves one after a return) makes "##access_token" and the sign-in is lost.
+  // Signing in shows Google's account chooser, so the person can pick another account after a sign out. Linking keeps the account the person already chose.
+  const options = { redirectTo: redirectTo.split("#")[0], ...(mode === "signin" ? { queryParams: { prompt: "select_account" } } : {}) };
+  const args = { provider: "google" as const, options };
   const { error } = mode === "signin" ? await client.auth.signInWithOAuth!(args) : await client.auth.linkIdentity(args);
   return error ? "Could not start Google sign-in. Try again." : null;
 }
