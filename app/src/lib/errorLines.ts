@@ -21,3 +21,7 @@ export function customerLine(action: CustomerAction, code: string, message: stri
   if (action === "confirm" && message !== "Only the customer can confirm.") return DELIVERED;
   return GENERIC;
 }
+
+// Story #904: the line matches the error. The cooking line only when the database says cannot_cancel; anything else (a dead network, an expired session) is the connection line.
+export const cancelLine = (message?: string): string =>
+  message?.startsWith("cannot_cancel") ? "The kitchen has started cooking, so this order cannot be cancelled now. Call the kitchen if you need to." : "Could not reach GoServe. Check your connection and try again.";
