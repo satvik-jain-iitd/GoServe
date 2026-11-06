@@ -121,7 +121,7 @@ export function AdminCity({ kitchens, people, invites, riders, onError, reload, 
           <section className="ui-group" aria-label="Leaving GoServe">
             <h2>Leaving GoServe <span className="mono">Asks twice</span></h2>
             <button type="button" className="ui-row ui-row-tall" onClick={() => setRemoving(true)}>
-              <span className="ui-row-label"><span className="ui-danger-text">Remove this kitchen</span><span className="ui-row-sub mono">Customers stop seeing it today. It stays in the city list as Closed.</span></span>
+              <span className="ui-row-label"><span className="ui-danger-text">Remove this kitchen</span><span className="ui-row-sub mono">Customers stop seeing it today. It stays in the city list as Off.</span></span>
               <span className="go" aria-hidden="true">›</span>
             </button>
           </section>
@@ -204,7 +204,7 @@ function RemoveSheet({ kitchen, onClose, onRemoved }: { kitchen: KitchenRow; onC
         <div className="ui-remove-rows">
           <p><strong>Stops</strong><span>new orders, the menu, every staff sign-in to this kitchen</span></p>
           <p><strong>Finishes</strong><span>orders already placed, today's slips and cash</span></p>
-          <p><strong>Stays</strong><span>past orders, bills and numbers; the kitchen in this list, marked Closed</span></p>
+          <p><strong>Stays</strong><span>past orders, bills and numbers; the kitchen in this list, marked Off</span></p>
         </div>
         <div className="ui-field"><label htmlFor="remove-word">Type REMOVE to go on</label><input id="remove-word" type="text" autoCapitalize="characters" autoComplete="off" value={word} onChange={(e) => setWord(e.target.value)} /></div>
         {error && <p role="alert" className="ui-note error">{error}</p>}

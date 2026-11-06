@@ -25,7 +25,7 @@ test("S1 the kitchen page has a red Remove row under Leaving GoServe; the sheet'
   await expect(sheet).toContainText("Ask 1 of 2");
   await expect(sheet).toContainText("new orders, the menu, every staff sign-in to this kitchen");
   await expect(sheet).toContainText("orders already placed, today's slips and cash");
-  await expect(sheet).toContainText("past orders, bills and numbers; the kitchen in this list, marked Closed");
+  await expect(sheet).toContainText("past orders, bills and numbers; the kitchen in this list, marked Off");
   const go = sheet.getByRole("button", { name: "Remove kitchen" });
   await expect(go).toBeDisabled();
   await sheet.getByLabel("Type REMOVE to go on").fill("remove");
@@ -44,7 +44,7 @@ test("S2 the section carries its caption; Keep it open closes the sheet and noth
   await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(removes(net)).toEqual([]);
   const section = page.getByRole("region", { name: "Leaving GoServe" });
-  await expect(section).toContainText("Customers stop seeing it today. It stays in the city list as Closed.");
+  await expect(section).toContainText("Customers stop seeing it today. It stays in the city list as Off.");
   const red = await section.locator(".ui-danger-text").evaluate((el) => getComputedStyle(el).color);
   const error = await page.evaluate(() => { const d = document.createElement("div"); d.style.color = "var(--md-error)"; document.body.append(d); const c = getComputedStyle(d).color; d.remove(); return c; });
   expect(red).toBe(error);   // red is the error token, not a new colour
