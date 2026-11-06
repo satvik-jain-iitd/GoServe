@@ -6,8 +6,8 @@ import { formatRupees } from "../lib/money";
 import { getClient } from "../lib/supabase";
 import { Timeline } from "../ui";
 
-const TAG: Record<string, string> = { placed: "placed", accepted: "placed", preparing: "", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "error" };
-const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "error" };
+const TAG: Record<string, string> = { placed: "placed", accepted: "placed", preparing: "", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
+const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up" };
 export const POLL_MS = 30_000;
 const CALL = <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" /></svg>;
