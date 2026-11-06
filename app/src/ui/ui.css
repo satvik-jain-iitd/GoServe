@@ -184,11 +184,11 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-seg { position: absolute; top: 12px; right: 12px; z-index: 1; display: grid; grid-template-columns: 46px 46px; padding: 0; box-sizing: border-box; overflow: hidden; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-pill); background: var(--md-surface); }
 .ui-seg a { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; border-radius: 0; text-decoration: none; color: var(--md-on-surface); }
 .ui-seg a svg { width: 16px; height: 16px; opacity: 0.6; }
-/* Story 638, board M4 option A: the chosen half is filled with the raised surface, the pill's own clip makes it D-shaped. No ring, no inset. */
-.ui-seg a.on, .ui-hero:has(#thali-nonveg:target) .ui-seg a.nonveg { background: var(--gs-raised); }
-.ui-seg a.on svg, .ui-hero:has(#thali-nonveg:target) .ui-seg a.nonveg svg { opacity: 1; }
-.ui-hero:has(#thali-nonveg:target) .ui-seg a.on { background: transparent; }
-.ui-hero:has(#thali-nonveg:target) .ui-seg a.on svg { opacity: 0.6; }
+/* Story 638, board M4 option A: the chosen half is filled, the pill's own clip makes it D-shaped. No ring, no inset.
+   Story 779, board Menu-DishLine-Tint: the fill is light green for veg and light red for non-veg, and it follows the side that is showing, also after a swipe (the page sets .on). */
+.ui-seg a.on { background: color-mix(in srgb, var(--gs-veg) 18%, var(--gs-raised)); }
+.ui-seg a.nonveg.on { background: color-mix(in srgb, var(--gs-nonveg) 18%, var(--gs-raised)); }
+.ui-seg a.on svg { opacity: 1; }
 /* The zigzag: GoServe's own mark. Light green, 8 px tall, under the lockup, under the greeting, at the top of every slip. */
 .ui-zigzag { height: 8px; background: linear-gradient(-45deg, var(--gs-zigzag) 5.66px, transparent 0), linear-gradient(45deg, var(--gs-zigzag) 5.66px, transparent 0); background-size: 16px 8px; background-repeat: repeat-x; }
 .ui-greet .ui-zigzag { width: 96px; margin-top: 8px; }

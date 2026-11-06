@@ -102,14 +102,14 @@ export const photoPath = (kitchenId: string, fileName: string, id: string): stri
   return `${kitchenId}/${id}.${ext}`;
 };
 
-export type DishRow = { id: string; name: string; price_paise: number; available: boolean; veg: boolean; category: string | null; image_url: string | null };
+export type DishRow = { id: string; name: string; price_paise: number; available: boolean; veg: boolean; category: string | null; image_url: string | null; description?: string | null };
 export async function listDishes(c: Client, kitchenId: string): Promise<DishRow[]> {
   const { data, error } = await c.from("menu_items").select("id, name, price_paise, available, veg, category, image_url").eq("kitchen_id", kitchenId).order("sort").order("name");
   if (error) throw error;
   return (data ?? []) as DishRow[];
 }
 type Store = SupabaseClient["storage"];
-export async function addDish(c: Client & { storage: Store }, d: { kitchenId: string; name: string; paise: number; veg: boolean; category: string; photo: File | null }): Promise<string | null> {
+export async function addDish(c: Client & { storage: Store }, d: { kitchenId: string; name: string; paise: number; veg: boolean; category: string; description?: string; photo: File | null }): Promise<string | null> {
   let image_url: string | null = null;
   if (d.photo) {
     const path = photoPath(d.kitchenId, d.photo.name, crypto.randomUUID());
@@ -117,7 +117,7 @@ export async function addDish(c: Client & { storage: Store }, d: { kitchenId: st
     if (up.error) return "The photo could not be uploaded. Try again.";
     image_url = c.storage.from("menu").getPublicUrl(path).data.publicUrl;
   }
-  return adminMessage((await c.from("menu_items").insert({ kitchen_id: d.kitchenId, name: d.name, price_paise: d.paise, veg: d.veg, category: d.category || null, image_url })).error);
+  return adminMessage((await c.from("menu_items").insert({ kitchen_id: d.kitchenId, name: d.name, price_paise: d.paise, veg: d.veg, category: d.category || null, description: d.description?.trim() || null, image_url })).error);
 }
 export const setDish = async (c: Client, id: string, change: { available?: boolean; price_paise?: number }) => adminMessage((await c.from("menu_items").update(change).eq("id", id)).error);
 export const deleteDish = async (c: Client, id: string) => adminMessage((await c.from("menu_items").delete().eq("id", id)).error);

@@ -9,7 +9,7 @@ import { VegMark } from "../ui";
 export function AdminMenu({ kitchenId, onError }: { kitchenId: string; onError: (m: string | null) => void }) {
   const [dishes, setDishes] = useState<DishRow[]>([]);
   const [adding, setAdding] = useState(false);
-  const [form, setForm] = useState({ name: "", price: "", category: "", veg: true });
+  const [form, setForm] = useState({ name: "", price: "", category: "", description: "", veg: true });
   const [photo, setPhoto] = useState<File | null>(null);
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [fileKey, setFileKey] = useState(0);   // a new key empties the file field after a save
@@ -25,9 +25,9 @@ export function AdminMenu({ kitchenId, onError }: { kitchenId: string; onError: 
     if (rule || paise === null) return onError(rule ?? "Type the price in rupees, for example 220 or 220.50.");
     const problem = photo ? photoProblem(photo) : null;
     if (problem) return onError(problem);
-    const failed = await addDish(getClient(), { kitchenId, name: form.name.trim(), paise, veg: form.veg, category: form.category.trim(), photo });
+    const failed = await addDish(getClient(), { kitchenId, name: form.name.trim(), paise, veg: form.veg, category: form.category.trim(), description: form.description.trim(), photo });
     onError(failed);
-    if (!failed) { setForm({ name: "", price: "", category: "", veg: true }); setPhoto(null); setFileKey((k) => k + 1); setAdding(false); await load(); }
+    if (!failed) { setForm({ name: "", price: "", category: "", description: "", veg: true }); setPhoto(null); setFileKey((k) => k + 1); setAdding(false); await load(); }
   };
   const change = async (id: string, c: { available?: boolean; price_paise?: number }) => {
     const failed = await setDish(getClient(), id, c);
@@ -68,6 +68,7 @@ export function AdminMenu({ kitchenId, onError }: { kitchenId: string; onError: 
           <div className="ui-field"><label htmlFor="dish-name">Dish name</label><input id="dish-name" type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
           <div className="ui-field"><label htmlFor="dish-price">Price (₹)</label><input id="dish-price" className="mono-input" inputMode="decimal" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
           <div className="ui-field"><label htmlFor="dish-cat">Category</label><input id="dish-cat" type="text" value={form.category} placeholder="Thali, Mains, Breads" onChange={(e) => setForm({ ...form, category: e.target.value })} /></div>
+          <div className="ui-field"><label htmlFor="dish-line">Short line (optional)</label><input id="dish-line" type="text" value={form.description} placeholder="Slow cooked overnight, butter on top" onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
           <div className="ui-row ui-row-static"><label htmlFor="dish-veg" className="ui-row-label"><span>Veg</span></label><input id="dish-veg" className="ui-switch" type="checkbox" role="switch" checked={form.veg} onChange={(e) => setForm({ ...form, veg: e.target.checked })} /></div>
           <div className="ui-field"><label htmlFor="dish-photo">Photo</label><input id="dish-photo" key={fileKey} type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} /></div>
           <div className="ui-form-acts"><button type="button" className="ui-btn big" onClick={() => void submit()}>Add dish</button><button type="button" className="ui-btn ghost big" onClick={() => setAdding(false)}>Not now</button></div>

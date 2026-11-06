@@ -35,6 +35,11 @@ describe("dishProblem", () => {
     expect(dishProblem({ ...D, name: "D" })).toMatch(/name/i);
     expect(dishProblem({ ...D, name: "x".repeat(61) })).toMatch(/name/i);
   });
+  it("story 779: the dish line is 60 characters at most, and optional", () => {
+    expect(dishProblem({ ...D, description: "x".repeat(60) })).toBeNull();
+    expect(dishProblem({ ...D, description: "" })).toBeNull();
+    expect(dishProblem({ ...D, description: "x".repeat(61) })).toMatch(/line/i);
+  });
   it("S2 the price is from ₹1 to ₹5,000 in rupees", () => {
     for (const p of ["", "abc", "0", "0.00", "5000.01", "-5"]) expect(dishProblem({ ...D, price: p }), p).toMatch(/price/i);
     expect(dishProblem({ ...D, price: "5000" })).toBeNull();
