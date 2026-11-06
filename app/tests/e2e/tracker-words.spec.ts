@@ -22,12 +22,12 @@ test("S2 a cancelled order says there is nothing to pay and offers Order again",
   await expect(page.getByRole("button", { name: "Order again" })).toBeVisible();
 });
 
-test("S3 a refused cancel tells the customer the kitchen has started", async ({ page, context }) => {
+test("S3 a refused cancel (cannot_cancel) tells the customer the kitchen has started cooking", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
   net.state.rpcError = { name: "cancel_order", message: "cannot_cancel" };
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Cancel order" }).click();
-  await expect(page.getByText("The kitchen has started, so this order cannot be cancelled now. Call the kitchen if you need to.")).toBeVisible();
+  await expect(page.getByText("The kitchen has started cooking, so this order cannot be cancelled now. Call the kitchen if you need to.")).toBeVisible();
 });
 
 test("S4 Orders shows the time in 12-hour form", async ({ page, context }) => {

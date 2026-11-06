@@ -57,8 +57,8 @@ test("S4 the tracker shows an estimate and a Cancel button while the order is pl
   await expect(page.getByRole("button", { name: "Cancel order" })).toHaveCount(0);
 });
 
-test("S5 once the kitchen has accepted, there is no Cancel button", async ({ page, context }) => {
-  await setup(context, page, [order("accepted", "2020-01-01T10:01:00Z")]);
+test("S5 once the kitchen has started cooking, there is no Cancel button (story #904: accepted still has one)", async ({ page, context }) => {
+  await setup(context, page, [order("preparing", "2020-01-01T10:01:00Z")]);
   await page.goto("/customer/");
   await expect(page.getByRole("heading", { name: "Your order", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Cancel order" })).toHaveCount(0);
