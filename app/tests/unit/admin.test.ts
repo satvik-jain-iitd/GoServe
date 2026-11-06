@@ -1,6 +1,6 @@
 // Story A2 (#149): the admin screen's input rules.
 import { describe, expect, it } from "vitest";
-import { parsePins } from "../../src/lib/admin";
+import { parsePins, removeKitchen } from "../../src/lib/admin";
 
 describe("parsePins", () => {
   it("reads pin codes separated by commas or spaces and drops repeats", () => {
@@ -145,5 +145,22 @@ describe("adminMessage when the network is gone or a rider cannot be removed (st
   });
   it("a foreign key refusal says the rider still has orders and what to do", () => {
     expect(adminMessage({ message: 'update or delete on table "riders" violates foreign key constraint "orders_rider_id_fkey" on table "orders"' })).toBe("This rider still has orders on record. Try again after the update, or ask the builder.");
+  });
+});
+
+// Story #900 (moved from the kitchen app, story #850): the admin removes a kitchen; the data path is one database function.
+describe("removeKitchen", () => {
+  const client = (reply: { data: unknown; error: { message: string } | null }, calls: unknown[][] = []) => ({ rpc: async (...a: unknown[]) => { calls.push(a); return reply; } }) as never;
+  it("calls kitchen_remove_v2 with the kitchen and says nothing when it worked", async () => {
+    const calls: unknown[][] = [];
+    expect(await removeKitchen(client({ data: { ok: true, staff: 2 }, error: null }, calls), "k-1")).toBeNull();
+    expect(calls).toEqual([["kitchen_remove_v2", { p_kitchen: "k-1" }]]);
+  });
+  it("tells the admin, in the admin's words, when orders are still to finish", async () => {
+    expect(await removeKitchen(client({ data: { ok: false, error: "orders_open", message: "Finish the orders on your tickets first, then remove the kitchen." }, error: null }), "k-1")).toBe("This kitchen still has orders to finish. Remove it when they are done.");
+  });
+  it("says plainly when the account is not an admin, and when anything else goes wrong", async () => {
+    expect(await removeKitchen(client({ data: null, error: { message: "not_allowed" } }), "k-1")).toBe("Only an admin can remove a kitchen.");
+    expect(await removeKitchen(client({ data: null, error: { message: "fetch failed" } }), "k-1")).toBe("Could not remove the kitchen. Try again.");
   });
 });

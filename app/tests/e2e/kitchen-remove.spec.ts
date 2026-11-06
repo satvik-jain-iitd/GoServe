@@ -1,26 +1,31 @@
-// Story #892, board K-Remove-Confirm (K7): Remove this kitchen asks twice. Ask 1 is this sheet (type REMOVE); ask 2 is the database, which refuses while orders are open.
+// Story #900, board A-Kitchen-Remove (A8): the admin removes a kitchen from its own page. Ask 1 is the sheet (type REMOVE); ask 2 is the database, which refuses while orders are open.
+// (Story #892 built this on the kitchen app for the wrong actor; #900 moved it.)
 import { test, expect, type Page } from "@playwright/test";
 import { setup, scan } from "./helpers";
 
+const KITCHEN = { id: "k-1", name: "Tau Ka Dhaba", address: "C-4, Hauz Khas", phone: "9876500011", pin_codes: ["110016"], open: true, active: true, opens_at: "11:00:00", closes_at: "22:00:00" };
 const open = async (page: Page) => {
-  await page.goto("/kitchen/");
-  await page.getByRole("button", { name: "Today", exact: true }).click();
+  await page.goto("/admin/");
+  await page.getByRole("button", { name: "City", exact: true }).click();
+  await page.getByRole("button", { name: /^Open kitchen Tau Ka Dhaba/ }).click();
   await page.getByRole("region", { name: "Leaving GoServe" }).getByRole("button", { name: /Remove this kitchen/ }).click();
-  return page.getByRole("dialog", { name: "Remove this kitchen?" });
+  return page.getByRole("dialog", { name: "Remove Tau Ka Dhaba?" });
 };
 const removes = (net: Awaited<ReturnType<typeof setup>>) => net.calls.rpc.filter((r) => r.name === "kitchen_remove_v2");
-
-test("S1 the row opens the sheet; the red button stays asleep until REMOVE is typed exactly", async ({ page, context }) => {
+const admin = async (page: Page, context: Parameters<typeof setup>[0]) => {
   const net = await setup(context, page);
-  net.state.kitchen = "k-1";
+  net.state.admin = true;
+  net.state.kitchens = [KITCHEN];
+  return net;
+};
+
+test("S1 the kitchen page has a red Remove row under Leaving GoServe; the sheet's button stays asleep until REMOVE is typed exactly", async ({ page, context }) => {
+  const net = await admin(page, context);
   const sheet = await open(page);
   await expect(sheet).toContainText("Ask 1 of 2");
-  await expect(sheet).toContainText("Stops");
   await expect(sheet).toContainText("new orders, the menu, every staff sign-in to this kitchen");
-  await expect(sheet).toContainText("Finishes");
   await expect(sheet).toContainText("orders already placed, today's slips and cash");
-  await expect(sheet).toContainText("Stays");
-  await expect(sheet).toContainText("past orders and numbers, the Google account");
+  await expect(sheet).toContainText("past orders, bills and numbers; the kitchen in this list, marked Off");
   const go = sheet.getByRole("button", { name: "Remove kitchen" });
   await expect(go).toBeDisabled();
   await sheet.getByLabel("Type REMOVE to go on").fill("remove");
@@ -28,38 +33,51 @@ test("S1 the row opens the sheet; the red button stays asleep until REMOVE is ty
   await sheet.getByLabel("Type REMOVE to go on").fill("REMOVE");
   await expect(go).toBeEnabled();
   expect(removes(net)).toEqual([]);
-  expect(await scan(page)).toEqual([]);   // no contrast or role violation, the red button included
+  expect(await scan(page)).toEqual([]);
 });
 
-test("S2 Keep cooking closes the sheet and nothing changes", async ({ page, context }) => {
-  const net = await setup(context, page);
-  net.state.kitchen = "k-1";
+test("S2 the section carries its caption; Keep it open closes the sheet and nothing changes", async ({ page, context }) => {
+  const net = await admin(page, context);
   const sheet = await open(page);
   await sheet.getByLabel("Type REMOVE to go on").fill("REMOVE");
-  await sheet.getByRole("button", { name: "Keep cooking" }).click();
+  await sheet.getByRole("button", { name: "Keep it open" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(removes(net)).toEqual([]);
-  await expect(page.getByRole("region", { name: "Leaving GoServe" })).toBeVisible();
+  const section = page.getByRole("region", { name: "Leaving GoServe" });
+  await expect(section).toContainText("Customers stop seeing it today. It stays in the city list as Off.");
+  const red = await section.locator(".ui-danger-text").evaluate((el) => getComputedStyle(el).color);
+  const error = await page.evaluate(() => { const d = document.createElement("div"); d.style.color = "var(--md-error)"; document.body.append(d); const c = getComputedStyle(d).color; d.remove(); return c; });
+  expect(red).toBe(error);   // red is the error token, not a new colour
 });
 
-test("S3 with open orders the database refuses and the line shows in the sheet; the kitchen stays", async ({ page, context }) => {
-  const net = await setup(context, page);
-  net.state.kitchen = "k-1";
+test("S3 with open orders the database refuses and the sheet says so in the admin's words; the kitchen stays", async ({ page, context }) => {
+  const net = await admin(page, context);
   net.state.removeReply = { ok: false, error: "orders_open", message: "Finish the orders on your tickets first, then remove the kitchen." };
   const sheet = await open(page);
   await sheet.getByLabel("Type REMOVE to go on").fill("REMOVE");
   await sheet.getByRole("button", { name: "Remove kitchen" }).click();
-  await expect(sheet.getByRole("alert")).toHaveText("Finish the orders on your tickets first, then remove the kitchen.");
+  await expect(sheet.getByRole("alert")).toHaveText("This kitchen still has orders to finish. Remove it when they are done.");
   expect(removes(net)).toHaveLength(1);
   await expect(sheet).toBeVisible();
 });
 
-test("S4 with no open orders the kitchen is removed and the gate shows not staff", async ({ page, context }) => {
-  const net = await setup(context, page);
-  net.state.kitchen = "k-1";
+test("S4 with no open orders the kitchen is removed: the sheet closes and the city list shows it as Off", async ({ page, context }) => {
+  const net = await admin(page, context);
   const sheet = await open(page);
   await sheet.getByLabel("Type REMOVE to go on").fill("REMOVE");
   await sheet.getByRole("button", { name: "Remove kitchen" }).click();
-  await expect(page.getByText("Not kitchen staff yet")).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(removes(net)).toEqual([{ name: "kitchen_remove_v2", body: { p_kitchen: "k-1" } }]);
+  await page.getByRole("button", { name: "Back to city" }).click();
+  await expect(page.getByRole("button", { name: /^Open kitchen Tau Ka Dhaba/ })).toContainText("Off");
+});
+
+test("S5 the kitchen app has no Leaving GoServe section, flag or not", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.kitchen = "k-1";
+  await page.goto("/kitchen/");
+  await page.getByRole("button", { name: "Today", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Send feedback" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Leaving GoServe" })).toHaveCount(0);
+  await expect(page.getByText("Remove this kitchen")).toHaveCount(0);
 });

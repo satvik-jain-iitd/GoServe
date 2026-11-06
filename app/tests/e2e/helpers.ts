@@ -49,7 +49,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
         return json(route, 200, { ok: true });
       }
       if (name === "delete_my_account") return json(route, 200, state.deleteReply);   // #771: the You screen deletes the account
-      if (name === "kitchen_remove_v2") { const r = state.removeReply as { ok?: boolean }; if (r.ok) state.kitchen = null; return json(route, 200, r); }   // #892: a removed kitchen has no staff row for this account any more
+      if (name === "kitchen_remove_v2") { const r = state.removeReply as { ok?: boolean }; if (r.ok) state.kitchens = (state.kitchens as any[]).map((k) => k.id === JSON.parse(req.postData() ?? "{}").p_kitchen ? { ...k, active: false, open: false } : k); return json(route, 200, r); }   // #900: a removed kitchen is switched off, not deleted
       if (name === "open_alert_add_v2") return json(route, 200, state.openAlert);   // #619 layer d, board L1
       if (name === "sim_clear_all") {   // #848: Clear everything is the admin's own database call, never the webhook
         if (state.clearReply) return json(route, 200, state.clearReply);
