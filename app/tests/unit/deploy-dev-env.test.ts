@@ -11,6 +11,10 @@ describe("deploy-dev.yml (the dev app)", () => {
     expect(text).toMatch(/VITE_OTP_GATE:\s*["']?1/);
     expect(text).toMatch(/VITE_OTP_SMS:\s*["']?(fixed|real)\b/);
   });
+  // Story #898: the owner tests Remove this kitchen on dev. Prod stays off (deploy-env.test.ts asserts it).
+  it("turns the Remove this kitchen row on, dev only", () => {
+    expect(text).toMatch(/VITE_KITCHEN_REMOVE:\s*["']1["']/);
+  });
   it("carries the sim webhook, same as prod", () => {
     expect(text).toMatch(/VITE_SIM_URL:/);
     expect(text).toMatch(/VITE_SIM_TOKEN:/);
