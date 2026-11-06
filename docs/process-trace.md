@@ -595,3 +595,4 @@ Rule: read this first in every session, append before saying done.
 | - | 2026-11-06 | owner | Saw the row on the kitchen app and said removing a kitchen is the admin's job, not the cook's. Frame A-Kitchen-Remove approved ("yes") | chat | volunteered |
 | - | 2026-11-06 | coder | Built #900 (PR #901): the row and the sheet moved to the admin's City > kitchen page; the kitchen app and the dev flag lost it. Red e2e first (5 of 5) | PR #901 | none |
 | - | 2026-11-06 | reviewer | Review of #901: the frame said "Closed" but the city list says "Off" for a removed kitchen; the copy was changed to Off. Merged | PR #901 | reviewed |
+| - | 2026-11-06 | coder | Built #904 (PR #906): `cancel_order` names the person who ordered as the customer first (migration `20261106110000`, applied on dev by the reviewer); Cancel shows at placed and accepted; the line matches the error; PostHog `cancel_failed`. Red first (DB 2 of 4, unit 3, e2e 5) | PR #906 | none |
