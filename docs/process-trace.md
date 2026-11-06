@@ -590,3 +590,8 @@ Rule: read this first in every session, append before saying done.
 | - | 2026-11-06 | reviewer | Proved the #842 root cause on the dev app's own path: after a Google return auth-js leaves `/customer/#`; sign out reloads and keeps it; `linkGoogle` sends `redirect_to=.../customer/#`; GoTrue concatenates `redirectURL + "#" + tokens`; the return `##access_token=` parses as the key `#access_token` and is ignored. Probe `probe842c.mjs` on the live dev app, GoTrue source `internal/tokens/service.go` | issue #842 comments | none |
 | - | 2026-11-06 | coder | Built #842 (PR #888): `linkGoogle` hands GoTrue the address without its fragment; sign-in mode adds `prompt=select_account` (acceptance 8). Red unit and e2e first | PR #888 | none |
 | - | 2026-11-06 | reviewer | Merged #888; deploy-dev green; the owner confirmed sign in, sign out, sign in on the iPhone with no relaunch | PR #888 | reviewed |
+| - | 2026-11-06 | coder | Built #892 (PR #897): Remove this kitchen confirm sheet on the kitchen app, behind `VITE_KITCHEN_REMOVE`. Built for the cook | PR #897 | none |
+| - | 2026-11-06 | coder | Built #898 (PR #899): the dev build turns the flag on for the owner's test; prod stays off | PR #899 | asked |
+| - | 2026-11-06 | owner | Saw the row on the kitchen app and said removing a kitchen is the admin's job, not the cook's. Frame A-Kitchen-Remove approved ("yes") | chat | volunteered |
+| - | 2026-11-06 | coder | Built #900 (PR #901): the row and the sheet moved to the admin's City > kitchen page; the kitchen app and the dev flag lost it. Red e2e first (5 of 5) | PR #901 | none |
+| - | 2026-11-06 | reviewer | Review of #901: the frame said "Closed" but the city list says "Off" for a removed kitchen; the copy was changed to Off. Merged | PR #901 | reviewed |
