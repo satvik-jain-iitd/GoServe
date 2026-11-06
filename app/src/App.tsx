@@ -311,11 +311,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [tellMe, setTellMe] = useState<"idle" | "busy" | "done">("idle");
   const [tellMeError, setTellMeError] = useState<string | null>(null);
   async function tellMeWhenOpen() {
-    if (shown?.kind !== "closed") return;
+    const kitchenId = shown?.kind === "closed" ? shown.id : (menu?.dishes.length === 0 && areaKitchenId) || null;   // closed kitchen (#718), or an open one with no dishes yet (#891, board M7)
+    if (!kitchenId) return;
     setTellMe("busy");
     setTellMeError(null);
     const allowed = reminder === "on" || (await allowReminder());
-    const { data, error } = allowed ? await getClient().rpc("open_alert_add_v2", { p_kitchen: shown.id }) : { data: null, error: null };
+    const { data, error } = allowed ? await getClient().rpc("open_alert_add_v2", { p_kitchen: kitchenId }) : { data: null, error: null };
     const ans = data as { ok?: boolean; message?: string } | null;
     if (allowed && !error && ans?.ok) return setTellMe("done");
     setTellMe("idle");

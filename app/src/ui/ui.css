@@ -464,3 +464,13 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 
 /* Story 850: the red words of "Remove this kitchen" (board K-Account) use the error token, no new colour. */
 .ui-danger-text { color: var(--md-error); font-weight: 600; }
+
+/* Story 891, board M7: a kitchen with no dishes yet. */
+.ui-menu-empty { display: flex; flex-direction: column; gap: var(--gs-space-3); margin: var(--gs-space-3) var(--gs-gutter) 0; padding: var(--gs-space-3); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); }
+.ui-menu-empty-row { display: grid; grid-template-columns: auto 1fr; gap: var(--gs-space-3); align-items: center; }
+.ui-menu-empty h2 { margin: 0; font-size: var(--gs-text-sm); font-weight: 600; }
+.ui-menu-empty p { margin: 0; }
+.ui-menu-empty .ui-btn { width: 100%; }
+.ui-menu-empty-note { margin: var(--gs-space-3) var(--gs-gutter) 0; color: var(--gs-text-muted); font-size: var(--gs-text-xs); }
+.ui-menu-empty-foot { padding: var(--gs-space-3) var(--gs-gutter); }
+.ui-menu-empty-foot .ui-btn { width: 100%; min-height: var(--gs-tap-big); }
