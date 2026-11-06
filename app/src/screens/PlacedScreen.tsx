@@ -82,7 +82,7 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
 
 // The customer says it in his words: the kitchen's "Ready" is "Ready, rider picks up", the last step is "At your door".
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "At your door" };
-const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "error" };
+const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
 export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track }: Props) {
   const steps = trackerSteps(status);

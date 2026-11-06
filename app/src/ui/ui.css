@@ -69,7 +69,7 @@ body { margin: 0; background: var(--md-background); color: var(--md-on-backgroun
 .ui-stamp.ready { color: var(--md-on-tertiary); background: var(--gs-status-ready); border-color: var(--md-on-tertiary); }
 .ui-stamp.out { color: var(--gs-status-out-for-delivery); }
 .ui-stamp.delivered { color: var(--gs-status-delivered); }
-.ui-stamp.error { color: var(--md-error); }
+.ui-stamp.cancelled { color: var(--md-error); }
 .ui-stamp.small { padding: 4px 10px; border-width: 2px; font-size: var(--gs-display-m); }
 
 /* Timeline */

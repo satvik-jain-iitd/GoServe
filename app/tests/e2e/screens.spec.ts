@@ -4,7 +4,7 @@
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { setup } from "./helpers";
+import { order, setup } from "./helpers";
 
 type Screen = { name: string; path: string; width: number; height: number; step: string };
 const screens: Screen[] = readFileSync(resolve(import.meta.dirname, "../../../docs/screens.txt"), "utf8")
@@ -31,6 +31,10 @@ const STEPS: Record<string, (context: BrowserContext, page: Page, path: string) 
   },
   account: async (context, page, path) => { const net = await setup(context, page); net.state.phoneUser = true; await page.goto(path);   // story 829: signed in by phone code (no Google name), so You shows the Google row as in the accepted picture
     await page.getByRole("button", { name: "Account" }).click(); await expect(page.getByTestId("account")).toBeVisible(); },
+  cancelled: async (context, page, path) => {   // story 916: the slip after a cancel
+    const net = await setup(context, page, [order("placed")]); await page.goto(path);
+    await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
+    net.push("UPDATE", order("cancelled", "2020-01-01T10:01:00Z")); await expect(page.getByText("Your order was cancelled")).toBeVisible({ timeout: 5000 }); },
   orders: async (context, page, path) => { await setup(context, page); await page.goto(path); await page.getByRole("button", { name: "My orders" }).click(); await page.waitForLoadState("networkidle"); },
 };
 
