@@ -1,7 +1,7 @@
 // The admin app's data calls and input rules (story A2). Row level security lets only an admin write these tables; the people functions check it again.
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type KitchenRow = { id: string; name: string; address: string | null; phone: string | null; pin_codes: string[]; open: boolean; active: boolean; opens_at?: string | null; closes_at?: string | null };
+export type KitchenRow = { id: string; name: string; address: string | null; phone: string | null; pin_codes: string[]; open: boolean; active: boolean; opens_at?: string | null; closes_at?: string | null; lat?: number | null; lng?: number | null; location_accuracy_m?: number | null; location_at?: string | null };
 export type PersonKind = "kitchen" | "rider" | "admin";
 export type Person = { kind: PersonKind; user_id: string; email: string | null; kitchen_id: string | null; kitchen_name: string | null };
 
@@ -45,12 +45,18 @@ export const isAdmin = async (c: Client): Promise<boolean> => {
   return !error && data === true;
 };
 export async function listKitchens(c: Client): Promise<KitchenRow[]> {
-  const { data, error } = await c.from("kitchens").select("id, name, address, phone, pin_codes, open, active, opens_at, closes_at").order("name");
+  const { data, error } = await c.from("kitchens").select("id, name, address, phone, pin_codes, open, active, opens_at, closes_at, lat, lng, location_accuracy_m, location_at").order("name");
   if (error) throw error;
   return (data ?? []) as KitchenRow[];
 }
-export const addKitchen = async (c: Client, k: { name: string; address: string; phone: string; pins: string[]; opensAt?: string; closesAt?: string }) =>
-  adminMessage((await c.from("kitchens").insert({ name: k.name, address: k.address || null, phone: k.phone || null, pin_codes: k.pins, opens_at: k.opensAt || null, closes_at: k.closesAt || null })).error);
+// Story #905: where a kitchen stands. accuracy is in metres from the phone's fix, null when the pin was placed by hand.
+export type Loc = { lat: number; lng: number; accuracy: number | null; at: string };
+const locColumns = (l: Loc) => ({ lat: l.lat, lng: l.lng, location_accuracy_m: l.accuracy, location_at: l.at });
+export const locOf = (k: Pick<KitchenRow, "lat" | "lng" | "location_accuracy_m" | "location_at">): Loc | null =>
+  typeof k.lat === "number" && typeof k.lng === "number" ? { lat: k.lat, lng: k.lng, accuracy: k.location_accuracy_m ?? null, at: k.location_at ?? "" } : null;
+export const addKitchen = async (c: Client, k: { name: string; address: string; phone: string; pins: string[]; opensAt?: string; closesAt?: string; loc?: Loc | null }) =>
+  adminMessage((await c.from("kitchens").insert({ name: k.name, address: k.address || null, phone: k.phone || null, pin_codes: k.pins, opens_at: k.opensAt || null, closes_at: k.closesAt || null, ...(k.loc ? locColumns(k.loc) : {}) })).error);
+export const setKitchenLocation = async (c: Client, id: string, loc: Loc) => adminMessage((await c.from("kitchens").update(locColumns(loc)).eq("id", id)).error);
 export type RiderListRow = { user_id: string; name: string | null; phone: string | null; online: boolean; lat?: number | null; lng?: number | null; updated_at?: string };
 export async function listRiders(c: Client): Promise<RiderListRow[]> {
   const { data, error } = await c.from("riders").select("user_id, name, phone, online, lat, lng, updated_at").order("name");

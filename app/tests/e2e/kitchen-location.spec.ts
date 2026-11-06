@@ -23,6 +23,8 @@ test("S1 Use my phone's location sets the pin and the line; Add kitchen saves la
   await expect(line(page)).toContainText("±25 m");
   await expect(page.locator(".leaflet-marker-icon")).toHaveCount(1);
   await page.getByLabel("Kitchen name").fill("Chhatarpur Kitchen");
+  await page.getByLabel("Address").fill("Chhatarpur Main Road");
+  await page.getByLabel("Phone").fill("9876500011");
   await page.getByLabel("Pin codes").fill("110074");
   await page.getByRole("button", { name: "Add kitchen" }).click();
   await expect.poll(() => net.calls.kitchenWrites.length).toBeGreaterThan(0);
@@ -47,6 +49,8 @@ test("S2 dragging the pin changes the saved values", async ({ page, context }) =
   await expect(line(page)).not.toContainText("28.56770, 77.24320");
   await expect(line(page)).toContainText("moved by hand");
   await page.getByLabel("Kitchen name").fill("Chhatarpur Kitchen");
+  await page.getByLabel("Address").fill("Chhatarpur Main Road");
+  await page.getByLabel("Phone").fill("9876500011");
   await page.getByLabel("Pin codes").fill("110074");
   await page.getByRole("button", { name: "Add kitchen" }).click();
   await expect.poll(() => net.calls.kitchenWrites.length).toBeGreaterThan(0);

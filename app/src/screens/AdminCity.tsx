@@ -1,13 +1,14 @@
 // The City of the admin app on the Ink v3 boards A5 (city), A6 (one kitchen) and A7 (add a kitchen) (story H12, #195; stories A2, A3, A5).
 import { useState } from "react";
-import { addKitchen, addPerson, cancelInvite, inviteLink, parsePins, removeKitchen, removePerson, type Invite, type KitchenRow, type Person, type PersonKind, type RiderListRow } from "../lib/admin";
+import { addKitchen, addPerson, cancelInvite, inviteLink, parsePins, removeKitchen, removePerson, locOf, setKitchenLocation, type Invite, type KitchenRow, type Loc, type Person, type PersonKind, type RiderListRow } from "../lib/admin";
 import { kitchenProblem } from "../lib/validate";
 import { getClient } from "../lib/supabase";
 import { AdminMenu } from "./AdminMenu";
+import { KitchenLocation } from "./KitchenLocation";
 
 type View = { kind: "list" } | { kind: "kitchen"; id: string } | { kind: "add" };
 type Props = { kitchens: KitchenRow[]; people: Person[]; invites: Invite[]; riders: RiderListRow[] | null; onError: (m: string | null) => void; reload: () => Promise<void>; view: View; onView: (v: View) => void };
-const EMPTY = { name: "", address: "", phone: "", pins: "", opensAt: "", closesAt: "" };
+const EMPTY = { name: "", address: "", phone: "", pins: "", opensAt: "", closesAt: "", loc: null as Loc | null };
 const hhmm = (t: string | null | undefined) => (t ? t.slice(0, 5) : null);
 /** Open (serving), Closed (the switch is off today), Off (taken out of the system, active false). */
 const stateOf = (k: KitchenRow): [string, string] => (!k.active ? ["Off", "error"] : k.open ? ["Open", "ready"] : ["Closed", "placed"]);
@@ -30,7 +31,7 @@ export function AdminCity({ kitchens, people, invites, riders, onError, reload, 
     const problem = kitchenProblem(form);
     if (problem) return onError(problem);
     const { pins } = parsePins(form.pins);
-    const failed = await addKitchen(getClient(), { name: form.name.trim(), address: form.address.trim(), phone: form.phone.trim(), pins, opensAt: form.opensAt, closesAt: form.closesAt });
+    const failed = await addKitchen(getClient(), { name: form.name.trim(), address: form.address.trim(), phone: form.phone.trim(), pins, opensAt: form.opensAt, closesAt: form.closesAt, loc: form.loc });
     onError(failed);
     if (!failed) { setForm(EMPTY); await reload(); onView({ kind: "list" }); }
   };
@@ -87,6 +88,7 @@ export function AdminCity({ kitchens, people, invites, riders, onError, reload, 
           <div className="ui-field"><label htmlFor="k-addr">Address</label><input id="k-addr" type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
           <div className="ui-field"><label htmlFor="k-phone">Phone</label><input id="k-phone" className="mono-input" type="tel" inputMode="numeric" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /><span className="ui-meta mono">10 digits</span></div>
           <div className="ui-field"><label htmlFor="k-pins">Pin codes</label><input id="k-pins" className="mono-input" type="text" inputMode="numeric" value={form.pins} placeholder="110016, 110017" onChange={(e) => setForm({ ...form, pins: e.target.value })} /><span className="ui-meta mono">At least one · comma between pins</span></div>
+          <KitchenLocation loc={form.loc} onChange={(loc) => setForm({ ...form, loc })} />
           <div className="ui-two">
             <div className="ui-field"><label htmlFor="k-open">Opens at</label><input id="k-open" className="mono-input" type="time" value={form.opensAt} onChange={(e) => setForm({ ...form, opensAt: e.target.value })} /></div>
             <div className="ui-field"><label htmlFor="k-close">Closes at</label><input id="k-close" className="mono-input" type="time" value={form.closesAt} onChange={(e) => setForm({ ...form, closesAt: e.target.value })} /></div>
@@ -110,6 +112,7 @@ export function AdminCity({ kitchens, people, invites, riders, onError, reload, 
         <div className="ui-row ui-row-static"><span>Hours</span><span className="mono ui-row-sub">{hhmm(k.opens_at) && hhmm(k.closes_at) ? `${hhmm(k.opens_at)} to ${hhmm(k.closes_at)}` : "Not set"}</span></div>
         <div className="ui-row ui-row-static"><span>Phone</span><span className="mono ui-row-sub">{k.phone ?? "Not set"}</span></div>
         <div className="ui-row ui-row-static"><span>Address</span><span className="ui-row-sub ui-right">{k.address ?? "Not set"}</span></div>
+        <KitchenLocation loc={locOf(k)} onChange={async (loc) => { const failed = await setKitchenLocation(getClient(), k.id, loc); onError(failed); if (!failed) await reload(); }} />
         <section className="ui-group" aria-label="Staff">
           <h2>Staff <span className="mono">{staffOf(k.id).length}{invitesOf(k.id).length > 0 && ` · ${invitesOf(k.id).length} invited`}</span></h2>
           {staffOf(k.id).length === 0 && invitesOf(k.id).length === 0 && <p className="ui-meta">No staff yet. Add a person from the City tab.</p>}
