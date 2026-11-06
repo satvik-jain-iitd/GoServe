@@ -34,7 +34,7 @@ type Props = {
   onAllowReminder: () => void;
   onMenu: () => void;           // See the menu, with an empty cart (a delivered or cancelled order)
   onBack: () => void;           // the chevron: back to the menu
-  onCancel: () => void;         // story B3: allowed only while the order is placed
+  onCancel: () => void;         // story B3, #904: allowed while the order is placed or accepted
   cancelling: boolean;
   rider: RiderCard | null;      // story D2: shown once a rider has the order
   onCall?: () => void;          // story H14: the Call tap is counted ("where is my food" calls)
@@ -176,7 +176,7 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
       </div>
       <div className="ui-bottom">
         {(delivered || cancelled) && <button type="button" className="ui-btn big" onClick={onMenu}>{cancelled ? "Order again" : "See the menu"}</button>}
-        {status === "placed" && <button type="button" className="ui-btn ghost big" disabled={cancelling} onClick={onCancel}>Cancel order</button>}
+        {(status === "placed" || status === "accepted") && <button type="button" className="ui-btn ghost big" disabled={cancelling} onClick={onCancel}>Cancel order</button>}
         {track?.phone && status === "out_for_delivery" && <a href={`tel:${track.phone}`} className="ui-btn ghost big" onClick={onCall}>Call the rider</a>}
         {kitchenPhone && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
       </div>

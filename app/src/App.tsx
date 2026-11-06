@@ -23,7 +23,7 @@ import { confirmAt, DEFAULT_CFG, mayAsk, notYet, reaskMs, type ConfirmCfg } from
 import { fetchOrders } from "./lib/live";
 import { pushTrail } from "./lib/trail";
 import { trace } from "./lib/trace";
-import { NO_INTERNET } from "./lib/errorLines";
+import { cancelLine, NO_INTERNET } from "./lib/errorLines";
 import { FeedbackSheet } from "./screens/FeedbackSheet";
 import { ensureSession, fetchMenuRows, fetchRiderCard, getClient, type RiderCard } from "./lib/supabase";
 import { openTill } from "./lib/browse";
@@ -662,13 +662,13 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const count = lines.reduce((n, l) => n + l.qty, 0);
 
   const [cancelling, setCancelling] = useState(false);
-  // The customer cancels while the order is still placed (story B3). The database checks the rule; the live list brings the new status.
+  // The customer cancels until cooking starts: placed or accepted (stories B3, #904). The database checks the rule; the live list brings the new status.
   async function cancelOrder() {
     if (!placed) return;
     setCancelling(true);
     setConfirmError(null);
     const { data, error: failed } = await getClient().rpc("cancel_order", { p_order: placed.id, p_reason: null });
-    if (failed) setConfirmError("The kitchen has started, so this order cannot be cancelled now. Call the kitchen if you need to.");
+    if (failed) { setConfirmError(cancelLine(failed.message)); capture("cancel_failed", { error: failed.message?.split(":")[0] ?? "unknown" }); }
     else if (data?.order) setOrders((cur) => mergeOrder(cur, data.order as Order));
     setCancelling(false);
   }
