@@ -1,6 +1,6 @@
 // The kitchen app on the Ink v3 boards K3 to K6 (story H11, #194): New tickets, Cooking, the Kitchen tab, and one ticket (K4) over the tabs.
 import { useEffect, useRef, useState } from "react";
-import { cashByRider, cookingTickets, deliveredToday, hhmm, justCancelled, minutesAway, newTickets, nextStep, outsideHours, readyTickets, removeShown, shortId, staffLabel, type Order } from "../lib/kitchen";
+import { cashByRider, cookingTickets, deliveredToday, hhmm, justCancelled, minutesAway, newTickets, nextStep, outsideHours, readyTickets, removeKitchen, removeShown, shortId, staffLabel, type Order } from "../lib/kitchen";
 import { listRiders, type RiderListRow } from "../lib/admin";
 import { getClient } from "../lib/supabase";
 import { formatRupees } from "../lib/money";
@@ -21,6 +21,7 @@ const stamp = (status: string): [string, string] => [staffLabel(status), STAMP[s
 export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandover, gate }: Props) {
   const [tab, setTab] = useState<Tab>("new");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [removing, setRemoving] = useState(false);   // story 892, board K7: the confirm sheet of Remove this kitchen
   const fresh = newTickets(orders);
   const cooking = cookingTickets(orders);
   const ready = readyTickets(orders);
@@ -166,7 +167,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
               {removeShown(import.meta.env.VITE_KITCHEN_REMOVE) && (
                 <section className="ui-group" aria-label="Leaving GoServe">
                   <h2>Leaving GoServe <span className="mono">Asks twice</span></h2>
-                  <button type="button" className="ui-row ui-row-tall">{/* the confirm sheet comes with its frame (story 850); until then the tap opens nothing */}
+                  <button type="button" className="ui-row ui-row-tall" onClick={() => setRemoving(true)}>
                     <span className="ui-row-label"><span className="ui-danger-text">Remove this kitchen</span><span className="ui-row-sub mono">Customers stop seeing it today. Orders already placed finish.</span></span>
                     <span className="go" aria-hidden="true">›</span>
                   </button>
@@ -176,7 +177,40 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
           ) : <p className="ui-meta ui-pad">The open switch and the dishes are on the kitchen app, after a Google sign-in.</p>}
         </div>
       )}
+      {removing && gate && <RemoveSheet kitchenId={gate.kitchenId} onClose={() => setRemoving(false)} onRemoved={gate.retry} />}
       <Tabs current={tab} tabs={[{ key: "new", label: "New", icon: "new", badge: fresh.length }, { key: "cooking", label: "Cooking", icon: "cooking" }, { key: "kitchen", label: "Today", icon: "kitchen" }]} onPick={setTab} />
     </>
+  );
+}
+
+// Story 892, board K7: ask 1 of 2 is this sheet (type REMOVE); ask 2 is the database, which refuses while orders are open and says so here.
+function RemoveSheet({ kitchenId, onClose, onRemoved }: { kitchenId: string; onClose: () => void; onRemoved: () => void }) {
+  const [word, setWord] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const go = async () => {
+    setBusy(true);
+    setError(null);
+    const line = await removeKitchen(getClient(), kitchenId);
+    setBusy(false);
+    if (line) return setError(line);
+    onClose();
+    onRemoved();   // the gate reads the staff list again and shows "not staff"
+  };
+  return (
+    <div className="ui-sheet-back" onClick={onClose}>
+      <section role="dialog" aria-modal="true" aria-label="Remove this kitchen?" className="ui-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="ui-sheet-head"><h2>Remove this kitchen?</h2><span className="mono">Ask 1 of 2</span></div>
+        <div className="ui-remove-rows">
+          <p><strong>Stops</strong><span>new orders, the menu, every staff sign-in to this kitchen</span></p>
+          <p><strong>Finishes</strong><span>orders already placed, today's slips and cash</span></p>
+          <p><strong>Stays</strong><span>past orders and numbers, the Google account</span></p>
+        </div>
+        <div className="ui-field"><label htmlFor="remove-word">Type REMOVE to go on</label><input id="remove-word" type="text" autoCapitalize="characters" autoComplete="off" value={word} onChange={(e) => setWord(e.target.value)} /></div>
+        {error && <p role="alert" className="ui-note error">{error}</p>}
+        <button type="button" className="ui-btn big danger" disabled={word !== "REMOVE" || busy} onClick={() => void go()}>Remove kitchen</button>
+        <button type="button" className="ui-btn ghost big" onClick={onClose}>Keep cooking</button>
+      </section>
+    </div>
   );
 }
