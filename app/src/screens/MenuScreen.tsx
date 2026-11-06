@@ -32,6 +32,7 @@ export function MenuScreen(p: Props) {
   const thali = thalisOf(shown.filter((d) => d.available !== false));   // a sold-out thali is not today's thali
   const sections = sectionsOf(shown);
   const closed = p.closed !== null;
+  const empty = p.dishes !== null && all.length === 0 && !p.error;   // story 891, board M7: the server answered and the kitchen has no dishes yet
   const add = (d: Dish) => <button type="button" className="ui-btn" aria-label={`Add ${d.name}`} disabled={closed} onClick={() => p.onAdd(d.id)}>Add</button>;
   if (p.dishes === null && p.error) return <OfflineEmpty onRetry={p.onRetry} />;   // story #637, board M6: nothing saved and no connection
   const control = (d: Dish) => d.available === false ? <span className="ui-stamp placed small" aria-label="Sold out for today">Sold out</span>
@@ -67,18 +68,21 @@ export function MenuScreen(p: Props) {
         {p.fromCache && <p role="status" className="ui-offline">No connection. Showing the menu you saw last.</p>}
                 {p.dishes === null && !p.error && <Loading />}
         {p.dishes !== null && (thali.veg || thali.nonveg) && <Hero veg={thali.veg} nonveg={thali.nonveg} closed={closed} qty={p.qty} onAdd={p.onAdd} onChange={p.onChange} />}
-        {p.dishes !== null && all.length === 0 && !p.error && (
+        {empty && (
           <div className="ui-menu-empty" data-testid="menu-empty">
-            <span className="ui-stamp placed small">Soon</span>
-            <h2>No dishes on the menu yet.</h2>
-            <p>{p.kitchenName || "This kitchen"} is still adding its dishes. Nothing to order right now.</p>
+            <div className="ui-menu-empty-row">
+              <span className="ui-stamp placed small">Soon</span>
+              <div>
+                <h2>No dishes on the menu yet.</h2>
+                <p>{p.kitchenName || "This kitchen"} is still adding its dishes. Nothing to order right now.</p>
+              </div>
+            </div>
             {p.tellMe === "done" ? <p role="status">We will tell you when the menu is ready.</p>
               : <button type="button" className="ui-btn ghost" disabled={p.tellMe === "busy"} onClick={p.onTellMe}>Tell me when the menu is ready</button>}
             {p.tellMeError && <p role="alert" className="ui-meta">{p.tellMeError}</p>}
-            <p className="mono">Your internet is fine. The kitchen has nothing listed yet.</p>
-            <button type="button" className="ui-btn ghost" onClick={p.onChangePin}>Try another pin code</button>
           </div>
         )}
+        {empty && <p className="ui-menu-empty-note mono">Your internet is fine. The kitchen has nothing listed yet.</p>}
         {p.dishes !== null && all.length > 0 && shown.length === 0 && <div className="ui-pad"><Empty title="Nothing matches" hint="Try another word or clear the filters." /></div>}
         {sections.map((s) => (
           <div key={s.id}>
@@ -100,6 +104,7 @@ export function MenuScreen(p: Props) {
           </div>
         ))}
       </div>
+      {empty && <div className="ui-menu-empty-foot"><button type="button" className="ui-btn ghost big" onClick={p.onChangePin}>Try another pin code</button></div>}
       {p.cartCount > 0 && (
         <div className="ui-sticky float">
           <button type="button" className="ui-btn bar" aria-label={`View bill (${p.cartCount}) · ${formatRupees(p.cartTotal)}`} onClick={p.onOpenCart}>
