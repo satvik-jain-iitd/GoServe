@@ -12,6 +12,9 @@ const day = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "n
 export const locationLine = (l: Loc): string =>
   [`${l.lat.toFixed(5)}, ${l.lng.toFixed(5)}`, l.accuracy === null ? "moved by hand" : `±${Math.round(l.accuracy)} m`, l.at ? day(l.at) : ""].filter(Boolean).join(" · ");
 
+// Story #933: the kitchen is a pin (24 by 32, brand colour, tip at the location). Riders keep the initials circle.
+const PIN_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="32" viewBox="0 0 24 32" aria-hidden="true"><path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill="currentColor"/><circle cx="12" cy="12" r="4.5" fill="#fff"/></svg>';
+
 type Props = { loc: Loc | null; onChange: (l: Loc) => void | Promise<void> };
 
 export function KitchenLocation({ loc, onChange }: Props) {
@@ -26,7 +29,7 @@ export function KitchenLocation({ loc, onChange }: Props) {
     let gone = false;
     void Promise.all([import("leaflet"), import("leaflet/dist/leaflet.css")]).then(([L]) => {
       if (gone || !box.current) return;
-      const map = L.map(box.current, { zoomControl: true, attributionControl: false, scrollWheelZoom: false }).setView(DELHI, 11);
+      const map = L.map(box.current, { zoomControl: true, attributionControl: false, scrollWheelZoom: false, keyboard: false })   /* story #933: not a keyboard stop, so a tap leaves no focus rectangle */.setView(DELHI, 11);
       if (TILES) L.tileLayer(TILES, { maxZoom: 19 }).addTo(map);
       map.on("click", (e) => void byHand(e.latlng.lat, e.latlng.lng));   // a tap on the map moves the pin there
       live.current = { map, pin: null, L };
@@ -42,7 +45,7 @@ export function KitchenLocation({ loc, onChange }: Props) {
     const m = live.current;
     if (!l || !m) return;
     if (!m.pin) {
-      m.pin = L.marker([l.lat, l.lng], { draggable: true, keyboard: false, title: "Kitchen pin", icon: L.divIcon({ className: "gs-pin-wrap", iconSize: [22, 22], html: '<span class="gs-pin small">K</span>' }) }).addTo(map);
+      m.pin = L.marker([l.lat, l.lng], { draggable: true, keyboard: false, title: "Kitchen pin", icon: L.divIcon({ className: "gs-kitchen-pin", iconSize: [24, 32], iconAnchor: [12, 32], html: PIN_SVG }) }).addTo(map);
       m.pin.on("dragend", () => { const p = m.pin!.getLatLng(); void byHand(p.lat, p.lng); });
       map.setView([l.lat, l.lng], 16, { animate: false });
     } else if (m.pin.getLatLng().lat !== l.lat || m.pin.getLatLng().lng !== l.lng) {
