@@ -35,6 +35,14 @@ const STEPS: Record<string, (context: BrowserContext, page: Page, path: string) 
     const net = await setup(context, page, [order("placed")]); await page.goto(path);
     await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
     net.push("UPDATE", order("cancelled", "2020-01-01T10:01:00Z")); await expect(page.getByText("Your order was cancelled")).toBeVisible({ timeout: 5000 }); },
+  "add-kitchen": async (context, page, path) => {   // story 923: the admin's Add kitchen form
+    const net = await setup(context, page); net.state.admin = true; await page.goto(path);
+    await page.getByRole("button", { name: "City", exact: true }).click(); await page.getByRole("button", { name: "Add a kitchen" }).click();
+    await expect(page.getByLabel("Kitchen name")).toBeVisible(); },
+  "add-dish": async (context, page, path) => {   // story 923: the admin's Add dish form
+    const net = await setup(context, page); net.state.admin = true; await page.goto(path);
+    await page.getByRole("button", { name: "City", exact: true }).click(); await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();
+    await page.getByRole("button", { name: "Add a dish" }).click(); await expect(page.getByLabel("Dish name")).toBeVisible(); },
   orders: async (context, page, path) => { await setup(context, page); await page.goto(path); await page.getByRole("button", { name: "My orders" }).click(); await page.waitForLoadState("networkidle"); },
 };
 

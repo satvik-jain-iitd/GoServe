@@ -272,7 +272,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-muted { color: var(--gs-text-muted); }
 .ui-add-more { justify-self: start; width: auto; min-height: var(--gs-tap); padding: 0 var(--gs-space-4); font-size: var(--gs-text-sm); }
 .ui-form { display: flex; flex-direction: column; gap: var(--gs-space-4); padding: var(--gs-space-4) var(--gs-gutter) var(--gs-space-5); }
-.ui-form input, .ui-form textarea, .otp-phone input { box-sizing: border-box; width: 100%; min-height: var(--gs-tap); padding: 10px 12px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font: inherit; resize: none; }
+.ui-form input:not(.ui-switch), .ui-form textarea, .otp-phone input { box-sizing: border-box; width: 100%; min-height: var(--gs-tap); padding: 10px 12px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font: inherit; resize: none; }
 .ui-form .mono-input { font-family: var(--gs-font-mono); }
 .ui-form input:focus-visible, .ui-form textarea:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
 .ui-form .ui-field { gap: 4px; }
@@ -370,7 +370,10 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 
 /* Admin City, boards A5 to A7 (story H12b) */
 .ui-pad-y { padding: var(--gs-space-3) 0; }
-.ui-two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gs-space-3); }
+.ui-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--gs-space-3); }
+.ui-two > * { min-width: 0; }
+.ui-form input[type="time"] { min-width: 0; -webkit-appearance: none; appearance: none; }   /* story 923: iOS Safari gives a time box its own minimum width and pushes the page sideways */
+.ui-map, .ui-map-box { width: 100%; max-width: 100%; box-sizing: border-box; }
 .ui-right { text-align: right; max-width: 60%; }
 /* Story 875, board A-AddPerson-Invite: the box under the add-a-person form, and the email of an invited row. */
 .ui-invite { display: flex; flex-direction: column; gap: 10px; margin-top: var(--gs-space-4); padding: 14px 16px; border: 1px solid var(--md-outline-variant); border-radius: 6px; background: var(--md-surface); }
@@ -439,6 +442,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-mapcard { margin: var(--gs-space-3) 0 0; border: 1px solid var(--md-outline-variant); border-radius: 6px; overflow: hidden; background: var(--md-surface); }
 .ui-map { position: relative; }
 .ui-map[data-offline="true"] .ui-map-box { opacity: 0.55; filter: grayscale(1); }
+.ui-map { margin-bottom: 12px; }   /* story 923: the location button must not touch the map */
 .ui-map-box { height: 220px; background: var(--md-surface-variant, var(--md-surface)); }
 .ui-map-credit { position: absolute; right: 6px; bottom: 4px; z-index: 500; font-size: 10px; color: var(--gs-text-muted); background: var(--md-surface); padding: 1px 4px; border-radius: 3px; }
 .ui-map-line { display: flex; align-items: center; gap: var(--gs-space-2); padding: 10px var(--gs-space-3); border-top: 1px solid var(--md-outline-variant); font-size: var(--gs-text-sm); }
