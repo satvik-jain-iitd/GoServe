@@ -4,6 +4,9 @@ import { shrinkPhoto } from "./photo";
 
 export type KitchenRow = { id: string; name: string; address: string | null; phone: string | null; pin_codes: string[]; open: boolean; active: boolean; opens_at?: string | null; closes_at?: string | null; lat?: number | null; lng?: number | null; location_accuracy_m?: number | null; location_at?: string | null };
 export type PersonKind = "kitchen" | "rider" | "admin";
+// Story #985: the owner account is the one superadmin, hardcoded. The database holds the same address (owner_email() in migration 20261108100000); a unit test checks the two match.
+export const OWNER_EMAIL = "satvik.jain@iitdalumni.com";
+export const isOwner = (p: { email: string | null }): boolean => (p.email ?? "").trim().toLowerCase() === OWNER_EMAIL;
 export type Person = { kind: PersonKind; user_id: string; email: string | null; kitchen_id: string | null; kitchen_name: string | null };
 
 // Pin codes: six digits each, separated by commas or spaces; repeats are dropped; anything else is named back to the admin.
@@ -20,6 +23,7 @@ export function parsePins(text: string): { pins: string[]; bad: string[] } {
 const MESSAGES: Record<string, string> = {
   no_such_user: "No admin account has that email yet. Ask them to sign in to the admin app with Google once, then add them.",   // an admin with no account becomes an invite since story #968; kept for a database without the migration (story 875); only an admin must exist first
   last_admin: "This is the last admin. Add another admin first.",
+  owner_admin: "The owner account cannot be removed.",   // story #985
   not_allowed: "Not allowed.",
   invalid_kind: "Pick a role, and a kitchen for kitchen staff.",
   reason_required: "Give a reason for the cancel.",
