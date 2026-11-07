@@ -1,6 +1,8 @@
-# Story #928: every day, and after every push to dev, check that each merged migration is applied on the dev project. Read-only.
+# Story #928: every day (and on demand), check that each merged migration is applied on the dev project. Read-only.
 # Needs the repository secret SUPABASE_ACCESS_TOKEN (the owner adds it). Without it the job says so and stops; it never passes silently.
 name: migration drift
+permissions:
+  contents: read
 on:
   schedule:
     - cron: "30 3 * * *"
