@@ -65,7 +65,7 @@ const api = orderDeps;
 
 // `lock` makes this one of the role apps (story #83): that role only, no role tabs, no demo tools. Without it, this is the demo console.
 export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
-  const [menu, setMenu] = useState<{ dishes: Dish[]; fromCache: boolean } | null>(null);
+  const [menu, setMenu] = useState<{ dishes: Dish[]; fromCache: boolean; slow?: boolean } | null>(null);
   // The customer app asks for a pin code and shows the menu of the kitchen that serves it (story B2). The demo console and the other apps keep the plain menu.
   const land = useRef(false);
   const [pin, setPin] = useState<string | null>(() => (lock === "customer" ? loadPin() : null));
@@ -389,7 +389,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
 
   useEffect(() => {
     if (lock && lock !== "customer") return;   // story H2: the kitchen, rider, ops and admin apps have nothing to sell
-    if (!lock) return void loadMenu(() => fetchMenuRows(), window.localStorage).then((m) => { setMenu(m); setMenuError(null); }, (e: Error) => setMenuError(e.message));
+    if (!lock) return void loadMenu(() => fetchMenuRows(), window.localStorage, MENU_KEY, { onLater: setMenu }).then((m) => { setMenu(m); setMenuError(null); }, (e: Error) => setMenuError(e.message));
     if (!pin) return;
     let alive = true;
     setLooking(true);
@@ -401,11 +401,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }, [lock, pin, from, menuTry]);
   // The menu of the kitchen that serves the pin; a closed kitchen still shows its menu (board 02c). Reads as soon as the kitchen is known,
   // so a saved kitchen (D15, #242) shows its menu before the kitchens read answers.
+  useEffect(() => { if (menu?.fromCache) capture("error_shown", { line_key: menu.slow ? "menu_slow" : "menu_offline" }); }, [menu?.fromCache, menu?.slow]);   // story #930: how often the banner shows
   const areaKitchenId = area?.kind === "ok" ? area.kitchen.id : area?.kind === "closed" ? area.id : null;
   useEffect(() => {
     if (lock !== "customer" || !areaKitchenId) return;
     let alive = true;
-    loadMenu(() => fetchMenuRows(areaKitchenId), window.localStorage, `${MENU_KEY}.${areaKitchenId}`)
+    loadMenu(() => fetchMenuRows(areaKitchenId), window.localStorage, `${MENU_KEY}.${areaKitchenId}`, { onLater: (m) => { if (alive) setMenu(m); } })   // story #930: a second read lands, or fails, after the first
       .then((loaded) => { if (alive) { setMenu(loaded); setMenuError(null); } }, (e: Error) => { if (alive) setMenuError(e.message); });
     return () => { alive = false; };
   }, [lock, areaKitchenId, menuTry]);
@@ -421,7 +422,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     if (liveTick === 0 || lock !== "customer" || !pin || !areaKitchenId) return;
     let alive = true;
     resolveArea(pin, () => fetchKitchens(getClient()), window.localStorage, from ?? undefined).then((found) => { if (alive) setArea(found); }, () => undefined);
-    loadMenu(() => fetchMenuRows(areaKitchenId), window.localStorage, `${MENU_KEY}.${areaKitchenId}`).then((loaded) => { if (alive) { setMenu(loaded); setMenuError(null); } }, () => undefined);
+    loadMenu(() => fetchMenuRows(areaKitchenId), window.localStorage, `${MENU_KEY}.${areaKitchenId}`, { onLater: (m) => { if (alive) setMenu(m); } }).then((loaded) => { if (alive) { setMenu(loaded); setMenuError(null); } }, () => undefined);
     return () => { alive = false; };
   }, [liveTick]);   // eslint-disable-line react-hooks/exhaustive-deps
   function choosePin(p: string, at?: { lat: number; lng: number }) {
@@ -765,7 +766,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   ) : (
     <>
         {step === "menu" && (
-          <MenuScreen land={land.current} onLanded={() => { land.current = false; }} dishes={menu?.dishes ?? null} fromCache={menu?.fromCache ?? false} error={menuError} onRetry={() => setMenuTry((n) => n + 1)}
+          <MenuScreen land={land.current} onLanded={() => { land.current = false; }} dishes={menu?.dishes ?? null} fromCache={menu?.fromCache ?? false} slow={menu?.slow ?? false} error={menuError} onRetry={() => setMenuTry((n) => n + 1)}
             pin={pin} name={name} qty={cart} cartCount={count} cartTotal={total}
             kitchenName={kitchenName}
             openText={shown?.kind === "ok" ? openTill(shown.kitchen.closes_at) : ""}

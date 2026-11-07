@@ -8,7 +8,7 @@ import { formatRupees } from "../lib/money";
 import { Empty, Stepper, TabBar, VegMark } from "../ui";
 
 type Props = {
-  dishes: Dish[] | null; fromCache: boolean; error: string | null; onRetry: () => void;
+  dishes: Dish[] | null; fromCache: boolean; slow?: boolean; error: string | null; onRetry: () => void;
   pin: string | null; kitchenName: string; openText: string; name: string; closed: { main: string; sub: string } | null;
   tellMe: "idle" | "busy" | "done"; tellMeError: string | null; onTellMe: () => void;   // #718: ask for one push when the closed kitchen opens
   qty: Record<string, number>; cartCount: number; cartTotal: number;
@@ -66,7 +66,7 @@ export function MenuScreen(p: Props) {
             {p.tellMeError && <p role="alert" className="ui-closed-sub">{p.tellMeError}</p>}
           </div>
         )}
-        {p.fromCache && <p role="status" className="ui-offline">No connection. Showing the menu you saw last.</p>}
+        {p.fromCache && <p role="status" className="ui-offline">{p.slow ? "GoServe is slow right now. Showing the menu you saw last." : "No connection. Showing the menu you saw last."}</p>}
                 {p.dishes === null && !p.error && <Loading />}
         {p.dishes !== null && (thali.veg || thali.nonveg) && <Hero veg={thali.veg} nonveg={thali.nonveg} closed={closed} qty={p.qty} onAdd={p.onAdd} onChange={p.onChange} />}
         {empty && (
