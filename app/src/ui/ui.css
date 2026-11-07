@@ -272,7 +272,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-muted { color: var(--gs-text-muted); }
 .ui-add-more { justify-self: start; width: auto; min-height: var(--gs-tap); padding: 0 var(--gs-space-4); font-size: var(--gs-text-sm); }
 .ui-form { display: flex; flex-direction: column; gap: var(--gs-space-4); padding: var(--gs-space-4) var(--gs-gutter) var(--gs-space-5); }
-.ui-form input:not(.ui-switch), .ui-form textarea, .otp-phone input { box-sizing: border-box; width: 100%; min-height: var(--gs-tap); padding: 10px 12px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font: inherit; resize: none; }
+.ui-form input:where(:not(.ui-switch)), .ui-form textarea, .otp-phone input { box-sizing: border-box; width: 100%; min-height: var(--gs-tap); padding: 10px 12px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font: inherit; resize: none; }
 .ui-form .mono-input { font-family: var(--gs-font-mono); }
 .ui-form input:focus-visible, .ui-form textarea:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
 .ui-form .ui-field { gap: 4px; }

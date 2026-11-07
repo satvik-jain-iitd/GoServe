@@ -94,7 +94,7 @@ describe("css rules", () => {
   });
   // Same specificity as the shared rule, so source order is the whole argument for the 17px (over iOS Safari's 16px zoom) beating `font: inherit`.
   it("S3 the phone number box size rule comes after the shared input rule", () => {
-    const shared = css.indexOf(".ui-form input:not(.ui-switch), .ui-form textarea, .otp-phone input {");
+    const shared = css.indexOf(".ui-form input:where(:not(.ui-switch)), .ui-form textarea, .otp-phone input {");
     const size = css.search(/(?:^|\n)\.otp-phone input \{[^}]*font-size/);
     expect(shared, "shared input rule").toBeGreaterThan(-1);
     expect(size, "own size rule").toBeGreaterThan(shared);

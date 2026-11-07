@@ -63,3 +63,14 @@ test("S3 Add kitchen: 'Use my phone's location here' keeps 12 px of air under th
   });
   expect(gap).toBeGreaterThanOrEqual(12);
 });
+
+test("S4 the bill's 'How you pay' radio buttons keep their small round size (the form rule must not stretch them)", async ({ page, context }) => {
+  await page.setViewportSize({ width: 412, height: 915 });
+  await setup(context, page);
+  await page.goto("/customer/");
+  await page.getByRole("button", { name: "Add Butter Chicken" }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
+  const widths = await page.locator("input[type=radio]").evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().width)));
+  expect(widths.length).toBeGreaterThan(0);
+  for (const w of widths) expect(w, `radio widths ${widths}`).toBeLessThanOrEqual(32);
+});
