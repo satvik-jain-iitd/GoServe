@@ -164,3 +164,17 @@ describe("removeKitchen", () => {
     expect(await removeKitchen(client({ data: null, error: { message: "fetch failed" } }), "k-1")).toBe("Could not remove the kitchen. Try again.");
   });
 });
+
+import { fitSize } from "../../src/lib/photo";
+describe("fitSize (story #921)", () => {
+  it("keeps the ratio and makes the longest side 800", () => {
+    expect(fitSize(4000, 3000)).toEqual({ width: 800, height: 600 });
+    expect(fitSize(3000, 4000)).toEqual({ width: 600, height: 800 });
+  });
+  it("never makes a small picture bigger", () => {
+    expect(fitSize(400, 300)).toEqual({ width: 400, height: 300 });
+  });
+  it("never goes to zero on a thin strip", () => {
+    expect(fitSize(8000, 1).height).toBe(1);
+  });
+});

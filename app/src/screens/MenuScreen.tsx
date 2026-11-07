@@ -31,6 +31,7 @@ export function MenuScreen(p: Props) {
   const shown = filterDishes(all, { vegOnly, query });
   const thali = thalisOf(shown.filter((d) => d.available !== false));   // a sold-out thali is not today's thali
   const sections = sectionsOf(shown);
+  const rank = new Map(sections.flatMap((s) => s.dishes).map((d, i) => [d.id, i] as const));   // story #921: the first two photos load at once, the rest when they near the screen
   const closed = p.closed !== null;
   const empty = p.dishes !== null && all.length === 0 && !p.error;   // story 891, board M7: the server answered and the kitchen has no dishes yet
   const add = (d: Dish) => <button type="button" className="ui-btn" aria-label={`Add ${d.name}`} disabled={closed} onClick={() => p.onAdd(d.id)}>Add</button>;
@@ -91,7 +92,7 @@ export function MenuScreen(p: Props) {
               {s.dishes.map((d) => (
                 <article key={d.id} className={d.available === false ? "ui-tile sold" : "ui-tile"}>
                   <button type="button" className="ui-photo-btn" aria-label={`${d.name} details`} onClick={() => setDish(d)}>
-                    <Photo src={d.image_url} cls="ui-photo" lazy />
+                    <Photo src={d.image_url} cls="ui-photo" lazy={(rank.get(d.id) ?? 9) >= 2} box={76} />
                   </button>
                   <div className="ui-tile-body">
                     <h3>{d.veg !== undefined && <VegMark veg={d.veg} />}{d.name}</h3>
@@ -125,7 +126,7 @@ export function MenuScreen(p: Props) {
 }
 
 // A photo that is missing or cannot load shows the plate, never the browser's broken-image mark (story #637).
-function Photo({ src, cls, alt = "", lazy }: { src: string | null; cls?: string; alt?: string; lazy?: boolean }) {
+function Photo({ src, cls, alt = "", lazy, box }: { src: string | null; cls?: string; alt?: string; lazy?: boolean; box?: number }) {
   const [failed, setFailed] = useState(false);
   if (!src || failed) {
     return (
@@ -134,7 +135,7 @@ function Photo({ src, cls, alt = "", lazy }: { src: string | null; cls?: string;
       </span>
     );
   }
-  return <img className={cls} src={src} alt={alt} loading={lazy ? "lazy" : undefined} onError={() => setFailed(true)} />;
+  return <img className={cls} src={src} alt={alt} loading={lazy === undefined ? undefined : lazy ? "lazy" : "eager"} decoding={box ? "async" : undefined} width={box} height={box} onError={() => setFailed(true)} />;
 }
 
 // Board M6: no connection and no saved menu. The whole screen, no header, no tabs.
