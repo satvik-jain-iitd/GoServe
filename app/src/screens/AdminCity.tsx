@@ -16,6 +16,8 @@ const stateOf = (k: KitchenRow): [string, string] => (!k.active ? ["Off", "error
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" });
 const BACK = <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>;
 
+const TRASH = <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" /></svg>;   // story #990: one delete icon for every person row
+
 const INVITE_WORDS = { kitchen: "Open this link and tap Continue with Google to start in your kitchen on GoServe.", rider: "Open this link and tap Continue with Google to start riding with GoServe.", admin: "Open this link and tap Continue with Google to run GoServe as an admin." };   // story #968: the words the box and the share sheet carry
 
 export function AdminCity({ me, kitchens, people, invites, riders, onError, reload, view, onView }: Props) {
@@ -68,7 +70,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
   const inviteRow = (i: Invite) => (   // board A-Kitchen-Invite
     <div key={i.id} className="ui-row ui-row-static">
       <span className="ui-row-label"><span className="mono ui-invite-email">{i.email}</span><span className="ui-row-sub mono">{i.kind === "admin" ? "Admin · " : ""}Invited {day(i.created_at)} · not signed in yet</span></span>
-      <span className="ui-row-acts"><span className="ui-tag placed">Invited</span><button type="button" className="ui-btn ghost icon ui-trash" aria-label={`Cancel the invite for ${i.email}`} title="Cancel invite" onClick={() => void cancel(i)}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" /></svg></button></span>
+      <span className="ui-row-acts"><span className="ui-tag placed">Invited</span><button type="button" className="ui-btn ghost icon ui-trash" aria-label={`Cancel the invite for ${i.email}`} title="Cancel invite" onClick={() => void cancel(i)}>{TRASH}</button></span>
     </div>
   );
   const remove = async (p: Person) => {
@@ -79,7 +81,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
     if (!failed) await reload();
   };
   const signOut = async () => { try { await getClient().auth.signOut(); } catch { /* offline */ } window.location.reload(); };
-  const removeButton = (p: Person) => <button type="button" className="ui-btn ghost small" aria-label={`Remove ${p.email ?? p.user_id}`} onClick={() => void remove(p)}>Remove</button>;
+  const removeButton = (p: Person) => <button type="button" className="ui-btn ghost icon ui-trash" aria-label={`Remove ${p.email ?? p.user_id}`} title="Remove" onClick={() => void remove(p)}>{TRASH}</button>;
 
   if (view.kind === "add") return (   // A7
     <>
