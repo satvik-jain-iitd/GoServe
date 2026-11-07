@@ -42,6 +42,13 @@ Standing rules, every session:
 
 22. **How often, really? (owner, 4 Nov 2026, GoServe only, not ShipQuick).** Before any feature, screen or data-model change is proposed, write one line: how often this will happen in the real world with real kitchens, riders and customers (never, once a year, every week, every order), and whether a configuration we already have covers it (another Google account, a setting, a row, a flag). A case that is rare and has an easy configuration is not built; the configuration is written down as the answer. The line goes in the story at Ready, under `Practically:`. Example, 4 Nov 2026: one person working in two kitchens is rare in a pilot of a few kitchens and a second Google account for the second kitchen costs two minutes and keeps the kitchens' emails and alerts apart, so the kitchen chooser and switcher are not built; the error for a Google account already on a kitchen must name that kitchen.
 
+23. **UI mistakes revised before every UI PR (owner, 8 Nov 2026, strict).** Before any PR that touches a screen
+    (`app/src/**/*.tsx`, `app/src/**/*.css`, a canvas board), read `docs/UI_MISTAKES.md` fully: the four roots and
+    the whole checklist. Fix at the shared rule, never at one call site; sweep every sibling screen and role; run
+    the WebKit check for any sheet or form. Write in the PR body `UI mistakes revised: yes · checks <numbers>`.
+    No line, no review. Every UI mistake the owner finds is added to that file in the same PR that fixes it, with
+    a `docs/LEARNINGS.md` row. The reviewer refuses a UI PR that skipped the file.
+
 ## Radar first (owner, 25 Oct 2026, strictest rule)
 
 Before any new component, script, skill, workflow or tool in this project: run the `radar` skill (`radar@agi`) on the need, read the top 3 READMEs, record the run in `docs/research/repo-radar.md`, reuse or borrow first. Build from scratch only when the run found nothing, and say so. No radar run, no new code. Full text: `~/.claude/CLAUDE.md` section 2, rule 0.
