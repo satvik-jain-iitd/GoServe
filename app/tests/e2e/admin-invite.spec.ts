@@ -181,3 +181,60 @@ for (const theme of ["day", "night"] as const) {
     await scan();   // I2
   });
 }
+
+// Story #968: the same invite for a second admin. The database side is proved in scripts/test_admin_invite.py.
+const fillAdmin = async (page: Page, email: string) => {
+  await page.getByRole("button", { name: "Add a person" }).click();
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Role").selectOption("admin");
+  await page.getByRole("button", { name: "Add person" }).click();
+};
+
+test("S9 (#968) an admin email with no account becomes an invite: the box has the admin link and words, and People lists it as Invited", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.admin = true;
+  net.state.kitchens = KITCHENS;
+  net.state.inviteOnAdd = true;
+  await city(page);
+  await fillAdmin(page, "Second.Admin@gmail.com");
+  const box = page.getByRole("status").filter({ hasText: "Invite ready" });
+  await expect(box).toContainText("Invite ready for second.admin@gmail.com");
+  await expect(box).toContainText("/admin/");
+  await expect(box).toContainText("Open this link and tap Continue with Google to run GoServe as an admin.");
+  await expect(box).not.toContainText(/\b(she|he|her|his)\b/i);
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(page.locator(".ui-row", { hasText: "second.admin@gmail.com" }).getByText("Invited", { exact: true })).toBeVisible();
+});
+
+test("S10 (#968) Share the link sends the admin link and the admin words", async ({ page, context }) => {
+  await context.addInitScript(() => { (window as any).__shared = []; (navigator as any).share = async (d: unknown) => { (window as any).__shared.push(d); }; });
+  const net = await setup(context, page);
+  net.state.admin = true;
+  net.state.kitchens = KITCHENS;
+  net.state.inviteOnAdd = true;
+  await city(page);
+  await fillAdmin(page, "second.admin@gmail.com");
+  await page.getByRole("button", { name: "Share the link" }).click();
+  const shared = await page.evaluate(() => (window as any).__shared[0]);
+  expect(shared.url).toMatch(/\/admin\/$/);
+  expect(shared.text).toBe("Open this link and tap Continue with Google to run GoServe as an admin.");
+});
+
+test("S11 (#968) the admin gate claims a waiting invite before it asks is_admin, so the invited person never sees Not an admin account", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.admin = false;
+  net.state.claimGrant = "admin";
+  await page.goto("/admin/");
+  await expect(page.getByRole("button", { name: "City", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Not an admin account" })).toHaveCount(0);
+  const names = net.calls.rpc.map((c) => c.name).filter((n) => n === "claim_my_invites" || n === "is_admin");
+  expect(names.slice(0, 2)).toEqual(["claim_my_invites", "is_admin"]);
+});
+
+test("S12 (#968) with no invite waiting the admin screen still says Not an admin account", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.admin = false;
+  await page.goto("/admin/");
+  await expect(page.getByRole("heading", { name: "Not an admin account" })).toBeVisible();
+  expect(net.calls.rpc.filter((c) => c.name === "claim_my_invites")).toHaveLength(1);
+});

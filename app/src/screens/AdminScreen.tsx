@@ -1,6 +1,6 @@
 // The founder's app on the Ink v3 boards A1 to A4 and A8 (story H12, #195; story A2): the gate, Orders, City (the kitchen, staff and menu tools until the A5 to A7 layer), Numbers, Simulator (H7, #190).
 import { useCallback, useEffect, useState } from "react";
-import { isAdmin, listInvites, listKitchens, listPeople, listRiders, type Invite, type KitchenRow, type Person, type RiderListRow } from "../lib/admin";
+import { claimInvites, isAdmin, listInvites, listKitchens, listPeople, listRiders, type Invite, type KitchenRow, type Person, type RiderListRow } from "../lib/admin";
 import { ensureSession, getClient } from "../lib/supabase";
 import { AdminCity } from "./AdminCity";
 import { AdminDecisions } from "./AdminDecisions";
@@ -39,6 +39,7 @@ export function AdminScreen() {
         const email = data.user?.email ?? null;
         setMe({ first: (full.split(/\s+/)[0] || (email ?? "").split("@")[0] || "you"), email });
       } catch { /* unknown: treat as not signed in */ }
+      await claimInvites(c);   // story #968: an admin invite waiting for this email is claimed before the check
       const ok = await isAdmin(c);
       setAllowed(ok);
       if (!ok) return;

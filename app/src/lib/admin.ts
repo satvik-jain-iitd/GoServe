@@ -18,7 +18,7 @@ export function parsePins(text: string): { pins: string[]; bad: string[] } {
 }
 
 const MESSAGES: Record<string, string> = {
-  no_such_user: "No admin account has that email yet. Ask them to sign in to the admin app with Google once, then add them.",   // a cook or rider with no account becomes an invite (story 875); only an admin must exist first
+  no_such_user: "No admin account has that email yet. Ask them to sign in to the admin app with Google once, then add them.",   // an admin with no account becomes an invite since story #968; kept for a database without the migration (story 875); only an admin must exist first
   last_admin: "This is the last admin. Add another admin first.",
   not_allowed: "Not allowed.",
   invalid_kind: "Pick a role, and a kitchen for kitchen staff.",
@@ -74,15 +74,15 @@ export async function addPerson(c: Client, email: string, kind: PersonKind, kitc
   const { data, error } = await c.rpc("admin_add_person", { p_email: email.trim(), p_kind: kind, p_kitchen: kind === "kitchen" ? kitchen : null });
   return error ? { error: adminMessage(error), invited: false } : { error: null, invited: (data as { invited?: boolean } | null)?.invited === true };
 }
-export type Invite = { id: string; email: string; kind: "kitchen" | "rider"; kitchen_id: string | null; kitchen_name: string | null; created_at: string };
+export type Invite = { id: string; email: string; kind: "kitchen" | "rider" | "admin"; kitchen_id: string | null; kitchen_name: string | null; created_at: string };
 export async function listInvites(c: Client): Promise<Invite[]> {
   const { data, error } = await c.rpc("admin_invites");
   if (error) throw error;
   return (data ?? []) as Invite[];
 }
 export const cancelInvite = async (c: Client, id: string) => adminMessage((await c.rpc("admin_cancel_invite", { p_id: id })).error);
-/** The link an invited person opens: the kitchen app for a cook, the rider app for a rider. */
-export const inviteLink = (kind: "kitchen" | "rider", origin: string): string => `${origin.replace(/\/$/, "")}/${kind}/`;
+/** The link an invited person opens: the kitchen app for a cook, the rider app for a rider, the admin app for an admin (story #968). */
+export const inviteLink = (kind: "kitchen" | "rider" | "admin", origin: string): string => `${origin.replace(/\/$/, "")}/${kind}/`;
 /** The gate's safety check (story 875): how many waiting invites this signed-in account just claimed. Any failure is 0 and the gate carries on. */
 export async function claimInvites(c: Client): Promise<number> {
   try {

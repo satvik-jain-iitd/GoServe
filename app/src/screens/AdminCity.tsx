@@ -16,11 +16,13 @@ const stateOf = (k: KitchenRow): [string, string] => (!k.active ? ["Off", "error
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" });
 const BACK = <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>;
 
+const INVITE_WORDS = { kitchen: "Open this link and tap Continue with Google to start in your kitchen on GoServe.", rider: "Open this link and tap Continue with Google to start riding with GoServe.", admin: "Open this link and tap Continue with Google to run GoServe as an admin." };   // story #968: the words the box and the share sheet carry
+
 export function AdminCity({ me, kitchens, people, invites, riders, onError, reload, view, onView }: Props) {
   const [form, setForm] = useState(EMPTY);
   const [addingPerson, setAddingPerson] = useState(false);
   const [who, setWho] = useState<{ email: string; kind: PersonKind; kitchen: string }>({ email: "", kind: "kitchen", kitchen: "" });
-  const [invited, setInvited] = useState<{ email: string; kind: "kitchen" | "rider" } | null>(null);   // story 875: the "Invite ready" box
+  const [invited, setInvited] = useState<{ email: string; kind: "kitchen" | "rider" | "admin" } | null>(null);   // story 875: the "Invite ready" box
   const [shareNote, setShareNote] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);   // story 900, board A8: the confirm sheet of Remove this kitchen
   const [addError, setAddError] = useState<string | null>(null);   // story 885: the add-person line sits under the form, next to its button
@@ -44,14 +46,14 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
     const { error: failed, invited: wasInvited } = await addPerson(getClient(), who.email, who.kind, who.kitchen || null);
     setAddError(failed);
     if (failed) return;
-    if (wasInvited && who.kind !== "admin") setInvited({ email: who.email.trim().toLowerCase(), kind: who.kind });   // the form stays open, with the box under it (board A-AddPerson-Invite)
+    if (wasInvited) setInvited({ email: who.email.trim().toLowerCase(), kind: who.kind });   // the form stays open, with the box under it (board A-AddPerson-Invite)
     else { setWho({ ...who, email: "" }); setAddingPerson(false); }
     await reload();
   };
   const share = async () => {
     if (!invited) return;
     const url = inviteLink(invited.kind, window.location.origin);
-    const text = invited.kind === "kitchen" ? "Open this link and tap Continue with Google to start in your kitchen on GoServe." : "Open this link and tap Continue with Google to start riding with GoServe.";
+    const text = INVITE_WORDS[invited.kind];
     if (typeof navigator.share === "function") {
       try { await navigator.share({ title: "GoServe", text, url }); return; } catch (e) { if (e instanceof DOMException && e.name === "AbortError") return; /* the sheet failed: copy instead */ }
     }
@@ -64,7 +66,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
   };
   const inviteRow = (i: Invite) => (   // board A-Kitchen-Invite
     <div key={i.id} className="ui-row ui-row-static">
-      <span className="ui-row-label"><span className="mono ui-invite-email">{i.email}</span><span className="ui-row-sub mono">Invited {day(i.created_at)} · not signed in yet</span></span>
+      <span className="ui-row-label"><span className="mono ui-invite-email">{i.email}</span><span className="ui-row-sub mono">{i.kind === "admin" ? "Admin · " : ""}Invited {day(i.created_at)} · not signed in yet</span></span>
       <span className="ui-row-acts"><span className="ui-tag placed">Invited</span><button type="button" className="ui-btn ghost icon ui-trash" aria-label={`Cancel the invite for ${i.email}`} title="Cancel invite" onClick={() => void cancel(i)}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" /></svg></button></span>
     </div>
   );
@@ -163,7 +165,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
             <span className="ui-row-acts">{r.person && removeButton(r.person)}{riders && <span className={`ui-tag ${r.online ? "ready" : "placed"}`}>{r.online ? "Online" : "Offline"}</span>}</span>
           </div>
         ))}
-        {invites.filter((i) => i.kind === "rider").map(inviteRow)}
+        {invites.filter((i) => i.kind === "rider" || i.kind === "admin").map(inviteRow)}
         {people.filter((p) => p.kind === "admin").map((p) => <div key={p.user_id} className="ui-row ui-row-static"><span className="ui-row-label"><span>{firstName(p)}</span><span className="ui-row-sub mono">Admin · {p.email ?? p.user_id}</span></span>{removeButton(p)}</div>)}
         {!addingPerson && <div className="ui-pad-y"><button type="button" className="ui-btn ghost" onClick={() => { onError(null); setAddingPerson(true); }}>+ Add a person</button></div>}
         {addingPerson && (
@@ -176,7 +178,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
             {invited && (   // board A-AddPerson-Invite
               <div role="status" className="ui-invite">
                 <p className="ui-invite-title">Invite ready for {invited.email}</p>
-                <p className="ui-meta">They open the {invited.kind} link and tap Continue with Google once. Nothing to install. {invited.kind === "kitchen" ? "Their kitchen" : "Their deliveries"} open on that first sign-in.</p>
+                <p className="ui-meta">{invited.kind === "admin" ? INVITE_WORDS.admin : <>They open the {invited.kind} link and tap Continue with Google once. Nothing to install. {invited.kind === "kitchen" ? "Their kitchen" : "Their deliveries"} open on that first sign-in.</>}</p>
                 <div className="ui-invite-link"><span className="mono">{inviteLink(invited.kind, window.location.origin).replace(/^https?:\/\//, "")}</span><button type="button" className="ui-btn ghost small" onClick={() => void share()}>Share the link</button></div>
                 {shareNote && <p className="ui-meta" role="status">{shareNote}</p>}
               </div>
