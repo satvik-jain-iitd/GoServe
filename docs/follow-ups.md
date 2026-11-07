@@ -311,3 +311,16 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
 | F309 | `supabase functions deploy --project-ref <ref>` is deprecated and goes away in the Supabase CLI's v4; `--remote=<ref>` replaces it. The CLI is pinned at 3.0.0 (#836), so nothing breaks today, and the note sits in `.github/workflows/backend.yml` where the person moving the pin will read it. Do it in the same pull request that moves the pin, never as a surprise inside another story. | coder, reviewer |
 
 - UI PR Guard line (8 Nov 2026): add a check to `scripts/check_screen_change.py` (or a sibling) that a PR touching `app/src/**/*.tsx` or `*.css` carries `UI mistakes revised: yes` in its body. Story to open after #999.
+
+- Records of 7 and 8 Nov 2026 (reviewer):
+  - Zigzag band samples, and rider and admin "Signed in as" frames.
+  - Decision row on Ready (trigger or order-actions call), or retire the Laya dataset on purpose. Jev is now off, so this is a deliberate retire.
+  - Clean-up story for dead n8n nodes (SUB 11, SUB 15, confirm, dispatch call) and the demo token.
+  - Include `.github/workflows/migration-drift.yml` in the next release PR so the daily drift check can start.
+  - JPEG fallback for photo resize on iOS (Safari does not encode WebP).
+  - Own pin directory in an Edge function (GeoNames table, #987); data.gov.in directory as the upgrade.
+  - A GoServe `places` table seeded from the survey sheet, after #987.
+  - The webhook's refusal text for an unknown sim action still lists the old actions; align it with `guard_sim.js`.
+  - Watchdog: `verify_live.js` should fail when dev and prod n8n active flags differ.
+  - Admin invite for an email that already has an account becomes admin at once; the share box is shown too (#989).
+  - Own-kitchen ADR on `documents` (plan v2 assumed partner home kitchens).

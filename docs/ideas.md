@@ -65,3 +65,11 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - ID277 (2026-10-28, taken, story #665): a fixed OTP code (123456) until an SMS provider is clicked; the flow stays the real OTP flow so the provider is one switch later.
 - ID278 (2026-10-29, open, later): a small Edge Function proxy with a cache in front of the address lookup, which also lets us swap the lookup source without an app release (F278).
 - ID279 and ID280 (29 Oct, logged by the reviewer in the vault): the glove frames and the pin ending of the launch animatic (F285, F286).
+- ID315 (2026-11-07, open, later): edit OpenStreetMap ourselves for our towns, from the owner's surveys (hand edits in iD or Every Door, small batches, his own account).
+- ID316 (2026-11-07, open, later): rider route intelligence from GPS traces (Valhalla or OSRM map matching, edge speeds by time of day).
+- ID317 (2026-11-07, open, later): an error margin shown on every map pin (the accuracy ring), never read as a bound.
+- ID324 (2026-11-07, open): home like Swiggy: address line, search, veg switch, saved addresses, order again (epic #974).
+- ID318 (2026-11-07, open, later): door capture at delivery: the Delivered-tap GPS and a door photo build a doors table for the galis (E-DOOR-1).
+- ID319 (2026-11-07, open, later): a bike camera on riders (Mapillary style) to find road changes (E-CAM-1).
+- ID326 (2026-11-08, open, later): build our own maps later from surveyed data on OSM.
+- ID326, same entry (2026-11-08, open, after #987): a GoServe places table seeded from the owner's survey sheet.
