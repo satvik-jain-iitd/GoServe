@@ -15,6 +15,7 @@ h1 {
 
 /* Customer screens (story #48). Colours and sizes come from the tokens only. */
 .shell { padding-bottom: var(--gs-space-9); }
+.shell:not(.below) { height: 100dvh; box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain; }   /* story 932: the document is locked, so the console and ops pages scroll inside their own box */
 h2 { font-size: var(--gs-text-xl); color: var(--md-on-background); }
 ul { list-style: none; margin: 0; padding: 0; }
 .dishes { display: grid; gap: var(--gs-space-4); }

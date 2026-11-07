@@ -1,4 +1,6 @@
 html { touch-action: pan-x pan-y; }   /* story 932: pan and scroll, never pinch */
+/* Story 932, part two: the document never moves. iOS rubber-bands the whole document when a drag starts on something that does not scroll (the tab bar); only inner boxes scroll. */
+html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 /* GoServe Ink v3 component sheet (story H10). Same class names as before. Colours, spacing, radius and type come from tokens.css. Source: the approved J2 boards, ink.css. */
 body { margin: 0; background: var(--md-background); color: var(--md-on-background); font-family: var(--gs-font); font-size: var(--gs-text-base); line-height: 1.45; }
 .mono { font-family: var(--gs-font-mono); text-transform: uppercase; }
@@ -115,7 +117,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 [data-theme="night"] .ui-logo { filter: none; }
 
 /* Tab bar: the three homes (Menu, Orders, You). Only on home screens; sub-screens push over it. */
-.ui-tabs { display: flex; flex: none; padding: 0 var(--gs-space-2) max(var(--gs-space-2), env(safe-area-inset-bottom)); border-top: 1px solid var(--md-outline-variant); background: var(--md-surface); }
+.ui-tabs { touch-action: none; display: flex; flex: none; padding: 0 var(--gs-space-2) max(var(--gs-space-2), env(safe-area-inset-bottom)); border-top: 1px solid var(--md-outline-variant); background: var(--md-surface); }
 .ui-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: var(--gs-tap-big); color: var(--gs-text-muted); font: inherit; font-size: var(--gs-text-xs); font-weight: 500; text-decoration: none; background: transparent; border: 0; border-radius: var(--gs-radius-s); cursor: pointer; }
 .ui-tab svg { width: 24px; height: 24px; }
 .ui-tab.on { color: var(--md-primary); font-weight: 600; }
@@ -427,7 +429,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-sticky .ui-bar-note { position: absolute; left: 0; right: 0; bottom: 100%; margin: 0; padding: 6px var(--gs-gutter); text-align: center; background: var(--md-background); }
 
 /* Story 667, boards O0 and O0b: the first full screen, the number and the code with Google under it. */
-.ui-welcome { min-height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; padding: var(--gs-space-7) var(--gs-gutter) var(--gs-space-5); background: var(--md-background); color: var(--md-on-background); }
+.ui-welcome { height: 100dvh; overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; display: flex; flex-direction: column; padding: var(--gs-space-7) var(--gs-gutter) var(--gs-space-5); background: var(--md-background); color: var(--md-on-background); }
 .ui-welcome header { display: flex; flex-direction: column; gap: 10px; }
 .ui-welcome h1 { margin: 0; }
 .ui-welcome .ui-lockup { display: block; width: 100%; height: auto; }
