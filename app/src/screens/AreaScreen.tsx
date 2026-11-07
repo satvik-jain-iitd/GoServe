@@ -13,6 +13,7 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace }: 
   const [address, setAddress] = useState(start);
   const [text, setText] = useState(pin ?? "");
   const [place, setPlace] = useState<Place | undefined>(undefined);
+  const [pinMissing, setPinMissing] = useState(false);   // story #969: the location found an address but no pin, even from the nearest tagged object
   const [located, setLocated] = useState<string | undefined>(undefined);   // story #910: the address the location found, to tell a hand edit from it
   const [finding, setFinding] = useState(false);
   const [note, setNote] = useState<string | null>(null);
@@ -30,6 +31,7 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace }: 
       setLocated(found.address);
       setAddress(found.address);
       setText(found.pin);
+      setPinMissing(found.pin === "");
       setMode("found");
     } catch {
       setNote("We could not get your location. Type it by hand.");
@@ -48,9 +50,10 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace }: 
       <div className="ui-field">
         <label htmlFor="pin">Pin code</label>
         <input id="pin" className="ui-pin-input" type="tel" inputMode="numeric" maxLength={6} placeholder="110024" value={text}
-          aria-invalid={!!(error || none) || undefined} aria-describedby={error || none ? "pin-help" : undefined}
+          aria-invalid={!!(error || none) || undefined} aria-describedby={error || none || (pinMissing && text === "") ? "pin-help" : undefined}
           onChange={(e) => setText(e.target.value.trim())} />
         {error && <p id="pin-help" role="alert" className="ui-field-error">{error}</p>}
+        {!error && !none && pinMissing && text === "" && <p id="pin-help" role="status" className="ui-field-error">We could not find your pin code. Type it.</p>}
         {!error && none && <p id="pin-help" role="status" className="ui-field-error">Not here yet. We do not deliver to {pin} yet.</p>}
       </div>
       {none && <p className="ui-note">A pin code next to yours may work.</p>}

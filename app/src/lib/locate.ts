@@ -29,10 +29,47 @@ export function addressFrom(r: Reply): Found | null {
   return { address: street.join(", "), pin };
 }
 
+// Story #969: most of small-town India has no postcode on the reverse lookup (volunteers did not tag one). The nearest object that has one, within 10 km, is the fallback.
+// Overpass (the same OpenStreetMap data, no key) does not sort by distance, so the nearest is picked here. Any failure or a 4 second wait is "no pin": the field stays empty and says so.
+const NEAR_M = 10_000;
+const NEAR_WAIT_MS = 4_000;
+type Element = { lat?: number; lon?: number; center?: { lat: number; lon: number }; tags?: Record<string, string> };
+const metres = (a: Place, b: Place) => {   // a flat-earth distance is plenty at 10 km
+  const dy = (a.lat - b.lat) * 111_320, dx = (a.lng - b.lng) * 111_320 * Math.cos((a.lat * Math.PI) / 180);
+  return Math.hypot(dx, dy);
+};
+export async function nearestPin(at: Place, state: string | undefined, fetchFn: typeof fetch = fetch): Promise<string> {
+  const stop = new AbortController();
+  const timer = setTimeout(() => stop.abort(), NEAR_WAIT_MS);
+  try {
+    const q = `[out:json][timeout:4];nwr(around:${NEAR_M},${at.lat},${at.lng})["addr:postcode"];out center tags 60;`;
+    const res = await fetchFn(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(q)}`, { signal: stop.signal });
+    if (!res.ok) return "";
+    const elements: Element[] = (await res.json())?.elements ?? [];
+    let best = "", bestAt = Infinity;
+    for (const e of elements) {
+      const pin = e.tags?.["addr:postcode"]?.replace(/\s/g, "") ?? "";
+      const lat = e.lat ?? e.center?.lat, lng = e.lon ?? e.center?.lon;
+      if (!/^\d{6}$/.test(pin) || !pinFits(pin, state) || typeof lat !== "number" || typeof lng !== "number") continue;
+      const d = metres(at, { lat, lng });
+      if (d < bestAt) { best = pin; bestAt = d; }
+    }
+    return best;
+  } catch {
+    return "";
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function reverseAddress(lat: number, lng: number, fetchFn: typeof fetch = fetch): Promise<Found | null> {
   try {
     const res = await fetchFn(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&zoom=18&lat=${lat}&lon=${lng}`);
-    return res.ok ? addressFrom(await res.json()) : null;
+    if (!res.ok) return null;
+    const reply: Reply = await res.json();
+    const found = addressFrom(reply);
+    if (found && !found.pin) found.pin = await nearestPin({ lat, lng }, reply.address?.state, fetchFn);   // only when the first reply has no fitting pin: one extra call
+    return found;
   } catch {
     return null;
   }
