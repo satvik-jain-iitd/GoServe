@@ -81,8 +81,8 @@ class Plan(unittest.TestCase):
 
 
 class Functions(unittest.TestCase):
-    def test_S7_all_13_functions_with_shared_files_and_no_tests(self):
-        self.assertEqual(len(p.function_names()), 13)
+    def test_S7_all_14_functions_with_shared_files_and_no_tests(self):
+        self.assertEqual(len(p.function_names()), 14)
         files = p.function_files("otp")
         self.assertIn("otp/index.ts", files)
         self.assertIn("_shared/runlog.ts", files)
@@ -105,7 +105,7 @@ class Main(unittest.TestCase):
         out = run(fake, [], vault)
         self.assertEqual(fake.writes, [])
         self.assertFalse(os.path.exists(vault))
-        self.assertIn("will deploy all 13", out)
+        self.assertIn("will deploy all 14", out)
         self.assertIn("20261028070000_coupon_by_code_session.sql", out)
         self.assertNotIn("123456", out)
 
@@ -121,8 +121,8 @@ class Main(unittest.TestCase):
         out = run(fake, ["--apply"], vault)
         kinds = [w[0] for w in fake.writes]
         self.assertEqual(kinds[0], "sql")                      # the one missing migration first
-        self.assertEqual(kinds[1:14], ["deploy"] * 13)         # then all functions
-        self.assertEqual(kinds[14], "POST")                    # then the secrets
+        self.assertEqual(kinds[1:15], ["deploy"] * 14)         # then all functions
+        self.assertEqual(kinds[15], "POST")                    # then the secrets
         self.assertEqual(os.stat(vault).st_mode & 0o777, 0o600)
         keys = [l.split("=")[0] for l in open(vault) if "=" in l]
         self.assertEqual(keys, ["PAYMENTS_WEBHOOK_SECRET", "PUSH_NOTIFY_SECRET"])
