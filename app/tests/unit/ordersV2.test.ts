@@ -1,8 +1,8 @@
-// Story #590: the customer app places the order with POST /orders (backend v2) behind VITE_ORDERS_V2=1. No network: fetch is injected.
+// Story #590: the customer app places the order with POST /orders (backend v2) as the only way to place (story #940). No network: fetch is injected.
 import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { ordersV2On, placeOrderV2, PriceChanged } from "../../src/lib/ordersV2";
+import { placeOrderV2, PriceChanged } from "../../src/lib/ordersV2";
 import { PlaceError } from "../../src/lib/orders";
 
 const input = { kitchenId: "k-1", pin: "110016", items: [{ menu_item_id: "d1", qty: 2 }], address: " Flat 4, Green Park ", key: "key-12345678", expectedPaise: 29000, code: null as string | null, none: false };
@@ -11,15 +11,6 @@ const deps = (status: number, body: unknown, token = "tok") => {
   return { fetchFn: fetchFn as unknown as typeof fetch, token: async () => token, url: "https://x.supabase.co", anon: "anon" };
 };
 const placed = { ok: true, created: true, order: { id: "o1", kitchen_id: "k-1", status: "placed", total_paise: 29000, address: "Flat 4", items: [], bill: {}, created_at: "2026-10-29T10:00:00Z" } };
-
-describe("ordersV2On", () => {
-  it("S1 off by default; on by the build flag or by this phone's own flag", () => {
-    expect(ordersV2On({})).toBe(false);
-    expect(ordersV2On({ VITE_ORDERS_V2: "1" })).toBe(true);
-    expect(ordersV2On({}, { getItem: () => "1" })).toBe(true);
-    expect(ordersV2On({}, { getItem: () => { throw new Error("blocked"); } })).toBe(false);
-  });
-});
 
 describe("placeOrderV2", () => {
   it("S2 posts the cart, the address, the key and the price the customer saw, with the caller's token", async () => {

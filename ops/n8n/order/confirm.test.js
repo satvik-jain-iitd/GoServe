@@ -16,20 +16,9 @@ const run = (file, json, others = {}) => new Function('$input', '$', src(file))(
 const byName = (w, n) => w.nodes.find((x) => x.name === n);
 const next = (w, n, i = 0) => ((w.connections[n] || { main: [] }).main[i] || []).map((x) => x.node);
 
-test('S3 a new action needs all three: Check token knows `confirm`, the Route has an output for it, the Call node reaches SUB 12 as the customer', () => {
+test('S3 (story #940) the customer\'s Yes is not served by the webhook any more: Check token marks `confirm` as bad, so Route sends it to 400', () => {
   const token = run('check_token.js', { demo_token: 't', headers: { 'x-gs-token': 't' }, body: { action: 'confirm' }, kill_switch: false, supabase_url: 'u', params_version: 1, kitchen_id: UUID });
-  assert.equal(token.action, 'confirm');
-  const route = byName(wf.main01, 'Route').parameters.rules.values;
-  const idx = route.findIndex((v) => v.outputKey === 'confirm');
-  assert.ok(idx >= 0, 'Route has no confirm output');
-  assert.deepEqual(next(wf.main01, 'Route', idx), ['Call SUB 12 Confirm']);
-  const call = byName(wf.main01, 'Call SUB 12 Confirm').parameters;
-  assert.equal(call.workflowId.value, IDS.sub12);
-  assert.deepEqual([call.workflowInputs.value.to_status, call.workflowInputs.value.actor], ['confirm', 'customer']);   // fixed here: the phone cannot choose another actor for a confirm
-  const declared = byName(wf.sub12, 'Start').parameters.workflowInputs.values.map((v) => v.name).sort();
-  assert.deepEqual(Object.keys(call.workflowInputs.value).sort(), declared);
-  assert.deepEqual(next(wf.main01, 'Call SUB 12 Confirm'), ['Respond result']);
-  assert.deepEqual(next(wf.main01, 'Route', route.length), ['Respond 400']);   // unknown still goes to 400
+  assert.equal(token.action, 'bad');
 });
 
 test('Guard (SUB 12): `confirm` picks confirm_delivery with only the order and the session; any other status still picks change_status', () => {

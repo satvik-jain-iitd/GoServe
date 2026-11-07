@@ -19,7 +19,7 @@ test("S1 a new ticket sits on the New tab with Accept, opens as one ticket, and 
   await page.getByRole("button", { name: "Accept 0f0f0f0f" }).click();
   await expect(page.getByRole("heading", { name: "Cooking" })).toBeVisible();   // K4 Accept lands on the Cooking tab
   await expect(page.getByRole("button", { name: "Start 0f0f0f0f" })).toBeVisible();
-  expect(net.calls.status[0].body).toMatchObject({ order_id: ID, session_id: SESSION, to_status: "accepted", actor: "kitchen" });
+  expect(net.calls.status[0].body).toEqual({ order_id: ID, action: "accept" });
 });
 
 test("S2 the Cooking tab holds Start and Ready, and a ready ticket waits for the rider below", async ({ page, context }) => {

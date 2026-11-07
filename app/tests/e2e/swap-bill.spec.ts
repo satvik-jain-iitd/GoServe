@@ -1,6 +1,6 @@
 // Story #619 layer c (board L3): a dish in the bill that went sold out. The Bill says why, offers the server's one alternative with the swap discount,
 // and has two ways out: Swap it in, Take it out. No alternative: the item goes out and the menu opens with the dish stamped Sold out.
-// POST /quote and POST /orders are answered by the test, as the real functions answer (layer b). The swap runs on the v2 order path (gs-orders-v2=1).
+// POST /quote and POST /orders are answered by the test, as the real functions answer (layer b).
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { setup } from "./helpers";
 
@@ -18,7 +18,6 @@ const line = (d: typeof PANEER, qty: number) => ({ menu_item_id: d.id, name: d.n
 const placed = { ok: true, created: true, order: { id: "0f0f0f0f-1111-4222-8333-444444444444", kitchen_id: "k-1", status: "placed", total_paise: 24000, address: "Flat 4", items: [], bill: {}, created_at: new Date().toISOString() } };
 
 async function start(context: BrowserContext, page: Page, alt: object | null) {
-  await context.addInitScript(() => { try { localStorage.setItem("gs-orders-v2", "1"); } catch { /* blocked */ } });
   const net = await setup(context, page);
   net.state.menu = [PANEER, DAL, ROTI];
   const seen = { quotes: [] as any[], orders: [] as any[] };

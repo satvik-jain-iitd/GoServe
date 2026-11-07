@@ -1,15 +1,13 @@
-import { DEFAULT_CFG, type ConfirmCfg } from "./confirm";
 import { customerLine, NO_INTERNET, type CustomerAction } from "./errorLines";
 import type { Decision, Rider } from "./ops";
+import { getClient } from "./supabase";
 
-// Placing an order: one call to the n8n webhook with the demo token (ADR-009, docs/integrations/n8n-order-workflows.md).
-// The phone sends ids and quantities; the server prices the order. Server text is shown only in the expected shape.
+// The n8n webhook is now used only for the rider decision and the tester feedback (story #940 moved placing and every order step to Supabase).
 export class PlaceError extends Error {
   constructor(message: string, public code: string) {
     super(message);
   }
 }
-export type PlaceInput = { sessionId: string; key: string; items: { menu_item_id: string; qty: number }[]; address: string };
 export type PlacedOrder = { id: string; status: string; total_paise: number; updated_at: string; paid_by?: string | null };
 export type OrderDeps = { url: string; token: string; fetchFn: typeof fetch };
 export const orderDeps = (): OrderDeps => ({ url: import.meta.env.VITE_ORDER_URL, token: import.meta.env.VITE_DEMO_TOKEN, fetchFn: fetch.bind(window) });
@@ -44,35 +42,53 @@ async function callApi(body: object, deps: OrderDeps, need: "order" | "decision"
   throw new PlaceError("Something went wrong. Please try again.", "unknown");
 }
 
-// The answer also carries when to ask "Was your order delivered?" (story S-C); the times are settings on the server.
-export async function placeOrder(input: PlaceInput, deps: OrderDeps): Promise<{ order: PlacedOrder; created: boolean; confirm: ConfirmCfg }> {
-  const a = await callApi({ action: "place", session_id: input.sessionId, client_order_key: input.key, items: input.items, address: input.address }, deps);
-  const num = (v: unknown, d: number) => (typeof v === "number" && v >= 0 ? v : d);
-  return { order: a.order as PlacedOrder, created: a.created === true,
-    confirm: { afterReadyMin: num(a.confirm_after_ready_min, DEFAULT_CFG.afterReadyMin), afterPlaceMin: num(a.confirm_after_place_min, DEFAULT_CFG.afterPlaceMin) } };
+// Story #940: every step after "placed" goes to POST /order-actions with the signed-in user's own token. The database reads who is asking
+// (auth.uid()) and decides who may do what. The phone sends the order and the step, never who it is or which session it belongs to.
+export type ActDeps = { fetchFn: typeof fetch; token: () => Promise<string>; url: string; anon: string };
+export const actDeps = (): ActDeps => ({
+  fetchFn: fetch.bind(window), url: import.meta.env.VITE_SUPABASE_URL, anon: import.meta.env.VITE_SUPABASE_ANON_KEY,
+  token: async () => (await getClient().auth.getSession()).data.session?.access_token ?? "",
+});
+
+// The staff screens keep the server's line; the customer's Yes shows our own line for every refusal (story #659).
+async function act(orderId: string, action: string, deps: ActDeps, mine: CustomerAction | null = null): Promise<{ order: PlacedOrder; alreadyDone: boolean }> {
+  let res: Response;
+  try {
+    res = await deps.fetchFn(`${deps.url}/functions/v1/order-actions`, {
+      method: "POST", headers: { "content-type": "application/json", apikey: deps.anon, authorization: `Bearer ${await deps.token()}` }, body: JSON.stringify({ order_id: orderId, action }),
+    });
+  } catch {
+    throw new PlaceError(NO_INTERNET, "network");
+  }
+  const a = await res.json().catch(() => null) as { ok?: boolean; order?: PlacedOrder; error?: string; message?: string } | null;
+  if (res.ok && a?.ok && a.order) return { order: a.order, alreadyDone: false };
+  const code = typeof a?.error === "string" ? a.error : "unknown";
+  if (mine) throw new PlaceError(customerLine(mine, code, typeof a?.message === "string" ? a.message : "") ?? "Already done.", code);
+  if (a && a.ok === false && typeof a.message === "string") throw new PlaceError(a.message, code);
+  throw new PlaceError("Something went wrong. Please try again.", "unknown");
 }
 
 // The customer's Yes: the order closes as delivered and paid by cash. A second Yes is not an error (alreadyDone).
-export async function confirmDelivery(input: { sessionId: string; orderId: string }, deps: OrderDeps): Promise<{ order: PlacedOrder | null; alreadyDone: boolean }> {
+export async function confirmDelivery(input: { orderId: string }, deps: ActDeps): Promise<{ order: PlacedOrder | null; alreadyDone: boolean }> {
   try {
-    const a = await callApi({ action: "confirm", session_id: input.sessionId, order_id: input.orderId }, deps);
-    return { order: a.order as PlacedOrder, alreadyDone: a.already_done === true };
+    return await act(input.orderId, "confirm", deps, "confirm");
   } catch (e) {
     if (e instanceof PlaceError && e.code === "already_done") return { order: null, alreadyDone: true };   // an earlier Yes went through: the order is delivered, no line
     throw e;
   }
 }
 
-export type StatusInput = { sessionId: string; orderId: string; to: string; actor: "customer" | "kitchen" | "rider" | "ops" };
-export async function changeStatus(input: StatusInput, deps: OrderDeps): Promise<{ order: PlacedOrder }> {
-  const a = await callApi({ action: "status", session_id: input.sessionId, order_id: input.orderId, to_status: input.to, actor: input.actor }, deps);
-  return { order: a.order as PlacedOrder };
+const STEP: Record<string, string> = { accepted: "accept", preparing: "prepare", ready: "ready", out_for_delivery: "pickup", delivered: "deliver" };
+export type StatusInput = { orderId: string; to: string };
+export async function changeStatus(input: StatusInput, deps: ActDeps): Promise<{ order: PlacedOrder }> {
+  const action = STEP[input.to];
+  if (!action) throw new PlaceError("Something went wrong. Please try again.", "unknown");
+  return { order: (await act(input.orderId, action, deps)).order };
 }
 
-export type EventInput = { sessionId: string; orderId: string; event: "order.arriving"; actor: "customer" | "kitchen" | "rider" | "ops" };
-export async function addEvent(input: EventInput, deps: OrderDeps): Promise<{ order: PlacedOrder }> {
-  const a = await callApi({ action: "event", session_id: input.sessionId, order_id: input.orderId, event: input.event, actor: input.actor }, deps);
-  return { order: a.order as PlacedOrder };
+export type EventInput = { orderId: string; event: "order.arriving" };
+export async function addEvent(input: EventInput, deps: ActDeps): Promise<{ order: PlacedOrder }> {
+  return { order: (await act(input.orderId, "arriving", deps)).order };
 }
 
 // Ask for the rider decision of a ready order (story #46 call, story #51 screen). The rule decides; the answer also carries the AI's advice.

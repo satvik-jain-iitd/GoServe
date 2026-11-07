@@ -36,7 +36,7 @@ test("S3 while the order is sent the button reads Placing…", async ({ page, co
   await setup(context, page);
   let release!: () => void;
   const gate = new Promise<void>((r) => { release = r; });
-  await context.route("https://orders.test/**", async (route) => { if (route.request().method() === "POST") await gate; await route.fallback(); });
+  await context.route("https://test.supabase.co/functions/v1/orders", async (route) => { if (route.request().method() === "POST") await gate; await route.fallback(); });
   await toBill(page);
   await fill(page);
   await page.getByRole("button", { name: /Place order/ }).click();

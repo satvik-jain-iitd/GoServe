@@ -72,7 +72,7 @@ test("S1 one device: a tap in the kitchen app reaches the order the customer app
   await page.getByRole("button", { name: "Accept 0f0f0f0f" }).click();
   await page.getByRole("button", { name: "Cooking", exact: true }).click();   // H11: an accepted ticket moves to the Cooking tab
   await expect(page.getByText("Accepted", { exact: true })).toBeVisible();
-  expect(net.calls.status[0].body).toMatchObject({ order_id: ID, session_id: SESSION, to_status: "accepted", actor: "kitchen" });
+  expect(net.calls.status[0].body).toEqual({ order_id: ID, action: "accept" });
 });
 
 // The install bug of 22 Oct 2026: Add to Home Screen opened the domain, not /customer/. Chrome reads the manifest from the first HTML it gets,
