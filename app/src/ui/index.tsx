@@ -72,6 +72,43 @@ export function Sheet({ open, title, onClose, children }: { open: boolean; title
   );
 }
 
+// Story #955: the one danger sheet. Remove kitchen, Clear everything and every later sheet that destroys something are this shape (boards D1 and D2, canvas row 2n).
+// Title and a muted mono line, a round 44 px close, one sentence, a facts table, the word gate with its helper line, red first and asleep until the word matches, ghost to leave, one last line.
+export type DangerFact = [label: string, text: string];
+export type DangerProps = {
+  title: string; kicker: string; sentence: string; facts: DangerFact[]; word: string; value: string; onValue: (v: string) => void;
+  confirmLabel: string; leaveLabel: string; after: string; busy: boolean; error?: string | null; onConfirm: () => void; onClose: () => void; id?: string;
+};
+export const DANGER_HELPER = "The red button wakes up when the word matches. Until then a touch does nothing.";
+export function DangerSheet(p: DangerProps) {
+  const id = p.id ?? "danger-word";
+  return (
+    <div className="ui-sheet-back" onClick={p.onClose}>
+      <section className="ui-sheet ui-danger" role="dialog" aria-modal="true" aria-label={p.title} onClick={(e) => e.stopPropagation()}>
+        <div className="ui-danger-head">
+          <div><h2>{p.title}</h2><span className="mono ui-danger-kicker">{p.kicker}</span></div>
+          <button type="button" className="ui-btn ghost icon" aria-label="Close" onClick={p.onClose}>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        </div>
+        <p className="ui-danger-sentence">{p.sentence}</p>
+        <div className="ui-danger-facts">
+          {p.facts.map(([label, text]) => <div key={label} className="ui-danger-fact"><span className="mono">{label}</span><span>{text}</span></div>)}
+        </div>
+        <label className="ui-danger-label" htmlFor={id}>Type <span className="mono">{p.word}</span> to go on</label>
+        <input id={id} className="ui-danger-input" type="text" autoCapitalize="characters" autoComplete="off" placeholder={p.word} aria-label={`Type ${p.word} to go on`} value={p.value} onChange={(e) => p.onValue(e.target.value)} />
+        <p className="mono ui-danger-helper">{DANGER_HELPER}</p>
+        {p.error && <p role="alert" className="ui-note error">{p.error}</p>}
+        <div className="ui-danger-acts">
+          <button type="button" className="ui-btn big danger-fill" disabled={p.value !== p.word || p.busy} aria-disabled={p.value !== p.word || p.busy} onClick={p.onConfirm}>{p.confirmLabel}</button>
+          <button type="button" className="ui-btn ghost big" onClick={p.onClose}>{p.leaveLabel}</button>
+        </div>
+        <p className="mono ui-danger-after">{p.after}</p>
+      </section>
+    </div>
+  );
+}
+
 export function Empty({ title, hint, children }: { title: string; hint?: string; children?: ReactNode }) {
   return (
     <div className="ui-empty">

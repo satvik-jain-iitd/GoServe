@@ -165,8 +165,9 @@ test("S10 (#848) Clear everything asks for the word CLEAR, then calls the databa
   await open(page);
   await page.getByRole("button", { name: "Clear everything" }).click();
   const sheet = page.getByRole("dialog", { name: "Clear everything?" });
-  await expect(sheet).toContainText("This empties the dev city. It cannot be undone.");
-  await expect(sheet).toContainText("run log, decision log, every account");
+  await expect(sheet).toContainText("This empties the dev city. Seed the kitchens brings it back.");
+  await expect(sheet).toContainText("Dev only · cannot be undone");
+  await expect(sheet).toContainText("Run log, decision log, and every account.");
   const go = sheet.getByRole("button", { name: "Clear everything" });
   await expect(go).toBeDisabled();
   await sheet.getByLabel("Type CLEAR to go on").fill("CLE");

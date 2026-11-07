@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { callSim, clearAll, clearShown, CLEAR_WORD, countsLine, groupLine, KNOB_DEFAULTS, SEED_DEFAULTS, simDeps, SimError, tickLine, type Knobs, type SimAnswer } from "../lib/sim";
 import { getClient } from "../lib/supabase";
-import { Sheet, Skeleton } from "../ui";
+import { DangerSheet, Skeleton } from "../ui";
 
 type Form = typeof SEED_DEFAULTS;
 const FIELDS: { key: keyof Form; label: string; min: number; max: number }[] = [
@@ -112,18 +112,12 @@ export function AdminSim() {
         </div>
         <p className="ui-meta">{clearShown(import.meta.env.VITE_SIM_CLEAR, state) ? "Everything goes. Logs and accounts stay. Seed brings it back." : "Reset removes the synthetic kitchens, riders and dishes. Real ones stay."}</p>
       </section>
-      <Sheet open={clearing} title="Clear everything?" onClose={() => { setClearing(false); setWord(""); }}>
-        <div className="ui-pad">
-          <p>This empties the dev city. It cannot be undone.</p>
-          <div className="ui-row ui-row-static"><span className="ui-row-label"><span>Goes</span></span><span>every kitchen and dish, every rider, orders, order events, ratings, payments, tracking</span></div>
-          <div className="ui-row ui-row-static"><span className="ui-row-label"><span>Stays</span></span><span>run log, decision log, every account</span></div>
-          <div className="ui-form ui-form-flush"><div className="ui-field"><label htmlFor="sim-clear-word">Type {CLEAR_WORD} to go on</label>
-            <input id="sim-clear-word" className="mono-input" autoComplete="off" autoCapitalize="characters" value={word} onChange={(e) => setWord(e.target.value)} /></div></div>
-          <button type="button" className="ui-btn big danger-fill" disabled={word !== CLEAR_WORD || busy} onClick={() => void clear()}>Clear everything</button>
-          <button type="button" className="ui-btn big ghost" onClick={() => { setClearing(false); setWord(""); }}>Keep the city</button>
-          <p className="ui-meta">The button wakes up when the word matches. After it, Seed the kitchens brings the city back.</p>
-        </div>
-      </Sheet>
+      {clearing && (
+        <DangerSheet id="clear-word" title="Clear everything?" kicker="Dev only · cannot be undone" sentence="This empties the dev city. Seed the kitchens brings it back."
+          facts={[["Goes", "Every kitchen and dish, every rider, orders, order events, ratings, payments, tracking."], ["Stays", "Run log, decision log, and every account."]]}
+          word={CLEAR_WORD} value={word} onValue={setWord} confirmLabel="Clear everything" leaveLabel="Keep the city" after="After it, Seed the kitchens brings the city back."
+          busy={busy} onConfirm={() => void clear()} onClose={() => { setClearing(false); setWord(""); }} />
+      )}
     </div>
   );
 }
