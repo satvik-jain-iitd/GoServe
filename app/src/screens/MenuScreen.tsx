@@ -26,6 +26,7 @@ export function MenuScreen(p: Props) {
   const [vegOnly, setVegOnly] = useState(false);
   const [cats, setCats] = useState<string[]>([]);   // story #972: the ticked categories; none ticked is all
   const [query, setQuery] = useState("");
+  const [photoBad, setPhotoBad] = useState(false);   // story #975: a photo that cannot load leaves the first letter, never a broken picture
   const [filterOpen, setFilterOpen] = useState(false);
   const [dish, setDish] = useState<Dish | null>(null);
   const where = p.address.trim() || (p.pin ? `Pin code ${p.pin}` : "Choose where to deliver");   // story #975: the one saved address until the saved list (#976) lands
@@ -49,7 +50,7 @@ export function MenuScreen(p: Props) {
           <span className="ui-where-line">{where}</span>
         </button>
         <button type="button" className="ui-circle" aria-label="You: your details, alerts and account" onClick={p.onProfile}>
-          {p.photo ? <img src={p.photo} alt="" width={36} height={36} referrerPolicy="no-referrer" /> : initial || <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" /></svg>}
+          {p.photo && !photoBad ? <img src={p.photo} alt="" width={36} height={36} referrerPolicy="no-referrer" onError={() => setPhotoBad(true)} /> : initial || <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" /></svg>}
         </button>
         <div className="ui-top-search">
           <div className="ui-search-box">

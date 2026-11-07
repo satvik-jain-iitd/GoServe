@@ -78,3 +78,10 @@ test("S8 with no photo the circle shows the first letter of the name", async ({ 
   await home(page, context);
   await expect(page.getByRole("button", { name: /^You: / })).toHaveText("A");
 });
+
+test("S9 a photo that cannot load leaves the first letter in the circle", async ({ page, context }) => {
+  await context.route("https://example.com/**", (r) => r.abort());
+  await home(page, context, "https://example.com/gone.png");
+  await expect(page.getByRole("button", { name: /^You: / })).toHaveText("A");
+  await expect(page.getByRole("button", { name: /^You: / }).locator("img")).toHaveCount(0);
+});
