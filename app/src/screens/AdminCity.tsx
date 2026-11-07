@@ -1,7 +1,7 @@
 // The City of the admin app on the Ink v3 boards A5 (city), A6 (one kitchen) and A7 (add a kitchen) (story H12, #195; stories A2, A3, A5).
 import { useState } from "react";
-import { DangerSheet } from "../ui";
-import { addKitchen, addPerson, cancelInvite, inviteLink, isOwner, parsePins, removeKitchen, removePerson, locOf, setKitchenLocation, type Invite, type KitchenRow, type Loc, type Person, type PersonKind, type RiderListRow } from "../lib/admin";
+import { DangerSheet, useSheetFit } from "../ui";
+import { addKitchen, addPerson, cancelInvite, inviteLink, isOwner, parsePins, removeKitchen, removePerson, locOf, setKitchenLocation, setKitchenDetails, type Invite, type KitchenRow, type Loc, type Person, type PersonKind, type RiderListRow } from "../lib/admin";
 import { kitchenProblem } from "../lib/validate";
 import { getClient } from "../lib/supabase";
 import { AdminMenu } from "./AdminMenu";
@@ -16,6 +16,8 @@ const stateOf = (k: KitchenRow): [string, string] => (!k.active ? ["Off", "error
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" });
 const BACK = <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>;
 
+const TRASH = <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" /></svg>;   // story #990: one delete icon for every person row
+
 const INVITE_WORDS = { kitchen: "Open this link and tap Continue with Google to start in your kitchen on GoServe.", rider: "Open this link and tap Continue with Google to start riding with GoServe.", admin: "Open this link and tap Continue with Google to run GoServe as an admin." };   // story #968: the words the box and the share sheet carry
 
 export function AdminCity({ me, kitchens, people, invites, riders, onError, reload, view, onView }: Props) {
@@ -25,6 +27,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
   const [invited, setInvited] = useState<{ email: string; kind: "kitchen" | "rider" | "admin" } | null>(null);   // story 875: the "Invite ready" box
   const [shareNote, setShareNote] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);   // story 900, board A8: the confirm sheet of Remove this kitchen
+  const [editing, setEditing] = useState(false);   // story #990, board K-EditKitchen
   const [addError, setAddError] = useState<string | null>(null);   // story 885: the add-person line sits under the form, next to its button
   const invitesOf = (id: string) => invites.filter((i) => i.kind === "kitchen" && i.kitchen_id === id);
   const staffOf = (id: string) => people.filter((p) => p.kind === "kitchen" && p.kitchen_id === id);
@@ -67,7 +70,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
   const inviteRow = (i: Invite) => (   // board A-Kitchen-Invite
     <div key={i.id} className="ui-row ui-row-static">
       <span className="ui-row-label"><span className="mono ui-invite-email">{i.email}</span><span className="ui-row-sub mono">{i.kind === "admin" ? "Admin · " : ""}Invited {day(i.created_at)} · not signed in yet</span></span>
-      <span className="ui-row-acts"><span className="ui-tag placed">Invited</span><button type="button" className="ui-btn ghost icon ui-trash" aria-label={`Cancel the invite for ${i.email}`} title="Cancel invite" onClick={() => void cancel(i)}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" /></svg></button></span>
+      <span className="ui-row-acts"><span className="ui-tag placed">Invited</span><button type="button" className="ui-btn ghost icon ui-trash" aria-label={`Cancel the invite for ${i.email}`} title="Cancel invite" onClick={() => void cancel(i)}>{TRASH}</button></span>
     </div>
   );
   const remove = async (p: Person) => {
@@ -78,7 +81,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
     if (!failed) await reload();
   };
   const signOut = async () => { try { await getClient().auth.signOut(); } catch { /* offline */ } window.location.reload(); };
-  const removeButton = (p: Person) => <button type="button" className="ui-btn ghost small" aria-label={`Remove ${p.email ?? p.user_id}`} onClick={() => void remove(p)}>Remove</button>;
+  const removeButton = (p: Person) => <button type="button" className="ui-btn ghost icon ui-trash" aria-label={`Remove ${p.email ?? p.user_id}`} title="Remove" onClick={() => void remove(p)}>{TRASH}</button>;
 
   if (view.kind === "add") return (   // A7
     <>
@@ -117,6 +120,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
         <div className="ui-row ui-row-static"><span>Hours</span><span className="mono ui-row-sub">{hhmm(k.opens_at) && hhmm(k.closes_at) ? `${hhmm(k.opens_at)} to ${hhmm(k.closes_at)}` : "Not set"}</span></div>
         <div className="ui-row ui-row-static"><span>Phone</span><span className="mono ui-row-sub">{k.phone ?? "Not set"}</span></div>
         <div className="ui-row ui-row-static"><span>Address</span><span className="ui-row-sub ui-right">{k.address ?? "Not set"}</span></div>
+        <button type="button" className="ui-row" onClick={() => { onError(null); setEditing(true); }}><span>Edit details</span><span className="go" aria-hidden="true">›</span></button>
         <KitchenLocation loc={locOf(k)} onChange={async (loc) => { const failed = await setKitchenLocation(getClient(), k.id, loc); onError(failed); if (!failed) await reload(); }} />
         <section className="ui-group" aria-label="Staff">
           <h2>Staff <span className="mono">{staffOf(k.id).length}{invitesOf(k.id).length > 0 && ` · ${invitesOf(k.id).length} invited`}</span></h2>
@@ -124,6 +128,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
           {staffOf(k.id).map((p) => <div key={p.user_id} className="ui-row ui-row-static"><span className="ui-row-label"><span>{firstName(p)}</span><span className="ui-row-sub mono">{p.email ?? p.user_id}</span></span>{removeButton(p)}</div>)}
           {invitesOf(k.id).map(inviteRow)}
         </section>
+        {editing && <KitchenSheet k={k} onClose={() => setEditing(false)} onDone={async () => { setEditing(false); await reload(); }} />}
         <AdminMenu kitchenId={k.id} kitchenName={k.name} onError={onError} />
         {k.active && (
           <section className="ui-group" aria-label="Leaving GoServe">
@@ -221,5 +226,51 @@ function RemoveSheet({ kitchen, onClose, onRemoved }: { kitchen: KitchenRow; onC
       facts={[["Stops", "New orders, the menu, and every staff sign-in to this kitchen."], ["Finishes", "Orders already placed, and today's slips and cash."], ["Stays", "Past orders, bills and numbers. The kitchen stays in the city list, marked Off."]]}
       word="REMOVE" value={word} onValue={setWord} confirmLabel="Remove this kitchen" leaveLabel="Keep it open" after="Open orders? It refuses until they are done."
       busy={busy} error={error} onConfirm={() => void go()} onClose={onClose} />
+  );
+}
+
+// Story #990, board K-EditKitchen: the fields and words of Add a kitchen, in a sheet. Location keeps its own map.
+function KitchenSheet({ k, onClose, onDone }: { k: KitchenRow; onClose: () => void; onDone: () => Promise<void> }) {
+  const fit = useSheetFit();
+  const [f, setF] = useState({ name: k.name, pins: k.pin_codes.join(", "), opensAt: hhmm(k.opens_at) ?? "", closesAt: hhmm(k.closes_at) ?? "", phone: k.phone ?? "", address: k.address ?? "" });
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    const problem = kitchenProblem(f);
+    if (problem) return setError(problem);
+    setBusy(true);
+    setError(null);
+    const failed = await setKitchenDetails(getClient(), k.id, { name: f.name.trim(), address: f.address.trim(), phone: f.phone.trim(), pins: parsePins(f.pins).pins, opensAt: f.opensAt, closesAt: f.closesAt });
+    setBusy(false);
+    if (failed) return setError(failed);
+    await onDone();
+  };
+  const set = (key: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [key]: e.target.value });
+  return (
+    <div ref={fit} className="ui-sheet-back" onClick={onClose}>
+      <section className="ui-sheet ui-danger ui-dish-sheet" role="dialog" aria-modal="true" aria-label={`Edit ${k.name}`} onClick={(e) => e.stopPropagation()}>
+        <div className="ui-danger-head">
+          <div><h2>{k.name}</h2><span className="mono ui-danger-kicker">Edit details · the location pin has its own map</span></div>
+          <button type="button" className="ui-btn ghost icon" aria-label="Close" onClick={onClose}>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        </div>
+        <label className="ui-danger-label" htmlFor="ek-name">Kitchen name</label>
+        <input id="ek-name" className="ui-sheet-input" type="text" value={f.name} onChange={set("name")} />
+        <label className="ui-danger-label" htmlFor="ek-pins">Pin codes · comma between them</label>
+        <input id="ek-pins" className="ui-sheet-input mono-input" type="text" inputMode="numeric" value={f.pins} onChange={set("pins")} />
+        <div className="ui-two">
+          <div><label className="ui-danger-label tight" htmlFor="ek-open">Opens at</label><input id="ek-open" className="ui-sheet-input mono-input" type="time" value={f.opensAt} onChange={set("opensAt")} /></div>
+          <div><label className="ui-danger-label tight" htmlFor="ek-close">Closes at</label><input id="ek-close" className="ui-sheet-input mono-input" type="time" value={f.closesAt} onChange={set("closesAt")} /></div>
+        </div>
+        <label className="ui-danger-label" htmlFor="ek-phone">Phone · the admin calls this</label>
+        <input id="ek-phone" className="ui-sheet-input mono-input" type="tel" inputMode="numeric" value={f.phone} onChange={set("phone")} />
+        <label className="ui-danger-label" htmlFor="ek-addr">Address · the rider reads this</label>
+        <textarea id="ek-addr" className="ui-sheet-text" rows={2} value={f.address} onChange={set("address")} />
+        {error && <p role="alert" className="ui-note error">{error}</p>}
+        <div className="ui-sheet-acts"><button type="button" className="ui-btn big" disabled={busy} onClick={() => void save()}>Save</button></div>
+        <p className="mono ui-sheet-foot">A pin code taken away hides the kitchen from those customers at once. Staff and dishes stay.</p>
+      </section>
+    </div>
   );
 }
