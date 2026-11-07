@@ -30,7 +30,7 @@ test("S2 no network and nothing saved: the offline screen still shows", async ({
   await expect(page.getByText("No dishes on the menu yet.")).toHaveCount(0);
 });
 
-test("S3 no network and a saved menu: the saved menu still shows with its line", async ({ page, context }) => {
+test("S3 the server fails twice and a menu is saved: the saved menu shows, with the true line (story #930: slow, not no connection)", async ({ page, context }) => {
   const net = await setup(context, page);
   await page.goto("/customer/");
   await expect(page.getByText("Butter Chicken").first()).toBeVisible();
@@ -38,7 +38,8 @@ test("S3 no network and a saved menu: the saved menu still shows with its line",
   net.state.menuUp = false;
   await page.reload();
   await expect(page.getByText("Butter Chicken").first()).toBeVisible();
-  await expect(page.getByText("No connection. Showing the menu you saw last.")).toBeVisible();
+  await expect(page.getByText("GoServe is slow right now. Showing the menu you saw last.")).toBeVisible({ timeout: 8000 });
+  await expect(page.getByText("No connection. Showing the menu you saw last.")).toHaveCount(0);
   await expect(page.getByText("No dishes on the menu yet.")).toHaveCount(0);
 });
 
