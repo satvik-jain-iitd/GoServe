@@ -19,7 +19,7 @@ test("S1 zero dishes and the network on: the menu shows the empty box, not the o
   await expect(page.getByText("Your internet is fine. The kitchen has nothing listed yet.")).toBeVisible();
   await expect(page.getByText("Could not connect to the internet.")).toHaveCount(0);
   await expect(page.getByRole("navigation", { name: "Main" })).toBeVisible();   // the header and tabs stay
-  await expect(page.getByRole("button", { name: /^Home\b/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^(Home|Deliver to)\b/ })).toBeVisible();
 });
 
 test("S2 no network and nothing saved: the offline screen still shows", async ({ page, context }) => {

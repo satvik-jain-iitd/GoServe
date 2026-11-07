@@ -42,13 +42,14 @@ test("S4 a kitchen that serves the pin code but is closed says it is closed", as
   await expect(page.getByText("Kitchen closed. Opens at 10:00 am.")).toBeVisible();
 });
 
-test("S5 a known pin code goes straight to the menu, and Change area goes back to the question", async ({ page, context }) => {
+test("S5 a known pin code goes straight to the menu, and the address line opens Deliver to, where Add new address asks the question", async ({ page, context }) => {
   await setup(context, page);
   await page.goto("/customer/");
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
-  await page.getByRole("button", { name: /^Home\b/ }).click();
+  await page.getByRole("button", { name: /^(Home|Deliver to)\b/ }).click();
+  await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Use current location" }).click();
   await expect(page.getByRole("heading", { name: "Where does the food go?" })).toBeVisible();
-  expect(await page.evaluate(() => window.localStorage.getItem("gs-pin"))).toBeNull();
 });
 
 test("S6 the demo console at / still shows the menu with no pin code question", async ({ page, context }) => {
