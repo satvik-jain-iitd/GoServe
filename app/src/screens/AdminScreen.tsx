@@ -26,12 +26,19 @@ export function AdminScreen() {
   const [people, setPeople] = useState<Person[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [me, setMe] = useState<{ first: string; email: string | null } | null>(null);   // story #957: who is signed in, for the You section
 
   const load = useCallback(async () => {
     try {
       await ensureSession();
       const c = getClient();
-      try { const { data } = await c.auth.getUser(); setAnonymous(data.user?.is_anonymous !== false); } catch { /* unknown: treat as not signed in */ }
+      try {
+        const { data } = await c.auth.getUser();
+        setAnonymous(data.user?.is_anonymous !== false);
+        const full = String(data.user?.user_metadata?.full_name ?? data.user?.user_metadata?.name ?? "").trim();
+        const email = data.user?.email ?? null;
+        setMe({ first: (full.split(/\s+/)[0] || (email ?? "").split("@")[0] || "you"), email });
+      } catch { /* unknown: treat as not signed in */ }
       const ok = await isAdmin(c);
       setAllowed(ok);
       if (!ok) return;
@@ -68,7 +75,7 @@ export function AdminScreen() {
   const head = tab === "orders" ? { h: "Orders", meta: `Today · ${count.total}` } : tab === "city" ? { h: "City", meta: "Delhi" } : tab === "sim" ? { h: "Simulator", meta: "Synthetic city" } : { h: "Numbers", meta: `Today · ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` };
   const ordersView = <AdminOrders kitchens={kitchens} onError={setError} open={openOrder} onOpen={setOpenOrder} onCount={onCount} />;
   if (tab === "orders" && openOrder) return <>{error && <p role="alert" className="ui-note error">{error}</p>}{ordersView}</>;   // A4 sits over the tabs
-  const cityScreen = <AdminCity kitchens={kitchens} people={people} invites={invites} riders={riders} onError={setError} reload={load} view={cityView} onView={setCityView} />;
+  const cityScreen = <AdminCity me={me} kitchens={kitchens} people={people} invites={invites} riders={riders} onError={setError} reload={load} view={cityView} onView={setCityView} />;
   if (tab === "city" && cityView.kind !== "list") return <>{error && <p role="alert" className="ui-note error">{error}</p>}{cityScreen}</>;   // A6 and A7 sit over the tabs
   return (
     <>
