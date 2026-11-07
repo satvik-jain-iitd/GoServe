@@ -3,17 +3,18 @@ import { describe, expect, it, vi } from "vitest";
 import { CLEAR_WORD, KNOB_DEFAULTS, SEED_DEFAULTS, callSim, clearAll, clearShown, groupLine, SimError, tickLine } from "../../src/lib/sim";
 
 const deps = (res: () => Promise<Response>, seen: { url?: string; init?: RequestInit } = {}) => ({
-  url: "https://n8n.test/webhook/gs-sim", token: "sim-token",
+  url: "https://n8n.test/webhook/gs-sim", token: async () => "aaa.bbb.ccc",
   fetchFn: (async (url: string, init: RequestInit) => { seen.url = url; seen.init = init; return res(); }) as typeof fetch,
 });
 const json = (status: number, body: unknown) => async () => new Response(JSON.stringify(body), { status });
 
 describe("callSim", () => {
-  it("posts the action and the parameters with the simulator token header", async () => {
+  it("posts the action and the parameters with the signed-in admin token and no shared token", async () => {
     const seen: { url?: string; init?: RequestInit } = {};
     const a = await callSim("seed", { kitchens: 12, riders: 20, dishes_per_kitchen: 6, seed: 42 }, deps(json(200, { ok: true, kitchens: 12, riders: 20, dishes: 72 }), seen));
     expect(seen.url).toBe("https://n8n.test/webhook/gs-sim");
-    expect((seen.init?.headers as Record<string, string>)["x-gs-sim-token"]).toBe("sim-token");
+    expect((seen.init?.headers as Record<string, string>)["authorization"]).toBe("Bearer aaa.bbb.ccc");
+    expect((seen.init?.headers as Record<string, string>)["x-gs-sim-token"]).toBeUndefined();
     expect((seen.init?.headers as Record<string, string>)["x-gs-token"]).toBeUndefined();
     expect(JSON.parse(seen.init?.body as string)).toEqual({ action: "seed", kitchens: 12, riders: 20, dishes_per_kitchen: 6, seed: 42 });
     expect(a).toEqual({ ok: true, kitchens: 12, riders: 20, dishes: 72 });
@@ -39,7 +40,7 @@ describe("the #284 numbers", () => {
 
 // Story #848 (board A-Sim-Groups, A-Sim-Clear): two seed groups, and Clear everything through the admin's own session.
 describe("the two seed groups", () => {
-  it("seed_kitchens and seed_riders go to the webhook with the simulator token", async () => {
+  it("seed_kitchens and seed_riders go to the webhook with the admin token", async () => {
     const seen: { url?: string; init?: RequestInit } = {};
     await callSim("seed_kitchens", {}, deps(json(200, { ok: true, kitchens: 10 }), seen));
     expect(JSON.parse(seen.init?.body as string)).toEqual({ action: "seed_kitchens" });
@@ -54,12 +55,12 @@ describe("the two seed groups", () => {
 
 describe("Clear everything", () => {
   it("is the typed word CLEAR", () => expect(CLEAR_WORD).toBe("CLEAR"));
-  it("shows only when the dev build flag is on AND the database says it is allowed", () => {
-    expect(clearShown("1", { ok: true, clear_allowed: true })).toBe(true);
-    expect(clearShown("1", { ok: true, clear_allowed: false })).toBe(false);
-    expect(clearShown("1", { ok: true })).toBe(false);
-    expect(clearShown(undefined, { ok: true, clear_allowed: true })).toBe(false);
-    expect(clearShown("1", null)).toBe(false);
+  it("shows at once with the dev build flag, until the database says no (story 941)", () => {
+    expect(clearShown("1", true)).toBe(true);
+    expect(clearShown("1", null)).toBe(true);   // the answer has not come yet: the button is there, asleep
+    expect(clearShown("1", false)).toBe(false);
+    expect(clearShown(undefined, true)).toBe(false);
+    expect(clearShown("0", true)).toBe(false);
   });
   const slice = (o: object) => ({ data: { ok: true, done: false, logs_detached: 0, orders: 0, kitchens: 0, riders: 0, dishes: 0, ...o }, error: null });
   it("calls sim_clear_all with the admin's client, never the webhook, slice after slice until done, and adds the counts up", async () => {

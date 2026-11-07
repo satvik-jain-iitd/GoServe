@@ -14,7 +14,8 @@ test("S1 the tab asks the webhook for the status and shows the counts, the switc
   await expect(page.getByTestId("sim-counts")).toHaveText("10 kitchens · 40 riders (29 online) · 137 dishes");
   await expect(page.getByRole("switch", { name: "City moves every minute" })).not.toBeChecked();
   expect(net.calls.sim.map((c) => c.body.action)).toEqual(["status"]);
-  expect(net.calls.sim[0].headers["x-gs-sim-token"]).toBe("sim-token");
+  expect(net.calls.sim[0].headers["authorization"]).toMatch(/^Bearer \S+$/);   // story 941: the admin's own sign-in, no shared token
+  expect(net.calls.sim[0].headers["x-gs-sim-token"]).toBeUndefined();
   expect(await axeScan(page)).toEqual([]);
 });
 
@@ -33,7 +34,7 @@ test("S2 (#848) Seed the riders posts the rider numbers and shows the new counts
   expect(net.calls.sim.find((c) => c.body.action === "seed_kitchens")!.body).toEqual({ action: "seed_kitchens" });
   expect(net.calls.sim.some((c) => c.body.action === "seed")).toBe(false);   // the old both-at-once button is gone
   expect(net.calls.kitchenWrites).toEqual([]);
-  expect(net.calls.rpc.filter((r) => r.name.startsWith("sim_"))).toEqual([]);
+  expect(net.calls.rpc.filter((r) => r.name.startsWith("sim_") && r.name !== "sim_clear_allowed")).toEqual([]);
   expect(net.calls.menuWrites).toEqual([]);
 });
 
@@ -251,4 +252,27 @@ test("S15 (#873) Clear everything calls the function again until it says done, w
   expect(calls).toHaveLength(3);
   expect(calls.every((c) => c.body.p_limit === 500)).toBe(true);
   expect(net.calls.sim.map((c) => c.body.action)).toEqual(["status"]);
+});
+
+test("S16 (#941) Clear everything and Reset show at once, asleep, while the answers are on their way; the database read wakes Clear", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.admin = true;
+  net.state.simDelayMs = 3000;   // the webhook status answer is slow
+  net.state.clearAllowedDelayMs = 700;
+  await open(page);
+  const clear = page.getByRole("button", { name: "Clear everything" });
+  await expect(clear).toBeVisible({ timeout: 1000 });   // long before the 3 s webhook answer
+  await expect(clear).toHaveAttribute("aria-disabled", "true");
+  await expect(page.getByRole("button", { name: "Reset the city" })).toBeVisible();
+  await expect(clear).not.toHaveAttribute("aria-disabled", "true", { timeout: 2000 });
+  expect(net.calls.rpc.filter((r) => r.name === "sim_clear_allowed")).toHaveLength(1);
+});
+
+test("S17 (#941) a database that does not allow Clear removes the button once it says so, and never asks the webhook for it", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.admin = true;
+  net.state.sim.clear_allowed = false;
+  await open(page);
+  await expect(page.getByRole("button", { name: "Reset the city" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Clear everything" })).toHaveCount(0);
 });

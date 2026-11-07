@@ -31,12 +31,10 @@ jobs:
       - name: The dev webhook secrets are set
         env:
           SIM_URL: ${{ secrets.DEV_VITE_SIM_URL }}
-          SIM_TOKEN: ${{ secrets.DEV_VITE_SIM_TOKEN }}
           ENGINE_URL: ${{ secrets.DEV_VITE_ENGINE_URL }}
         run: |
           missing=""
           test -n "$SIM_URL" || missing="$missing DEV_VITE_SIM_URL"
-          test -n "$SIM_TOKEN" || missing="$missing DEV_VITE_SIM_TOKEN"
           test -n "$ENGINE_URL" || missing="$missing DEV_VITE_ENGINE_URL"
           if [ -n "$missing" ]; then echo "These repository secrets are not set:$missing. The owner adds them (the dev simulator and engine webhooks, never the PROD_ ones). The dev build stops here."; exit 1; fi
           case "$SIM_URL$ENGINE_URL" in *-prod*) echo "A dev webhook address names a prod copy (gs-sim-prod or gs-engine-prod). The dev build stops here."; exit 1;; esac
@@ -60,7 +58,6 @@ jobs:
           VITE_OTP_GATE: "1"
           VITE_OTP_SMS: fixed
           VITE_SIM_URL: ${{ secrets.DEV_VITE_SIM_URL }}
-          VITE_SIM_TOKEN: ${{ secrets.DEV_VITE_SIM_TOKEN }}
           VITE_ENGINE_URL: ${{ secrets.DEV_VITE_ENGINE_URL }}
           VITE_SIM_CLEAR: "1"   # story 848: the Clear everything button is drawn in a dev build only (the database must also allow it)
           VITE_BUILD: ${{ github.sha }}
