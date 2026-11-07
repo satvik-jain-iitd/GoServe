@@ -20,7 +20,8 @@ test("S1 the Bill has an optional note box that holds 200 characters, and the no
   await expect(box).toHaveAttribute("maxlength", "200");
   await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();   // optional: empty is fine
   await box.fill(NOTE);
-  await expect(page.getByText(`${NOTE.length} of 200`)).toBeVisible();
+  await expect(page.getByText(`${NOTE.length} / 200`)).toBeVisible();
+  await expect(page.getByText("The cook reads these exact words")).toBeVisible();
   await page.getByRole("button", { name: /Place order/ }).click();
   await expect.poll(() => net.calls.place.length).toBe(1);
   expect(net.calls.place[0].body.instructions).toBe(NOTE);
@@ -48,8 +49,10 @@ test("S4 the kitchen reads the note on the New row, the order sheet and the Cook
   const net = await setup(context, page, [withNote, { ...order("placed"), id: "0c0c0c0c-0000-0000-0000-000000000000" }]);
   net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
-  await expect(page.locator(".ui-ticket", { hasText: "No. 0f0f0f0f" })).toContainText(NOTE);
-  await expect(page.locator(".ui-ticket", { hasText: "No. 0c0c0c0c" })).not.toContainText("Note");
+  const row = page.locator(".ui-ticket", { hasText: "No. 0f0f0f0f" });
+  await expect(row.getByText("Says", { exact: true })).toBeVisible();
+  await expect(row).toContainText(NOTE);
+  await expect(page.locator(".ui-ticket", { hasText: "No. 0c0c0c0c" })).not.toContainText("Says");
   await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
   const sheet = page.getByRole("dialog", { name: "Order 0f0f0f0f" });
   await expect(sheet.getByText("Rahul says")).toBeVisible();
