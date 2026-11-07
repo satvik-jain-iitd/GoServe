@@ -65,7 +65,7 @@ export function AdminCity({ kitchens, people, invites, riders, onError, reload, 
   const inviteRow = (i: Invite) => (   // board A-Kitchen-Invite
     <div key={i.id} className="ui-row ui-row-static">
       <span className="ui-row-label"><span className="mono ui-invite-email">{i.email}</span><span className="ui-row-sub mono">Invited {day(i.created_at)} · not signed in yet</span></span>
-      <span className="ui-row-acts"><span className="ui-tag placed">Invited</span><button type="button" className="ui-btn ghost small" aria-label={`Cancel invite for ${i.email}`} onClick={() => void cancel(i)}>Cancel</button></span>
+      <span className="ui-row-acts"><span className="ui-tag placed">Invited</span><button type="button" className="ui-btn ghost icon ui-trash" aria-label={`Cancel the invite for ${i.email}`} title="Cancel invite" onClick={() => void cancel(i)}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" /></svg></button></span>
     </div>
   );
   const remove = async (p: Person) => {
@@ -120,7 +120,7 @@ export function AdminCity({ kitchens, people, invites, riders, onError, reload, 
           {staffOf(k.id).map((p) => <div key={p.user_id} className="ui-row ui-row-static"><span className="ui-row-label"><span>{firstName(p)}</span><span className="ui-row-sub mono">{p.email ?? p.user_id}</span></span>{removeButton(p)}</div>)}
           {invitesOf(k.id).map(inviteRow)}
         </section>
-        <AdminMenu kitchenId={k.id} onError={onError} />
+        <AdminMenu kitchenId={k.id} kitchenName={k.name} onError={onError} />
         {k.active && (
           <section className="ui-group" aria-label="Leaving GoServe">
             <h2>Leaving GoServe <span className="mono">Asks twice</span></h2>

@@ -508,3 +508,27 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-sheet .ui-danger-acts .ui-btn { margin-top: 0; }
 .ui-danger .ui-btn.danger-fill:disabled { opacity: 0.4; }
 .ui-danger-after { margin: 12px 0 0; text-align: center; font-size: 12px; color: var(--gs-text-muted); }
+
+/* Story 936: dish rows with no buttons (board M1-DishRows-B), the Edit sheet (board M2-DishEdit) and the invite trash icon. */
+.ui-dish-line { width: 100%; min-height: 60px; gap: 10px; background: transparent; border: 0; border-bottom: 1px solid var(--md-outline-variant); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.ui-dish-main { display: inline-flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.ui-dish-main.off, .ui-dish-price.off { opacity: 0.55; }
+.ui-dish-text { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.ui-dish-text .ui-tag { font-size: 11px; line-height: 1.2; padding: 2px 6px; }
+.ui-dish-price { font-size: 13px; flex: none; }
+.ui-go { color: var(--md-primary); font-size: 22px; line-height: 1; }
+.ui-dish-photo-row { display: flex; align-items: center; gap: 12px; margin: 16px 0 0; }
+.ui-dish-photo-row img, .ui-dish-photo-ph { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; border: 1px solid var(--md-outline-variant); }
+.ui-file-btn { min-height: 40px; display: inline-flex; align-items: center; justify-content: center; }
+.ui-sheet .ui-file-btn { width: auto; margin-top: 0; }
+.ui-sheet-input { box-sizing: border-box; width: 100%; height: 48px; padding: 0 12px; border: 1px solid var(--md-outline); border-radius: 8px; background: var(--md-surface); color: var(--md-on-surface); font: inherit; }
+.ui-sheet-input.mono-input { font-family: var(--gs-font-mono); font-size: 18px; }
+.ui-danger-label.tight { margin-top: 12px; }
+.ui-dish-sheet .ui-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.ui-sheet-switch { min-height: 48px; }
+.ui-stock { display: flex; flex-direction: column; gap: 2px; }
+.ui-stock .mono { font-size: 12px; color: var(--gs-text-muted); }
+.ui-delete-row { width: 100%; margin-top: 8px; min-height: 48px; background: transparent; border: 0; color: var(--md-error); font: inherit; cursor: pointer; justify-content: space-between; }
+.ui-delete-row > span:first-child { display: inline-flex; align-items: center; gap: 8px; }
+.ui-sheet .ui-btn.ui-trash, .ui-btn.ui-trash { flex: none; width: 40px; height: 40px; min-width: 40px; min-height: 40px; margin: 0; padding: 0; border-radius: 999px; color: var(--md-error); border-color: var(--md-error); display: inline-flex; align-items: center; justify-content: center; }
+.ui-dish-hint { margin: 8px 0 12px; font-size: 12px; color: var(--gs-text-muted); }   /* story 936: air between the hint and the Add dish form */

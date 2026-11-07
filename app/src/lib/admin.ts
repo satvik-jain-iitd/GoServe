@@ -128,23 +128,28 @@ export const photoPath = (kitchenId: string, fileName: string, id: string): stri
 
 export type DishRow = { id: string; name: string; price_paise: number; available: boolean; veg: boolean; category: string | null; image_url: string | null; description?: string | null };
 export async function listDishes(c: Client, kitchenId: string): Promise<DishRow[]> {
-  const { data, error } = await c.from("menu_items").select("id, name, price_paise, available, veg, category, image_url").eq("kitchen_id", kitchenId).order("sort").order("name");
+  const { data, error } = await c.from("menu_items").select("id, name, price_paise, available, veg, category, image_url, description").eq("kitchen_id", kitchenId).order("sort").order("name");
   if (error) throw error;
   return (data ?? []) as DishRow[];
 }
 type Store = SupabaseClient["storage"];
+// The photo is shrunk, then uploaded under a new path every time, so a year in the cache is safe. Returns the public address, or null when the upload failed.
+export async function uploadDishPhoto(c: { storage: Store }, kitchenId: string, file: File): Promise<string | null> {
+  const photo = await shrinkPhoto(file);
+  const path = photoPath(kitchenId, photo.name, crypto.randomUUID());
+  const up = await c.storage.from("menu").upload(path, photo, { contentType: photo.type, cacheControl: "31536000" });
+  return up.error ? null : c.storage.from("menu").getPublicUrl(path).data.publicUrl;
+}
 export async function addDish(c: Client & { storage: Store }, d: { kitchenId: string; name: string; paise: number; veg: boolean; category: string; description?: string; photo: File | null }): Promise<string | null> {
   let image_url: string | null = null;
   if (d.photo) {
-    const photo = await shrinkPhoto(d.photo);
-    const path = photoPath(d.kitchenId, photo.name, crypto.randomUUID());   // a new path for every upload, so a year in the cache is safe
-    const up = await c.storage.from("menu").upload(path, photo, { contentType: photo.type, cacheControl: "31536000" });
-    if (up.error) return "The photo could not be uploaded. Try again.";
-    image_url = c.storage.from("menu").getPublicUrl(path).data.publicUrl;
+    image_url = await uploadDishPhoto(c, d.kitchenId, d.photo);
+    if (!image_url) return "The photo could not be uploaded. Try again.";
   }
   return adminMessage((await c.from("menu_items").insert({ kitchen_id: d.kitchenId, name: d.name, price_paise: d.paise, veg: d.veg, category: d.category || null, description: d.description?.trim() || null, image_url })).error);
 }
-export const setDish = async (c: Client, id: string, change: { available?: boolean; price_paise?: number }) => adminMessage((await c.from("menu_items").update(change).eq("id", id)).error);
+export type DishChange = { name?: string; price_paise?: number; category?: string | null; veg?: boolean; available?: boolean; image_url?: string };   // story #936: any of these, one update
+export const setDish = async (c: Client, id: string, change: DishChange) => adminMessage((await c.from("menu_items").update(change).eq("id", id)).error);
 export const deleteDish = async (c: Client, id: string) => adminMessage((await c.from("menu_items").delete().eq("id", id)).error);
 
 // Orders and the day's numbers (story A4). "Today" is the day in India, whatever the phone's own clock zone says.

@@ -43,6 +43,10 @@ const STEPS: Record<string, (context: BrowserContext, page: Page, path: string) 
     const net = await setup(context, page); net.state.admin = true; await page.goto(path);
     await page.getByRole("button", { name: "City", exact: true }).click(); await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();
     await page.getByRole("button", { name: "Add a dish" }).click(); await expect(page.getByLabel("Dish name")).toBeVisible(); },
+  "dish-edit": async (context, page, path) => {   // story 936: the Edit dish sheet, board M2-DishEdit
+    const net = await setup(context, page); net.state.admin = true; await page.goto(path);
+    await page.getByRole("button", { name: "City", exact: true }).click(); await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();
+    await page.getByRole("button", { name: "Edit Butter Chicken" }).click(); await expect(page.getByRole("dialog", { name: "Edit Butter Chicken" })).toBeVisible(); },
   "remove-kitchen": async (context, page, path) => {   // story 955: the danger sheet, board D1-RemoveKitchen
     const net = await setup(context, page); net.state.admin = true; await page.goto(path);
     await page.getByRole("button", { name: "City", exact: true }).click(); await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();
