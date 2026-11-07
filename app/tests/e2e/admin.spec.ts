@@ -101,22 +101,27 @@ test("S6 a wrong price or a file that is not a picture is refused before anythin
   expect(net.calls.uploads).toHaveLength(0);
 });
 
-test("S7 a dish can be marked sold out, get a new price, and be deleted", async ({ page, context }) => {
+test("S7 a dish can be marked sold out, get a new price, and be deleted (story #936: from the Edit sheet)", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.admin = true;
   await page.goto("/admin/");
   await page.getByRole("button", { name: "City", exact: true }).click();
   await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();
   await expect(page.getByText("Butter Chicken", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Mark Butter Chicken sold out" }).click();
+  await page.getByRole("button", { name: "Edit Butter Chicken" }).click();
+  await page.getByRole("switch", { name: "In stock" }).uncheck();
+  await page.getByRole("button", { name: "Save" }).click();
   await expect.poll(() => net.calls.menuWrites.length).toBe(1);
   expect(net.calls.menuWrites[0]).toMatchObject({ method: "PATCH", body: { available: false } });
-  await page.getByLabel("New price for Butter Chicken").fill("350");
-  await page.getByRole("button", { name: "Save price of Butter Chicken" }).click();
+  await page.getByRole("button", { name: "Edit Butter Chicken" }).click();
+  await page.getByLabel("Price (₹)").fill("350");
+  await page.getByRole("button", { name: "Save" }).click();
   await expect.poll(() => net.calls.menuWrites.length).toBe(2);
   expect(net.calls.menuWrites[1]).toMatchObject({ method: "PATCH", body: { price_paise: 35000 } });
-  page.on("dialog", (d) => void d.accept());   // the delete asks first
-  await page.getByRole("button", { name: "Delete Butter Chicken" }).click();
+  await page.getByRole("button", { name: "Edit Butter Chicken" }).click();
+  await page.getByRole("dialog", { name: "Edit Butter Chicken" }).getByRole("button", { name: "Delete this dish" }).click();
+  await page.getByLabel("Type DELETE to go on").fill("DELETE");
+  await page.getByRole("dialog", { name: "Delete Butter Chicken?" }).getByRole("button", { name: "Delete this dish" }).click();
   await expect.poll(() => net.calls.menuWrites.length).toBe(3);
   expect(net.calls.menuWrites[2].method).toBe("DELETE");
 });

@@ -98,7 +98,7 @@ test("S6 the kitchen's staff list shows an invited person with the Invited tag a
   await expect(staff).toContainText("sunita.devi@gmail.com");
   await expect(staff).toContainText("not signed in yet");
   await expect(staff.getByText("Invited", { exact: true })).toBeVisible();
-  await staff.getByRole("button", { name: "Cancel invite for sunita.devi@gmail.com" }).click();
+  await staff.getByRole("button", { name: "Cancel the invite for sunita.devi@gmail.com" }).click();
   await expect.poll(() => net.calls.rpc.find((c) => c.name === "admin_cancel_invite")?.body).toEqual({ p_id: "i-9" });
   await expect(staff).not.toContainText("sunita.devi@gmail.com");
   await expect(staff).toContainText("raju@example.com");
@@ -113,7 +113,7 @@ test("S7 an invited rider is listed with the Invited tag and can be cancelled", 
   const riders = page.getByRole("region", { name: "Riders" });
   await expect(riders).toContainText("amit@example.com");
   await expect(riders.getByText("Invited", { exact: true })).toBeVisible();
-  await riders.getByRole("button", { name: "Cancel invite for amit@example.com" }).click();
+  await riders.getByRole("button", { name: "Cancel the invite for amit@example.com" }).click();
   await expect.poll(() => net.calls.rpc.find((c) => c.name === "admin_cancel_invite")?.body).toEqual({ p_id: "i-8" });
   await expect(riders).not.toContainText("amit@example.com");
 });

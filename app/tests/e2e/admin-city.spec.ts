@@ -36,7 +36,9 @@ test("S2 one kitchen shows its details, staff, menu and a Call button; the menu 
   await expect(page.getByText("11:00 to 22:00")).toBeVisible();
   await expect(page.getByRole("region", { name: "Staff" })).toContainText("sunita@example.com");
   await expect(page.getByRole("region", { name: "Menu" })).toContainText("Butter Chicken");
-  await page.getByRole("button", { name: "Mark Butter Chicken sold out" }).click();
+  await page.getByRole("button", { name: "Edit Butter Chicken" }).click();
+  await page.getByRole("switch", { name: "In stock" }).uncheck();
+  await page.getByRole("button", { name: "Save" }).click();
   await expect.poll(() => net.calls.menuWrites.length).toBe(1);
   await expect(page.getByRole("link", { name: "Call Hauz Khas Kitchen" })).toHaveAttribute("href", "tel:9876500011");
   await page.getByRole("button", { name: "Back to city" }).click();
