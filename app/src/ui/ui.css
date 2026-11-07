@@ -607,3 +607,10 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-profile-foot { margin: var(--gs-space-3) 0 0; text-align: center; font-size: 11px; color: var(--gs-text-muted); }
 .ui-profile .ui-btn { width: auto; margin-top: 0; }   /* the sheet rule makes every button full width; the You rows keep their own sizes */
 .ui-profile .ui-btn.icon { flex: none; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; border-radius: 999px; }
+
+/* Story 977, board H1-History: the state tag with its second button under it; the row's two parts are siblings, never a button in a button. */
+.ui-order-row-wrap { align-items: start; }
+.ui-order-open { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.ui-order-side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.ui-order-side .ui-btn.small { min-height: 36px; padding: 0 14px; font-size: 14px; width: auto; margin: 0; }
+.ui-again-line { margin: var(--gs-space-3) var(--gs-gutter) 0; }

@@ -1,4 +1,4 @@
-// Story #485: one way to do a thing, never two (owner, 27 Oct). A delivered order's slip has one button, "See the menu". Story #660 (owner's mark E.7, 28 Oct): a cancelled order, and only that, offers "Order again".
+// Story #485: one way to do a thing, never two (owner, 27 Oct). A delivered order's slip has one button, "See the menu". Story #660 (owner's mark E.7, 28 Oct): a cancelled order, and only that, offers "Order again". Story #977 (owner, 8 Nov, board H1): a delivered slip in History offers "Order again" as well, and that is the one reorder path in the code (reorderCart).
 import { describe, expect, it } from "vitest";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -8,8 +8,10 @@ const files = walk(resolve(__dirname, "../../src")).filter((f) => /\.(ts|tsx)$/.
 
 describe("one way to order", () => {
   it("no Order again text, no orderAgain code, no reorder button anywhere in the app source", () => {
-    for (const f of files.filter((f) => !f.endsWith("PlacedScreen.tsx"))) expect(readFileSync(f, "utf8"), f).not.toMatch(/order again|orderAgain|reorder/i);
+    const ALLOWED = ["PlacedScreen.tsx", "OrdersScreen.tsx", "App.tsx", "cart.ts"];   // story #977: the History button and the one function behind it
+    for (const f of files.filter((f) => !ALLOWED.some((a) => f.endsWith(a)))) expect(readFileSync(f, "utf8"), f).not.toMatch(/order again|orderAgain|reorder/i);
     expect(readFileSync(resolve(__dirname, "../../src/screens/PlacedScreen.tsx"), "utf8").match(/order again/gi)).toHaveLength(1);   // the one cancelled-order button
+    expect(readFileSync(resolve(__dirname, "../../src/screens/OrdersScreen.tsx"), "utf8").match(/>Order again</g)).toHaveLength(1);   // story #977: the one History button
   });
   it("the placed screen's bottom button for a delivered or cancelled order reads See the menu", () => {
     expect(readFileSync(resolve(__dirname, "../../src/screens/PlacedScreen.tsx"), "utf8")).toMatch(/cancelled \? "Order again" : "See the menu"/);
