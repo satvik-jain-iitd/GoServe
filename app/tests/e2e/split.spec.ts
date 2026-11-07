@@ -1,4 +1,4 @@
-// Story #52: split view, a second device that joins a session, and reset. The network is answered by the test (see helpers.ts).
+// Story #52: split view and a reset by another device. The network is answered by the test (see helpers.ts).
 import { test, expect, type Page } from "@playwright/test";
 import { SESSION, order, setup } from "./helpers";
 
@@ -25,53 +25,6 @@ test("S1 split view shows the customer and the kitchen side by side", async ({ p
   const customer = await page.getByRole("heading", { name: "Order placed" }).boundingBox();
   expect(Math.abs(kitchen!.y - customer!.y)).toBeLessThan(80);   // same row: side by side, not stacked
   expect(kitchen!.x).toBeGreaterThan(customer!.x);
-});
-
-test("S2 a second device opens the link, joins the session and sees its orders", async ({ page, context }) => {
-  const net = await setup(context, page, [order("placed")]);
-  await page.goto(`/console/?join=${OTHER}`);
-  await page.getByRole("button", { name: "Kitchen" }).click();
-  await expect(page.getByText("No. 0f0f0f0f")).toBeVisible();
-  expect(net.calls.rpc).toContainEqual({ name: "join_session", body: { p_session: OTHER } });
-  expect(net.calls.orderReads.some((u) => u.includes(`session_id=eq.${OTHER}`))).toBe(true);   // reads the joined session, not its own
-  await page.getByRole("button", { name: "Accept 0f0f0f0f" }).click();
-  await page.getByRole("button", { name: "Cooking", exact: true }).click();   // H11: the accepted ticket moves to Cooking
-  await expect(page.getByText("Accepted", { exact: true })).toBeVisible();
-  expect(net.calls.status[0].body.session_id).toBe(SESSION);   // the tap names the order's own session
-});
-
-test("S2 the share link carries this device's session", async ({ page, context }) => {
-  await setup(context, page);
-  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-  await page.goto("/console/");
-  await page.getByRole("button", { name: "Copy link for a second device" }).click();
-  await expect(page.getByText("Link copied.")).toBeVisible();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(new RegExp(`\\?join=${SESSION}$`));
-});
-
-test("S3 reset asks first, then clears this session and returns to the menu", async ({ page, context }) => {
-  const net = await setup(context, page, [order("placed")]);
-  await page.goto("/console/");
-  await page.getByRole("button", { name: "Kitchen" }).click();
-  await expect(page.getByText("No. 0f0f0f0f")).toBeVisible();
-  await page.getByRole("button", { name: "Reset demo" }).click();
-  await expect(page.getByText("Clear all orders of this demo?")).toBeVisible();
-  expect(net.calls.rpc.filter((c) => c.name === "reset_session")).toHaveLength(0);   // nothing yet
-  await page.getByRole("button", { name: "Yes, clear" }).click();
-  await expect(page.getByRole("heading", { name: "No new tickets" })).toBeVisible();   // H11: K6
-  expect(net.calls.rpc).toContainEqual({ name: "reset_session", body: { p_session: SESSION } });
-  await page.getByRole("button", { name: "Customer" }).click();
-  await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
-});
-
-test("S3 saying no keeps everything", async ({ page, context }) => {
-  const net = await setup(context, page, [order("placed")]);
-  await page.goto("/console/");
-  await page.getByRole("button", { name: "Kitchen" }).click();
-  await page.getByRole("button", { name: "Reset demo" }).click();
-  await page.getByRole("button", { name: "No, keep" }).click();
-  await expect(page.getByText("No. 0f0f0f0f")).toBeVisible();
-  expect(net.calls.rpc.filter((c) => c.name === "reset_session")).toHaveLength(0);
 });
 
 test("S3 when the other device resets, this one clears too", async ({ page, context }) => {

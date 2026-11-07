@@ -9,6 +9,7 @@ import { Styleguide } from "./ui/Styleguide";
 import { styleguideOn } from "./ui/flag";
 import { roleFromPath, roleTitle } from "./lib/roles";
 import { applyTheme } from "./lib/theme";
+import { dropOldJoin } from "./lib/session";
 import { watchForUpdates } from "./lib/updates";
 import { initAnalytics, reportUncaught } from "./lib/analytics";
 
@@ -18,6 +19,7 @@ let store: Storage | null = null;
 try { store = window.localStorage; } catch { /* storage blocked: the clock decides */ }
 watchForUpdates(navigator.serviceWorker, document, () => window.location.reload());   // an open installed app gets the new build (#320)
 applyTheme(store, document);   // Day or Night; index.html already did it for the first paint
+dropOldJoin();   // story #938: a key an older version saved is removed before anything reads a session
 const path = window.location.pathname;
 const role = roleFromPath(path);
 if (role) document.title = roleTitle(role);

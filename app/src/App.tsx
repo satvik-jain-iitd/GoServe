@@ -29,7 +29,7 @@ import { FeedbackSheet } from "./screens/FeedbackSheet";
 import { ensureSession, fetchMenuRows, fetchRiderCard, getClient, type RiderCard } from "./lib/supabase";
 import { openTill } from "./lib/browse";
 import { AccountScreen } from "./screens/AccountScreen";
-import { currentSession, scopeFor, joinCode, joinLink, joinSession, rememberJoin, resetSession } from "./lib/session";
+import { currentSession, scopeFor } from "./lib/session";
 import { MenuScreen } from "./screens/MenuScreen";
 import { BillScreen } from "./screens/BillScreen";
 import { OFFERS_ON } from "./lib/quote";
@@ -141,14 +141,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [arrived, setArrived] = useState<Set<string>>(new Set());
   // The live list runs for the kitchen, the rider, and the customer while the tracker is on screen.
-  // A device that opened a ?join= link joins that session first; the live list waits for it (story #52).
-  const [ready, setReady] = useState(() => !joinCode(window.location.search));
   // Autopilot (story #53): 'demo' is the offline story played from local data; 'auto' is the autopilot moving a real order.
   const [auto, setAuto] = useState(false);
   const [demo, setDemo] = useState(false);
   const [autoNote, setAutoNote] = useState<string | null>(null);
   const [resumed, setResumed] = useState(false);   // only the customer app (not the demo console) looks once, at load, for an order that is still open
-  const live = useLiveOrders(ready && !demo && (auto || role === "kitchen" || role === "rider" || role === "split" || role === "ops" || (role === "customer" && (step === "placed" || step === "orders" || (lock === "customer" && !resumed)))), lock === "kitchen" || lock === "rider" ? lock : undefined);
+  const live = useLiveOrders(!demo && (auto || role === "kitchen" || role === "rider" || role === "split" || role === "ops" || (role === "customer" && (step === "placed" || step === "orders" || (lock === "customer" && !resumed)))), lock === "kitchen" || lock === "rider" ? lock : undefined);
   const { orders, setOrders } = live;
   const sawLoading = useRef(false);
   useEffect(() => {
@@ -163,7 +161,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       setStep("placed");
     }
   }, [live.loading, orders, resumed, lock, demo, step, placed]);
-  const ops = useOps(ready && !demo && role === "ops", orders, api);   // the offline story never asks the server
+  const ops = useOps(!demo && role === "ops", orders, api);   // the offline story never asks the server
   const keyRef = useRef<{ fingerprint: string; key: string } | null>(null);
   // Delivered by hand (story S-C): the delivery question for the customer's order, the Yes, and the Not yet.
   const [confirmCfg, setConfirmCfg] = useState<ConfirmCfg>(DEFAULT_CFG);
@@ -391,23 +389,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }
 
   useEffect(() => {
-    const code = joinCode(window.location.search);
-    if (!code) return;
-    (async () => {
-      try {
-        await ensureSession();
-        await joinSession(getClient(), code);
-        rememberJoin(code);
-      } catch (e) {
-        live.setError(e instanceof Error ? e.message : "Could not join that demo.");
-      } finally {
-        window.history.replaceState(null, "", window.location.pathname);
-        setReady(true);
-      }
-    })();
-  }, []);
-
-  useEffect(() => {
     if (lock && lock !== "customer") return;   // story H2: the kitchen, rider, ops and admin apps have nothing to sell
     if (!lock) return void loadMenu(() => fetchMenuRows(), window.localStorage).then((m) => { setMenu(m); setMenuError(null); }, (e: Error) => setMenuError(e.message));
     if (!pin) return;
@@ -567,18 +548,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     else setAuto(true);
   }
 
-  async function reset() {
-    pushTrail("reset demo");
-    await resetSession(getClient(), await currentSession());
-    setOrders([]);
-    live.setLags([]);
-    setPlaced(null);
-    setStep("menu");
-    setCart({});
-    setArrived(new Set());
-    keyRef.current = null;
-  }
-  const shareLink = async () => joinLink(window.location.href, await currentSession());
 
   // Story D2: the rider card appears once a rider has the order; the database answers only for this customer's own order.
   const [rider, setRider] = useState<RiderCard | null>(null);
@@ -844,7 +813,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       {nameOpen && <NameSheet onDone={(n) => { if (n) setName(n); setNameAsked(true); setNameOpen(false); }} />}
       {toast && <p role="status" className="otp-toast">{toast}</p>}
       {demo && <p role="status" className="notice"><strong>Offline demo</strong></p>}
-      {!lock && <DemoBar onReset={reset} getLink={shareLink} autoOn={auto || demo} autoNote={autoNote} onAuto={toggleAuto} />}
+      {!lock && <DemoBar autoOn={auto || demo} autoNote={autoNote} onAuto={toggleAuto} />}
       {role === "kitchen" && !framed && kitchenView}
       {role === "rider" && !framed && riderView}
       {role === "ops" && (lock === "ops" ? <AdminGate>{opsView}</AdminGate> : opsView)}
