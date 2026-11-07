@@ -68,6 +68,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
         <button type="button" className="ui-ticket-open" aria-label={`Open ticket ${shortId(o.id)}`} onClick={() => setOpenId(o.id)}>
           <span className="ui-ticket-head"><span className="mono">No. {shortId(o.id)} · {hhmm(o.created_at)}</span><span className={`ui-tag ${cls === "cooking" ? "" : cls}`}>{word}</span></span>
           {lines(o)}
+          {o.instructions && <span className="ui-ticket-note"><span className="mono">Says</span><span className="ui-ticket-note-text">{o.instructions}</span></span>}
         </button>
         {next && o.status !== "placed" ? <button type="button" className="ui-btn big" aria-label={`${next.label} ${shortId(o.id)}`} disabled={busyId === o.id} onClick={() => void step(o)}>{next.label}</button>
           : o.status === "placed" ? null   // story #934: a new order is a tap target; Accept and Decline are on its sheet
@@ -110,6 +111,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
               <div className="ui-slip-head"><span>Placed {hhmm(opened.created_at)}</span><span>Cash at door</span></div>
               <div className="ui-slip-stamp"><span className={`ui-stamp ${cls}`}>{word}</span></div>
               {lines(opened, true)}
+              {opened.instructions && <><div className="ui-slip-rule" /><div className="ui-deliver"><span className="mono ui-kicker">{(opened.customer_name?.trim().split(/\s+/)[0]) || "The customer"} says</span><span>{opened.instructions}</span></div></>}
               <div className="ui-slip-rule" />
               <div className="ui-deliver"><span className="mono ui-kicker">Deliver to</span><b>{opened.customer_name || "The customer"}</b><span>{opened.address}</span></div>
               <div className="ui-slip-rule" />

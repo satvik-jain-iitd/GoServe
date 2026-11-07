@@ -9,6 +9,7 @@ import { useState } from "react";
 type Props = {
   lines: Line[]; total: number; kitchenName: string; pin: string | null;
   address: string; onAddress: (v: string) => void;
+  note: string; onNote: (v: string) => void;   // story #935: one optional line for the kitchen, up to 200 characters
   details?: { name: string; phone: string; onName: (v: string) => void; onPhone: (v: string) => void; gate?: boolean };   // the customer app also asks who and which phone (story B3)
   offers?: { quote: Quote; codeError: string | null; onApply: (code: string) => void; onRemove: () => void };   // story #588: the quote's bill and the Offers block (boards C1, C2)
   soldOut?: { id: string; name: string; alt: Alternative | null | undefined; canSwap: boolean; onSwap: () => void; onRemove: () => void };   // story #619, board L3: the first dish in the bill that is sold out
@@ -17,6 +18,7 @@ type Props = {
   onBack: () => void; onPlace: () => void;
 };
 
+export const NOTE_MAX = 200;
 const plain = (paise: number) => formatRupees(paise).replace("₹", "");
 export const BackChevron = ({ label, onClick }: { label: string; onClick: () => void }) => (
   <button type="button" className="ui-back" aria-label={label} onClick={onClick}>
@@ -24,7 +26,7 @@ export const BackChevron = ({ label, onClick }: { label: string; onClick: () => 
   </button>
 );
 
-export function BillScreen({ lines, total, kitchenName, pin, address, onAddress, details, offers, soldOut, pay, sending, error, onBack, onPlace }: Props) {
+export function BillScreen({ lines, total, kitchenName, pin, address, onAddress, note, onNote, details, offers, soldOut, pay, sending, error, onBack, onPlace }: Props) {
   const [typed, setTyped] = useState("");
   const q = offers?.quote;
   const empty = lines.length === 0;
@@ -119,6 +121,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
               </>
             )}
             <div className="ui-field"><label htmlFor="address">Address · food gets delivered here</label><textarea id="address" rows={2} value={address} maxLength={300} onChange={(e) => onAddress(e.target.value)} /></div>
+            <div className="ui-field"><label htmlFor="note">Anything the kitchen should know? · optional</label><textarea id="note" rows={2} value={note} maxLength={NOTE_MAX} placeholder="Allergies, spice, no onion" onChange={(e) => onNote(e.target.value)} /><p className="mono ui-note-count"><span>The cook reads these exact words</span><span>{note.length} / {NOTE_MAX}</span></p></div>
             {pay && (
               <fieldset className="ui-pay" role="radiogroup" aria-label="How you pay">
                 <legend>How you pay</legend>

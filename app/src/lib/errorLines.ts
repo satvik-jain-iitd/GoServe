@@ -14,6 +14,7 @@ export function customerLine(action: CustomerAction, code: string, message: stri
   if (code === "kill_switch") return "Orders are paused. Please try again soon.";
   if (code === "kitchen_closed") return opensAt ? `The kitchen closed just now. It opens at ${openingClock(opensAt)}.` : "The kitchen closed just now. Check back later.";
   if (code === "zone_closed") return "We are very busy right now. Please try again in a few minutes.";
+  if (code === "instructions_too_long") return "Keep the note to 200 characters.";   // story #935
   if (code === "session_order_cap") return "That is the most orders one phone can place today.";
   if (action === "feedback") return "Could not send the note. Try again.";
   if (code === "sold_out" || code === "dish_sold_out") return BILL;   // story #619: a dish went sold out; the Bill says which and offers the way out
