@@ -9,11 +9,12 @@ export type Answer = { ok: true; order: Record<string, unknown> } | { ok: false;
 export type Deps = {
   act: (token: string, orderId: string, action: string, reason: string | null) => Promise<Answer>;
   refundAfterCancel?: (orderId: string) => Promise<void>;   // story #348: a paid online order is refunded through the gateway after a cancel
+  dispatchAfterReady?: (orderId: string) => Promise<void>;   // story #940: Ready starts the rider search (the n8n status route did this before it was switched off)
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ACTIONS = ["accept", "prepare", "ready", "pickup", "arriving", "deliver", "confirm", "cancel"];
-const ORDER_FIELDS = ["id", "kitchen_id", "status", "total_paise", "address", "items", "bill", "created_at"];
+const ORDER_FIELDS = ["id", "kitchen_id", "status", "total_paise", "address", "items", "bill", "created_at", "updated_at", "paid_by"];
 const STATUS: Record<string, number> = { unauthorized: 401, not_allowed: 403, order_not_found: 404, already_done: 409, illegal_step: 409, cannot_cancel: 409, reason_required: 422, invalid_action: 400, order_action_failed: 500 };
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
@@ -27,6 +28,7 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
   try {
     const res = await deps.act(token, b.order_id, b.action, b.reason?.trim() || null);
     if (!res.ok) return json(STATUS[res.error] ?? 422, { ok: false, error: res.error, message: res.message });
+    if (b.action === "ready") await deps.dispatchAfterReady?.(b.order_id).catch(() => {});   // Ready stands; with no rider found the order waits and the ops screen shows it
     if (b.action === "cancel") await deps.refundAfterCancel?.(b.order_id).catch(() => {});   // the cancel stands; a refund that fails stays refund_due in the database for a retry
     return json(200, { ok: true, order: Object.fromEntries(ORDER_FIELDS.map((f) => [f, res.order[f]])) });
   } catch {
@@ -58,6 +60,8 @@ live.refundAfterCancel = async (orderId) => {
   await (await gatewayFromEnv()).refund(target.payment.provider_payment_id, target.payment.amount_paise);
   await rpc("payment_refunded_v2", { p_order: orderId });
 };
+// Story #940: the database picks the rider by the rule (dispatch_order_v2, service role only). Jev's advice and the decision row are not part of this door.
+live.dispatchAfterReady = async (orderId) => { await rpc("dispatch_order_v2", { p_order: orderId }); };
 export const handler = withCors(withRunLog("order-actions", makeHandler(live), writeRunLog));   // story #356: one run_log row per call
 
 if (import.meta.main) Deno.serve(handler);

@@ -58,8 +58,8 @@ test("S3 Yes closes the order: Paid cash, and the server got the Yes once", asyn
   await expect(page.getByText("Delivered. Thank you for eating with GoServe.")).toBeVisible();   // story #660: no Paid tail
   await expect(prompt(page)).toHaveCount(0);
   expect(net.calls.confirm).toHaveLength(1);
-  expect(net.calls.confirm[0].body).toMatchObject({ action: "confirm", order_id: ID });
-  expect(net.calls.confirm[0].headers["x-gs-token"]).toBe("demo-token");
+  expect(net.calls.confirm[0].body).toEqual({ order_id: ID, action: "confirm" });
+  expect(net.calls.confirm[0].headers["authorization"]).toMatch(/^Bearer .+/);
 });
 
 test("S4 a second Yes is not an error", async ({ page, context }) => {

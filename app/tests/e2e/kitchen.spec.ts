@@ -41,12 +41,11 @@ test("S2 Accept, then Start, then Ready: each tap sends the next step as the kit
   await page.getByRole("button", { name: "Ready 0f0f0f0f" }).click();
   await expect(page.getByText("Ready", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: /^(Accept|Start|Ready) 0f0f0f0f/ })).toHaveCount(0);   // no step button after Ready: the rider takes over
-  expect(net.calls.status.map((c) => c.body)).toEqual([
-    { action: "status", session_id: SESSION, order_id: ID, to_status: "accepted", actor: "kitchen" },
-    { action: "status", session_id: SESSION, order_id: ID, to_status: "preparing", actor: "kitchen" },
-    { action: "status", session_id: SESSION, order_id: ID, to_status: "ready", actor: "kitchen" },
+  expect(net.calls.status.map((c) => c.body)).toEqual([   // story #940: the order and the step only; who is asking comes from the token
+    { order_id: ID, action: "accept" }, { order_id: ID, action: "prepare" }, { order_id: ID, action: "ready" },
   ]);
-  expect(net.calls.status[0].headers["x-gs-token"]).toBe("demo-token");
+  expect(net.calls.status[0].headers["authorization"]).toMatch(/^Bearer .+/);
+  expect(net.calls.status[0].headers["x-gs-token"]).toBeUndefined();
 });
 
 test("S2 a live update of the same order moves its card and its button", async ({ page, context }) => {

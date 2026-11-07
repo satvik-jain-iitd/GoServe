@@ -52,11 +52,8 @@ test("S2 online, Autopilot moves the order by itself and each step is sent as th
   await page.goto("/console/");
   await page.getByRole("button", { name: "Autopilot" }).click();
   await expect.poll(() => net.calls.status.length, { timeout: 10000 }).toBe(6);
-  expect(net.calls.status.map((c) => [c.body.action, c.body.actor, c.body.to_status ?? c.body.event])).toEqual([
-    ["status", "kitchen", "accepted"], ["status", "kitchen", "preparing"], ["status", "kitchen", "ready"],
-    ["status", "rider", "out_for_delivery"], ["event", "rider", "order.arriving"], ["status", "rider", "delivered"],
-  ]);
-  expect(net.calls.status.every((c) => c.body.order_id === ID && c.headers["x-gs-token"] === "demo-token")).toBe(true);
+  expect(net.calls.status.map((c) => c.body.action)).toEqual(["accept", "prepare", "ready", "pickup", "arriving", "deliver"]);
+  expect(net.calls.status.every((c) => c.body.order_id === ID && /^Bearer .+/.test(c.headers["authorization"]))).toBe(true);
   await expect(page.getByText("Offline demo")).toHaveCount(0);
   await page.waitForTimeout(900);
   expect(net.calls.status).toHaveLength(6);   // it stops after Delivered
@@ -94,7 +91,7 @@ test("S1 online but the server cannot be reached and there is no order: Autopilo
 
 test("S1 if the server cannot be reached while Autopilot runs, it falls back to the offline story", async ({ page, context }) => {
   await setup(context, page, [order("placed")]);
-  await context.route("https://orders.test/**", (route) => route.abort());   // the network fails after the page is up
+  await context.route("https://test.supabase.co/functions/v1/order-actions", (route) => route.abort());   // the network fails after the page is up
   await page.goto("/console/");
   await page.getByRole("button", { name: "Autopilot" }).click();
   await expect(page.getByText("Offline demo")).toBeVisible({ timeout: 5000 });
@@ -115,7 +112,7 @@ test("S2 online, a refused step (kill switch) stops Autopilot after one call and
 
 test("S1 the offline story never asks the server for a decision, even if the phone could reach it", async ({ page, context }) => {
   await setup(context, page, [order("placed")]);
-  await context.route("https://orders.test/**", (route) => route.abort());   // the first step fails, so the story goes offline
+  await context.route("https://test.supabase.co/functions/v1/order-actions", (route) => route.abort());   // the first step fails, so the story goes offline
   const asked: string[] = [];
   page.on("request", (r) => { if (r.url().startsWith("https://orders.test") && (r.postData() ?? "").includes('"decide"')) asked.push(r.url()); });
   await page.goto("/console/");

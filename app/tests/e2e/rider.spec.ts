@@ -20,11 +20,10 @@ test("S1 rider steps: pick up, arriving, delivered each send their step as the r
   await page.getByRole("button", { name: "Next delivery" }).click();   // H11: the delivered slip stays until the rider lets it go
   await expect(page.getByText("No. 0f0f0f0f")).toHaveCount(0);   // delivered orders leave the Job tab
   expect(net.calls.status.map((c) => c.body)).toEqual([
-    { action: "status", session_id: SESSION, order_id: ID, to_status: "out_for_delivery", actor: "rider" },
-    { action: "event", session_id: SESSION, order_id: ID, event: "order.arriving", actor: "rider" },
-    { action: "status", session_id: SESSION, order_id: ID, to_status: "delivered", actor: "rider" },
+    { order_id: ID, action: "pickup" }, { order_id: ID, action: "arriving" }, { order_id: ID, action: "deliver" },
   ]);
-  expect(net.calls.status[0].headers["x-gs-token"]).toBe("demo-token");
+  expect(net.calls.status[0].headers["authorization"]).toMatch(/^Bearer .+/);
+  expect(net.calls.status[0].headers["x-gs-token"]).toBeUndefined();
 });
 
 test("S1 the rider list shows only ready and on-the-road orders, and a live order appears", async ({ page, context }) => {

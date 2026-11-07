@@ -19,7 +19,7 @@ import { takeReturn } from "./lib/auth";
 import { alertsState, readOff, turnAlertsOff, writeOff, type Alerts } from "./lib/alerts";
 import { loadProfile, saveProfile } from "./lib/profile";
 import { capture } from "./lib/analytics";
-import { addEvent, changeStatus, confirmDelivery, orderDeps, placeOrder, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
+import { actDeps, addEvent, changeStatus, confirmDelivery, orderDeps, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
 import { confirmAt, DEFAULT_CFG, mayAsk, notYet, reaskMs, type ConfirmCfg } from "./lib/confirm";
 import { fetchOrders } from "./lib/live";
 import { pushTrail } from "./lib/trail";
@@ -34,7 +34,7 @@ import { MenuScreen } from "./screens/MenuScreen";
 import { BillScreen } from "./screens/BillScreen";
 import { OFFERS_ON } from "./lib/quote";
 import { watchMenu } from "./lib/liveMenu";
-import { ordersV2On, placeOrderV2, PriceChanged, v2Deps } from "./lib/ordersV2";
+import { placeOrderV2, PriceChanged, v2Deps } from "./lib/ordersV2";
 import { useOffers } from "./lib/useOffers";
 import { openOrderToResume } from "./lib/resume";
 import { SignIn } from "./screens/SignIn";
@@ -107,7 +107,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }, [lock]);
   const wall = lock === "customer";   // the customer app's front door: a signed-out customer meets Google (or the phone code) before the menu
   const gate = lock === "customer" && otpSetting !== undefined && otpLoginOn(otpSetting, import.meta.env, window.localStorage);
-  const ordersV2 = lock === "customer" && ordersV2On(import.meta.env, window.localStorage);   // story #590: POST /orders instead of the v1 webhook
   const [verified, setVerified] = useState(false);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);   // story #667: null = not asked yet; the first screen waits so a returning customer never sees it flash
   const [otpOpen, setOtpOpen] = useState(false);
@@ -364,7 +363,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setConfirming(true);
     setConfirmError(null);
     try {
-      const answer = await confirmDelivery({ sessionId: await currentSession(), orderId: placed.id }, api());
+      const answer = await confirmDelivery({ orderId: placed.id }, actDeps());
       const saved = answer.order ?? { ...placed, status: "delivered", updated_at: new Date().toISOString() };   // "Already done": show the delivered state, no line
       setOrders((cur) => (cur.some((o) => o.id === saved.id) ? mergeOrder(cur, { ...cur.find((o) => o.id === saved.id)!, status: saved.status, updated_at: saved.updated_at, paid_by: saved.paid_by ?? null }) : cur));
       setPlaced({ ...placed, status: saved.status, updated_at: saved.updated_at, paid_by: saved.paid_by ?? null });
@@ -462,8 +461,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         setOrders((cur) => mergeOrder(cur, { ...order, status: "cancelled", updated_at: new Date().toISOString() }));
         return null;
       }
-      const deps = { sessionId: order.session_id, orderId: order.id, actor };
-      const { order: saved } = action.kind === "status" ? await changeStatus({ ...deps, to: action.to }, api()) : await addEvent({ ...deps, event: action.event }, api());
+      const deps = { orderId: order.id };
+      const { order: saved } = action.kind === "status" ? await changeStatus({ ...deps, to: action.to }, actDeps()) : await addEvent({ ...deps, event: action.event }, actDeps());
       setOrders((cur) => mergeOrder(cur, { ...order, status: saved.status, updated_at: saved.updated_at }));
       if (action.kind === "event") setArrived((cur) => new Set(cur).add(order.id));
       return null;
@@ -632,7 +631,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const offers = useOffers(OFFERS_ON && lock === "customer" && step === "bill", area?.kind === "ok" ? area.kitchen.id : null, pin, orderItems);   // story #588
   const total = offers.quote ? offers.quote.to_pay_paise : cartTotal(lines);
   const dead = lines.find((l) => l.dish.available === false && !swapped.includes(l.dish.id));   // the first dish in the bill that is sold out
-  const canSwap = ordersV2 && OFFERS_ON;   // the swap is priced by POST /quote and ordered by POST /orders
+  const canSwap = OFFERS_ON;   // the swap is priced by POST /quote and ordered by POST /orders
   const takeOut = (id: string) => { setCart((c) => changeQty(c, id, -(c[id] ?? 0))); setSwapped((s) => s.filter((x) => x !== id)); };
   // No alternative (or no way to ask): the item goes out, the rest of the bill is kept, and the menu opens with the dish stamped Sold out.
   useEffect(() => {
@@ -676,6 +675,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     void place();
   }, [pendingPlace, otpOpen, nameOpen, nameAsked, name]);   // eslint-disable-line react-hooks/exhaustive-deps
 
+  const readPinOrEmpty = () => { try { return window.localStorage.getItem("gs-pin") ?? ""; } catch { return ""; } };   // the console has no area step; it uses the pin this phone saved
+  async function demoKitchenId(): Promise<string | null> {
+    const { data } = await getClient().from("kitchens").select("id").eq("active", true).eq("open", true).limit(1);
+    return (data?.[0] as { id?: string } | undefined)?.id ?? null;
+  }
+
   async function place() {
     if (lock && lock !== "customer") return;   // story H2: only the customer app and the demo console place orders
     if (gate && !verified) { setOtpOpen(true); return; }
@@ -687,14 +692,14 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       const items = orderItems;
       const fingerprint = JSON.stringify([items, address.trim()]);
       if (keyRef.current?.fingerprint !== fingerprint) keyRef.current = { fingerprint, key: crypto.randomUUID() };
-      const sessionId = await currentSession();
+      await currentSession();   // the sign-in must exist before the order is sent
       if (lock === "customer" && !(await saveProfile(getClient(), await ensureSession(), { name, phone, address, pin }))) {   // the kitchen and the rider need the name and phone; place_order copies them
         setError("Could not save your details. Try again.");
         return;
       }
-      const { order, confirm } = ordersV2 && areaKitchenId
-        ? await placeOrderV2({ kitchenId: areaKitchenId, pin: pin ?? "", items, address: address.trim(), key: keyRef.current.key, expectedPaise: total, code: offers.code, none: offers.none, drop: dropFor(from, fixAddress, address) }, v2Deps())
-        : await placeOrder({ sessionId, key: keyRef.current.key, items, address: address.trim() }, api());
+      const kitchenId = areaKitchenId ?? (lock ? null : await demoKitchenId());   // the demo console has no area step: it orders from the first open kitchen
+      if (!kitchenId) throw new Error("Choose where the food goes first.");   // story #940: the order is placed for a kitchen by POST /orders, as the signed-in user
+      const { order, confirm } = await placeOrderV2({ kitchenId, pin: pin ?? (lock ? "" : readPinOrEmpty()), items, address: address.trim(), key: keyRef.current.key, expectedPaise: total, code: offers.code, none: offers.none, drop: dropFor(from, fixAddress, address) }, v2Deps());
       setPlaced(order);
       capture("order_placed", { items_count: lines.length });
       setPlacedLines(lines.map((l) => ({ name: l.dish.name, qty: l.qty, paise: l.line_paise })));

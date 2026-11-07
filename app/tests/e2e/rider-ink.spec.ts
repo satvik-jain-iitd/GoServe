@@ -21,7 +21,7 @@ test("S1 the Job tab holds the one delivery in hand: pick up, on the way, delive
   await expect(page.getByText("Cash collected")).toBeVisible();
   await page.getByRole("button", { name: "Next delivery" }).click();
   await expect(page.getByRole("heading", { name: "Waiting for a delivery" })).toBeVisible();
-  expect(net.calls.status.map((c) => c.body.to_status ?? c.body.event)).toEqual(["out_for_delivery", "order.arriving", "delivered"]);
+  expect(net.calls.status.map((c) => c.body.action)).toEqual(["pickup", "arriving", "deliver"]);
 });
 
 test("S2 Today lists the deliveries so far and the cash in hand", async ({ page, context }) => {

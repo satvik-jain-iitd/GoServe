@@ -25,10 +25,10 @@ test('S1 token: the right token passes; wrong, missing or unset token does not',
   assert.equal(run('check_token.js', { ...cfg, demo_token: undefined, headers: {} }).token_ok, false);
 });
 
-test('S1 route: only place and status are known actions', () => {
+test('S1 route: the order actions are off (story #940); only decide, health and feedback are known', () => {
   const cfg = { demo_token: 'a', headers: { 'x-gs-token': 'a' } };
-  assert.equal(run('check_token.js', { ...cfg, body: { action: 'place' } }).action, 'place');
-  assert.equal(run('check_token.js', { ...cfg, body: { action: 'status' } }).action, 'status');
+  for (const a of ['place', 'status', 'event', 'confirm']) assert.equal(run('check_token.js', { ...cfg, body: { action: a } }).action, 'bad', a);   // the demo token alone can no longer place, move or confirm an order
+  for (const a of ['decide', 'health', 'feedback']) assert.equal(run('check_token.js', { ...cfg, body: { action: a } }).action, a, a);
   assert.equal(run('check_token.js', { ...cfg, body: { action: 'drop table' } }).action, 'bad');
   assert.equal(run('check_token.js', { ...cfg }).action, 'bad');
 });

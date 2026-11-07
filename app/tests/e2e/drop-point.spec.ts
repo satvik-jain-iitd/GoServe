@@ -8,7 +8,6 @@ const quote = { ok: true, kitchen_id: "k-1", lines: [], item_total_paise: 25000,
 const placed = { ok: true, created: true, order: { id: "0f0f0f0f-1111-4222-8333-444444444444", kitchen_id: "k-1", status: "placed", total_paise: 29000, address: "x", items: [], bill: {}, created_at: "2026-11-06T10:00:00Z" } };
 
 async function start(context: any, page: Page) {
-  await context.addInitScript(() => { try { localStorage.setItem("gs-orders-v2", "1"); } catch { /* blocked */ } });
   await setup(context, page, [], { pin: null });
   const orders: any[] = [];
   await context.route("https://test.supabase.co/functions/v1/quote", (r: any) => r.request().method() === "OPTIONS" ? r.fulfill({ status: 204, headers: CORS }) : r.fulfill({ status: 200, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(quote) }));
