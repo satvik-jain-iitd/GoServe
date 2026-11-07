@@ -19,5 +19,11 @@ class Scope(unittest.TestCase):
             self.assertIn(m["startUrl"].strip("/").split("/")[0], m["packageId"] + m["webManifestUrl"], p.parent.name)   # /rider/ goes with in.goserve.rider
 
 
+class Orientation(unittest.TestCase):
+    def test_story_983_every_twa_stays_upright(self):
+        for p in sorted(ROOT.glob("*/twa-manifest.json")):
+            self.assertEqual(json.loads(p.read_text()).get("orientation"), "portrait", p.parent.name)
+
+
 if __name__ == "__main__":
     unittest.main()
