@@ -18,7 +18,7 @@ export function parsePins(text: string): { pins: string[]; bad: string[] } {
 }
 
 const MESSAGES: Record<string, string> = {
-  no_such_user: "No account has that email yet. Ask them to sign in with Google once, then add them.",   // every kind with no account becomes an invite now (story #968); kept for an old database (story 875); only an admin must exist first
+  no_such_user: "No admin account has that email yet. Ask them to sign in to the admin app with Google once, then add them.",   // an admin with no account becomes an invite since story #968; kept for a database without the migration (story 875); only an admin must exist first
   last_admin: "This is the last admin. Add another admin first.",
   not_allowed: "Not allowed.",
   invalid_kind: "Pick a role, and a kitchen for kitchen staff.",
