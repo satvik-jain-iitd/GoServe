@@ -62,6 +62,10 @@ export const locOf = (k: Pick<KitchenRow, "lat" | "lng" | "location_accuracy_m" 
 export const addKitchen = async (c: Client, k: { name: string; address: string; phone: string; pins: string[]; opensAt?: string; closesAt?: string; loc?: Loc | null }) =>
   adminMessage((await c.from("kitchens").insert({ name: k.name, address: k.address || null, phone: k.phone || null, pin_codes: k.pins, opens_at: k.opensAt || null, closes_at: k.closesAt || null, ...(k.loc ? locColumns(k.loc) : {}) })).error);
 export const setKitchenLocation = async (c: Client, id: string, loc: Loc) => adminMessage((await c.from("kitchens").update(locColumns(loc)).eq("id", id)).error);
+// Story #990: the details of a kitchen after Add. The location has its own call above.
+export type KitchenDetails = { name: string; address: string; phone: string; pins: string[]; opensAt: string; closesAt: string };
+export const setKitchenDetails = async (c: Client, id: string, k: KitchenDetails) =>
+  adminMessage((await c.from("kitchens").update({ name: k.name, address: k.address || null, phone: k.phone || null, pin_codes: k.pins, opens_at: k.opensAt || null, closes_at: k.closesAt || null }).eq("id", id)).error);
 export type RiderListRow = { user_id: string; name: string | null; phone: string | null; online: boolean; lat?: number | null; lng?: number | null; updated_at?: string };
 export async function listRiders(c: Client): Promise<RiderListRow[]> {
   const { data, error } = await c.from("riders").select("user_id, name, phone, online, lat, lng, updated_at").order("name");
