@@ -118,7 +118,7 @@ for (const theme of ["day", "night"] as const) {
     await page.goto("/customer/");
     await page.getByRole("button", { name: "Back to menu" }).click();
     await page.getByRole("button", { name: "History" }).click();
-    await page.getByRole("heading", { name: "Your orders" }).waitFor();
+    await page.getByRole("heading", { name: "History", exact: true }).waitFor();
     await shot("Orders");
     await page.getByRole("button", { name: /^You: / }).click();
     await page.getByRole("dialog", { name: "You" }).waitFor();

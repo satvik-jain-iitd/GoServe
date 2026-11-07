@@ -5,11 +5,11 @@ import { order, setup, scan as axeScan } from "./helpers";
 const you = (page: Page) => page.getByRole("button", { name: /^You: / });
 const KITCHEN = { id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: "9876543210", pin_codes: ["110016"], open: true, active: true, lat: null, lng: null, opens_at: "00:00:00", closes_at: "23:59:00" };
 
-test("S1 a tap on a slip opens it, a delivered one offers See the menu and no Order again", async ({ page, context }) => {
+test("S1 a tap on a slip opens it, a delivered slip (the tracker) offers See the menu and no Order again", async ({ page, context }) => {
   await setup(context, page, [{ ...order("delivered", "2020-01-01T11:00:00Z"), paid_by: "cash" }]);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "History" }).click();
-  await expect(page.getByText("1 order", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "History", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /Butter Chicken/ }).click();
   await expect(page.getByRole("heading", { name: "Delivered", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "See the menu" })).toBeVisible();
@@ -100,7 +100,7 @@ for (const t of ["day", "night"] as const) {
     expect(await scan()).toEqual([]);
     await page.getByRole("button", { name: "Close", exact: true }).click();
     await page.getByRole("button", { name: "History" }).click();
-    await expect(page.getByRole("heading", { name: "Your orders" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "History", exact: true })).toBeVisible();
     expect(await scan()).toEqual([]);
   });
 }

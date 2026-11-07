@@ -14,7 +14,7 @@ type Props = {
   offers?: { quote: Quote; codeError: string | null; onApply: (code: string) => void; onRemove: () => void };   // story #588: the quote's bill and the Offers block (boards C1, C2)
   soldOut?: { id: string; name: string; alt: Alternative | null | undefined; canSwap: boolean; onSwap: () => void; onRemove: () => void };   // story #619, board L3: the first dish in the bill that is sold out
   pay?: { value: PayMethod; onChange: (v: PayMethod) => void };   // story #552: how you pay (the customer app only)
-  sending: boolean; error: string | null;
+  sending: boolean; error: string | null; notice?: string | null;   // story #977: what the History button could not put back
   onBack: () => void; onPlace: () => void;
 };
 
@@ -26,7 +26,7 @@ export const BackChevron = ({ label, onClick }: { label: string; onClick: () => 
   </button>
 );
 
-export function BillScreen({ lines, total, kitchenName, pin, address, onAddress, note, onNote, details, offers, soldOut, pay, sending, error, onBack, onPlace }: Props) {
+export function BillScreen({ lines, total, kitchenName, pin, address, onAddress, note, onNote, details, offers, soldOut, pay, sending, error, notice, onBack, onPlace }: Props) {
   const [typed, setTyped] = useState("");
   const q = offers?.quote;
   const empty = lines.length === 0;
@@ -38,6 +38,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
         <BackChevron label="Back to menu" onClick={onBack} />
         <h1>Your bill</h1>
       </header>
+      {notice && <p role="status" className="ui-note ui-again-line">{notice}</p>}
       <div className="ui-scroll">
         <section className="ui-slip ui-slip-pad" aria-label={empty ? "Empty bill" : "Items"}>
           <div className="ui-slip-body">
