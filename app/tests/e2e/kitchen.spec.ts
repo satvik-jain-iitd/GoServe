@@ -33,6 +33,7 @@ test("S1 orders already placed show when the kitchen opens", async ({ page, cont
 test("S2 Accept, then Start, then Ready: each tap sends the next step as the kitchen", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
   await openKitchen(page);
+  await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
   await page.getByRole("button", { name: "Accept 0f0f0f0f" }).click();
   await page.getByRole("button", { name: "Cooking", exact: true }).click();   // H11: Accept from the list stays on New; the ticket is now on Cooking
   await expect(page.getByText("Accepted", { exact: true })).toBeVisible();
@@ -60,6 +61,7 @@ test("S2 a refused tap shows the reason and keeps the button", async ({ page, co
   const net = await setup(context, page, [order("placed")]);
   net.state.reply = { status: 409, body: { ok: false, error: "illegal_step", message: "That step is not allowed now." } };
   await openKitchen(page);
+  await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
   await page.getByRole("button", { name: "Accept 0f0f0f0f" }).click();
   await expect(page.getByRole("alert")).toHaveText("That step is not allowed now.");
   await expect(page.getByRole("button", { name: "Accept 0f0f0f0f" })).toBeEnabled();

@@ -69,6 +69,7 @@ test("S1 one device: a tap in the kitchen app reaches the order the customer app
   const net = await setup(context, page, [order("placed")]);
   net.state.kitchen = "k-1";   // H3: the kitchen app is for kitchen staff
   await page.goto("/kitchen/");
+  await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
   await page.getByRole("button", { name: "Accept 0f0f0f0f" }).click();
   await page.getByRole("button", { name: "Cooking", exact: true }).click();   // H11: an accepted ticket moves to the Cooking tab
   await expect(page.getByText("Accepted", { exact: true })).toBeVisible();

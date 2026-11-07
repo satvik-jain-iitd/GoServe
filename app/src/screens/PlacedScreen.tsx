@@ -41,6 +41,8 @@ type Props = {
   onCall?: () => void;          // story H14: the Call tap is counted ("where is my food" calls)
   pay?: Pay;                    // story #552: an online order waits for its payment
   track?: Track;                // story #691: On the way, with the rider's place known
+  declined?: { reason: string; at: string } | null;   // story #934: the kitchen said no, in its own words
+  onOtherKitchen?: () => void;  // story #934: Try another kitchen
 };
 export type Track = { kitchen: LatLng; you: LatLng; rider: Point; name: string; phone: string | null };
 export type Pay = {
@@ -85,14 +87,14 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "At your door" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
-export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor }: Props) {
+export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, declined, onOtherKitchen }: Props) {
   const steps = trackerSteps(status);
   const eta = etaMinutes();
   const placed = new Date(placedAt);
   const door = new Date(placed.getTime() + eta * 60_000);
   const delivered = status === "delivered";
   const cancelled = status === "cancelled";
-  const title = status === "placed" ? "Order placed" : delivered ? "Delivered" : cancelled ? "Cancelled" : "Your order";
+  const title = status === "placed" ? "Order placed" : delivered ? "Delivered" : cancelled ? (declined ? "Declined" : "Cancelled") : "Your order";
   const head = [kitchenName, pin].filter(Boolean).join(" · ");
   return (
     <>
@@ -130,7 +132,7 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
         <section className="ui-slip ui-slip-pad" aria-label={delivered ? "Order, delivered" : "Order"}>
           <div className="ui-slip-body">
             <div className="ui-slip-head"><span>{head}</span><span>{delivered ? `${placed.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${clock12(placed)}` : `No. ${shortId(order.id)}`}</span></div>
-            <div className="ui-slip-stamp"><span className={`ui-stamp ${STAMP[status] ?? "placed"}`}>{statusLabel(status)}</span></div>
+            <div className="ui-slip-stamp"><span className={`ui-stamp ${STAMP[status] ?? "placed"}`}>{declined ? "Declined" : statusLabel(status)}</span></div>
             {pay && status === "placed" && (pay.state === "ready" || pay.state === "starting" || pay.state === "waiting") && <Countdown startedAt={pay.startedAt} />}
             {!cancelled && !delivered && <p className="ui-clock">About <b>{eta} min</b> · at your door by {clock12(door)}</p>}
             {delivered && confirmedAt && <p className="ui-clock">At your door <b>{clock12(new Date(confirmedAt))}</b></p>}
@@ -140,7 +142,7 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
               <div><span>Delivery</span><span>Free</span></div>
             </div>
             <div className="ui-slip-rule" />
-            <div className="ui-slip-total"><b>{pay?.state === "paid" ? "Paid online" : pay ? "To pay online" : delivered && paidBy === "cash" ? "Cash paid" : "Cash at door"}</b><span>{formatRupees(order.total_paise)}</span></div>
+            <div className="ui-slip-total"><b>{declined ? "Nothing to pay" : pay?.state === "paid" ? "Paid online" : pay ? "To pay online" : delivered && paidBy === "cash" ? "Cash paid" : "Cash at door"}</b><span>{declined ? formatRupees(0) : formatRupees(order.total_paise)}</span></div>
           </div>
         </section>
         <div className="ui-after">
@@ -154,7 +156,16 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
               <a className="ui-btn" href={`tel:${rider.phone}`} onClick={onCall}>Call {rider.name}</a>
             </div>
           )}
-          {cancelled && <p role="status"><strong>Your order was cancelled. Nothing to pay.</strong></p>}
+          {declined ? (
+            <>
+              <div role="status" className="ui-declined">
+                <p><strong>{kitchenName || "The kitchen"} could not take this order.</strong></p>
+                <p>“{declined.reason}”</p>
+                <p className="mono ui-declined-when">Declined {clock12(new Date(declined.at))} · {Math.max(0, Math.round((Date.parse(declined.at) - placed.getTime()) / 60_000))} min after you ordered</p>
+              </div>
+              <p className="ui-meta">Your money is not taken. If you paid online, it comes back in 5 to 7 days.</p>
+            </>
+          ) : cancelled && <p role="status"><strong>Your order was cancelled. Nothing to pay.</strong></p>}
           {asking && (
             <div role="group" aria-label="Delivery check" className="ui-closed ui-ask">
               <h3>Was your order delivered?</h3>
@@ -176,7 +187,8 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
         </div>
       </div>
       <div className="ui-bottom">
-        {(delivered || cancelled) && <button type="button" className="ui-btn big" onClick={onMenu}>{cancelled ? "Order again" : "See the menu"}</button>}
+        {(delivered || cancelled) && <button type="button" className="ui-btn big" onClick={onMenu}>{declined ? "Order something else" : cancelled ? "Order again" : "See the menu"}</button>}
+        {declined && onOtherKitchen && <button type="button" className="ui-btn ghost big" onClick={onOtherKitchen}>Try another kitchen</button>}
         {(status === "placed" || status === "accepted") && <button type="button" className="ui-btn ghost big" disabled={cancelling} onClick={onCancel}>Cancel order</button>}
         {track?.phone && status === "out_for_delivery" && <a href={`tel:${track.phone}`} className="ui-btn ghost big" onClick={onCall}>Call the rider</a>}
         {kitchenPhone && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
