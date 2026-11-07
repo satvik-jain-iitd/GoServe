@@ -1,6 +1,7 @@
 // The Feedback button and its sheet (story S-B, #94). A tester tells us what went wrong in ten seconds, without leaving the app.
 // The picture is the phone's own screenshot, picked from the gallery. The words, the screen, the order and the last 20 taps go with it.
 import { useEffect, useState } from "react";
+import { useSheetFit } from "../ui";
 import { buildPayload, defaultTopic, flushQueue, pictureToBase64, queueReport, SAVED_CARD, SENT_CARD, TEXT_MAX, topicsFor, type Doing, type Report } from "../lib/feedback";
 import { PlaceError } from "../lib/orders";
 import { readTrail } from "../lib/trail";
@@ -19,6 +20,7 @@ const BUILD = import.meta.env.VITE_BUILD ?? "dev";
 const phoneName = () => (navigator.userAgent.match(/\(([^)]+)\)/)?.[1] ?? "unknown").slice(0, 80);
 
 export function FeedbackSheet({ role, screen, order, getSession, send, preset, button = true }: Props) {
+  const fit = useSheetFit();   // story #954: the overlay follows the visual viewport
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [topic, setTopic] = useState(() => defaultTopic(role));   // story #661: the list is per app
@@ -90,7 +92,7 @@ export function FeedbackSheet({ role, screen, order, getSession, send, preset, b
     <>
       {button && <button type="button" className="btn small feedback-btn" onClick={() => { setOpen(true); setError(null); }}>Feedback</button>}
       {open && (
-        <div className="ui-sheet-back">
+        <div ref={fit} className="ui-sheet-back">
           <div role="dialog" aria-modal="true" aria-label="Feedback" className="ui-sheet">
             <div className="ui-sheet-head"><h2>Feedback</h2></div>
             <div className="ui-form ui-form-flush">

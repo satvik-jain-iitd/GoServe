@@ -4,7 +4,7 @@ import { addDish, deleteDish, listDishes, photoProblem, rupeesToPaise, setDish, 
 import { dishProblem } from "../lib/validate";
 import { formatRupees } from "../lib/money";
 import { getClient } from "../lib/supabase";
-import { DangerSheet, VegMark } from "../ui";
+import { DangerSheet, VegMark, useSheetFit } from "../ui";
 
 export function AdminMenu({ kitchenId, kitchenName, onError }: { kitchenId: string; kitchenName?: string; onError: (m: string | null) => void }) {
   const [dishes, setDishes] = useState<DishRow[]>([]);
@@ -63,6 +63,7 @@ export function AdminMenu({ kitchenId, kitchenName, onError }: { kitchenId: stri
 
 // Story #936, board M2-DishEdit: one sheet with every field of a dish. Save sends only what changed. Delete asks once more with the danger sheet of #955.
 function DishSheet({ dish, kitchenId, kitchenName, onError, onClose, onDone }: { dish: DishRow; kitchenId: string; kitchenName?: string; onError: (m: string | null) => void; onClose: () => void; onDone: () => Promise<void> }) {
+  const fit = useSheetFit();   // story #954: the overlay follows the visual viewport
   const [name, setName] = useState(dish.name);
   const [price, setPrice] = useState(String(dish.price_paise / 100));
   const [category, setCategory] = useState(dish.category ?? "");
@@ -117,7 +118,7 @@ function DishSheet({ dish, kitchenId, kitchenName, onError, onClose, onDone }: {
     );
   }
   return (
-    <div className="ui-sheet-back" onClick={onClose}>
+    <div ref={fit} className="ui-sheet-back" onClick={onClose}>
       <section className="ui-sheet ui-danger ui-dish-sheet" role="dialog" aria-modal="true" aria-label={`Edit ${dish.name}`} onClick={(e) => e.stopPropagation()}>
         <div className="ui-danger-head">
           <div><h2>{dish.name}</h2><span className="mono ui-danger-kicker">{kitchenName ? `Edit dish · ${kitchenName}` : "Edit dish"}</span></div>

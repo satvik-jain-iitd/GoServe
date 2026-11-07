@@ -1,5 +1,6 @@
 // The phone code sheets of the Ink journeys boards O1 to O9 (story #551): number, code with a resend timer, the contract's errors, a number that is already used, the name.
 import { useEffect, useRef, useState } from "react";
+import { useSheetFit } from "../ui";
 import { capture } from "../lib/analytics";
 import { finishSignIn, isMobile, sendCode, sendSignInCode, showPhone, verifyCode, type OtpResult } from "../lib/otp";
 import { getClient } from "../lib/supabase";
@@ -11,6 +12,7 @@ type Step = "number" | "code";
 // `welcome` (story #667, boards O0 and O0b): the same steps as the first full screen of the app, with Google under the number and no way to close it.
 // `googleOnly` (story 829, board O0g-B-GoogleFirst): the phone code switch is off, so the welcome screen is one tap: Continue with Google, nothing else.
 export function OtpSheet({ phone: start, onVerified, onClose, welcome = false, googleOnly = false }: { phone: string; onVerified: (phone: string) => void; onClose: () => void; welcome?: boolean; googleOnly?: boolean }) {
+  const fit = useSheetFit();   // story #954: the overlay follows the visual viewport
   const [phone, setPhone] = useState(isMobile(start) ? start : "");
   const [step, setStep] = useState<Step>("number");
   const [mode, setMode] = useState<"link" | "signin">("link");   // signin = the returning customer (O7)
@@ -83,7 +85,7 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false, g
       <p className="ui-welcome-foot">No app to install · no card needed</p>
     </main>
   ) : (
-    <div className="ui-sheet-back">
+    <div ref={fit} className="ui-sheet-back">
       <div role="dialog" aria-modal="true" aria-label="Confirm your number" className="ui-sheet">{inner}</div>
     </div>
   );
@@ -151,9 +153,10 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false, g
 
 // O9: asked once, after the first sign in. Skippable.
 export function NameSheet({ onDone }: { onDone: (name: string | null) => void }) {
+  const fit = useSheetFit();   // story #954
   const [name, setName] = useState("");
   return (
-    <div className="ui-sheet-back">
+    <div ref={fit} className="ui-sheet-back">
       <div role="dialog" aria-modal="true" aria-label="Your name" className="ui-sheet">
         <div className="ui-sheet-head"><h2>What should we call you?</h2></div>
         <div className="ui-field"><label htmlFor="otp-name">Your name</label><input id="otp-name" type="text" maxLength={80} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} /></div>

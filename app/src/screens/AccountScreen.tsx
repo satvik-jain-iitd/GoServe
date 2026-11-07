@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { DEFAULT_THEME, readPin, pinTheme, type Theme } from "../lib/theme";
 import { buildLabel } from "../lib/updates";
-import { TabBar } from "../ui";
+import { TabBar, useSheetFit } from "../ui";
 import { SignIn } from "./SignIn";
 
 type Props = {
@@ -19,6 +19,7 @@ type Props = {
 const store = (): Storage | null => { try { return window.localStorage; } catch { return null; } };
 
 export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAddress, alerts, onAlerts, alertsError, live, onGivenName, onForget, onDeleteAccount, onMenu, onOrders }: Props) {
+  const fit = useSheetFit();   // story #954: the overlay follows the visual viewport
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({ name, phone, address });   // story 640: Edit opens a draft; Save applies it, Cancel drops it
   const [look, setLook] = useState<Theme>(() => readPin(store()) ?? DEFAULT_THEME);
@@ -75,7 +76,7 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
         <p className="mono ui-legal">{buildLabel(import.meta.env.VITE_BUILD)}</p>
       </div>
       {deleting && (
-        <div className="ui-sheet-back">
+        <div ref={fit} className="ui-sheet-back">
           <div role="dialog" aria-modal="true" aria-label="Delete your account?" className="ui-sheet">
             <div className="ui-sheet-head"><h2>Delete your account?</h2></div>
             <p>Your orders, saved details and Google link are deleted. This cannot be undone.</p>
