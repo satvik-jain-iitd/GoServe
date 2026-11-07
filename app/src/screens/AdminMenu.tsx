@@ -133,8 +133,8 @@ function DishSheet({ dish, kitchenId, kitchenName, onError, onClose, onDone }: {
         <label className="ui-danger-label" htmlFor="d-name">Dish name</label>
         <input id="d-name" className="ui-sheet-input" type="text" value={name} onChange={(e) => setName(e.target.value)} />
         <div className="ui-two">
-          <div><label className="ui-danger-label tight" htmlFor="d-price">Price (₹)</label><input id="d-price" className="ui-sheet-input mono-input" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} /></div>
-          <div><label className="ui-danger-label tight" htmlFor="d-cat">Category</label><input id="d-cat" className="ui-sheet-input" type="text" value={category} onChange={(e) => setCategory(e.target.value)} /></div>
+          <div><label className="ui-danger-label" htmlFor="d-price">Price (₹)</label><input id="d-price" className="ui-sheet-input mono-input" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} /></div>
+          <div><label className="ui-danger-label" htmlFor="d-cat">Category</label><input id="d-cat" className="ui-sheet-input" type="text" value={category} onChange={(e) => setCategory(e.target.value)} /></div>
         </div>
         <div className="ui-row ui-row-static ui-sheet-switch"><span>Veg</span><input className="ui-switch" type="checkbox" role="switch" aria-label="Veg" checked={veg} onChange={(e) => setVeg(e.target.checked)} /></div>
         <div className="ui-row ui-row-static ui-sheet-switch"><span className="ui-stock"><span>In stock</span><span className="mono">Off = Sold out on the menu, the dish stays</span></span><input className="ui-switch" type="checkbox" role="switch" aria-label="In stock" checked={inStock} onChange={(e) => setInStock(e.target.checked)} /></div>
