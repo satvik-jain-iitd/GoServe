@@ -1,5 +1,5 @@
 // GoServe design system (story D1, #160). Every screen is built from these. Look and spacing come from ui.css and the tokens.
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { useCallback, useRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import "./ui.css";
 
 const cx = (...a: (string | false | undefined)[]) => a.filter(Boolean).join(" ");
@@ -60,10 +60,30 @@ export function Timeline({ steps, current, label }: { steps: string[]; current: 
   );
 }
 
+// Story #954: on iOS the keyboard shrinks the visual viewport and scrolls the layout viewport, so a fixed overlay drifts and leaves an empty band above the keyboard.
+// The overlay takes the visual viewport's height and top, so the sheet (which scrolls inside) keeps its title and its fields above the keyboard.
+export function useSheetFit() {
+  const off = useRef<(() => void) | null>(null);
+  return useCallback((el: HTMLElement | null) => {
+    off.current?.();
+    off.current = null;
+    const vv = typeof window === "undefined" ? null : window.visualViewport;
+    if (!el || !vv) return;
+    const fit = () => { el.style.height = `${vv.height}px`; el.style.top = `${vv.offsetTop}px`; el.style.bottom = "auto"; };
+    const reveal = (e: Event) => { const t = e.target as HTMLElement | null; if (t?.matches?.("input, textarea, select")) setTimeout(() => t.scrollIntoView?.({ block: "nearest" }), 300); };   // after the keyboard has come up
+    fit();
+    vv.addEventListener("resize", fit);
+    vv.addEventListener("scroll", fit);
+    el.addEventListener("focusin", reveal);
+    off.current = () => { vv.removeEventListener("resize", fit); vv.removeEventListener("scroll", fit); el.removeEventListener("focusin", reveal); };
+  }, []);
+}
+
 export function Sheet({ open, title, onClose, children }: { open: boolean; title: string; onClose: () => void; children: ReactNode }) {
+  const fit = useSheetFit();   // story #954: the overlay follows the visual viewport
   if (!open) return null;
   return (
-    <div className="ui-sheet-back" onClick={onClose}>
+    <div ref={fit} className="ui-sheet-back" onClick={onClose}>
       <section className="ui-sheet" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <div className="ui-sheet-head"><h2>{title}</h2><Button variant="ghost" onClick={onClose}>Close</Button></div>
         {children}
@@ -81,9 +101,10 @@ export type DangerProps = {
 };
 export const DANGER_HELPER = "The red button wakes up when the word matches. Until then a touch does nothing.";
 export function DangerSheet(p: DangerProps) {
+  const fit = useSheetFit();   // story #954: the overlay follows the visual viewport
   const id = p.id ?? "danger-word";
   return (
-    <div className="ui-sheet-back" onClick={p.onClose}>
+    <div ref={fit} className="ui-sheet-back" onClick={p.onClose}>
       <section className="ui-sheet ui-danger" role="dialog" aria-modal="true" aria-label={p.title} onClick={(e) => e.stopPropagation()}>
         <div className="ui-danger-head">
           <div><h2>{p.title}</h2><span className="mono ui-danger-kicker">{p.kicker}</span></div>

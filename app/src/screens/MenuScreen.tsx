@@ -5,7 +5,7 @@ import { filterDishes } from "../lib/browse";
 import { greeting, sectionsOf, thalisOf } from "../lib/home";
 import { creditLicence, creditLine, type Dish } from "../lib/menu";
 import { formatRupees } from "../lib/money";
-import { Empty, Stepper, TabBar, VegMark } from "../ui";
+import { Empty, Stepper, TabBar, VegMark, useSheetFit } from "../ui";
 
 type Props = {
   dishes: Dish[] | null; fromCache: boolean; slow?: boolean; error: string | null; onRetry: () => void;
@@ -208,8 +208,9 @@ function Hero({ veg, nonveg, closed, qty, onAdd, onChange }: { veg?: Dish; nonve
 }
 
 function Modal({ label, onClose, children }: { label: string; onClose: () => void; children: React.ReactNode }) {
+  const fit = useSheetFit();   // story #954: the overlay follows the visual viewport
   return (
-    <div className="ui-sheet-back" onClick={onClose}>
+    <div ref={fit} className="ui-sheet-back" onClick={onClose}>
       <section role="dialog" aria-modal="true" aria-label={label} className="ui-sheet ui-sheet-flush" onClick={(e) => e.stopPropagation()}>{children}</section>
     </div>
   );
