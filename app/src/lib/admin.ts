@@ -92,12 +92,22 @@ export async function claimInvites(c: Client): Promise<number> {
     return 0;
   }
 }
-/** Story #900: the admin removes a kitchen (deactivate, never delete). null when it worked, else a line in the admin's words. The database refuses while orders are open. */
+/** Story #900, #928: the admin removes a kitchen (deactivate, never delete). null when it worked, else a line that is true for the admin. */
+const COULD_NOT_REACH = "Could not reach GoServe. Check your connection and try again.";
 export async function removeKitchen(c: Client, kitchenId: string): Promise<string | null> {
   const { data, error } = await c.rpc("kitchen_remove_v2", { p_kitchen: kitchenId });
-  if (error) return error.message?.includes("not_allowed") ? "Only an admin can remove a kitchen." : "Could not remove the kitchen. Try again.";
+  if (error) {
+    if (error.message?.includes("not_allowed")) return "Only an admin can remove a kitchen.";
+    // The function missing on the project (PGRST202) or no network at all: the admin cannot fix this by tapping again, so the line says GoServe could not be reached.
+    if (error.code === "PGRST202" || !error.code || /fetch|network/i.test(error.message ?? "")) return COULD_NOT_REACH;
+    return "Could not remove the kitchen. Try again.";
+  }
   if (data?.ok === true) return null;
-  return data?.error === "orders_open" ? "This kitchen still has orders to finish. Remove it when they are done." : "Could not remove the kitchen. Try again.";
+  if (data?.error !== "orders_open") return "Could not remove the kitchen. Try again.";
+  const { count } = await c.from("orders").select("id", { count: "exact", head: true }).eq("kitchen_id", kitchenId).not("status", "in", "(delivered,cancelled)");
+  return typeof count === "number" && count > 0
+    ? `This kitchen has ${count} open ${count === 1 ? "order" : "orders"}. Finish or cancel them first.`
+    : "This kitchen has open orders. Finish or cancel them first.";
 }
 export const removePerson = async (c: Client, p: Person) => adminMessage((await c.rpc("admin_remove_person", { p_kind: p.kind, p_user: p.user_id, p_kitchen: p.kitchen_id })).error);
 
