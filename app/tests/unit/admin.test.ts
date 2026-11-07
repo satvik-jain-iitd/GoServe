@@ -193,3 +193,26 @@ describe("fitSize (story #921)", () => {
     expect(fitSize(8000, 1).height).toBe(1);
   });
 });
+
+// Story #985: the owner is one hardcoded address. The app's constant and the database's constant are the same string.
+describe("the owner account (story 985)", () => {
+  it("OWNER_EMAIL is the owner_email() of the migration", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const { OWNER_EMAIL } = await import("../../src/lib/admin");
+    const sql = readFileSync(resolve(__dirname, "../../../supabase/migrations/20261108100000_owner_admin.sql"), "utf8");
+    expect(sql.match(/select '([^']+)'::text/)?.[1]).toBe(OWNER_EMAIL);
+    expect(OWNER_EMAIL).toBe(OWNER_EMAIL.toLowerCase());
+  });
+  it("isOwner matches the address in any letter case and nothing else", async () => {
+    const { isOwner, OWNER_EMAIL } = await import("../../src/lib/admin");
+    expect(isOwner({ email: OWNER_EMAIL })).toBe(true);
+    expect(isOwner({ email: OWNER_EMAIL.toUpperCase() })).toBe(true);
+    expect(isOwner({ email: "someone@example.com" })).toBe(false);
+    expect(isOwner({ email: null })).toBe(false);
+  });
+  it("owner_admin says so in words", async () => {
+    const { adminMessage } = await import("../../src/lib/admin");
+    expect(adminMessage({ message: "owner_admin" })).toBe("The owner account cannot be removed.");
+  });
+});

@@ -1,7 +1,7 @@
 // The City of the admin app on the Ink v3 boards A5 (city), A6 (one kitchen) and A7 (add a kitchen) (story H12, #195; stories A2, A3, A5).
 import { useState } from "react";
 import { DangerSheet } from "../ui";
-import { addKitchen, addPerson, cancelInvite, inviteLink, parsePins, removeKitchen, removePerson, locOf, setKitchenLocation, type Invite, type KitchenRow, type Loc, type Person, type PersonKind, type RiderListRow } from "../lib/admin";
+import { addKitchen, addPerson, cancelInvite, inviteLink, isOwner, parsePins, removeKitchen, removePerson, locOf, setKitchenLocation, type Invite, type KitchenRow, type Loc, type Person, type PersonKind, type RiderListRow } from "../lib/admin";
 import { kitchenProblem } from "../lib/validate";
 import { getClient } from "../lib/supabase";
 import { AdminMenu } from "./AdminMenu";
@@ -71,6 +71,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
     </div>
   );
   const remove = async (p: Person) => {
+    if (p.kind === "admin" && isOwner(p)) return;   // story #985: never offered, never sent; the database refuses it too
     if (!window.confirm(`Remove ${p.email ?? p.user_id}? They lose access at once.`)) return;   // one tap less than a mistake
     const failed = await removePerson(getClient(), p);
     onError(failed);
@@ -166,7 +167,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
           </div>
         ))}
         {invites.filter((i) => i.kind === "rider" || i.kind === "admin").map(inviteRow)}
-        {people.filter((p) => p.kind === "admin").map((p) => <div key={p.user_id} className="ui-row ui-row-static"><span className="ui-row-label"><span>{firstName(p)}</span><span className="ui-row-sub mono">Admin · {p.email ?? p.user_id}</span></span>{removeButton(p)}</div>)}
+        {people.filter((p) => p.kind === "admin").map((p) => <div key={p.user_id} className="ui-row ui-row-static"><span className="ui-row-label"><span>{firstName(p)}</span><span className="ui-row-sub mono">Admin · {p.email ?? p.user_id}</span></span>{isOwner(p) ? <span className="ui-tag ready">Owner</span> : removeButton(p)}</div>)}
         {!addingPerson && <div className="ui-pad-y"><button type="button" className="ui-btn ghost" onClick={() => { onError(null); setAddingPerson(true); }}>+ Add a person</button></div>}
         {addingPerson && (
           <div className="ui-form ui-form-flush">
