@@ -1,3 +1,4 @@
+html { touch-action: pan-x pan-y; }   /* story 932: pan and scroll, never pinch */
 /* GoServe Ink v3 component sheet (story H10). Same class names as before. Colours, spacing, radius and type come from tokens.css. Source: the approved J2 boards, ink.css. */
 body { margin: 0; background: var(--md-background); color: var(--md-on-background); font-family: var(--gs-font); font-size: var(--gs-text-base); line-height: 1.45; }
 .mono { font-family: var(--gs-font-mono); text-transform: uppercase; }
