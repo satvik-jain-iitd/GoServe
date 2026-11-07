@@ -23,9 +23,9 @@ test("S1 the kitchen page has a red Remove row under Leaving GoServe; the sheet'
   const net = await admin(page, context);
   const sheet = await open(page);
   await expect(sheet).toContainText("Ask 1 of 2");
-  await expect(sheet).toContainText("new orders, the menu, every staff sign-in to this kitchen");
-  await expect(sheet).toContainText("orders already placed, today's slips and cash");
-  await expect(sheet).toContainText("past orders, bills and numbers; the kitchen in this list, marked Off");
+  await expect(sheet).toContainText("Customers stop seeing this kitchen today. New orders stop, the menu goes off, and the staff can no longer sign in to it.");
+  await expect(sheet).toContainText("Orders already placed are finished as normal, and today's slips and cash are closed.");
+  await expect(sheet).toContainText("Past orders, bills and numbers stay. The kitchen stays in this list, marked Off.");
   const go = sheet.getByRole("button", { name: "Remove kitchen" });
   await expect(go).toBeDisabled();
   await sheet.getByLabel("Type REMOVE to go on").fill("remove");
@@ -56,7 +56,7 @@ test("S3 with open orders the database refuses and the sheet says so in the admi
   const sheet = await open(page);
   await sheet.getByLabel("Type REMOVE to go on").fill("REMOVE");
   await sheet.getByRole("button", { name: "Remove kitchen" }).click();
-  await expect(sheet.getByRole("alert")).toHaveText("This kitchen still has orders to finish. Remove it when they are done.");
+  await expect(sheet.getByRole("alert")).toHaveText(/^This kitchen has (\d+ )?open orders?\. Finish or cancel them first\.$/);
   expect(removes(net)).toHaveLength(1);
   await expect(sheet).toBeVisible();
 });
@@ -80,4 +80,29 @@ test("S5 the kitchen app has no Leaving GoServe section, flag or not", async ({ 
   await expect(page.getByRole("button", { name: "Send feedback" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Leaving GoServe" })).toHaveCount(0);
   await expect(page.getByText("Remove this kitchen")).toHaveCount(0);
+});
+
+test("S6 at 360, 390 and 412 px the sheet, its input and both buttons stay inside the screen, and nothing scrolls sideways", async ({ page, context }) => {
+  const net = await admin(page, context);
+  void net;
+  for (const width of [360, 390, 412]) {
+    await page.setViewportSize({ width, height: 800 });
+    const sheet = await open(page);
+    const inside = await sheet.evaluate((el, w) => {
+      const box = (e: Element) => e.getBoundingClientRect();
+      return [el, ...el.querySelectorAll("input, button")].every((e) => box(e).left >= 0 && box(e).right <= w + 0.5);
+    }, width);
+    expect(inside, `${width}px`).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), `${width}px sideways`).toBe(true);
+  }
+});
+
+test("S7 a missing database function shows a true line, not 'try again'", async ({ page, context }) => {
+  await admin(page, context);
+  await context.route("**/rest/v1/rpc/kitchen_remove_v2", (route) => route.fulfill({ status: 404, headers: { "access-control-allow-origin": "*", "content-type": "application/json" },
+    body: JSON.stringify({ code: "PGRST202", message: "Could not find the function public.kitchen_remove_v2(p_kitchen) in the schema cache" }) }));
+  const sheet = await open(page);
+  await sheet.getByLabel("Type REMOVE to go on").fill("REMOVE");
+  await sheet.getByRole("button", { name: "Remove kitchen" }).click();
+  await expect(sheet.getByRole("alert")).toHaveText("Could not reach GoServe. Check your connection and try again.");
 });

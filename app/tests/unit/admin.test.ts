@@ -150,18 +150,33 @@ describe("adminMessage when the network is gone or a rider cannot be removed (st
 
 // Story #900 (moved from the kitchen app, story #850): the admin removes a kitchen; the data path is one database function.
 describe("removeKitchen", () => {
-  const client = (reply: { data: unknown; error: { message: string } | null }, calls: unknown[][] = []) => ({ rpc: async (...a: unknown[]) => { calls.push(a); return reply; } }) as never;
+  type Reply = { data: unknown; error: { message: string; code?: string } | null };
+  const client = (reply: Reply, calls: unknown[][] = [], open: number | null = 3) => ({
+    rpc: async (...a: unknown[]) => { calls.push(a); return reply; },
+    from: () => ({ select: () => ({ eq: () => ({ not: async () => (open === null ? { count: null, error: { message: "x" } } : { count: open, error: null }) }) }) }),
+  }) as never;
+  const CONNECT = "Could not reach GoServe. Check your connection and try again.";
   it("calls kitchen_remove_v2 with the kitchen and says nothing when it worked", async () => {
     const calls: unknown[][] = [];
     expect(await removeKitchen(client({ data: { ok: true, staff: 2 }, error: null }, calls), "k-1")).toBeNull();
     expect(calls).toEqual([["kitchen_remove_v2", { p_kitchen: "k-1" }]]);
   });
-  it("tells the admin, in the admin's words, when orders are still to finish", async () => {
-    expect(await removeKitchen(client({ data: { ok: false, error: "orders_open", message: "Finish the orders on your tickets first, then remove the kitchen." }, error: null }), "k-1")).toBe("This kitchen still has orders to finish. Remove it when they are done.");
+  it("S1 open orders: the line says how many, and what to do", async () => {
+    const refuse = { data: { ok: false, error: "orders_open", message: "x" }, error: null };
+    expect(await removeKitchen(client(refuse, [], 3), "k-1")).toBe("This kitchen has 3 open orders. Finish or cancel them first.");
+    expect(await removeKitchen(client(refuse, [], 1), "k-1")).toBe("This kitchen has 1 open order. Finish or cancel them first.");
+    expect(await removeKitchen(client(refuse, [], null), "k-1")).toBe("This kitchen has open orders. Finish or cancel them first.");
   });
-  it("says plainly when the account is not an admin, and when anything else goes wrong", async () => {
-    expect(await removeKitchen(client({ data: null, error: { message: "not_allowed" } }), "k-1")).toBe("Only an admin can remove a kitchen.");
-    expect(await removeKitchen(client({ data: null, error: { message: "fetch failed" } }), "k-1")).toBe("Could not remove the kitchen. Try again.");
+  it("S2 a non-admin is told so", async () => {
+    expect(await removeKitchen(client({ data: null, error: { message: "not_allowed", code: "42501" } }), "k-1")).toBe("Only an admin can remove a kitchen.");
+  });
+  it("S3 a missing database function or a dead network is not called 'try again': it says GoServe could not be reached", async () => {
+    expect(await removeKitchen(client({ data: null, error: { message: "Could not find the function public.kitchen_remove_v2(p_kitchen) in the schema cache", code: "PGRST202" } }), "k-1")).toBe(CONNECT);
+    expect(await removeKitchen(client({ data: null, error: { message: "TypeError: Failed to fetch", code: "" } }), "k-1")).toBe(CONNECT);
+    expect(await removeKitchen(client({ data: null, error: { message: "fetch failed" } }), "k-1")).toBe(CONNECT);
+  });
+  it("any other database error keeps the plain retry line", async () => {
+    expect(await removeKitchen(client({ data: null, error: { message: "boom", code: "XX000" } }), "k-1")).toBe("Could not remove the kitchen. Try again.");
   });
 });
 
