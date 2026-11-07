@@ -97,3 +97,9 @@ select { font: inherit; padding: var(--gs-space-3); border: 1px solid var(--md-o
 .below { max-width: 28rem; margin: 0 auto; padding: 0; }   /* #242: nothing under a board; only the feedback sheet mounts here */
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .below .feedback-btn { position: static; box-shadow: none; }   /* on the Ink screens Feedback waits below the phone frame until You (H10d) holds it */
+
+/* Story 983: a phone turned sideways (iOS cannot be locked) fills the width instead of a 28 rem column in the middle of an empty screen.
+   Only a short landscape viewport (a phone); a desktop or tablet keeps the centred column. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .shell, .frame, .below { max-width: none; }
+}

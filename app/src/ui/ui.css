@@ -243,7 +243,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-swap-price .was { color: var(--gs-text-muted); text-decoration: line-through; }
 .ui-swap-actions { display: flex; gap: var(--gs-space-2); }
 .ui-swap-actions .ui-btn { flex: 1; min-height: 44px; justify-content: center; }
-.ui-closed-ask { display: flex; flex-direction: column; align-items: flex-start; gap: var(--gs-space-2); padding: 0 var(--gs-space-4) var(--gs-space-3); }
+.ui-closed-ask { display: flex; flex-direction: column; align-items: flex-start; gap: var(--gs-space-2); padding: var(--gs-space-3) var(--gs-gutter) var(--gs-space-3); }   /* story 984: 12 px under the banner, on its left edge */
 .ui-closed-ask p { margin: 0; }
 .ui-closed-sub { font-size: var(--gs-text-xs); color: var(--gs-text-muted); }
 /* story 619, board L2: a dish that is sold out keeps its card, greyed, with a Sold out stamp in place of Add */
@@ -571,3 +571,8 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-cat-row span.on { font-weight: 600; }
 .ui-cat-row .ui-count { font-weight: 400; }
 .ui-clear { align-self: flex-end; margin: 8px 0 0; font-size: 12px; color: var(--md-primary); }
+
+/* Story 983: on a short landscape screen the lockup keeps a phone-sized width (it scales with the width and would fill the screen). After the base rules on purpose. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .ui-landing-head .ui-logo, .ui-welcome .ui-lockup { width: min(100%, 10rem); }
+}

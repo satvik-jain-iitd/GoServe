@@ -30,7 +30,7 @@
   "isMetaQuest": false,
   "fullScopeUrl": "https://goserve-app.pages.dev/customer/",
   "minSdkVersion": 24,
-  "orientation": "default",
+  "orientation": "portrait",
   "fingerprints": [],
   "additionalTrustedOrigins": [],
   "retainedBundles": [],
