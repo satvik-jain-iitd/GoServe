@@ -21,12 +21,12 @@ test("S1 the menu shows the kitchen with its closing time, sections, a veg toggl
   await page.getByRole("button", { name: "Veg only" }).click();
   await page.getByRole("button", { name: "Filter" }).click();
   await page.getByLabel("Search dishes").fill("butter");
-  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: /^Show \d+ dish(es)?$/ }).click();   // story 972: Show n dishes closes the sheet
   await expect(page.getByText("Butter Chicken")).toBeVisible();
   await expect(page.getByText("Dal Makhani")).toHaveCount(0);
   await page.getByRole("button", { name: "Filter" }).click();
   await page.getByLabel("Search dishes").fill("zzz");
-  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: /^Show \d+ dish(es)?$/ }).click();   // story 972: Show n dishes closes the sheet
   await expect(page.getByText("Nothing matches")).toBeVisible();
 });
 

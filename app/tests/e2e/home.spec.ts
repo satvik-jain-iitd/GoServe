@@ -49,14 +49,16 @@ test("S3 tapping a dish photo opens the Dish sheet; Add to bill puts the chosen 
   await expect(page.getByRole("button", { name: /View bill \(2\)/ })).toContainText("₹640");
 });
 
-test("S4 the Filter sheet jumps to a section and closes", async ({ page, context }) => {
+test("S4 the Filter sheet filters by ticked categories and closes with Show n dishes (story 972: the jump list is gone)", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.menu = MENU;
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Filter" }).click();
   const sheet = page.getByRole("dialog", { name: "Filter" });
-  await expect(sheet.getByText("5 dishes")).toBeVisible();
-  await sheet.getByRole("button", { name: /Sweet/ }).click();
+  await expect(sheet.getByText("5 of 5 dishes")).toBeVisible();
+  await expect(sheet.getByRole("navigation", { name: "Sections" })).toHaveCount(0);
+  await sheet.getByRole("checkbox", { name: /Sweet/ }).check();
+  await sheet.getByRole("button", { name: /^Show 1 dish$/ }).click();
   await expect(sheet).toHaveCount(0);
 });
 
