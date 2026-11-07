@@ -7,7 +7,7 @@ const base = {
   short_name: "GoServe",
   description: "Hot meals at your door in 25 to 35 minutes.",
   display: "standalone" as const,
-  orientation: "portrait" as const,   // an installed Android app stays upright; iPhone ignores this, so RotateGuard covers it
+  orientation: "portrait" as const,   // an installed Android app stays upright; iPhone ignores this, the landscape media query in app.css fills the width
   theme_color: tokens.color.core.deepGreen,
   background_color: tokens.color.core.cream,
   icons: [
