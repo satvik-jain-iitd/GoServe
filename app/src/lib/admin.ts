@@ -1,5 +1,6 @@
 // The admin app's data calls and input rules (story A2). Row level security lets only an admin write these tables; the people functions check it again.
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { shrinkPhoto } from "./photo";
 
 export type KitchenRow = { id: string; name: string; address: string | null; phone: string | null; pin_codes: string[]; open: boolean; active: boolean; opens_at?: string | null; closes_at?: string | null; lat?: number | null; lng?: number | null; location_accuracy_m?: number | null; location_at?: string | null };
 export type PersonKind = "kitchen" | "rider" | "admin";
@@ -125,8 +126,9 @@ type Store = SupabaseClient["storage"];
 export async function addDish(c: Client & { storage: Store }, d: { kitchenId: string; name: string; paise: number; veg: boolean; category: string; description?: string; photo: File | null }): Promise<string | null> {
   let image_url: string | null = null;
   if (d.photo) {
-    const path = photoPath(d.kitchenId, d.photo.name, crypto.randomUUID());
-    const up = await c.storage.from("menu").upload(path, d.photo, { contentType: d.photo.type });
+    const photo = await shrinkPhoto(d.photo);
+    const path = photoPath(d.kitchenId, photo.name, crypto.randomUUID());   // a new path for every upload, so a year in the cache is safe
+    const up = await c.storage.from("menu").upload(path, photo, { contentType: photo.type, cacheControl: "31536000" });
     if (up.error) return "The photo could not be uploaded. Try again.";
     image_url = c.storage.from("menu").getPublicUrl(path).data.publicUrl;
   }
