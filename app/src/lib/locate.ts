@@ -93,3 +93,19 @@ export const currentFix = (): Promise<Fix> =>
 // Story #910: the drop point follows the address. The fix is kept only while the address is still the one the location found; a hand edit clears it.
 export const dropFor = (from: Place | null, located: string | null, address: string): Place | null =>
   from && located !== null && address.trim() === located.trim() ? from : null;
+// Story #998: the address words and the pin from Ola Maps, asked through our own function (the browser never holds a key); when it says no for any reason, OpenStreetMap answers as before.
+// Ola's answer is shown to the customer and kept only on their own address. It is never stored by place or in a table of ours (Ola's terms).
+export type Looked = Found & { from: "ola" | "osm" };
+type LookupDeps = { fetchFn: typeof fetch; url: string; anon: string; token: () => Promise<string> };
+export async function findAddress(lat: number, lng: number, deps?: LookupDeps): Promise<Looked | null> {
+  try {
+    const d = deps ?? (await import("./ordersV2")).v2Deps();
+    const res = await d.fetchFn(`${d.url}/functions/v1/geocode?lat=${lat}&lng=${lng}`, { headers: { apikey: d.anon, authorization: `Bearer ${await d.token()}` } });
+    if (res.ok) {
+      const a = await res.json();
+      if (a?.ok && typeof a.address === "string" && a.address.trim()) return { address: a.address, pin: /^\d{6}$/.test(a.pin ?? "") ? a.pin : "", from: "ola" };
+    }
+  } catch { /* off, over the cap, no connection: OpenStreetMap answers */ }
+  const osm = await reverseAddress(lat, lng, deps?.fetchFn);
+  return osm ? { ...osm, from: "osm" } : null;
+}

@@ -151,6 +151,72 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /geocode:
+    get:
+      operationId: getGeocode
+      summary: The address words and pin code of one place, from Ola Maps. The key stays in the function; the answer is shown to the customer and never stored.
+      x-handler: ../supabase/functions/geocode/index.ts
+      x-contract-handler: ../supabase/functions/geocode/fixture.ts
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema: { type: number, minimum: -90, maximum: 90 }
+          example: 24.9167
+        - name: lng
+          in: query
+          required: true
+          schema: { type: number, minimum: -180, maximum: 180 }
+          example: 79.5833
+      responses:
+        "200":
+          description: The words (sublocality, town, state) and the six-digit pin code. The pin is empty when Ola gives none.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Geocoded"
+        "400":
+          description: The place is missing, not a number, or out of range (invalid_place).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: No login (unauthorized).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Ola has no address words for this place (not_found).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "405":
+          description: Only GET is answered.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: More than 10 calls a minute from this caller (slow_down).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "502":
+          description: Ola could not be asked. No detail is given (geocode_unavailable).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          description: The provider switch is off (provider_off) or the month's free calls are used (over_cap).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /orders:
     post:
       operationId: postOrders
@@ -1187,6 +1253,17 @@ components:
               code: { type: string }
               title: { type: string }
               saves_paise: { type: integer, minimum: 1 }
+    Geocoded:
+      type: object
+      additionalProperties: false
+      required: [ok, address, pin, locality, town]
+      properties:
+        ok:
+          const: true
+        address: { type: string, minLength: 1 }
+        pin: { type: string, pattern: "^(\\d{6})?$" }
+        locality: { type: string }
+        town: { type: string }
     Serviceability:
       type: object
       additionalProperties: false

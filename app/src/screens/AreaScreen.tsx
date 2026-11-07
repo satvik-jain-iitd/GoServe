@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { isPin } from "../lib/area";
 import type { Area } from "../lib/area";
-import { currentPlace, reverseAddress, type Place } from "../lib/locate";
+import { currentPlace, findAddress, type Place } from "../lib/locate";
 
 type Props = { pin: string | null; address: string; area: Area | null; busy: boolean; error: string | null; onPlace: (p: { pin: string; address: string; from?: Place; located?: string }) => void };
 type Mode = "ask" | "found" | "hand";
@@ -14,6 +14,7 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace }: 
   const [text, setText] = useState(pin ?? "");
   const [place, setPlace] = useState<Place | undefined>(undefined);
   const [pinMissing, setPinMissing] = useState(false);   // story #969: the location found an address but no pin, even from the nearest tagged object
+  const [from, setFrom] = useState<"ola" | "osm" | null>(null);   // story #998: who named the words; the Ola credit shows only for Ola's
   const [located, setLocated] = useState<string | undefined>(undefined);   // story #910: the address the location found, to tell a hand edit from it
   const [finding, setFinding] = useState(false);
   const [note, setNote] = useState<string | null>(null);
@@ -25,9 +26,10 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace }: 
     setNote(null);
     try {
       const here = await currentPlace();
-      const found = await reverseAddress(here.lat, here.lng);
+      const found = await findAddress(here.lat, here.lng);
       if (!found) throw new Error("not_found");
       setPlace(here);
+      setFrom(found.from);
       setLocated(found.address);
       setAddress(found.address);
       setText(found.pin);
@@ -85,6 +87,7 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace }: 
               <h2 className="ui-slip-title">Is this right?</h2>
               <p className="ui-meta">We found this from your location. Fix anything, then go on.</p>
               {form}
+              {from === "ola" && <p className="ui-credit mono">Address words: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">Ola Maps</a> · Map: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a></p>}
             </>
           )}
           {mode === "hand" && (
