@@ -29,10 +29,11 @@ test("S2 the kitchen app and the rider app still offer Google sign-in at their g
   await expect(page.getByTestId("google-signin")).toBeVisible();
 });
 
-test("S3 the bottom tabs keep their names on every app: My orders and You (Account) for the customer, Delivery and New for staff", async ({ page, context }) => {
+test("S3 the bottom tabs keep their names on every app: Delivery and History for the customer, the profile behind the circle, Delivery and New for staff", async ({ page, context }) => {
   const net = await setup(context, page);
   await page.goto("/customer/");
-  for (const name of ["Menu", "My orders", "You (Account)"]) await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
+  for (const name of ["Delivery", "History"]) await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^You: / })).toBeVisible();
   await page.goto("/rider/");
   for (const name of ["Delivery", "Today", "Me"]) await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
   net.state.kitchen = "k-1";

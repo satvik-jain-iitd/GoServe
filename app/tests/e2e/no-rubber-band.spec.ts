@@ -14,7 +14,7 @@ test("S1 html and body never scroll or rubber-band", async ({ page, context }) =
 test("S2 a drag that starts on the tab bar is not a pan (touch-action none)", async ({ page, context }) => {
   await setup(context, page);
   await page.goto("/customer/");
-  await expect(page.getByRole("button", { name: "My orders" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "History" })).toBeVisible();
   expect(await page.locator(".ui-tabs").evaluate((e) => getComputedStyle(e).touchAction)).toBe("none");
 });
 
@@ -25,7 +25,7 @@ test("S3 on a short phone the document does not move; the list scrolls inside it
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
   const doc = await page.evaluate(() => { window.scrollTo(0, 400); return { y: window.scrollY, fits: document.documentElement.scrollHeight <= document.documentElement.clientHeight }; });
   expect(doc).toEqual({ y: 0, fits: true });
-  const tabs = page.getByRole("button", { name: "My orders" });
+  const tabs = page.getByRole("button", { name: "History" });
   const before = await tabs.boundingBox();
   await page.mouse.wheel(0, 3000);
   expect((await tabs.boundingBox())!.y).toBe(before!.y);

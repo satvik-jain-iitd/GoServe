@@ -21,7 +21,7 @@ test("D1 D2 nothing sits under any board: no title, no floating Feedback, no leg
 test("D2 D10 the customer You tab ends with Send feedback and then Privacy · Terms", async ({ page, context }) => {
   await setup(context, page);
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "You (Account)", exact: true }).click();
+  await page.getByRole("button", { name: /^You: / }).click();
   await expect(page.getByText("Used on your bill")).toBeVisible();
   const rows = page.locator(".ui-scroll");
   await expect(rows.getByRole("button", { name: "Send feedback" })).toBeVisible();
@@ -78,7 +78,7 @@ test("D6 D7 D8 D9 D13 the bill, placed and orders screens use the agreed words",
   await expect(page.locator(".ui-slip-head").getByText("Cash", { exact: true })).toHaveCount(0);
   await expect(page.locator("header .meta").getByText("Cash", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Back to menu" }).click();
-  await page.getByRole("button", { name: "My orders", exact: true }).click();
+  await page.getByRole("button", { name: "History", exact: true }).click();
   await expect(page.getByRole("heading", { name: "No orders yet" })).toBeVisible();
   await expect(page.getByText("Your orders will show here.")).toBeVisible();
 });

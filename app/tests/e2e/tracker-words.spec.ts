@@ -33,14 +33,14 @@ test("S3 a refused cancel (cannot_cancel) tells the customer the kitchen has sta
 test("S4 Orders shows the time in 12-hour form", async ({ page, context }) => {
   await setup(context, page, [order("delivered", new Date().toISOString(), new Date().toISOString())]);
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "My orders", exact: true }).click();
+  await page.getByRole("button", { name: "History", exact: true }).click();
   await expect(page.getByText(new RegExp(`today ${TIME.source}`))).toBeVisible();
 });
 
 test("S5 the Orders empty state has the new words", async ({ page, context }) => {
   await setup(context, page);
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "My orders", exact: true }).click();
+  await page.getByRole("button", { name: "History", exact: true }).click();
   await expect(page.getByRole("heading", { name: "No orders yet" })).toBeVisible();
   await expect(page.getByText("Your orders will show here.")).toBeVisible();
   await expect(page.locator("body")).not.toContainText("No sign-in needed");

@@ -64,8 +64,8 @@ test("S5 ticks that match nothing show the Nothing matches card with the way out
   await sheet.getByRole("switch", { name: /Veg only/ }).check();
   await sheet.getByRole("checkbox", { name: "Mains" }).check();
   await sheet.getByRole("checkbox", { name: "Mains" }).uncheck();
-  await sheet.getByLabel("Search dishes").fill("zzz");
-  await sheet.getByRole("button", { name: "Show 0 dishes" }).click();
+  await sheet.getByRole("button", { name: /^Show \d+ dish(es)?$/ }).click();
+  await page.getByRole("searchbox", { name: "Search dishes" }).fill("zzz");
   await expect(page.getByText("Nothing matches")).toBeVisible();
   await expect(page.getByText("Try another word or clear the filters.")).toBeVisible();
 });

@@ -20,7 +20,7 @@ test("S3 scrolling a long menu leaves the bottom tabs where they are", async ({ 
   await setup(context, page);
   await page.goto("/customer/");
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
-  const tabs = page.getByRole("button", { name: "My orders" });
+  const tabs = page.getByRole("button", { name: "History" });
   const before = await tabs.boundingBox();
   await page.mouse.wheel(0, 3000);
   const after = await tabs.boundingBox();

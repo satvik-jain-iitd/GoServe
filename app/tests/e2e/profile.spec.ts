@@ -68,12 +68,12 @@ test("S6 Your orders lists past orders by what was ordered, with the short order
   await setup(context, page, [{ ...order("delivered", "2020-01-01T11:00:00Z"), paid_by: "cash" }]);
   await page.goto("/customer/");
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
-  await page.getByRole("button", { name: "My orders" }).click();
+  await page.getByRole("button", { name: "History" }).click();
   await expect(page.getByRole("heading", { name: "Your orders" })).toBeVisible();
   await expect(page.getByText("2 × Butter Chicken")).toBeVisible();
   await expect(page.getByText("Delivered")).toBeVisible();
   await expect(page.getByText(/No\. 0f0f0f0f/)).toBeVisible();   // the short number, never the whole id
-  await page.getByRole("button", { name: "Menu", exact: true }).click();
+  await page.getByRole("button", { name: "Delivery", exact: true }).click();
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
 });
 

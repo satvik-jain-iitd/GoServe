@@ -117,10 +117,10 @@ for (const theme of ["day", "night"] as const) {
     net.state.customer = { user_id: "u", name: "Rahul Verma", phone: "9876543210", address: "B-12, Lajpat Nagar II, near the park gate", pin_code: "110016" };
     await page.goto("/customer/");
     await page.getByRole("button", { name: "Back to menu" }).click();
-    await page.getByRole("button", { name: "My orders" }).click();
+    await page.getByRole("button", { name: "History" }).click();
     await page.getByRole("heading", { name: "Your orders" }).waitFor();
     await shot("Orders");
-    await page.getByRole("button", { name: "You (Account)" }).click();
+    await page.getByRole("button", { name: /^You: / }).click();
     await page.getByRole("heading", { name: "You", exact: true }).waitFor();
     await page.evaluate(() => document.fonts.ready);
     await shot("Account");
@@ -129,7 +129,7 @@ for (const theme of ["day", "night"] as const) {
     await context.addInitScript((v) => localStorage.setItem("gs-theme", v), theme);
     await setup(context, page);
     await page.goto("/customer/");
-    await page.getByRole("button", { name: "My orders" }).click();
+    await page.getByRole("button", { name: "History" }).click();
     await page.getByText("No orders yet").waitFor();
     await page.screenshot({ path: `${OUT}/${theme}/S-EmptyOrders-${theme}.png` });
   });

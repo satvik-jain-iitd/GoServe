@@ -14,9 +14,9 @@ const when = (iso: string, now = new Date()) => {
   return `${d.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${clock12(d)}`;
 };
 
-type Props = { orders: Order[]; loading: boolean; kitchenName: string; onOpen: (o: Order) => void; onMenu: () => void; onYou: () => void };
+type Props = { orders: Order[]; loading: boolean; kitchenName: string; onOpen: (o: Order) => void; onMenu: () => void };
 
-export function OrdersScreen({ orders, loading, kitchenName, onOpen, onMenu, onYou }: Props) {
+export function OrdersScreen({ orders, loading, kitchenName, onOpen, onMenu }: Props) {
   const empty = !loading && orders.length === 0;
   return (
     <>
@@ -46,7 +46,7 @@ export function OrdersScreen({ orders, loading, kitchenName, onOpen, onMenu, onY
         ))}
         {orders.length > 0 && <p className="mono ui-foot">Newest first</p>}
       </div>
-      <TabBar current="orders" onMenu={onMenu} onOrders={() => undefined} onYou={onYou} />
+      <TabBar current="orders" onMenu={onMenu} onOrders={() => undefined} />
     </>
   );
 }

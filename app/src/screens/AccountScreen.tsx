@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { DEFAULT_THEME, readPin, pinTheme, type Theme } from "../lib/theme";
 import { buildLabel } from "../lib/updates";
-import { TabBar, useSheetFit } from "../ui";
+import { useSheetFit } from "../ui";
 import { SignIn } from "./SignIn";
 
 type Props = {
@@ -13,12 +13,12 @@ type Props = {
   onGivenName: (name: string) => void;   // story 527: the Google first name fills an empty name
   onForget: () => void;
   onDeleteAccount: () => Promise<string | null>;   // story #771: deletes the account on the server; the answer is a message when it was refused, null when it worked
-  onMenu: () => void; onOrders: () => void;
+  onMenu: () => void;
 };
 
 const store = (): Storage | null => { try { return window.localStorage; } catch { return null; } };
 
-export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAddress, alerts, onAlerts, alertsError, live, onGivenName, onForget, onDeleteAccount, onMenu, onOrders }: Props) {
+export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAddress, alerts, onAlerts, alertsError, live, onGivenName, onForget, onDeleteAccount, onMenu }: Props) {
   const fit = useSheetFit();   // story #954: the overlay follows the visual viewport
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({ name, phone, address });   // story 640: Edit opens a draft; Save applies it, Cancel drops it
@@ -30,6 +30,7 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
   return (
     <>
       <header className="ui-head">
+        <button type="button" className="ui-back" aria-label="Back" onClick={onMenu}><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg></button>
         <h1>You</h1>
       </header>
       {live && <button type="button" className="ui-live" onClick={live.onOpen}><span className="tag">{live.label}</span><span className="mono">No. {live.no}</span><span className="go" aria-hidden="true">›</span></button>}
@@ -88,7 +89,6 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
           </div>
         </div>
       )}
-      <TabBar current="you" onMenu={onMenu} onOrders={onOrders} onYou={() => undefined} />
     </>
   );
 }
