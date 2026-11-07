@@ -1,0 +1,62 @@
+{
+  "n8n-today": {
+    "dir": "TB",
+    "crossings": 1,
+    "through": 0,
+    "backward": 0,
+    "unlabelled": 0,
+    "overlaps": 0,
+    "textOut": 0,
+    "childCut": 0,
+    "labelOnBox": 0,
+    "badColours": 0,
+    "minFont": 16,
+    "bends": 56,
+    "length": 9192,
+    "issues": [
+      "crossing: L_main34_outbox_0 x L_sub20_apple_0"
+    ],
+    "clusters": [
+      {
+        "id": "out",
+        "text": "",
+        "x": 59,
+        "y": 2086,
+        "w": 639,
+        "h": 516
+      },
+      {
+        "id": "store",
+        "text": "",
+        "x": 300,
+        "y": 1386,
+        "w": 598,
+        "h": 576
+      },
+      {
+        "id": "n8n",
+        "text": "",
+        "x": 32,
+        "y": 462,
+        "w": 920,
+        "h": 780
+      },
+      {
+        "id": "phones",
+        "text": "",
+        "x": 405,
+        "y": 86,
+        "w": 732,
+        "h": 252
+      }
+    ],
+    "size": {
+      "w": 1169,
+      "h": 2638
+    },
+    "pngScale": 2,
+    "seed": 0,
+    "pngKB": 338,
+    "pass": true
+  }
+}

@@ -358,3 +358,15 @@ What that evidence says, and it beats every explainer we read:
 - The popular "the address becomes a hex cell and the cell maps to a store" claim comes from one Substack analysis and a Medium post that itself says "likely H3, quadtrees". That is the author's inference, not a company statement. Tier C, confidence 0.3. The owner's reel appears to repeat it as fact.
 - Uber's H3 is real and well documented (Tier A, their own engineering blog, confidence 0.9) but it answers a question we do not have: which of hundreds of stores covers a cell. With a handful of kitchens an exact distance or a point-in-polygon test is both cheaper and exact.
 Decision: adopt nothing. Borrow the shape of the answer: a per-kitchen service **polygon** we own and the owner draws, with road distance used for the time promise, never a straight line. PostGIS 3.3.7 is available on our own Supabase project (checked against the dev project's `pg_available_extensions`, Tier A), so `ST_Contains` and `ST_DWithin` need no new dependency; there is no `h3` extension there and we do not need one yet. `kitchens.lat`, `kitchens.lng` and `kitchens.radius_m` already exist (story #342) and the customer app simply does not use them.
+
+## 2026-11-07 · need: serve admin-uploaded menu photos small and cached, free egress (image CDN)
+
+Runs: `scout.py` found no repos. GitHub search (cloudflare r2 image resize worker; topics image-optimization + cloudflare-workers; supabase storage cloudflare cdn): five repos under 10 stars, none fit. Decision: no new dependency. Resize on the phone with the canvas API, upload with `cacheControl` of one year, lazy images. R2 only past about 5 GB cached a month. (Safari cannot encode WebP in `toBlob`; a JPEG fallback story followed.)
+
+## 2026-11-07 · need: reverse geocode an India pin code from latitude and longitude (offline dataset or free API)
+
+Runs: `scout.py` found no repos. Decision: borrow the Overpass `around` query on `addr:postcode` (same OSM data as Nominatim), story #969. Own pin directory in an Edge function logged as a follow-up.
+
+## 2026-11-07 · need: India pin code dataset with coordinates, nearest pin code from a point
+
+Runs: `scout.py` found no repos. Decision: use the GeoNames IN postal codes file (CC BY, 11,042 centroids) in a `pincodes` table with `nearest_pin()` (story #987). The data.gov.in All India Pincode Directory (post-office level) is the upgrade. Overpass left the customer path (see experiments.md, E-OVERPASS-1).

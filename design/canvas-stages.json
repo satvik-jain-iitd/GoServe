@@ -1,354 +1,528 @@
 {
-  "canvas": "https://claude.ai/artifact/6faaULE7F6FDCSQw8YvPuW",
-  "arranged": "2026-11-04",
-  "tints": {
-    "sage": "#BFCFB4",
-    "teal": "#CFD998",
-    "yellow": "#FFDE59",
-    "red": "#B3261E",
-    "gray": "#706F70",
-    "blue": "#8FB3C7"
-  },
-  "ink": "#263528",
-  "paper": "#FFFFFF",
-  "font": "'Anek Latin', system-ui, sans-serif",
-  "start_tint": "blue",
-  "remove_notes": [
-    "start-here",
-    "row1",
-    "row2",
-    "row3",
-    "row4",
-    "row5"
-  ],
-  "start_here": "HOW TO READ THIS CANVAS. Five sections top to bottom, each on its own coloured board with its title: 1 Production (on prod today), 2 Design final not on prod, 3 In discussion, 4 Rejected, 5 Mistakes fixed. Inside Section 1 the rows follow the customer's journey left to right (first open and address, menu to order, after the order, You and alerts and feedback, no connection and Night), then kitchen, rider, admin. Every board's name starts with its state: LIVE, ON STAGING (coded, flag off on prod), DESIGN (approved, not coded), IN TALK, REJECTED, OLD (the wrong version; its fix is named in the section note), UNSORTED (not placed yet). Green notes are story notes next to the boards they describe. The layout is generated from design/canvas-stages.json by canvas_stage.py; a board moves by editing that file, never by dragging.",
-  "sections": [
+ "canvas": "https://claude.ai/artifact/6faaULE7F6FDCSQw8YvPuW",
+ "arranged": "2026-11-06",
+ "tints": {
+  "sage": "#BFCFB4",
+  "teal": "#CFD998",
+  "yellow": "#FFDE59",
+  "red": "#B3261E",
+  "gray": "#706F70",
+  "blue": "#8FB3C7"
+ },
+ "ink": "#263528",
+ "paper": "#FFFFFF",
+ "font": "'Anek Latin', system-ui, sans-serif",
+ "start_tint": "blue",
+ "remove_notes": [
+  "start-here",
+  "row1",
+  "row2",
+  "row3",
+  "row4",
+  "row5"
+ ],
+ "start_here": "HOW TO READ THIS CANVAS. Five sections top to bottom, each on its own coloured board with its title: 1 Production (on prod today), 2 Design final not on prod, 3 In discussion, 4 Rejected, 5 Mistakes fixed. Inside Section 1 the rows follow the customer's journey left to right (first open and address, menu to order, after the order, You and alerts and feedback, no connection and Night), then kitchen, rider, admin. Every board's name starts with its state: LIVE, ON STAGING (coded, flag off on prod), DESIGN (approved, not coded), IN TALK, REJECTED, OLD (the wrong version; its fix is named in the section note), UNSORTED (not placed yet). Green notes are story notes next to the boards they describe. The layout is generated from design/canvas-stages.json by canvas_stage.py; a board moves by editing that file, never by dragging.",
+ "sections": [
+  {
+   "id": "production",
+   "title": "Section 1 · Production: what is on prod today (release #795, 29 Oct 2026)",
+   "purpose": "Section 1 = the prod build. Rows follow the customer from the first open to the order, then after the order, You, alerts, feedback, no connection and Night at checkout; then the kitchen, the rider, the admin. A board moves to Section 5 the day a newer version replaces it on prod. Fixes made on the same board (the Menu pill, option A) leave no old board.",
+   "prefix": "LIVE",
+   "tint": "sage",
+   "rows": [
     {
-      "id": "production",
-      "title": "Section 1 · Production: what is on prod today (release #687, 29 Oct 2026)",
-      "purpose": "Section 1 = the prod build. Rows follow the customer from the first open to the order, then after the order, You, alerts, feedback, no connection and Night at checkout; then the kitchen, the rider, the admin. A board moves to Section 5 the day a newer version replaces it on prod. Fixes made on the same board (the Menu pill, option A) leave no old board.",
-      "prefix": "LIVE",
-      "tint": "sage",
-      "rows": [
-        {
-          "id": "1a",
-          "title": "1a · Customer · first open and the address",
-          "boards": [
-            "O0-Welcome.dc.html",
-            "O0b-Code.dc.html",
-            "A1-LocationAsk.dc.html",
-            "A2-AddressFound.dc.html",
-            "A3-AddressByHand.dc.html",
-            "S-NoKitchen.dc.html"
-          ],
-          "notes": [
-            "first-open"
-          ]
-        },
-        {
-          "id": "1b",
-          "title": "1b · Customer · the menu to the order",
-          "boards": [
-            "Menu.dc.html",
-            "S-Loading.dc.html",
-            "S-Closed.dc.html",
-            "Categories.dc.html",
-            "Dish.dc.html",
-            "M2-MenuThaliStep.dc.html",
-            "D1-BillFields.dc.html",
-            "S-EmptyBill.dc.html",
-            "Placed.dc.html"
-          ],
-          "notes": [
-            "how",
-            "sitting-fixes"
-          ]
-        },
-        {
-          "id": "1c",
-          "title": "1c · Customer · after the order",
-          "boards": [
-            "Tracker.dc.html",
-            "T1-Cancelled.dc.html",
-            "Delivered.dc.html",
-            "Orders.dc.html",
-            "S-EmptyOrders.dc.html"
-          ],
-          "notes": []
-        },
-        {
-          "id": "1d",
-          "title": "1d · Customer · You, order alerts, feedback",
-          "boards": [
-            "Y3-YouRows.dc.html",
-            "Y2-YouEditing.dc.html",
-            "U1-AlertsOff.dc.html",
-            "U2-AlertsOn.dc.html",
-            "U3-AlertsOffByYou.dc.html",
-            "U4-AlertsBlocked.dc.html",
-            "F1-FeedbackNight.dc.html",
-            "F2-FeedbackSent.dc.html",
-            "F3-FeedbackList.dc.html"
-          ],
-          "notes": [
-            "feedback-sent"
-          ]
-        },
-        {
-          "id": "1e",
-          "title": "1e · Customer · no connection, and Night",
-          "boards": [
-            "M5-MenuOffline.dc.html",
-            "M6-OfflineEmpty.dc.html",
-            "N-Blue.dc.html",
-            "N1-YouNightSignedIn.dc.html"
-          ],
-          "notes": [
-            "menu-offline",
-            "menu-offline-empty",
-            "night-contrast",
-            "how-blue"
-          ]
-        },
-        {
-          "id": "1g",
-          "title": "1g · Kitchen · tickets in, food out",
-          "boards": [
-            "K-SignIn.dc.html",
-            "K-NotStaff.dc.html",
-            "K2-Tickets.dc.html",
-            "K2-Cooking.dc.html",
-            "K-Ticket.dc.html",
-            "K-YourKitchen.dc.html",
-            "K-NoTickets.dc.html"
-          ],
-          "notes": [
-            "how-kitchen"
-          ]
-        },
-        {
-          "id": "1h",
-          "title": "1h · Rider · one job, one screen",
-          "boards": [
-            "R-SignIn.dc.html",
-            "R-NotRider.dc.html",
-            "R-Offline.dc.html",
-            "R-Online.dc.html",
-            "R-PickUp.dc.html",
-            "R-OnTheWay.dc.html",
-            "R-Delivered.dc.html",
-            "R-Today.dc.html",
-            "R-Me.dc.html"
-          ],
-          "notes": [
-            "how-rider"
-          ]
-        },
-        {
-          "id": "1i",
-          "title": "1i · Admin · the city in one hand",
-          "boards": [
-            "A-SignIn.dc.html",
-            "A-NotAdmin.dc.html",
-            "A-Orders.dc.html",
-            "A-Order.dc.html",
-            "A-City.dc.html",
-            "A-Kitchen.dc.html",
-            "A-AddKitchen.dc.html",
-            "A-Numbers.dc.html"
-          ],
-          "notes": [
-            "how-admin"
-          ]
-        },
-        {
-          "id": "1j",
-          "title": "1j · Rider map on the tracker (#691), live since release #774",
-          "prefix": "LIVE",
-          "boards": [
-            "T2-OnTheWayMap.dc.html",
-            "T3-MapOffline.dc.html"
-          ],
-          "notes": [
-            "rider-map"
-          ]
-        },
-        {
-          "id": "1l",
-          "title": "1l · The story at the bare address (#503), live since release #774",
-          "prefix": "LIVE",
-          "boards": [
-            "S1-StoryHero.dc.html",
-            "S2-StoryParts.dc.html",
-            "S3-StoryDoors.dc.html"
-          ],
-          "notes": []
-        },
-        {
-          "id": "1k",
-          "title": "1k · Closed and sold out (#619), live since release #774",
-          "prefix": "LIVE",
-          "boards": [
-            "L1-ClosedLive.dc.html",
-            "L2-SoldOut.dc.html",
-            "L3-BillReason.dc.html",
-            "A9-Settings.dc.html"
-          ],
-          "notes": [
-            "closed-live"
-          ]
-        }
-      ]
+     "id": "1a",
+     "title": "1a · Customer · first open and the address",
+     "boards": [
+      "O0-Welcome.dc.html",
+      "O0b-Code.dc.html",
+      "A1-LocationAsk.dc.html",
+      "A2-AddressFound.dc.html",
+      "A3-AddressByHand.dc.html",
+      "S-NoKitchen.dc.html"
+     ],
+     "notes": [
+      "first-open"
+     ]
     },
     {
-      "id": "final",
-      "title": "Section 2 · Design final, not on prod: the owner said yes, not live yet",
-      "purpose": "Section 2: the owner said yes. Row 2b is coded behind a flag the prod build does not carry (coupons, UPI). Rows 2e and 2g are approved and not built yet, one story each. Row 2f is coded and live on the dev link only. A board moves to Section 1 when the release that carries it ships.",
-      "prefix": "DESIGN",
-      "tint": "teal",
-      "rows": [
-        {
-          "id": "2e",
-          "title": "2e · Design final, not built yet: the code has not caught up (one story each)",
-          "prefix": "DESIGN",
-          "boards": [
-            "R-PickUp-PinLine.dc.html",
-            "Menu-DishLine.dc.html",
-            "A-Order-Delivery.dc.html"
-          ]
-        },
-        {
-          "id": "2b",
-          "title": "2b · Coded and tested on staging, the prod build does not carry the flag (coupons, UPI payments)",
-          "prefix": "ON STAGING",
-          "boards": [
-            "C1-BillOffers.dc.html",
-            "C2-BillCode.dc.html",
-            "P1-BillCash.dc.html",
-            "P2-BillUpi.dc.html",
-            "P2b-PlacedPay.dc.html",
-            "P4-PayFailed.dc.html",
-            "P5-Paid.dc.html"
-          ],
-          "notes": [
-            "offers",
-            "how-pay"
-          ]
-        },
-        {
-          "id": "2f",
-          "title": "2f · Google first on the welcome (#829, PR #833): on the dev link since 3 Nov, waiting for the next release",
-          "prefix": "ON STAGING",
-          "boards": [
-            "O0g-B-GoogleFirst.dc.html"
-          ],
-          "notes": []
-        },
-        {
-          "id": "2g",
-          "title": "2g · Bug sprint, approved 4 Nov 2026: Simulator in two groups with Clear everything (S1, S2), the kitchen's account row and Remove this kitchen (K6); not coded yet",
-          "boards": [
-            "A-Sim-Groups.dc.html",
-            "A-Sim-Clear.dc.html",
-            "K-Account.dc.html"
-          ],
-          "notes": [
-            "sprint-frames"
-          ]
-        },
-        {
-          "id": "2h",
-          "title": "2h · Pending invite, approved 5 Nov 2026 (\"baki sab theek h\"): add a person by email before the first sign-in (I1, I2); not coded yet",
-          "boards": [
-            "A-AddPerson-Invite.dc.html",
-            "A-Kitchen-Invite.dc.html"
-          ],
-          "notes": [
-            "invite-frames"
-          ]
-        }
-      ]
+     "id": "1b",
+     "title": "1b · Customer · the menu to the order",
+     "boards": [
+      "Menu.dc.html",
+      "S-Loading.dc.html",
+      "S-Closed.dc.html",
+      "Categories.dc.html",
+      "Dish.dc.html",
+      "M2-MenuThaliStep.dc.html",
+      "D1-BillFields.dc.html",
+      "S-EmptyBill.dc.html",
+      "Placed.dc.html"
+     ],
+     "notes": [
+      "how",
+      "sitting-fixes"
+     ]
     },
     {
-      "id": "discussion",
-      "title": "Section 3 · In discussion: no decision yet",
-      "purpose": "Section 3: 02s Sunset is on hold (owner, 29 Oct). P3 Paying is a placeholder until the gateway (KYC). Row 3c holds the phone-code states, on hold until the SMS integration (owner, 3 Nov). Nothing here is built until a decision. A board the manifest does not name lands in the Unsorted row here, so nothing is ever lost.",
-      "prefix": "IN TALK",
-      "tint": "yellow",
-      "rows": [
-        {
-          "id": "3a",
-          "title": "3a · On hold, or a placeholder",
-          "boards": [
-            "N-Sunset.dc.html",
-            "P3-PayWaiting.dc.html"
-          ],
-          "notes": []
-        },
-        {
-          "id": "3c",
-          "title": "3c · The phone code at checkout, every state (O1 to O9): on hold until the SMS integration (owner, 3 Nov 2026)",
-          "boards": [
-            "O1-Number.dc.html",
-            "O2-NumberError.dc.html",
-            "O3-Code.dc.html",
-            "O4-CodeError.dc.html",
-            "O5-CodeResend.dc.html",
-            "O6-CodeLocked.dc.html",
-            "O7-InUse.dc.html",
-            "O8-Confirmed.dc.html",
-            "O9-Name.dc.html"
-          ],
-          "notes": [
-            "how-otp"
-          ]
-        }
-      ]
+     "id": "1c",
+     "title": "1c · Customer · after the order",
+     "boards": [
+      "Tracker.dc.html",
+      "T1-Cancelled.dc.html",
+      "Delivered.dc.html",
+      "Orders.dc.html",
+      "S-EmptyOrders.dc.html"
+     ],
+     "notes": []
     },
     {
-      "id": "rejected",
-      "title": "Section 4 · Rejected: tried and not taken",
-      "purpose": "Section 4: M4 options B and C rejected, A chosen (owner, 29 Oct); A is on the Menu boards in Section 1. M3, the earlier 3x pill, was replaced by A. Deleted boards from earlier versions come here after the history walk.",
-      "prefix": "REJECTED",
-      "tint": "red",
-      "rows": [
-        {
-          "id": "4a",
-          "title": "4a · The pill options (A chosen), the earlier pill, and welcome option A (rejected 3 Nov: basic, nothing new)",
-          "boards": [
-            "M4-PillOptions.dc.html",
-            "M3-VegPill.dc.html",
-            "O0g-A-GoogleOnly.dc.html"
-          ],
-          "notes": [
-            "o0-option-a-rejected"
-          ]
-        }
-      ]
+     "id": "1d",
+     "title": "1d · Customer · You, order alerts, feedback",
+     "boards": [
+      "Y3-YouRows.dc.html",
+      "Y2-YouEditing.dc.html",
+      "U1-AlertsOff.dc.html",
+      "U2-AlertsOn.dc.html",
+      "U3-AlertsOffByYou.dc.html",
+      "U4-AlertsBlocked.dc.html",
+      "F1-FeedbackNight.dc.html",
+      "F2-FeedbackSent.dc.html",
+      "F3-FeedbackList.dc.html"
+     ],
+     "notes": [
+      "feedback-sent"
+     ]
     },
     {
-      "id": "mistakes",
-      "title": "Section 5 · Mistakes, fixed: the old screen as it was when it was wrong",
-      "purpose": "Section 5, each old screen and its fix: 01 Pin code was the first screen before #655 (a redesign after the phone sitting, not a bug): now O0 then A1 to A3 in row 1a. 04 Bill before the copy audit #659: now D1 in row 1b. 09 Account before the Google row and the alerts block: now Y3 in row 1d. Y1 before the copy audit #661: now Y3. K3 New and K3b Cooking used a 1fr auto grid, so Accept, Start and Ready buttons of different widths made the text column jump: now K2 and K3 in row 1g with one 1fr 112px grid.",
-      "prefix": "OLD",
-      "tint": "gray",
-      "rows": [
-        {
-          "id": "5a",
-          "title": "5a · Each old screen; the section note says its fix and where the corrected screen sits in Section 1",
-          "boards": [
-            "Main.dc.html",
-            "Bill.dc.html",
-            "Account.dc.html",
-            "Y1-YouGoogleRow.dc.html",
-            "K-Tickets.dc.html",
-            "K-Cooking.dc.html"
-          ],
-          "notes": [
-            "copy-audit"
-          ]
-        }
-      ]
+     "id": "1e",
+     "title": "1e · Customer · no connection, and Night",
+     "boards": [
+      "M5-MenuOffline.dc.html",
+      "M6-OfflineEmpty.dc.html",
+      "N-Blue.dc.html",
+      "N1-YouNightSignedIn.dc.html"
+     ],
+     "notes": [
+      "menu-offline",
+      "menu-offline-empty",
+      "night-contrast",
+      "how-blue"
+     ]
+    },
+    {
+     "id": "1g",
+     "title": "1g · Kitchen · tickets in, food out",
+     "boards": [
+      "K-SignIn.dc.html",
+      "K-NotStaff.dc.html",
+      "K2-Tickets.dc.html",
+      "K2-Cooking.dc.html",
+      "K-Ticket.dc.html",
+      "K-YourKitchen.dc.html",
+      "K-NoTickets.dc.html"
+     ],
+     "notes": [
+      "how-kitchen"
+     ]
+    },
+    {
+     "id": "1h",
+     "title": "1h · Rider · one job, one screen",
+     "boards": [
+      "R-SignIn.dc.html",
+      "R-NotRider.dc.html",
+      "R-Offline.dc.html",
+      "R-Online.dc.html",
+      "R-PickUp.dc.html",
+      "R-OnTheWay.dc.html",
+      "R-Delivered.dc.html",
+      "R-Today.dc.html",
+      "R-Me.dc.html"
+     ],
+     "notes": [
+      "how-rider"
+     ]
+    },
+    {
+     "id": "1i",
+     "title": "1i · Admin · the city in one hand",
+     "boards": [
+      "A-SignIn.dc.html",
+      "A-NotAdmin.dc.html",
+      "A-Orders.dc.html",
+      "A-Order.dc.html",
+      "A-City.dc.html",
+      "A-Kitchen.dc.html",
+      "A-AddKitchen.dc.html",
+      "A-Numbers.dc.html"
+     ],
+     "notes": [
+      "how-admin"
+     ]
+    },
+    {
+     "id": "1j",
+     "title": "1j · Rider map on the tracker (#691), live since release #774",
+     "prefix": "LIVE",
+     "boards": [
+      "T2-OnTheWayMap.dc.html",
+      "T3-MapOffline.dc.html"
+     ],
+     "notes": [
+      "rider-map"
+     ]
+    },
+    {
+     "id": "1l",
+     "title": "1l · The story at the bare address (#503), live since release #774",
+     "prefix": "LIVE",
+     "boards": [
+      "S1-StoryHero.dc.html",
+      "S2-StoryParts.dc.html",
+      "S3-StoryDoors.dc.html"
+     ],
+     "notes": []
+    },
+    {
+     "id": "1k",
+     "title": "1k · Closed and sold out (#619), live since release #774",
+     "prefix": "LIVE",
+     "boards": [
+      "L1-ClosedLive.dc.html",
+      "L2-SoldOut.dc.html",
+      "L3-BillReason.dc.html",
+      "A9-Settings.dc.html"
+     ],
+     "notes": [
+      "closed-live"
+     ]
     }
-  ]
+   ]
+  },
+  {
+   "id": "final",
+   "title": "Section 2 · Design final, not on prod: the owner said yes, not live yet",
+   "purpose": "Section 2: the owner said yes. Row 2b is coded behind a flag the prod build does not carry (coupons, UPI). Rows 2e and 2g are approved and not built yet, one story each. Row 2f is coded and live on the dev link only. A board moves to Section 1 when the release that carries it ships.",
+   "prefix": "DESIGN",
+   "tint": "teal",
+   "rows": [
+    {
+     "id": "2e",
+     "title": "2e · Design final, not built yet: the code has not caught up (one story each)",
+     "prefix": "DESIGN",
+     "boards": [
+      "R-PickUp-PinLine.dc.html",
+      "A-Order-Delivery.dc.html"
+     ]
+    },
+    {
+     "id": "2b",
+     "title": "2b · Coded and tested on staging, the prod build does not carry the flag (coupons, UPI payments)",
+     "prefix": "ON STAGING",
+     "boards": [
+      "C1-BillOffers.dc.html",
+      "C2-BillCode.dc.html",
+      "P1-BillCash.dc.html",
+      "P2-BillUpi.dc.html",
+      "P2b-PlacedPay.dc.html",
+      "P4-PayFailed.dc.html",
+      "P5-Paid.dc.html"
+     ],
+     "notes": [
+      "offers",
+      "how-pay"
+     ]
+    },
+    {
+     "id": "2f",
+     "title": "2f · Google first on the welcome (#829, PR #833): on the dev link since 3 Nov, waiting for the next release",
+     "prefix": "ON STAGING",
+     "boards": [
+      "O0g-B-GoogleFirst.dc.html"
+     ],
+     "notes": []
+    },
+    {
+     "id": "2g",
+     "title": "2g · Bug sprint, approved 4 Nov 2026: Simulator in two groups with Clear everything (S1, S2), the kitchen's account row and Remove this kitchen (K6); not coded yet",
+     "boards": [
+      "A-Sim-Groups.dc.html",
+      "A-Sim-Clear.dc.html",
+      "K-Account.dc.html"
+     ],
+     "notes": [
+      "sprint-frames"
+     ]
+    },
+    {
+     "id": "2h",
+     "title": "2h · Pending invite, approved 5 Nov 2026 (\"baki sab theek h\"): add a person by email before the first sign-in (I1, I2); not coded yet",
+     "boards": [
+      "A-AddPerson-Invite.dc.html",
+      "A-Kitchen-Invite.dc.html"
+     ],
+     "notes": [
+      "invite-frames"
+     ]
+    },
+    {
+     "id": "2i",
+     "title": "2i · Approved 6 Nov 2026 (\"yes go ahead\"): a kitchen with no dishes yet (M7, PR #893), the veg and non-veg tint on the thali switch (#779, PR #894); on the dev link, waiting for the next release",
+     "boards": [
+      "M7-MenuEmpty.dc.html",
+      "Menu-DishLine-Tint.dc.html"
+     ],
+     "notes": [
+      "frames-6nov"
+     ]
+    },
+    {
+     "id": "2j",
+     "title": "2j · Approved 6 Nov 2026 (\"yes\"): Remove this kitchen on the admin side (A8), the City > kitchen page with the Leaving GoServe row and the confirm sheet; deactivate, never delete; not coded yet",
+     "boards": [
+      "A-Kitchen-Remove.dc.html"
+     ],
+     "notes": [
+      "remove-admin"
+     ]
+    },
+    {
+     "id": "2k",
+     "title": "2k · Approved 6 Nov 2026 (\"yes for frame\", pin a little smaller): the kitchen location pin on Add a kitchen and Edit details (A10, story #905); not coded yet",
+     "boards": [
+      "A-AddKitchen-Pin.dc.html"
+     ],
+     "notes": [
+      "kitchen-pin"
+     ]
+    },
+    {
+     "id": "2l",
+     "title": "2l · Approved 7 Nov 2026 (\"yes kitchen designs K3 order sheet, K3 decline and T2 declined are good\"): tap a ticket, the order sheet with Accept and Decline; Decline needs 20 characters; the customer reads the kitchen's words (#934)",
+     "boards": [
+      "K3-OrderSheet.dc.html",
+      "K3-OrderDecline.dc.html",
+      "T2-Declined.dc.html"
+     ],
+     "notes": [
+      "decline-sheet"
+     ]
+    },
+    {
+     "id": "2m",
+     "title": "2m · Approved 7 Nov 2026 (\"I like address frame A, not B\"): A2 after Use my location, the pin on a map with your words below; the pin is the truth, the words are for the rider (#931)",
+     "boards": [
+      "A2-AddressMap.dc.html"
+     ],
+     "notes": [
+      "address-pin"
+     ]
+    },
+    {
+     "id": "2n",
+     "title": "2n · Approved 7 Nov 2026 (\"new designs for remove kitchen and clear everything look good\"): the danger sheet pattern, one shape for every sheet that destroys something",
+     "boards": [
+      "D1-RemoveKitchen.dc.html",
+      "D2-ClearEverything.dc.html"
+     ],
+     "notes": [
+      "danger-sheet"
+     ]
+    },
+    {
+     "id": "2o",
+     "title": "2o · Approved 7 Nov 2026 (\"I like the other one\", option B): dish rows carry no buttons, tap the row; the Edit sheet holds photo, name, price, veg, in stock and delete (#936). Path: Admin → City → a kitchen → Menu",
+     "boards": [
+      "M1-DishRows-B.dc.html",
+      "M2-DishEdit.dc.html"
+     ],
+     "notes": [
+      "dish-edit"
+     ]
+    },
+    {
+     "id": "2p",
+     "title": "2p · Approved 7 Nov 2026 (\"do whatever you want, go ahead\"): City ends with a You section and the admin's Sign out row (#957)",
+     "boards": [
+      "A-City-SignOut.dc.html"
+     ],
+     "notes": []
+    },
+    {
+     "id": "2q",
+     "title": "2q · Approved 7 Nov 2026 (story #935, owner's \"all yes\"): the note to the kitchen on the Bill (200 characters, optional) and its one line on the ticket row; the order sheet already shows it (row 2l)",
+     "boards": [
+      "D2-BillNote.dc.html",
+      "K2-TicketsNote.dc.html"
+     ],
+     "notes": []
+    },
+    {
+     "id": "2r",
+     "title": "2r · Approved 7 Nov 2026 (owner: \"haan ab sahi lag raha hai\", epic #974): the home top area with two tabs, the Deliver to page (saved addresses only) and the filter with checkboxes (#972)",
+     "boards": [
+      "C1-HomeTop.dc.html",
+      "C2-AddressSheet.dc.html",
+      "F1-Filter.dc.html"
+     ],
+     "notes": []
+    },
+    {
+     "id": "2s",
+     "title": "2s · 8 Nov 2026 (story #990, owner's ask): the kitchen Edit details sheet, the M2 sheet pattern with the Add kitchen fields",
+     "boards": [
+      "K-EditKitchen.dc.html"
+     ],
+     "notes": []
+    },
+    {
+     "id": "2t",
+     "title": "2t · Approved 8 Nov 2026 (owner: \"much, much better\"): today's numbers as four tiles on the admin Orders tab, labels fixed, numbers count up from 0",
+     "boards": [
+      "N1-NumbersTiles-A.dc.html"
+     ],
+     "notes": []
+    },
+    {
+     "id": "2u",
+     "title": "2u · Design final, not live, 8 Nov 2026: the dish photo placeholder, option A (plate, fork and spoon) picked by the owner; B and C rejected. Story #937.",
+     "boards": [
+      "P1-Placeholder.dc.html"
+     ],
+     "notes": []
+    },
+    {
+     "id": "2v",
+     "title": "2v · Approved 8 Nov 2026 (owner: 'Home history profile sheet ko haan', epic #974): H1 History with Order again (#977), Y1 the profile sheet behind the circle (#975).",
+     "boards": [
+      "H1-History.dc.html",
+      "Y1-ProfileSheet.dc.html"
+     ],
+     "notes": []
+    }
+   ]
+  },
+  {
+   "id": "discussion",
+   "title": "Section 3 · In discussion: no decision yet",
+   "purpose": "Section 3: 02s Sunset is on hold (owner, 29 Oct). P3 Paying is a placeholder until the gateway (KYC). Row 3c holds the phone-code states, on hold until the SMS integration (owner, 3 Nov). Nothing here is built until a decision. A board the manifest does not name lands in the Unsorted row here, so nothing is ever lost.",
+   "prefix": "IN TALK",
+   "tint": "yellow",
+   "rows": [
+    {
+     "id": "3a",
+     "title": "3a · On hold, or a placeholder",
+     "boards": [
+      "N-Sunset.dc.html",
+      "P3-PayWaiting.dc.html"
+     ],
+     "notes": []
+    },
+    {
+     "id": "3c",
+     "title": "3c · The phone code at checkout, every state (O1 to O9): on hold until the SMS integration (owner, 3 Nov 2026)",
+     "boards": [
+      "O1-Number.dc.html",
+      "O2-NumberError.dc.html",
+      "O3-Code.dc.html",
+      "O4-CodeError.dc.html",
+      "O5-CodeResend.dc.html",
+      "O6-CodeLocked.dc.html",
+      "O7-InUse.dc.html",
+      "O8-Confirmed.dc.html",
+      "O9-Name.dc.html"
+     ],
+     "notes": [
+      "how-otp"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "rejected",
+   "title": "Section 4 · Rejected: tried and not taken",
+   "purpose": "Section 4: M4 options B and C rejected, A chosen (owner, 29 Oct); A is on the Menu boards in Section 1. M3, the earlier 3x pill, was replaced by A. Deleted boards from earlier versions come here after the history walk.",
+   "prefix": "REJECTED",
+   "tint": "red",
+   "rows": [
+    {
+     "id": "4a",
+     "title": "4a · The pill options (A chosen), the earlier pill, and welcome option A (rejected 3 Nov: basic, nothing new)",
+     "boards": [
+      "M4-PillOptions.dc.html",
+      "M3-VegPill.dc.html",
+      "O0g-A-GoogleOnly.dc.html"
+     ],
+     "notes": [
+      "o0-option-a-rejected"
+     ]
+    },
+    {
+     "id": "4b",
+     "title": "4b · A2 option B, the pin as a chip with no map (rejected 7 Nov 2026: the customer cannot see a wrong pin)",
+     "boards": [
+      "A2-AddressChip.dc.html"
+     ],
+     "notes": []
+    },
+    {
+     "id": "4c",
+     "title": "4c · M1 option A, a switch and a pencil on every dish row (rejected 7 Nov 2026: the pencil looks bad)",
+     "boards": [
+      "M1-DishRows-A.dc.html"
+     ],
+     "notes": []
+    },
+    {
+     "id": "4d",
+     "title": "4d · Rejected 8 Nov 2026: numbers as one band (option B); the owner picked the tiles",
+     "boards": [
+      "N1-NumbersBand-B.dc.html"
+     ],
+     "notes": []
+    }
+   ]
+  },
+  {
+   "id": "mistakes",
+   "title": "Section 5 · Mistakes, fixed: the old screen as it was when it was wrong",
+   "purpose": "Section 5, each old screen and its fix: 01 Pin code was the first screen before #655 (a redesign after the phone sitting, not a bug): now O0 then A1 to A3 in row 1a. 04 Bill before the copy audit #659: now D1 in row 1b. 09 Account before the Google row and the alerts block: now Y3 in row 1d. Y1 before the copy audit #661: now Y3. K3 New and K3b Cooking used a 1fr auto grid, so Accept, Start and Ready buttons of different widths made the text column jump: now K2 and K3 in row 1g with one 1fr 112px grid.",
+   "prefix": "OLD",
+   "tint": "gray",
+   "rows": [
+    {
+     "id": "5a",
+     "title": "5a · Each old screen; the section note says its fix and where the corrected screen sits in Section 1",
+     "boards": [
+      "Main.dc.html",
+      "Bill.dc.html",
+      "Account.dc.html",
+      "Y1-YouGoogleRow.dc.html",
+      "K-Tickets.dc.html",
+      "K-Cooking.dc.html"
+     ],
+     "notes": [
+      "copy-audit"
+     ]
+    },
+    {
+     "id": "5b",
+     "title": "5b · Replaced 6 Nov 2026: the dish-line board without the tint; the tinted board in row 2i is the one to build (#779)",
+     "boards": [
+      "Menu-DishLine.dc.html"
+     ],
+     "notes": []
+    },
+    {
+     "id": "5c",
+     "title": "5c · Wrong actor, 6 Nov 2026: Remove this kitchen was drawn and built (#850, PR #897) on the kitchen app; it belongs to the admin (row 2j). The kitchen app keeps only Open for orders",
+     "boards": [
+      "K-Remove-Confirm.dc.html"
+     ],
+     "notes": []
+    }
+   ]
+  }
+ ]
 }

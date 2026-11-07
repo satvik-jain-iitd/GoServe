@@ -1,0 +1,64 @@
+---
+title: "GoServe today — one order: the phones tap, n8n carries, Supabase keeps the truth, the push comes back"
+---
+flowchart TB
+  subgraph phones[" "]
+    phHead["① THE PHONES TAP"]
+    cust["<b>Customer app</b><br/>places the order"]
+    kit["<b>Kitchen screen</b><br/>accept · ready"]
+    rider["<b>Rider app</b><br/>picked up · delivered"]
+  end
+  subgraph n8n[" "]
+    n8nHead["② n8n CARRIES<br/>one box, dev and prod together"]
+    main01["<b>MAIN 01 Order API</b><br/>the webhook every phone calls"]
+    sub11["<b>SUB 11 Place order</b>"]
+    sub12["<b>SUB 12 Change status</b>"]
+    sub22["<b>SUB 22 Dispatch</b><br/>picks the rider at Ready"]
+    main34["<b>MAIN 34 Push drain</b><br/>clock, every 30 s<br/>(today's bug: dev copy was OFF)"]
+    sub20["<b>SUB 20 Push</b><br/>signs VAPID, sends"]
+  end
+  subgraph store[" "]
+    stHead["③ SUPABASE KEEPS THE TRUTH"]
+    db["<b>Order book</b><br/>orders · events · rider on the order"]
+    outbox["<b>push_outbox queue</b><br/>a trigger adds a row<br/>on placed, ready, picked up, delivered"]
+    subs["<b>push_subscriptions</b><br/>which phones said yes"]
+  end
+  subgraph out[" "]
+    outHead["④ OUTSIDE, THEN BACK TO THE PHONE"]
+    apple["<b>Apple / Google push service</b>"]
+    custPhone["<b>Customer's phone</b><br/>pings, then asks the order book what to show"]
+    screens["<b>Every screen</b><br/>updates live from the order book, no n8n"]
+  end
+
+  phHead ~~~ cust & kit & rider
+  n8nHead ~~~ main01
+  stHead ~~~ db & outbox & subs
+  outHead ~~~ apple & custPhone & screens
+
+  cust -->|"1 · order placed"| main01
+  kit -->|"3 · accept, ready"| main01
+  rider -->|"5 · picked up, delivered"| main01
+  main01 -->|"2 · new order"| sub11
+  main01 -->|"3, 5 · status change"| sub12
+  sub12 -->|"4 · at Ready"| sub22
+  sub11 -->|"2 · place_order"| db
+  sub12 -->|"3, 5 · set_status"| db
+  sub22 -->|"4 · assign rider"| db
+  db -->|"6 · trigger queues a push"| outbox
+  main34 -->|"7 · take the queue"| outbox
+  main34 -->|"8 · one call per push"| sub20
+  sub20 -->|"9 · who to push"| subs
+  sub20 -->|"10 · empty push"| apple
+  apple -->|"11 · ping"| custPhone
+  db -->|"12 · realtime"| screens
+
+  classDef head fill:#F7F3EF,stroke:#F7F3EF,color:#263528,font-weight:bold
+  classDef lane fill:#F7F3EF,stroke:#BFCFB4,stroke-width:2px,color:#263528
+  class phHead,n8nHead,stHead,outHead head
+  class phones,n8n,store,out lane
+  classDef tap fill:#FFFFFF,stroke:#45654E,stroke-width:2px,color:#263528
+  classDef glue fill:#C8D888,stroke:#45654E,stroke-width:2px,color:#263528
+  classDef bug fill:#FFDE59,stroke:#263528,stroke-width:2px,color:#263528
+  class cust,kit,rider,db,outbox,subs,apple,custPhone,screens tap
+  class main01,sub11,sub12,sub22,sub20 glue
+  class main34 bug
