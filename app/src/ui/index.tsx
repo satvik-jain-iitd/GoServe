@@ -1,6 +1,7 @@
 // GoServe design system (story D1, #160). Every screen is built from these. Look and spacing come from ui.css and the tokens.
 import { useCallback, useRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import "./ui.css";
+import { bindSheetFit } from "./sheetFit";
 
 const cx = (...a: (string | false | undefined)[]) => a.filter(Boolean).join(" ");
 
@@ -60,8 +61,7 @@ export function Timeline({ steps, current, label }: { steps: string[]; current: 
   );
 }
 
-// Story #954: on iOS the keyboard shrinks the visual viewport and scrolls the layout viewport, so a fixed overlay drifts and leaves an empty band above the keyboard.
-// The overlay takes the visual viewport's height and top, so the sheet (which scrolls inside) keeps its title and its fields above the keyboard.
+// Stories #954 and #980: the overlay follows the visual viewport only while the keyboard is up (see sheetFit.ts).
 export function useSheetFit() {
   const off = useRef<(() => void) | null>(null);
   return useCallback((el: HTMLElement | null) => {
@@ -69,13 +69,7 @@ export function useSheetFit() {
     off.current = null;
     const vv = typeof window === "undefined" ? null : window.visualViewport;
     if (!el || !vv) return;
-    const fit = () => { el.style.height = `${vv.height}px`; el.style.top = `${vv.offsetTop}px`; el.style.bottom = "auto"; };
-    const reveal = (e: Event) => { const t = e.target as HTMLElement | null; if (t?.matches?.("input, textarea, select")) setTimeout(() => t.scrollIntoView?.({ block: "nearest" }), 300); };   // after the keyboard has come up
-    fit();
-    vv.addEventListener("resize", fit);
-    vv.addEventListener("scroll", fit);
-    el.addEventListener("focusin", reveal);
-    off.current = () => { vv.removeEventListener("resize", fit); vv.removeEventListener("scroll", fit); el.removeEventListener("focusin", reveal); };
+    off.current = bindSheetFit(el, vv, window);
   }, []);
 }
 
