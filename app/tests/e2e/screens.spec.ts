@@ -43,6 +43,15 @@ const STEPS: Record<string, (context: BrowserContext, page: Page, path: string) 
     const net = await setup(context, page); net.state.admin = true; await page.goto(path);
     await page.getByRole("button", { name: "City", exact: true }).click(); await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();
     await page.getByRole("button", { name: "Add a dish" }).click(); await expect(page.getByLabel("Dish name")).toBeVisible(); },
+  "remove-kitchen": async (context, page, path) => {   // story 955: the danger sheet, board D1-RemoveKitchen
+    const net = await setup(context, page); net.state.admin = true; await page.goto(path);
+    await page.getByRole("button", { name: "City", exact: true }).click(); await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();
+    await page.getByRole("region", { name: "Leaving GoServe" }).getByRole("button", { name: /Remove this kitchen/ }).click();
+    await expect(page.getByRole("dialog", { name: /^Remove / })).toBeVisible(); },
+  "clear-everything": async (context, page, path) => {   // story 955: the danger sheet, board D2-ClearEverything
+    const net = await setup(context, page); net.state.admin = true; await page.goto(path);
+    await page.getByRole("button", { name: "Simulator", exact: true }).click(); await page.getByRole("button", { name: "Clear everything" }).click();
+    await expect(page.getByRole("dialog", { name: "Clear everything?" })).toBeVisible(); },
   orders: async (context, page, path) => { await setup(context, page); await page.goto(path); await page.getByRole("button", { name: "My orders" }).click(); await page.waitForLoadState("networkidle"); },
 };
 

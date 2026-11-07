@@ -1,5 +1,6 @@
 // The City of the admin app on the Ink v3 boards A5 (city), A6 (one kitchen) and A7 (add a kitchen) (story H12, #195; stories A2, A3, A5).
 import { useState } from "react";
+import { DangerSheet } from "../ui";
 import { addKitchen, addPerson, cancelInvite, inviteLink, parsePins, removeKitchen, removePerson, locOf, setKitchenLocation, type Invite, type KitchenRow, type Loc, type Person, type PersonKind, type RiderListRow } from "../lib/admin";
 import { kitchenProblem } from "../lib/validate";
 import { getClient } from "../lib/supabase";
@@ -186,7 +187,7 @@ export function AdminCity({ kitchens, people, invites, riders, onError, reload, 
   );
 }
 
-// Story 900, board A8 (moved from the kitchen app, story 892): ask 1 of 2 is this sheet (type REMOVE); ask 2 is the database, which refuses while orders are open and says so here.
+// Story 900, board A8; story #955: the shared danger sheet (board D1-RemoveKitchen). Ask 1 of 2 is this sheet (type REMOVE); ask 2 is the database, which refuses while orders are open and says so here.
 function RemoveSheet({ kitchen, onClose, onRemoved }: { kitchen: KitchenRow; onClose: () => void; onRemoved: () => Promise<void> }) {
   const [word, setWord] = useState("");
   const [busy, setBusy] = useState(false);
@@ -201,19 +202,10 @@ function RemoveSheet({ kitchen, onClose, onRemoved }: { kitchen: KitchenRow; onC
     await onRemoved();   // the city list is read again; the kitchen shows as Off
   };
   return (
-    <div className="ui-sheet-back" onClick={onClose}>
-      <section role="dialog" aria-modal="true" aria-label={`Remove ${kitchen.name}?`} className="ui-sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="ui-sheet-head"><h2>Remove {kitchen.name}?</h2><span className="mono">Ask 1 of 2</span></div>
-        <div className="ui-remove-rows">
-          <p><strong>Stops</strong><span>Customers stop seeing this kitchen today. New orders stop, the menu goes off, and the staff can no longer sign in to it.</span></p>
-          <p><strong>Finishes</strong><span>Orders already placed are finished as normal, and today's slips and cash are closed.</span></p>
-          <p><strong>Stays</strong><span>Past orders, bills and numbers stay. The kitchen stays in this list, marked Off.</span></p>
-        </div>
-        <div className="ui-field"><label htmlFor="remove-word">Type REMOVE to go on</label><input id="remove-word" type="text" autoCapitalize="characters" autoComplete="off" value={word} onChange={(e) => setWord(e.target.value)} /></div>
-        {error && <p role="alert" className="ui-note error">{error}</p>}
-        <button type="button" className="ui-btn big danger" disabled={word !== "REMOVE" || busy} onClick={() => void go()}>Remove kitchen</button>
-        <button type="button" className="ui-btn ghost big" onClick={onClose}>Keep it open</button>
-      </section>
-    </div>
+    <DangerSheet id="remove-word" title={`Remove ${kitchen.name}?`} kicker="Ask 1 of 2 · asks twice · admin only"
+      sentence="The kitchen leaves GoServe today. Customers stop seeing it at once. Nothing is deleted."
+      facts={[["Stops", "New orders, the menu, and every staff sign-in to this kitchen."], ["Finishes", "Orders already placed, and today's slips and cash."], ["Stays", "Past orders, bills and numbers. The kitchen stays in the city list, marked Off."]]}
+      word="REMOVE" value={word} onValue={setWord} confirmLabel="Remove this kitchen" leaveLabel="Keep it open" after="Open orders? It refuses until they are done."
+      busy={busy} error={error} onConfirm={() => void go()} onClose={onClose} />
   );
 }
