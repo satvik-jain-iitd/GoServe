@@ -121,7 +121,7 @@ for (const theme of ["day", "night"] as const) {
     await page.getByRole("heading", { name: "Your orders" }).waitFor();
     await shot("Orders");
     await page.getByRole("button", { name: /^You: / }).click();
-    await page.getByRole("heading", { name: "You", exact: true }).waitFor();
+    await page.getByRole("dialog", { name: "You" }).waitFor();
     await page.evaluate(() => document.fonts.ready);
     await shot("Account");
   });

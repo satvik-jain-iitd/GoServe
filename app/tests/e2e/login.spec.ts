@@ -61,7 +61,7 @@ test("S4c back from Google the customer app opens on You, not the menu (story #6
   await context.addInitScript(() => { try { window.sessionStorage.setItem("gs-return", "account"); } catch { /* the menu opens */ } });
   await setup(context, page, []);
   await page.goto("/customer/");
-  await expect(page.getByRole("heading", { name: "You" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "You" })).toBeVisible();
 });
 
 // Story #653 (row T3): the signed-in line and its Sign out button are ink on the light box, Day and Night (board N1). White on lime was unreadable on Night.

@@ -48,7 +48,7 @@ test("S4 tapping the circle opens the profile; no You tab exists", async ({ page
   await page.getByRole("button", { name: /^You: / }).click();
   await expect(page.getByRole("region", { name: "Delivery details" })).toContainText("Amit Kumar");
   await expect(page.getByRole("button", { name: "You (Account)" })).toHaveCount(0);
-  await page.getByRole("button", { name: "Back", exact: true }).click();
+  await page.getByRole("button", { name: "Close", exact: true }).click();
   await expect(page.getByRole("searchbox", { name: "Search dishes" })).toBeVisible();
 });
 

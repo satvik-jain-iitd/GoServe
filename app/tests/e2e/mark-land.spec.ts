@@ -18,7 +18,7 @@ test("S2 coming back to the Menu from History or the profile, the mark is alread
   await page.goto("/customer/");
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
   await expect(mark(page)).not.toHaveClass(/ui-mark-land/);   // a saved pin is not a fresh pick
-  for (const [open, back] of [["History", "Delivery"], ["You: your details, alerts and account", "Back"]]) {
+  for (const [open, back] of [["History", "Delivery"], ["You: your details, alerts and account", "Close"]]) {
     await page.getByRole("button", { name: open }).click();
     await page.getByRole("button", { name: back, exact: true }).click();
     await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();

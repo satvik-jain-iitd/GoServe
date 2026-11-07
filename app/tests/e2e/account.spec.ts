@@ -82,7 +82,7 @@ test("S7 You has no Use on another phone row and no No account needed line", asy
   await setup(context, page);
   await page.goto("/customer/");
   await you(page).click();
-  await expect(page.getByRole("heading", { name: "You", exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "You" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Use on another phone" })).toHaveCount(0);
   await expect(page.locator("body")).not.toContainText("No account needed");
 });
@@ -95,10 +95,10 @@ for (const t of ["day", "night"] as const) {
     await page.goto("/customer/");
     await page.getByRole("button", { name: "Back to menu" }).click();
     await you(page).click();
-    await expect(page.getByRole("heading", { name: "You", exact: true })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "You" })).toBeVisible();
     const scan = () => axeScan(page);
     expect(await scan()).toEqual([]);
-    await page.getByRole("button", { name: "Back", exact: true }).click();
+    await page.getByRole("button", { name: "Close", exact: true }).click();
     await page.getByRole("button", { name: "History" }).click();
     await expect(page.getByRole("heading", { name: "Your orders" })).toBeVisible();
     expect(await scan()).toEqual([]);

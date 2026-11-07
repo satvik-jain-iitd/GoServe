@@ -87,7 +87,7 @@ test("S6 Account shows the saved name, phone and address, and signs out", async 
   net.state.customer = { user_id: "u", name: "Asha", phone: "9876543210", address: "Flat 4, Green Park", pin_code: "110016" };
   await page.goto("/customer/");
   await page.getByRole("button", { name: /^You: / }).click();
-  await expect(page.getByRole("heading", { name: "You", exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "You" })).toBeVisible();
   await expect(page.getByTestId("account")).toContainText("Asha");
   await expect(page.getByTestId("account")).toContainText("9876543210");
   await expect(page.getByTestId("account")).toContainText("Flat 4, Green Park");

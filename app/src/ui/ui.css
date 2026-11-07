@@ -595,3 +595,15 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-switch.small { width: 44px; height: 24px; }
 .ui-switch.small::before { top: 2px; left: 2px; width: 18px; height: 18px; }
 .ui-switch.small:checked::before { transform: translateX(20px); }
+
+/* Story 975, board Y1-ProfileSheet: the profile sheet behind the circle. */
+.ui-profile-head { display: flex; align-items: center; gap: var(--gs-space-3); margin-bottom: var(--gs-space-3); }
+.ui-profile-photo { flex: none; box-sizing: border-box; width: 48px; height: 48px; border-radius: var(--gs-radius-pill); overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--md-primary); color: var(--md-on-primary); font-family: var(--gs-font-display); font-size: 20px; font-weight: 800; }
+.ui-profile-photo img { display: block; width: 48px; height: 48px; object-fit: cover; }
+.ui-profile-who { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ui-profile-who h2 { margin: 0; font-family: var(--gs-font-display); font-size: 22px; font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ui-profile-who .mono { font-size: 13px; color: var(--gs-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ui-profile .ui-account { padding: 0; display: flex; flex-direction: column; }
+.ui-profile-foot { margin: var(--gs-space-3) 0 0; text-align: center; font-size: 11px; color: var(--gs-text-muted); }
+.ui-profile .ui-btn { width: auto; margin-top: 0; }   /* the sheet rule makes every button full width; the You rows keep their own sizes */
+.ui-profile .ui-btn.icon { flex: none; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; border-radius: 999px; }

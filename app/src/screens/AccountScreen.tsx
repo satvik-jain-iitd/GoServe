@@ -6,7 +6,7 @@ import { useSheetFit } from "../ui";
 import { SignIn } from "./SignIn";
 
 type Props = {
-  name: string; phone: string; address: string; pin: string | null;
+  name: string; phone: string; address: string; pin: string | null; photo: string | null; email: string | null;
   onName: (v: string) => void; onPhone: (v: string) => void; onAddress: (v: string) => void;
   alerts: "ask" | "on" | "off" | "none"; onAlerts: () => void; alertsError?: string | null;
   live: { label: string; no: string; onOpen: () => void } | null;
@@ -18,7 +18,9 @@ type Props = {
 
 const store = (): Storage | null => { try { return window.localStorage; } catch { return null; } };
 
-export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAddress, alerts, onAlerts, alertsError, live, onGivenName, onForget, onDeleteAccount, onMenu }: Props) {
+export function AccountScreen({ name, phone, address, pin, photo, email, onName, onPhone, onAddress, alerts, onAlerts, alertsError, live, onGivenName, onForget, onDeleteAccount, onMenu }: Props) {
+  const sheetRef = useSheetFit();   // story #975: the profile sheet follows the visual viewport too
+  const [photoBad, setPhotoBad] = useState(false);
   const fit = useSheetFit();   // story #954: the overlay follows the visual viewport
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({ name, phone, address });   // story 640: Edit opens a draft; Save applies it, Cancel drops it
@@ -29,12 +31,17 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
   const row = (label: string, value: string, mono = false) => (<><dt className="mono">{label}</dt><dd className={mono ? "mono" : undefined}>{value || "Not saved yet"}</dd></>);
   return (
     <>
-      <header className="ui-head">
-        <button type="button" className="ui-back" aria-label="Back" onClick={onMenu}><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg></button>
-        <h1>You</h1>
-      </header>
+    <div ref={sheetRef} className="ui-sheet-back" onClick={onMenu}>
+    <section className="ui-sheet ui-profile" role="dialog" aria-modal="true" aria-label="You" onClick={(e) => e.stopPropagation()}>
+      <div className="ui-profile-head">
+        <span className="ui-profile-photo" aria-hidden="true">{photo && !photoBad ? <img src={photo} alt="" width={48} height={48} referrerPolicy="no-referrer" onError={() => setPhotoBad(true)} /> : name.trim().charAt(0).toUpperCase() || "·"}</span>
+        <div className="ui-profile-who"><h2>{name.trim() || "You"}</h2><span className="mono">{[phone, email].filter(Boolean).join(" · ") || "No details saved yet"}</span></div>
+        <button type="button" className="ui-btn ghost icon" aria-label="Close" onClick={onMenu}>
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+      </div>
       {live && <button type="button" className="ui-live" onClick={live.onOpen}><span className="tag">{live.label}</span><span className="mono">No. {live.no}</span><span className="go" aria-hidden="true">›</span></button>}
-      <div className="ui-scroll ui-account">
+      <div className="ui-account">
         <section className="ui-slip ph-no-capture" aria-label="Delivery details">
           <div className="ui-slip-body">
             <div className="ui-slip-head"><span>Delivery details</span><span>Used on your bill</span></div>
@@ -66,7 +73,7 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
             <button type="button" className={look === "night" ? "ui-chip on" : "ui-chip"} aria-pressed={look === "night"} onClick={() => pick("night")}>Night</button>
           </div>
         </section>
-        <button type="button" className="ui-row" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}><span className="ui-row-label"><span>Send feedback</span><span className="ui-row-sub">Two lines and a screenshot. We read every note.</span></span><span className="go" aria-hidden="true">›</span></button>
+        <button type="button" className="ui-row" onClick={() => { onMenu(); window.dispatchEvent(new Event("gs-feedback")); }}><span className="ui-row-label"><span>Send feedback</span><span className="ui-row-sub">Two lines and a screenshot. We read every note.</span></span><span className="go" aria-hidden="true">›</span></button>
         {sure ? (
           <div className="ui-row ui-row-static"><span>Forget your details on this phone?</span><span className="ui-ask-act"><button type="button" className="ui-btn" onClick={onForget}>Yes, forget</button><button type="button" className="ui-btn ghost" onClick={() => setSure(false)}>No</button></span></div>
         ) : (
@@ -76,6 +83,9 @@ export function AccountScreen({ name, phone, address, pin, onName, onPhone, onAd
         <p className="mono ui-legal"><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
         <p className="mono ui-legal">{buildLabel(import.meta.env.VITE_BUILD)}</p>
       </div>
+      <p className="mono ui-profile-foot">Signed in with Google. Your orders stay on every phone.</p>
+    </section>
+    </div>
       {deleting && (
         <div ref={fit} className="ui-sheet-back">
           <div role="dialog" aria-modal="true" aria-label="Delete your account?" className="ui-sheet">
