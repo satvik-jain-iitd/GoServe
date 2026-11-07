@@ -37,6 +37,7 @@ type Props = {
   onCancel: () => void;         // story B3, #904: allowed while the order is placed or accepted
   cancelling: boolean;
   rider: RiderCard | null;      // story D2: shown once a rider has the order
+  atDoor?: boolean;             // story #922: the rider tapped Arriving
   onCall?: () => void;          // story H14: the Call tap is counted ("where is my food" calls)
   pay?: Pay;                    // story #552: an online order waits for its payment
   track?: Track;                // story #691: On the way, with the rider's place known
@@ -84,7 +85,7 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "At your door" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
-export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track }: Props) {
+export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor }: Props) {
   const steps = trackerSteps(status);
   const eta = etaMinutes();
   const placed = new Date(placedAt);
@@ -144,12 +145,12 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
         </section>
         <div className="ui-after">
           {status === "placed" && <p>The kitchen has your order. This page updates on its own.</p>}
-          {!delivered && !cancelled && <Timeline steps={steps.map((x) => STEP_WORDS[x.status] ?? x.label)} current={steps.findIndex((x) => x.state === "current")} label="Order progress" />}
+          {!delivered && !cancelled && <Timeline steps={steps.map((x) => (atDoor && x.status === "out_for_delivery" ? "Rider at your door" : STEP_WORDS[x.status] ?? x.label))} current={steps.findIndex((x) => x.state === "current")} label="Order progress" />}
           {!delivered && !cancelled && address && <p className="mono ui-addr ph-no-capture">{address}</p>}
           {track && status === "out_for_delivery" && <MapCard t={track} />}
           {rider && !(track && status === "out_for_delivery") && (
             <div className="notice" data-testid="rider-card">
-              <strong>{rider.name}</strong> is bringing your order.{" "}
+              <strong>{atDoor ? rider.name.split(" ")[0] : rider.name}</strong> {atDoor ? "is at your door." : "is bringing your order."}{" "}
               <a className="ui-btn" href={`tel:${rider.phone}`} onClick={onCall}>Call {rider.name}</a>
             </div>
           )}

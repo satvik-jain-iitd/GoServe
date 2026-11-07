@@ -123,5 +123,30 @@ class PushOutbox(unittest.TestCase):
         self.assertEqual(r[-1], {"has": True, "isnull": True}, r)
 
 
+    # Story #922: the rider's Arriving tap (an event, not a status) queues one push; a second one is still one push; the phone is told the rider is at the door.
+    ARRIVING = f"select rider_event({ORDER}, '{UID}', 'order.arriving', 'rider')"
+    ARRIVING_ROW = f"insert into order_events (order_id, kitchen_id, session_id, event, actor) select id, kitchen_id, session_id, 'order.arriving', 'rider' from orders where session_id = '{UID}'"
+    ROAD = ["accepted", "preparing", "ready", "out_for_delivery"]
+
+    def test_arriving_queues_one_push(self):
+        self.assertEqual(self.statuses(SUB, PLACE, RIDER_ROW, *step(*self.ROAD), self.ARRIVING)[-1], "arriving")
+
+    def test_the_same_event_twice_is_still_one_push(self):
+        s = self.statuses(SUB, PLACE, RIDER_ROW, *step(*self.ROAD), self.ARRIVING_ROW, self.ARRIVING_ROW)
+        self.assertEqual(s.count("arriving"), 1, s)
+
+    def test_no_subscription_means_no_arriving_push(self):
+        r = run(PLACE, RIDER_ROW, *step(*self.ROAD), self.ARRIVING, f"select count(*) as n from push_outbox where session_id = '{UID}'")
+        self.assertEqual(r[-1]["n"], 0, r)
+
+    def test_the_phone_is_told_the_rider_is_at_the_door(self):
+        r = run(SUB, PLACE, RIDER_ROW, *step(*self.ROAD), self.ARRIVING, "select push_latest('https://web.push.apple.com/abc')->>'body' as body")
+        self.assertEqual(r[-1]["body"], "Your rider is at your door.", r)
+
+    def test_before_arriving_the_phone_still_says_picked_up(self):
+        r = run(SUB, PLACE, RIDER_ROW, *step(*self.ROAD), "select push_latest('https://web.push.apple.com/abc')->>'body' as body")
+        self.assertEqual(r[-1]["body"], "Asha has picked up your order.", r)
+
+
 if __name__ == "__main__":
     unittest.main()
