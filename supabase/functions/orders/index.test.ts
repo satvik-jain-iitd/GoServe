@@ -168,3 +168,34 @@ Deno.test("no drop point, or a bad one, reaches the DB as null and the order sti
     assertEquals(placed[0][7], null);
   }
 });
+
+// Story #935: an optional note for the kitchen, up to 200 characters, trimmed, null when blank; a longer one is refused before anything is written.
+Deno.test("a note reaches the DB trimmed, and the placed order answers with it", async () => {
+  placed.length = 0;
+  const res = await post(makeHandler(deps({ place: async (...a) => { placed.push(a); return { ok: true, created: true, order: { ...row, instructions: "No onion" } }; } })), body({ instructions: "  No onion  " }));
+  assertEquals(res.status, 201);
+  assertEquals((await res.json()).order.instructions, "No onion");
+  assertEquals(placed[0][8], "No onion");
+});
+
+Deno.test("no note, or a blank one, reaches the DB as null", async () => {
+  for (const b of [body(), body({ instructions: "   " }), body({ instructions: null })]) {
+    placed.length = 0;
+    assertEquals((await post(makeHandler(deps()), b)).status, 201);
+    assertEquals(placed[0][8], null);
+  }
+});
+
+Deno.test("a note of 201 characters is 422 instructions_too_long with a plain line, and nothing is placed; 200 is fine", async () => {
+  placed.length = 0;
+  const res = await post(makeHandler(deps()), body({ instructions: "x".repeat(201) }));
+  const o = await res.json();
+  assertEquals([res.status, o.ok, o.error], [422, false, "instructions_too_long"]);
+  assertEquals(o.message.includes("200"), true);
+  assertEquals(placed.length, 0);
+  assertEquals((await post(makeHandler(deps()), body({ instructions: "x".repeat(200) }))).status, 201);
+});
+
+Deno.test("a note that is not text is 400 invalid_request", async () => {
+  for (const v of [5, {}, ["a"], true]) assertEquals((await post(makeHandler(deps()), body({ instructions: v }))).status, 400);
+});

@@ -31,6 +31,7 @@ describe("customerLine", () => {
   });
   it("the session cap has its line", () => {
     expect(customerLine("place", "session_order_cap", "Too many orders in this demo session.")).toBe("That is the most orders one phone can place today.");
+    expect(customerLine("place", "instructions_too_long", "Keep the note to 200 characters.")).toBe("Keep the note to 200 characters.");   // story 935
   });
   it("a dish gone sold out says the bill did not go through (story 619: the Bill then names it)", () => {
     expect(customerLine("place", "sold_out", "Dal is sold out.")).toBe(BILL);

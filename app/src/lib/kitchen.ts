@@ -6,7 +6,7 @@ export type Order = {
   id: string; session_id: string; status: string; address: string; items: OrderLine[]; total_paise: number; created_at: string; updated_at: string; paid_by?: string | null;
   payment_method?: string | null; paid_at?: string | null;   // story #552: online orders wait for the payment
   customer_name?: string | null; customer_phone?: string | null;
-  kitchen_id?: string; rider_id?: string | null; cash_handed_at?: string | null; cancel_reason?: string | null;
+  kitchen_id?: string; rider_id?: string | null; cash_handed_at?: string | null; cancel_reason?: string | null; instructions?: string | null;
 };
 
 export const shortId = (id: string): string => id.slice(0, 8);   // the order number the customer and the kitchen both say

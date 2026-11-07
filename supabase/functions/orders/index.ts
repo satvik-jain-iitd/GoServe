@@ -10,13 +10,13 @@ type Placed = { ok: true; created: boolean; order: Record<string, unknown> } | {
 export type Deps = QuoteDeps & {
   existing: (session: string, key: string) => Promise<Record<string, unknown> | null>;   // story #537: the order this caller already made with this key
   rate: (order: string, session: string, food: number, rider: number | null, comment: string | null) => Promise<{ ok: true } | { ok: false; error: string; message: string }>;   // story #354
-  place: (session: string, key: string, kitchen: string, lines: unknown, address: string, itemTotal: number, bill: Record<string, unknown>, drop: Drop | null) => Promise<Placed>;
+  place: (session: string, key: string, kitchen: string, lines: unknown, address: string, itemTotal: number, bill: Record<string, unknown>, drop: Drop | null, instructions: string | null) => Promise<Placed>;
 };
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const bad = () => json(400, { ok: false, error: "invalid_request" });
 const RATING_STATUS: Record<string, number> = { order_not_found: 404, not_delivered: 409, already_rated: 409 };   // anything else the database refuses is 422
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const ORDER_FIELDS = ["id", "kitchen_id", "status", "total_paise", "address", "items", "bill", "created_at"];
+const ORDER_FIELDS = ["id", "kitchen_id", "status", "total_paise", "address", "items", "bill", "created_at", "instructions"];
 
 async function rateOrder(deps: Deps, req: Request, id: string, b: any): Promise<Response> {
   const food = b?.food_score, rider = b?.rider_score ?? null, note = b?.comment ?? null;
@@ -30,6 +30,11 @@ async function rateOrder(deps: Deps, req: Request, id: string, b: any): Promise<
     return json(502, { ok: false, error: "order_unavailable" });   // no detail: a database message must never reach an app
   }
 }
+
+// Story #935: one optional note for the kitchen, up to 200 characters. Blank is none; not text is a bad request; too long is refused in plain words, before anything is placed.
+const NOTE_MAX = 200;
+const noteOf = (v: unknown): { ok: true; note: string | null } | { ok: false } =>
+  v === undefined || v === null ? { ok: true, note: null } : typeof v === "string" ? { ok: true, note: v.trim() || null } : { ok: false };
 
 // Story #905: the customer app's device fix, saved on the order. A missing or bad fix is null and never refuses the order.
 type Drop = { lat: number; lng: number };
@@ -46,6 +51,9 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
   const key = b?.idempotency_key, expected = b?.expected_to_pay_paise, text = b?.address?.text;
   if (!q || typeof key !== "string" || key.length < 8 || key.length > 64 || !Number.isInteger(expected) || expected < 0
     || typeof text !== "string" || text.trim().length === 0 || text.length > 300) return bad();
+  const note = noteOf(b?.instructions);
+  if (!note.ok) return bad();
+  if (note.note && note.note.length > NOTE_MAX) return json(422, { ok: false, error: "instructions_too_long", message: `Keep the note to ${NOTE_MAX} characters.` });
   try {
     const session = await deps.session(req);
     if (!session) return json(401, { ok: false, error: "unauthorized" });
@@ -57,7 +65,7 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
     const quote = { ...out, kitchen_id: q.kitchen };
     if (out.to_pay_paise !== expected) return json(409, { ok: false, error: "price_changed", message: "A price changed. Check the bill again.", quote });
     const { ok: _ok, lines: _lines, offers: _offers, effective, ...bill } = out;   // the offers are for the screen, not for the order; story #619: a swap orders the lines after the swap, not the sold-out one
-    const res = await deps.place(session, key, q.kitchen, effective ?? q.lines, text.trim(), out.item_total_paise, { ...bill, lines: out.lines }, dropOf(b?.address));
+    const res = await deps.place(session, key, q.kitchen, effective ?? q.lines, text.trim(), out.item_total_paise, { ...bill, lines: out.lines }, dropOf(b?.address), note.note);
     if (!res.ok) return json(res.error === "price_changed" ? 409 : 422, { ok: false, error: res.error, message: res.message });
     const order = Object.fromEntries(ORDER_FIELDS.map((f) => [f, res.order[f]]));
     return json(res.created ? 201 : 200, { ok: true, created: res.created, order });
@@ -85,11 +93,11 @@ const live: Deps = {
     if (!res.ok) throw new Error("rate failed");
     return await res.json();
   },
-  place: async (session, key, kitchen, lines, address, itemTotal, bill, drop) => {
+  place: async (session, key, kitchen, lines, address, itemTotal, bill, drop, instructions) => {
     const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const res = await fetch(`${Deno.env.get("SUPABASE_URL")}/rest/v1/rpc/place_order_v2`, {
       method: "POST", headers: { apikey: service, authorization: `Bearer ${service}`, "content-type": "application/json" },
-      body: JSON.stringify({ p_session: session, p_key: key, p_kitchen: kitchen, p_lines: lines, p_address: address, p_item_total: itemTotal, p_bill: bill, p_drop_lat: drop?.lat ?? null, p_drop_lng: drop?.lng ?? null }),
+      body: JSON.stringify({ p_session: session, p_key: key, p_kitchen: kitchen, p_lines: lines, p_address: address, p_item_total: itemTotal, p_bill: bill, p_drop_lat: drop?.lat ?? null, p_drop_lng: drop?.lng ?? null, p_instructions: instructions }),
     });
     if (!res.ok) throw new Error("place failed");
     return await res.json();

@@ -556,3 +556,8 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-declined p + p { margin-top: 6px; }
 .ui-declined .ui-declined-when { margin-top: 8px; font-size: 12px; color: var(--gs-text-muted); }
 .ui-ticket.ui-ticket-solo { grid-template-columns: minmax(0, 1fr); }   /* story 934: a new order has no action column */
+
+/* Story 935: the note for the kitchen */
+.ui-note-count { display: block; margin-top: 4px; text-align: right; color: var(--gs-text-muted); }
+.ui-ticket-note { font-size: 15px; color: var(--md-on-surface); }
+.ui-ticket-note .ui-kicker { font-size: 12px; text-transform: uppercase; color: var(--gs-text-muted); }
