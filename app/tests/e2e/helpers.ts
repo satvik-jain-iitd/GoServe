@@ -80,8 +80,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
         return json(route, 200, state.claimGrant ? 1 : 0);
       }
       if (name === "order_rider") return json(route, 200, state.riderCard ? [state.riderCard] : []);   // D2: the rider card
-      if (name === "reset_session") state.orders = [];
-      return json(route, 200, name === "reset_session" ? { orders: 1 } : null);
+      return json(route, 200, null);
     }
     if (req.url().includes("/rest/v1/settings")) {   // story 829: the public read of the phone code switch (one row, name = otp_login_on)
       if (state.otpLogin === "down") return json(route, 500, { message: "down" });

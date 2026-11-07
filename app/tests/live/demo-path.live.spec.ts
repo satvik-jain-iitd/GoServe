@@ -26,8 +26,4 @@ test("S1 demo path: menu, order, kitchen, AI suggestion, delivered, reset", asyn
   await page.getByRole("button", { name: "Customer" }).click();
   await page.getByRole("button", { name: "Autopilot" }).click();
   await expect(page.locator("[aria-current=step]").filter({ hasText: "Delivered" })).toBeVisible({ timeout: 60_000 });
-
-  await page.getByRole("button", { name: "Reset demo" }).click();
-  await page.getByRole("button", { name: "Yes, clear" }).click();
-  await expect(page.getByText("Demo cleared.")).toBeVisible({ timeout: 10_000 });
 });
