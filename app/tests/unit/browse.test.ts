@@ -1,6 +1,6 @@
 // Story D2 (#161): finding a dish. Categories as chips, a veg toggle and a search box work on the menu already loaded.
 import { describe, it, expect } from "vitest";
-import { categoriesOf, filterDishes, openTill } from "../../src/lib/browse";
+import { categoriesOf, categoryKey, filterDishes, openTill } from "../../src/lib/browse";
 import type { Dish } from "../../src/lib/menu";
 
 const d = (id: string, name: string, over: Partial<Dish> = {}): Dish => ({ id, name, price_paise: 10000, image_url: null, image_credit: null, ...over });
@@ -28,5 +28,33 @@ describe("browse", () => {
     expect(openTill("00:30:00")).toBe("Open till 12:30 am");
     expect(openTill(null)).toBe("");
     expect(openTill(undefined)).toBe("");
+  });
+});
+
+// Story #972: the filter sheet has a checkbox per category. Tick any number: only dishes of the ticked categories show; none ticked is all.
+describe("filterDishes with categories (story 972)", () => {
+  const M = [
+    { id: "1", name: "Dal Makhani", price_paise: 100, category: "Mains", veg: true }, { id: "2", name: "Butter Chicken", price_paise: 100, category: "mains", veg: false },
+    { id: "3", name: "Tandoori Roti", price_paise: 100, category: "Breads", veg: true }, { id: "4", name: "Keema Naan", price_paise: 100, category: "Breads", veg: false },
+    { id: "5", name: "Jeera Rice", price_paise: 100, category: "Rice", veg: true }, { id: "6", name: "House special", price_paise: 100, veg: true },
+  ] as Dish[];
+  it("ticking one category shows only its dishes (a case difference in the data does not split a category)", () => {
+    expect(filterDishes(M, { categories: ["mains"] }).map((x) => x.id)).toEqual(["1", "2"]);
+    expect(filterDishes(M, { categories: ["breads"] }).map((x) => x.id)).toEqual(["3", "4"]);
+  });
+  it("ticking two categories shows both", () => {
+    expect(filterDishes(M, { categories: ["breads", "rice"] }).map((x) => x.id)).toEqual(["3", "4", "5"]);
+  });
+  it("none ticked, or an empty list, is the whole menu", () => {
+    expect(filterDishes(M, { categories: [] })).toHaveLength(6);
+    expect(filterDishes(M, {})).toHaveLength(6);
+  });
+  it("a dish with no category belongs to the Menu group", () => {
+    expect(filterDishes(M, { categories: ["menu"] }).map((x) => x.id)).toEqual(["6"]);
+    expect(categoryKey(M[5])).toBe("menu");
+  });
+  it("veg only with Breads shows only the veg breads, and the search word narrows it further", () => {
+    expect(filterDishes(M, { categories: ["breads"], vegOnly: true }).map((x) => x.id)).toEqual(["3"]);
+    expect(filterDishes(M, { categories: ["breads", "mains"], query: "naan" }).map((x) => x.id)).toEqual(["4"]);
   });
 });

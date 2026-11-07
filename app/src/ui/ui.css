@@ -562,3 +562,12 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-ticket-note { display: flex; align-items: baseline; gap: 6px; min-width: 0; font-size: 14px; }
 .ui-ticket-note .mono { flex: none; font-size: 11px; color: var(--gs-text-muted); }
 .ui-ticket-note-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Story 972, board F1-Filter: a checkbox per category */
+.ui-switch-note { font-size: 11px; font-weight: 400; color: var(--gs-text-muted); }
+.ui-cats { display: flex; flex-direction: column; padding: 0 var(--gs-gutter); }
+.ui-cat-row { display: grid; grid-template-columns: 24px 1fr auto; gap: 12px; align-items: center; cursor: pointer; }
+.ui-cat-row input { width: 22px; height: 22px; margin: 0; accent-color: var(--md-primary); }
+.ui-cat-row span { font-weight: 400; }
+.ui-cat-row span.on { font-weight: 600; }
+.ui-cat-row .ui-count { font-weight: 400; }
+.ui-clear { align-self: flex-end; margin: 8px 0 0; font-size: 12px; color: var(--md-primary); }

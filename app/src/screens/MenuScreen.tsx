@@ -1,7 +1,7 @@
 // The menu of the Ink v3 boards 02, 02a, 02b, 02c and 03 (story H10b, #193): header, greeting, thali hero, sections, filter sheet, dish sheet.
 import { useEffect, useState } from "react";
 import { SHOW_KITCHEN_NAME } from "../lib/area";
-import { filterDishes } from "../lib/browse";
+import { categoryKey, filterDishes } from "../lib/browse";
 import { greeting, sectionsOf, thalisOf } from "../lib/home";
 import { creditLicence, creditLine, type Dish } from "../lib/menu";
 import { formatRupees } from "../lib/money";
@@ -24,11 +24,12 @@ export function MenuScreen(p: Props) {
   const [land] = useState(p.land);   // read once at mount, so a re-render never cuts the fly-in short
   useEffect(() => { p.onLanded(); }, []);
   const [vegOnly, setVegOnly] = useState(false);
+  const [cats, setCats] = useState<string[]>([]);   // story #972: the ticked categories; none ticked is all
   const [query, setQuery] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [dish, setDish] = useState<Dish | null>(null);
   const all = p.dishes ?? [];
-  const shown = filterDishes(all, { vegOnly, query });
+  const shown = filterDishes(all, { vegOnly, query, categories: cats });
   const thali = thalisOf(shown.filter((d) => d.available !== false));   // a sold-out thali is not today's thali
   const sections = sectionsOf(shown);
   const rank = new Map(sections.flatMap((s) => s.dishes).map((d, i) => [d.id, i] as const));   // story #921: the first two photos load at once, the rest when they near the screen
@@ -116,9 +117,8 @@ export function MenuScreen(p: Props) {
       )}
       <TabBar current="menu" onMenu={() => undefined} onOrders={p.onOrders} onYou={p.onYou} />
       {filterOpen && (
-        <FilterSheet count={shown.length} vegOnly={vegOnly} onVeg={setVegOnly} query={query} onQuery={setQuery}
-          sections={sectionsOf(all)} onClose={() => setFilterOpen(false)}
-          onJump={(id) => { setFilterOpen(false); setTimeout(() => document.getElementById(id)?.scrollIntoView({ block: "start" }), 0); }} />
+        <FilterSheet count={shown.length} total={all.length} vegOnly={vegOnly} onVeg={setVegOnly} query={query} onQuery={setQuery}
+          sections={sectionsOf(all)} ticked={cats} onTick={(k, on) => setCats((cur) => (on ? [...cur, k] : cur.filter((x) => x !== k)))} onClear={() => setCats([])} onClose={() => setFilterOpen(false)} />
       )}
       {dish && <DishSheet dish={dish} closed={closed} qty={p.qty[dish.id] ?? 0} onAdd={(n) => { for (let i = 0; i < n; i++) p.onAdd(dish.id); setDish(null); }} onClose={() => setDish(null)} />}
     </>
@@ -216,19 +216,30 @@ function Modal({ label, onClose, children }: { label: string; onClose: () => voi
   );
 }
 
-function FilterSheet({ count, vegOnly, onVeg, query, onQuery, sections, onClose, onJump }: { count: number; vegOnly: boolean; onVeg: (v: boolean) => void; query: string; onQuery: (q: string) => void; sections: { id: string; title: string; dishes: Dish[] }[]; onClose: () => void; onJump: (id: string) => void }) {
+// Story #972, board F1-Filter: a checkbox per category (multi-select, none ticked is all), the veg switch for the whole menu, the count of what matches, Show n dishes.
+function FilterSheet({ count, total, vegOnly, onVeg, query, onQuery, sections, ticked, onTick, onClear, onClose }: { count: number; total: number; vegOnly: boolean; onVeg: (v: boolean) => void; query: string; onQuery: (q: string) => void; sections: { id: string; title: string; dishes: Dish[] }[]; ticked: string[]; onTick: (key: string, on: boolean) => void; onClear: () => void; onClose: () => void }) {
   return (
     <Modal label="Filter" onClose={onClose}>
-      <div className="ui-sheet-head"><h2>Filter</h2><span className="mono ui-count">{count} {count === 1 ? "dish" : "dishes"}</span></div>
+      <div className="ui-sheet-head"><h2>Filter</h2><span className="mono ui-count">{count} of {total} dishes</span></div>
       <input className="ui-search" type="search" aria-label="Search dishes" placeholder="Search dishes" value={query} onChange={(e) => onQuery(e.target.value)} />
       <div className="ui-switch-row">
-        <label htmlFor="veg" className="ui-switch-label">Veg only</label>
+        <label htmlFor="veg" className="ui-switch-label">Veg only <span className="mono ui-switch-note">· whole menu, thali too</span></label>
         <input id="veg" className="ui-switch" type="checkbox" role="switch" checked={vegOnly} onChange={(e) => onVeg(e.target.checked)} />
       </div>
-      <nav aria-label="Sections" className="ui-sections">
-        {sections.map((s) => <button key={s.id} type="button" className="ui-row" onClick={() => onJump(s.id)}><span>{s.title}</span><span className="mono ui-count">{s.dishes.length}</span></button>)}
-      </nav>
-      <button type="button" className="ui-btn ghost big" onClick={onClose}>Close</button>
+      <div role="group" aria-label="Categories" className="ui-cats">
+        {sections.map((s) => {
+          const key = categoryKey(s.dishes[0]);
+          const on = ticked.includes(key);
+          return (
+            <label key={s.id} htmlFor={`cat-${s.id}`} className="ui-row ui-cat-row">
+              <input id={`cat-${s.id}`} type="checkbox" checked={on} onChange={(e) => onTick(key, e.target.checked)} />
+              <span className={on ? "on" : ""}>{s.title}</span><span className="mono ui-count">{s.dishes.length}</span>
+            </label>
+          );
+        })}
+        {ticked.length > 0 && <a href="#" className="mono ui-clear" onClick={(e) => { e.preventDefault(); onClear(); }}>Clear all</a>}
+      </div>
+      <button type="button" className="ui-btn big" onClick={onClose}>Show {count} {count === 1 ? "dish" : "dishes"}</button>
     </Modal>
   );
 }
