@@ -35,7 +35,7 @@ self.addEventListener('push', function (event) {
       }
     } catch (e) { /* offline: the general line stays */ }
     try {
-      await self.registration.showNotification(title, { body: body, icon: '/icons/customer-192.png', tag: 'gs-order' });
+      await self.registration.showNotification(title, { body: body, icon: '/icons/customer-192.png', tag: d && d.order_id ? d.order_id : 'gs-order' });
       logs.push(gsLog('notification_shown', 'ok', body));
     } catch (e) {
       logs.push(gsLog('notification_failed', 'error', String(e && e.message)));

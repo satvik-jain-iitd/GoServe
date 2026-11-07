@@ -6,6 +6,7 @@ const { ENVS, namesFor, orderFor } = require('./deploy');
 const env = process.argv.includes('--env') ? process.argv[process.argv.indexOf('--env') + 1] : 'dev';   // dev or prod
 const E = ENVS[env], ORD = orderFor(env), NM = namesFor(env);
 const { checkLayout } = require('../lib/layout_checks');
+const { activeMismatches } = require('./active_check');
 const gsvault=require('../lib/vault');   // goserve.env first, then the old file (owner, 29 Oct 2026)
 const key=gsvault.get('04_integrations.env','N8N_API_KEY');
 // The User-Agent is the same one deploy.js sends. A plain Node fetch also answered 200 on 15 Oct 2026, so it may not be needed; it stays so the two scripts behave alike
@@ -29,4 +30,8 @@ const call=async p=>(await fetch('https://n8n.linkright.in/api/v1'+p,{headers:{'
     const layout=checkLayout(live,mine.sections);
     console.log(NM[k].padEnd(32),'active='+live.active,'nodes='+live.nodes.length,'parameters='+(par(live)===par(mine)?'same':'DIFF'),'positions='+(pos(live)===pos(mine)?'same':'DIFF'),'links='+(conn(live)===conn(mine)?'same':'DIFF'),'layout='+(layout.length?JSON.stringify(layout).slice(0,120):'clean'));
   }
+  // Story #920: a timer MAIN on in one env and off in the other fails the check (dev MAIN 34 sat off for two days). Exit 1 so the daily run turns red.
+  const bad = activeMismatches(list);
+  for (const m of bad) console.log('ACTIVE MISMATCH', m);
+  if (bad.length) process.exitCode = 1;
 })();

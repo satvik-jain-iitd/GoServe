@@ -20,13 +20,14 @@ def step(*to):
 
 
 def run(*stmts):
-    return sql("begin; " + "; ".join(stmts) + "; rollback;")
+    # Dev holds real queue rows; the checks must see only their own (the delete is rolled back with everything else).
+    return sql("begin; delete from push_outbox; " + "; ".join(stmts) + "; rollback;")
 
 
 @unittest.skipUnless(TOKEN, "SUPABASE_ACCESS_TOKEN not set")
 class PushOutbox(unittest.TestCase):
     def statuses(self, *stmts):
-        r = run(*stmts, "select coalesce(array_agg(status order by id), '{}') as s from push_outbox")
+        r = run(*stmts, f"select coalesce(array_agg(status order by id), '{{}}') as s from push_outbox where session_id = '{UID}'")
         self.assertIsInstance(r, list, r)
         return r[-1]["s"]
 
@@ -42,7 +43,7 @@ class PushOutbox(unittest.TestCase):
         self.assertEqual(self.statuses(SUB, PLACE, *step("accepted", "preparing", "ready"))[-1], "ready")
 
     def test_no_subscription_means_no_queue_row_but_a_trace_line_says_why(self):
-        r = run(PLACE, "select (select count(*) from push_outbox) as q, (select result from order_trace where event='push_skipped') as why")
+        r = run(PLACE, f"select (select count(*) from push_outbox where session_id = '{UID}') as q, (select result from order_trace where event='push_skipped') as why")
         self.assertEqual(r[-1], {"q": 0, "why": "no_subscription"}, r)
 
     def test_take_hands_each_row_out_once(self):
@@ -95,6 +96,31 @@ class PushOutbox(unittest.TestCase):
     def test_a_customer_cannot_mark_a_row_sent(self):
         for who in ("set local role anon", "set local role authenticated"):
             self.assertIn("permission denied", str(run(who, "select push_outbox_sent(array[1]::bigint[])")), who)
+
+    # Story #920: a restart never fires yesterday's pushes, the phone gets the order id as its tag, and the daily check sees a queue that waits too long.
+    OLD = "update push_outbox set created_at = now() - interval '11 minutes'"
+
+    def test_a_row_older_than_10_minutes_is_dead_as_stale_and_never_handed_out(self):
+        r = run(SUB, PLACE, self.OLD, "select jsonb_array_length(push_outbox_take(10)->'rows') as handed",
+                "select (select dead_at is not null from push_outbox) as dead, (select reoffers from push_outbox) as reoffers, (select taken_at is null from push_outbox) as untaken, "
+                "(select (detail::text like '%stale%') from order_trace where event = 'push_dead') as why")
+        self.assertEqual(r[-1], {"dead": True, "reoffers": 0, "untaken": True, "why": True}, r)
+
+    def test_a_row_of_9_minutes_is_still_sent(self):
+        r = run(SUB, PLACE, "update push_outbox set created_at = now() - interval '9 minutes'", "select jsonb_array_length(push_outbox_take(10)->'rows') as handed")
+        self.assertEqual(r[-1]["handed"], 1, r)
+
+    def test_the_latest_push_carries_the_order_id_for_the_phone_tag(self):
+        r = run(SUB, PLACE, f"select push_latest('https://web.push.apple.com/abc')->>'order_id' as oid, {ORDER}::text as want")
+        self.assertEqual(r[-1]["oid"], r[-1]["want"], r)
+
+    def test_the_daily_numbers_say_how_long_the_oldest_waiting_push_has_waited(self):
+        r = run(SUB, PLACE, "update push_outbox set created_at = now() - interval '5 minutes'", "select (health_numbers()->>'push_wait_s')::int as wait")
+        self.assertTrue(299 <= r[-1]["wait"] <= 330, r)
+
+    def test_an_empty_queue_has_no_wait(self):
+        r = run("select health_numbers() ? 'push_wait_s' as has, health_numbers()->'push_wait_s' = 'null'::jsonb as isnull")
+        self.assertEqual(r[-1], {"has": True, "isnull": True}, r)
 
 
 if __name__ == "__main__":
