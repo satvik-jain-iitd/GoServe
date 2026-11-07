@@ -8,7 +8,7 @@ import { AdminMenu } from "./AdminMenu";
 import { KitchenLocation } from "./KitchenLocation";
 
 type View = { kind: "list" } | { kind: "kitchen"; id: string } | { kind: "add" };
-type Props = { kitchens: KitchenRow[]; people: Person[]; invites: Invite[]; riders: RiderListRow[] | null; onError: (m: string | null) => void; reload: () => Promise<void>; view: View; onView: (v: View) => void };
+type Props = { me?: { first: string; email: string | null } | null; kitchens: KitchenRow[]; people: Person[]; invites: Invite[]; riders: RiderListRow[] | null; onError: (m: string | null) => void; reload: () => Promise<void>; view: View; onView: (v: View) => void };
 const EMPTY = { name: "", address: "", phone: "", pins: "", opensAt: "", closesAt: "", loc: null as Loc | null };
 const hhmm = (t: string | null | undefined) => (t ? t.slice(0, 5) : null);
 /** Open (serving), Closed (the switch is off today), Off (taken out of the system, active false). */
@@ -16,7 +16,7 @@ const stateOf = (k: KitchenRow): [string, string] => (!k.active ? ["Off", "error
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" });
 const BACK = <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>;
 
-export function AdminCity({ kitchens, people, invites, riders, onError, reload, view, onView }: Props) {
+export function AdminCity({ me, kitchens, people, invites, riders, onError, reload, view, onView }: Props) {
   const [form, setForm] = useState(EMPTY);
   const [addingPerson, setAddingPerson] = useState(false);
   const [who, setWho] = useState<{ email: string; kind: PersonKind; kitchen: string }>({ email: "", kind: "kitchen", kitchen: "" });
@@ -74,6 +74,7 @@ export function AdminCity({ kitchens, people, invites, riders, onError, reload, 
     onError(failed);
     if (!failed) await reload();
   };
+  const signOut = async () => { try { await getClient().auth.signOut(); } catch { /* offline */ } window.location.reload(); };
   const removeButton = (p: Person) => <button type="button" className="ui-btn ghost small" aria-label={`Remove ${p.email ?? p.user_id}`} onClick={() => void remove(p)}>Remove</button>;
 
   if (view.kind === "add") return (   // A7
@@ -183,6 +184,16 @@ export function AdminCity({ kitchens, people, invites, riders, onError, reload, 
           </div>
         )}
       </section>
+      {me && (
+        <section className="ui-group" aria-label="You">   {/* story #957, board A-City-SignOut: the way out for the signed-in admin */}
+          <h2>You</h2>
+          <button type="button" className="ui-row" onClick={() => void signOut()}>
+            <span className="ui-row-label"><span>Signed in as {me.first}</span>{me.email && <span className="ui-row-sub mono">{me.email}</span>}</span>
+            <span className="ui-signout">Sign out <span aria-hidden="true">›</span></span>
+          </button>
+          <p className="mono ui-meta">Sign out brings the Google sign-in back. The city stays as it is.</p>
+        </section>
+      )}
     </div>
   );
 }
