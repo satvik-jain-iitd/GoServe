@@ -32,6 +32,10 @@ if (db && db.rows) {
     out.push('Jev calls today: ' + n + ' of ' + cap + ' allowed · cost $' + String(Number(Number(db.ai.jev_cost_today || 0).toFixed(6))) + ' · ' + (cap === 0 ? 'OFF' : mark(n, cap)));
     out.push('Laya calls today: 0 (not deployed)');
   }
+  if (db.push_wait_s !== undefined) {   // story #920: the sender may be off; the alert node picks up UNHEALTHY
+    const w = db.push_wait_s;
+    out.push(w === null ? 'Push queue: empty · OK' : 'Push queue: oldest waits ' + w + ' s · ' + (w > 120 ? 'UNHEALTHY (the sender may be off)' : 'OK'));
+  }
   out.push('Oldest rows: ' + ['orders', 'run_log', 'rider_pings', 'order_events'].map((t) => t + ' ' + day(db.oldest && db.oldest[t])).join(', '));
 } else out.push('Database: could not read');
 out.unshift(db && db.rows ? 'Health: OK' : 'Health: UNHEALTHY (the database did not answer)');
