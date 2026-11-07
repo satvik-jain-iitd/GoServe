@@ -260,8 +260,8 @@ function KitchenSheet({ k, onClose, onDone }: { k: KitchenRow; onClose: () => vo
         <label className="ui-danger-label" htmlFor="ek-pins">Pin codes · comma between them</label>
         <input id="ek-pins" className="ui-sheet-input mono-input" type="text" inputMode="numeric" value={f.pins} onChange={set("pins")} />
         <div className="ui-two">
-          <div><label className="ui-danger-label tight" htmlFor="ek-open">Opens at</label><input id="ek-open" className="ui-sheet-input mono-input" type="time" value={f.opensAt} onChange={set("opensAt")} /></div>
-          <div><label className="ui-danger-label tight" htmlFor="ek-close">Closes at</label><input id="ek-close" className="ui-sheet-input mono-input" type="time" value={f.closesAt} onChange={set("closesAt")} /></div>
+          <div><label className="ui-danger-label" htmlFor="ek-open">Opens at</label><input id="ek-open" className="ui-sheet-input mono-input" type="time" value={f.opensAt} onChange={set("opensAt")} /></div>
+          <div><label className="ui-danger-label" htmlFor="ek-close">Closes at</label><input id="ek-close" className="ui-sheet-input mono-input" type="time" value={f.closesAt} onChange={set("closesAt")} /></div>
         </div>
         <label className="ui-danger-label" htmlFor="ek-phone">Phone · the admin calls this</label>
         <input id="ek-phone" className="ui-sheet-input mono-input" type="tel" inputMode="numeric" value={f.phone} onChange={set("phone")} />
