@@ -451,6 +451,10 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-map-line.offline { border-top: 3px solid var(--gs-warm-yellow); gap: var(--gs-space-3); }
 .ui-chip-warn { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 6px; background: var(--gs-warm-yellow); color: var(--gs-ink-green); font-family: var(--gs-font-mono); font-size: 12px; font-weight: 500; text-transform: uppercase; white-space: nowrap; }
 .gs-pin-wrap { background: transparent; border: 0; }
+.gs-kitchen-pin { background: transparent; border: 0; color: var(--md-primary); }   /* story 933: the kitchen pin */
+.gs-kitchen-pin svg { display: block; }
+.leaflet-container:focus, .leaflet-container:focus-visible { outline: none; }   /* story 933: no focus rectangle after a tap */
+.ui-map, .leaflet-container { isolation: isolate; z-index: 0; }   /* story 933: the map panes and controls keep their z-index inside the map, never above a sheet */
 .gs-pin { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 999px; background: var(--md-surface); border: 2px solid var(--md-on-surface); color: var(--md-on-surface); font-family: var(--gs-font-mono); font-size: 10px; box-sizing: border-box; }
 .gs-pin.small { width: 22px; height: 22px; font-size: 9px; }
 .gs-pin.rider { background: var(--md-primary); border-color: var(--md-surface); box-shadow: 0 0 0 7px color-mix(in srgb, var(--md-primary) 25%, transparent); animation: gs-pulse 2s ease-out infinite; }
