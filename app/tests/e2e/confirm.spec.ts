@@ -108,6 +108,7 @@ test("S6 a double tap on a kitchen step: the second answer already_done is not s
   net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
   net.state.reply = { status: 409, body: { ok: false, error: "already_done", message: "Already done." } };
+  await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
   await page.getByRole("button", { name: "Accept 0f0f0f0f" }).click();
   await expect(page.getByText("Already done.")).toHaveCount(0);
   await expect(page.getByRole("alert")).toHaveCount(0);

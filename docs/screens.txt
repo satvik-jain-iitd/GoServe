@@ -15,3 +15,6 @@ add-dish | /admin/ | 412x915 | add-dish
 dish-edit | /admin/ | 412x915 | dish-edit
 remove-kitchen | /admin/ | 412x915 | remove-kitchen
 clear-everything | /admin/ | 412x915 | clear-everything
+order-sheet | /kitchen/ | 412x915 | order-sheet
+order-decline | /kitchen/ | 412x915 | order-decline
+declined | /customer/ | 412x915 | declined

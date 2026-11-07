@@ -51,11 +51,11 @@ export const actDeps = (): ActDeps => ({
 });
 
 // The staff screens keep the server's line; the customer's Yes shows our own line for every refusal (story #659).
-async function act(orderId: string, action: string, deps: ActDeps, mine: CustomerAction | null = null): Promise<{ order: PlacedOrder; alreadyDone: boolean }> {
+async function act(orderId: string, action: string, deps: ActDeps, mine: CustomerAction | null = null, reason?: string): Promise<{ order: PlacedOrder; alreadyDone: boolean }> {
   let res: Response;
   try {
     res = await deps.fetchFn(`${deps.url}/functions/v1/order-actions`, {
-      method: "POST", headers: { "content-type": "application/json", apikey: deps.anon, authorization: `Bearer ${await deps.token()}` }, body: JSON.stringify({ order_id: orderId, action }),
+      method: "POST", headers: { "content-type": "application/json", apikey: deps.anon, authorization: `Bearer ${await deps.token()}` }, body: JSON.stringify(reason === undefined ? { order_id: orderId, action } : { order_id: orderId, action, reason }),
     });
   } catch {
     throw new PlaceError(NO_INTERNET, "network");
@@ -84,6 +84,14 @@ export async function changeStatus(input: StatusInput, deps: ActDeps): Promise<{
   const action = STEP[input.to];
   if (!action) throw new PlaceError("Something went wrong. Please try again.", "unknown");
   return { order: (await act(input.orderId, action, deps)).order };
+}
+
+// Story #934: the kitchen declines a new order with a reason the customer reads. The database allows it only for the kitchen or admin, while placed or accepted.
+export const MIN_REASON = 20;
+export async function declineOrder(input: { orderId: string; reason: string }, deps: ActDeps): Promise<{ order: PlacedOrder }> {
+  const reason = input.reason.trim();
+  if (reason.length < MIN_REASON) throw new PlaceError(`Write at least ${MIN_REASON} characters so the customer understands.`, "reason_short");
+  return { order: (await act(input.orderId, "cancel", deps, null, reason)).order };
 }
 
 export type EventInput = { orderId: string; event: "order.arriving" };

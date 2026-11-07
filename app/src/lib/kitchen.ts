@@ -20,6 +20,8 @@ export const nextStep = (status: string) => STEPS[status] ?? null;
 
 // One label map for the kitchen, the rider and the customer tracker.
 const LABELS: Record<string, string> = { placed: "Placed", accepted: "Accepted", preparing: "Cooking", ready: "Ready", out_for_delivery: "On the way", delivered: "Delivered", cancelled: "Cancelled" };
+/** Story #934: the kitchen said no, in words. A customer's own cancel has no reason; the rider's refusal has a code, not words. */
+export const isDeclined = (o: { status: string; cancel_reason?: string | null }): boolean => o.status === "cancelled" && !!o.cancel_reason && o.cancel_reason !== "refused_at_door";
 export const statusLabel = (status: string): string => LABELS[status] ?? status;
 /** The staff apps (kitchen, admin) say "New" for a placed order; the customer sees "Placed". One place for the difference (H12). */
 export const staffLabel = (status: string): string => (status === "placed" ? "New" : statusLabel(status));

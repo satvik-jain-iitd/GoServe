@@ -1,7 +1,7 @@
 // The customer flow in one place: menu, cart, bill, placed (story #48). No router yet: four steps in state.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { addDish, cartLines, cartTotal, changeQty, toOrderItems, type Cart } from "./lib/cart";
-import { mergeOrder, riderOrders, shortId, statusLabel, type Order, type RiderAction, confirmHandover, isCash } from "./lib/kitchen";
+import { mergeOrder, riderOrders, isDeclined, shortId, statusLabel, type Order, type RiderAction, confirmHandover, isCash } from "./lib/kitchen";
 import { clientPlatform } from "./lib/platform";
 import { riderRefused, savePlatform, tapCall } from "./lib/signals";
 import { useLiveOrders } from "./lib/useLiveOrders";
@@ -19,7 +19,7 @@ import { takeReturn } from "./lib/auth";
 import { alertsState, readOff, turnAlertsOff, writeOff, type Alerts } from "./lib/alerts";
 import { loadProfile, saveProfile } from "./lib/profile";
 import { capture } from "./lib/analytics";
-import { actDeps, addEvent, changeStatus, confirmDelivery, orderDeps, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
+import { actDeps, addEvent, changeStatus, confirmDelivery, declineOrder, orderDeps, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
 import { confirmAt, DEFAULT_CFG, mayAsk, notYet, reaskMs, type ConfirmCfg } from "./lib/confirm";
 import { fetchOrders } from "./lib/live";
 import { pushTrail } from "./lib/trail";
@@ -482,6 +482,23 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     }
   }
 
+  // Story #934: the kitchen declines a new order with a reason the customer reads. Returns null when it worked, or the error line.
+  async function decline(order: Order, reason: string): Promise<string | null> {
+    if (demo) { setOrders((cur) => mergeOrder(cur, { ...order, status: "cancelled", cancel_reason: reason, updated_at: new Date().toISOString() })); return null; }
+    setBusyId(order.id);
+    live.setError(null);
+    pushTrail("kitchen: declined");
+    try {
+      const { order: saved } = await declineOrder({ orderId: order.id, reason }, actDeps());
+      setOrders((cur) => mergeOrder(cur, { ...order, status: saved.status, cancel_reason: reason, updated_at: saved.updated_at }));
+      return null;
+    } catch (e) {
+      return e instanceof Error ? e.message : "Something went wrong. Please try again.";
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   // The autopilot looks at the newest open order, does its next step, and waits. It stops after Delivered or when tapped again.
   // If the server cannot be reached it falls back to the offline story.
   const latest = useRef({ orders, arrived, loading: live.loading, failed: live.error, act });
@@ -753,7 +770,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }
   const kitchenScreen = (gate: KitchenGateState | null) => (
     <KitchenScreen orders={orders} loading={live.loading} error={live.error} busyId={busyId}
-      onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} onHandover={handover} gate={gate} />
+      onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} onDecline={decline} onHandover={handover} gate={gate} />
   );
   const kitchenView = lock === "kitchen" ? <KitchenGate>{kitchenScreen}</KitchenGate> : kitchenScreen(null);
   const needArea = lock === "customer" && step !== "placed" && step !== "orders" && !(pin && (area?.kind === "ok" || area?.kind === "closed"));
@@ -793,6 +810,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             lines={tracked && "items" in tracked ? tracked.items.map((i) => ({ name: i.name, qty: i.qty, paise: i.price_paise * i.qty })) : placedLines}
             address={tracked && "address" in tracked ? tracked.address : address.trim()}
             confirmedAt={tracked && tracked.status === "delivered" ? tracked.updated_at : null}
+            declined={tracked && isDeclined(tracked) ? { reason: (tracked as Order).cancel_reason ?? "", at: tracked.updated_at } : null}
+            onOtherKitchen={() => { setPlaced(null); setCart({}); changeArea(); }}
             asking={asking} busy={confirming} error={confirmError} reminder={reminder}
             onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} pay={paidNow || payState || resumedOnline ? { state: paidNow ? "paid" : payState ?? "waiting", method: payMethod === "cod" ? "upi" : payMethod, startedAt: payState ? payStart : null, error: payError, onPay: payNow, onCash: payCash, onSimulate: () => void simulatePaid(import.meta.env.VITE_PAYMENTS_DEV_SECRET ?? "", payRef.current) } : undefined}
             onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} atDoor={atDoor} track={riderTrack} onCall={() => void tapCall(getClient(), placed.id)} />

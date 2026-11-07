@@ -533,3 +533,26 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-sheet .ui-btn.ui-trash, .ui-btn.ui-trash { flex: none; width: 40px; height: 40px; min-width: 40px; min-height: 40px; margin: 0; padding: 0; border-radius: 999px; color: var(--md-error); border-color: var(--md-error); display: inline-flex; align-items: center; justify-content: center; }
 .ui-dish-hint { margin: 8px 0 12px; font-size: 12px; color: var(--gs-text-muted); }   /* story 936: air between the hint and the Add dish form */
 .ui-signout { color: var(--md-primary); font-weight: 600; white-space: nowrap; }   /* story 957: Sign out in the primary colour on the You row */
+
+/* Story 934: the kitchen order sheet and its decline sheet (boards K3-OrderSheet, K3-OrderDecline) */
+.ui-order-sheet { padding: 20px 20px max(28px, env(safe-area-inset-bottom)); border-radius: 16px 16px 0 0; background: var(--md-surface); color: var(--md-on-surface); }
+.ui-order-sheet .ui-sheet-head { margin-bottom: 12px; }
+.ui-order-sheet .ui-sheet-head h2 { font-size: var(--gs-text-l, 22px); }
+.ui-sheet-when { font-size: 12px; color: var(--gs-text-muted); white-space: nowrap; }
+.ui-sheet-block { display: flex; flex-direction: column; gap: 2px; font-size: 15px; }
+.ui-sheet-block .ui-kicker, .ui-order-sheet label.ui-kicker { font-size: 12px; text-transform: uppercase; color: var(--gs-text-muted); }
+.ui-order-sheet label.ui-kicker { display: block; margin: 0 0 6px; }
+.ui-sheet-acts { display: flex; flex-direction: column; gap: 8px; padding: 20px 0 0; }
+.ui-sheet .ui-sheet-acts .ui-btn { margin-top: 0; }
+.ui-btn.ui-decline { color: var(--md-error); border-color: var(--md-error); }
+.ui-sheet-foot { margin: 12px 0 0; text-align: center; font-size: 12px; color: var(--gs-text-muted); }
+.ui-sheet-lead { margin: 0 0 12px; font-size: 15px; }
+.ui-sheet-text { box-sizing: border-box; width: 100%; padding: 10px 12px; border: 1px solid var(--md-outline); border-radius: 6px; background: var(--md-surface); color: var(--md-on-surface); font: inherit; font-size: 16px; resize: none; }
+.ui-sheet-count { margin: 6px 0 0; display: flex; justify-content: space-between; font-size: 12px; color: var(--gs-text-muted); }
+.ui-sheet-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; }
+.ui-order-sheet .ui-btn.danger-fill:disabled { opacity: 0.4; }
+.ui-declined { margin: 0; padding: 12px 14px; border-left: 4px solid var(--md-error); background: var(--md-surface); border-radius: 0 6px 6px 0; }
+.ui-declined p { margin: 0; font-size: 16px; }
+.ui-declined p + p { margin-top: 6px; }
+.ui-declined .ui-declined-when { margin-top: 8px; font-size: 12px; color: var(--gs-text-muted); }
+.ui-ticket.ui-ticket-solo { grid-template-columns: minmax(0, 1fr); }   /* story 934: a new order has no action column */

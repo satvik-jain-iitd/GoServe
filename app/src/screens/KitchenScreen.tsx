@@ -6,19 +6,21 @@ import { getClient } from "../lib/supabase";
 import { formatRupees } from "../lib/money";
 import { Skeleton, Tabs } from "../ui";
 import { DishList } from "./KitchenTools";
+import { OrderSheet } from "./OrderSheet";
 import type { KitchenGateState } from "./KitchenGate";
 
 type Tab = "new" | "cooking" | "kitchen";
 type Props = {
   orders: Order[]; loading: boolean; error: string | null; busyId: string | null;
   onStep: (order: Order, to: string) => Promise<{ code: string; message: string } | null>;
+  onDecline: (order: Order, reason: string) => Promise<string | null>;   // story #934: the kitchen says no, in words the customer reads
   onHandover: (riderId: string) => Promise<string | null>;   // story #229: the kitchen confirms a rider's cash
   gate: KitchenGateState | null;   // null in the demo console: no open switch, no dishes
 };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready" };
 const stamp = (status: string): [string, string] => [staffLabel(status), STAMP[status] ?? ""];
 
-export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandover, gate }: Props) {
+export function KitchenScreen({ orders, loading, error, busyId, onStep, onDecline, onHandover, gate }: Props) {
   const [tab, setTab] = useState<Tab>("new");
   const [openId, setOpenId] = useState<string | null>(null);
   const fresh = newTickets(orders);
@@ -62,12 +64,13 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
     const [word, cls] = stamp(o.status);
     const next = nextStep(o.status);
     return (
-      <div key={o.id} className="ui-ticket">
+      <div key={o.id} className={o.status === "placed" ? "ui-ticket ui-ticket-solo" : "ui-ticket"}>
         <button type="button" className="ui-ticket-open" aria-label={`Open ticket ${shortId(o.id)}`} onClick={() => setOpenId(o.id)}>
           <span className="ui-ticket-head"><span className="mono">No. {shortId(o.id)} · {hhmm(o.created_at)}</span><span className={`ui-tag ${cls === "cooking" ? "" : cls}`}>{word}</span></span>
           {lines(o)}
         </button>
-        {next ? <button type="button" className="ui-btn big" aria-label={`${next.label} ${shortId(o.id)}`} disabled={busyId === o.id} onClick={() => void step(o)}>{next.label}</button>
+        {next && o.status !== "placed" ? <button type="button" className="ui-btn big" aria-label={`${next.label} ${shortId(o.id)}`} disabled={busyId === o.id} onClick={() => void step(o)}>{next.label}</button>
+          : o.status === "placed" ? null   // story #934: a new order is a tap target; Accept and Decline are on its sheet
           : <span className="mono ui-ticket-wait">{riderLine(o).split(" · ").map((part) => <span key={part}>{part}</span>)}</span>}
       </div>
     );
@@ -84,7 +87,13 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
   );
   const todayLine = <p className="mono ui-foot">Today · {done.length} done{tab === "kitchen" ? ` · ${formatRupees(onSlips)} cash today` : ""}</p>;
 
-  if (opened) {   // K4: one ticket over the tabs
+  const sheet = opened && opened.status === "placed" && (   // story #934: K3 order sheet over the New tab
+    <OrderSheet order={opened} busy={busyId === opened.id} error={error}
+      onAccept={() => void step(opened)}
+      onDecline={async (reason) => { const failed = await onDecline(opened, reason); if (!failed) setOpenId(null); return failed; }}
+      onClose={() => setOpenId(null)} />
+  );
+  if (opened && opened.status !== "placed") {   // K4: one ticket over the tabs
     const [word, cls] = stamp(opened.status);
     const next = nextStep(opened.status);
     return (
@@ -125,7 +134,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
         <h1>{head.h}</h1>
         {head.meta && <span className="meta">{tab !== "kitchen" && dot}{head.meta}</span>}
       </header>
-      {error && <p role="alert" className="ui-note error">{error}</p>}
+      {error && !sheet && <p role="alert" className="ui-note error">{error}</p>}
       {loading && orders.length === 0 && <div className="ui-pad"><Skeleton lines={3} /></div>}
       {tab === "new" && (fresh.length === 0 ? (
         <div className="ui-scroll ui-center"><div className="ui-empty"><h2>No new tickets</h2><p className="ui-meta">New orders ring and show here. Keep this page open.</p>{todayLine}</div></div>
@@ -168,6 +177,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onHandov
         </div>
       )}
       <Tabs current={tab} tabs={[{ key: "new", label: "New", icon: "new", badge: fresh.length }, { key: "cooking", label: "Cooking", icon: "cooking" }, { key: "kitchen", label: "Today", icon: "kitchen" }]} onPick={setTab} />
+      {sheet}
     </>
   );
 }

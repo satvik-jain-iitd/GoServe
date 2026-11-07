@@ -11,9 +11,10 @@ const open = async (page: Page, role: "Kitchen" | "Rider") => {
 test("S1 a kitchen ticket has big type and a big main button", async ({ page, context }) => {
   await setup(context, page, [order("placed")]);
   await open(page, "Kitchen");
+  await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
   const button = page.getByRole("button", { name: "Accept 0f0f0f0f" });
   expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(56);
-  const size = await page.getByText("2 × Butter Chicken").evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+  const size = await page.getByRole("dialog").getByText("2 × Butter Chicken").evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
   expect(size).toBeGreaterThanOrEqual(18);
 });
 
