@@ -43,7 +43,7 @@ export function AdminMenu({ kitchenId, kitchenName, onError }: { kitchenId: stri
           <span className="ui-go" aria-hidden="true">›</span>
         </button>
       ))}
-      {dishes.length > 0 && <p className="mono ui-meta">Tap a dish to change it, mark it sold out, or delete it.</p>}
+      {dishes.length > 0 && <p className="mono ui-meta ui-dish-hint">Tap a dish to change it, mark it sold out, or delete it.</p>}
       {!adding && <div className="ui-pad-y"><button type="button" className="ui-btn ghost" onClick={() => { onError(null); setAdding(true); }}>+ Add a dish</button></div>}
       {adding && (
         <div className="ui-form ui-form-flush">
