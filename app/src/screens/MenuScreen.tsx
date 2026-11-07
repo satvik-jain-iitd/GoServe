@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { SHOW_KITCHEN_NAME } from "../lib/area";
 import { categoryKey, filterDishes } from "../lib/browse";
-import { greeting, sectionsOf, thalisOf } from "../lib/home";
+import { sectionsOf, thalisOf } from "../lib/home";
 import { creditLicence, creditLine, type Dish } from "../lib/menu";
 import { formatRupees } from "../lib/money";
 import { Empty, Stepper, TabBar, VegMark, useSheetFit } from "../ui";
@@ -14,11 +14,11 @@ type Props = {
   qty: Record<string, number>; cartCount: number; cartTotal: number;
   onAdd: (id: string) => void; onChange: (id: string, delta: number) => void; onOpenCart: () => void;
   land: boolean; onLanded: () => void;   // #525: true only for the first Menu after the pin screen
-  onChangePin: () => void; onOrders: () => void; onYou: () => void;
+  onChangePin: () => void; onOrders: () => void;
+  address: string; photo: string | null; onProfile: () => void;   // story #975: the top area and the circle
 };
 
 const FunnelIcon = () => <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 5h18l-7 8v6l-4-2v-4z" /></svg>;
-const VegIcon = () => <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="4" width="16" height="16" rx="1" /><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none" /></svg>;
 
 export function MenuScreen(p: Props) {
   const [land] = useState(p.land);   // read once at mount, so a re-render never cuts the fly-in short
@@ -26,8 +26,11 @@ export function MenuScreen(p: Props) {
   const [vegOnly, setVegOnly] = useState(false);
   const [cats, setCats] = useState<string[]>([]);   // story #972: the ticked categories; none ticked is all
   const [query, setQuery] = useState("");
+  const [photoBad, setPhotoBad] = useState(false);   // story #975: a photo that cannot load leaves the first letter, never a broken picture
   const [filterOpen, setFilterOpen] = useState(false);
   const [dish, setDish] = useState<Dish | null>(null);
+  const where = p.address.trim() || (p.pin ? `Pin code ${p.pin}` : "Choose where to deliver");   // story #975: the one saved address until the saved list (#976) lands
+  const initial = p.name.trim().charAt(0).toUpperCase();
   const all = p.dishes ?? [];
   const shown = filterDishes(all, { vegOnly, query, categories: cats });
   const thali = thalisOf(shown.filter((d) => d.available !== false));   // a sold-out thali is not today's thali
@@ -41,16 +44,25 @@ export function MenuScreen(p: Props) {
     : (p.qty[d.id] ?? 0) > 0 && !closed ? <Stepper label={d.name} value={p.qty[d.id]} onChange={(n) => p.onChange(d.id, n - p.qty[d.id])} /> : add(d);
   return (
     <>
-      <header className="ui-head">
-        <button type="button" className="ui-pin" aria-label={`Change area, pin code ${p.pin ?? ""}`} onClick={p.onChangePin}>
-          <svg className={`ui-pin-svg${land ? " ui-mark-land" : ""}`} aria-hidden="true" viewBox="0 0 24 24" width="22" height="22"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z" fill="var(--md-primary)" /><circle cx="12" cy="9" r="3" fill="var(--md-on-primary)" /></svg>{p.pin}
+      <header className="ui-top">
+        <button type="button" className="ui-where" title="Change the delivery address" onClick={p.onChangePin}>
+          <span className="ui-where-label"><svg className={`ui-pin-svg${land ? " ui-mark-land" : ""}`} aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.5" /></svg>Home<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg></span>
+          <span className="ui-where-line">{where}</span>
         </button>
-        <button type="button" className="ui-btn ghost icon" aria-label="Veg only" aria-pressed={vegOnly} onClick={() => setVegOnly(!vegOnly)}><VegIcon /></button>
-        <button type="button" className="ui-btn ghost icon" aria-label="Filter" onClick={() => setFilterOpen(true)}><FunnelIcon /></button>
+        <button type="button" className="ui-circle" aria-label="You: your details, alerts and account" onClick={p.onProfile}>
+          {p.photo && !photoBad ? <img src={p.photo} alt="" width={36} height={36} referrerPolicy="no-referrer" onError={() => setPhotoBad(true)} /> : initial || <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" /></svg>}
+        </button>
+        <div className="ui-top-search">
+          <div className="ui-search-box">
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
+            <input type="search" aria-label="Search dishes" placeholder="Search dishes" value={query} onChange={(e) => setQuery(e.target.value)} />
+            <button type="button" className="ui-search-filter" aria-label="Filter the menu" onClick={() => setFilterOpen(true)}><FunnelIcon /></button>
+          </div>
+          <label htmlFor="veg-top" className="ui-veg-top"><span className="mono">VEG</span><input id="veg-top" className="ui-switch small" type="checkbox" role="switch" aria-label="Veg only, whole menu" checked={vegOnly} onChange={(e) => setVegOnly(e.target.checked)} /></label>
+        </div>
       </header>
       <div className="ui-scroll" aria-busy={p.dishes === null && !p.error ? true : undefined} aria-label={p.dishes === null && !p.error ? "Loading the menu" : undefined}>
         <div className="ui-greet">
-          <h1>{greeting(new Date().getHours(), p.name)}</h1>
           {(SHOW_KITCHEN_NAME ? p.kitchenName : "") || p.openText ? <h2 className="ui-greet-line">{[SHOW_KITCHEN_NAME ? p.kitchenName : "", p.openText].filter(Boolean).join(" · ")}</h2> : null}
           <div className="ui-zigzag" aria-hidden="true" />
         </div>
@@ -115,9 +127,9 @@ export function MenuScreen(p: Props) {
           </button>
         </div>
       )}
-      <TabBar current="menu" onMenu={() => undefined} onOrders={p.onOrders} onYou={p.onYou} />
+      <TabBar current="menu" onMenu={() => undefined} onOrders={p.onOrders} />
       {filterOpen && (
-        <FilterSheet count={shown.length} total={all.length} vegOnly={vegOnly} onVeg={setVegOnly} query={query} onQuery={setQuery}
+        <FilterSheet count={shown.length} total={all.length} vegOnly={vegOnly} onVeg={setVegOnly}
           sections={sectionsOf(all)} ticked={cats} onTick={(k, on) => setCats((cur) => (on ? [...cur, k] : cur.filter((x) => x !== k)))} onClear={() => setCats([])} onClose={() => setFilterOpen(false)} />
       )}
       {dish && <DishSheet dish={dish} closed={closed} qty={p.qty[dish.id] ?? 0} onAdd={(n) => { for (let i = 0; i < n; i++) p.onAdd(dish.id); setDish(null); }} onClose={() => setDish(null)} />}
@@ -217,11 +229,10 @@ function Modal({ label, onClose, children }: { label: string; onClose: () => voi
 }
 
 // Story #972, board F1-Filter: a checkbox per category (multi-select, none ticked is all), the veg switch for the whole menu, the count of what matches, Show n dishes.
-function FilterSheet({ count, total, vegOnly, onVeg, query, onQuery, sections, ticked, onTick, onClear, onClose }: { count: number; total: number; vegOnly: boolean; onVeg: (v: boolean) => void; query: string; onQuery: (q: string) => void; sections: { id: string; title: string; dishes: Dish[] }[]; ticked: string[]; onTick: (key: string, on: boolean) => void; onClear: () => void; onClose: () => void }) {
+function FilterSheet({ count, total, vegOnly, onVeg, sections, ticked, onTick, onClear, onClose }: { count: number; total: number; vegOnly: boolean; onVeg: (v: boolean) => void; sections: { id: string; title: string; dishes: Dish[] }[]; ticked: string[]; onTick: (key: string, on: boolean) => void; onClear: () => void; onClose: () => void }) {
   return (
     <Modal label="Filter" onClose={onClose}>
       <div className="ui-sheet-head"><h2>Filter</h2><span className="mono ui-count">{count} of {total} dishes</span></div>
-      <input className="ui-search" type="search" aria-label="Search dishes" placeholder="Search dishes" value={query} onChange={(e) => onQuery(e.target.value)} />
       <div className="ui-switch-row">
         <label htmlFor="veg" className="ui-switch-label">Veg only <span className="mono ui-switch-note">· whole menu, thali too</span></label>
         <input id="veg" className="ui-switch" type="checkbox" role="switch" checked={vegOnly} onChange={(e) => onVeg(e.target.checked)} />

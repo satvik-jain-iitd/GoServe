@@ -62,7 +62,7 @@ test("S3 Back to the order returns to the order sheet and sends nothing", async 
 test("S4 the Orders row says Declined with the kitchen's line, and the slip shows the kitchen's words", async ({ page, context }) => {
   await setup(context, page, [{ ...order("cancelled", "2020-01-01T10:02:00Z"), cancel_reason: REASON }]);
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "My orders" }).click();
+  await page.getByRole("button", { name: "History" }).click();
   await expect(page.locator(".ui-order-row .ui-tag.error")).toHaveText("Declined");
   await expect(page.locator(".ui-order-row")).toContainText("could not take this order.");
   await page.getByRole("button", { name: /Butter Chicken/ }).click();
@@ -77,7 +77,7 @@ test("S4 the Orders row says Declined with the kitchen's line, and the slip show
 test("S5 a customer's own cancel still says Cancelled", async ({ page, context }) => {
   await setup(context, page, [order("cancelled", "2020-01-01T10:02:00Z")]);
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "My orders" }).click();
+  await page.getByRole("button", { name: "History" }).click();
   await expect(page.locator(".ui-order-row .ui-tag.error")).toHaveText("Cancelled");
   await page.getByRole("button", { name: /Butter Chicken/ }).click();
   await expect(page.getByRole("heading", { name: "Cancelled" })).toBeVisible();

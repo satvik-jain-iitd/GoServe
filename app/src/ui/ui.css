@@ -575,3 +575,35 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 @media (orientation: landscape) and (max-height: 520px) {
   .ui-landing-head .ui-logo, .ui-welcome .ui-lockup { width: min(100%, 10rem); }
 }
+
+/* Story 975, board C1-HomeTop: the top of the home screen. Line one the label, line two the address; the profile circle at the right; search and the VEG switch under them. */
+.ui-top { display: grid; grid-template-columns: 1fr auto; gap: 8px var(--gs-space-3); align-items: start; padding: max(env(safe-area-inset-top), var(--gs-space-3)) var(--gs-gutter) var(--gs-space-3); border-bottom: 1px solid var(--md-outline-variant); background: var(--md-background); }
+.ui-where { min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.ui-where-label { display: inline-flex; align-items: center; gap: 4px; font-family: var(--gs-font-display); font-size: 22px; font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; text-transform: uppercase; }
+.ui-where-label svg { color: var(--md-primary); flex: none; }
+.ui-where-line { font-size: 14px; line-height: 1.3; color: var(--gs-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ui-circle { box-sizing: border-box; width: 36px; height: 36px; margin-top: 2px; padding: 0; border: 0; border-radius: var(--gs-radius-pill); overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--md-primary); color: var(--md-on-primary); font-family: var(--gs-font-display); font-size: 16px; font-weight: 800; cursor: pointer; }
+.ui-circle img { display: block; width: 36px; height: 36px; object-fit: cover; }
+.ui-top-search { grid-column: 1 / -1; display: flex; align-items: center; gap: var(--gs-space-3); margin-top: 4px; }
+.ui-search-box { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; box-sizing: border-box; border: 1px solid var(--md-outline); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--gs-text-muted); }
+.ui-search-box input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--md-on-surface); font: inherit; font-size: 16px; }
+.ui-search-box:focus-within { outline: 3px solid var(--md-primary); outline-offset: 2px; }
+.ui-search-filter { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; margin-right: -6px; padding: 0; border: 0; border-radius: var(--gs-radius-s); background: transparent; color: var(--md-primary); cursor: pointer; }
+.ui-search-filter svg { width: 20px; height: 20px; }
+.ui-veg-top { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 48px; }
+.ui-veg-top .mono { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; color: var(--gs-text-muted); }
+.ui-switch.small { width: 44px; height: 24px; }
+.ui-switch.small::before { top: 2px; left: 2px; width: 18px; height: 18px; }
+.ui-switch.small:checked::before { transform: translateX(20px); }
+
+/* Story 975, board Y1-ProfileSheet: the profile sheet behind the circle. */
+.ui-profile-head { display: flex; align-items: center; gap: var(--gs-space-3); margin-bottom: var(--gs-space-3); }
+.ui-profile-photo { flex: none; box-sizing: border-box; width: 48px; height: 48px; border-radius: var(--gs-radius-pill); overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--md-primary); color: var(--md-on-primary); font-family: var(--gs-font-display); font-size: 20px; font-weight: 800; }
+.ui-profile-photo img { display: block; width: 48px; height: 48px; object-fit: cover; }
+.ui-profile-who { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ui-profile-who h2 { margin: 0; font-family: var(--gs-font-display); font-size: 22px; font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ui-profile-who .mono { font-size: 13px; color: var(--gs-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ui-profile .ui-account { padding: 0; display: flex; flex-direction: column; }
+.ui-profile-foot { margin: var(--gs-space-3) 0 0; text-align: center; font-size: 11px; color: var(--gs-text-muted); }
+.ui-profile .ui-btn { width: auto; margin-top: 0; }   /* the sheet rule makes every button full width; the You rows keep their own sizes */
+.ui-profile .ui-btn.icon { flex: none; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; border-radius: 999px; }

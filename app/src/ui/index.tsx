@@ -155,6 +155,7 @@ export function VegMark({ veg, size = 12 }: { veg: boolean; size?: number }) {
 
 const TAB_ICONS = {
   menu: <><path d="M5 3h14v18l-2-1.5L15 21l-2-1.5L11 21l-2-1.5L7 21l-2-1.5z" /><path d="M8 8h8M8 12h8M8 16h5" /></>,
+  home: <><path d="M4 11l8-7 8 7" /><path d="M6 10v10h12V10" /><path d="M10 20v-6h4v6" /></>,
   orders: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
   you: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" /></>,
   job: <><circle cx="6" cy="17" r="3" /><circle cx="18" cy="17" r="3" /><path d="M6 17l4-8h5l3 8M10 9l-2-4h3" /></>,
@@ -181,14 +182,14 @@ export function Tabs<K extends string>({ current, tabs, onPick }: { current: K; 
     </nav>
   );
 }
-// Bottom tabs of the customer app: Tabs with the names the tests already use ("My orders", "You (Account)").
-export function TabBar({ current, onMenu, onOrders, onYou }: { current: "menu" | "orders" | "you"; onMenu: () => void; onOrders: () => void; onYou: () => void }) {
-  const go = { menu: onMenu, orders: onOrders, you: onYou };
-  return <Tabs current={current} onPick={(k) => go[k]()} tabs={[
-    { key: "menu", label: "Menu", icon: "menu", name: "Menu" },
-    { key: "orders", label: "Orders", icon: "orders", name: "My orders" },
-    { key: "you", label: "You", icon: "you", name: "You (Account)" },
-  ]} />;
+// Bottom tabs of the customer app (story #975, board C1-HomeTop): Delivery and History. The profile sits behind the circle at the top of the home screen.
+export const CUSTOMER_TABS: { key: "menu" | "orders"; label: string; icon: TabIcon; name: string }[] = [
+  { key: "menu", label: "Delivery", icon: "home", name: "Delivery" },
+  { key: "orders", label: "History", icon: "orders", name: "History" },
+];
+export function TabBar({ current, onMenu, onOrders }: { current: "menu" | "orders"; onMenu: () => void; onOrders: () => void }) {
+  const go = { menu: onMenu, orders: onOrders };
+  return <Tabs current={current} onPick={(k) => go[k]()} tabs={CUSTOMER_TABS} />;
 }
 
 // The landing of the staff apps on the Ink boards R1, R2, K1, K2, A1, A2 (story H12): lockup, zigzag, a kicker, one slip, a footer line.

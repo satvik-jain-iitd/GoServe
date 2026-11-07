@@ -140,8 +140,8 @@ for (const theme of ["day", "night"]) {
     await page.reload();
     await expect(page.getByText("Butter Chicken")).toBeVisible();
     await expect(page.getByText("No connection. Showing the menu you saw last.")).toBeVisible();
-    await expect(page.locator(".ui-pin svg")).toBeVisible();   // the pin mark is drawn in the page, not a picture that can break
-    await expect(page.locator(".ui-pin img")).toHaveCount(0);
+    await expect(page.locator(".ui-where svg").first()).toBeVisible();   // the pin mark is drawn in the page, not a picture that can break
+    await expect(page.locator(".ui-where img")).toHaveCount(0);
     await expect(page.locator(".ui-ph").first()).toBeVisible();   // a photo that cannot load shows the plate
     const broken = await page.evaluate(() => [...document.images].filter((i) => i.complete && i.naturalWidth === 0).length);
     expect(broken).toBe(0);
@@ -159,7 +159,7 @@ for (const theme of ["day", "night"]) {
     await expect(page.getByText("Could not connect to the internet.")).toBeVisible();
     await expect(page.getByText("Check your network, then try again.")).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Main" })).toHaveCount(0);   // no tabs, no header
-    await expect(page.getByRole("button", { name: /Change area/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^Home\b/ })).toHaveCount(0);
     net.menuUp = true;
     await page.getByRole("button", { name: "Try again" }).click();
     await expect(page.getByText("Butter Chicken")).toBeVisible();

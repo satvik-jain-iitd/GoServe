@@ -46,7 +46,7 @@ test("S5 a known pin code goes straight to the menu, and Change area goes back t
   await setup(context, page);
   await page.goto("/customer/");
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
-  await page.getByRole("button", { name: "Change area" }).click();
+  await page.getByRole("button", { name: /^Home\b/ }).click();
   await expect(page.getByRole("heading", { name: "Where does the food go?" })).toBeVisible();
   expect(await page.evaluate(() => window.localStorage.getItem("gs-pin"))).toBeNull();
 });

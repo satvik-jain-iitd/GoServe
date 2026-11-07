@@ -13,6 +13,7 @@ export async function youLayout(page: Page, context: BrowserContext, theme: "day
   const card = page.getByRole("region", { name: "Delivery details" });
   const google = page.getByTestId("google-signin");
   await expect(google).toBeVisible();
+  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));   // story #975: the profile sheet slides in; measure after it stops
   const gap = async () => {
     const c = (await card.boundingBox())!, g = (await google.boundingBox())!;
     return { air: Math.round(g.y - (c.y + c.height)), overlap: g.y < c.y + c.height };

@@ -8,25 +8,21 @@ const MENU = [
   { id: "d3", name: "Gulab Jamun", price_paise: 9000, image_url: null, image_credit: null, veg: true, category: "Sweet" },
 ];
 
-test("S1 the menu shows the kitchen with its closing time, sections, a veg toggle and a search box in the Filter sheet", async ({ page, context }) => {
+test("S1 the menu shows the kitchen with its closing time, sections, a veg switch and a search box at the top", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.menu = MENU;
   await page.goto("/customer/");
   await expect(page.getByRole("heading", { name: /Open till/ })).toBeVisible();   // story #668: the kitchen is not named on the menu
   await expect(page.getByText("Open till 11:59 pm")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Sweet" })).toBeVisible();
-  await page.getByRole("button", { name: "Veg only" }).click();
+  await page.getByRole("switch", { name: "Veg only, whole menu" }).check();
   await expect(page.getByText("Butter Chicken")).toHaveCount(0);
   await expect(page.getByText("Dal Makhani")).toBeVisible();
-  await page.getByRole("button", { name: "Veg only" }).click();
-  await page.getByRole("button", { name: "Filter" }).click();
-  await page.getByLabel("Search dishes").fill("butter");
-  await page.getByRole("button", { name: /^Show \d+ dish(es)?$/ }).click();   // story 972: Show n dishes closes the sheet
+  await page.getByRole("switch", { name: "Veg only, whole menu" }).uncheck();
+  await page.getByRole("searchbox", { name: "Search dishes" }).fill("butter");   // story #975: the search field sits at the top
   await expect(page.getByText("Butter Chicken")).toBeVisible();
   await expect(page.getByText("Dal Makhani")).toHaveCount(0);
-  await page.getByRole("button", { name: "Filter" }).click();
-  await page.getByLabel("Search dishes").fill("zzz");
-  await page.getByRole("button", { name: /^Show \d+ dish(es)?$/ }).click();   // story 972: Show n dishes closes the sheet
+  await page.getByRole("searchbox", { name: "Search dishes" }).fill("zzz");
   await expect(page.getByText("Nothing matches")).toBeVisible();
 });
 
@@ -72,7 +68,7 @@ test("S4 with no rider yet there is no rider card", async ({ page, context }) =>
 test("S5 My orders: See the menu opens the menu with an empty cart", async ({ page, context }) => {
   await setup(context, page, [{ ...order("delivered", "2020-01-01T11:00:00Z"), paid_by: "cash" }]);
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "My orders" }).click();
+  await page.getByRole("button", { name: "History" }).click();
   await page.getByRole("button", { name: /Butter Chicken/ }).click();   // the slip opens as the delivered screen
   await page.getByRole("button", { name: "See the menu" }).click();
   await expect(page.getByRole("heading", { name: "Your bill" })).toHaveCount(0);
@@ -82,7 +78,7 @@ test("S5 My orders: See the menu opens the menu with an empty cart", async ({ pa
 test("S5 an empty My orders says so and points back to the menu", async ({ page, context }) => {
   await setup(context, page);
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "My orders" }).click();
+  await page.getByRole("button", { name: "History" }).click();
   await expect(page.getByText("No orders yet")).toBeVisible();
 });
 
@@ -90,8 +86,8 @@ test("S6 Account shows the saved name, phone and address, and signs out", async 
   const net = await setup(context, page);
   net.state.customer = { user_id: "u", name: "Asha", phone: "9876543210", address: "Flat 4, Green Park", pin_code: "110016" };
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "Account" }).click();
-  await expect(page.getByRole("heading", { name: "You", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /^You: / }).click();
+  await expect(page.getByRole("dialog", { name: "You" })).toBeVisible();
   await expect(page.getByTestId("account")).toContainText("Asha");
   await expect(page.getByTestId("account")).toContainText("9876543210");
   await expect(page.getByTestId("account")).toContainText("Flat 4, Green Park");

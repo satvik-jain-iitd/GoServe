@@ -110,6 +110,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const gate = lock === "customer" && otpSetting !== undefined && otpLoginOn(otpSetting, import.meta.env, window.localStorage);
   const [verified, setVerified] = useState(false);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);   // story #667: null = not asked yet; the first screen waits so a returning customer never sees it flash
+  const [email, setEmail] = useState<string | null>(null);
+  const [photo, setPhoto] = useState<string | null>(null);   // story #975: the Google photo in the profile circle; none for a phone or guest account
   const [otpOpen, setOtpOpen] = useState(false);
   const [nameOpen, setNameOpen] = useState(false);
   const [nameAsked, setNameAsked] = useState(false);
@@ -683,6 +685,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       const p = data.user && !data.user.is_anonymous ? data.user.phone : null;
       const n = (data.user?.user_metadata?.full_name ?? data.user?.user_metadata?.name) as string | undefined;
       if (alive) setSignedIn(!!data.user && !data.user.is_anonymous);
+      const m = data.user && !data.user.is_anonymous ? data.user.user_metadata : null;
+      const url = String(m?.avatar_url ?? m?.picture ?? "");
+      if (alive) setPhoto(/^https:\/\//.test(url) ? url : null);
+      if (alive) setEmail(data.user && !data.user.is_anonymous ? data.user.email ?? null : null);
       if (alive && p) { setVerified(true); setPhone(p.replace(/^91/, "")); if (n) setName((cur) => cur || n); }
     }).catch(() => { if (alive) setSignedIn(false); });
     return () => { alive = false; };
@@ -792,13 +798,13 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             closed={shown?.kind === "closed" ? closedCopy(shown.opens_at, shown.paused === true) : null}
             tellMe={tellMe} tellMeError={tellMeError} onTellMe={tellMeWhenOpen}
             onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
-            onChangePin={changeArea} onOrders={() => setStep("orders")} onYou={() => setStep("account")} />
+            onChangePin={changeArea} onOrders={() => setStep("orders")} address={address} photo={photo} onProfile={() => setStep("account")} />
         )}
-        {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} onYou={() => setStep("account")} />}
+        {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} />}
         {step === "account" && (
-          <AccountScreen onGivenName={(n) => setName((v) => v || n)} name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone} onAddress={setAddress}
+          <AccountScreen photo={photo} email={email} onGivenName={(n) => setName((v) => v || n)} name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone} onAddress={setAddress}
             alerts={reminder} onAlerts={toggleAlerts} alertsError={alertsError} live={openLive} onForget={forgetMe} onDeleteAccount={deleteAccount}
-            onMenu={() => setStep("menu")} onOrders={() => setStep("orders")} />
+            onMenu={() => setStep("menu")} />
         )}
         {menu && step === "bill" && (
           <BillScreen note={note} onNote={setNote} lines={billLines} total={total} soldOut={dead && step === "bill" ? { id: dead.dish.id, name: dead.dish.name, alt: offers.alt, canSwap, onSwap: () => setSwapped((s) => [...s, dead.dish.id]), onRemove: () => takeOut(dead.dish.id) } : undefined} offers={offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove } : undefined} kitchenName={kitchenName} pin={pin} address={address} onAddress={setAddress}

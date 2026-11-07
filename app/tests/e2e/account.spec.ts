@@ -2,13 +2,13 @@
 import { test, expect, type Page } from "@playwright/test";
 import { order, setup, scan as axeScan } from "./helpers";
 
-const you = (page: Page) => page.getByRole("button", { name: "You (Account)" });
+const you = (page: Page) => page.getByRole("button", { name: /^You: / });
 const KITCHEN = { id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: "9876543210", pin_codes: ["110016"], open: true, active: true, lat: null, lng: null, opens_at: "00:00:00", closes_at: "23:59:00" };
 
 test("S1 a tap on a slip opens it, a delivered one offers See the menu and no Order again", async ({ page, context }) => {
   await setup(context, page, [{ ...order("delivered", "2020-01-01T11:00:00Z"), paid_by: "cash" }]);
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "My orders" }).click();
+  await page.getByRole("button", { name: "History" }).click();
   await expect(page.getByText("1 order", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: /Butter Chicken/ }).click();
   await expect(page.getByRole("heading", { name: "Delivered", exact: true })).toBeVisible();
@@ -82,7 +82,7 @@ test("S7 You has no Use on another phone row and no No account needed line", asy
   await setup(context, page);
   await page.goto("/customer/");
   await you(page).click();
-  await expect(page.getByRole("heading", { name: "You", exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "You" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Use on another phone" })).toHaveCount(0);
   await expect(page.locator("body")).not.toContainText("No account needed");
 });
@@ -95,10 +95,11 @@ for (const t of ["day", "night"] as const) {
     await page.goto("/customer/");
     await page.getByRole("button", { name: "Back to menu" }).click();
     await you(page).click();
-    await expect(page.getByRole("heading", { name: "You", exact: true })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "You" })).toBeVisible();
     const scan = () => axeScan(page);
     expect(await scan()).toEqual([]);
-    await page.getByRole("button", { name: "My orders" }).click();
+    await page.getByRole("button", { name: "Close", exact: true }).click();
+    await page.getByRole("button", { name: "History" }).click();
     await expect(page.getByRole("heading", { name: "Your orders" })).toBeVisible();
     expect(await scan()).toEqual([]);
   });

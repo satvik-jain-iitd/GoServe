@@ -32,7 +32,7 @@ test("S2 a tap on Google on You comes back to You", async ({ page, context }) =>
   net.state.phoneUser = true;   // story 829: signed in by phone code, so You still offers Google
   const written = await watchReturn(context, page);
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "Account" }).click();
+  await page.getByRole("button", { name: /^You: / }).click();
   await page.getByTestId("google-signin").click();
   await expect.poll(() => written).toEqual(["account"]);
 });
