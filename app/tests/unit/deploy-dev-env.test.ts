@@ -17,7 +17,7 @@ describe("deploy-dev.yml (the dev app)", () => {
   });
   it("carries the sim webhook, same as prod", () => {
     expect(text).toMatch(/VITE_SIM_URL:/);
-    expect(text).toMatch(/VITE_SIM_TOKEN:/);
+    expect(text).not.toMatch(/SIM_TOKEN/);   // story 941: no shared simulator token ships in any build
   });
   it("carries the decision engine URL, same as prod", () => {
     expect(text).toMatch(/VITE_ENGINE_URL:/);
@@ -29,7 +29,6 @@ describe("deploy-dev.yml (the dev app)", () => {
   });
   it("builds the sim and engine webhooks from the dev secrets", () => {
     expect(text).toMatch(/VITE_SIM_URL:\s*\$\{\{\s*secrets\.DEV_VITE_SIM_URL\s*\}\}/);
-    expect(text).toMatch(/VITE_SIM_TOKEN:\s*\$\{\{\s*secrets\.DEV_VITE_SIM_TOKEN\s*\}\}/);
     expect(text).toMatch(/VITE_ENGINE_URL:\s*\$\{\{\s*secrets\.DEV_VITE_ENGINE_URL\s*\}\}/);
   });
   it("refuses to build when a dev webhook secret is missing, instead of falling back to prod", () => {

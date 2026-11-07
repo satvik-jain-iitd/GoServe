@@ -71,7 +71,7 @@ function finish(name, nodes, edges, sections, setts) {
 }
 
 // env 'prod' builds the PROD copy (story #78): a `PROD` name mark and its own webhook path. Everything else, including the canvas, is the same code.
-function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrouterCredential, n8nApiCredential, uptimerobotKey, vapidCredential, vapidPublicKey, vapidSubject, chatId, driveFolderId, env }) {
+function build({ ids, token, anonKey, supabaseUrl, credential, openrouterCredential, n8nApiCredential, uptimerobotKey, vapidCredential, vapidPublicKey, vapidSubject, chatId, driveFolderId, env }) {
   const prod = env === 'prod';
   const settings = ids.alert ? Object.assign({}, baseSettings, { errorWorkflow: ids.alert }) : baseSettings;
   const cred = credential || { id: 'REPLACE_CREDENTIAL_ID', name: 'GoServe Supabase dev' };
@@ -599,35 +599,46 @@ function build({ ids, token, simToken, anonKey, supabaseUrl, credential, openrou
   ];
   const main93 = finish('GS MAIN 93 Weekly and monthly report', n93m, e93m, s93m, Object.assign({}, settings, { timezone: 'Asia/Kolkata' }));
 
-  // ---- Simulator (story H5, #188, epic E16): the synthetic city. SUB 30 writes through sim_seed or sim_reset; MAIN 30 is its own webhook with its own token. ----
+  // ---- Simulator (story H5, #188, epic E16): the synthetic city. SUB 30 writes through sim_seed or sim_reset; MAIN 30 is its own webhook; the caller must be a signed-in admin (story #941). ----
   const sub30 = sub({ name: 'GS SUB 30 Simulator write', n: 30, callerIds: [ids.main30, ids.main31].filter(Boolean).join(','), credential: cred, settings,
     fields: [['action', 'string'], ['body', 'object'], ['kill_switch', 'boolean'], ['supabase_url', 'string']],
     guardFile: 'guard_sim.js', rpc: { fn: 'sim_seed or sim_reset', label: 'Seed or reset', dynamic: true },
     what: 'Seed fills the synthetic kitchens, dishes and riders (same seed, same rows). Reset deletes every synthetic row and nothing else. Tick moves the synthetic riders and flips a few kitchens, dishes and riders (H6). Enable and disable write the sim_enabled switch. Status reads the switch and the counts for the admin tab (H7).' });
+  const noKeep30 = Object.assign({}, settings, { saveDataSuccessExecution: 'none', saveDataErrorExecution: 'none' });   // the admin's token passes through as an item field: n8n keeps no run data (story #941)
   const n30 = [
     node('gs-main30-01', 'Sim webhook', 'n8n-nodes-base.webhook', 2, { httpMethod: 'POST', path: prod ? 'gs-sim-prod' : 'gs-sim', responseMode: 'responseNode', options: { allowedOrigins: '*' } }, { webhookId: prod ? '3c7a9e52-6d1b-4f08-9a2e-7b5d1c0e8f30' : 'a1e4c830-5b2f-4d7e-8c3a-9f0b6d2e1c30' }),
-    cfgSet('gs-main30-02', [['kill_switch', 'boolean', false], ['sim_token', 'string', simToken || PLACEHOLDER], ['supabase_url', 'string', url], ['env', 'string', prod ? 'prod' : 'dev']]),
-    codeNode('gs-main30-03', 'Check token', code('sim_token.js')),
-    ifNode('gs-main30-04', 'Token ok?', '={{ $json.token_ok }}', 'true'),
+    cfgSet('gs-main30-02', [['kill_switch', 'boolean', false], ['supabase_url', 'string', url], ['anon_key', 'string', anonKey || PLACEHOLDER], ['env', 'string', prod ? 'prod' : 'dev']]),
+    codeNode('gs-main30-03', 'Check request', code('sim_check.js')),
+    ifNode('gs-main30-04', 'Signed in?', '={{ $json.auth_ok }}', 'true'),
     ifNode('gs-main30-05', 'Kill switch?', '={{ $json.kill_switch }}', 'true'),
     ifNode('gs-main30-06', 'Action ok?', '={{ $json.action !== "bad" }}', 'true'),
+    node('gs-main30-12', 'Is admin?', 'n8n-nodes-base.httpRequest', 4.2, {
+      method: 'POST', url: '={{ $json.supabase_url }}/rest/v1/rpc/is_admin', authentication: 'none',
+      sendHeaders: true, specifyHeaders: 'keypair', headerParameters: { parameters: [{ name: 'Authorization', value: '={{ $json.auth }}' }, { name: 'apikey', value: '={{ $json.anon_key }}' }] },
+      sendBody: true, specifyBody: 'json', jsonBody: '{}',
+      options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 8000 } }),
+    codeNode('gs-main30-13', 'Admin answer', code('sim_admin.js')),
+    ifNode('gs-main30-14', 'Admin?', '={{ $json.admin }}', 'true'),
     callSub('gs-main30-07', 'Call SUB 30 Simulator write', ids.sub30, [['action', '={{ $json.action }}', 'string'], ['body', '={{ $json.body }}', 'object'], ['kill_switch', '={{ $json.kill_switch }}', 'boolean'], ['supabase_url', '={{ $json.supabase_url }}', 'string']]),
     respond('gs-main30-08', 'Respond result', '={{ $json.status_code }}', '={{ JSON.stringify($json) }}'),   // a JSON string like MAIN 01; an object body made the edge answer 502 (prod, 25 Oct)
-    respond('gs-main30-09', 'Respond 401', 401, '{"ok":false,"error":"unauthorized","message":"Missing or wrong simulator token."}'),
+    respond('gs-main30-09', 'Respond 401', 401, '{"ok":false,"error":"not_signed_in","message":"Please sign in again."}'),
+    respond('gs-main30-15', 'Respond 403', 403, '{"ok":false,"error":"not_admin","message":"Only an admin can use the simulator."}'),
     respond('gs-main30-10', 'Respond 503', 503, '{"ok":false,"error":"kill_switch","message":"The simulator is paused."}'),
     respond('gs-main30-11', 'Respond 400', 400, '{"ok":false,"error":"bad_action","message":"Action must be seed, seed_kitchens, seed_riders, reset, tick, enable, disable, status or knobs."}'),
   ];
-  const e30 = [['Sim webhook', 'Config'], ['Config', 'Check token'], ['Check token', 'Token ok?'], ['Token ok?', 'Kill switch?', 0], ['Token ok?', 'Respond 401', 1],
-    ['Kill switch?', 'Respond 503', 0], ['Kill switch?', 'Action ok?', 1], ['Action ok?', 'Call SUB 30 Simulator write', 0], ['Action ok?', 'Respond 400', 1], ['Call SUB 30 Simulator write', 'Respond result']];
+  const e30 = [['Sim webhook', 'Config'], ['Config', 'Check request'], ['Check request', 'Signed in?'], ['Signed in?', 'Kill switch?', 0], ['Signed in?', 'Respond 401', 1],
+    ['Kill switch?', 'Respond 503', 0], ['Kill switch?', 'Action ok?', 1], ['Action ok?', 'Is admin?', 0], ['Action ok?', 'Respond 400', 1],
+    ['Is admin?', 'Admin answer'], ['Admin answer', 'Admin?'], ['Admin?', 'Call SUB 30 Simulator write', 0], ['Admin?', 'Respond 403', 1], ['Call SUB 30 Simulator write', 'Respond result']];
   const s30 = [
-    { name: 'RECEIVE', what: 'The admin Simulator tab posts here through n8n, never the database. Body field "action" is seed, seed_kitchens, seed_riders, reset, tick, enable, disable, status or knobs; seed may carry riders_per_kitchen and online_pct; knobs may carry reject_pct, sold_out_pct, delay_pct, rider_drop_pct. The header x-gs-sim-token carries the simulator token.', needs: 'Path gs-sim. Body: action and the seed numbers.', nodes: ['Sim webhook'], color: 4 },
-    { name: 'CONFIG', what: 'The kill switch, the simulator token (its own, not the demo token) and the database address.', needs: 'Config keys: kill_switch, sim_token, supabase_url, env.', nodes: ['Config'], color: 5 },
-    { name: 'GATE', what: 'Wrong token gets 401. Kill switch on gets 503. An action that is not seed or reset gets 400.', needs: 'Config: sim_token, kill_switch. Header x-gs-sim-token. Body: action.', nodes: ['Check token', 'Token ok?', 'Kill switch?', 'Action ok?'], color: 5 },
-    { name: 'WRITE', what: 'Call SUB 30. It clamps the numbers and runs sim_seed or sim_reset. Only rows marked synthetic are ever touched.', needs: 'SUB 30 id. Body: action and the seed numbers.', nodes: ['Call SUB 30 Simulator write'], color: 6 },
+    { name: 'RECEIVE', what: 'The admin Simulator tab posts here with its own sign-in token in the Authorization header. Body field "action" is seed, seed_kitchens, seed_riders, reset, tick, enable, disable, status or knobs; seed may carry riders_per_kitchen and online_pct; knobs may carry reject_pct, sold_out_pct, delay_pct, rider_drop_pct.', needs: 'Path gs-sim. Header Authorization: Bearer <token>. Body: action and the numbers.', nodes: ['Sim webhook'], color: 4 },
+    { name: 'CONFIG', what: 'The kill switch and the database address. No shared token: the caller is the admin who is signed in.', needs: 'Config keys: kill_switch, supabase_url, anon_key, env.', nodes: ['Config'], color: 5 },
+    { name: 'GATE', what: 'No token in the right shape gets 401. Kill switch on gets 503. An unknown action gets 400.', needs: 'Config: kill_switch. Header Authorization. Body: action.', nodes: ['Check request', 'Signed in?', 'Kill switch?', 'Action ok?'], color: 5 },
+    { name: 'ADMIN', what: 'Ask the database whether this token belongs to an admin (rpc is_admin, with the caller\'s own token). Not an admin gets 403 and nothing else runs. The token is dropped after this step.', needs: 'No stored credential. Config: supabase_url, anon_key.', nodes: ['Is admin?', 'Admin answer', 'Admin?'], color: 6 },
+    { name: 'WRITE', what: 'Call SUB 30. It clamps the numbers and runs the simulator function. The database refuses every write unless this database allows the simulator (settings row clear_allowed).', needs: 'SUB 30 id. Body: action and the seed numbers.', nodes: ['Call SUB 30 Simulator write'], color: 6 },
     { name: 'ANSWER', what: 'Send the counts back with the status code.', needs: 'The SUB output: status_code, ok, kitchens, riders, dishes.', nodes: ['Respond result'], color: 4 },
-    { name: 'REFUSE', what: 'Answer the calls that must not go on: 401, 503 and 400.', needs: 'Nothing.', nodes: ['Respond 401', 'Respond 503', 'Respond 400'], color: 1 },
+    { name: 'REFUSE', what: 'Answer the calls that must not go on: 401, 403, 503 and 400.', needs: 'Nothing.', nodes: ['Respond 401', 'Respond 403', 'Respond 503', 'Respond 400'], color: 1 },
   ];
-  const main30 = finish('GS MAIN 30 Simulator', n30, e30, s30, settings);
+  const main30 = finish('GS MAIN 30 Simulator', n30, e30, s30, noKeep30);
 
   // ---- MAIN 31 Simulator tick (story H6, #189): every minute, while the database switch sim_enabled is on, the synthetic city moves. ----
   const n31 = [

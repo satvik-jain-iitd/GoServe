@@ -1,7 +1,7 @@
 // Story H7 (#190): the admin Simulator tab. Parameters, Seed, Reset, the tick switch, Tick now, and the counts.
 // Story #848 (boards A-Sim-Groups, A-Sim-Clear): two groups, Kitchens and Riders, each with its own seed button; Clear everything sits under Start over, dev only. Every tap is one webhook call (lib/sim.ts).
 import { useEffect, useState } from "react";
-import { callSim, clearAll, clearShown, CLEAR_WORD, countsLine, groupLine, KNOB_DEFAULTS, SEED_DEFAULTS, simDeps, SimError, tickLine, type Knobs, type SimAnswer } from "../lib/sim";
+import { callSim, clearAll, clearShown, CLEAR_WORD, readClearAllowed, countsLine, groupLine, KNOB_DEFAULTS, SEED_DEFAULTS, simDeps, SimError, tickLine, type Knobs, type SimAnswer } from "../lib/sim";
 import { getClient } from "../lib/supabase";
 import { DangerSheet, Skeleton } from "../ui";
 
@@ -23,6 +23,7 @@ export function AdminSim() {
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
+  const [allowed, setAllowed] = useState<boolean | null>(null);   // story #941: asked of the database directly; null until it answers
   const [word, setWord] = useState("");
 
   const run = async (go: () => Promise<SimAnswer>, say: (a: SimAnswer) => string, apply: (a: SimAnswer) => void) => {
@@ -32,6 +33,8 @@ export function AdminSim() {
     finally { setBusy(false); }
   };
   useEffect(() => { callSim("status", {}, simDeps()).then((a) => { setState(a); if (a.knobs) setKnobs(a.knobs); }, (e) => setError(e instanceof SimError ? e.message : "Could not reach the simulator.")); }, []);
+
+  useEffect(() => { if (import.meta.env.VITE_SIM_CLEAR === "1") void readClearAllowed(getClient()).then(setAllowed); }, []);
 
   const counts = (a: SimAnswer) => setState((s) => ({ ...(s ?? { ok: true }), ...a }));
   const seedKitchens = () => run(() => callSim("seed_kitchens", {}, simDeps()), (a) => `Seeded: ${a.kitchens} kitchens, ${a.dishes} dishes.`, counts);
@@ -108,9 +111,9 @@ export function AdminSim() {
         <h2>Start over</h2>
         <div className="ui-pad-y ui-row-pair">
           <button type="button" className="ui-btn ghost" disabled={busy} onClick={reset}>Reset the city</button>
-          {clearShown(import.meta.env.VITE_SIM_CLEAR, state) && <button type="button" className="ui-btn ghost danger" disabled={busy} onClick={() => setClearing(true)}>Clear everything</button>}
+          {clearShown(import.meta.env.VITE_SIM_CLEAR, allowed) && <button type="button" className="ui-btn ghost danger" disabled={busy || allowed === null} aria-disabled={busy || allowed === null} onClick={() => setClearing(true)}>Clear everything</button>}
         </div>
-        <p className="ui-meta">{clearShown(import.meta.env.VITE_SIM_CLEAR, state) ? "Everything goes. Logs and accounts stay. Seed brings it back." : "Reset removes the synthetic kitchens, riders and dishes. Real ones stay."}</p>
+        <p className="ui-meta">{clearShown(import.meta.env.VITE_SIM_CLEAR, allowed) ? "Everything goes. Logs and accounts stay. Seed brings it back." : "Reset removes the synthetic kitchens, riders and dishes. Real ones stay."}</p>
       </section>
       {clearing && (
         <DangerSheet id="clear-word" title="Clear everything?" kicker="Dev only · cannot be undone" sentence="This empties the dev city. Seed the kitchens brings it back."
