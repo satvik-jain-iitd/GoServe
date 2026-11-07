@@ -201,7 +201,7 @@ function RemoveSheet({ kitchen, onClose, onRemoved }: { kitchen: KitchenRow; onC
     await onRemoved();   // the city list is read again; the kitchen shows as Off
   };
   return (
-    <div className="ui-sheet-back solid" onClick={onClose}>
+    <div className="ui-sheet-back" onClick={onClose}>
       <section role="dialog" aria-modal="true" aria-label={`Remove ${kitchen.name}?`} className="ui-sheet" onClick={(e) => e.stopPropagation()}>
         <div className="ui-sheet-head"><h2>Remove {kitchen.name}?</h2><span className="mono">Ask 1 of 2</span></div>
         <div className="ui-remove-rows">

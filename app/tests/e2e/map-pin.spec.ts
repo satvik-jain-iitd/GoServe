@@ -34,7 +34,7 @@ test("S2 the map is not a keyboard stop: no tabindex, so a tap leaves no focus r
   expect(await page.locator(".leaflet-container").evaluate((e) => getComputedStyle(e).outlineStyle)).toBe("none");
 });
 
-test("S3 with the Remove sheet open nothing of the map shows through or stands above the backdrop", async ({ page, context }) => {
+test("S3 with the Remove sheet open the map sits under the standard half-dim backdrop, never above it", async ({ page, context }) => {
   const net = await setup(context, page); net.state.admin = true; net.state.kitchens = [KITCHEN];
   await page.goto("/admin/");
   await page.getByRole("button", { name: "City", exact: true }).click();
@@ -42,7 +42,7 @@ test("S3 with the Remove sheet open nothing of the map shows through or stands a
   await page.getByRole("region", { name: "Leaving GoServe" }).getByRole("button", { name: /Remove this kitchen/ }).click();
   await expect(page.getByRole("dialog", { name: "Remove Tau Ka Dhaba?" })).toBeVisible();
   const back = page.locator(".ui-sheet-back");
-  expect(await back.evaluate((e) => getComputedStyle(e).backgroundColor)).toMatch(/^rgb\(/);   // opaque: rgb, not rgba
+  expect(await back.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe("rgba(38, 53, 40, 0.5)");   // the standard half-dim backdrop, like every other sheet: the page stays behind it
   // the point at the centre of the map, and the point of its zoom buttons, must both land on the backdrop (or the sheet in it), never on a map tile or control
   const at = await page.evaluate(() => {
     const hit = (sel: string) => { const el = document.querySelector(sel); if (!el) return "none"; const r = el.getBoundingClientRect(); const top = document.elementFromPoint(r.left + r.width / 2, r.top + Math.min(r.height / 2, 20)); return top?.closest(".ui-sheet-back") ? "backdrop" : "map"; };
