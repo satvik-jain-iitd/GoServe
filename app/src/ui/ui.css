@@ -725,9 +725,21 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-eta-by { margin-top: 4px; color: var(--gs-text-muted); }
 .ui-eta-late { color: var(--gs-nonveg); }
 
+/* Story 1056, board SW2: the strip under the header when the phone is far from the chosen address. */
+.ui-farstrip { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px var(--gs-gutter); background: var(--gs-lime-soft); color: var(--md-on-tertiary); font-size: 14px; line-height: 1.35; }
+.ui-farstrip button { border: 0; background: transparent; color: var(--md-on-tertiary); font: inherit; font-weight: 600; padding: 4px 0; cursor: pointer; white-space: nowrap; }
 /* Story 1049 part 2, board N0: the bell in a soft lime circle. */
 .ui-bellbadge { width: 96px; height: 96px; border-radius: var(--gs-radius-pill); background: var(--gs-lime-soft); display: flex; align-items: center; justify-content: center; color: var(--md-primary); margin: 8px auto; }
 
+/* Story 1056, board SW3: the location-off sheet. */
+.ui-locoff { display: flex; flex-direction: column; align-items: stretch; gap: 12px; text-align: center; }
+.ui-locoff h2 { margin: 0; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
+.ui-locoff-icon { align-self: center; display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; box-sizing: border-box; border: 1px solid var(--md-outline-variant); border-radius: 14px; background: var(--md-surface); color: var(--md-on-surface); }
+.ui-locoff-how { margin: 0; font-size: 14px; color: var(--gs-text-muted); }
+.ui-locoff-head { display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid var(--md-outline-variant); text-align: left; }
+.ui-locoff-all { border: 0; background: transparent; padding: 8px 0; min-height: 44px; color: var(--md-primary); font: inherit; font-weight: 700; font-size: 14px; }
+.ui-locoff-row { display: grid; grid-template-columns: 28px 1fr 16px; gap: 12px; align-items: center; width: 100%; min-height: 56px; padding: 8px 0; border: 0; border-bottom: 1px solid var(--md-outline-variant); background: transparent; color: var(--md-on-surface); font: inherit; text-align: left; }
+.ui-locoff-home { color: var(--md-primary); display: inline-flex; }
 /* Story 1049 part 3, board NK-A: the place of a pin no kitchen serves. */
 .ui-nkplace { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-top: 1px solid var(--md-outline-variant); border-bottom: 1px solid var(--md-outline-variant); color: var(--md-primary); }
 .ui-nkplace > span { display: flex; flex-direction: column; color: var(--md-on-surface); min-width: 0; }
