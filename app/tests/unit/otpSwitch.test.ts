@@ -17,6 +17,16 @@ describe("otpLoginOn", () => {
     expect(otpLoginOn(null, { VITE_OTP_GATE: "1" }, store(null))).toBe(true);
     expect(otpLoginOn(null, {}, store(null))).toBe(false);
   });
+  // Story #1106 (TC 1.13): offline the read fails; the screen must be the one the phone showed the last time it could read, not the build value.
+  it("uses the last setting the phone read when the read fails, before the build value", () => {
+    const last = (v: string) => ({ getItem: (k: string) => (k === "gs-otp-last" ? v : null) });
+    expect(otpLoginOn(null, { VITE_OTP_GATE: "1" }, last("0"))).toBe(false);
+    expect(otpLoginOn(null, {}, last("1"))).toBe(true);
+    expect(otpLoginOn(true, {}, last("0"))).toBe(true);   // a fresh read still wins
+  });
+  it("uses the build value only when the phone never read the setting", () => {
+    expect(otpLoginOn(null, { VITE_OTP_GATE: "1" }, store(null))).toBe(true);
+  });
   it("keeps the phone's own override (gs-otp-gate=1) for tests and a dev phone", () => {
     expect(otpLoginOn(false, {}, store("1"))).toBe(true);
   });

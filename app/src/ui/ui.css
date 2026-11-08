@@ -748,3 +748,6 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 
 /* Story 1103, board O0g-B: the thali picture of the welcome screen, 306 x 181, centred between the title and Continue with Google. */
 .ui-welcome-pic { display: block; width: 306px; max-width: 100%; height: auto; aspect-ratio: 306 / 181; margin: 8px auto -10px; }   /* the button above brings its own 16 px; the board leaves 6 px between the picture and the button */
+
+/* Story 1107: a failed logo keeps its shape (the lockup is 350 x 50), so offline it can never become a huge box. */
+.ui-lockup { aspect-ratio: 7 / 1; object-fit: contain; }

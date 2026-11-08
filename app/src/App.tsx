@@ -48,7 +48,7 @@ import { openOrderToResume } from "./lib/resume";
 import { SignIn } from "./screens/SignIn";
 import { NameSheet, OtpSheet } from "./screens/OtpSheet";
 import { Skeleton } from "./ui";
-import { otpLoginOn } from "./lib/otpGate";
+import { otpLoginOn, rememberOtpSetting } from "./lib/otpGate";
 import { watchOtpSwitch } from "./lib/otpSwitch";
 import { createPayment, switchToCash, simulatePaid, type PayMethod } from "./lib/payments";
 import { openGateway } from "./lib/payGateway";
@@ -113,7 +113,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   useEffect(() => {
     if (lock !== "customer") return;
     const giveUp = setTimeout(() => setOtpSetting((cur) => (cur === undefined ? null : cur)), 4000);   // a slow network never holds the first screen
-    const stop = watchOtpSwitch(getClient(), setOtpSetting);
+    const stop = watchOtpSwitch(getClient(), (v) => { if (typeof v === "boolean") rememberOtpSetting(v); setOtpSetting(v); });   // story #1106: the last read is kept for offline
     return () => { clearTimeout(giveUp); stop(); };
   }, [lock]);
   const wall = lock === "customer";   // the customer app's front door: a signed-out customer meets Google (or the phone code) before the menu

@@ -29,7 +29,10 @@ export function SignIn({ mode = "link", returnTo = "menu", big, filled, onGivenN
   return (
     <div className={big ? "ui-google-stack" : undefined}>
       <Button variant={filled ? "primary" : "ghost"} size={big ? "big" : undefined} data-testid="google-signin"
-        onClick={async () => { rememberReturn(returnTo); await ensureSession().catch(() => {}); setError(await linkGoogle(getClient(), window.location.href.split("?")[0], mode)); }}>
+        onClick={async () => {
+          if (typeof navigator !== "undefined" && navigator.onLine === false) { setError("No internet. Connect and tap again."); return; }   // story #1108: never leave for the browser's error page
+          setError(null);
+          rememberReturn(returnTo); await ensureSession().catch(() => {}); setError(await linkGoogle(getClient(), window.location.href.split("?")[0], mode)); }}>
         Continue with Google
       </Button>
       {help && <p className="ui-google-help">{help}</p>}
