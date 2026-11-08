@@ -12,6 +12,7 @@ declare
   v_pick text;
   v_role text := current_setting('request.jwt.claim.role', true);
 begin
+  perform pg_advisory_xact_lock(hashtext('goserve_dispatch'));   -- one dispatch at a time: two Ready orders can never read the same rider as free
   select * into v_order from orders where id = p_order;
   if v_order.id is null then
     return jsonb_build_object('ok', false, 'error', 'order_not_found', 'message', 'This order was not found.');
@@ -34,6 +35,9 @@ begin
   perform set_config('request.jwt.claim.role', coalesce(v_role, ''), true);
   v_pick := v_dec -> 'decision' ->> 'chosen_pick';
   if v_pick is null or v_pick = 'none' then
+    return jsonb_build_object('ok', false, 'error', 'no_rider_free', 'message', 'No rider is free.');
+  end if;
+  if exists (select 1 from orders where rider_id = v_pick::uuid and status in ('ready', 'out_for_delivery')) then   -- belt and braces after the lock
     return jsonb_build_object('ok', false, 'error', 'no_rider_free', 'message', 'No rider is free.');
   end if;
   return jsonb_build_object('ok', true, 'rider_id', v_pick, 'order', assign_rider(p_order, v_pick::uuid) -> 'order');

@@ -45,6 +45,11 @@ class DispatchInDb(unittest.TestCase):
                 final=f"{RIDER_OF(O2)} as rider")
         self.assertEqual(r["rider"], NEAR, r)   # O took NEAR on Ready; O2 waited; the delivery of O freed NEAR
 
+    def test_a_busy_rider_is_not_picked_for_a_second_ready_order(self):
+        r = run(rider(NEAR, 0.001), order(O), order(O2, "preparing"), f"update orders set status = 'ready' where id = '{O2}'",
+                final=f"{RIDER_OF(O)} as first, {RIDER_OF(O2)} as second, (select count(*) from order_events where event = 'order.assigned' and order_id in ('{O}', '{O2}')) as events")
+        self.assertEqual((r["first"], r["second"], r["events"]), (NEAR, None, 1), r)
+
     def test_batch_mode_is_left_to_its_own_tick(self):
         r = run("update params set value = '{\"mode\":\"batch\"}' where session_id = 'global' and key = 'dispatch_mode' and version = 99999999",
                 rider(NEAR, 0.001), order(O), final=f"{RIDER_OF(O)} as rider")
