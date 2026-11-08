@@ -101,7 +101,6 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
             <div className="ui-field"><label htmlFor="k-open">Opens at</label><input id="k-open" className="mono-input" type="time" value={form.opensAt} onChange={(e) => setForm({ ...form, opensAt: e.target.value })} /></div>
             <div className="ui-field"><label htmlFor="k-close">Closes at</label><input id="k-close" className="mono-input" type="time" value={form.closesAt} onChange={(e) => setForm({ ...form, closesAt: e.target.value })} /></div>
           </div>
-          <p className="ui-meta">A kitchen with no pin code never shows to a customer. You can add staff and dishes after saving.</p>
         </div>
       </div>
       <div className="ui-bottom"><button type="button" className="ui-btn big" onClick={() => void submitKitchen()}>Add kitchen</button></div>
@@ -199,7 +198,6 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
             <span className="ui-row-label"><span>Signed in as {me.first}</span>{me.email && <span className="ui-row-sub mono">{me.email}</span>}</span>
             <span className="ui-signout">Sign out <span aria-hidden="true">›</span></span>
           </button>
-          <p className="mono ui-meta">Sign out brings the Google sign-in back. The city stays as it is.</p>
         </section>
       )}
     </div>
@@ -221,10 +219,10 @@ function RemoveSheet({ kitchen, onClose, onRemoved }: { kitchen: KitchenRow; onC
     await onRemoved();   // the city list is read again; the kitchen shows as Off
   };
   return (
-    <DangerSheet id="remove-word" title={`Remove ${kitchen.name}?`} kicker="Ask 1 of 2 · asks twice · admin only"
+    <DangerSheet id="remove-word" title={`Remove ${kitchen.name}?`}
       sentence="The kitchen leaves GoServe today. Customers stop seeing it at once. Nothing is deleted."
       facts={[["Stops", "New orders, the menu, and every staff sign-in to this kitchen."], ["Finishes", "Orders already placed, and today's slips and cash."], ["Stays", "Past orders, bills and numbers. The kitchen stays in the city list, marked Off."]]}
-      word="REMOVE" value={word} onValue={setWord} confirmLabel="Remove this kitchen" leaveLabel="Keep it open" after="Open orders? It refuses until they are done."
+      word="REMOVE" value={word} onValue={setWord} confirmLabel="Remove this kitchen" leaveLabel="Keep it open" after="Open orders must finish first."
       busy={busy} error={error} onConfirm={() => void go()} onClose={onClose} />
   );
 }
@@ -250,26 +248,25 @@ function KitchenSheet({ k, onClose, onDone }: { k: KitchenRow; onClose: () => vo
     <div ref={fit} className="ui-sheet-back" onClick={onClose}>
       <section className="ui-sheet ui-danger ui-dish-sheet" role="dialog" aria-modal="true" aria-label={`Edit ${k.name}`} onClick={(e) => e.stopPropagation()}>
         <div className="ui-danger-head">
-          <div><h2>{k.name}</h2><span className="mono ui-danger-kicker">Edit details · the location pin has its own map</span></div>
+          <div><h2>{k.name}</h2><span className="mono ui-danger-kicker">Edit details</span></div>
           <button type="button" className="ui-btn ghost icon" aria-label="Close" onClick={onClose}>
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
         </div>
         <label className="ui-danger-label" htmlFor="ek-name">Kitchen name</label>
         <input id="ek-name" className="ui-sheet-input" type="text" value={f.name} onChange={set("name")} />
-        <label className="ui-danger-label" htmlFor="ek-pins">Pin codes · comma between them</label>
+        <label className="ui-danger-label" htmlFor="ek-pins">Pin codes</label>
         <input id="ek-pins" className="ui-sheet-input mono-input" type="text" inputMode="numeric" placeholder="000000, 000000" value={f.pins} onChange={set("pins")} />
         <div className="ui-two">
           <div><label className="ui-danger-label" htmlFor="ek-open">Opens at</label><input id="ek-open" className="ui-sheet-input mono-input" type="time" value={f.opensAt} onChange={set("opensAt")} /></div>
           <div><label className="ui-danger-label" htmlFor="ek-close">Closes at</label><input id="ek-close" className="ui-sheet-input mono-input" type="time" value={f.closesAt} onChange={set("closesAt")} /></div>
         </div>
-        <label className="ui-danger-label" htmlFor="ek-phone">Phone · the admin calls this</label>
+        <label className="ui-danger-label" htmlFor="ek-phone">Phone</label>
         <input id="ek-phone" className="ui-sheet-input mono-input" type="tel" inputMode="numeric" value={f.phone} onChange={set("phone")} />
-        <label className="ui-danger-label" htmlFor="ek-addr">Address · the rider reads this</label>
+        <label className="ui-danger-label" htmlFor="ek-addr">Address</label>
         <textarea id="ek-addr" className="ui-sheet-text" rows={2} value={f.address} onChange={set("address")} />
         {error && <p role="alert" className="ui-note error">{error}</p>}
         <div className="ui-sheet-acts"><button type="button" className="ui-btn big" disabled={busy} onClick={() => void save()}>Save</button></div>
-        <p className="mono ui-sheet-foot">A pin code taken away hides the kitchen from those customers at once. Staff and dishes stay.</p>
       </section>
     </div>
   );

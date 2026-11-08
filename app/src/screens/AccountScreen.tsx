@@ -59,10 +59,10 @@ export function AccountScreen({ name, phone, address, pin, photo, email, onName,
             )}
           </div>
         </section>
-        <div className="ui-google"><SignIn returnTo="account" onGivenName={onGivenName} help="Keeps your orders on every phone." /></div>
+        <div className="ui-google"><SignIn returnTo="account" onGivenName={onGivenName} /></div>
         {!editing && <button type="button" className="ui-row" onClick={() => { setDraft({ name, phone, address }); setEditing(true); }}><span>Edit delivery details</span><span className="go" aria-hidden="true">›</span></button>}
         <div className="ui-row ui-row-static">
-          <label htmlFor="alerts" className="ui-row-label"><span>Order alerts</span><span className="ui-row-sub">{alerts === "none" ? "Blocked in your phone settings. Settings › Notifications › GoServe, then come back." : alerts === "on" ? "On for this phone" : alerts === "off" ? "Off for this phone. Tap to turn on." : "Tap to turn on"}</span></label>
+          <label htmlFor="alerts" className="ui-row-label"><span>Order alerts</span><span className="ui-row-sub">{alerts === "none" ? "Blocked in your phone settings. Settings › Notifications › GoServe, then come back." : alerts === "on" ? "On for this phone" : alerts === "off" ? "Off for this phone" : ""}</span></label>
           <input id="alerts" className="ui-switch" type="checkbox" role="switch" checked={alerts === "on"} disabled={alerts === "none"} onChange={onAlerts} />
         </div>
         {alertsError && <p role="alert" className="ui-field-error">{alertsError}</p>}
@@ -83,7 +83,6 @@ export function AccountScreen({ name, phone, address, pin, photo, email, onName,
         <p className="mono ui-legal"><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
         <p className="mono ui-legal">{buildLabel(import.meta.env.VITE_BUILD)}</p>
       </div>
-      <p className="mono ui-profile-foot">Signed in with Google. Your orders stay on every phone.</p>
     </section>
     </div>
       {deleting && (

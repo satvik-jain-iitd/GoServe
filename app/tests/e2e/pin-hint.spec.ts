@@ -12,7 +12,7 @@ test("S1 the address step by hand: 000000 in grey, empty value, Continue off unt
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Type it by hand" }).click();
   const pin = page.getByLabel("Pin code");
-  await expect(pin).toHaveAttribute("placeholder", "000000");
+  await expect(pin).toHaveAttribute("placeholder", "123456");   // story #1044: the by-hand step shows 123456
   await expect(pin).toHaveValue("");
   const c = await muted(page, "#pin");
   expect(c.hint).not.toBe(c.text);

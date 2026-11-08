@@ -45,7 +45,7 @@ test("S2 an order placed from a typed address carries no drop point", async ({ p
   const orders = await start(context, page);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Type it by hand" }).click();
-  await page.getByLabel("Address · food gets delivered here").fill("Flat 4, Green Park");
+  await page.getByLabel("Address", { exact: true }).fill("Flat 4, Green Park");
   await page.getByLabel("Pin code").fill("110016");
   await page.getByRole("button", { name: "See the menu" }).click();
   await orderFromBill(page);
@@ -61,7 +61,7 @@ test("S3 location used, then the address typed over on the same screen: the orde
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Use my location" }).click();
   await expect(page.getByRole("heading", { name: "Is this right?" })).toBeVisible();
-  await page.getByLabel("Address · food gets delivered here").fill("C-4, Hauz Khas, near the metro");
+  await page.getByLabel("Address", { exact: true }).fill("C-4, Hauz Khas, near the metro");
   await page.getByRole("button", { name: "See the menu" }).click();
   await orderFromBill(page);
   expect(orders).toHaveLength(1);

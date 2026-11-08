@@ -76,13 +76,12 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false, g
       <header>
         <h1><img className="ui-logo ui-lockup" src="/brand/lockup-day.png" alt="GoServe" width="350" height="50" /></h1>
         <div className="ui-zigzag" aria-hidden="true" />
-        <p className="ui-welcome-kicker">Hot meals from our kitchen · cash at the door</p>
+        <p className="ui-welcome-kicker">Hot meals from our kitchen for you in 20 mins</p>
       </header>
       <section className="ui-slip" aria-label="Welcome"><div className="ui-slip-body">
         <div className="ui-slip-head"><span>Welcome</span><span>Step 1 of 3</span></div>
         {inner}
       </div></section>
-      <p className="ui-welcome-foot">No app to install · no card needed</p>
     </main>
   ) : (
     <div ref={fit} className="ui-sheet-back">
@@ -95,8 +94,7 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false, g
     return frame(
       <>
         {head("One tap and you are in")}
-        <p className="ui-meta">No password, no code to wait for.</p>
-        <SignIn mode="signin" big filled help="We ask for your mobile number on the bill, so the rider can call you." />
+        <SignIn mode="signin" big filled />
       </>,
     );
   }
@@ -106,7 +104,6 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false, g
         {step === "number" ? (
           <>
             {head(welcome ? "Where do we reach you?" : "Your mobile number")}
-            {welcome && <p className="ui-meta">Your mobile number, then a 6 digit code. The rider calls this number.</p>}
             <div className="ui-field">
               <label htmlFor="otp-phone">{welcome ? "Mobile" : "Mobile number"}</label>
               <div className={welcome ? "otp-phone otp-box" : "otp-phone"}>
@@ -117,7 +114,7 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false, g
             <button type="button" className={welcome ? "ui-btn big" : "ui-btn bar"} disabled={!isMobile(phone) || busy || locked} onClick={() => send()}>Send code</button>
             {welcome ? (
               <>
-                <div className="ui-or" aria-hidden="true"><span /><span>or</span><span /></div>
+                <div className="ui-or" aria-hidden="true"><span /><span>Or</span><span /></div>
                 <SignIn mode="signin" big />
               </>
             ) : <button type="button" className="ui-btn ghost" onClick={onClose}>Not now</button>}

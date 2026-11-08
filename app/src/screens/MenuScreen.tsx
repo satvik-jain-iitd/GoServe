@@ -58,7 +58,7 @@ export function MenuScreen(p: Props) {
             <input type="search" aria-label="Search dishes" placeholder="Search dishes" value={query} onChange={(e) => setQuery(e.target.value)} />
             <button type="button" className="ui-search-filter" aria-label="Filter the menu" onClick={() => setFilterOpen(true)}><FunnelIcon /></button>
           </div>
-          <label htmlFor="veg-top" className="ui-veg-top"><span className="mono">VEG</span><input id="veg-top" className="ui-switch small" type="checkbox" role="switch" aria-label="Veg only, whole menu" checked={vegOnly} onChange={(e) => setVegOnly(e.target.checked)} /></label>
+          <label htmlFor="veg-top" className="ui-veg-top"><span className="mono">Veg</span><input id="veg-top" className="ui-switch small" type="checkbox" role="switch" aria-label="Veg only, whole menu" checked={vegOnly} onChange={(e) => setVegOnly(e.target.checked)} /></label>
         </div>
       </header>
       <div className="ui-scroll" aria-busy={p.dishes === null && !p.error ? true : undefined} aria-label={p.dishes === null && !p.error ? "Loading the menu" : undefined}>
@@ -96,7 +96,7 @@ export function MenuScreen(p: Props) {
             {p.tellMeError && <p role="alert" className="ui-meta">{p.tellMeError}</p>}
           </div>
         )}
-        {empty && <p className="ui-menu-empty-note mono">Your internet is fine. The kitchen has nothing listed yet.</p>}
+        {empty && <p className="ui-menu-empty-note mono">Nothing listed yet.</p>}
         {p.dishes !== null && all.length > 0 && shown.length === 0 && <div className="ui-pad"><Empty title="Nothing matches" hint="Try another word or clear the filters." /></div>}
         {sections.map((s) => (
           <div key={s.id}>

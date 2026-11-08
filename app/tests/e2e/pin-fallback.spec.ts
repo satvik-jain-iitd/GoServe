@@ -28,7 +28,7 @@ test("S1 no postcode from the first lookup: the nearest pin from our table fills
   const calls = await start(context, page, CHHATARPUR, () => ({ status: 200, body: JSON.stringify("471001") }));
   await expect(page.getByRole("heading", { name: "Is this right?" })).toBeVisible();
   await expect(page.getByLabel("Pin code")).toHaveValue("471001");
-  await expect(page.getByText("We found this from your location. Fix anything, then go on.")).toBeVisible();
+  await expect(page.getByText("We found this from your location. Fix anything, then go on.")).toHaveCount(0);   // story #1044
   await expect(page.getByText("We could not find your pin code. Type it.")).toHaveCount(0);
   expect(calls).toEqual({ nominatim: 1, rpc: 1, overpass: 0 });
 });

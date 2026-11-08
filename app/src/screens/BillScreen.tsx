@@ -88,7 +88,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
         )}
         {offers && (offers.quote.offers.length > 0 || offers.quote.coupon) && (
           <section aria-label="Offers" style={{ margin: "16px 20px 0 20px", display: "flex", flexDirection: "column", gap: 8 }}>
-            <h2 style={{ margin: "0 0 4px 0", fontFamily: "'DM Mono', monospace", fontSize: 12, fontWeight: 400, textTransform: "uppercase", color: "var(--gs-text-muted)" }}>Offers</h2>
+            <h2 style={{ margin: "0 0 4px 0", fontFamily: "'DM Mono', monospace", fontSize: 12, fontWeight: 400, color: "var(--gs-text-muted)" }}>Offers</h2>
             {offers.quote.offers.map((o) => {
               const on = offers.quote.coupon?.code === o.code;
               return (
@@ -118,11 +118,11 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
             {details && !details.gate && (
               <>
                 <div className="ui-field"><label htmlFor="name">Your name</label><input id="name" type="text" value={details.name} maxLength={80} autoComplete="name" onChange={(e) => details.onName(e.target.value)} /></div>
-                <div className="ui-field"><label htmlFor="phone">Phone · the rider calls this</label><input id="phone" className="mono-input" type="tel" value={details.phone} inputMode="numeric" maxLength={10} autoComplete="tel-national" onChange={(e) => details.onPhone(e.target.value.replace(/\D/g, ""))} /></div>
+                <div className="ui-field"><label htmlFor="phone">Phone</label><input id="phone" className="mono-input" type="tel" value={details.phone} inputMode="numeric" maxLength={10} autoComplete="tel-national" onChange={(e) => details.onPhone(e.target.value.replace(/\D/g, ""))} /></div>
               </>
             )}
-            <div className="ui-field"><label htmlFor="address">Address · food gets delivered here</label><textarea id="address" rows={2} value={address} maxLength={300} onChange={(e) => onAddress(e.target.value)} /></div>
-            <div className="ui-field"><label htmlFor="note">Anything the kitchen should know? · optional</label><textarea id="note" rows={2} value={note} maxLength={NOTE_MAX} placeholder="Allergies, spice, no onion" onChange={(e) => onNote(e.target.value)} /><p className="mono ui-note-count"><span>The cook reads these exact words</span><span>{note.length} / {NOTE_MAX}</span></p></div>
+            <div className="ui-field"><label htmlFor="address">Address</label><textarea id="address" rows={2} value={address} maxLength={300} onChange={(e) => onAddress(e.target.value)} /></div>
+            <div className="ui-field"><label htmlFor="note">Note for the kitchen (optional)</label><textarea id="note" rows={2} value={note} maxLength={NOTE_MAX} placeholder="Allergies, spice, no onion" onChange={(e) => onNote(e.target.value)} /><p className="mono ui-note-count"><span>{note.length} / {NOTE_MAX}</span></p></div>
             {pay && (
               <fieldset className="ui-pay" role="radiogroup" aria-label="How you pay">
                 <legend>How you pay</legend>
@@ -138,7 +138,6 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
       </div>
       {!empty && (
         <div className="ui-sticky float">
-          {!ready && <p className="ui-note ui-bar-note">Add your name, phone and address to place the order.</p>}
           <button type="button" className="ui-btn bar" disabled={!ready || sending} onClick={onPlace}>
             <span className="mono">{pay && pay.value !== "cod" ? PAY_METHODS.find((m) => m.id === pay.value)!.label : "Cash"} · {formatRupees(total)}</span><span className="verb">{sending ? "Placing…" : soldOut ? "Fix the bill first" : "Place order ›"}</span>
           </button>

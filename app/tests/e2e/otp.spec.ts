@@ -61,7 +61,7 @@ test("S1 a guest at checkout enters the number and the code, the phone is linked
   await expect(dialog(page).getByRole("button", { name: "Send code" })).toBeDisabled();
   await dialog(page).getByLabel("Mobile number").fill("9876543210");
   await dialog(page).getByRole("button", { name: "Send code" }).click();
-  await expect(dialog(page).getByText("Sent to +91 98765 43210")).toBeVisible();
+  await expect(dialog(page).getByText("Sent to +91 9876543210")).toBeVisible();
   expect(otp.sends).toEqual([{ phone: "9876543210" }]);
   await expect(dialog(page).getByRole("button", { name: "Verify" })).toBeDisabled();
   await typeCode(page, "482913");
