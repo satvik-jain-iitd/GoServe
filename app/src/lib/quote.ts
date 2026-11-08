@@ -30,3 +30,6 @@ export async function fetchQuote(input: { kitchenId: string; pin: string; items:
     return down;
   }
 }
+// Story #995: the Bill and Place order ask the server the same question. With the offers off in this build the question is "no coupon", because the server picks a personal coupon
+// (the apology coupon of a late order) by itself when nobody says otherwise, and then its total is not the one the Bill shows.
+export const askFor = (off: boolean, pick: { code: string | null; none: boolean }): { code: string | null; none: boolean } => (off ? { code: null, none: true } : pick);

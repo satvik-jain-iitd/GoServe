@@ -1,11 +1,11 @@
 // Story #588: asks POST /quote while the Bill is open and keeps the offers, the applied code and the line for a code that is not valid.
 import { useEffect, useState } from "react";
-import { fetchQuote, type Alternative, type Quote } from "./quote";
+import { askFor, fetchQuote, type Alternative, type Quote } from "./quote";
 
-export function useOffers(on: boolean, kitchenId: string | null, pin: string | null, items: { menu_item_id: string; qty: number; swap?: boolean }[]) {
+export function useOffers(on: boolean, kitchenId: string | null, pin: string | null, items: { menu_item_id: string; qty: number; swap?: boolean }[], off = false) {   // off: the offers are not shown, so no coupon is asked for (story #995)
   const key = JSON.stringify(items);
   const [pick, setPick] = useState<{ key: string; code: string | null; none: boolean }>({ key, code: null, none: false });   // code null: the server picks the best; none: Remove (story #597)
-  const { code, none } = pick.key === key ? pick : { code: null, none: false };   // a change in the cart clears the pick
+  const { code, none } = askFor(off, pick.key === key ? pick : { code: null, none: false });   // a change in the cart clears the pick
   const [quote, setQuote] = useState<Quote | null>(null);
   const [codeError, setCodeError] = useState<string | null>(null);
   const [alt, setAlt] = useState<Alternative | null | undefined>(undefined);   // story #619: the server's alternative for the first sold-out dish; null none, undefined not asked or not sold out

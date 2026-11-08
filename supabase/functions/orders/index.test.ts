@@ -199,3 +199,18 @@ Deno.test("a note of 201 characters is 422 instructions_too_long with a plain li
 Deno.test("a note that is not text is 400 invalid_request", async () => {
   for (const v of [5, {}, ["a"], true]) assertEquals((await post(makeHandler(deps()), body({ instructions: v }))).status, 400);
 });
+
+// Story #995: a personal coupon (the apology coupon of a late order) is in the customer's list. With nothing said the server applies it by itself, so an order that expects the item total is
+// answered price_changed with the coupon's total; the same order that says no_coupon, or expects the discounted total, is placed. The app now asks the question it expects the answer to.
+const LATE = { code: "LATE-1", title: "Sorry we were late", kind: "flat" as const, amount_paise: 5000, percent: 0, cap_paise: 0, min_order_paise: 0, first_order_only: false };
+Deno.test("with a personal coupon in the list: no_coupon expects the item total; nothing said expects the discounted total", async () => {
+  placed.length = 0;
+  const h = makeHandler(deps({ coupons: async () => [LATE] }));
+  let res = await post(h, body({ no_coupon: true }));
+  assertEquals(res.status, 201);
+  res = await post(h, body());
+  assertEquals([res.status, (await res.json()).quote.to_pay_paise], [409, 23000]);   // the server applied the coupon by itself
+  res = await post(h, body({ expected_to_pay_paise: 23000 }));
+  assertEquals(res.status, 201);
+  assertEquals((placed.at(-1) as unknown[])[6] && ((placed.at(-1) as unknown[])[6] as Record<string, number>).to_pay_paise, 23000);
+});

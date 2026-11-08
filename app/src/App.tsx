@@ -729,7 +729,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // Story #619, board L3: a dish the customer chose to swap goes to the server with swap true; the server puts its own alternative in its place.
   const [swapped, setSwapped] = useState<string[]>([]);
   const orderItems = useMemo(() => toOrderItems(cart).map((i) => (swapped.includes(i.menu_item_id) ? { ...i, swap: true } : i)), [cart, swapped]);
-  const offers = useOffers(OFFERS_ON && lock === "customer" && step === "bill", area?.kind === "ok" ? area.kitchen.id : null, pin, orderItems);   // story #588
+  const offers = useOffers(lock === "customer" && step === "bill", area?.kind === "ok" ? area.kitchen.id : null, pin, orderItems, !OFFERS_ON);   // story #588; story #995: the quote is always asked on the Bill so the total is the server's; with the offers off it asks for no coupon
   const total = offers.quote ? offers.quote.to_pay_paise : cartTotal(lines);
   const dead = lines.find((l) => l.dish.available === false && !swapped.includes(l.dish.id));   // the first dish in the bill that is sold out
   const canSwap = OFFERS_ON;   // the swap is priced by POST /quote and ordered by POST /orders
@@ -895,7 +895,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             onMenu={() => setStep("menu")} />
         )}
         {menu && step === "bill" && (
-          <BillScreen notice={againLine} note={note} onNote={setNote} lines={billLines} total={total} soldOut={dead && step === "bill" ? { id: dead.dish.id, name: dead.dish.name, alt: offers.alt, canSwap, onSwap: () => setSwapped((s) => [...s, dead.dish.id]), onRemove: () => takeOut(dead.dish.id) } : undefined} offers={offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove } : undefined} kitchenName={kitchenName} pin={pin} address={address} onAddress={setAddress}
+          <BillScreen notice={againLine} note={note} onNote={setNote} lines={billLines} total={total} soldOut={dead && step === "bill" ? { id: dead.dish.id, name: dead.dish.name, alt: offers.alt, canSwap, onSwap: () => setSwapped((s) => [...s, dead.dish.id]), onRemove: () => takeOut(dead.dish.id) } : undefined} offers={OFFERS_ON && offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove } : undefined} kitchenName={kitchenName} pin={pin} address={address} onAddress={setAddress}
             details={lock === "customer" ? { name, phone, onName: setName, onPhone: setPhone, gate } : undefined}
             pay={lock === "customer" ? { value: payMethod, onChange: setPayMethod } : undefined} sending={sending} error={error}
             onBack={() => setStep("menu")} onPlace={place} />
