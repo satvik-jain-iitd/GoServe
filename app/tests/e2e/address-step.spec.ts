@@ -58,13 +58,3 @@ test("S4 location not given: the search opens, and a picked place lands on the s
   await page.getByRole("button", { name: "Use my location" }).click();   // not allowed in this context
   await expect(page.getByRole("searchbox", { name: "Search an area or address" })).toBeVisible();
 });
-
-test("S5 a pin code no kitchen serves says so on the same screen", async ({ page, context }) => {
-  await setup(context, page, [], { pin: null });
-  await page.goto("/customer/");
-  await page.getByRole("button", { name: "Type it by hand" }).click();
-  await page.getByLabel("Address", { exact: true }).fill("Somewhere far");
-  await page.getByLabel("Pin code").fill("110099");
-  await page.getByRole("button", { name: "See the menu" }).click();
-  await expect(page.getByText("Not here yet. We do not deliver to 110099 yet.")).toBeVisible();
-});

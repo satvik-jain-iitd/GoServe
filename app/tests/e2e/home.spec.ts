@@ -86,12 +86,13 @@ test("S6 while the menu loads the page says it is busy; the saved pin is on the 
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
 });
 
-test("S7 a pin code that no kitchen serves marks the field and keeps the button", async ({ page, context }) => {
+test("S7 a pin code that no kitchen serves shows the no-kitchen screen (board NK-A), not the form", async ({ page, context }) => {
   await setup(context, page, [], { pin: null });
   await page.goto("/customer/");
   await typePlace(page, "110099");
   await page.getByRole("button", { name: "See the menu" }).click();
-  await expect(page.getByLabel("Pin code")).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByRole("heading", { name: "We don't reach here yet" })).toBeVisible();
+  await expect(page.getByLabel("Pin code")).toHaveCount(0);
 });
 
 for (const t of ["day", "night"] as const) {

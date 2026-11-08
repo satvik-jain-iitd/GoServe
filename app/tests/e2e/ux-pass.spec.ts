@@ -65,7 +65,7 @@ test("D4 D5 the pin screen has one button and plain words", async ({ page, conte
   await expect(page.getByText("Cash only")).toHaveCount(0);
   await typePlace(page, "110099");
   await page.getByRole("button", { name: "See the menu" }).click();
-  await expect(page.getByText("Not here yet. We do not deliver to 110099 yet.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "We don't reach here yet" })).toBeVisible();   // story #1049, board NK-A
 });
 
 test("D6 D7 D8 D9 D13 the bill, placed and orders screens use the agreed words", async ({ page, context }) => {

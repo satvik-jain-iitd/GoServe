@@ -17,7 +17,6 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace, on
   const [text, setText] = useState(pin ?? "");
   const [finding, setFinding] = useState(false);
   const [note, setNote] = useState<string | null>(null);
-  const none = area?.kind === "none";
   const ready = address.trim().length > 0 && isPin(text);
 
   async function useLocation() {
@@ -41,12 +40,10 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace, on
       <div className="ui-field">
         <label htmlFor="pin">Pin code</label>
         <input id="pin" className="ui-pin-input" type="tel" inputMode="numeric" maxLength={6} placeholder="123456" value={text}
-          aria-invalid={!!(error || none) || undefined} aria-describedby={error || none ? "pin-help" : undefined}
+          aria-invalid={!!error || undefined} aria-describedby={error ? "pin-help" : undefined}
           onChange={(e) => setText(e.target.value.trim())} />
         {error && <p id="pin-help" role="alert" className="ui-field-error">{error}</p>}
-        {!error && none && <p id="pin-help" role="status" className="ui-field-error">Not here yet. We do not deliver to {pin} yet.</p>}
       </div>
-      {none && <p className="ui-note">A pin code next to yours may work.</p>}
       {busy && <p role="status" className="ui-note">Finding your kitchen…</p>}
       <button type="button" className="ui-btn big" disabled={busy || !ready} onClick={() => onPlace({ pin: text, address: address.trim() })}>See the menu</button>
     </>
