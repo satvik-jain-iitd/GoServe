@@ -73,3 +73,4 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - ID319 (2026-11-07, open, later): a bike camera on riders (Mapillary style) to find road changes (E-CAM-1).
 - ID326 (2026-11-08, open, later): build our own maps later from surveyed data on OSM.
 - ID326, same entry (2026-11-08, open, after #987): a GoServe places table seeded from the owner's survey sheet.
+- IDEA (no vault id yet) (2026-11-08, open): Onboarding pin step: after Use my location, set the pin on the full map before the next step. Source: frame A1p.

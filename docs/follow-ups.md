@@ -324,3 +324,6 @@ Every follow-up, so nothing is lost. Each has an owner and a status.
   - Watchdog: `verify_live.js` should fail when dev and prod n8n active flags differ.
   - Admin invite for an email that already has an account becomes admin at once; the share box is shown too (#989).
   - Own-kitchen ADR on `documents` (plan v2 assumed partner home kitchens).
+- Records of 8 Nov night (reviewer):
+  - #977 cancelled slips with Order again: owner's answer pending. Ola Fair Usage Policy PDF not yet read. Canvas batch 3: I1-Icons (#997), A-AddPerson share box (#989), A2 map step for #988 as built.
+  - Swish onboarding video study ON HOLD (owner: "hold on to that recording analysis task and remind me later"). Video is in ~/Downloads. Remind the owner; story #1049 waits on it. (owner: owner; where: work_state goserve-remaining-8nov)
