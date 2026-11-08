@@ -3,6 +3,7 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import { makeHandler, type Deps } from "./index.ts";
 import { FakePush } from "../_shared/push.ts";
+import type { WebDeps, WebJob } from "./index.ts";
 
 const O = "7e57ab1e-0000-4000-8000-0000000000f1";
 const SECRET = "test-notify-secret";
@@ -83,4 +84,66 @@ Deno.test("other methods and routes: 405 and 404", async () => {
   reset();
   assertEquals((await post(makeHandler(deps()), "register", null, {}, "GET")).status, 405);
   assertEquals((await post(makeHandler(deps()), "nope", {})).status, 404);
+});
+
+// Story #1067: POST /push/web, the database's immediate ask for one outbox row.
+const sentWeb: { endpoint: string; payload: unknown }[] = [];
+const webLog: string[] = [];
+const JOB: WebJob = { ok: true, done: false, subscriptions: [
+  { endpoint: "https://p.example/a", p256dh: "k1", auth: "a1", message: { title: "GoServe", body: "Your order is ready.", order_id: "o1", status: "ready" } },
+  { endpoint: "https://p.example/b", p256dh: "k2", auth: "a2", message: null },
+] };
+const web = (o: Partial<WebDeps> = {}, status: Record<string, number> = {}): WebDeps => ({
+  send: async (s, payload) => { sentWeb.push({ endpoint: s.endpoint, payload: JSON.parse(payload) }); return { status: status[s.endpoint] ?? 201 }; },
+  job: async (id) => { webLog.push(`job ${id}`); return JOB; },
+  forget: async (e) => { webLog.push(`forget ${e}`); },
+  done: async (id, sent, failed) => { webLog.push(`done ${id} ${sent} ${failed}`); },
+  ...o,
+});
+const resetWeb = () => { sentWeb.length = 0; webLog.length = 0; };
+const SEC = { "x-push-secret": SECRET };
+
+Deno.test("web: every subscription gets one push with the words inside (a generic line when there are none), then the row is reported", async () => {
+  resetWeb();
+  const res = await post(makeHandler(deps({ web: web() })), "web", { outbox_id: 7 }, SEC);
+  assertEquals([res.status, await res.json()], [200, { ok: true, sent: 2, failed: 0, forgotten: 0 }]);
+  assertEquals(sentWeb, [
+    { endpoint: "https://p.example/a", payload: { title: "GoServe", body: "Your order is ready.", order_id: "o1", status: "ready" } },
+    { endpoint: "https://p.example/b", payload: { title: "GoServe", body: "Your order has an update.", order_id: null, status: null } },
+  ]);
+  assertEquals(webLog, ["job 7", "done 7 2 0"]);
+});
+
+Deno.test("web: a dead subscription (404 or 410) is forgotten, another failure is counted and the row is not marked sent when nothing went out", async () => {
+  resetWeb();
+  const gone = await post(makeHandler(deps({ web: web({}, { "https://p.example/a": 410, "https://p.example/b": 404 }) })), "web", { outbox_id: 7 }, SEC);
+  assertEquals(await gone.json(), { ok: true, sent: 0, failed: 0, forgotten: 2 });
+  assertEquals(webLog, ["job 7", "forget https://p.example/a", "forget https://p.example/b", "done 7 0 0"]);
+  resetWeb();
+  const bad = await post(makeHandler(deps({ web: web({}, { "https://p.example/a": 500, "https://p.example/b": 429 }) })), "web", { outbox_id: 7 }, SEC);
+  assertEquals(await bad.json(), { ok: true, sent: 0, failed: 2, forgotten: 0 });
+  assertEquals(webLog, ["job 7", "done 7 0 2"]);
+  resetWeb();
+  const thrown = await post(makeHandler(deps({ web: web({ send: async () => { throw new Error("network down"); } }) })), "web", { outbox_id: 7 }, SEC);
+  assertEquals((await thrown.json()).failed, 2);
+});
+
+Deno.test("web: a row already sent or claimed by the retry sends nothing", async () => {
+  resetWeb();
+  const res = await post(makeHandler(deps({ web: web({ job: async () => ({ ok: true, done: true, subscriptions: [] }) }) })), "web", { outbox_id: 7 }, SEC);
+  assertEquals(await res.json(), { ok: true, skipped: true });
+  assertEquals(sentWeb, []);
+  assertEquals(webLog, []);   // no done call: the row is not touched
+});
+
+Deno.test("web: no secret header is 401, a bad id is 400, missing VAPID secrets is 503 and claims nothing, a dead database is 502 with no detail", async () => {
+  resetWeb();
+  assertEquals((await post(makeHandler(deps({ web: web() })), "web", { outbox_id: 7 }, {})).status, 401);
+  for (const b of [{}, { outbox_id: "7" }, { outbox_id: 0 }, { outbox_id: 1.5 }, { outbox_id: null }]) assertEquals((await post(makeHandler(deps({ web: web() })), "web", b, SEC)).status, 400, JSON.stringify(b));
+  const off = await post(makeHandler(deps({ web: web({ send: null }) })), "web", { outbox_id: 7 }, SEC);
+  assertEquals([off.status, (await off.json()).error], [503, "web_not_configured"]);
+  assertEquals(webLog, []);   // the row was not claimed
+  const dead = await post(makeHandler(deps({ web: web({ job: async () => { throw new Error("db host 10.0.0.1 down"); } }) })), "web", { outbox_id: 7 }, SEC);
+  assertEquals([dead.status, JSON.stringify(await dead.json()).includes("10.0.0.1")], [502, false]);
+  assertEquals((await post(makeHandler(deps({ web: web() })), "web", { outbox_id: 7 }, SEC, "GET")).status, 405);
 });

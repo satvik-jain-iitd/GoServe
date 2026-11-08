@@ -219,6 +219,18 @@ Deno.test("push: register and notify answer 200, 400, 401, 404 as the contract s
   const body = await (await post("notify", { order_id: O }, sec)).json();
   body.token = "x";   // a device token must never be a field of the answer
   await assertRejects(() => checkAnswer("/push/notify", "post", new Response(JSON.stringify(body), { status: 200 })), Error, "additional properties");
+  // story #1067: /push/web
+  const web = await post("web", { outbox_id: 1 }, sec);
+  assertEquals(web.status, 200);
+  await checkAnswer("/push/web", "post", web);
+  const skipped = await post("web", { outbox_id: 2 }, sec);
+  assertEquals((await skipped.clone().json()).skipped, true);
+  await checkAnswer("/push/web", "post", skipped);
+  await checkAnswer("/push/web", "post", await post("web", { outbox_id: 1 }, { "x-push-secret": "nope" }));   // 401
+  await checkAnswer("/push/web", "post", await post("web", { outbox_id: "x" }, sec));   // 400
+  const wb = await (await post("web", { outbox_id: 1 }, sec)).json();
+  wb.endpoint = "https://p.example/a";   // a subscription address must never be a field of the answer
+  await assertRejects(() => checkAnswer("/push/web", "post", new Response(JSON.stringify(wb), { status: 200 })), Error);
 });
 
 Deno.test("payments: switch-to-cash answers 200, 401, 404, 409 as the contract says and a wrong field is red", async () => {
