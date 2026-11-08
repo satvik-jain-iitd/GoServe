@@ -55,7 +55,7 @@ test("S3 Add a kitchen opens the form; a complete kitchen is sent", async ({ pag
   await page.getByLabel("Address").fill("A-12, Greater Kailash I");
   await page.getByLabel("Phone").fill("9810022334");
   await page.getByLabel("Pin codes").fill("110048");
-  await page.getByRole("button", { name: "Add kitchen" }).click();
+  await page.getByRole("button", { name: "Save kitchen" }).click();
   await expect.poll(() => net.calls.kitchenWrites.length).toBe(1);
   expect(net.calls.kitchenWrites[0].body).toMatchObject({ name: "Punjab Rasoi", pin_codes: ["110048"] });
   await expect(page.getByRole("heading", { name: "City", exact: true })).toBeVisible();   // back on the city after the save

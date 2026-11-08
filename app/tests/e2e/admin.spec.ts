@@ -31,11 +31,11 @@ test("S3 adding a kitchen sends its name and pin codes; a bad pin code is refuse
   await page.getByLabel("Address").fill("12 Lajpat Nagar, Delhi");
   await page.getByLabel("Phone").fill("9876543210");
   await page.getByLabel("Pin codes").fill("1100");
-  await page.getByRole("button", { name: "Add kitchen" }).click();
+  await page.getByRole("button", { name: "Save kitchen" }).click();
   await expect(page.getByRole("alert")).toContainText("1100");
   expect(net.calls.kitchenWrites).toHaveLength(0);
   await page.getByLabel("Pin codes").fill("110024, 110049");
-  await page.getByRole("button", { name: "Add kitchen" }).click();
+  await page.getByRole("button", { name: "Save kitchen" }).click();
   await expect.poll(() => net.calls.kitchenWrites.length).toBe(1);
   expect(net.calls.kitchenWrites[0].method).toBe("POST");
   expect(net.calls.kitchenWrites[0].body).toMatchObject({ name: "Lajpat Nagar Kitchen", pin_codes: ["110024", "110049"] });

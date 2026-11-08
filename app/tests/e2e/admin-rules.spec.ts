@@ -14,7 +14,7 @@ test("S1 a kitchen with no pin code is refused before any call", async ({ page, 
   await page.getByRole("button", { name: "City", exact: true }).click();   // H12: the forms live on the City tab
   await page.getByRole("button", { name: "Add a kitchen" }).click();   // H12b: board A7
   await fill(page, { "Pin codes": "" });
-  await page.getByRole("button", { name: "Add kitchen" }).click();
+  await page.getByRole("button", { name: "Save kitchen" }).click();
   await expect(page.getByRole("alert")).toContainText("pin code");
   expect(net.calls.kitchenWrites).toHaveLength(0);
 });
@@ -26,12 +26,12 @@ test("S1 a bad phone and the same opening and closing time are refused", async (
   await page.getByRole("button", { name: "City", exact: true }).click();   // H12: the forms live on the City tab
   await page.getByRole("button", { name: "Add a kitchen" }).click();   // H12b: board A7
   await fill(page, { Phone: "12345" });
-  await page.getByRole("button", { name: "Add kitchen" }).click();
+  await page.getByRole("button", { name: "Save kitchen" }).click();
   await expect(page.getByRole("alert")).toContainText("phone");
   await fill(page);
   await page.getByLabel("Opens at").fill("10:00");
   await page.getByLabel("Closes at").fill("10:00");
-  await page.getByRole("button", { name: "Add kitchen" }).click();
+  await page.getByRole("button", { name: "Save kitchen" }).click();
   await expect(page.getByRole("alert")).toContainText("time");
   expect(net.calls.kitchenWrites).toHaveLength(0);
 });
@@ -43,7 +43,7 @@ test("S1 a complete kitchen is sent", async ({ page, context }) => {
   await page.getByRole("button", { name: "City", exact: true }).click();   // H12: the forms live on the City tab
   await page.getByRole("button", { name: "Add a kitchen" }).click();   // H12b: board A7
   await fill(page);
-  await page.getByRole("button", { name: "Add kitchen" }).click();
+  await page.getByRole("button", { name: "Save kitchen" }).click();
   await expect.poll(() => net.calls.kitchenWrites.length).toBe(1);
   expect(net.calls.kitchenWrites[0].body).toMatchObject({ name: "Lajpat Nagar Kitchen", phone: "9876543210", pin_codes: ["110024"] });
 });

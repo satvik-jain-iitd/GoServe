@@ -53,15 +53,16 @@ for (const width of [360, 412, 768]) {
   });
 }
 
-test("S3 Add kitchen: 'Use my phone's location here' keeps 12 px of air under the map", async ({ page, context }) => {
+test("S3 Add kitchen: the Location row keeps 12 px of air above and below it", async ({ page, context }) => {
   await page.setViewportSize({ width: 412, height: 915 });
   await openKitchenForm(page, context);
-  const gap = await page.evaluate(() => {
-    const map = document.querySelector(".ui-map")!.getBoundingClientRect();
-    const btn = Array.from(document.querySelectorAll("button")).find((b) => b.textContent?.includes("Use my phone's location here"))!.getBoundingClientRect();
-    return Math.round(btn.top - map.bottom);
+  const gaps = await page.evaluate(() => {
+    const row = document.querySelector(".ui-locrow")!.getBoundingClientRect();
+    const pins = document.querySelector("#k-pins")!.getBoundingClientRect();
+    const open = document.querySelector("#k-open")!.getBoundingClientRect();
+    return [Math.round(row.top - pins.bottom), Math.round(open.top - row.bottom)];
   });
-  expect(gap).toBeGreaterThanOrEqual(12);
+  for (const g of gaps) expect(g).toBeGreaterThanOrEqual(12);
 });
 
 test("S4 the bill's 'How you pay' radio buttons keep their small round size (the form rule must not stretch them)", async ({ page, context }) => {

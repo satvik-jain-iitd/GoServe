@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Map as LMap, Marker } from "leaflet";
 import { currentPlace, findAddress, type Looked, type Place } from "../lib/locate";
 import { isPin } from "../lib/area";
-import { addressText, cardWords, serveAt, splitAddress, stripsFor, type Serve } from "../lib/pinMap";
+import { addressText, cardWords, serveAt, splitAddress, stripsFor, type Serve, type Strip } from "../lib/pinMap";
 import { tileUrl } from "../lib/riderMap";
 
 const TILES = tileUrl(import.meta.env.VITE_MAP_TILES);
@@ -19,12 +19,14 @@ export type Saved = { pin: string; address: string; label: string; from: Place }
 type Props = {
   center: Place; zoom?: number; kicker?: string; confirmLabel: string;
   edit?: { label: string; address: string };   // story #1051 (board C9): the saved row being changed; the details open filled with it
+  kitchen?: { pins: string[] };   // story #1052 (board A12): a kitchen's place. No serviceability, no details step: Confirm hands the point back. "Inside <pin>" when the words are in one of its pin codes
+  onPoint?: (p: { at: Place; words: Looked | null }) => void;
 
   onBack: () => void; onSearch: () => void; onSave: (a: Saved) => void;
   lookup?: (p: Place) => Promise<Looked | null>; serve?: (p: Place) => Promise<Serve | null>;
 };
 
-export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, onBack, onSearch, onSave, lookup = (p) => findAddress(p.lat, p.lng), serve = (p) => serveAt(p) }: Props) {
+export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, kitchen, onPoint, onBack, onSearch, onSave, lookup = (p) => findAddress(p.lat, p.lng), serve = (p) => (kitchen ? Promise.resolve(null) : serveAt(p)) }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const live = useRef<{ map: LMap; L: typeof import("leaflet"); dot: Marker | null } | null>(null);
   const [point, setPoint] = useState<Place>(center);
@@ -110,7 +112,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, on
   const name = cardWords(words?.address ?? null);
   const was = edit ? splitAddress(edit.address) : null;   // board C9: Editing shows the saved house and landmark in front of the words of the pin
   const editLine = was ? [was.house, was.landmark ? `near ${was.landmark}` : ""].filter(Boolean).join(", ") : "";
-  const strips = stripsFor({ serve: served, here, pin: point });
+  const strips: Strip[] = kitchen ? (words?.pin && kitchen.pins.includes(words.pin) ? [{ kind: "ready", text: `Inside ${words.pin}` }] : []) : stripsFor({ serve: served, here, pin: point });
   return (
     <section ref={root} className="ui-pinmap" role="region" aria-label="Pin map" data-step={pick ? "details" : "pin"}>
       <div ref={box} className="ui-pinmap-map" role="application" aria-label="Map" />
@@ -125,11 +127,11 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, on
         <button type="button" className="ui-pinmap-here" onClick={() => void toPhone()}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg><span>Current Location</span></button>
         {kicker && <span className="mono ui-pinmap-kicker">{kicker}</span>}
         <div className="ui-pinmap-place"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.6" fill="#ffffff" /></svg><span className="ui-pinmap-name">{name.name}</span></div>
-        {(editLine ? `${editLine} · ${name.rest}`.replace(/ · $/, "") : name.rest) && <span className="ui-pinmap-addr">{editLine ? `${editLine} · ${name.rest}`.replace(/ · $/, "") : name.rest}</span>}
+        {(kitchen ? words?.address : editLine ? `${editLine} · ${name.rest}`.replace(/ · $/, "") : name.rest) && <span className="ui-pinmap-addr">{kitchen ? words?.address : editLine ? `${editLine} · ${name.rest}`.replace(/ · $/, "") : name.rest}</span>}   {/* board A12 repeats the whole address under the name */}
         {failed && <span className="ui-pinmap-addr ui-pinmap-quiet">Could not read the address, the pin still counts</span>}
         {note && <span role="alert" className="ui-pinmap-addr ui-pinmap-quiet">{note}</span>}
         {strips.map((s) => <span key={s.kind} role="status" className={`ui-pinmap-strip ${s.kind}`}>{s.text}</span>)}
-        <button type="button" className="ui-btn big" disabled={busy} onClick={() => setPick({ at: point, words, served: served ? served.serviceable : null })}>{confirmLabel}</button>
+        <button type="button" className="ui-btn big" disabled={busy} onClick={() => (onPoint ? onPoint({ at: point, words }) : setPick({ at: point, words, served: served ? served.serviceable : null }))}>{confirmLabel}</button>
         <span className="mono ui-pinmap-credit">{words?.from === "ola" && <><a href={OSM} target="_blank" rel="noopener noreferrer">Ola Maps</a> · </>}<a href={OSM} target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a></span>
       </div>}
       {pick && <DetailsSheet pick={pick} edit={edit} onChange={() => setPick(null)} onSave={onSave} onHeight={(h) => { root.current?.style.setProperty("--sheet-h", `${h}px`); live.current?.map.invalidateSize({ pan: false }); const c = pick.at; live.current?.map.setView([c.lat, c.lng], live.current.map.getZoom(), { animate: false }); }} />}

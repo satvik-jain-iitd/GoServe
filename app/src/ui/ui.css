@@ -698,3 +698,13 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-pinmap-saveas { display: flex; flex-direction: column; gap: 8px; }
 .ui-pinmap-saveas .ui-chips { margin-bottom: 0; }
 .ui-pinmap-saveas .ui-chip { min-height: 36px; padding: 0 18px; border-radius: var(--gs-radius-pill); font-size: 14px; }   /* pills, as the board draws them */
+
+/* Story 1052, board A11: the Location row of the kitchen form. */
+.ui-locrow-label { font-family: var(--gs-font-mono, "DM Mono", monospace); font-size: 12px; color: var(--gs-text-muted); }
+.ui-locrow { display: grid; grid-template-columns: 40px 1fr 24px; gap: 12px; align-items: center; width: 100%; min-height: 64px; padding: 12px 14px; box-sizing: border-box; border: 1px solid var(--md-outline-variant); border-radius: 6px; background: var(--md-surface); color: var(--md-on-surface); font: inherit; text-align: left; cursor: pointer; }
+.ui-locrow-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 6px; background: var(--md-surface-variant); color: var(--md-primary); }
+.ui-locrow-words { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ui-locrow-title { font-size: 16px; font-weight: 600; line-height: 1.2; }
+.ui-locrow-sub { font-size: 12px; color: var(--gs-text-muted); text-transform: none; }
+.ui-locrow-go { color: var(--gs-text-muted); display: inline-flex; }
+.ui-today > .ui-field { margin: 16px 0; }   /* story 1052: on a kitchen page the Location row sits apart from the rows above and the Staff group below */
