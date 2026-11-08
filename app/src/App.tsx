@@ -202,7 +202,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   useEffect(() => {
     if (!placed) return void (trackedSeen.current = false);
     if (orders.some((o) => o.id === placed.id)) trackedSeen.current = true;
-    else if (trackedSeen.current) {
+    else if (trackedSeen.current && lock !== "customer") {   // story #1014: only the demo console leaves a vanished order; a customer leaves the placed screen by their own tap
       trackedSeen.current = false;
       setPlaced(null);
       setStep("menu");
@@ -449,6 +449,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [nearM, setNearM] = useState(200);
   const [adding, setAdding] = useState<null | { mode: "ask" | "hand"; words?: string }>(null);
   const opened = useRef(false);
+  const moved = useRef(false);   // true once the customer has left the first menu (the Bill, the placed screen, any page)
+  if (step !== "menu") moved.current = true;
   function useSaved(a: SavedAddress, touch: boolean) {   // the Bill reads `address`; a new pin code finds the kitchen again
     setSelectedId(a.id);
     setAddress(a.address);
@@ -477,6 +479,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       setHere(at);
       const pick = pickOnOpen(list, at, near);
       const row = list.find((r) => r.id === pick.id);
+      if (moved.current) return;   // story #1014: a slow location must not pull a customer who already moved on (the Bill, the placed screen) back to the address pick
       if (row) useSaved(row, false);
       else if (pick.asks) setStep("deliver");
     })().catch(() => undefined);
