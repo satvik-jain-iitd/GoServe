@@ -217,6 +217,49 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /place-search:
+    get:
+      operationId: getPlaceSearch
+      summary: Find places by words (a street, a landmark, a colony) from OpenStreetMap Nominatim, through our own function. Search on submit only, never on each keystroke (the public server forbids auto-complete). One call a second in total, a 30 day cache.
+      x-handler: ../supabase/functions/place-search/index.ts
+      x-contract-handler: ../supabase/functions/place-search/fixture.ts
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 3, maxLength: 100 }
+          example: Green Park
+      responses:
+        "200":
+          description: Up to five places, each with the one-line address, the place, the pin when known, and whether one of our kitchens reaches it.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaceSearch"
+        "400":
+          description: The query is missing or not 3 to 100 characters (invalid_query).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: No login (unauthorized).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: Too many searches from this caller, or the one-a-second slot is taken (slow_down). Try again in a moment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "502":
+          description: Nominatim could not be asked. No detail is given (search_unavailable).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /orders:
     post:
       operationId: postOrders
@@ -1264,6 +1307,27 @@ components:
         pin: { type: string, pattern: "^(\\d{6})?$" }
         locality: { type: string }
         town: { type: string }
+    PlaceSearch:
+      type: object
+      additionalProperties: false
+      required: [ok, results]
+      properties:
+        ok:
+          const: true
+        results:
+          type: array
+          maxItems: 5
+          items:
+            type: object
+            additionalProperties: false
+            required: [name, address, lat, lng, pin, served]
+            properties:
+              name: { type: string, minLength: 1 }
+              address: { type: string, minLength: 1 }
+              lat: { type: number, minimum: -90, maximum: 90 }
+              lng: { type: number, minimum: -180, maximum: 180 }
+              pin: { type: string, pattern: "^(\\d{6})?$" }
+              served: { type: boolean }
     Serviceability:
       type: object
       additionalProperties: false

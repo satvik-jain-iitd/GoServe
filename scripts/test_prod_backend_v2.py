@@ -69,7 +69,7 @@ class Plan(unittest.TestCase):
 
     def test_S5_every_v2_file_names_one_object(self):
         self.assertEqual([f for f, m in V2 if m is None], [])
-        self.assertEqual(len(V2), 50)   # story 942: purge_pii replaces the purge function, the 50th; story 987: nearest_pin and the pincodes seed in two files are the 47th to 49th; story 1015: live_eta is the 46th; story 1017: cancelled_by is the 45th; story 976: addresses is the 44th; story 985: owner_admin is the 43th; story 935: order_instructions is the 42nd; story 968: admin_invite is the 41st; story 941: sim_dev_only is the 40th; story 922: push_arriving is the 39th; story 920: push_outbox_stale, push_latest_order_id and health_push_wait are the 36th to 38th; story 905: kitchen_location_drop_point is the 35th; story 904: cancel_customer_first is the 34th; story 779: dish_description is the 33rd; story 880: rider_remove_keeps_orders is the 32nd; story 875: staff_invites is the 31st; story 873: sim_clear_all in slices is the 30th; story 850: kitchen_remove is the 29th; story 848: sim_groups is the 28th; story 619: the settings migration is the 24th, its admin functions the 25th; story #802a: otp_repair_phone_form is the 26th; story 829: the phone code switch is the 27th
+        self.assertEqual(len(V2), 51)   # story 1027: place_search is the 51st; story 942: purge_pii replaces the purge function, the 50th; story 987: nearest_pin and the pincodes seed in two files are the 47th to 49th; story 1015: live_eta is the 46th; story 1017: cancelled_by is the 45th; story 976: addresses is the 44th; story 985: owner_admin is the 43th; story 935: order_instructions is the 42nd; story 968: admin_invite is the 41st; story 941: sim_dev_only is the 40th; story 922: push_arriving is the 39th; story 920: push_outbox_stale, push_latest_order_id and health_push_wait are the 36th to 38th; story 905: kitchen_location_drop_point is the 35th; story 904: cancel_customer_first is the 34th; story 779: dish_description is the 33rd; story 880: rider_remove_keeps_orders is the 32nd; story 875: staff_invites is the 31st; story 873: sim_clear_all in slices is the 30th; story 850: kitchen_remove is the 29th; story 848: sim_groups is the 28th; story 619: the settings migration is the 24th, its admin functions the 25th; story #802a: otp_repair_phone_form is the 26th; story 829: the phone code switch is the 27th
 
     def test_S6_markers(self):
         self.assertEqual(p.marker("-- c\ncreate table if not exists public.t (a int);"), "table:t")
@@ -82,7 +82,7 @@ class Plan(unittest.TestCase):
 
 class Functions(unittest.TestCase):
     def test_S7_all_14_functions_with_shared_files_and_no_tests(self):
-        self.assertEqual(len(p.function_names()), 14)
+        self.assertEqual(len(p.function_names()), 15)
         files = p.function_files("otp")
         self.assertIn("otp/index.ts", files)
         self.assertIn("_shared/runlog.ts", files)
@@ -105,7 +105,7 @@ class Main(unittest.TestCase):
         out = run(fake, [], vault)
         self.assertEqual(fake.writes, [])
         self.assertFalse(os.path.exists(vault))
-        self.assertIn("will deploy all 14", out)
+        self.assertIn("will deploy all 15", out)
         self.assertIn("20261028070000_coupon_by_code_session.sql", out)
         self.assertNotIn("123456", out)
 
@@ -121,8 +121,8 @@ class Main(unittest.TestCase):
         out = run(fake, ["--apply"], vault)
         kinds = [w[0] for w in fake.writes]
         self.assertEqual(kinds[0], "sql")                      # the one missing migration first
-        self.assertEqual(kinds[1:15], ["deploy"] * 14)         # then all functions
-        self.assertEqual(kinds[15], "POST")                    # then the secrets
+        self.assertEqual(kinds[1:16], ["deploy"] * 15)         # then all functions
+        self.assertEqual(kinds[16], "POST")                    # then the secrets
         self.assertEqual(os.stat(vault).st_mode & 0o777, 0o600)
         keys = [l.split("=")[0] for l in open(vault) if "=" in l]
         self.assertEqual(keys, ["PAYMENTS_WEBHOOK_SECRET", "PUSH_NOTIFY_SECRET"])
