@@ -1,7 +1,7 @@
 // "Your orders" of the Ink v3 boards 08 and 08e (story H10d, #193; stories B3, D2): the slips of this phone, newest first. A tap opens the slip.
 import { clock12 } from "../lib/clock";
 import { formatRupees } from "../lib/money";
-import { isDeclined, shortId, statusLabel, type Order } from "../lib/kitchen";
+import { cancelKind, shortId, statusLabel, type Order } from "../lib/kitchen";
 import { orderSummary } from "../lib/profile";
 import { Skeleton, TabBar } from "../ui";
 
@@ -40,10 +40,10 @@ export function OrdersScreen({ orders, loading, kitchenName, onOpen, onMenu, onA
               <span className="mono ui-order-no">No. {shortId(o.id)} · {when(o.created_at)}</span>
               <span className="ui-order-items">{orderSummary(o)}</span>
               <span className="ui-order-sub">{kitchenName ? `${kitchenName} · ` : ""}<span className="mono">{formatRupees(o.total_paise)}</span></span>
-              {isDeclined(o) && <span className="ui-order-sub">{kitchenName || "The kitchen"} could not take this order.</span>}
+              {cancelKind(o) === "declined" && <span className="ui-order-sub">{kitchenName || "The kitchen"} could not take this order.</span>}
             </button>
             <span className="ui-order-side">
-              <span className={`ui-tag ${TAG[o.status] ?? ""}`}>{isDeclined(o) ? "Declined" : statusLabel(o.status)}</span>
+              <span className={`ui-tag ${TAG[o.status] ?? ""}`}>{cancelKind(o) === "declined" ? "Declined" : statusLabel(o.status)}</span>
               {o.status === "delivered" && <button type="button" className="ui-btn ghost small" aria-label={`Order again, No. ${shortId(o.id)}`} onClick={() => onAgain(o)}>Order again</button>}
             </span>
           </div>
