@@ -16,8 +16,8 @@ const fill = async (page: import("@playwright/test").Page) => {
 test("S1 the address label says where the food goes, and the cash note is gone", async ({ page, context }) => {
   await setup(context, page);
   await toBill(page);
-  await expect(page.getByLabel("Address · food gets delivered here")).toBeVisible();
-  await expect(page.getByLabel("Phone · the rider calls this")).toBeVisible();
+  await expect(page.getByLabel("Address", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Phone", { exact: true })).toBeVisible();
   await expect(page.getByText("Pay the rider cash at the door.")).toHaveCount(0);
 });
 
@@ -25,7 +25,7 @@ test("S2 while name, phone or address is missing one line says so above the grey
   await setup(context, page);
   await toBill(page);
   const line = page.getByText("Add your name, phone and address to place the order.");
-  await expect(line).toBeVisible();
+  await expect(line).toHaveCount(0);   // story #1044: no line says why the button is grey
   await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
   await fill(page);
   await expect(line).toHaveCount(0);

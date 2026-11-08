@@ -47,12 +47,12 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace }: 
   const form = (
     <>
       <div className="ui-field">
-        <label htmlFor="address">Address · food gets delivered here</label>
+        <label htmlFor="address">Address</label>
         <textarea id="address" rows={2} maxLength={300} value={address} onChange={(e) => setAddress(e.target.value)} />
       </div>
       <div className="ui-field">
         <label htmlFor="pin">Pin code</label>
-        <input id="pin" className="ui-pin-input" type="tel" inputMode="numeric" maxLength={6} placeholder="000000" value={text}
+        <input id="pin" className="ui-pin-input" type="tel" inputMode="numeric" maxLength={6} placeholder="123456" value={text}
           aria-invalid={!!(error || none) || undefined} aria-describedby={error || none || (pinMissing && text === "") ? "pin-help" : undefined}
           onChange={(e) => setText(e.target.value.trim())} />
         {error && <p id="pin-help" role="alert" className="ui-field-error">{error}</p>}
@@ -70,7 +70,7 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace }: 
       <header className="ui-landing-head">
         <h1><img className="ui-logo ui-lockup" src="/brand/lockup-day.png" alt="GoServe" width="350" height="50" /></h1>
         <div className="ui-zigzag" aria-hidden="true" />
-        <p className="ui-kicker">Hot meals from our kitchen · cash at the door</p>
+        <p className="ui-kicker">Hot meals from our kitchen for you in 20 mins</p>
       </header>
       <div className="ui-slip" role="group" aria-label="Your address">
         <div className="ui-slip-body">
@@ -78,7 +78,7 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace }: 
           {mode === "ask" && (
             <>
               <h2 className="ui-slip-title">Where does the food go?</h2>
-              <p className="ui-meta">Allow location and we fill in your address. You can fix it before the menu opens.</p>
+              <p className="ui-meta ui-slip-line">We have multiple kitchens with hygienic homely food</p>
               <button type="button" className="ui-btn big" disabled={finding} onClick={useLocation}>{finding ? "Finding you…" : "Use my location"}</button>
               <button type="button" className="ui-btn ghost big" onClick={() => setMode("hand")}>Type it by hand</button>
             </>
@@ -86,7 +86,6 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace }: 
           {mode === "found" && (
             <>
               <h2 className="ui-slip-title">Is this right?</h2>
-              <p className="ui-meta">We found this from your location. Fix anything, then go on.</p>
               {form}
               {from === "ola" && <p className="ui-credit mono">Address words: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">Ola Maps</a> · Map: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a></p>}
             </>
@@ -94,15 +93,11 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace }: 
           {mode === "hand" && (
             <>
               <h2 className="ui-slip-title">Where does the food go?</h2>
-              <p className="ui-meta">Type your address and pin code. The rider reads this.</p>
               {note && <p role="status" className="ui-note">{note}</p>}
               {form}
             </>
           )}
         </div>
-      </div>
-      <div className="ui-landing-foot">
-        <p className="ui-kicker">No app to install · no card needed</p>
       </div>
     </section>
   );

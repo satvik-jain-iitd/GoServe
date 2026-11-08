@@ -55,7 +55,7 @@ test("S4 airplane mode: the phone says it is offline, so the line is 'No connect
   await expect(page.getByText(SLOW_LINE)).toHaveCount(0);
 });
 
-test("S5 the banner keeps 12 px of air under the zigzag", async ({ page, context }) => {
+test("S5 the banner keeps 12 px of air under the header", async ({ page, context }) => {
   await setup(context, page);
   await page.goto("/customer/");
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();

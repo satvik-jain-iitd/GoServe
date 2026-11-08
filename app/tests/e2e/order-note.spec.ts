@@ -15,13 +15,13 @@ const toBill = async (page: import("@playwright/test").Page) => {
 test("S1 the Bill has an optional note box that holds 200 characters, and the note goes with the order", async ({ page, context }) => {
   const net = await setup(context, page);
   await toBill(page);
-  const box = page.getByLabel("Anything the kitchen should know?");
+  const box = page.getByLabel("Note for the kitchen (optional)");
   await expect(box).toBeVisible();
   await expect(box).toHaveAttribute("maxlength", "200");
   await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();   // optional: empty is fine
   await box.fill(NOTE);
   await expect(page.getByText(`${NOTE.length} / 200`)).toBeVisible();
-  await expect(page.getByText("The cook reads these exact words")).toBeVisible();
+  await expect(page.getByText("The cook reads these exact words")).toHaveCount(0);   // story #1044
   await page.getByRole("button", { name: /Place order/ }).click();
   await expect.poll(() => net.calls.place.length).toBe(1);
   expect(net.calls.place[0].body.instructions).toBe(NOTE);
@@ -39,7 +39,7 @@ test("S3 the server's plain line for a too long note shows on the Bill", async (
   const net = await setup(context, page);
   net.state.reply = { status: 422, body: { ok: false, error: "instructions_too_long", message: "Keep the note to 200 characters." } };
   await toBill(page);
-  await page.getByLabel("Anything the kitchen should know?").fill("x");
+  await page.getByLabel("Note for the kitchen (optional)").fill("x");
   await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByText("Keep the note to 200 characters.")).toBeVisible();
 });

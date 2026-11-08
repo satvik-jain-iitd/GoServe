@@ -16,7 +16,7 @@ test("S1 the New row has no Accept; a tap opens the order sheet with Accept and 
   await expect(sheet.getByText("Deliver to")).toBeVisible();
   await expect(sheet.getByText("Flat 4, Green Park")).toBeVisible();
   await expect(sheet.getByText("Rider collects")).toBeVisible();
-  await expect(sheet.getByText("Swipe down to leave it waiting")).toBeVisible();
+  await expect(sheet.getByText("Swipe down to leave it waiting")).toHaveCount(0);   // story #1044
   await expect(sheet.getByText(/says$/)).toHaveCount(0);   // instructions wait for story 935
   await sheet.getByRole("button", { name: "Accept 0f0f0f0f" }).click();
   await expect.poll(() => net.calls.status.length).toBe(1);

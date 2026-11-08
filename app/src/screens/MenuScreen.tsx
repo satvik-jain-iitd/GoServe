@@ -64,7 +64,6 @@ export function MenuScreen(p: Props) {
       <div className="ui-scroll" aria-busy={p.dishes === null && !p.error ? true : undefined} aria-label={p.dishes === null && !p.error ? "Loading the menu" : undefined}>
         <div className="ui-greet">
           {(SHOW_KITCHEN_NAME ? p.kitchenName : "") || p.openText ? <h2 className="ui-greet-line">{[SHOW_KITCHEN_NAME ? p.kitchenName : "", p.openText].filter(Boolean).join(" · ")}</h2> : null}
-          <div className="ui-zigzag" aria-hidden="true" />
         </div>
         {closed && (
           <div className="ui-closed">
@@ -96,7 +95,7 @@ export function MenuScreen(p: Props) {
             {p.tellMeError && <p role="alert" className="ui-meta">{p.tellMeError}</p>}
           </div>
         )}
-        {empty && <p className="ui-menu-empty-note mono">Your internet is fine. The kitchen has nothing listed yet.</p>}
+        {empty && <p className="ui-menu-empty-note mono">Nothing listed yet.</p>}
         {p.dishes !== null && all.length > 0 && shown.length === 0 && <div className="ui-pad"><Empty title="Nothing matches" hint="Try another word or clear the filters." /></div>}
         {sections.map((s) => (
           <div key={s.id}>

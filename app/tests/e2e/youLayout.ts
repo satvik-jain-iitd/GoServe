@@ -21,7 +21,7 @@ export async function youLayout(page: Page, context: BrowserContext, theme: "day
   const rest = await gap();
   expect(rest.overlap).toBe(false);
   expect(rest.air).toBeGreaterThanOrEqual(16);
-  await expect(page.getByText("Keeps your orders on every phone.")).toBeVisible();
+  await expect(page.getByText("Keeps your orders on every phone.")).toHaveCount(0);   // story #1044: no line under the Google row
   await page.getByRole("button", { name: "Edit delivery details" }).click();
   // The fields open inside the card, with Save and Cancel; the Google row moves down by their height and still has its air.
   const c = (await card.boundingBox())!;
