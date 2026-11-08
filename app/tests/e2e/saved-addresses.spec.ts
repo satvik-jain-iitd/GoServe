@@ -87,3 +87,12 @@ test("S7 today's single saved address becomes the first row labelled Home, once"
   await expect(page.getByRole("button", { name: /^Home\b/ })).toBeVisible();
   expect(net.state.addresses).toHaveLength(1);
 });
+
+test("S8 the search box on the Deliver to page is 48 px high, not stretched down the column", async ({ page, context }) => {
+  await open(page, context, AT_HOME);
+  await page.getByRole("button", { name: /^(Home|Deliver to)\b/ }).click();
+  const box = (await page.locator(".ui-deliver-to .ui-search-box").boundingBox())!;
+  expect(Math.round(box.height)).toBe(48);
+  const cards = (await page.locator(".ui-two-cards").boundingBox())!;
+  expect(cards.y - (box.y + box.height)).toBeLessThanOrEqual(24);   // the cards sit right under it
+});

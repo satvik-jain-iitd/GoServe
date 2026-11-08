@@ -635,3 +635,4 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-saved-addr { font-size: 14px; color: var(--gs-text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .ui-saved-row .ui-btn.icon { width: 32px; height: 32px; min-width: 32px; min-height: 32px; padding: 0; margin: 0; }
 .ui-deliver-foot { margin: 0; font-size: 11px; color: var(--gs-text-muted); }
+.ui-deliver-to > * { flex: none; }   /* a child of the column keeps its own height; the search box has flex: 1 from the home row (found in the review of story 976) */
