@@ -76,12 +76,13 @@ test("S5b a failed search says it could not search", async ({ page, context }) =
   await expect(page.getByRole("alert")).toContainText("Could not search places. Try again.");
 });
 
-test("S6 tapping a place hands its words to the add flow", async ({ page, context }) => {
-  await open(page, context);
+test("S6 tapping a place opens the pin map at that place (story #1037)", async ({ page, context }) => {
+  const net = await open(page, context);
   await box(page).fill("green park");
   await box(page).press("Enter");
   await page.getByRole("region", { name: "Places" }).getByRole("button").first().click();
-  await expect(page.getByLabel(/Address/)).toHaveValue("Green Park, Delhi, 110016");
+  await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
+  await expect.poll(() => net.calls.serve.at(-1) ?? "").toContain("lat=28.5599");
 });
 
 test("S7 changing the words clears the places of the last search", async ({ page, context }) => {
