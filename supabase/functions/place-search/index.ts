@@ -1,6 +1,6 @@
-// Story #1027: forward place search for the Deliver to box. GET /place-search?q=. OpenStreetMap Nominatim behind our own function, so the rules of that public server live in one place.
-// Its policy (operations.osmfoundation.org/policies/nominatim, read 8 Nov 2026): 1 request a second in total, an identifying User-Agent, results cached on our side, attribution shown, and
-// NO auto-complete: the screen searches on submit, never on each keystroke. A cached answer makes no call at all. The caller is never stored with a query.
+// Story #1027, source changed by #1029 (owner, 8 Nov 2026: "humara wala pincode wala use kar lete hain"): place search for the Deliver to box. GET /place-search?q=.
+// The places come from our own pincodes table (GeoNames place and post-office names) through the SQL function search_places: no third party, no policy to keep, nothing about the caller stored.
+// The Nominatim helpers below (makeNominatim, mapHits), the cache table and the one-a-second slot are DORMANT: kept, tested, not called by the handler.
 // The data sources are injected so the tests need no network.
 import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
 import { withCors } from "../_shared/cors.ts";
@@ -8,16 +8,14 @@ import { serviceability, type KitchenRow } from "../serviceability/serviceabilit
 
 export type Hit = { name: string; address: string; lat: number; lng: number; pin: string };
 export type Viewbox = [number, number, number, number];   // left (lng), top (lat), right (lng), bottom (lat)
+export type Candidate = { pin: string; place: string; state: string | null; lat: number; lng: number };
 export type Deps = {
   session: (req: Request) => Promise<string | null>;
   allow: (session: string) => boolean;   // 10 calls a minute per caller
-  cached: (key: string) => Promise<Hit[] | null>;   // an answer under 30 days old
-  save: (key: string, hits: Hit[]) => Promise<void>;
-  slot: () => Promise<boolean>;   // the one-a-second slot, kept in the database so every instance shares it
-  viewbox: () => Promise<Viewbox | null>;
-  search: (q: string, viewbox: Viewbox | null) => Promise<unknown>;
+  lookup: (q: string) => Promise<Candidate[]>;   // search_places: up to 20 candidates, best first
   served: (lat: number, lng: number) => Promise<boolean>;
 };
+// Dormant (story #1027): the Nominatim path, below.
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 export const normalise = (q: string) => q.trim().toLowerCase().replace(/\s+/g, " ");
 
@@ -52,16 +50,14 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
     const session = await deps.session(req);
     if (!session) return json(401, { ok: false, error: "unauthorized" });
     if (!deps.allow(session)) return json(429, { ok: false, error: "slow_down" });
-    let hits = await deps.cached(q);
-    if (!hits) {
-      if (!(await deps.slot())) return json(429, { ok: false, error: "slow_down" });
-      hits = mapHits(await deps.search(q, await deps.viewbox()));
-      await deps.save(q, hits);
-    }
-    const results = await Promise.all(hits.map(async (h) => ({ ...h, served: await deps.served(h.lat, h.lng) })));
+    const found = await deps.lookup(q);
+    const flagged = await Promise.all(found.map(async (c) => ({ c, served: await deps.served(c.lat, c.lng) })));
+    const results = [...flagged.filter((f) => f.served), ...flagged.filter((f) => !f.served)].slice(0, 5).map(({ c, served }) => ({
+      name: c.place, address: [c.place, c.state, c.pin].filter(Boolean).join(", "), lat: c.lat, lng: c.lng, pin: c.pin, served,
+    }));
     return json(200, { ok: true, results });
   } catch {
-    return json(502, { ok: false, error: "search_unavailable" });   // no detail: a vendor message must never reach an app
+    return json(502, { ok: false, error: "search_unavailable" });   // no detail: a database message must never reach an app
   }
 };
 
@@ -75,7 +71,6 @@ export const makeNominatim = (fetchFn: typeof fetch = fetch) => async (q: string
 
 const url = () => Deno.env.get("SUPABASE_URL")!;
 const service = () => { const k = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!; return { apikey: k, authorization: `Bearer ${k}`, "content-type": "application/json" }; };
-const THIRTY_DAYS = 30 * 86_400_000;
 let kitchens: { at: number; rows: KitchenRow[] } | undefined;
 const kitchenRows = async (): Promise<KitchenRow[]> => {   // a minute of memory: the box is typed into, kitchens do not move that fast
   if (kitchens && Date.now() - kitchens.at < 60_000) return kitchens.rows;
@@ -92,27 +87,11 @@ const live: Deps = {
     return res.ok ? ((await res.json()).id ?? null) : null;
   },
   allow: allowCall,
-  cached: async (key) => {
-    const since = new Date(Date.now() - THIRTY_DAYS).toISOString();
-    const res = await fetch(`${url()}/rest/v1/place_search_cache?select=results&key=eq.${encodeURIComponent(key)}&created_at=gte.${since}&limit=1`, { headers: service() });
-    if (!res.ok) return null;
-    const rows = await res.json();
-    return rows.length ? rows[0].results : null;
+  lookup: async (q) => {
+    const res = await fetch(`${url()}/rest/v1/rpc/search_places`, { method: "POST", headers: service(), body: JSON.stringify({ p_q: q }) });
+    if (!res.ok) throw new Error("search_places");
+    return await res.json();
   },
-  save: async (key, hits) => {
-    await fetch(`${url()}/rest/v1/place_search_cache?on_conflict=key`, { method: "POST", headers: { ...service(), prefer: "resolution=merge-duplicates" }, body: JSON.stringify({ key, results: hits, created_at: new Date().toISOString() }) });
-  },
-  slot: async () => {
-    const res = await fetch(`${url()}/rest/v1/rpc/place_search_take_slot`, { method: "POST", headers: service(), body: "{}" });
-    return res.ok && (await res.json()) === true;
-  },
-  viewbox: async () => {   // our kitchens and 0.3 degrees around them (about 30 km): the city the customer is in
-    const rows = (await kitchenRows()).filter((k) => k.lat != null && k.lng != null);
-    if (rows.length === 0) return null;
-    const lats = rows.map((k) => k.lat!), lngs = rows.map((k) => k.lng!);
-    return [Math.min(...lngs) - 0.3, Math.max(...lats) + 0.3, Math.max(...lngs) + 0.3, Math.min(...lats) - 0.3];
-  },
-  search: makeNominatim(),
   served: async (lat, lng) => serviceability({ lat, lng }, await kitchenRows(), new Date()).serviceable,
 };
 export const handler = withCors(withRunLog("place-search", makeHandler(live), writeRunLog));

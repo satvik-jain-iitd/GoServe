@@ -220,7 +220,7 @@ paths:
   /place-search:
     get:
       operationId: getPlaceSearch
-      summary: Find places by words (a street, a landmark, a colony) from OpenStreetMap Nominatim, through our own function. Search on submit only, never on each keystroke (the public server forbids auto-complete). One call a second in total, a 30 day cache.
+      summary: Find places by words (a colony, a post office) or by a pin code, from our own pincodes table (GeoNames). No third party. Served places come first, five at most. Search on submit.
       x-handler: ../supabase/functions/place-search/index.ts
       x-contract-handler: ../supabase/functions/place-search/fixture.ts
       parameters:
@@ -231,7 +231,7 @@ paths:
           example: Green Park
       responses:
         "200":
-          description: Up to five places, each with the one-line address, the place, the pin when known, and whether one of our kitchens reaches it.
+          description: Up to five places, each with the one-line address, the place, the pin, and whether one of our kitchens reaches it. An empty list when nothing matches.
           content:
             application/json:
               schema:
@@ -249,13 +249,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "429":
-          description: Too many searches from this caller, or the one-a-second slot is taken (slow_down). Try again in a moment.
+          description: Too many searches from this caller (slow_down). Try again in a moment.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
         "502":
-          description: Nominatim could not be asked. No detail is given (search_unavailable).
+          description: The places could not be read. No detail is given (search_unavailable).
           content:
             application/json:
               schema:
