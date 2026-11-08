@@ -52,3 +52,19 @@ test("S4 alerts blocked in the phone settings: the step is not shown", async ({ 
   await expect(page.getByRole("button", { name: "Use my location" })).toBeVisible();
   await expect(step2(page)).toHaveCount(0);
 });
+
+// Story #1116 (TC 2.1): Turn on alerts always moves on. When the phone's permission call never settles (iPhone Safari outside the home-screen app), the screen waits about 8 seconds and goes to step 3.
+test("TC 2.1 Turn on alerts always moves on, even when the phone never answers (#1116)", async ({ page, context }) => {
+  await setup(context, page, [], { pin: null });
+  await context.addInitScript(() => {
+    Object.defineProperty(Notification, "permission", { get: () => "default", configurable: true });
+    (Notification as unknown as { requestPermission: () => Promise<string> }).requestPermission = () => new Promise(() => undefined);   // never settles
+  });
+  await page.clock.install();
+  await page.goto("/customer/");
+  await page.getByRole("button", { name: "Turn on alerts" }).click();
+  await expect(step2(page)).toBeVisible();   // still waiting
+  await page.clock.fastForward(8_500);
+  await expect(page.getByRole("button", { name: "Use my location" })).toBeVisible();
+  await expect(page.getByText("Step 3 of 4")).toBeVisible();
+});
