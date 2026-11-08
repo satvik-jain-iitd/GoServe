@@ -27,7 +27,7 @@ jobs:
         with:
           deno-version: v2.x
       - name: Test every function and the contract
-        run: deno test --allow-read api supabase/functions
+        run: deno test --allow-read --allow-env=ECE_KEYLOG api supabase/functions   # story 1067: the web-push library reads this one variable when it loads
 
   deploy:
     name: Deploy to dev and check health
