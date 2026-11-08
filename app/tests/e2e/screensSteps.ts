@@ -118,6 +118,11 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 24.8847, longitude: 79.597 });
     await page.goto(path); await page.getByRole("button", { name: "Use my location" }).click();
     await expect(page.getByText("We deliver here · the kitchen is 1.2 km from the pin")).toBeVisible(); },
+  "location-off": async (context, page, path) => {   // story #1056, board SW3: the location-off sheet over the menu
+    const net = await setup(context, page, [], { pin: "110016" });
+    net.state.addresses = [{ id: "h1", label: "Home", address: "C-128, Green Avenue Colony, Satai Road, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" }];
+    await page.addInitScript(() => { Object.defineProperty(navigator, "permissions", { value: { query: async () => ({ state: "denied" }) }, configurable: true }); });
+    await page.goto(path); await expect(page.getByRole("dialog", { name: "Location is off" })).toBeVisible(); },
   "add-dish": async (context, page, path) => {   // story 923: the admin's Add dish form
     const net = await setup(context, page); net.state.admin = true; await page.goto(path);
     await page.getByRole("button", { name: "City", exact: true }).click(); await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();

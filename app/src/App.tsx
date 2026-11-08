@@ -10,6 +10,7 @@ import { fetchKitchens, forgetArea, loadArea, loadPin, closedCopy, openingText, 
 import { dropFor } from "./lib/locate";
 import { AreaScreen } from "./screens/AreaScreen";
 import { AlertsAsk } from "./screens/AlertsAsk";
+import { LocationOffSheet } from "./screens/LocationOffSheet";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { AdminGate } from "./screens/AdminGate";
 import { RiderGate } from "./screens/RiderGate";
@@ -71,6 +72,7 @@ type Role = "customer" | "kitchen" | "rider" | "split" | "ops" | "admin";
 const api = orderDeps;
 
 // `lock` makes this one of the role apps (story #83): that role only, no role tabs, no demo tools. Without it, this is the demo console.
+const LOC_WAIT_MS = 5000;   // story #1056: how long the app waits for a position before it shows the location-off sheet
 export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [menu, setMenu] = useState<{ dishes: Dish[]; fromCache: boolean; slow?: boolean } | null>(null);
   // The customer app asks for a pin code and shows the menu of the kitchen that serves it (story B2). The demo console and the other apps keep the plain menu.
@@ -456,6 +458,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [saved, setSaved] = useState<SavedAddress[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [here, setHere] = useState<Place | null>(null);
+  const [locOff, setLocOff] = useState<null | { denied: boolean; busy: boolean; how: boolean }>(null);   // story #1056: the location-off sheet, shown once per app open
   const [pinMap, setPinMap] = useState<null | { center: Place; edit?: SavedAddress }>(null);   // story #1037: the one full-screen map, the door for Add new address, Use current location and a tapped search result
   const mapStart = (): Place => {   // where the map opens when nothing says otherwise: the phone, else the picked address, else the city centre
     const row = (saved ?? []).find((r) => r.id === selectedId);
@@ -486,11 +489,17 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       const row = lastUsed(list);
       if (row && !moved.current) useSaved(row, false);   // story #1014: a customer who already moved on (the Bill, the placed screen) is never pulled back
       let at: Place | null = null;
+      let off: "denied" | "silent" | null = null;   // story #1056 (board SW3): blocked, or allowed but no position within 5 s
       try {
         const perm = await navigator.permissions?.query({ name: "geolocation" as PermissionName });
-        if (perm?.state === "granted") at = await currentPlace();
-      } catch { /* no place: the rows show no distance */ }
+        if (perm?.state === "denied") off = "denied";
+        if (perm?.state === "granted") {
+          at = await Promise.race([currentPlace(), new Promise<null>((res) => setTimeout(() => res(null), LOC_WAIT_MS))]);
+          if (!at) off = "silent";
+        }
+      } catch { /* no place: the rows show no distance */ if (!at) off = "silent"; }
       setHere(at);
+      if (off && !moved.current) setLocOff({ denied: off === "denied", busy: false, how: false });
     })().catch(() => undefined);
   }, [signedIn]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {   // today's single saved address becomes the first row, Home, once (only while the list is empty)
@@ -968,6 +977,11 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       </nav>}
       {otpOpen && <OtpSheet phone={phone} onClose={() => setOtpOpen(false)}
         onVerified={(p) => { setPhone(p); setVerified(true); setOtpOpen(false); setToast("Number confirmed"); setTimeout(() => setToast(null), 2500); setPendingPlace(true); }} />}
+      {locOff && step === "menu" && !pinMap && (
+        <LocationOffSheet list={saved ?? []} denied={locOff.how} busy={locOff.busy} onClose={() => setLocOff(null)}
+          onTurnOn={() => { if (locOff.denied) return setLocOff({ ...locOff, how: true }); setLocOff({ ...locOff, busy: true }); currentPlace().then((p) => { setHere(p); setLocOff(null); }, () => setLocOff({ denied: true, busy: false, how: true })); }}
+          onPick={(a) => { useSaved(a, true); setLocOff(null); }} onViewAll={() => { setLocOff(null); setStep("deliver"); }} onSearch={() => { setLocOff(null); setStep("deliver"); }} />
+      )}
       {nameOpen && <NameSheet onDone={(n) => { if (n) setName(n); setNameAsked(true); setNameOpen(false); }} />}
       {toast && <p role="status" className="otp-toast">{toast}</p>}
       {demo && <p role="status" className="notice"><strong>Offline demo</strong></p>}
