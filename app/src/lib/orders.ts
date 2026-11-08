@@ -1,5 +1,6 @@
 import { customerLine, NO_INTERNET, type CustomerAction } from "./errorLines";
 import type { Decision, Rider } from "./ops";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getClient } from "./supabase";
 
 // The n8n webhook is now used only for the rider decision and the tester feedback (story #940 moved placing and every order step to Supabase).
@@ -99,11 +100,15 @@ export async function addEvent(input: EventInput, deps: ActDeps): Promise<{ orde
   return { order: (await act(input.orderId, "arriving", deps)).order };
 }
 
-// Ask for the rider decision of a ready order (story #46 call, story #51 screen). The rule decides; the answer also carries the AI's advice.
-export async function askDecision(input: { sessionId: string; orderId: string; riders: Rider[] }, deps: OrderDeps): Promise<Decision> {
-  const a = await callApi({ action: "decide", session_id: input.sessionId, order_id: input.orderId, riders: input.riders }, deps, "decision");
-  return a.decision as Decision;
+// Ask for the rider decision of a ready order (story #46 call, story #51 screen; story #1068: the database decides, n8n is out of it). The rule decides.
+// The reply is an answer, not an error: {ok:false, error, message} is a refusal and becomes a plain message.
+export async function askDecision(input: { sessionId: string; kitchenId: string; orderId: string; riders: Rider[] }, client: Pick<SupabaseClient, "rpc"> = getClient()): Promise<Decision> {
+  const { data, error } = await client.rpc("decide_rider_rules_v2", { p_session: input.sessionId, p_kitchen: input.kitchenId, p_order: input.orderId, p_riders: input.riders });
+  if (error || !data) throw new PlaceError(NO_INTERNET_OR_SERVER, "unknown");
+  if (data.ok === true && data.decision) return data.decision as Decision;
+  throw new PlaceError(typeof data.message === "string" && data.message ? data.message : NO_INTERNET_OR_SERVER, typeof data.error === "string" ? data.error : "unknown");
 }
+const NO_INTERNET_OR_SERVER = "Something went wrong. Please try again.";
 
 // A tester's report from the Feedback button (story S-B). The server saves it and answers with the new id.
 export async function sendFeedback(report: object, deps: OrderDeps): Promise<string> {

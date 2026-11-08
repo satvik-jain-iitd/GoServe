@@ -1,5 +1,5 @@
 // Story #940: every step after "placed" goes to POST /order-actions with the signed-in user's own token. The body names the order and the step only.
-// askDecision still uses the n8n webhook with the demo token.
+// askDecision asks the database (story #1068).
 import { describe, expect, it } from "vitest";
 import { addEvent, askDecision, changeStatus, confirmDelivery, PlaceError } from "../../src/lib/orders";
 
@@ -84,14 +84,18 @@ describe("confirmDelivery", () => {
 
 describe("askDecision", () => {
   const riders = [{ id: "r1", free: true, distance_m: 1800, trips_done: 3 }];
-  it("S1 posts the decide action with the riders and returns the decision", async () => {
-    const seen: { url?: string; init?: RequestInit } = {};
-    const d = await askDecision({ sessionId: "s1", orderId: "o1", riders }, deps(json(200, { ok: true, decision: { rule_pick: "r1" } }), seen));
-    expect(JSON.parse(seen.init?.body as string)).toEqual({ action: "decide", session_id: "s1", order_id: "o1", riders });
+  const input = { sessionId: "s1", kitchenId: "k1", orderId: "o1", riders };
+  const client = (reply: { data?: unknown; error?: unknown }, seen: { name?: string; args?: unknown } = {}) => ({ rpc: async (name: string, args: unknown) => { seen.name = name; seen.args = args; return { data: null, error: null, ...reply }; } }) as never;
+  it("S1 asks the database function with the riders and returns the decision (story #1068: n8n is out of it)", async () => {
+    const seen: { name?: string; args?: unknown } = {};
+    const d = await askDecision(input, client({ data: { ok: true, decision: { rule_pick: "r1" } } }, seen));
+    expect(seen).toEqual({ name: "decide_rider_rules_v2", args: { p_session: "s1", p_kitchen: "k1", p_order: "o1", p_riders: riders } });
     expect(d).toEqual({ rule_pick: "r1" });
   });
-  it("S1 a refused call becomes a plain message; a reply without a decision is not trusted", async () => {
-    await expect(askDecision({ sessionId: "s1", orderId: "o1", riders }, deps(json(503, { ok: false, error: "kill_switch", message: "Orders are paused." })))).rejects.toThrow("Orders are paused.");
-    await expect(askDecision({ sessionId: "s1", orderId: "o1", riders }, deps(json(200, { ok: true })))).rejects.toThrow("Something went wrong. Please try again.");
+  it("S1 a refusal becomes a plain message; a reply without a decision, or an error, is not trusted", async () => {
+    await expect(askDecision(input, client({ data: { ok: false, error: "not_allowed", message: "Only an admin can ask for a decision." } }))).rejects.toThrow("Only an admin can ask for a decision.");
+    await expect(askDecision(input, client({ data: { ok: true } }))).rejects.toThrow("Something went wrong. Please try again.");
+    await expect(askDecision(input, client({ error: { message: "db host down" } }))).rejects.toThrow("Something went wrong. Please try again.");
   });
 });
+

@@ -168,7 +168,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       setStep("placed");
     }
   }, [live.loading, orders, resumed, lock, demo, step, placed]);
-  const ops = useOps(!demo && role === "ops", orders, api);   // the offline story never asks the server
+  const ops = useOps(!demo && role === "ops", orders);   // the offline story never asks the server
   const keyRef = useRef<{ fingerprint: string; key: string } | null>(null);
   // Delivered by hand (story S-C): the delivery question for the customer's order, the Yes, and the Not yet.
   const [confirmCfg, setConfirmCfg] = useState<ConfirmCfg>(DEFAULT_CFG);
