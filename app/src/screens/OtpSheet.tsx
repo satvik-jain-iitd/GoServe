@@ -79,7 +79,7 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false, g
         <p className="ui-welcome-kicker">Hot meals from our kitchen for you in 20 mins</p>
       </header>
       <section className="ui-slip" aria-label="Welcome"><div className="ui-slip-body">
-        <div className="ui-slip-head"><span>Welcome</span><span>Step 1 of 3</span></div>
+        <div className="ui-slip-head"><span>Welcome</span><span>Step 1 of 4</span></div>
         {inner}
       </div></section>
     </main>
