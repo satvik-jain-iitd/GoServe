@@ -370,3 +370,16 @@ Runs: `scout.py` found no repos. Decision: borrow the Overpass `around` query on
 ## 2026-11-07 · need: India pin code dataset with coordinates, nearest pin code from a point
 
 Runs: `scout.py` found no repos. Decision: use the GeoNames IN postal codes file (CC BY, 11,042 centroids) in a `pincodes` table with `nearest_pin()` (story #987). The data.gov.in All India Pincode Directory (post-office level) is the upgrade. Overpass left the customer path (see experiments.md, E-OVERPASS-1).
+
+
+## 2026-11-08 · need: delivery ETA estimate from rider GPS pings, open source (story #1015, #1023)
+
+Runs: `scout.py` found no repos; GitHub search "delivery eta prediction" and topic `eta` gave one 3-star MLOps repo (a model trained on past delivery data: we have no history) and unrelated progress-bar repos. Decision: nothing to borrow; the rule is straight line x detour 1.3 at 300 m a minute (the A64 speed `kitchen.ts` already used), prep minutes from the kitchen, all in the versioned param `eta_rules`. PR #1022.
+
+## 2026-11-08 · need: nominatim forward geocoding proxy with cache and rate limit (story #1027)
+
+Runs: `scout.py` found no repos; GitHub search "nominatim proxy cache": none. Built from the shape of our `geocode` function. The usage policy read at the same time (1 request a second in total, identifying User-Agent, cache, no auto-complete) made the owner choose our own table instead (story #1029, PR #1030; the Nominatim path stays in the code, dormant).
+
+## 2026-11-08 · need: place names for pins (stories #1029, #1031)
+
+Runs: no scout needed, the owner named the source ("humara wala pincode wala"): the GeoNames IN file already in `pincodes` (#987), now with `place` and `state`; local aliases by hand in `pincode_aliases` (#1031). Parked for the owner: India Post directory (data.gov.in), the main GeoNames India file, an OSM India extract (landmarks); each needs a radar run and the licence named in its story.

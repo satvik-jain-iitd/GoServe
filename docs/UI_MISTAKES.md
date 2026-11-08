@@ -45,6 +45,8 @@ Grade-5 English. One row per mistake. Never delete a row; add a newer one.
 | 18 | Axe contrast scan during an animation reads a blended colour | Stamp fade, reveal animations | Wait for `document.getAnimations()` to finish, in the shared helper |
 | 19 | Inputs without `box-sizing: border-box` or `min-width: 0` inside a grid or flex row | Sheet inputs, `.ui-two` children | Every input: `box-sizing: border-box; width: 100%; min-width: 0`; grid columns `minmax(0, 1fr)` |
 | 20 | A fixed-height or fixed-width box that grows with content on a real phone (long dish name, long address) | Dish rows, address lines | Text boxes wrap (`min-width: 0`, `overflow-wrap: anywhere`); test with the longest real value |
+| 21 | An input outside `.ui-form` or without a class shows the browser's own thin white box; the textarea next to it is styled, so the gap hides | #1020 Add address and Edit sheet (Label thin and white, Address styled, Pin tall) | Every control is styled by `.ui-field`, never by the wrapper. Compare every field's height with the board before approve (Label = Pin = 48 px, Address two rows) |
+| 22 | A spacing rule written as a sibling selector (`.ui-field + .ui-field`) also hits side-by-side rows and pushes the second box down | #1020 first try: Opens at and Closes at on Add kitchen | Scope a spacing rule to the column that owns it (`.ui-sheet > .ui-field + .ui-field`), then look at every picture that changes, not only the ones you meant |
 
 ## C. How to use this file
 
