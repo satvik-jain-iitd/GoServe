@@ -10,8 +10,9 @@ import { PAY_WINDOW_S, PAY_METHODS, type PayMethod } from "../lib/payments";
 import { devHelperOn } from "../lib/payGateway";
 import { Timeline } from "../ui";
 import { BackChevron } from "./BillScreen";
-import { RiderMap } from "./RiderMap";
-import { distanceText, lastSeenText, riderLine, type Point } from "../lib/riderMap";
+import { RiderMapScreen } from "./RiderMapScreen";
+import { agoText, distanceText, lastSeenText, type Point } from "../lib/riderMap";
+import { useNowOnline } from "../lib/useNowOnline";
 import type { LatLng } from "../lib/riderTrack";
 
 type Props = {
@@ -53,24 +54,20 @@ export type Pay = {
 };
 
 const placeholderGone = import.meta.env.VITE_PAYMENTS_PROVIDER === "razorpay";
-// Story #691 (boards T2, T3): the map card. The words refresh every 10 s; a phone with no connection greys the map and says when the rider was last seen.
-function MapCard({ t }: { t: Track }) {
-  const [now, setNow] = useState(() => Date.now());
-  const [online, setOnline] = useState(() => navigator.onLine);
-  useEffect(() => {
-    const tick = setInterval(() => setNow(Date.now()), 10_000);
-    const up = () => { setOnline(true); setNow(Date.now()); }, down = () => setOnline(false);
-    window.addEventListener("online", up); window.addEventListener("offline", down);
-    return () => { clearInterval(tick); window.removeEventListener("online", up); window.removeEventListener("offline", down); };
-  }, []);
-  const last = lastSeenText(t.rider.at, now);
+// Story 1053 (boards T4, T5; before: #691 T2, T3): one rider row, no map in the page. A tap opens the full-screen map. The words refresh every 10 s; with no connection the row says when the rider was last seen.
+const MAP_ICON = <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z" /><path d="M9 3v15M15 6v15" /></svg>;
+const GO = <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>;
+function RiderRow({ t, onOpen }: { t: Track; onOpen: () => void }) {
+  const { now, online } = useNowOnline();
   return (
-    <section className="ui-mapcard" aria-label="Rider on the map">
-      <RiderMap kitchen={t.kitchen} you={t.you} rider={t.rider} offline={!online} />
-      {online
-        ? <div className="ui-map-line"><span aria-hidden="true" className="ui-live-dot" /><span><b>{t.name}</b>{riderLine("", distanceText(t.rider.lat, t.rider.lng, t.you.lat, t.you.lng), t.rider.at, now)}</span></div>
-        : <div className="ui-map-line offline"><span className="ui-chip-warn">No connection</span><span><b>{last.slice(0, last.indexOf(","))}</b>{last.slice(last.indexOf(","))}</span></div>}
-    </section>
+    <button type="button" className="ui-locrow ui-riderrow" aria-label="See the rider on the map" onClick={onOpen}>
+      <span className="ui-locrow-icon">{MAP_ICON}</span>
+      <span className="ui-locrow-words">
+        <span className="ui-locrow-title"><b>{t.name}</b> is {distanceText(t.rider.lat, t.rider.lng, t.you.lat, t.you.lng)} away</span>
+        <span className="ui-locrow-sub mono">{online ? `On the map · updated ${agoText(t.rider.at, now)}` : `No connection · ${lastSeenText(t.rider.at, now)}`}</span>
+      </span>
+      <span className="ui-locrow-go">{GO}</span>
+    </button>
   );
 }
 
@@ -87,6 +84,7 @@ const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", del
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
 export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, declined }: Props) {
+  const [mapOpen, setMapOpen] = useState(false);   // story 1053: the full-screen rider map
   const steps = trackerSteps(status);
   const eta = etaMinutes();
   const placed = new Date(placedAt);
@@ -146,9 +144,9 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
         </section>
         <div className="ui-after">
           {status === "placed" && <p>The kitchen has your order. This page updates on its own.</p>}
+          {track && status === "out_for_delivery" && <RiderRow t={track} onOpen={() => setMapOpen(true)} />}   {/* board T4: the row sits under the slip, above the timeline */}
           {!delivered && !cancelled && <Timeline steps={steps.map((x) => (atDoor && x.status === "out_for_delivery" ? "Rider at your door" : STEP_WORDS[x.status] ?? x.label))} current={steps.findIndex((x) => x.state === "current")} label="Order progress" />}
           {!delivered && !cancelled && address && <p className="mono ui-addr ph-no-capture">{address}</p>}
-          {track && status === "out_for_delivery" && <MapCard t={track} />}
           {rider && !(track && status === "out_for_delivery") && (
             <div className="notice" data-testid="rider-card">
               <strong>{atDoor ? rider.name.split(" ")[0] : rider.name}</strong> {atDoor ? "is at your door." : "is bringing your order."}{" "}
@@ -185,6 +183,7 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
           )}
         </div>
       </div>
+      {mapOpen && track && status === "out_for_delivery" && <RiderMapScreen t={track} orderNo={shortId(order.id)} door={clock12(door)} onBack={() => setMapOpen(false)} onCall={onCall} />}
       <div className="ui-bottom">
         {(delivered || cancelled) && <button type="button" className="ui-btn big" onClick={onMenu}>{declined ? "Order something else" : cancelled ? "Order again" : "See the menu"}</button>}
         {(status === "placed" || status === "accepted") && <button type="button" className="ui-btn ghost big" disabled={cancelling} onClick={onCancel}>Cancel order</button>}

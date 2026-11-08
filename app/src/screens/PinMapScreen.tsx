@@ -121,7 +121,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
           <path d="M207 360 c-9 0 -15 7 -15 15 c0 11 15 29 15 29 s15 -18 15 -29 c0 -8 -6 -15 -15 -15z" fill="var(--md-primary)" /><circle cx="207" cy="375" r="5" fill="#ffffff" /></svg></span>
       <div className="ui-pinmap-top">
         <button type="button" className="ui-pinmap-back" aria-label="Back" onClick={onBack}>{I(<path d="M19 12H5M11 18l-6-6 6-6" />)}</button>
-        {!pick && <button type="button" className="ui-pinmap-search" aria-label="Search an area or address" onClick={onSearch}><span>Search an area or address</span>{I(<><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></>, 20)}</button>}
+        {!pick && !kitchen && <button type="button" className="ui-pinmap-search" aria-label="Search an area or address" onClick={onSearch}><span>Search an area or address</span>{I(<><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></>, 20)}</button>}
       </div>
       {!pick && <div className="ui-pinmap-card">
         <button type="button" className="ui-pinmap-here" onClick={() => void toPhone()}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg><span>Current Location</span></button>

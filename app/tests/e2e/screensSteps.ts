@@ -72,7 +72,20 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await page.getByRole("button", { name: "Save location" }).click();
     await page.getByLabel("Address").fill("Green avenue, near bus stand"); await page.getByLabel("Phone").fill("9876500011");
     await page.getByLabel("Opens at").fill("11:00"); await page.getByLabel("Closes at").fill("22:00");
-    await expect(page.locator(".ui-locrow")).toContainText("Green Avenue Colony, Satai Road"); await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur()); },   // unfocused: no ring on Closes at
+    await expect(page.locator(".ui-locrow")).toContainText("Green Avenue Colony, Satai Road"); await page.getByRole("heading", { name: "Add a kitchen" }).click(); },   // a click on the title takes the focus off Closes at: no ring in the picture
+  // Story 1053: the boards T4 and T5 with their own words (Rahul, 1.2 km, 20 sec ago). The clock is fixed at NINE, so the door time is the test's, not the board's 8:12 pm.
+  "tracker-rider-row": async (context, page, path) => {   // board T4: On the way with the rider row, no map in the page
+    const net = await setup(context, page, [order("out_for_delivery", "2020-01-01T10:05:00Z")]);
+    net.state.riderCard = { name: "Rahul", phone: "9876543210" };
+    Object.assign(net.state.kitchens[0], { lat: 28.57, lng: 77.24 });
+    net.state.tracking = { rider_lat: 28.5792, rider_lng: 77.26, updated_at: new Date(NINE.getTime() - 20_000).toISOString() };
+    await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+vg+AAVYAqhyXHCrAAAAAElFTkSuQmCC", "base64") }));
+    await page.goto(path); await expect(page.getByRole("button", { name: "See the rider on the map" })).toBeVisible(); },
+  "rider-map": async (context, page, path) => {   // board T5: the rider on the full-screen map
+    await page.emulateMedia({ reducedMotion: "reduce" });   // the rider's mark pulses forever; a still picture needs it still
+    await STEPS["tracker-rider-row"](context, page, path);
+    await page.getByRole("button", { name: "See the rider on the map" }).click();
+    await expect(page.getByRole("region", { name: "Rider on the map" }).getByRole("img", { name: "Rider" })).toBeVisible(); },
   "add-dish": async (context, page, path) => {   // story 923: the admin's Add dish form
     const net = await setup(context, page); net.state.admin = true; await page.goto(path);
     await page.getByRole("button", { name: "City", exact: true }).click(); await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();
