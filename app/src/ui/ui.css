@@ -745,3 +745,6 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-nkplace > span { display: flex; flex-direction: column; color: var(--md-on-surface); min-width: 0; }
 .ui-nkplace b { font-size: 16px; font-weight: 600; }
 .ui-nkplace > span > span { font-size: 14px; color: var(--gs-text-muted); }
+
+/* Story #1103, board O0g-B: the thali picture of the welcome screen, 306 x 181, centred between the title and Continue with Google. */
+.ui-welcome-pic { display: block; width: 306px; max-width: 100%; height: auto; aspect-ratio: 306 / 181; margin: 8px auto -10px; }   /* the button above brings its own 16 px; the board leaves 6 px between the picture and the button */
