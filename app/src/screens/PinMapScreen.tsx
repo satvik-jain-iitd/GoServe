@@ -113,7 +113,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, onBack, 
       <span className="ui-pinmap-pin" data-testid="map-pin" aria-hidden="true">{I(PIN_PATH, 40)}</span>
       <div className="ui-pinmap-top">
         <button type="button" className="ui-pinmap-back" aria-label="Back" onClick={onBack}>{I(<path d="M15 5l-7 7 7 7" />)}</button>
-        <button type="button" className="ui-pinmap-search" aria-label="Search an area or address" onClick={onSearch}><span>Search an area or address</span>{I(<><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></>, 20)}</button>
+        {!pick && <button type="button" className="ui-pinmap-search" aria-label="Search an area or address" onClick={onSearch}><span>Search an area or address</span>{I(<><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></>, 20)}</button>}
       </div>
       {!pick && <div className="ui-pinmap-card">
         <button type="button" className="ui-pinmap-here" onClick={() => void toPhone()}>{I(<><circle cx="12" cy="12" r="7" /><circle cx="12" cy="12" r="2.5" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></>, 18)}<span>Current Location</span></button>
@@ -150,34 +150,26 @@ function DetailsSheet({ pick, onChange, onSave, onHeight }: { pick: PinPick; onC
   const [custom, setCustom] = useState("");
   const [area, setArea] = useState("");
   const [pinText, setPinText] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const found = (pick.words?.address ?? "").trim();
   const needArea = found === "";
   const needPin = !isPin(pick.words?.pin ?? "");
   const name = cardWords(found || null);
-  const save = () => {
-    const label = chip === "Other" ? custom.trim() : chip;
-    const pin = needPin ? pinText.trim() : pick.words!.pin;
-    if (house.trim().length < 1) return setError("Add the house, flat or floor.");
-    if (label.length < 1 || label.length > 30) return setError(chip === "Other" && label.length > 30 ? "A name of 1 to 30 characters." : "Give this place a name.");
-    if (needArea && area.trim().length < 2) return setError("Type the area or street.");
-    if (!isPin(pin)) return setError("The pin code is six digits.");
-    setError(null);
-    onSave({ pin, address: addressText(house, landmark, needArea ? area : found), label, from: pick.at });
-  };
+  const label = chip === "Other" ? custom.trim() : chip;
+  const pin = needPin ? pinText.trim() : pick.words?.pin ?? "";
+  const ready = house.trim().length >= 1 && label.length >= 1 && label.length <= 30 && (!needArea || area.trim().length >= 2) && isPin(pin);   // Save stays asleep until it can work
+  const save = () => { if (ready) onSave({ pin, address: addressText(house, landmark, needArea ? area : found), label, from: pick.at }); };
   return (
     <section ref={el} className="ui-pinmap-details" role="dialog" aria-label="Address details">
-      <div className="ui-pinmap-details-head"><h2>Address details</h2><span className="mono">Step 2 of 2</span></div>
+      <div className="ui-sheet-head ui-pinmap-details-head"><h2>Address details</h2><span className="mono">Step 2 of 2</span></div>
       <div className="ui-pinmap-where">{I(PIN_PATH, 22)}<span className="ui-pinmap-where-words"><b>{name.name}</b>{name.rest && <span>{name.rest}</span>}</span><button type="button" className="ui-pinmap-change" onClick={onChange}>Change</button></div>
       {needArea && <div className="ui-field"><label htmlFor="pd-area">Area or street</label><input id="pd-area" type="text" maxLength={200} value={area} onChange={(e) => setArea(e.target.value)} /></div>}
       {needPin && <div className="ui-field"><label htmlFor="pd-pin">Pin code</label><input id="pd-pin" className="mono-input" type="tel" inputMode="numeric" maxLength={6} placeholder="000000" value={pinText} onChange={(e) => setPinText(e.target.value.trim())} /></div>}
-      <div className="ui-field"><label htmlFor="pd-house">House, flat, floor</label><input id="pd-house" type="text" maxLength={120} value={house} onChange={(e) => setHouse(e.target.value)} /></div>
-      <div className="ui-field"><label htmlFor="pd-landmark">Landmark (optional)</label><input id="pd-landmark" type="text" maxLength={120} value={landmark} onChange={(e) => setLandmark(e.target.value)} /></div>
+      <div className="ui-field"><label htmlFor="pd-house">House, flat, floor</label><input id="pd-house" type="text" placeholder="C-128, second floor" maxLength={120} value={house} onChange={(e) => setHouse(e.target.value)} /></div>
+      <div className="ui-field"><label htmlFor="pd-landmark">Landmark (optional)</label><input id="pd-landmark" type="text" placeholder="near the park gate" maxLength={120} value={landmark} onChange={(e) => setLandmark(e.target.value)} /></div>
       <div className="ui-pinmap-saveas"><span className="mono ui-pinmap-kicker">Save as</span>
         <div className="ui-chips">{CHIPS.map((c) => <button key={c} type="button" className={`ui-chip${chip === c ? " on" : ""}`} aria-pressed={chip === c} onClick={() => setChip(c)}>{c}</button>)}</div></div>
       {chip === "Other" && <div className="ui-field"><label htmlFor="pd-name">Name this place</label><input id="pd-name" type="text" maxLength={30} value={custom} onChange={(e) => setCustom(e.target.value)} /></div>}
-      {error && <p role="alert" className="ui-field-error">{error}</p>}
-      <button type="button" className="ui-btn big" onClick={save}>Save address</button>
+      <button type="button" className="ui-btn big" disabled={!ready} onClick={save}>Save address</button>
     </section>
   );
 }

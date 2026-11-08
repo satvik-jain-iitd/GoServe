@@ -32,15 +32,23 @@ test("S1 the sheet opens over the same map: Step 2 of 2, the place and a Change 
   await expect(sheet(page).getByLabel("Landmark (optional)")).toBeVisible();
   for (const c of ["Home", "Office", "Other"]) await expect(sheet(page).getByRole("button", { name: c, exact: true })).toBeVisible();
   await expect(sheet(page).getByRole("button", { name: "Save address" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Search an area or address" })).toHaveCount(0);   // the top shows only Back while the sheet is open
+  await expect(sheet(page).getByLabel("House, flat, floor")).toHaveAttribute("placeholder", "C-128, second floor");
+  await expect(sheet(page).getByLabel("Landmark (optional)")).toHaveAttribute("placeholder", "near the park gate");
+  const chip = (await sheet(page).getByRole("button", { name: "Office", exact: true }).boundingBox())!;
+  expect(Math.round(chip.height)).toBe(36);
   await expect(page.getByText(/The pin takes the rider/)).toHaveCount(0);   // owner rule 8 Nov: no hint under the chips
   const pin = (await page.getByTestId("map-pin").boundingBox())!, top = (await sheet(page).boundingBox())!;
   expect(pin.y + pin.height).toBeLessThan(top.y);   // the pin stays visible above the sheet
 });
 
-test("S2 Save with no house says what to add and writes nothing", async ({ page, context }) => {
+test("S2 Save stays asleep until the house is typed, with no alert and no helper line", async ({ page, context }) => {
   const net = await toDetails(page, context);
-  await sheet(page).getByRole("button", { name: "Save address" }).click();
-  await expect(page.getByRole("alert")).toContainText("Add the house, flat or floor.");
+  const save = sheet(page).getByRole("button", { name: "Save address" });
+  await expect(save).toBeDisabled();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await sheet(page).getByLabel("House, flat, floor").fill("12B");
+  await expect(save).toBeEnabled();
   expect(net.state.addresses).toHaveLength(1);
 });
 
@@ -69,8 +77,7 @@ test("S5 Other opens a name box that must be filled", async ({ page, context }) 
   const net = await toDetails(page, context);
   await sheet(page).getByLabel("House, flat, floor").fill("12B");
   await sheet(page).getByRole("button", { name: "Other", exact: true }).click();
-  await sheet(page).getByRole("button", { name: "Save address" }).click();
-  await expect(page.getByRole("alert")).toContainText("Give this place a name.");
+  await expect(sheet(page).getByRole("button", { name: "Save address" })).toBeDisabled();   // Other needs a name
   await sheet(page).getByLabel("Name this place").fill("Nani's house");
   await sheet(page).getByRole("button", { name: "Save address" }).click();
   await expect.poll(() => net.state.addresses.length).toBe(2);
@@ -97,12 +104,12 @@ test("S7 the fields share one style: same height, border and corners, and 16 px 
 test("S8 when the lookup found no words or no pin code, the sheet asks for them", async ({ page, context }) => {
   const net = await toDetails(page, context, { status: 503, body: { ok: false } });
   await sheet(page).getByLabel("House, flat, floor").fill("12B");
-  await sheet(page).getByRole("button", { name: "Save address" }).click();
-  await expect(page.getByRole("alert")).toContainText("Type the area or street.");
+  const save = sheet(page).getByRole("button", { name: "Save address" });
+  await expect(save).toBeDisabled();   // no area yet
   await sheet(page).getByLabel("Area or street").fill("Green Park");
-  await sheet(page).getByRole("button", { name: "Save address" }).click();
-  await expect(page.getByRole("alert")).toContainText("The pin code is six digits.");
+  await expect(save).toBeDisabled();   // no pin code yet
   await sheet(page).getByLabel("Pin code").fill("110016");
+  await expect(save).toBeEnabled();
   await sheet(page).getByRole("button", { name: "Save address" }).click();
   await expect.poll(() => net.state.addresses.length).toBe(2);
   expect(net.state.addresses.at(-1)).toMatchObject({ address: "12B, Green Park", pin_code: "110016" });
