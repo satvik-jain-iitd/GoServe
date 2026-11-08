@@ -3,7 +3,7 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import { makeHandler, type Deps } from "./index.ts";
 import { FakePush } from "../_shared/push.ts";
-import type { WebDeps, WebJob } from "./index.ts";
+import { parseBody, type WebDeps, type WebJob } from "./index.ts";
 
 const O = "7e57ab1e-0000-4000-8000-0000000000f1";
 const SECRET = "test-notify-secret";
@@ -93,11 +93,12 @@ const JOB: WebJob = { ok: true, done: false, subscriptions: [
   { endpoint: "https://p.example/a", p256dh: "k1", auth: "a1", message: { title: "GoServe", body: "Your order is ready.", order_id: "o1", status: "ready" } },
   { endpoint: "https://p.example/b", p256dh: "k2", auth: "a2", message: null },
 ] };
+const doneNotes: (string | undefined)[] = [];
 const web = (o: Partial<WebDeps> = {}, status: Record<string, number> = {}): WebDeps => ({
   send: async (s, payload) => { sentWeb.push({ endpoint: s.endpoint, payload: JSON.parse(payload) }); return { status: status[s.endpoint] ?? 201 }; },
   job: async (id) => { webLog.push(`job ${id}`); return JOB; },
   forget: async (e) => { webLog.push(`forget ${e}`); },
-  done: async (id, sent, failed) => { webLog.push(`done ${id} ${sent} ${failed}`); },
+  done: async (id, sent, failed, note) => { webLog.push(`done ${id} ${sent} ${failed}`); doneNotes.push(note); },
   ...o,
 });
 const resetWeb = () => { sentWeb.length = 0; webLog.length = 0; };
@@ -146,4 +147,21 @@ Deno.test("web: no secret header is 401, a bad id is 400, missing VAPID secrets 
   const dead = await post(makeHandler(deps({ web: web({ job: async () => { throw new Error("db host 10.0.0.1 down"); } }) })), "web", { outbox_id: 7 }, SEC);
   assertEquals([dead.status, JSON.stringify(await dead.json()).includes("10.0.0.1")], [502, false]);
   assertEquals((await post(makeHandler(deps({ web: web() })), "web", { outbox_id: 7 }, SEC, "GET")).status, 405);
+});
+
+Deno.test("web: why the last send failed goes to the report as a short note (a status, or the error's name and start with any address cut out)", async () => {
+  resetWeb(); doneNotes.length = 0;
+  await post(makeHandler(deps({ web: web({}, { "https://p.example/a": 403, "https://p.example/b": 500 }) })), "web", { outbox_id: 7 }, SEC);
+  assertEquals(doneNotes, ["status 500"]);
+  doneNotes.length = 0;
+  await post(makeHandler(deps({ web: web({ send: async () => { throw new TypeError("fetch failed for https://secret.example/x?token=abc"); } }) })), "web", { outbox_id: 7 }, SEC);
+  assertEquals(doneNotes, ["threw TypeError: fetch failed for [url]"]);
+  doneNotes.length = 0;
+  await post(makeHandler(deps({ web: web() })), "web", { outbox_id: 7 }, SEC);
+  assertEquals(doneNotes, [undefined]);   // all went out: no note
+});
+
+Deno.test("parseBody: an empty answer (a function that returns nothing) is null, a JSON answer is read", () => {
+  assertEquals(parseBody(""), null);
+  assertEquals(parseBody('{"ok":true}'), { ok: true });
 });

@@ -6,7 +6,7 @@ import os, sys, unittest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from test_schema import TOKEN, sql, migration_inside
 
-MIG = migration_inside(["20261108190000_web_push_now.sql"], "to_regproc('public.push_web_job_v2') is not null")   # empty once dev has it applied
+MIG = migration_inside(["20261108190000_web_push_now.sql", "20261108210000_web_push_done_note.sql"], "to_regproc('public.push_web_job_v2') is not null and exists (select 1 from pg_proc where proname = 'push_web_done_v2' and pronargs = 4)")   # empty once dev has both applied
 UID = "00000000-0000-0000-0000-0000000000e7"
 DISH = "(select id from menu_items order by price_paise limit 1)"
 PLACE = f"select place_order('{UID}', 'key7', jsonb_build_array(jsonb_build_object('menu_item_id', {DISH}, 'qty', 1)), 'Flat 4')"
@@ -82,14 +82,20 @@ class WebPushNow(unittest.TestCase):
                 f"(select count(*)::int from order_trace where event = 'push_failed' and order_id = (select order_id from push_outbox where id = {ROW})) as failed")
         self.assertEqual([r["open"], r["failed"]], [True, 1])
 
+    def test_s5b_a_failure_note_goes_into_the_trace_line_and_is_cut_at_200_characters(self):
+        r = run(*SUBS, PLACE, f"select push_web_done_v2({ROW}, 0, 1, 'status 403')", f"select (select detail->>'text' from order_trace where event = 'push_failed' and order_id = (select order_id from push_outbox where id = {ROW})) as t")
+        self.assertEqual(r["t"], "web: 1 failed, row kept for retry (status 403)")
+        r = run(*SUBS, PLACE, f"select push_web_done_v2({ROW}, 0, 1, repeat('x', 500))", f"select (select length(detail->>'text') from order_trace where event = 'push_failed' and order_id = (select order_id from push_outbox where id = {ROW})) as n")
+        self.assertEqual(r["n"], 200)
+
     def test_s6_forget_removes_only_that_subscription(self):
         r = run(*SUBS, "select push_web_forget_v2('https://web.push.example/a')",
                 f"select array_agg(endpoint) as left from push_subscriptions where session_id = '{UID}'")
         self.assertEqual(r["left"], ["https://web.push.example/b"])
 
     def test_s7_only_the_service_may_call_them(self):
-        r = sql("select has_function_privilege('anon', 'push_web_job_v2(bigint)', 'execute') or has_function_privilege('authenticated', 'push_web_done_v2(bigint,int,int)', 'execute') or has_function_privilege('anon', 'push_web_forget_v2(text)', 'execute') as open" if not MIG else
-                "begin; " + MIG + "; select has_function_privilege('anon', 'push_web_job_v2(bigint)', 'execute') or has_function_privilege('authenticated', 'push_web_done_v2(bigint,int,int)', 'execute') or has_function_privilege('anon', 'push_web_forget_v2(text)', 'execute') as open; rollback;")
+        r = sql("select has_function_privilege('anon', 'push_web_job_v2(bigint)', 'execute') or has_function_privilege('authenticated', 'push_web_done_v2(bigint,int,int,text)', 'execute') or has_function_privilege('anon', 'push_web_forget_v2(text)', 'execute') as open" if not MIG else
+                "begin; " + MIG + "; select has_function_privilege('anon', 'push_web_job_v2(bigint)', 'execute') or has_function_privilege('authenticated', 'push_web_done_v2(bigint,int,int,text)', 'execute') or has_function_privilege('anon', 'push_web_forget_v2(text)', 'execute') as open; rollback;")
         row = r[-1] if isinstance(r, list) else r
         self.assertFalse(row["open"], r)
 
