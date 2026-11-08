@@ -61,7 +61,7 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace, on
       </header>
       <div className="ui-slip" role="group" aria-label="Your address">
         <div className="ui-slip-body">
-          <div className="ui-slip-head"><span>Your address</span><span>{mode === "ask" ? "Step 2 of 3" : "Step 3 of 3"}</span></div>
+          <div className="ui-slip-head"><span>Your address</span><span>{mode === "ask" ? "Step 3 of 4" : "Step 4 of 4"}</span></div>
           {mode === "ask" && (
             <>
               <h2 className="ui-slip-title">Where does the food go?</h2>

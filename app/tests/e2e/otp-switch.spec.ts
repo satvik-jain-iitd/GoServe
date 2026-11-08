@@ -26,7 +26,7 @@ test("S1 with the switch off the welcome screen is Continue with Google only, an
   await expect(google).toHaveClass(/\bbig\b/);
   await expect(google).not.toHaveClass(/\bghost\b/);
   await expect(page.getByText("We ask for your mobile number on the bill, so the rider can call you.")).toHaveCount(0);   // story #1044
-  await expect(page.getByText("Step 1 of 3")).toBeVisible();
+  await expect(page.getByText("Step 1 of 4")).toBeVisible();
   await noPhoneParts(page);
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toHaveCount(0);
 });
