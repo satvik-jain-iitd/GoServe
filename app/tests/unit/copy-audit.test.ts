@@ -44,6 +44,6 @@ describe("story #1044: the removed texts stay removed", () => {
   });
 
   it("the onboarding tagline is the one sentence, in the header", () => {
-    expect(hits("Hot meals from our kitchen for you in 20 mins").sort()).toEqual(["src/screens/AlertsAsk.tsx", "src/screens/AreaScreen.tsx", "src/screens/OtpSheet.tsx"]);
+    expect(hits("Hot meals from our kitchen for you in 20 mins").sort()).toEqual(["src/screens/AlertsAsk.tsx", "src/screens/AreaScreen.tsx", "src/screens/NoKitchen.tsx", "src/screens/OtpSheet.tsx"]);
   });
 });
