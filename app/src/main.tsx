@@ -10,6 +10,7 @@ import { styleguideOn } from "./ui/flag";
 import { roleFromPath, roleTitle } from "./lib/roles";
 import { applyTheme } from "./lib/theme";
 import { dropOldJoin } from "./lib/session";
+import { claimDevice } from "./lib/deviceOwner";
 import { lockZoom } from "./lib/zoomLock";
 import { watchForUpdates } from "./lib/updates";
 import { initAnalytics, reportUncaught } from "./lib/analytics";
@@ -22,6 +23,7 @@ watchForUpdates(navigator.serviceWorker, document, () => window.location.reload(
 lockZoom(document);   // story #932: no pinch zoom, the tabs stay put
 applyTheme(store, document);   // Day or Night; index.html already did it for the first paint
 dropOldJoin();   // story #938: a key an older version saved is removed before anything reads a session
+claimDevice();   // story 1115: a different account on this phone never opens with the previous one's address (before anything reads the area, the draft or the alerts choice)
 const path = window.location.pathname;
 const role = roleFromPath(path);
 if (role) document.title = roleTitle(role);
