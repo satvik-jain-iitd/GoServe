@@ -34,9 +34,9 @@ class PushOutbox(unittest.TestCase):
     def test_placing_queues_one_push_when_the_customer_has_a_subscription(self):
         self.assertEqual(self.statuses(SUB, PLACE), ["placed"])
 
-    def test_the_four_steps_are_queued_the_two_in_between_are_not(self):
+    def test_every_step_is_queued_but_preparing(self):   # story #1099: accepted is queued too
         self.assertEqual(self.statuses(SUB, PLACE, RIDER_ROW, *step("accepted", "preparing", "ready", "out_for_delivery", "delivered")),
-                         ["placed", "ready", "out_for_delivery", "delivered"])
+                         ["placed", "accepted", "ready", "out_for_delivery", "delivered"])
 
     def test_a_status_change_made_by_a_plain_update_is_queued_too(self):
         # This is how the city tick moves an order: no app, no n8n webhook. It is the root cause of #483.
