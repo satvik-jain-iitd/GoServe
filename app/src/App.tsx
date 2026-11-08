@@ -30,6 +30,7 @@ import { ensureSession, fetchMenuRows, fetchRiderCard, getClient, type RiderCard
 import { openTill } from "./lib/browse";
 import { AccountScreen } from "./screens/AccountScreen";
 import { DeliverToScreen } from "./screens/DeliverToScreen";
+import { placeSearch } from "./lib/placeSearch";
 import { addAddress, editAddress, firstFromProfile, listAddresses, lastUsed, removeAddress, touchAddress, type SavedAddress } from "./lib/addresses";
 import { currentPlace, type Place } from "./lib/locate";
 import { currentSession, scopeFor } from "./lib/session";
@@ -866,7 +867,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   ) : adding ? (
     <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} adding={{ ...adding, onBack: () => setAdding(null) }} onPlace={(pl) => void saveNew(pl)} />
   ) : step === "deliver" ? (
-    <DeliverToScreen list={saved ?? []} selectedId={selectedId} here={here} onBack={() => setStep("menu")}
+    <DeliverToScreen list={saved ?? []} selectedId={selectedId} here={here} search={(q) => placeSearch(q)} onPlace={(h) => setAdding({ mode: "hand", words: h.address })} onBack={() => setStep("menu")}
       onSelect={(id) => { const r = (saved ?? []).find((x) => x.id === id); if (r) { useSaved(r, true); setStep("menu"); } }}
       onUseLocation={() => setAdding({ mode: "ask" })} onAddNew={(words) => setAdding({ mode: "hand", words })}
       onEdit={async (id, v) => { const ok = await editAddress(getClient(), id, v); if (ok) { setSaved((cur) => (cur ?? []).map((r) => (r.id === id ? { ...r, ...v } : r))); if (id === selectedId) { setAddress(v.address); if (v.pin !== pin) choosePin(v.pin); } } return ok; }}

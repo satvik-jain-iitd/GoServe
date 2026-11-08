@@ -38,7 +38,7 @@ test("S2 story #1035: phone far from every saved address, the page does not open
   await expect(dialog(page)).toHaveCount(0);
   expect(reads).toBe(0);
   await page.getByRole("button", { name: /^Office\b/ }).click();
-  await expect(page.getByText(/The last address you used is picked when the app opens/)).toBeVisible();
+  await expect(page.locator(".ui-deliver-foot")).toHaveCount(0);   // owner rule 8 Nov: the page ends with the list, no line about why
 });
 
 test("S3 no location permission: the last used address stays picked and the page does not open by itself", async ({ page, context }) => {
