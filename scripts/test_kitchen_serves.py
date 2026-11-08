@@ -34,8 +34,8 @@ class KitchenServes(unittest.TestCase):
     def test_s5_nothing_known_about_the_place_is_not_decided_here(self):
         self.assertTrue(go(NEAR, final=f"kitchen_serves({K}, null, null, null) as v")["v"])
 
-    def test_s6_a_switched_off_kitchen_serves_nothing(self):
-        self.assertFalse(go(NEAR, f"update kitchens set active = false where id = {K}", final=f"kitchen_serves({K}, '403725', {GOA[0]}, {GOA[1]}) as v")["v"])
+    def test_s6_a_switched_off_kitchen_still_serves_the_switch_only_decides_open_or_paused(self):
+        self.assertTrue(go(NEAR, f"update kitchens set active = false where id = {K}", final=f"kitchen_serves({K}, '403725', {GOA[0]}, {GOA[1]}) as v")["v"])
 
     def test_s7_place_order_refuses_a_drop_point_the_kitchen_does_not_reach(self):
         far = f"insert into res (r) select place_order_v2('s1', 'k1', {K}, '{LINES}'::jsonb, 'Flat 4, Far', 32000, '{BILL}'::jsonb, p_drop_lat => 15.5, p_drop_lng => {GOA[1]})"
@@ -46,6 +46,18 @@ class KitchenServes(unittest.TestCase):
         near = f"insert into res (r) select place_order_v2('s1', 'k1', {K}, '{LINES}'::jsonb, 'Flat 4, Near', 32000, '{BILL}'::jsonb, p_drop_lat => {GOA[0]}, p_drop_lng => {GOA[1]})"
         r = go(NEAR, near, final="(select count(*) from orders where client_order_key = 'k1') as n")
         self.assertEqual((r["rs"][0]["ok"], r["n"]), (True, 1), r)
+
+
+    def test_s9_the_shared_cases_the_app_and_the_edge_function_run_too(self):
+        import json
+        cases = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "spec", "serviceability_cases.json")))["cases"]
+        lit = lambda v: "null" if v is None else (f"'{v}'" if isinstance(v, str) else str(v).lower())
+        for c in cases:
+            k, pl = c["kitchen"], c["place"]
+            setup = (f"update kitchens set pin_codes = array[{', '.join(lit(p) for p in k['pin_codes'])}]::text[], lat = {lit(k['lat'])}, lng = {lit(k['lng'])}, "
+                     f"radius_m = {k['radius_m']}, active = {lit(k['active'])} where id = {K}")
+            call = f"kitchen_serves({K}, {lit(c['pin'])}, {lit(pl['lat']) if pl else 'null'}, {lit(pl['lng']) if pl else 'null'}) as v"
+            self.assertEqual(go(setup, final=call)["v"], c["served"], c["name"])
 
 
 if __name__ == "__main__":

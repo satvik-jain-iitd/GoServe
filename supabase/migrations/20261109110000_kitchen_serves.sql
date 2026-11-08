@@ -1,4 +1,4 @@
--- Story #1102: one serviceability rule. A kitchen serves a place when it is active and lists the place's pin OR the place is inside its radius.
+-- Story #1102: one serviceability rule. A kitchen serves a place when it lists the place's pin OR the place is inside its radius.
 -- The map strip (Edge Function serviceability), the menu and the save (app/src/lib/area.ts) and now place_order all say the same thing, so a customer is never told
 -- yes at the map and no after the save. kitchen_serves answers true when there is nothing to judge by (no pin, and no place or no kitchen position): that case is not decided here.
 create function kitchen_serves(p_kitchen uuid, p_pin text, p_lat double precision, p_lng double precision) returns boolean
@@ -6,7 +6,7 @@ language sql stable security definer set search_path = public as $$
   select coalesce((
     select case
       when p_pin is null and not (p_lat is not null and p_lng is not null and k.lat is not null and k.lng is not null) then true   -- nothing to judge by
-      else k.active and (
+      else (
         (p_pin is not null and p_pin = any (k.pin_codes))
         or (p_lat is not null and p_lng is not null and k.lat is not null and k.lng is not null
             and 2 * 6371008.8 * asin(sqrt(least(1.0, power(sin(radians(k.lat - p_lat) / 2), 2) + cos(radians(p_lat)) * cos(radians(k.lat)) * power(sin(radians(k.lng - p_lng) / 2), 2)))) <= k.radius_m)) end

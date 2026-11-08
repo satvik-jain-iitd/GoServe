@@ -1,0 +1,215 @@
+{
+ "rule": "A kitchen serves a place when it lists the pin OR the place is inside its radius. The active switch is not part of it (it decides open or paused). A listed pin needs no position. Story 1102.",
+ "cases": [
+  {
+   "name": "a listed pin and no place is served",
+   "kitchen": {
+    "pin_codes": [
+     "403725"
+    ],
+    "lat": 15.25,
+    "lng": 73.9417,
+    "radius_m": 3000,
+    "active": true
+   },
+   "pin": "403725",
+   "place": null,
+   "served": true
+  },
+  {
+   "name": "a place at the kitchen is served whatever pin the map read (the 403721 case of #1102)",
+   "kitchen": {
+    "pin_codes": [
+     "403725"
+    ],
+    "lat": 15.25,
+    "lng": 73.9417,
+    "radius_m": 3000,
+    "active": true
+   },
+   "pin": "403721",
+   "place": {
+    "lat": 15.25,
+    "lng": 73.9417
+   },
+   "served": true
+  },
+  {
+   "name": "far away with an unlisted pin is not served",
+   "kitchen": {
+    "pin_codes": [
+     "403725"
+    ],
+    "lat": 15.25,
+    "lng": 73.9417,
+    "radius_m": 3000,
+    "active": true
+   },
+   "pin": "403721",
+   "place": {
+    "lat": 15.5,
+    "lng": 73.9417
+   },
+   "served": false
+  },
+  {
+   "name": "a listed pin is served even far from the kitchen",
+   "kitchen": {
+    "pin_codes": [
+     "403725"
+    ],
+    "lat": 15.25,
+    "lng": 73.9417,
+    "radius_m": 3000,
+    "active": true
+   },
+   "pin": "403725",
+   "place": {
+    "lat": 15.5,
+    "lng": 73.9417
+   },
+   "served": true
+  },
+  {
+   "name": "an unlisted pin and no place is not served",
+   "kitchen": {
+    "pin_codes": [
+     "403725"
+    ],
+    "lat": 15.25,
+    "lng": 73.9417,
+    "radius_m": 3000,
+    "active": true
+   },
+   "pin": "403721",
+   "place": null,
+   "served": false
+  },
+  {
+   "name": "inside the radius (2,990 m) is served",
+   "kitchen": {
+    "pin_codes": [
+     "403725"
+    ],
+    "lat": 15.25,
+    "lng": 73.9417,
+    "radius_m": 3000,
+    "active": true
+   },
+   "pin": "403721",
+   "place": {
+    "lat": 15.2768896982778,
+    "lng": 73.9417
+   },
+   "served": true
+  },
+  {
+   "name": "outside the radius (3,010 m) is not served",
+   "kitchen": {
+    "pin_codes": [
+     "403725"
+    ],
+    "lat": 15.25,
+    "lng": 73.9417,
+    "radius_m": 3000,
+    "active": true
+   },
+   "pin": "403721",
+   "place": {
+    "lat": 15.277069562480328,
+    "lng": 73.9417
+   },
+   "served": false
+  },
+  {
+   "name": "a switched-off kitchen that lists the pin still serves it (the switch only decides open or paused)",
+   "kitchen": {
+    "pin_codes": [
+     "403725"
+    ],
+    "lat": 15.25,
+    "lng": 73.9417,
+    "radius_m": 3000,
+    "active": false
+   },
+   "pin": "403725",
+   "place": {
+    "lat": 15.25,
+    "lng": 73.9417
+   },
+   "served": true
+  },
+  {
+   "name": "a switched-off kitchen still serves a place inside its radius",
+   "kitchen": {
+    "pin_codes": [
+     "403725"
+    ],
+    "lat": 15.25,
+    "lng": 73.9417,
+    "radius_m": 3000,
+    "active": false
+   },
+   "pin": "403721",
+   "place": {
+    "lat": 15.25,
+    "lng": 73.9417
+   },
+   "served": true
+  },
+  {
+   "name": "a kitchen with no position that lists the pin serves it",
+   "kitchen": {
+    "pin_codes": [
+     "403725"
+    ],
+    "lat": null,
+    "lng": null,
+    "radius_m": 3000,
+    "active": true
+   },
+   "pin": "403725",
+   "place": {
+    "lat": 15.25,
+    "lng": 73.9417
+   },
+   "served": true
+  },
+  {
+   "name": "a kitchen with no position and an unlisted pin does not serve a place",
+   "kitchen": {
+    "pin_codes": [
+     "403725"
+    ],
+    "lat": null,
+    "lng": null,
+    "radius_m": 3000,
+    "active": true
+   },
+   "pin": "403721",
+   "place": {
+    "lat": 15.25,
+    "lng": 73.9417
+   },
+   "served": false
+  },
+  {
+   "name": "the pin unknown and the place inside the radius is served",
+   "kitchen": {
+    "pin_codes": [
+     "403725"
+    ],
+    "lat": 15.25,
+    "lng": 73.9417,
+    "radius_m": 3000,
+    "active": true
+   },
+   "pin": null,
+   "place": {
+    "lat": 15.25,
+    "lng": 73.9417
+   },
+   "served": true
+  }
+ ]
+}
