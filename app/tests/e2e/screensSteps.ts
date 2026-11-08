@@ -104,6 +104,20 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     net.state.addresses = [{ id: "h1", label: "Home", address: "C-128, Green Avenue Colony, Satai Road, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" }];
     await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.6139, longitude: 77.209 });
     await page.goto(path); await expect(page.getByText("You are 6 km from Home")).toBeVisible(); },
+  // Story #1049: the first-open boards. The first-open screen is the location ask (A1, with step 3 of 4); Use my location opens the pin map at the phone (A1p).
+  "first-open-ask": async (context, page, path) => {   // board A1
+    await setup(context, page, [], { pin: null }); await page.goto(path); await expect(page.getByRole("button", { name: "Use my location" })).toBeVisible(); },
+  "alerts-ask": async (context, page, path) => {   // story #1049 part 2, board N0: order alerts, step 2 of 4
+    await setup(context, page, [], { pin: null });
+    await context.addInitScript(() => { if (typeof Notification === "undefined") (window as unknown as { Notification: unknown }).Notification = function () {}; Object.defineProperty(Notification, "permission", { get: () => "default", configurable: true }); });   // an iPhone tab has no Notification: the picture needs one
+    await page.goto(path); await expect(page.getByRole("heading", { name: "Get order alerts" })).toBeVisible(); },
+  "first-open-pin": async (context, page, path) => {   // board A1p: after Use my location, the full map, the same screen as C6
+    const net = await setup(context, page, [], { pin: null });
+    net.state.geocode = { status: 200, body: { ok: true, address: "Green Avenue Colony, Satai Road, Chhatarpur, Madhya Pradesh 471001", pin: "471001", locality: "Green Avenue Colony", town: "Chhatarpur" } };
+    await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+vg+AAVYAqhyXHCrAAAAAElFTkSuQmCC", "base64") }));
+    await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 24.8847, longitude: 79.597 });
+    await page.goto(path); await page.getByRole("button", { name: "Use my location" }).click();
+    await expect(page.getByText("We deliver here · the kitchen is 1.2 km from the pin")).toBeVisible(); },
   "add-dish": async (context, page, path) => {   // story 923: the admin's Add dish form
     const net = await setup(context, page); net.state.admin = true; await page.goto(path);
     await page.getByRole("button", { name: "City", exact: true }).click(); await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();

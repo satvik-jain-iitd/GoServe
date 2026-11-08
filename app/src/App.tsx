@@ -9,6 +9,7 @@ import { loadMenu, MENU_KEY, type Dish } from "./lib/menu";
 import { fetchKitchens, forgetArea, loadArea, loadPin, closedCopy, openingText, resolveArea, savePin, shownArea, type Area } from "./lib/area";
 import { dropFor } from "./lib/locate";
 import { AreaScreen } from "./screens/AreaScreen";
+import { AlertsAsk } from "./screens/AlertsAsk";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { AdminGate } from "./screens/AdminGate";
 import { RiderGate } from "./screens/RiderGate";
@@ -316,6 +317,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     });
     return ok;
   }
+  // Story #1049 part 2 (board N0): first open, after the number and before the location, alerts are asked once. Turn on asks the phone's permission and moves on either way; Not now moves on.
+  const ASKED_KEY = "gs_alerts_asked";
+  const [alertsAsked, setAlertsAsked] = useState(() => { try { return window.localStorage.getItem(ASKED_KEY) === "1"; } catch { return false; } });
+  const [askingAlerts, setAskingAlerts] = useState(false);
+  const markAsked = () => { try { window.localStorage.setItem(ASKED_KEY, "1"); } catch { /* asked again next visit */ } setAlertsAsked(true); };
+  async function turnOnFirst() { setAskingAlerts(true); try { await allowReminder(); } finally { setAskingAlerts(false); markAsked(); } }
   // Story #718 (board L1): a closed kitchen offers one push when it opens. Alerts are allowed first when they are not on yet.
   const [tellMe, setTellMe] = useState<"idle" | "busy" | "done">("idle");
   const [tellMeError, setTellMeError] = useState<string | null>(null);
@@ -460,6 +467,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   function useSaved(a: SavedAddress, touch: boolean) {   // the Bill reads `address`; a new pin code finds the kitchen again
     setSelectedId(a.id);
     setAddress(a.address);
+    setFixAddress(a.lat !== null && a.lng !== null ? a.address : null);   // story #1049: a saved place with its pin carries its drop point while the words stay as saved
     if (a.pin !== pin) choosePin(a.pin, a.lat !== null && a.lng !== null ? { lat: a.lat, lng: a.lng } : undefined);
     if (touch) {
       const at = new Date().toISOString();
@@ -894,15 +902,18 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <OtpSheet welcome googleOnly={!gate} phone={phone} onClose={() => undefined}
       onVerified={(p) => { setPhone(p); setVerified(true); setSignedIn(true); }} />
   ) : pinMap ? (
-    <PinMapScreen center={pinMap.center} edit={pinMap.edit} kicker={pinMap.edit ? `Editing ${pinMap.edit.label}` : undefined} confirmLabel={pinMap.edit ? "Save changes" : "Confirm & proceed"} onBack={() => setPinMap(null)} onSearch={() => setPinMap(null)}
+    <PinMapScreen center={pinMap.center} edit={pinMap.edit} kicker={pinMap.edit ? `Editing ${pinMap.edit.label}` : undefined} confirmLabel={pinMap.edit ? "Save changes" : "Confirm & proceed"} onBack={() => setPinMap(null)} onSearch={() => { setPinMap(null); if (needArea) setStep("deliver"); }}
       onSave={(a) => { const e = pinMap.edit; setPinMap(null); if (e) void saveEdit(e.id, a); else void saveNew(a); }} />
   ) : step === "deliver" ? (
     <DeliverToScreen list={saved ?? []} selectedId={selectedId} here={here} search={(q) => placeSearch(q)} onPlace={(h) => setPinMap({ center: { lat: h.lat, lng: h.lng } })} onBack={() => setStep("menu")}
       onSelect={(id) => { const r = (saved ?? []).find((x) => x.id === id); if (r) { useSaved(r, true); setStep("menu"); } }}
       onUseLocation={() => { void currentPlace().then((p) => setPinMap({ center: p }), () => setPinMap({ center: mapStart() })); }} onAddNew={() => setPinMap({ center: mapStart() })}
       onEditOnMap={(a) => setPinMap({ center: a.lat !== null && a.lng !== null ? { lat: a.lat, lng: a.lng } : mapStart(), edit: a })} onRemove={dropSaved} />
+  ) : needArea && !alertsAsked && reminder === "ask" ? (
+    <AlertsAsk busy={askingAlerts} onTurnOn={() => void turnOnFirst()} onNotNow={markAsked} />
   ) : needArea ? (
-    <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={(pl) => { setAddress(pl.address); setFixAddress(pl.located ?? null); choosePin(pl.pin, pl.from); }} />
+    <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={(pl) => { setAddress(pl.address); setFixAddress(null); choosePin(pl.pin); }}
+      onMap={(at) => setPinMap({ center: at })} onSearch={() => setStep("deliver")} />
   ) : (
     <>
         {step === "menu" && (

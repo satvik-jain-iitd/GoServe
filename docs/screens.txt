@@ -19,6 +19,9 @@ eta-big | /customer/ | 412x915 | eta-big
 eta-late | /customer/ | 412x915 | eta-late
 eta-working | /customer/ | 412x915 | eta-working
 menu-far | /customer/ | 412x915 | menu-far
+alerts-ask | /customer/ | 412x915 | alerts-ask
+first-open-ask | /customer/ | 412x915 | first-open-ask
+first-open-pin | /customer/ | 412x915 | first-open-pin
 add-dish | /admin/ | 412x915 | add-dish
 dish-edit | /admin/ | 412x915 | dish-edit
 edit-kitchen | /admin/ | 412x915 | edit-kitchen

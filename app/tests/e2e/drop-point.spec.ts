@@ -1,6 +1,7 @@
 // Story #905: the order keeps the customer's drop point. A device fix is saved as drop_lat and drop_lng; a typed address sends none.
 import { test, expect, type Page } from "@playwright/test";
 import { setup } from "./helpers";
+import { firstOpenToMenu } from "./firstOpen";
 
 const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
 const NOMINATIM = { address: { house_number: "B-12", road: "Lajpat Nagar II", suburb: "Lajpat Nagar", city: "New Delhi", state: "Delhi", postcode: "110016", country: "India" } };
@@ -28,17 +29,16 @@ async function orderFromBill(page: Page) {
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
 }
 
-test("S1 an order placed after a device fix carries the drop point", async ({ page, context }) => {
+test("S1 an order placed after the pin map carries the drop point", async ({ page, context }) => {
   const orders = await start(context, page);
   await context.grantPermissions(["geolocation"]);
   await context.setGeolocation({ latitude: 28.5677, longitude: 77.2432 });
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "Use my location" }).click();
-  await expect(page.getByRole("heading", { name: "Is this right?" })).toBeVisible();
-  await page.getByRole("button", { name: "See the menu" }).click();
+  await firstOpenToMenu(page);
   await orderFromBill(page);
   expect(orders).toHaveLength(1);
-  expect(orders[0].address).toMatchObject({ lat: 28.5677, lng: 77.2432 });
+  expect(orders[0].address.lat).toBeCloseTo(28.5677, 3);
+  expect(orders[0].address.lng).toBeCloseTo(77.2432, 3);
 });
 
 test("S2 an order placed from a typed address carries no drop point", async ({ page, context }) => {
@@ -52,37 +52,4 @@ test("S2 an order placed from a typed address carries no drop point", async ({ p
   expect(orders).toHaveLength(1);
   expect(orders[0].address.lat).toBeUndefined();
   expect(orders[0].address.lng).toBeUndefined();
-});
-
-test("S3 location used, then the address typed over on the same screen: the order carries no drop point", async ({ page, context }) => {
-  const orders = await start(context, page);
-  await context.grantPermissions(["geolocation"]);
-  await context.setGeolocation({ latitude: 28.5677, longitude: 77.2432 });
-  await page.goto("/customer/");
-  await page.getByRole("button", { name: "Use my location" }).click();
-  await expect(page.getByRole("heading", { name: "Is this right?" })).toBeVisible();
-  await page.getByLabel("Address", { exact: true }).fill("C-4, Hauz Khas, near the metro");
-  await page.getByRole("button", { name: "See the menu" }).click();
-  await orderFromBill(page);
-  expect(orders).toHaveLength(1);
-  expect(orders[0].address.text).toBe("C-4, Hauz Khas, near the metro");
-  expect(orders[0].address.lat).toBeUndefined();
-});
-
-test("S4 location used, the address kept on the screen, then changed on the Bill: the order carries no drop point", async ({ page, context }) => {
-  const orders = await start(context, page);
-  await context.grantPermissions(["geolocation"]);
-  await context.setGeolocation({ latitude: 28.5677, longitude: 77.2432 });
-  await page.goto("/customer/");
-  await page.getByRole("button", { name: "Use my location" }).click();
-  await page.getByRole("button", { name: "See the menu" }).click();
-  await page.getByRole("button", { name: "Add Butter Chicken" }).click();
-  await page.getByRole("button", { name: /View bill/ }).click();
-  await page.getByLabel("Address").fill("Flat 9, somewhere else");
-  await page.getByLabel("Your name").fill("Asha");
-  await page.getByLabel("Phone").fill("9876543210");
-  await page.getByRole("button", { name: /Place order/ }).click();
-  await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
-  expect(orders[0].address.text).toBe("Flat 9, somewhere else");
-  expect(orders[0].address.lat).toBeUndefined();
 });

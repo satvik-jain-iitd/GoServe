@@ -1,22 +1,20 @@
 // The first question of the customer app (story B2, rebuilt in story #668, boards A1 to A3): where does the food go? The customer's own address, never the kitchen's.
-// Ask (use my location, or type it) -> found (check it) or by hand. The kitchen is matched behind the scenes from the pin code and, when allowed, the place.
+// Ask (use my location, or type it by hand). Story #1049 (boards A1, A1p): Use my location opens the full-screen pin map at the phone (the same screen as C6); the phone not giving
+// its place opens the search. The kitchen is matched behind the scenes from the pin code and, when allowed, the place.
 import { useState } from "react";
 import { isPin } from "../lib/area";
 import type { Area } from "../lib/area";
-import { currentPlace, findAddress, type Place } from "../lib/locate";
+import { currentPlace, type Place } from "../lib/locate";
 
-type Props = { pin: string | null; address: string; area: Area | null; busy: boolean; error: string | null; onPlace: (p: { pin: string; address: string; from?: Place; located?: string }) => void;
+type Props = { pin: string | null; address: string; area: Area | null; busy: boolean; error: string | null; onPlace: (p: { pin: string; address: string }) => void;
+  onMap: (at: Place) => void; onSearch: () => void;   // story #1049: the pin map at the phone; the search when the phone does not give its place
 };
-type Mode = "ask" | "found" | "hand";
+type Mode = "ask" | "hand";
 
-export function AreaScreen({ pin, address: start, area, busy, error, onPlace }: Props) {
+export function AreaScreen({ pin, address: start, area, busy, error, onPlace, onMap, onSearch }: Props) {
   const [mode, setMode] = useState<Mode>(pin ? "hand" : "ask");
   const [address, setAddress] = useState(start);
   const [text, setText] = useState(pin ?? "");
-  const [place, setPlace] = useState<Place | undefined>(undefined);
-  const [pinMissing, setPinMissing] = useState(false);   // story #969: the location found an address but no pin, even from the nearest tagged object
-  const [from, setFrom] = useState<"ola" | "osm" | null>(null);   // story #998: who named the words; the Ola credit shows only for Ola's
-  const [located, setLocated] = useState<string | undefined>(undefined);   // story #910: the address the location found, to tell a hand edit from it
   const [finding, setFinding] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const none = area?.kind === "none";
@@ -26,19 +24,9 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace }: 
     setFinding(true);
     setNote(null);
     try {
-      const here = await currentPlace();
-      const found = await findAddress(here.lat, here.lng);
-      if (!found) throw new Error("not_found");
-      setPlace(here);
-      setFrom(found.from);
-      setLocated(found.address);
-      setAddress(found.address);
-      setText(found.pin);
-      setPinMissing(found.pin === "");
-      setMode("found");
+      onMap(await currentPlace());   // the map opens at the phone; the words come from the pin there
     } catch {
-      setNote("We could not get your location. Type it by hand.");
-      setMode("hand");
+      onSearch();   // location not given: search, and a picked result lands on the same map
     } finally {
       setFinding(false);
     }
@@ -53,15 +41,14 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace }: 
       <div className="ui-field">
         <label htmlFor="pin">Pin code</label>
         <input id="pin" className="ui-pin-input" type="tel" inputMode="numeric" maxLength={6} placeholder="123456" value={text}
-          aria-invalid={!!(error || none) || undefined} aria-describedby={error || none || (pinMissing && text === "") ? "pin-help" : undefined}
+          aria-invalid={!!(error || none) || undefined} aria-describedby={error || none ? "pin-help" : undefined}
           onChange={(e) => setText(e.target.value.trim())} />
         {error && <p id="pin-help" role="alert" className="ui-field-error">{error}</p>}
-        {!error && !none && pinMissing && text === "" && <p id="pin-help" role="status" className="ui-field-error">We could not find your pin code. Type it.</p>}
         {!error && none && <p id="pin-help" role="status" className="ui-field-error">Not here yet. We do not deliver to {pin} yet.</p>}
       </div>
       {none && <p className="ui-note">A pin code next to yours may work.</p>}
       {busy && <p role="status" className="ui-note">Finding your kitchen…</p>}
-      <button type="button" className="ui-btn big" disabled={busy || !ready} onClick={() => onPlace({ pin: text, address: address.trim(), from: place, located })}>See the menu</button>
+      <button type="button" className="ui-btn big" disabled={busy || !ready} onClick={() => onPlace({ pin: text, address: address.trim() })}>See the menu</button>
     </>
   );
 
@@ -74,20 +61,13 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace }: 
       </header>
       <div className="ui-slip" role="group" aria-label="Your address">
         <div className="ui-slip-body">
-          <div className="ui-slip-head"><span>Your address</span><span>{mode === "ask" ? "Step 2 of 3" : "Step 3 of 3"}</span></div>
+          <div className="ui-slip-head"><span>Your address</span><span>{mode === "ask" ? "Step 3 of 4" : "Step 4 of 4"}</span></div>
           {mode === "ask" && (
             <>
               <h2 className="ui-slip-title">Where does the food go?</h2>
               <p className="ui-meta ui-slip-line">We have multiple kitchens with hygienic homely food</p>
               <button type="button" className="ui-btn big" disabled={finding} onClick={useLocation}>{finding ? "Finding you…" : "Use my location"}</button>
               <button type="button" className="ui-btn ghost big" onClick={() => setMode("hand")}>Type it by hand</button>
-            </>
-          )}
-          {mode === "found" && (
-            <>
-              <h2 className="ui-slip-title">Is this right?</h2>
-              {form}
-              {from === "ola" && <p className="ui-credit mono">Address words: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">Ola Maps</a> · Map: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a></p>}
             </>
           )}
           {mode === "hand" && (
