@@ -32,6 +32,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, onBack, 
   const [busy, setBusy] = useState(true);
   const [here, setHere] = useState<Place | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const root = useRef<HTMLElement>(null);
   const [pick, setPick] = useState<PinPick | null>(null);   // story #1038: set when Confirm is tapped; the details sheet shows over the same map
   const ask = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -107,7 +108,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, onBack, 
   const name = cardWords(words?.address ?? null);
   const strips = stripsFor({ serve: served, here, pin: point });
   return (
-    <section className="ui-pinmap" role="region" aria-label="Pin map" data-step={pick ? "details" : "pin"}>
+    <section ref={root} className="ui-pinmap" role="region" aria-label="Pin map" data-step={pick ? "details" : "pin"}>
       <div ref={box} className="ui-pinmap-map" role="application" aria-label="Map" />
       <span className="ui-pinmap-pin" data-testid="map-pin" aria-hidden="true">{I(PIN_PATH, 40)}</span>
       <div className="ui-pinmap-top">
@@ -125,14 +126,24 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, onBack, 
         <button type="button" className="ui-btn big" disabled={busy} onClick={() => setPick({ at: point, words, served: served ? served.serviceable : null })}>{confirmLabel}</button>
         <span className="mono ui-pinmap-credit">{words?.from === "ola" && <><a href={OSM} target="_blank" rel="noopener noreferrer">Ola Maps</a> · </>}<a href={OSM} target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a></span>
       </div>}
-      {pick && <DetailsSheet pick={pick} onChange={() => setPick(null)} onSave={onSave} />}
+      {pick && <DetailsSheet pick={pick} onChange={() => setPick(null)} onSave={onSave} onHeight={(h) => { root.current?.style.setProperty("--sheet-h", `${h}px`); live.current?.map.invalidateSize({ pan: false }); const c = pick.at; live.current?.map.setView([c.lat, c.lng], live.current.map.getZoom(), { animate: false }); }} />}
     </section>
   );
 }
 
 const CHIPS = ["Home", "Office", "Other"] as const;
 // Story #1038 (board C7-PinDetails): the words the rider needs, and the save. The pin's exact place is the one the map rested on.
-function DetailsSheet({ pick, onChange, onSave }: { pick: PinPick; onChange: () => void; onSave: (a: Saved) => void }) {
+function DetailsSheet({ pick, onChange, onSave, onHeight }: { pick: PinPick; onChange: () => void; onSave: (a: Saved) => void; onHeight: (h: number) => void }) {
+  const el = useRef<HTMLElement>(null);
+  const tell = useRef(onHeight);
+  tell.current = onHeight;
+  useEffect(() => {   // the map above keeps exactly the part the sheet leaves free
+    const e = el.current;
+    if (!e || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => tell.current(e.getBoundingClientRect().height));
+    ro.observe(e);
+    return () => ro.disconnect();
+  }, []);
   const [house, setHouse] = useState("");
   const [landmark, setLandmark] = useState("");
   const [chip, setChip] = useState<(typeof CHIPS)[number]>("Home");
@@ -155,7 +166,7 @@ function DetailsSheet({ pick, onChange, onSave }: { pick: PinPick; onChange: () 
     onSave({ pin, address: addressText(house, landmark, needArea ? area : found), label, from: pick.at });
   };
   return (
-    <section className="ui-pinmap-details" role="dialog" aria-label="Address details">
+    <section ref={el} className="ui-pinmap-details" role="dialog" aria-label="Address details">
       <div className="ui-pinmap-details-head"><h2>Address details</h2><span className="mono">Step 2 of 2</span></div>
       <div className="ui-pinmap-where">{I(PIN_PATH, 22)}<span className="ui-pinmap-where-words"><b>{name.name}</b>{name.rest && <span>{name.rest}</span>}</span><button type="button" className="ui-pinmap-change" onClick={onChange}>Change</button></div>
       {needArea && <div className="ui-field"><label htmlFor="pd-area">Area or street</label><input id="pd-area" type="text" maxLength={200} value={area} onChange={(e) => setArea(e.target.value)} /></div>}
