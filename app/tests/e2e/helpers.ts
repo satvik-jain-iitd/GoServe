@@ -38,6 +38,13 @@ export async function setup(context: BrowserContext, page: Page, initial: object
       const name = req.url().split("/rest/v1/rpc/")[1].split("?")[0];
       calls.rpc.push({ name, body: JSON.parse(req.postData() ?? "{}") });
       if (state.rpcError && state.rpcError.name === name) return json(route, 400, { message: state.rpcError.message, details: state.rpcError.details });   // #466: one database function refuses with this code
+      if (name === "decide_rider_rules_v2") {   // story #1068: the database decides; the answer is 200 with ok true or a refusal
+        const b = JSON.parse(req.postData() ?? "{}");
+        calls.decide.push({ action: "decide", session_id: b.p_session, order_id: b.p_order, riders: b.p_riders });
+        const r = state.reply ?? { status: 200, body: { ok: true, decision: decisionOf() } };
+        if (r.status === 200) state.decisions = [{ id: 1, order_id: b.p_order, session_id: SESSION, created_at: new Date().toISOString(), decision: decisionOf() }];
+        return json(route, 200, r.body);
+      }
       if (name === "swap_discount_get_v2" && state.swapDelayMs) await new Promise((r) => setTimeout(r, state.swapDelayMs));   // a slow load
       if (name === "swap_discount_get_v2") return json(route, 200, { pct: state.swapPct, updated_by: "owner@goserve.test", updated_at: "2026-10-29T14:10:00Z" });   // #619 layer d, board A9
       if (name === "otp_login_get_v2") return json(route, 200, { on: state.otpLogin === true, updated_by: "owner@goserve.test", updated_at: "2026-11-03T10:00:00Z" });   // story 829: the phone code switch
@@ -254,12 +261,6 @@ export async function setup(context: BrowserContext, page: Page, initial: object
       if (state.feedbackDown) return route.abort("internetdisconnected");
       calls.feedback.push({ headers: req.headers(), body });
       const r = state.reply ?? { status: 201, body: { ok: true, id: "f1" } };
-      return json(route, r.status, r.body);
-    }
-    if (body.action === "decide") {
-      calls.decide.push(body);
-      const r = state.reply ?? { status: 200, body: { ok: true, decision: decisionOf() } };
-      if (r.status === 200) state.decisions = [{ id: 1, order_id: body.order_id, session_id: SESSION, created_at: new Date().toISOString(), decision: decisionOf() }];
       return json(route, r.status, r.body);
     }
     return json(route, 404, { ok: false, error: "no_such_action" });   // story #940: place, status, event and confirm no longer exist on the webhook
