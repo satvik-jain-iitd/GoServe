@@ -59,3 +59,9 @@ jobs:
             sleep 5
           done
           echo "health did not answer ok"; exit 1
+      # Story 1110: a migration merged to dev but not applied on goserve-dev means merged code is not live (found 9 Nov: files 57, 59, 60 never applied).
+      # This run goes red and names the files. Fix: apply them (scripts/apply_migration.py <ref> <file>), then re-run this job. Read-only; it writes nothing.
+      - name: Migrations are applied on dev
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: python3 scripts/migration_drift.py

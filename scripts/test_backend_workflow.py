@@ -21,5 +21,18 @@ class BackendWorkflow(unittest.TestCase):
         self.assertIn("--yes", line)
 
 
+    # Story 1110: a merge to dev fails when a migration file is not applied on goserve-dev. A schedule runs only from the default branch, which does not hold the daily workflow,
+    # so the check runs here, on the push to dev, after the deploy.
+    def test_s3_a_push_to_dev_runs_the_drift_check_and_a_pull_request_does_not(self):
+        deploy = self.text[self.text.index("  deploy:"):]
+        self.assertIn("python3 scripts/migration_drift.py", deploy)
+        self.assertIn("if: github.event_name != 'pull_request'", deploy)
+        self.assertLess(deploy.index("supabase functions deploy"), deploy.index("python3 scripts/migration_drift.py"))
+
+    def test_s4_the_drift_step_needs_the_token_and_names_what_is_missing(self):
+        step = self.text[self.text.index("Migrations are applied on dev"):]
+        self.assertIn("SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}", step.split("- name:")[0])
+
+
 if __name__ == "__main__":
     unittest.main()
