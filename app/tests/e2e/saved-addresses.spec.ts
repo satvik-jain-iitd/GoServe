@@ -62,24 +62,30 @@ test("S4 Add new address with a label saves a row, shows it with its distance, a
   await expect(page.getByRole("button", { name: /^Nani's house\b/ })).toBeVisible();
 });
 
-test("S5 Remove the selected address: the next most recent is Selected; with none left the first-visit screen shows", async ({ page, context }) => {
+test("S5 Remove the selected address: after the Undo bar runs out the next most recent is Selected; with none left the first-visit screen shows", async ({ page, context }) => {
+  await page.clock.install({ time: new Date(NOW) });
   await open(page, context, AT_HOME);
   await page.getByRole("button", { name: /^Office\b/ }).click();
   await page.getByRole("button", { name: "Edit or remove Office" }).click();
   await page.getByRole("button", { name: "Remove", exact: true }).click();
+  await page.clock.runFor(6_500);   // story #1051: the delete waits for Undo
   await expect(page.getByRole("listitem").filter({ hasText: "Home" })).toContainText("Selected");
   await page.getByRole("button", { name: "Edit or remove Home" }).click();
   await page.getByRole("button", { name: "Remove", exact: true }).click();
+  await page.clock.runFor(6_500);
   await expect(page.getByRole("button", { name: "Use my location" })).toBeVisible();
 });
 
-test("S6 Edit changes the label and the words", async ({ page, context }) => {
-  const net = await open(page, context, AT_HOME);
+test("S6 Edit opens the map; the label changes in the details and the row is updated", async ({ page, context }) => {
+  const net = await open(page, context, AT_HOME, [HOME, OFFICE], (st) => { st.geocode = { status: 200, body: { ok: true, address: "Connaught Place, New Delhi", pin: "110016", locality: "Connaught Place", town: "New Delhi" } }; });
   await page.getByRole("button", { name: /^Office\b/ }).click();
   await page.getByRole("button", { name: "Edit or remove Office" }).click();
   await page.getByRole("button", { name: "Edit", exact: true }).click();
-  await page.getByLabel(/^Label/).fill("Work");
-  await page.getByRole("button", { name: "Save" }).click();
+  await page.getByRole("button", { name: "Save changes" }).click();
+  const sheet = page.getByRole("dialog", { name: "Address details" });
+  await sheet.getByRole("button", { name: "Other", exact: true }).click();
+  await sheet.getByLabel("Name this place").fill("Work");
+  await sheet.getByRole("button", { name: "Save changes" }).click();
   await expect.poll(() => net.state.addresses.find((r: any) => r.id === "o1")?.label).toBe("Work");
 });
 

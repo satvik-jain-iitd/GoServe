@@ -628,11 +628,11 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-credit a { color: inherit; text-decoration: underline; }
 
 /* Story 976, board C2-AddressSheet: the Deliver to page. */
-.ui-deliver-to { padding: 16px var(--gs-gutter) 24px; gap: 16px; }
+.ui-deliver-to { padding: 16px 16px 24px; gap: 16px; }   /* boards C9 to C13: 16 px at the sides */
 .ui-two-cards { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
 .ui-card-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; box-sizing: border-box; padding: 14px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font: inherit; font-size: 16px; font-weight: 600; text-align: left; cursor: pointer; }
 .ui-card-btn svg { width: 22px; height: 22px; color: var(--md-primary); }
-.ui-saved-head { margin: 0 0 4px; font-size: 12px; font-weight: 400; letter-spacing: 0.04em; color: var(--gs-text-muted); }
+.ui-saved-head { margin: 0 0 8px; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; color: var(--gs-text-muted); }
 .ui-saved-list { margin: 0; padding: 0; list-style: none; }
 .ui-saved-row { display: grid; grid-template-columns: 56px minmax(0, 1fr) 32px; gap: 12px; align-items: start; padding: 14px 0; border-bottom: 1px solid var(--md-outline-variant); }
 .ui-chip-box { display: flex; flex-direction: column; align-items: center; gap: 2px; box-sizing: border-box; padding: 8px 0; border-radius: var(--gs-radius-s); background: var(--md-surface-variant); color: var(--md-primary); }
@@ -640,34 +640,48 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-saved-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .ui-saved-row.ui-place-row { grid-template-columns: minmax(0, 1fr); }   /* story 1036: a place has no icon tile and no menu button */
 .ui-place-row .ui-saved-label { flex-wrap: wrap; }
-.ui-saved-label { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 600; }
+.ui-saved-label { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 600; line-height: 1.2; }
 .ui-saved-label .ui-tag { font-size: 11px; }
-.ui-saved-addr { font-size: 14px; color: var(--gs-text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.ui-saved-row .ui-btn.icon { width: 32px; height: 32px; min-width: 32px; min-height: 32px; padding: 0; margin: 0; }
+.ui-saved-addr { font-size: 14px; line-height: 1.35; color: var(--gs-text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ui-saved-row .ui-btn.icon { width: 32px; height: 32px; min-width: 32px; min-height: 32px; padding: 0; margin: 0; border: 0; color: var(--md-primary); }
+/* Story 1051, boards C10 to C13: the saved rows sit in one card, three show and View all opens the rest; an empty list is one line; the Undo bar stays 6 seconds. */
+.ui-saved-card { border-radius: 16px; background: var(--md-surface); overflow: hidden; }
+.ui-saved-card .ui-saved-row { padding: 14px 16px; }
+.ui-saved-card .ui-saved-row:last-child { border-bottom: 0; }
+.ui-saved-card .ui-chip-box { width: 56px; height: 56px; padding: 0; justify-content: center; color: var(--md-on-surface); }
+.ui-view-all { display: flex; align-items: center; justify-content: center; gap: 6px; width: calc(100% - 32px); min-height: 48px; margin: 0 16px; padding: 0; border: 0; border-top: 1px solid var(--md-outline-variant); background: transparent; color: var(--md-primary); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
+.ui-saved-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px 20px 0; text-align: center; }
+.ui-saved-empty h2 { margin: 0; font-size: 20px; font-weight: 600; line-height: 1.2; }
+.ui-saved-empty-icon { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 999px; background: var(--md-surface-variant); color: var(--md-on-surface); }
+.ui-undo-bar { position: fixed; left: 16px; right: 16px; bottom: 24px; z-index: 30; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 0 8px 0 16px; box-sizing: border-box; border-radius: 12px; background: var(--md-on-background); color: var(--md-background); box-shadow: 0 8px 24px rgba(38, 53, 40, 0.2); }
+.ui-undo-bar > span:first-child { flex: 1; font-size: 15px; }
+.ui-undo-bar .mono { font-size: 11px; opacity: 0.8; }
+.ui-undo-bar button { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; color: var(--gs-lime); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
 .ui-deliver-to > * { flex: none; }   /* a child of the column keeps its own height; the search box has flex: 1 from the home row (found in the review of story 976) */
 
 /* Story 1037 (board C6-PinMap): the one full-screen map. The pin is a plain element at the centre of the map box (primary green), the card floats 16 px from the edges. */
 .ui-pinmap { position: fixed; inset: 0; z-index: 900; background: var(--md-surface-variant, var(--md-surface)); overflow: hidden; }
 .ui-pinmap-map { position: absolute; inset: 0; background: var(--md-surface-variant, var(--md-surface)); }
-.ui-pinmap-pin { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; transform: translate(-50%, -100%); color: var(--md-primary); pointer-events: none; z-index: 600; display: block; }
-.ui-pinmap-pin svg { display: block; fill: currentColor; stroke: var(--gs-raised); }
+.ui-pinmap-pin { position: absolute; left: 50%; top: 50%; width: 60px; height: 80px; transform: translate(-50%, -62.5%); color: var(--md-primary); pointer-events: none; z-index: 600; display: block; }   /* boards C6, C6b, C9: the marker, its halo and its shadow; the tip is the centre of the map */
+.ui-pinmap-pin svg { display: block; width: 60px; height: 80px; }
 .ui-pinmap-top { position: absolute; left: 16px; right: 16px; top: calc(env(safe-area-inset-top, 0px) + 12px); z-index: 700; display: flex; gap: 12px; align-items: center; }
-.ui-pinmap-back { flex: none; width: 48px; height: 48px; display: grid; place-items: center; border: 0; border-radius: var(--gs-radius-pill); background: var(--gs-raised); color: var(--md-on-surface); box-shadow: var(--gs-shadow-m); cursor: pointer; }
-.ui-pinmap-search { flex: 1; min-width: 0; height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 16px; border: 0; border-radius: var(--gs-radius-pill); background: var(--gs-raised); color: var(--gs-text-muted); font: inherit; font-size: 16px; text-align: left; box-shadow: var(--gs-shadow-m); cursor: pointer; }
+.ui-pinmap-back { flex: none; width: 48px; height: 48px; display: grid; place-items: center; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-pill); background: var(--md-surface); color: var(--md-on-surface); box-shadow: 0 8px 24px rgba(38, 53, 40, 0.12); cursor: pointer; }
+.ui-pinmap-search { flex: 1; min-width: 0; height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 16px 0 18px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-pill); background: var(--md-surface); color: var(--gs-text-muted); font: inherit; font-size: 16px; text-align: left; box-shadow: 0 8px 24px rgba(38, 53, 40, 0.12); cursor: pointer; }
 .ui-pinmap-search span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ui-pinmap-here { position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, -16px); display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border: 0; border-radius: var(--gs-radius-pill); background: var(--gs-raised); color: var(--md-primary); font: inherit; font-weight: 600; box-shadow: var(--gs-shadow-m); cursor: pointer; }
-.ui-pinmap-card { position: absolute; left: 16px; right: 16px; bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); z-index: 700; display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 16px; background: var(--gs-raised); box-shadow: var(--gs-shadow-m); box-sizing: border-box; }
-.ui-pinmap-kicker { font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
-.ui-pinmap-place { display: flex; align-items: center; gap: 8px; color: var(--md-primary); }
+.ui-pinmap-here { position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, -16px); display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 20px; white-space: nowrap; border: 1px solid var(--md-outline-variant); border-radius: 10px; background: var(--md-surface); color: var(--md-on-surface); font: inherit; font-size: 16px; font-weight: 600; box-shadow: 0 8px 24px rgba(38, 53, 40, 0.12); cursor: pointer; }
+.ui-pinmap-here svg { color: var(--md-primary); }
+.ui-pinmap-card { position: absolute; left: 16px; right: 16px; bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); z-index: 700; display: flex; flex-direction: column; gap: 12px; padding: 24px 20px; border-radius: 16px; background: var(--md-surface); box-shadow: 0 8px 24px rgba(38, 53, 40, 0.12); box-sizing: border-box; }
+.ui-pinmap-kicker { font-size: 12px; letter-spacing: 0.06em; color: var(--gs-text-muted); }
+.ui-pinmap-place { display: flex; align-items: center; gap: 10px; color: var(--md-primary); }
 .ui-pinmap-name { font-size: 22px; font-weight: 600; line-height: 1.2; color: var(--md-on-surface); overflow-wrap: anywhere; }
-.ui-pinmap-addr { font-size: 15px; color: var(--gs-text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ui-pinmap-addr { font-size: 15px; line-height: 1.35; color: var(--gs-text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .ui-pinmap-quiet { font-size: 13px; }
-.ui-pinmap-strip { padding: 10px 12px; border-radius: 10px; font-size: 14px; font-weight: 600; }
-.ui-pinmap-strip.ready { background: var(--gs-lime); color: var(--md-on-tertiary); }
+.ui-pinmap-strip { padding: 10px 12px; border-radius: 6px; font-size: 14px; line-height: 1.35; }   /* board C6b: 6 px corners, regular weight */
+.ui-pinmap-strip.ready { background: var(--gs-lime-soft, var(--gs-lime)); color: var(--md-on-tertiary); }
 .ui-pinmap-strip.warn { background: var(--gs-warm-yellow); color: var(--md-on-tertiary); }
 .ui-pinmap-strip.error { background: var(--md-error); color: var(--md-on-error); }
 .ui-pinmap-credit { font-size: 11px; color: var(--gs-text-muted); text-transform: none; }
-.ui-pinmap-credit a { color: inherit; }
+.ui-pinmap-credit a { color: inherit; text-decoration: none; }   /* boards C6b, C9: links without the underline */
 .gs-here-dot { background: transparent; border: 0; }
 .gs-here-dot i { display: block; width: 18px; height: 18px; margin: 4px; box-sizing: border-box; border: 3px solid var(--gs-raised); border-radius: 50%; background: var(--gs-earth-mid); box-shadow: 0 0 0 4px color-mix(in srgb, var(--gs-earth-mid) 18%, transparent); }
 
