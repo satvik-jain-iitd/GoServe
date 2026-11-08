@@ -43,9 +43,13 @@ def ping(lat):
     return who(RIDER) + [f"select rider_ping({lat}, 77.20)"]
 
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+MIG = "" if os.environ.get("SKIP_MIG") else open(os.path.join(HERE, "..", "supabase", "migrations", "20261108130000_live_eta.sql")).read()   # story 1015: the live ETA rule replaces the 250 m a minute one
+
+
 def run(*steps, final=""):
     flat = [s for st in steps for s in (st if isinstance(st, list) else [st])]
-    r = sql("begin; " + "; ".join(SETUP + flat + ["reset role", f"select {final}"]) + "; rollback;")
+    r = sql("begin; " + "; ".join(SETUP) + "; " + MIG + "; " + "; ".join(flat + ["reset role", f"select {final}"]) + "; rollback;")
     assert isinstance(r, list), r
     return r[-1]
 
@@ -56,9 +60,9 @@ COUNT = f"(select count(*) from order_tracking where order_id = '{O}') as n"
 
 @unittest.skipUnless(TOKEN, "SUPABASE_ACCESS_TOKEN not set")
 class OrderTracking(unittest.TestCase):
-    def test_a_placed_order_has_a_tracking_row_with_no_rider_and_no_eta(self):
-        r = run(make_order(), final=ROW)
-        self.assertEqual(r["row"], {"status": "placed", "rider_lat": None, "rider_lng": None, "eta_min": None}, r)
+    def test_a_placed_order_has_a_tracking_row_with_no_rider_and_the_kitchens_time(self):
+        r = run(make_order(), final=ROW)   # story 1015: prep 20 + the ride 4.77 = 25
+        self.assertEqual(r["row"], {"status": "placed", "rider_lat": None, "rider_lng": None, "eta_min": 25}, r)
 
     def test_when_the_rider_moves_the_row_carries_status_position_and_a_new_eta(self):
         # the scenario: out for delivery, the rider is 1.1 km from the drop point; then 330 m
@@ -71,7 +75,7 @@ class OrderTracking(unittest.TestCase):
         r = run(make_order("ready"), f"update orders set rider_id = '{RIDER}' where id = '{O}'", final=ROW)
         self.assertEqual((r["row"]["status"], r["row"]["eta_min"]), ("ready", 5), r)   # the rider is at the kitchen: 0 m + 1.1 km
         far = run(make_order("ready"), f"update orders set rider_id = '{RIDER}' where id = '{O}'", ping(28.58), final=ROW)
-        self.assertEqual(far["row"]["eta_min"], 9, far)   # 1.1 km to the kitchen + 1.1 km on = 2.2 km
+        self.assertEqual(far["row"]["eta_min"], 10, far)   # 1.1 km to the kitchen + 1.1 km on = 2.2 km, x1.3 at 300 m a minute (story 1015)
 
     def test_a_delivered_or_cancelled_order_has_no_eta(self):
         self.assertEqual(run(make_order("delivered"), final=ROW)["row"]["eta_min"], None)
