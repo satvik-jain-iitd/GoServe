@@ -133,18 +133,17 @@ test("S9 Use current location opens the map at the phone; a tapped search result
   await expect.poll(() => net.calls.geocode.at(-1) ?? "").toContain("lat=24.9");
 });
 
-test("S10 Confirm & proceed hands the words, the pin code and the pin's place to the add form, and saving stores that place", async ({ page, context }) => {
+test("S10 Confirm & proceed opens the details step over the same map (story #1038), and saving stores the pin's place", async ({ page, context }) => {
   const net = await open(page, context);
   await page.getByRole("button", { name: "Add new address" }).click();
   await expect(screen(page).getByText("We deliver here · the kitchen is 1.2 km from the pin")).toBeVisible();
   await page.getByRole("button", { name: "Confirm & proceed" }).click();
-  await expect(page.getByLabel(/Address/)).toHaveValue("Green Park, New Delhi, Delhi");
-  await expect(page.getByLabel("Pin code")).toHaveValue("110016");
-  await page.getByLabel(/^Label/).fill("Work");
-  await page.getByRole("button", { name: /Save address|Deliver here|Go on/ }).click();
+  const sheet = page.getByRole("dialog", { name: "Address details" });
+  await expect(sheet).toBeVisible();
+  await sheet.getByLabel("House, flat, floor").fill("12B");
+  await sheet.getByRole("button", { name: "Save address" }).click();
   await expect.poll(() => net.state.addresses.length).toBe(2);
   const saved = net.state.addresses.at(-1)!;
-  expect(saved).toMatchObject({ label: "Work", pin_code: "110016" });
-  expect(Math.abs(saved.lat - 28.5677)).toBeLessThan(0.5);   // the pin's place (the map's centre), not null
-  expect(typeof saved.lng).toBe("number");
+  expect(saved).toMatchObject({ label: "Home", address: "12B, Green Park, New Delhi, Delhi", pin_code: "110016" });
+  expect(saved.lat).toBeCloseTo(28.56, 3);
 });

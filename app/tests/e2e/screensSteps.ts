@@ -72,6 +72,10 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+vg+AAVYAqhyXHCrAAAAAElFTkSuQmCC", "base64") }));
     await page.goto(path); await page.getByRole("button", { name: /^(Home|Deliver to)\b/ }).click(); await page.getByRole("button", { name: "Add new address" }).click();
     await expect(page.getByText("We deliver here · the kitchen is 1.2 km from the pin")).toBeVisible(); },
+  "pin-details": async (context, page, path) => {   // story #1038: the details sheet over the map, board C7-PinDetails
+    await STEPS["pin-map"](context, page, path);
+    await page.getByRole("button", { name: "Confirm & proceed" }).click();
+    await expect(page.getByRole("dialog", { name: "Address details" })).toBeVisible(); },
   "remove-kitchen": async (context, page, path) => {   // story 955: the danger sheet, board D1-RemoveKitchen
     const net = await setup(context, page); net.state.admin = true; await page.goto(path);
     await page.getByRole("button", { name: "City", exact: true }).click(); await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();

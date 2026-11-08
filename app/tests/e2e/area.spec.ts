@@ -51,7 +51,7 @@ test("S5 a known pin code goes straight to the menu, and the address line opens 
   await page.getByRole("button", { name: "Add new address" }).click();
   await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();   // story #1037: the map is the door; its Confirm opens the form
   await page.getByRole("button", { name: "Confirm & proceed" }).click();
-  await expect(page.getByRole("heading", { name: "Where does the food go?" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Address details" })).toBeVisible();   // story #1038: the details step
 });
 
 test("S6 the demo console at / still shows the menu with no pin code question", async ({ page, context }) => {

@@ -48,14 +48,15 @@ test("S3 no location permission: the last used address stays picked and the page
 });
 
 test("S4 Add new address with a label saves a row, shows it with its distance, and the Bill uses it", async ({ page, context }) => {
-  const net = await open(page, context, AT_HOME);
+  const net = await open(page, context, AT_HOME, [HOME, OFFICE], (st) => { st.geocode = { status: 200, body: { ok: true, address: "Hauz Khas Village, New Delhi, Delhi", pin: "110016", locality: "Hauz Khas", town: "New Delhi" } }; });
   await page.getByRole("button", { name: /^Office\b/ }).click();   // story #1035: the last used one is on top
   await page.getByRole("button", { name: "Add new address" }).click();
   await page.getByRole("button", { name: "Confirm & proceed" }).click();   // story #1037: the map is the door
-  await page.getByLabel(/^Label/).fill("Nani's house");
-  await page.getByLabel(/Address/).fill("House 9, Hauz Khas Village, New Delhi");
-  await page.getByLabel("Pin code").fill("110016");
-  await page.getByRole("button", { name: /Save address|Deliver here|Go on/ }).click();
+  const sheet = page.getByRole("dialog", { name: "Address details" });   // story #1038: then the details
+  await sheet.getByLabel("House, flat, floor").fill("House 9");
+  await sheet.getByRole("button", { name: "Other", exact: true }).click();
+  await sheet.getByLabel("Name this place").fill("Nani's house");
+  await sheet.getByRole("button", { name: "Save address" }).click();
   await expect.poll(() => net.state.addresses.length).toBe(3);
   expect(net.state.addresses.at(-1)).toMatchObject({ label: "Nani's house", pin_code: "110016" });
   await expect(page.getByRole("button", { name: /^Nani's house\b/ })).toBeVisible();

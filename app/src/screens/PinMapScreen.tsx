@@ -4,7 +4,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { Map as LMap, Marker } from "leaflet";
 import { currentPlace, findAddress, type Looked, type Place } from "../lib/locate";
-import { cardWords, serveAt, stripsFor, type Serve } from "../lib/pinMap";
+import { isPin } from "../lib/area";
+import { addressText, cardWords, serveAt, stripsFor, type Serve } from "../lib/pinMap";
 import { tileUrl } from "../lib/riderMap";
 
 const TILES = tileUrl(import.meta.env.VITE_MAP_TILES);
@@ -14,13 +15,14 @@ const I = (d: React.ReactNode, w = 22) => <svg aria-hidden="true" width={w} heig
 const PIN_PATH = <><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.5" /></>;
 
 export type PinPick = { at: Place; words: Looked | null; served: boolean | null };
+export type Saved = { pin: string; address: string; label: string; from: Place };   // story #1038: what the details step hands to the save
 type Props = {
   center: Place; zoom?: number; kicker?: string; confirmLabel: string;
-  onBack: () => void; onSearch: () => void; onConfirm: (p: PinPick) => void;
+  onBack: () => void; onSearch: () => void; onSave: (a: Saved) => void;
   lookup?: (p: Place) => Promise<Looked | null>; serve?: (p: Place) => Promise<Serve | null>;
 };
 
-export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, onBack, onSearch, onConfirm, lookup = (p) => findAddress(p.lat, p.lng), serve = (p) => serveAt(p) }: Props) {
+export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, onBack, onSearch, onSave, lookup = (p) => findAddress(p.lat, p.lng), serve = (p) => serveAt(p) }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const live = useRef<{ map: LMap; L: typeof import("leaflet"); dot: Marker | null } | null>(null);
   const [point, setPoint] = useState<Place>(center);
@@ -30,6 +32,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, onBack, 
   const [busy, setBusy] = useState(true);
   const [here, setHere] = useState<Place | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const [pick, setPick] = useState<PinPick | null>(null);   // story #1038: set when Confirm is tapped; the details sheet shows over the same map
   const ask = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fns = useRef({ lookup, serve });
@@ -81,6 +84,16 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, onBack, 
     };
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {   // the map stays behind the sheet, still, and shrinks to the part above it so the pin stays in view
+    const m = live.current;
+    if (!m) return;
+    const h = m.map;
+    for (const x of [h.dragging, h.touchZoom, h.doubleClickZoom]) (pick ? x.disable() : x.enable());
+    const c = pick ? pick.at : null;
+    h.invalidateSize({ pan: false });
+    if (c) h.setView([c.lat, c.lng], h.getZoom(), { animate: false });
+  }, [pick]);
+
   const toPhone = async () => {
     setNote(null);
     try {
@@ -94,14 +107,14 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, onBack, 
   const name = cardWords(words?.address ?? null);
   const strips = stripsFor({ serve: served, here, pin: point });
   return (
-    <section className="ui-pinmap" role="region" aria-label="Pin map">
+    <section className="ui-pinmap" role="region" aria-label="Pin map" data-step={pick ? "details" : "pin"}>
       <div ref={box} className="ui-pinmap-map" role="application" aria-label="Map" />
       <span className="ui-pinmap-pin" data-testid="map-pin" aria-hidden="true">{I(PIN_PATH, 40)}</span>
       <div className="ui-pinmap-top">
         <button type="button" className="ui-pinmap-back" aria-label="Back" onClick={onBack}>{I(<path d="M15 5l-7 7 7 7" />)}</button>
         <button type="button" className="ui-pinmap-search" aria-label="Search an area or address" onClick={onSearch}><span>Search an area or address</span>{I(<><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></>, 20)}</button>
       </div>
-      <div className="ui-pinmap-card">
+      {!pick && <div className="ui-pinmap-card">
         <button type="button" className="ui-pinmap-here" onClick={() => void toPhone()}>{I(<><circle cx="12" cy="12" r="7" /><circle cx="12" cy="12" r="2.5" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></>, 18)}<span>Current Location</span></button>
         {kicker && <span className="mono ui-pinmap-kicker">{kicker}</span>}
         <div className="ui-pinmap-place">{I(PIN_PATH, 24)}<span className="ui-pinmap-name">{name.name}</span></div>
@@ -109,9 +122,51 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, onBack, 
         {failed && <span className="ui-pinmap-addr ui-pinmap-quiet">Could not read the address, the pin still counts</span>}
         {note && <span role="alert" className="ui-pinmap-addr ui-pinmap-quiet">{note}</span>}
         {strips.map((s) => <span key={s.kind} role="status" className={`ui-pinmap-strip ${s.kind}`}>{s.text}</span>)}
-        <button type="button" className="ui-btn big" disabled={busy} onClick={() => onConfirm({ at: point, words, served: served ? served.serviceable : null })}>{confirmLabel}</button>
+        <button type="button" className="ui-btn big" disabled={busy} onClick={() => setPick({ at: point, words, served: served ? served.serviceable : null })}>{confirmLabel}</button>
         <span className="mono ui-pinmap-credit">{words?.from === "ola" && <><a href={OSM} target="_blank" rel="noopener noreferrer">Ola Maps</a> · </>}<a href={OSM} target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a></span>
-      </div>
+      </div>}
+      {pick && <DetailsSheet pick={pick} onChange={() => setPick(null)} onSave={onSave} />}
+    </section>
+  );
+}
+
+const CHIPS = ["Home", "Office", "Other"] as const;
+// Story #1038 (board C7-PinDetails): the words the rider needs, and the save. The pin's exact place is the one the map rested on.
+function DetailsSheet({ pick, onChange, onSave }: { pick: PinPick; onChange: () => void; onSave: (a: Saved) => void }) {
+  const [house, setHouse] = useState("");
+  const [landmark, setLandmark] = useState("");
+  const [chip, setChip] = useState<(typeof CHIPS)[number]>("Home");
+  const [custom, setCustom] = useState("");
+  const [area, setArea] = useState("");
+  const [pinText, setPinText] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const found = (pick.words?.address ?? "").trim();
+  const needArea = found === "";
+  const needPin = !isPin(pick.words?.pin ?? "");
+  const name = cardWords(found || null);
+  const save = () => {
+    const label = chip === "Other" ? custom.trim() : chip;
+    const pin = needPin ? pinText.trim() : pick.words!.pin;
+    if (house.trim().length < 1) return setError("Add the house, flat or floor.");
+    if (label.length < 1 || label.length > 30) return setError(chip === "Other" && label.length > 30 ? "A name of 1 to 30 characters." : "Give this place a name.");
+    if (needArea && area.trim().length < 2) return setError("Type the area or street.");
+    if (!isPin(pin)) return setError("The pin code is six digits.");
+    setError(null);
+    onSave({ pin, address: addressText(house, landmark, needArea ? area : found), label, from: pick.at });
+  };
+  return (
+    <section className="ui-pinmap-details" role="dialog" aria-label="Address details">
+      <div className="ui-pinmap-details-head"><h2>Address details</h2><span className="mono">Step 2 of 2</span></div>
+      <div className="ui-pinmap-where">{I(PIN_PATH, 22)}<span className="ui-pinmap-where-words"><b>{name.name}</b>{name.rest && <span>{name.rest}</span>}</span><button type="button" className="ui-pinmap-change" onClick={onChange}>Change</button></div>
+      {needArea && <div className="ui-field"><label htmlFor="pd-area">Area or street</label><input id="pd-area" type="text" maxLength={200} value={area} onChange={(e) => setArea(e.target.value)} /></div>}
+      {needPin && <div className="ui-field"><label htmlFor="pd-pin">Pin code</label><input id="pd-pin" className="mono-input" type="tel" inputMode="numeric" maxLength={6} placeholder="000000" value={pinText} onChange={(e) => setPinText(e.target.value.trim())} /></div>}
+      <div className="ui-field"><label htmlFor="pd-house">House, flat, floor</label><input id="pd-house" type="text" maxLength={120} value={house} onChange={(e) => setHouse(e.target.value)} /></div>
+      <div className="ui-field"><label htmlFor="pd-landmark">Landmark (optional)</label><input id="pd-landmark" type="text" maxLength={120} value={landmark} onChange={(e) => setLandmark(e.target.value)} /></div>
+      <div className="ui-pinmap-saveas"><span className="mono ui-pinmap-kicker">Save as</span>
+        <div className="ui-chips">{CHIPS.map((c) => <button key={c} type="button" className={`ui-chip${chip === c ? " on" : ""}`} aria-pressed={chip === c} onClick={() => setChip(c)}>{c}</button>)}</div></div>
+      {chip === "Other" && <div className="ui-field"><label htmlFor="pd-name">Name this place</label><input id="pd-name" type="text" maxLength={30} value={custom} onChange={(e) => setCustom(e.target.value)} /></div>}
+      {error && <p role="alert" className="ui-field-error">{error}</p>}
+      <button type="button" className="ui-btn big" onClick={save}>Save address</button>
     </section>
   );
 }
