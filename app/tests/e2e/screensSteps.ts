@@ -99,6 +99,16 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     const net = await setup(context, page, [order("preparing", "2020-01-01T10:02:00Z")]);
     net.state.tracking = { rider_lat: null, rider_lng: null, eta_lo_min: null, eta_hi_min: null, eta_late: false, updated_at: NINE.toISOString() };
     await page.goto(path); await expect(page.getByText("Working out the time")).toBeVisible(); },
+  // Story #1049: the first-open boards. The first-open screen is the location ask (A1, with step 3 of 4); Use my location opens the pin map at the phone (A1p).
+  "first-open-ask": async (context, page, path) => {   // board A1
+    await setup(context, page, [], { pin: null }); await page.goto(path); await expect(page.getByRole("button", { name: "Use my location" })).toBeVisible(); },
+  "first-open-pin": async (context, page, path) => {   // board A1p: after Use my location, the full map, the same screen as C6
+    const net = await setup(context, page, [], { pin: null });
+    net.state.geocode = { status: 200, body: { ok: true, address: "Green Avenue Colony, Satai Road, Chhatarpur, Madhya Pradesh 471001", pin: "471001", locality: "Green Avenue Colony", town: "Chhatarpur" } };
+    await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+vg+AAVYAqhyXHCrAAAAAElFTkSuQmCC", "base64") }));
+    await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 24.8847, longitude: 79.597 });
+    await page.goto(path); await page.getByRole("button", { name: "Use my location" }).click();
+    await expect(page.getByText("We deliver here · the kitchen is 1.2 km from the pin")).toBeVisible(); },
   "add-dish": async (context, page, path) => {   // story 923: the admin's Add dish form
     const net = await setup(context, page); net.state.admin = true; await page.goto(path);
     await page.getByRole("button", { name: "City", exact: true }).click(); await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();

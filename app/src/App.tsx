@@ -460,6 +460,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   function useSaved(a: SavedAddress, touch: boolean) {   // the Bill reads `address`; a new pin code finds the kitchen again
     setSelectedId(a.id);
     setAddress(a.address);
+    setFixAddress(a.lat !== null && a.lng !== null ? a.address : null);   // story #1049: a saved place with its pin carries its drop point while the words stay as saved
     if (a.pin !== pin) choosePin(a.pin, a.lat !== null && a.lng !== null ? { lat: a.lat, lng: a.lng } : undefined);
     if (touch) {
       const at = new Date().toISOString();
@@ -889,7 +890,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <OtpSheet welcome googleOnly={!gate} phone={phone} onClose={() => undefined}
       onVerified={(p) => { setPhone(p); setVerified(true); setSignedIn(true); }} />
   ) : pinMap ? (
-    <PinMapScreen center={pinMap.center} edit={pinMap.edit} kicker={pinMap.edit ? `Editing ${pinMap.edit.label}` : undefined} confirmLabel={pinMap.edit ? "Save changes" : "Confirm & proceed"} onBack={() => setPinMap(null)} onSearch={() => setPinMap(null)}
+    <PinMapScreen center={pinMap.center} edit={pinMap.edit} kicker={pinMap.edit ? `Editing ${pinMap.edit.label}` : undefined} confirmLabel={pinMap.edit ? "Save changes" : "Confirm & proceed"} onBack={() => setPinMap(null)} onSearch={() => { setPinMap(null); if (needArea) setStep("deliver"); }}
       onSave={(a) => { const e = pinMap.edit; setPinMap(null); if (e) void saveEdit(e.id, a); else void saveNew(a); }} />
   ) : step === "deliver" ? (
     <DeliverToScreen list={saved ?? []} selectedId={selectedId} here={here} search={(q) => placeSearch(q)} onPlace={(h) => setPinMap({ center: { lat: h.lat, lng: h.lng } })} onBack={() => setStep("menu")}
@@ -897,7 +898,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       onUseLocation={() => { void currentPlace().then((p) => setPinMap({ center: p }), () => setPinMap({ center: mapStart() })); }} onAddNew={() => setPinMap({ center: mapStart() })}
       onEditOnMap={(a) => setPinMap({ center: a.lat !== null && a.lng !== null ? { lat: a.lat, lng: a.lng } : mapStart(), edit: a })} onRemove={dropSaved} />
   ) : needArea ? (
-    <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={(pl) => { setAddress(pl.address); setFixAddress(pl.located ?? null); choosePin(pl.pin, pl.from); }} />
+    <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={(pl) => { setAddress(pl.address); setFixAddress(null); choosePin(pl.pin); }}
+      onMap={(at) => setPinMap({ center: at })} onSearch={() => setStep("deliver")} />
   ) : (
     <>
         {step === "menu" && (

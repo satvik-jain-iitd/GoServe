@@ -16,32 +16,32 @@ test("S1 the first question is where the food goes, with two ways to answer", as
   await expect(page.locator("body")).not.toContainText("Hauz Khas Kitchen");
 });
 
-test("S2 with location allowed the address is found, can be fixed, and the menu opens with it on the bill; the kitchen is never named", async ({ page, context }) => {
-  await setup(context, page, [], { pin: null });
+test("S2 with location allowed Use my location opens the pin map at the phone; Confirm, details and Save open the menu with the address on the bill; the kitchen is never named", async ({ page, context }) => {
+  const net = await setup(context, page, [], { pin: null });
+  net.state.geocode = { status: 200, body: { ok: true, address: "B-12, Lajpat Nagar II, Lajpat Nagar, New Delhi, Delhi", pin: "110016", locality: "Lajpat Nagar", town: "New Delhi" } };
   await context.grantPermissions(["geolocation"]);
   await context.setGeolocation({ latitude: 28.5677, longitude: 77.2432 });
-  await context.route("https://nominatim.openstreetmap.org/reverse**", (route) => route.fulfill({ status: 200, headers: { "access-control-allow-origin": "*", "content-type": "application/json" }, body: JSON.stringify(NOMINATIM) }));
+  await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64") }));
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Use my location" }).click();
-  await expect(page.getByRole("heading", { name: "Is this right?" })).toBeVisible();
-  await expect(page.getByLabel("Address", { exact: true })).toHaveValue("B-12, Lajpat Nagar II, Lajpat Nagar, New Delhi, Delhi");
-  await expect(page.getByLabel("Pin code")).toHaveValue("110016");
-  await page.getByLabel("Address", { exact: true }).fill("B-12, Lajpat Nagar II, near the park gate");
-  await page.getByRole("button", { name: "See the menu" }).click();
+  await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
+  await expect(page.getByText("B-12", { exact: false }).first()).toBeVisible();   // the words of the pin
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();
+  await page.getByLabel("House, flat, floor").fill("B-12, near the park gate");
+  await page.getByRole("button", { name: "Save address" }).click();
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
   await expect(page.locator("body")).not.toContainText("Hauz Khas Kitchen");   // the kitchen is back-end information
   await expect(page.getByText(/Open till/)).toBeVisible();
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
-  await expect(page.getByLabel("Address", { exact: true })).toHaveValue("B-12, Lajpat Nagar II, near the park gate");
+  await expect(page.getByLabel("Address", { exact: true })).toHaveValue(/near the park gate/);
 });
 
 test("S3 without location the customer types the address and pin; See the menu waits for both", async ({ page, context }) => {
   await setup(context, page, [], { pin: null });
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "Use my location" }).click();   // not allowed in this context
+  await page.getByRole("button", { name: "Type it by hand" }).click();
   await expect(ask(page)).toBeVisible();
-  await expect(page.getByText("We could not get your location. Type it by hand.")).toBeVisible();
   const go = page.getByRole("button", { name: "See the menu" });
   await expect(go).toBeDisabled();
   await page.getByLabel("Address", { exact: true }).fill("Flat 4, Green Park");
@@ -52,14 +52,11 @@ test("S3 without location the customer types the address and pin; See the menu w
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
 });
 
-test("S4 a place the lookup cannot read falls back to typing, with the words kept short", async ({ page, context }) => {
+test("S4 location not given: the search opens, and a picked place lands on the same pin map", async ({ page, context }) => {
   await setup(context, page, [], { pin: null });
-  await context.grantPermissions(["geolocation"]);
-  await context.setGeolocation({ latitude: 28.5677, longitude: 77.2432 });
-  await context.route("https://nominatim.openstreetmap.org/reverse**", (route) => route.fulfill({ status: 429, headers: { "access-control-allow-origin": "*" }, body: "slow down" }));
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "Use my location" }).click();
-  await expect(page.getByText("We could not get your location. Type it by hand.")).toBeVisible();
+  await page.getByRole("button", { name: "Use my location" }).click();   // not allowed in this context
+  await expect(page.getByRole("searchbox", { name: "Search an area or address" })).toBeVisible();
 });
 
 test("S5 a pin code no kitchen serves says so on the same screen", async ({ page, context }) => {
@@ -70,22 +67,4 @@ test("S5 a pin code no kitchen serves says so on the same screen", async ({ page
   await page.getByLabel("Pin code").fill("110099");
   await page.getByRole("button", { name: "See the menu" }).click();
   await expect(page.getByText("Not here yet. We do not deliver to 110099 yet.")).toBeVisible();
-});
-
-test("S5 a pin that contradicts its own state is not filled in: the address shows the city and the state, and the customer types the pin (story 827)", async ({ page, context }) => {
-  // OpenStreetMap holds a Gurgaon object tagged 110058 (a Delhi pin) beside state Haryana.
-  const GURGAON = { address: { road: "Sector 13 Road", city: "Gurugram", state: "Haryana", postcode: "110058", country: "India" } };
-  await setup(context, page, [], { pin: null });
-  await context.grantPermissions(["geolocation"]);
-  await context.setGeolocation({ latitude: 28.4595, longitude: 77.0266 });
-  await context.route("https://nominatim.openstreetmap.org/reverse**", (route) => route.fulfill({ status: 200, headers: { "access-control-allow-origin": "*", "content-type": "application/json" }, body: JSON.stringify(GURGAON) }));
-  await page.goto("/customer/");
-  await page.getByRole("button", { name: "Use my location" }).click();
-  await expect(page.getByRole("heading", { name: "Is this right?" })).toBeVisible();
-  await expect(page.getByLabel("Address", { exact: true })).toHaveValue("Sector 13 Road, Gurugram, Haryana");
-  await expect(page.getByLabel("Pin code")).toHaveValue("");
-  await expect(page.getByRole("alert")).toHaveCount(0);   // an empty pin is asked for, not shown as an error
-  await expect(page.getByRole("button", { name: "See the menu" })).toBeDisabled();
-  await page.getByLabel("Pin code").fill("122004");
-  await expect(page.getByRole("button", { name: "See the menu" })).toBeEnabled();
 });

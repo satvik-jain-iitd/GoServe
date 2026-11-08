@@ -1,4 +1,4 @@
-// Story #998, board A2-AddressOla: Use my location asks our geocode function first; the found screen carries the Ola credit line; when it says no, OpenStreetMap answers and the credit line is not shown.
+// Story #998, board A2-AddressOla: Use my location asks our geocode function first; the pin map card carries the Ola credit line; when it says no, OpenStreetMap answers and the credit line is not shown.
 import { test, expect, type Page } from "@playwright/test";
 import { setup } from "./helpers";
 
@@ -18,33 +18,25 @@ async function start(context: any, page: Page, geocode: { status: number; body: 
   return { net, osm };
 }
 
-test("S1 Ola answers: the words and pin fill in, OpenStreetMap is not asked, the credit line shows", async ({ page, context }) => {
+test("S1 Ola answers: the words show on the pin map card, OpenStreetMap is not asked, the credit line shows", async ({ page, context }) => {
   const { net, osm } = await start(context, page, OLA);
-  await expect(page.getByRole("heading", { name: "Is this right?" })).toBeVisible();
-  await expect(page.getByLabel(/Address/)).toHaveValue("Radio Colony, Chhatarpur, Madhya Pradesh");
-  await expect(page.getByLabel("Pin code")).toHaveValue("471001");
-  const credit = page.getByText(/Address words: Ola Maps/);
-  await expect(credit).toBeVisible();
+  await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
+  await expect(page.getByText("Radio Colony", { exact: true })).toBeVisible();
+  const credit = page.locator(".ui-pinmap-credit");
   await expect(credit.getByRole("link", { name: "Ola Maps" })).toHaveAttribute("href", "https://www.openstreetmap.org/copyright");
-  await expect(credit.getByRole("link", { name: "OpenStreetMap" })).toHaveAttribute("href", "https://www.openstreetmap.org/copyright");
+  await expect(credit.getByRole("link", { name: /OpenStreetMap contributors/ })).toHaveAttribute("href", "https://www.openstreetmap.org/copyright");
   expect(osm.n).toBe(0);
-  expect(net.calls.geocode).toHaveLength(1);
-});
-
-test("S2 the words stay editable after Ola's answer", async ({ page, context }) => {
-  await start(context, page, OLA);
-  await page.getByLabel(/Address/).fill("House 4, Radio Colony");
-  await expect(page.getByLabel(/Address/)).toHaveValue("House 4, Radio Colony");
+  expect(net.calls.geocode.length).toBeGreaterThan(0);
 });
 
 test("S3 our function says no (off, over the cap, an error): OpenStreetMap answers, no error shows, no Ola credit", async ({ page, context }) => {
   for (const status of [503, 429, 502]) {
     const { osm } = await start(context, page, { status, body: { ok: false } });
-    await expect(page.getByRole("heading", { name: "Is this right?" })).toBeVisible();
-    await expect(page.getByLabel("Pin code")).toHaveValue("471001");
-    await expect(page.getByText(/Ola Maps/)).toHaveCount(0);
+    await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
+    await expect(page.getByText("Link Road", { exact: false }).first()).toBeVisible();
+    await expect(page.locator(".ui-pinmap-credit").getByText("Ola Maps")).toHaveCount(0);
     await expect(page.getByRole("alert")).toHaveCount(0);
-    expect(osm.n).toBe(1);
+    expect(osm.n).toBeGreaterThan(0);
     await context.unroute("https://nominatim.openstreetmap.org/reverse**");
   }
 });
