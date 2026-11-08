@@ -71,7 +71,7 @@ test("S3 the card gives the place name, the address line, the lime served strip 
   await expect(screen(page).getByText(/Ola Maps/)).toBeVisible();
   await expect(screen(page).getByText(/© OpenStreetMap contributors/)).toBeVisible();
   expect(net.calls.geocode).toHaveLength(1);
-  expect(net.calls.serve).toHaveLength(1);
+  expect(net.calls.serve).toHaveLength(2);   // story #1102: once at once with the place, once more with the pin the lookup read
 });
 
 test("S4 dragging the map asks once, 400 ms after it stops, with the new centre", async ({ page, context }) => {
@@ -83,7 +83,7 @@ test("S4 dragging the map asks once, 400 ms after it stops, with the new centre"
   await expect.poll(() => net.calls.geocode.length, { timeout: 5000 }).toBe(before + 1);
   await page.waitForTimeout(900);
   expect(net.calls.geocode.length).toBe(before + 1);
-  expect(net.calls.serve.length).toBe(before + 1);
+  expect(net.calls.serve.length).toBe(2 * (before + 1));   // two serviceability asks per rest (the place, then the place with its pin)
   const last = new URL(net.calls.geocode.at(-1)!);
   expect(Number(last.searchParams.get("lng"))).not.toBeCloseTo(77.2, 3);   // it moved
 });

@@ -49,10 +49,13 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(async () => {
       const mine = ++ask.current;
-      const w = await fns.current.lookup(p).catch(() => null);   // story #1102: the serviceability answer needs the pin the lookup read
-      const s = await fns.current.serve(p, w?.pin ?? null).catch(() => null);
+      // The strip does not wait for the lookup (a slow Ola or OpenStreetMap read once hid it for good): it is asked at once with the place, and again with the pin the lookup reads.
+      void fns.current.serve(p, null).then((s0) => { if (mine === ask.current && s0) setServed(s0); }, () => undefined);
+      const w = await fns.current.lookup(p).catch(() => null);
       if (mine !== ask.current) return;   // a newer rest has taken over
       if (w) { setWords(w); setFailed(false); } else setFailed(true);   // the last words stay when this one fails; the point still counts
+      const s = w?.pin ? await fns.current.serve(p, w.pin).catch(() => null) : null;   // story #1102: the pin the lookup read goes with the place
+      if (mine !== ask.current) return;
       if (s) setServed(s);
       setBusy(false);
     }, SETTLE_MS);
