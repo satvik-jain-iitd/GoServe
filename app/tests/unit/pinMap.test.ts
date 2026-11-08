@@ -21,10 +21,11 @@ describe("stripsFor", () => {
   it("a pin no kitchen reaches gets the red strip", () => {
     expect(stripsFor({ serve: { serviceable: false, kitchenM: null }, here: null, pin: PIN })).toEqual([{ kind: "error", text: "Not in our area yet" }]);
   });
-  it("a pin far from the phone adds the warm strip with the distance, after the served one", () => {
+  it("a pin far from the phone adds the warm strip with the distance, above the served one (board C6b)", () => {
     const far = stripsFor({ serve: { serviceable: true, kitchenM: 900 }, here: { lat: 24.9, lng: 79.6 }, pin: PIN });
-    expect(far.map((s) => s.kind)).toEqual(["ready", "warn"]);
-    expect(far[1].text).toMatch(/^\d{3} km from where you are now$/);
+    expect(far.map((s) => s.kind)).toEqual(["warn", "ready"]);
+    expect(far[0].text).toMatch(/^\d{3} km from where you are now$/);
+    expect(stripsFor({ serve: { serviceable: false, kitchenM: null }, here: { lat: 24.9, lng: 79.6 }, pin: PIN }).map((s) => s.text)).toEqual([expect.stringMatching(/km from where you are now$/), "Not in our area yet"]);
   });
   it("near the phone adds nothing; no answer yet adds nothing; never more than two", () => {
     expect(stripsFor({ serve: { serviceable: true, kitchenM: 900 }, here: { lat: 28.5501, lng: 77.2001 }, pin: PIN })).toHaveLength(1);
@@ -60,5 +61,14 @@ describe("addressText (story #1038: what the rider reads)", () => {
   it("trims the words and leaves out what is empty", () => {
     expect(addressText("  12B  ", "  ", "")).toBe("12B");
     expect(addressText("12B", "", "  Green Park  ")).toBe("12B, Green Park");
+  });
+});
+
+describe("splitAddress (story #1051, board C9: Edit opens the details filled)", () => {
+  it("takes the house and the landmark off the front of a saved address", async () => {
+    const { splitAddress } = await import("../../src/lib/pinMap");
+    expect(splitAddress("C-128, near the park gate, Green Park, New Delhi")).toEqual({ house: "C-128", landmark: "the park gate" });
+    expect(splitAddress("Tower B, Connaught Place, New Delhi")).toEqual({ house: "Tower B", landmark: "" });
+    expect(splitAddress("")).toEqual({ house: "", landmark: "" });
   });
 });

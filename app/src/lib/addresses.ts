@@ -38,8 +38,9 @@ export async function addAddress(c: Client, a: NewAddress): Promise<SavedAddress
   const { data, error } = await c.from("addresses").insert({ label: a.label.trim(), address: a.address.trim(), pin_code: a.pin, lat: a.lat ?? null, lng: a.lng ?? null }).select(COLS).single();
   return error || !data ? null : fromRow(data as Row);
 }
-export async function editAddress(c: Client, id: string, a: { label: string; address: string; pin: string }): Promise<boolean> {
-  return !(await c.from("addresses").update({ label: a.label.trim(), address: a.address.trim(), pin_code: a.pin }).eq("id", id)).error;
+export async function editAddress(c: Client, id: string, a: { label: string; address: string; pin: string; lat?: number | null; lng?: number | null }): Promise<boolean> {   // lat and lng only when the pin was moved (story #1051)
+  const moved = a.lat != null && a.lng != null ? { lat: a.lat, lng: a.lng } : {};
+  return !(await c.from("addresses").update({ label: a.label.trim(), address: a.address.trim(), pin_code: a.pin, ...moved }).eq("id", id)).error;
 }
 export async function removeAddress(c: Client, id: string): Promise<boolean> {
   return !(await c.from("addresses").delete().eq("id", id)).error;

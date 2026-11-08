@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Map as LMap, Marker } from "leaflet";
 import { currentPlace, findAddress, type Looked, type Place } from "../lib/locate";
 import { isPin } from "../lib/area";
-import { addressText, cardWords, serveAt, stripsFor, type Serve } from "../lib/pinMap";
+import { addressText, cardWords, serveAt, splitAddress, stripsFor, type Serve } from "../lib/pinMap";
 import { tileUrl } from "../lib/riderMap";
 
 const TILES = tileUrl(import.meta.env.VITE_MAP_TILES);
@@ -18,11 +18,13 @@ export type PinPick = { at: Place; words: Looked | null; served: boolean | null 
 export type Saved = { pin: string; address: string; label: string; from: Place };   // story #1038: what the details step hands to the save
 type Props = {
   center: Place; zoom?: number; kicker?: string; confirmLabel: string;
+  edit?: { label: string; address: string };   // story #1051 (board C9): the saved row being changed; the details open filled with it
+
   onBack: () => void; onSearch: () => void; onSave: (a: Saved) => void;
   lookup?: (p: Place) => Promise<Looked | null>; serve?: (p: Place) => Promise<Serve | null>;
 };
 
-export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, onBack, onSearch, onSave, lookup = (p) => findAddress(p.lat, p.lng), serve = (p) => serveAt(p) }: Props) {
+export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, onBack, onSearch, onSave, lookup = (p) => findAddress(p.lat, p.lng), serve = (p) => serveAt(p) }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const live = useRef<{ map: LMap; L: typeof import("leaflet"); dot: Marker | null } | null>(null);
   const [point, setPoint] = useState<Place>(center);
@@ -110,15 +112,17 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, onBack, 
   return (
     <section ref={root} className="ui-pinmap" role="region" aria-label="Pin map" data-step={pick ? "details" : "pin"}>
       <div ref={box} className="ui-pinmap-map" role="application" aria-label="Map" />
-      <span className="ui-pinmap-pin" data-testid="map-pin" aria-hidden="true">{I(PIN_PATH, 40)}</span>
+      <span className="ui-pinmap-pin" data-testid="map-pin" aria-hidden="true">
+        <svg viewBox="177 354 60 80"><circle cx="207" cy="400" r="30" fill="var(--md-primary)" opacity="0.14" /><ellipse cx="207" cy="404" rx="7" ry="3" fill="var(--md-on-surface)" opacity="0.3" />
+          <path d="M207 360 c-9 0 -15 7 -15 15 c0 11 15 29 15 29 s15 -18 15 -29 c0 -8 -6 -15 -15 -15z" fill="var(--md-primary)" /><circle cx="207" cy="375" r="5" fill="#ffffff" /></svg></span>
       <div className="ui-pinmap-top">
-        <button type="button" className="ui-pinmap-back" aria-label="Back" onClick={onBack}>{I(<path d="M15 5l-7 7 7 7" />)}</button>
+        <button type="button" className="ui-pinmap-back" aria-label="Back" onClick={onBack}>{I(<path d="M19 12H5M11 18l-6-6 6-6" />)}</button>
         {!pick && <button type="button" className="ui-pinmap-search" aria-label="Search an area or address" onClick={onSearch}><span>Search an area or address</span>{I(<><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></>, 20)}</button>}
       </div>
       {!pick && <div className="ui-pinmap-card">
-        <button type="button" className="ui-pinmap-here" onClick={() => void toPhone()}>{I(<><circle cx="12" cy="12" r="7" /><circle cx="12" cy="12" r="2.5" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></>, 18)}<span>Current Location</span></button>
+        <button type="button" className="ui-pinmap-here" onClick={() => void toPhone()}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg><span>Current Location</span></button>
         {kicker && <span className="mono ui-pinmap-kicker">{kicker}</span>}
-        <div className="ui-pinmap-place">{I(PIN_PATH, 24)}<span className="ui-pinmap-name">{name.name}</span></div>
+        <div className="ui-pinmap-place"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.6" fill="#ffffff" /></svg><span className="ui-pinmap-name">{name.name}</span></div>
         {name.rest && <span className="ui-pinmap-addr">{name.rest}</span>}
         {failed && <span className="ui-pinmap-addr ui-pinmap-quiet">Could not read the address, the pin still counts</span>}
         {note && <span role="alert" className="ui-pinmap-addr ui-pinmap-quiet">{note}</span>}
@@ -126,14 +130,14 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, onBack, 
         <button type="button" className="ui-btn big" disabled={busy} onClick={() => setPick({ at: point, words, served: served ? served.serviceable : null })}>{confirmLabel}</button>
         <span className="mono ui-pinmap-credit">{words?.from === "ola" && <><a href={OSM} target="_blank" rel="noopener noreferrer">Ola Maps</a> · </>}<a href={OSM} target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a></span>
       </div>}
-      {pick && <DetailsSheet pick={pick} onChange={() => setPick(null)} onSave={onSave} onHeight={(h) => { root.current?.style.setProperty("--sheet-h", `${h}px`); live.current?.map.invalidateSize({ pan: false }); const c = pick.at; live.current?.map.setView([c.lat, c.lng], live.current.map.getZoom(), { animate: false }); }} />}
+      {pick && <DetailsSheet pick={pick} edit={edit} onChange={() => setPick(null)} onSave={onSave} onHeight={(h) => { root.current?.style.setProperty("--sheet-h", `${h}px`); live.current?.map.invalidateSize({ pan: false }); const c = pick.at; live.current?.map.setView([c.lat, c.lng], live.current.map.getZoom(), { animate: false }); }} />}
     </section>
   );
 }
 
 const CHIPS = ["Home", "Office", "Other"] as const;
 // Story #1038 (board C7-PinDetails): the words the rider needs, and the save. The pin's exact place is the one the map rested on.
-function DetailsSheet({ pick, onChange, onSave, onHeight }: { pick: PinPick; onChange: () => void; onSave: (a: Saved) => void; onHeight: (h: number) => void }) {
+function DetailsSheet({ pick, edit, onChange, onSave, onHeight }: { pick: PinPick; edit?: { label: string; address: string }; onChange: () => void; onSave: (a: Saved) => void; onHeight: (h: number) => void }) {
   const el = useRef<HTMLElement>(null);
   const tell = useRef(onHeight);
   tell.current = onHeight;
@@ -144,10 +148,12 @@ function DetailsSheet({ pick, onChange, onSave, onHeight }: { pick: PinPick; onC
     ro.observe(e);
     return () => ro.disconnect();
   }, []);
-  const [house, setHouse] = useState("");
-  const [landmark, setLandmark] = useState("");
-  const [chip, setChip] = useState<(typeof CHIPS)[number]>("Home");
-  const [custom, setCustom] = useState("");
+  const was = edit ? splitAddress(edit.address) : { house: "", landmark: "" };
+  const [house, setHouse] = useState(was.house);
+  const [landmark, setLandmark] = useState(was.landmark);
+  const known = edit ? (CHIPS as readonly string[]).includes(edit.label) && edit.label !== "Other" : true;
+  const [chip, setChip] = useState<(typeof CHIPS)[number]>(edit && known ? (edit.label as (typeof CHIPS)[number]) : edit ? "Other" : "Home");
+  const [custom, setCustom] = useState(edit && !known ? edit.label : "");
   const [area, setArea] = useState("");
   const [pinText, setPinText] = useState("");
   const found = (pick.words?.address ?? "").trim();
@@ -169,7 +175,7 @@ function DetailsSheet({ pick, onChange, onSave, onHeight }: { pick: PinPick; onC
       <div className="ui-pinmap-saveas"><span className="mono ui-pinmap-kicker">Save as</span>
         <div className="ui-chips">{CHIPS.map((c) => <button key={c} type="button" className={`ui-chip${chip === c ? " on" : ""}`} aria-pressed={chip === c} onClick={() => setChip(c)}>{c}</button>)}</div></div>
       {chip === "Other" && <div className="ui-field"><label htmlFor="pd-name">Name this place</label><input id="pd-name" type="text" maxLength={30} value={custom} onChange={(e) => setCustom(e.target.value)} /></div>}
-      <button type="button" className="ui-btn big" disabled={!ready} onClick={save}>Save address</button>
+      <button type="button" className="ui-btn big" disabled={!ready} onClick={save}>{edit ? "Save changes" : "Save address"}</button>
     </section>
   );
 }
