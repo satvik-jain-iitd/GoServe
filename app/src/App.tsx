@@ -30,7 +30,7 @@ import { ensureSession, fetchMenuRows, fetchRiderCard, getClient, type RiderCard
 import { openTill } from "./lib/browse";
 import { AccountScreen } from "./screens/AccountScreen";
 import { DeliverToScreen } from "./screens/DeliverToScreen";
-import { addAddress, editAddress, firstFromProfile, listAddresses, nearMetres, pickOnOpen, removeAddress, touchAddress, type SavedAddress } from "./lib/addresses";
+import { addAddress, editAddress, firstFromProfile, listAddresses, lastUsed, removeAddress, touchAddress, type SavedAddress } from "./lib/addresses";
 import { currentPlace, type Place } from "./lib/locate";
 import { currentSession, scopeFor } from "./lib/session";
 import { MenuScreen } from "./screens/MenuScreen";
@@ -442,11 +442,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setPin(p);
     ensureSession().then((uid) => getClient().from("customers").upsert({ user_id: uid, pin_code: p, updated_at: new Date().toISOString() }, { onConflict: "user_id" })).catch(() => {});
   }
-  // Story #976: the saved addresses. On open the one nearest the phone (within address_near_m) is picked; far from all of them none is picked and the Deliver to page asks.
+  // Story #976, changed by #1035: the saved addresses. On open the one used last is picked, always; the phone's place only shows "here" or "N km" on the rows.
   const [saved, setSaved] = useState<SavedAddress[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [here, setHere] = useState<Place | null>(null);
-  const [nearM, setNearM] = useState(200);
   const [adding, setAdding] = useState<null | { mode: "ask" | "hand"; words?: string }>(null);
   const opened = useRef(false);
   const moved = useRef(false);   // true once the customer has left the first menu (the Bill, the placed screen, any page)
@@ -469,19 +468,14 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       const list = await listAddresses(c);
       if (list === null) return;
       setSaved(list);
-      const near = await nearMetres(c);
-      setNearM(near);
+      const row = lastUsed(list);
+      if (row && !moved.current) useSaved(row, false);   // story #1014: a customer who already moved on (the Bill, the placed screen) is never pulled back
       let at: Place | null = null;
       try {
         const perm = await navigator.permissions?.query({ name: "geolocation" as PermissionName });
         if (perm?.state === "granted") at = await currentPlace();
-      } catch { /* no place: the last used one stays */ }
+      } catch { /* no place: the rows show no distance */ }
       setHere(at);
-      const pick = pickOnOpen(list, at, near);
-      const row = list.find((r) => r.id === pick.id);
-      if (moved.current) return;   // story #1014: a slow location must not pull a customer who already moved on (the Bill, the placed screen) back to the address pick
-      if (row) useSaved(row, false);
-      else if (pick.asks) setStep("deliver");
     })().catch(() => undefined);
   }, [signedIn]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {   // today's single saved address becomes the first row, Home, once (only while the list is empty)
@@ -872,7 +866,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   ) : adding ? (
     <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} adding={{ ...adding, onBack: () => setAdding(null) }} onPlace={(pl) => void saveNew(pl)} />
   ) : step === "deliver" ? (
-    <DeliverToScreen list={saved ?? []} selectedId={selectedId} here={here} nearM={nearM} onBack={() => setStep("menu")}
+    <DeliverToScreen list={saved ?? []} selectedId={selectedId} here={here} onBack={() => setStep("menu")}
       onSelect={(id) => { const r = (saved ?? []).find((x) => x.id === id); if (r) { useSaved(r, true); setStep("menu"); } }}
       onUseLocation={() => setAdding({ mode: "ask" })} onAddNew={(words) => setAdding({ mode: "hand", words })}
       onEdit={async (id, v) => { const ok = await editAddress(getClient(), id, v); if (ok) { setSaved((cur) => (cur ?? []).map((r) => (r.id === id ? { ...r, ...v } : r))); if (id === selectedId) { setAddress(v.address); if (v.pin !== pin) choosePin(v.pin); } } return ok; }}
