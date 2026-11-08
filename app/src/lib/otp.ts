@@ -8,7 +8,7 @@ const NETWORK: OtpResult = { ok: false, error: "network", message: "Could not re
 const FAULTS: Record<string, string> = { otp_unavailable: "Codes are down for a moment. Try again in a minute." };
 const FAULT = "Something went wrong on our side. Try again in a minute.";
 export const toPhone = (digits: string) => `+91${digits}`;
-export const showPhone = (d: string) => `+91 ${d.slice(0, 5)} ${d.slice(5)}`;
+export const showPhone = (d: string) => `+91 ${d}`;   // story #1044: ten digits together, never split
 export const isMobile = (d: string) => /^[6-9]\d{9}$/.test(d);
 
 async function call(route: "send" | "verify" | "claim", body: object, token?: string): Promise<OtpResult> {

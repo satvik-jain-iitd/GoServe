@@ -194,7 +194,6 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-seg a.on svg { opacity: 1; }
 /* The zigzag: GoServe's own mark. Light green, 8 px tall, under the lockup, under the greeting, at the top of every slip. */
 .ui-zigzag { height: 8px; background: var(--gs-zigzag); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8'%3E%3Cpath d='M0 8L8 0L16 8Z'/%3E%3C/svg%3E") 0 0 / 16px 8px round no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8'%3E%3Cpath d='M0 8L8 0L16 8Z'/%3E%3C/svg%3E") 0 0 / 16px 8px round no-repeat; }   /* story 1046: the same one-triangle mask as the slip teeth */
-.ui-greet .ui-zigzag { width: 100%; margin-top: 8px; }   /* story 973: the zigzag always spans the content width */
 /* A count badge on a tab (new tickets) */
 .ui-tab { position: relative; }
 .ui-tab .badge { position: absolute; top: 6px; left: calc(50% + 8px); min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: var(--md-primary); color: var(--md-on-primary); font-family: var(--gs-font-mono); font-size: 11px; font-weight: 500; line-height: 18px; text-align: center; }
@@ -210,7 +209,12 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-landing-head { display: flex; flex-direction: column; gap: 10px; }
 .ui-landing-head .ui-logo { display: block; width: 100%; height: auto; }
 .ui-kicker { margin: 0; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); letter-spacing: 0.04em; color: var(--gs-text-muted); }
-.ui-landing .ui-slip { margin-top: var(--gs-space-6); }
+.ui-landing .ui-slip { margin-top: var(--gs-space-6); flex: 1; }   /* story 1044: the slip runs to the bottom of the screen on every onboarding step, so its height never changes between steps */
+.ui-landing { padding-bottom: 0; }
+.ui-landing .ui-slip-body { padding-bottom: max(18px, env(safe-area-inset-bottom)); }
+.ui-slip-title, .ui-welcome-title { text-align: center; }
+.ui-slip-line { margin: 0; text-align: center; }
+.ui-landing-head .ui-kicker, .ui-welcome-kicker { white-space: nowrap; font-size: clamp(10px, 2.9vw, 13px); }   /* the tagline is one line at every phone width */
 .ui-landing-foot { margin-top: auto; padding-top: var(--gs-space-5); display: flex; flex-direction: column; gap: var(--gs-space-2); text-align: center; }
 .ui-landing-foot .ui-kicker { font-size: var(--gs-mono-xs); }
 .ui-legal { margin: var(--gs-space-4) 0 var(--gs-space-2); text-align: center; font-size: var(--gs-mono-xs); color: var(--gs-text-muted); }   /* story 242: Privacy · Terms at the end of You */
@@ -403,11 +407,12 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 /* Story 803 (board O0): on the welcome screen the 48 px bordered box is the wrapper and the input fills it. This selector is more specific than the shared input rule, so it does not depend on source order. */
 .otp-phone.otp-box { display: flex; align-items: center; box-sizing: border-box; height: 48px; border: 1px solid var(--md-outline-variant); border-radius: 6px; background: var(--md-surface); }
 .otp-phone.otp-box input { height: 44px; min-height: 0; border: 0; background: transparent; padding: 0 12px; font-family: var(--gs-font-mono); font-size: 18px; }
-.otp-boxes { display: flex; gap: var(--gs-space-2); margin: var(--gs-space-3) 0; }
-.otp-boxes input { width: 100%; min-width: 0; min-height: var(--gs-tap); text-align: center; font-size: var(--gs-text-lg, 1.25rem); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius, 6px); background: var(--md-surface); color: var(--md-on-surface); }
+.otp-boxes { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin: var(--gs-space-3) 0; }
+.otp-boxes input { box-sizing: border-box; width: 100%; min-width: 0; height: 56px; min-height: 0; padding: 0; text-align: center; font-size: var(--gs-text-lg, 1.25rem); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius, 6px); background: var(--md-surface); color: var(--md-on-surface); }
 .otp-choices { display: flex; flex-direction: column; gap: var(--gs-space-2); margin: var(--gs-space-3) 0; }
 .ui-sheet .ui-btn { width: 100%; margin-top: var(--gs-space-3); }
 .ui-link { background: none; border: 0; padding: 0; font: inherit; color: var(--md-primary); text-decoration: underline; cursor: pointer; min-height: 24px; }
+.ui-meta .ui-link { text-decoration: none; }
 .otp-toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 40; padding: var(--gs-space-2) var(--gs-space-4); border-radius: var(--gs-radius-s); background: var(--md-primary); color: var(--md-on-primary); }
 
 /* How you pay and the pay bar (story 552, boards P1 to P5). */
@@ -437,7 +442,9 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-welcome h1 { margin: 0; }
 .ui-welcome .ui-lockup { display: block; width: 100%; height: auto; }
 .ui-welcome-kicker { margin: 0; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); letter-spacing: 0.04em; color: var(--gs-text-muted); }
-.ui-welcome .ui-slip { margin-top: 40px; }
+.ui-welcome .ui-slip { margin-top: 40px; flex: 1; }
+.ui-welcome { padding-bottom: 0; }
+.ui-welcome .ui-slip-body { padding-bottom: max(18px, env(safe-area-inset-bottom)); }
 .ui-welcome .ui-slip-body { gap: var(--gs-space-4); }
 .ui-welcome-title { margin: 0; font-family: var(--gs-font-display); font-weight: 800; font-size: var(--gs-display-l); line-height: 1; letter-spacing: -0.02em; }
 .ui-welcome-foot { margin: auto 0 0; text-align: center; font-family: var(--gs-font-mono); font-size: var(--gs-mono-xs); color: var(--gs-text-muted); }

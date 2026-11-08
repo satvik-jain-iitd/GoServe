@@ -32,7 +32,7 @@ test("S1 the row says Tap to turn on, a tap saves the web push and the row says 
   const seen = await registerRoute(context);
   await toYou(page);
   const row = page.getByRole("switch", { name: /Order alerts/ });
-  await expect(page.getByText("Tap to turn on")).toBeVisible();
+  await expect(page.getByText("Tap to turn on")).toHaveCount(0);   // story #1044: the switch is the control, no line tells how to use it
   await expect(row).not.toBeChecked();
   await row.click();
   await expect.poll(() => net.calls.rpc.filter((c) => c.name === "save_push").length).toBe(1);
@@ -105,7 +105,7 @@ test("S5 alerts on can be turned off: the server row goes, the phone unsubscribe
   await expect(row).toBeChecked();
   await expect(row).toBeEnabled();
   await row.click();
-  await expect(page.getByText("Off for this phone. Tap to turn on.")).toBeVisible();
+  await expect(page.getByText("Off for this phone", { exact: true })).toBeVisible();
   await expect(row).not.toBeChecked();
   await expect(row).toBeEnabled();
   expect(removed.filter((r) => r.startsWith("DELETE") && r.includes("endpoint=eq.https://push.example/abc"))).toHaveLength(1);
@@ -114,7 +114,7 @@ test("S5 alerts on can be turned off: the server row goes, the phone unsubscribe
   const before = saves();
   await page.reload();
   await page.getByRole("button", { name: "You" }).click();
-  await expect(page.getByText("Off for this phone. Tap to turn on.")).toBeVisible();   // remembered
+  await expect(page.getByText("Off for this phone", { exact: true })).toBeVisible();   // remembered
   expect(saves()).toBe(before);                                                      // and the start-up re-save did not bring it back
   await page.getByRole("switch", { name: /Order alerts/ }).click();
   await expect(page.getByText("On for this phone")).toBeVisible();

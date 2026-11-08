@@ -61,7 +61,7 @@ test("S1 a guest at checkout enters the number and the code, the phone is linked
   await expect(dialog(page).getByRole("button", { name: "Send code" })).toBeDisabled();
   await dialog(page).getByLabel("Mobile number").fill("9876543210");
   await dialog(page).getByRole("button", { name: "Send code" }).click();
-  await expect(dialog(page).getByText("Sent to +91 98765 43210")).toBeVisible();
+  await expect(dialog(page).getByText("Sent to +91 9876543210")).toBeVisible();
   expect(otp.sends).toEqual([{ phone: "9876543210" }]);
   await expect(dialog(page).getByRole("button", { name: "Verify" })).toBeDisabled();
   await typeCode(page, "482913");
@@ -109,12 +109,12 @@ test("S4 resend: a 30 second timer counts down, then Resend code asks for a new 
   const { otp } = await withOtp(context, page);
   await toBill(page);
   await toCodeStep(page);
-  await expect(dialog(page).getByText("Resend code in 0:30")).toBeVisible();
+  await expect(dialog(page).getByText("Resend code in 30 sec")).toBeVisible();
   await expect(dialog(page).getByRole("button", { name: "Resend code" })).toHaveCount(0);
   await page.clock.runFor(31_000);
   await dialog(page).getByRole("button", { name: "Resend code" }).click();
   await expect.poll(() => otp.sends.length).toBe(2);
-  await expect(dialog(page).getByText(/Resend code in 0:/)).toBeVisible();
+  await expect(dialog(page).getByText(/Resend code in \d+ sec/)).toBeVisible();
 });
 
 test("S5 too many codes locks the resend and says why", async ({ page, context }) => {
@@ -147,7 +147,7 @@ test("S7 a number already used offers Sign in with this number: Supabase's own c
   await expect(dialog(page).getByRole("alert")).toHaveText("This number is already used by another account.");
   await dialog(page).getByRole("button", { name: "Sign in with this number" }).click();
   await expect.poll(() => otp.authOtp.length).toBe(1);   // Supabase's own code is asked for before the boxes are used again
-  await expect(dialog(page).getByText(/Resend code in 0:/)).toBeVisible();
+  await expect(dialog(page).getByText(/Resend code in \d+ sec/)).toBeVisible();
   expect(otp.authOtp).toHaveLength(1);
   expect(otp.authOtp[0]).toMatchObject({ phone: "+919876543210" });
   await typeCode(page, "123456");
@@ -203,3 +203,18 @@ for (const t of ["day", "night"] as const) {
     expect(await axeScan(page)).toEqual([]);
   });
 }
+
+// Story #1044, screen 3 (board O0b-Code): six boxes in one line as wide as the Verify button; Change number is a link with no underline.
+test("S-1044 the six code boxes fill the Verify width in one line; Change number has no underline", async ({ page, context }) => {
+  await withOtp(context, page);
+  await toBill(page);
+  await toCodeStep(page);
+  const d = dialog(page);
+  const boxes = await Promise.all([1, 2, 3, 4, 5, 6].map((i) => d.getByLabel(`Digit ${i}`).boundingBox()));
+  const verify = await d.getByRole("button", { name: "Verify" }).boundingBox();
+  expect(new Set(boxes.map((b) => Math.round(b!.y))).size).toBe(1);
+  expect(boxes.every((b) => Math.round(b!.height) === 56)).toBe(true);
+  expect(Math.abs(boxes[0]!.x - verify!.x)).toBeLessThan(1.5);
+  expect(Math.abs(boxes[5]!.x + boxes[5]!.width - (verify!.x + verify!.width))).toBeLessThan(1.5);
+  expect(await d.getByRole("button", { name: "Change number" }).evaluate((e) => getComputedStyle(e).textDecorationLine)).toBe("none");
+});

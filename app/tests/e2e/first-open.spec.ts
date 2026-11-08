@@ -27,7 +27,7 @@ test("S1 first open shows the number screen with Google under it, and no menu", 
   await page.goto("/customer/");
   await expect(title(page)).toBeVisible();
   await expect(page.getByLabel("Mobile", { exact: true })).toBeVisible();
-  await expect(page.getByText("Your mobile number, then a 6 digit code. The rider calls this number.")).toBeVisible();
+  await expect(page.getByText("Your mobile number, then a 6 digit code. The rider calls this number.")).toHaveCount(0);   // story #1044
   await expect(page.getByRole("button", { name: "Send code" })).toBeDisabled();
   await expect(page.getByTestId("google-signin")).toBeVisible();
   await expect(page.getByText("Butter Chicken")).toHaveCount(0);   // no menu before the number or Google

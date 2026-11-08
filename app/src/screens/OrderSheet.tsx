@@ -43,7 +43,6 @@ export function OrderSheet({ order, busy, error, onAccept, onDecline, onClose }:
             <button type="button" className="ui-btn big" aria-label={`Accept ${no}`} disabled={busy} onClick={onAccept}>Accept</button>
             <button type="button" className="ui-btn ghost big ui-decline" onClick={() => setDeciding(true)}>Decline, with a reason</button>
           </div>
-          <p className="mono ui-sheet-foot">Swipe down to leave it waiting</p>
         </section>
       ) : (
         <section className="ui-sheet ui-order-sheet" role="dialog" aria-modal="true" aria-label={`Decline order ${no}`} onClick={(e) => e.stopPropagation()}>

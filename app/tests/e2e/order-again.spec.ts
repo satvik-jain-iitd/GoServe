@@ -22,7 +22,7 @@ test("S1 Order again opens the Bill with the same dishes at today's prices, with
   await expect(page.getByText("Veg Thali")).toBeVisible();
   await expect(page.getByText("Roti")).toBeVisible();
   await expect(page.getByText("₹230").first()).toBeVisible();   // 180 + 2 x 25 at today's prices, not the old 50
-  await expect(page.getByLabel(/Anything the kitchen should know/)).toHaveValue("");
+  await expect(page.getByLabel(/Note for the kitchen/)).toHaveValue("");
 });
 
 test("S2 a sold-out dish is left out and the line names it", async ({ page, context }) => {
