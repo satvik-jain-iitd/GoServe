@@ -20,7 +20,7 @@ async function onTheWay(page: Page, context: Parameters<typeof setup>[0], withPl
 const map = (page: Page) => page.getByRole("region", { name: "Rider on the map" });
 const row = (page: Page) => page.getByRole("button", { name: "See the rider on the map" });
 
-test("S1 On the way with a place: a rider row and no map in the page; the row opens the full-screen map with K, Delivery and the rider, the card, the attribution and Call the rider", async ({ page, context }) => {
+test("S1 On the way with a place: a rider row and no map in the page; the row opens the full-screen map with Home and the rider (no kitchen mark), the card, the attribution and Call the rider", async ({ page, context }) => {
   const { tiles } = await onTheWay(page, context);
   await page.goto("/customer/");
   await expect(row(page)).toContainText("Ravi is 1.5 km away");
@@ -29,9 +29,9 @@ test("S1 On the way with a place: a rider row and no map in the page; the row op
   expect(tiles).toEqual([]);   // and no tile asked for before the map is opened
   await row(page).click();
   await expect(map(page)).toBeVisible();
-  await expect(map(page).getByRole("img", { name: "Kitchen" })).toBeVisible();
-  await expect(map(page).getByRole("img", { name: "Delivery" })).toBeVisible();
-  await expect(map(page).getByRole("img", { name: "Rider" })).toBeVisible();
+  await expect(map(page).getByRole("img", { name: "Kitchen" })).toHaveCount(0);   // board T5: no kitchen mark once the rider is on the way
+  await expect(map(page).getByRole("img", { name: "Home" })).toBeVisible();
+  await expect(map(page).getByRole("img", { name: "Rider" })).toContainText("Ravi");   // the dot is labelled with the name
   await expect(map(page).getByText("Ravi is 1.5 km away")).toBeVisible();
   await expect(map(page).getByText(/^At your door by .* · updated 20 sec ago$/)).toBeVisible();
   await expect(map(page).getByText("Live", { exact: true })).toBeVisible();
