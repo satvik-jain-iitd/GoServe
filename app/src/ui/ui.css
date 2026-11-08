@@ -53,7 +53,7 @@ body { margin: 0; background: var(--md-background); color: var(--md-on-backgroun
 
 /* Slip and stamp */
 .ui-slip { position: relative; margin-top: 8px; background: var(--md-surface); border: 1px solid var(--md-outline-variant); border-top: 0; border-radius: var(--gs-radius-none); }
-.ui-slip::before { content: ""; display: block; height: 8px; margin: -8px -1px 0; background: linear-gradient(-45deg, var(--md-surface) 5.66px, transparent 0), linear-gradient(45deg, var(--md-surface) 5.66px, transparent 0); background-size: 16px 8px; background-repeat: repeat-x; }
+.ui-slip::before { content: ""; display: block; height: 8px; margin: -8px -1px 0; background: var(--md-surface); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8'%3E%3Cpath d='M0 8L8 0L16 8Z'/%3E%3C/svg%3E") 0 0 / 16px 8px round no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8'%3E%3Cpath d='M0 8L8 0L16 8Z'/%3E%3C/svg%3E") 0 0 / 16px 8px round no-repeat; }   /* story 1046: one triangle per tile, round on x, so the row starts and ends with a whole triangle */
 .ui-slip-body { display: grid; gap: var(--gs-space-3); padding: 6px 18px 18px; }
 .ui-slip-head { display: flex; justify-content: space-between; gap: 12px; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); color: var(--gs-text-muted); text-transform: uppercase; }
 .ui-slip-stamp { display: flex; justify-content: center; padding: 10px 0 4px; }
@@ -193,7 +193,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-seg a.nonveg.on { background: color-mix(in srgb, var(--gs-nonveg) 18%, var(--gs-raised)); }
 .ui-seg a.on svg { opacity: 1; }
 /* The zigzag: GoServe's own mark. Light green, 8 px tall, under the lockup, under the greeting, at the top of every slip. */
-.ui-zigzag { height: 8px; background: linear-gradient(-45deg, var(--gs-zigzag) 5.66px, transparent 0), linear-gradient(45deg, var(--gs-zigzag) 5.66px, transparent 0); background-size: 16px 8px; background-repeat: repeat-x; }
+.ui-zigzag { height: 8px; background: var(--gs-zigzag); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8'%3E%3Cpath d='M0 8L8 0L16 8Z'/%3E%3C/svg%3E") 0 0 / 16px 8px round no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8'%3E%3Cpath d='M0 8L8 0L16 8Z'/%3E%3C/svg%3E") 0 0 / 16px 8px round no-repeat; }   /* story 1046: the same one-triangle mask as the slip teeth */
 .ui-greet .ui-zigzag { width: 100%; margin-top: 8px; }   /* story 973: the zigzag always spans the content width */
 /* A count badge on a tab (new tickets) */
 .ui-tab { position: relative; }
