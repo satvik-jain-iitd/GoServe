@@ -1198,6 +1198,56 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /push/web:
+    post:
+      operationId: postPushWeb
+      summary: The database says an outbox row is new; every web subscription of its customer gets a push with the words inside
+      description: "Not for apps. The caller is the database (pg_net) and proves it with our own secret in the x-push-secret header (PUSH_NOTIFY_SECRET). The function claims the row, sends one encrypted VAPID push per subscription (urgency high, ttl 600 s), forgets a subscription the push service says is dead (404, 410) and reports the row. A row already sent or claimed by the retry sends nothing (skipped). Without the VAPID secrets it answers 503 and claims nothing."
+      x-handler: ../supabase/functions/push/index.ts
+      x-contract-handler: ../supabase/functions/push/fixture.ts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [outbox_id]
+              properties:
+                outbox_id: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: The pushes were tried (sent, failed, forgotten), or the row needed none (skipped).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/PushNotified"
+                  - $ref: "#/components/schemas/PushSkipped"
+        "400":
+          description: The request is malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: The secret is wrong or missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          description: The notify secret or the VAPID secrets are not set (notify_not_configured, web_not_configured).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   schemas:
     Error:
@@ -1480,6 +1530,15 @@ components:
         sent: { type: integer, minimum: 0 }
         failed: { type: integer, minimum: 0 }
         forgotten: { type: integer, minimum: 0 }
+    PushSkipped:
+      type: object
+      additionalProperties: false
+      required: [ok, skipped]
+      properties:
+        ok:
+          const: true
+        skipped:
+          const: true
     CouponList:
       type: object
       additionalProperties: false
