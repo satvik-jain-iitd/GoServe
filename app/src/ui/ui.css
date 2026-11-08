@@ -681,7 +681,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-pinmap-strip.warn { background: var(--gs-warm-yellow); color: var(--md-on-tertiary); }
 .ui-pinmap-strip.error { background: var(--md-error); color: var(--md-on-error); }
 .ui-pinmap-credit { font-size: 11px; color: var(--gs-text-muted); text-transform: none; }
-.ui-pinmap-credit a { color: inherit; }
+.ui-pinmap-credit a { color: inherit; text-decoration: none; }   /* boards C6b, C9: links without the underline */
 .gs-here-dot { background: transparent; border: 0; }
 .gs-here-dot i { display: block; width: 18px; height: 18px; margin: 4px; box-sizing: border-box; border: 3px solid var(--gs-raised); border-radius: 50%; background: var(--gs-earth-mid); box-shadow: 0 0 0 4px color-mix(in srgb, var(--gs-earth-mid) 18%, transparent); }
 

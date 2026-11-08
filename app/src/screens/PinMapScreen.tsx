@@ -108,6 +108,8 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, on
   };
 
   const name = cardWords(words?.address ?? null);
+  const was = edit ? splitAddress(edit.address) : null;   // board C9: Editing shows the saved house and landmark in front of the words of the pin
+  const editLine = was ? [was.house, was.landmark ? `near ${was.landmark}` : ""].filter(Boolean).join(", ") : "";
   const strips = stripsFor({ serve: served, here, pin: point });
   return (
     <section ref={root} className="ui-pinmap" role="region" aria-label="Pin map" data-step={pick ? "details" : "pin"}>
@@ -123,7 +125,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, on
         <button type="button" className="ui-pinmap-here" onClick={() => void toPhone()}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg><span>Current Location</span></button>
         {kicker && <span className="mono ui-pinmap-kicker">{kicker}</span>}
         <div className="ui-pinmap-place"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.6" fill="#ffffff" /></svg><span className="ui-pinmap-name">{name.name}</span></div>
-        {name.rest && <span className="ui-pinmap-addr">{name.rest}</span>}
+        {(editLine ? `${editLine} · ${name.rest}`.replace(/ · $/, "") : name.rest) && <span className="ui-pinmap-addr">{editLine ? `${editLine} · ${name.rest}`.replace(/ · $/, "") : name.rest}</span>}
         {failed && <span className="ui-pinmap-addr ui-pinmap-quiet">Could not read the address, the pin still counts</span>}
         {note && <span role="alert" className="ui-pinmap-addr ui-pinmap-quiet">{note}</span>}
         {strips.map((s) => <span key={s.kind} role="status" className={`ui-pinmap-strip ${s.kind}`}>{s.text}</span>)}

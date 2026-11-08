@@ -1,6 +1,6 @@
 // Story #976, board C2-AddressSheet, search by story #1036 (board C8-SearchResults): the Deliver to page. The saved addresses with their distance from the phone, a search, two ways to add one, and a small sheet to edit or remove.
 import { useEffect, useRef, useState } from "react";
-import { distanceM, distanceWord, NEAR_M, type Place, type SavedAddress } from "../lib/addresses";
+import { distanceM, distanceWord, lastUsed, NEAR_M, type Place, type SavedAddress } from "../lib/addresses";
 import { splitMatch, type PlaceHit } from "../lib/placeSearch";
 import { useSheetFit } from "../ui";
 
@@ -39,6 +39,7 @@ export function DeliverToScreen({ list, selectedId, here, search, onPlace, onBac
   useEffect(() => () => { if (goneRef.current) void removeRef.current(goneRef.current.a.id); }, []);
   const take = (a: SavedAddress) => { if (goneRef.current) void removeRef.current(goneRef.current.a.id); setGone({ a, left: UNDO_S }); };
   const rows = gone ? list.filter((a) => a.id !== gone.a.id) : list;
+  const picked = gone && gone.a.id === selectedId ? lastUsed(rows)?.id ?? null : selectedId;   // board C10: the row that takes over carries Selected while Undo is open
   const q = query.trim().toLowerCase();
   const matches = q ? rows.filter((a) => `${a.label} ${a.address}`.toLowerCase().includes(q)) : rows;
   const shown = !q && !all && matches.length > SHORT ? matches.slice(0, SHORT) : matches;
@@ -85,7 +86,7 @@ export function DeliverToScreen({ list, selectedId, here, search, onPlace, onBac
                 <li key={a.id} className="ui-saved-row">
                   <span className="ui-chip-box" aria-hidden="true">{iconFor(a.label, near)}<span className="mono">{m === null ? "" : distanceWord(m, NEAR_M)}</span></span>
                   <button type="button" className="ui-saved-main" aria-label={`Deliver to ${a.label}`} onClick={() => onSelect(a.id)}>
-                    <span className="ui-saved-label"><span>{bold(a.label)}</span>{a.id === selectedId && <span className="ui-tag ready">Selected</span>}</span>
+                    <span className="ui-saved-label"><span>{bold(a.label)}</span>{a.id === picked && <span className="ui-tag ready">Selected</span>}</span>
                     <span className="ui-saved-addr">{bold(a.address)}</span>
                   </button>
                   <button type="button" className="ui-btn ghost icon" aria-label={`Edit or remove ${a.label}`} onClick={() => setMenuFor(a)}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" /></svg></button>

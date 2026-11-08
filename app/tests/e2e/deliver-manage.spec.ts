@@ -27,6 +27,8 @@ test("S1 (C9) Edit opens the map at the saved pin; Save changes shows the detail
   await page.getByRole("button", { name: "Edit", exact: true }).click();
   await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
   await expect(page.getByText("Editing Home")).toBeVisible();
+  await expect(page.getByText("C-128, near the park gate · ", { exact: false })).toBeVisible();   // board C9: the saved house and landmark, then the words of the pin
+  expect(await page.locator(".ui-pinmap-credit a").first().evaluate((e) => getComputedStyle(e).textDecorationLine)).toBe("none");
   await page.getByRole("button", { name: "Save changes" }).click();
   const sheet = page.getByRole("dialog", { name: "Address details" });
   await expect(sheet.getByLabel("House, flat, floor")).toHaveValue("C-128");
@@ -46,6 +48,7 @@ test("S2 (C10) Remove: the row leaves at once, the Undo bar counts 6 sec, Undo p
   await page.getByRole("button", { name: "Remove", exact: true }).click();
   await expect(page.getByRole("listitem").filter({ hasText: "Office" })).toHaveCount(0);
   await expect(page.getByText("1 saved")).toBeVisible();
+  await expect(page.getByRole("listitem").filter({ hasText: "Home" })).toContainText("Selected");   // board C10: the row that takes over
   const bar = page.getByRole("status").filter({ hasText: "Office removed" });
   await expect(bar).toContainText("6 sec");
   await page.clock.runFor(2_000);
