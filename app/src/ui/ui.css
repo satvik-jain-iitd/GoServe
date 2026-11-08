@@ -724,3 +724,6 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-eta-big { margin: 10px 0 0 0; text-align: center; font-size: 48px; color: var(--md-primary); }
 .ui-eta-by { margin-top: 4px; color: var(--gs-text-muted); }
 .ui-eta-late { color: var(--gs-nonveg); }
+
+/* Story 1049 part 2, board N0: the bell in a soft lime circle. */
+.ui-bellbadge { width: 96px; height: 96px; border-radius: var(--gs-radius-pill); background: var(--gs-lime-soft); display: flex; align-items: center; justify-content: center; color: var(--md-primary); margin: 8px auto; }
