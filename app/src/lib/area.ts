@@ -12,12 +12,12 @@ export const isPin = (text: string): boolean => /^\d{6}$/.test(text);
 
 // Kitchens that serve the pin code: an open, active one wins. Several: the nearest to `from` when it is known, else the first by name.
 // Story #668: the customer's place, when they allowed location, decides between kitchens that serve the same pin; without it the name order decides.
-// Story #1102: the one rule (the same as supabase/functions/serviceability): a kitchen serves a place when it lists the pin OR the place is inside its radius.
+// Story #1102: the one rule (the same as supabase/functions/serviceability): a kitchen serves a place when it lists the pin OR the place is inside its radius. The active switch is not part of it (it decides open or paused). Shared cases: spec/serviceability_cases.json.
 const R = 6371008.8;
 const rad = (d: number) => (d * Math.PI) / 180;
 const metresApart = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => 2 * R * Math.asin(Math.sqrt(Math.sin(rad(b.lat - a.lat) / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(rad(b.lng - a.lng) / 2) ** 2));
 export const servesPlace = (k: AreaKitchen, pin: string, from?: { lat: number; lng: number }): boolean =>
-  k.pin_codes.includes(pin) || (!!from && k.active && k.lat !== null && k.lng !== null && metresApart(from, { lat: k.lat, lng: k.lng }) <= (k.radius_m ?? 3000));
+  k.pin_codes.includes(pin) || (!!from && k.lat !== null && k.lng !== null && metresApart(from, { lat: k.lat, lng: k.lng }) <= (k.radius_m ?? 3000));
 
 export function chooseKitchen(kitchens: AreaKitchen[], pin: string, from?: { lat: number; lng: number }, now: Date = new Date()): Area {
   const serving = kitchens.filter((k) => servesPlace(k, pin, from)).sort((a, b) => a.name.localeCompare(b.name));

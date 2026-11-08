@@ -30,7 +30,7 @@ const live: Deps = {
   now: () => new Date(),
   kitchens: async () => {
     const key = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const res = await fetch(`${Deno.env.get("SUPABASE_URL")}/rest/v1/kitchens?select=${COLUMNS}&active=eq.true`, { headers: { apikey: key, authorization: `Bearer ${key}` } });
+    const res = await fetch(`${Deno.env.get("SUPABASE_URL")}/rest/v1/kitchens?select=${COLUMNS}`, { headers: { apikey: key, authorization: `Bearer ${key}` } });
     if (!res.ok) throw new Error("kitchens read failed");
     return await res.json();
   },

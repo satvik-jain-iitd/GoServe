@@ -19,7 +19,7 @@ Deno.test("a place just inside the radius is served, with the kitchen's name, th
   assertEquals(r.serviceable, true);
   assertEquals(r.request_here, false);
   assertEquals([r.kitchens[0].kitchen_id, r.kitchens[0].name, r.kitchens[0].open], ["k1", "Hauz Khas Kitchen", true]);
-  assertEquals(r.kitchens[0].eta_min, 20 + Math.ceil(r.kitchens[0].distance_m / 250));   // prep + a rider at 15 km/h
+  assertEquals(r.kitchens[0].eta_min, 20 + Math.ceil((r.kitchens[0].distance_m ?? 0) / 250));   // prep + a rider at 15 km/h
 });
 
 Deno.test("a place just outside the radius gets no kitchen and 'Request here'", () => {
@@ -27,9 +27,10 @@ Deno.test("a place just outside the radius gets no kitchen and 'Request here'", 
   assertEquals([r.serviceable, r.request_here, r.kitchens.length], [false, true, 0]);
 });
 
-Deno.test("kitchens come nearest first; inactive kitchens and kitchens with no place are skipped", () => {
+Deno.test("kitchens come nearest first; a switched-off kitchen still serves (not open); a kitchen with no place and no listed pin is skipped", () => {
   const r = serviceability(north(500), [k({ id: "far", lat: north(2000).lat }), k({ id: "near" }), k({ id: "off", active: false }), k({ id: "nowhere", lat: null, lng: null })], noon);
-  assertEquals(r.kitchens.map((x) => x.kitchen_id), ["near", "far"]);
+  assertEquals(r.kitchens.map((x) => x.kitchen_id), ["near", "off", "far"]);   // story #1102: the switch is not part of the rule
+  assertEquals(r.kitchens.find((x) => x.kitchen_id === "off")?.open, false);
 });
 
 Deno.test("a kitchen switched off, or outside its hours, is served but not open", () => {
