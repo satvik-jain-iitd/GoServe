@@ -111,6 +111,11 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await setup(context, page, [], { pin: null });
     await context.addInitScript(() => { if (typeof Notification === "undefined") (window as unknown as { Notification: unknown }).Notification = function () {}; Object.defineProperty(Notification, "permission", { get: () => "default", configurable: true }); });   // an iPhone tab has no Notification: the picture needs one
     await page.goto(path); await expect(page.getByRole("heading", { name: "Get order alerts" })).toBeVisible(); },
+  "no-kitchen": async (context, page, path) => {   // story #1049 part 3, board NK-A: no kitchen near this pin
+    await setup(context, page, [], { pin: null }); await page.goto(path);
+    await page.getByRole("button", { name: "Type it by hand" }).click();
+    await page.getByLabel("Address", { exact: true }).fill("Sector 62, Noida, Uttar Pradesh 201301"); await page.getByLabel("Pin code").fill("110099");
+    await page.getByRole("button", { name: "See the menu" }).click(); await expect(page.getByRole("heading", { name: "We don't reach here yet" })).toBeVisible(); },
   "first-open-pin": async (context, page, path) => {   // board A1p: after Use my location, the full map, the same screen as C6
     const net = await setup(context, page, [], { pin: null });
     net.state.geocode = { status: 200, body: { ok: true, address: "Green Avenue Colony, Satai Road, Chhatarpur, Madhya Pradesh 471001", pin: "471001", locality: "Green Avenue Colony", town: "Chhatarpur" } };

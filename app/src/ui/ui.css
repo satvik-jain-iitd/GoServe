@@ -740,3 +740,8 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-locoff-all { border: 0; background: transparent; padding: 8px 0; min-height: 44px; color: var(--md-primary); font: inherit; font-weight: 700; font-size: 14px; }
 .ui-locoff-row { display: grid; grid-template-columns: 28px 1fr 16px; gap: 12px; align-items: center; width: 100%; min-height: 56px; padding: 8px 0; border: 0; border-bottom: 1px solid var(--md-outline-variant); background: transparent; color: var(--md-on-surface); font: inherit; text-align: left; }
 .ui-locoff-home { color: var(--md-primary); display: inline-flex; }
+/* Story 1049 part 3, board NK-A: the place of a pin no kitchen serves. */
+.ui-nkplace { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-top: 1px solid var(--md-outline-variant); border-bottom: 1px solid var(--md-outline-variant); color: var(--md-primary); }
+.ui-nkplace > span { display: flex; flex-direction: column; color: var(--md-on-surface); min-width: 0; }
+.ui-nkplace b { font-size: 16px; font-weight: 600; }
+.ui-nkplace > span > span { font-size: 14px; color: var(--gs-text-muted); }

@@ -21,6 +21,7 @@ eta-working | /customer/ | 412x915 | eta-working
 menu-far | /customer/ | 412x915 | menu-far
 location-off | /customer/ | 412x915 | location-off
 alerts-ask | /customer/ | 412x915 | alerts-ask
+no-kitchen | /customer/ | 412x915 | no-kitchen
 first-open-ask | /customer/ | 412x915 | first-open-ask
 first-open-pin | /customer/ | 412x915 | first-open-pin
 add-dish | /admin/ | 412x915 | add-dish
