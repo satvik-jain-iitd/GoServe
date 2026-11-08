@@ -38,7 +38,6 @@ export function KitchenGate({ children }: { children: (gate: KitchenGateState) =
           {anonymous ? (
             <>
               <h2 className="ui-slip-title">Sign in to cook</h2>
-              <p className="ui-meta">Only the staff the admin has added can sign in. No password, no form.</p>
               <SignIn mode="signin" big filled />
             </>
           ) : (

@@ -139,7 +139,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
       {error && !sheet && <p role="alert" className="ui-note error">{error}</p>}
       {loading && orders.length === 0 && <div className="ui-pad"><Skeleton lines={3} /></div>}
       {tab === "new" && (fresh.length === 0 ? (
-        <div className="ui-scroll ui-center"><div className="ui-empty"><h2>No new tickets</h2><p className="ui-meta">New orders ring and show here. Keep this page open.</p>{todayLine}</div></div>
+        <div className="ui-scroll ui-center"><div className="ui-empty"><h2>No new tickets</h2><p className="ui-meta">No new orders. Keep this page open.</p>{todayLine}</div></div>
       ) : (
         <div className="ui-scroll ui-tickets">{fresh.map(row)}<p className="mono ui-foot">New tickets land here · accept within 2 min</p></div>
       ))}

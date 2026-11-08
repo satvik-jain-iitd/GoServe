@@ -23,7 +23,7 @@ test("S1 the sheet opens filled with the kitchen's details", async ({ page, cont
   await expect(d.getByLabel("Closes at")).toHaveValue("22:00");
   await expect(d.getByLabel("Phone")).toHaveValue("9876500011");
   await expect(d.getByLabel("Address")).toHaveValue("C-4, Lajpat Nagar II, back lane");
-  await expect(d).toContainText("the location pin has its own map");
+  await expect(d).not.toContainText("the location pin has its own map");   // story #1044
 });
 
 test("S2 Save sends the new details and no location columns", async ({ page, context }) => {

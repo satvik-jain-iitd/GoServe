@@ -4,7 +4,6 @@ import { test, expect, type Page } from "@playwright/test";
 import { setup } from "./helpers";
 
 const KITCHEN = { id: "k-1", name: "Tau Ka Dhaba", address: "C-4, Hauz Khas", phone: "9876500011", pin_codes: ["110016"], open: true, active: true, opens_at: "11:00:00", closes_at: "22:00:00" };
-const HELPER = "The red button wakes up when the word matches. Until then a touch does nothing.";
 
 const removeSheet = async (page: Page, context: Parameters<typeof setup>[0]) => {
   const net = await setup(context, page); net.state.admin = true; net.state.kitchens = [KITCHEN];
@@ -51,11 +50,10 @@ for (const [name, open] of [["Remove kitchen", removeSheet], ["Clear everything"
     expect(["left", "start"]).toContain(m.dtAlign);
     expect(m.inputH).toBe(48);
     expect(m.order).toEqual(["red", "ghost"]);   // red first, ghost to leave
-    await expect(sheet.locator(".ui-danger-kicker")).toBeVisible();
     expect(await sheet.locator("input").getAttribute("placeholder")).toBe(name === "Clear everything" ? "CLEAR" : "REMOVE");   // the word is the placeholder
     await expect(sheet.locator(".ui-danger-sentence")).toBeVisible();
-    await expect(sheet.locator(".ui-danger-after")).toBeVisible();
-    await expect(sheet.getByText(HELPER)).toBeVisible();
+    await expect(sheet.locator(".ui-danger-after")).toHaveCount(name === "Remove kitchen" ? 1 : 0);   // story #1044: the line stays for Remove (Open orders must finish first), Clear has none
+    await expect(sheet.locator(".ui-danger-helper")).toHaveCount(0);   // story #1044: no line explains the red button
     await expect(sheet.getByRole("button", { name: "Close", exact: true })).toHaveCount(1);   // the 44 px round one; no Close pill
   });
 
@@ -70,7 +68,7 @@ for (const [name, open] of [["Remove kitchen", removeSheet], ["Clear everything"
 }
 
 test("S3 both sheets use the same class names", async ({ page, context }) => {
-  const names = async (sheet: ReturnType<Page["getByRole"]>) => Array.from(new Set(await sheet.evaluate((el) => Array.from(el.querySelectorAll("[class]")).map((e) => e.className).filter((c) => typeof c === "string" && c.includes("ui-danger"))))).sort().join("|");
+  const names = async (sheet: ReturnType<Page["getByRole"]>) => Array.from(new Set(await sheet.evaluate((el) => Array.from(el.querySelectorAll("[class]")).map((e) => e.className).filter((c) => typeof c === "string" && c.includes("ui-danger") && !c.includes("ui-danger-kicker") && !c.includes("ui-danger-after"))))).sort().join("|");
   const a = await names(await removeSheet(page, context));
   const page2 = await context.newPage();
   const b = await names(await clearSheet(page2, context));
