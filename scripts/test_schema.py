@@ -101,7 +101,7 @@ if __name__ == "__main__":
 def migration_inside(names, probe):
     """The SQL of the migration files to run inside a test's transaction. Empty when SKIP_MIG=1 (the red run before the migration) or when `probe`
     (a SQL boolean, true once the migration is applied) says dev already has it: a migration that creates a table cannot run twice, and the test still proves the same rules."""
-    if os.environ.get("SKIP_MIG"):
+    if os.environ.get("SKIP_MIG") or not TOKEN:   # no token (CI guard unit tests import this file): the tests skip themselves
         return ""
     if sql(f"select ({probe}) as applied")[0]["applied"]:
         return ""
