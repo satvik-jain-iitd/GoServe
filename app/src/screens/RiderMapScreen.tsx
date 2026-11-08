@@ -6,7 +6,7 @@ import { distanceText, lastSeenText, agoText, type Point } from "../lib/riderMap
 import { useNowOnline } from "../lib/useNowOnline";
 import type { LatLng } from "../lib/riderTrack";
 
-type Props = { t: { kitchen: LatLng; you: LatLng; rider: Point; name: string; phone: string | null }; orderNo: string; door: string; onBack: () => void; onCall?: () => void };
+type Props = { t: { kitchen: LatLng; you: LatLng; rider: Point; name: string; phone: string | null }; orderNo: string; door: string | null; onBack: () => void; onCall?: () => void };
 
 export function RiderMapScreen({ t, orderNo, door, onBack, onCall }: Props) {
   const { now, online } = useNowOnline();
@@ -31,7 +31,7 @@ export function RiderMapScreen({ t, orderNo, door, onBack, onCall }: Props) {
         <span className="mono ui-pinmap-kicker">Order {orderNo} · On the way</span>
         <span className="ui-pinmap-place"><span aria-hidden="true" className="ui-bigdot" /><span className="ui-pinmap-name">{t.name} is {distanceText(t.rider.lat, t.rider.lng, t.you.lat, t.you.lng)} away</span></span>
         {online
-          ? <span className="ui-pinmap-addr">At your door by {door} · updated {agoText(t.rider.at, now)}</span>
+          ? <span className="ui-pinmap-addr">{door ? `At your door by ${door} · ` : ""}updated {agoText(t.rider.at, now)}</span>
           : <span className="ui-pinmap-addr"><span className="ui-chip-warn">No connection</span> {lastSeenText(t.rider.at, now)}</span>}
         {t.phone && <a href={`tel:${t.phone}`} className="ui-btn ghost big" onClick={onCall}>Call the rider</a>}
         <span className="mono ui-pinmap-credit">{MAP_ATTRIBUTION}</span>

@@ -46,9 +46,10 @@ test("S3 the demo console at / still needs only the address", async ({ page, con
 
 test("S4 the tracker shows an estimate and a Cancel button while the order is placed; cancelling tells the database and the screen", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
+  net.state.tracking = { eta_lo_min: 20, eta_hi_min: 30, eta_late: false, updated_at: new Date().toISOString() };   // story #1015: the server's time
   await page.goto("/customer/");
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
-  await expect(page.getByText("About 20 min")).toBeVisible();
+  await expect(page.getByText("20 min", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Cancel order" }).click();
   await expect.poll(() => net.calls.rpc.filter((c) => c.name === "cancel_order").length).toBe(1);
   expect(net.calls.rpc.find((c) => c.name === "cancel_order")!.body).toEqual({ p_order: ID, p_reason: null });

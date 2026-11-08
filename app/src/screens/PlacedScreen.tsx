@@ -2,7 +2,7 @@
 import { clock12 } from "../lib/clock";
 import { formatRupees } from "../lib/money";
 import { shortId, statusLabel, trackerSteps } from "../lib/kitchen";
-import { etaMinutes } from "../lib/profile";
+import { etaView, type Eta } from "../lib/eta";
 import type { PlacedOrder } from "../lib/orders";
 import type { RiderCard } from "../lib/supabase";
 import { useEffect, useState } from "react";
@@ -42,6 +42,7 @@ type Props = {
   onCall?: () => void;          // story H14: the Call tap is counted ("where is my food" calls)
   pay?: Pay;                    // story #552: an online order waits for its payment
   track?: Track;                // story #691: On the way, with the rider's place known
+  eta?: Eta | null;             // story #1015: the server's delivery time
   declined?: { reason: string; at: string } | null;   // story #934: the kitchen said no, in its own words
 };
 export type Track = { kitchen: LatLng; you: LatLng; rider: Point; name: string; phone: string | null };
@@ -83,12 +84,13 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "At your door" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
-export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, declined }: Props) {
+export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, declined, eta }: Props) {
   const [mapOpen, setMapOpen] = useState(false);   // story 1053: the full-screen rider map
   const steps = trackerSteps(status);
-  const eta = etaMinutes();
+  const { now } = useNowOnline();
+  const view = etaView(eta, now);
   const placed = new Date(placedAt);
-  const door = new Date(placed.getTime() + eta * 60_000);
+  const door = view.kind === "time" ? clock12(view.by) : null;   // the clock the server's estimate lands on
   const delivered = status === "delivered";
   const cancelled = status === "cancelled";
   const title = status === "placed" ? "Order placed" : delivered ? "Delivered" : cancelled ? (declined ? "Declined" : "Cancelled") : "Your order";
@@ -131,7 +133,9 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
             <div className="ui-slip-head"><span>{head}</span><span>{delivered ? `${placed.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${clock12(placed)}` : `No. ${shortId(order.id)}`}</span></div>
             <div className="ui-slip-stamp"><span className={`ui-stamp ${STAMP[status] ?? "placed"}`}>{declined ? "Declined" : statusLabel(status)}</span></div>
             {pay && status === "placed" && (pay.state === "ready" || pay.state === "starting" || pay.state === "waiting") && <Countdown startedAt={pay.startedAt} />}
-            {!cancelled && !delivered && <p className="ui-clock">About <b>{eta} min</b> · at your door by {clock12(door)}</p>}
+            {!cancelled && !delivered && view.kind === "time" && <><p className="display ui-eta-big">{view.min} min</p><p className="ui-clock ui-eta-by">By {clock12(view.by)}</p></>}
+            {!cancelled && !delivered && view.kind === "late" && <p className="ui-clock ui-eta-late" role="status">Running late, sorry</p>}
+            {!cancelled && !delivered && view.kind === "working" && <p className="ui-clock ui-eta-by">Working out the time</p>}
             {delivered && confirmedAt && <p className="ui-clock">At your door <b>{clock12(new Date(confirmedAt))}</b></p>}
             <div className="ui-slip-rule" />
             <div className="ui-slip-lines">
@@ -183,7 +187,7 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
           )}
         </div>
       </div>
-      {mapOpen && track && status === "out_for_delivery" && <RiderMapScreen t={track} orderNo={shortId(order.id)} door={clock12(door)} onBack={() => setMapOpen(false)} onCall={onCall} />}
+      {mapOpen && track && status === "out_for_delivery" && <RiderMapScreen t={track} orderNo={shortId(order.id)} door={door} onBack={() => setMapOpen(false)} onCall={onCall} />}
       <div className="ui-bottom">
         {(delivered || cancelled) && <button type="button" className="ui-btn big" onClick={onMenu}>{declined ? "Order something else" : cancelled ? "Order again" : "See the menu"}</button>}
         {(status === "placed" || status === "accepted") && <button type="button" className="ui-btn ghost big" disabled={cancelling} onClick={onCancel}>Cancel order</button>}

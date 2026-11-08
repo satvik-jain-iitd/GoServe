@@ -86,6 +86,19 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await STEPS["tracker-rider-row"](context, page, path);
     await page.getByRole("button", { name: "See the rider on the map" }).click();
     await expect(page.getByRole("region", { name: "Rider on the map" }).getByRole("img", { name: "Rider" })).toBeVisible(); },
+  // Story #1015: the boards E2a (big number), E1b (running late) and E1c (working out the time) with the clock fixed at NINE: 25 min from 9:00 am is "By 9:25 am" where the board says 8:12 pm.
+  "eta-big": async (context, page, path) => {   // board E2a
+    const net = await setup(context, page, [order("preparing", "2020-01-01T10:02:00Z")]);
+    net.state.tracking = { rider_lat: null, rider_lng: null, eta_lo_min: 25, eta_hi_min: 35, eta_late: false, updated_at: NINE.toISOString() };
+    await page.goto(path); await expect(page.getByText("25 min", { exact: true })).toBeVisible(); },
+  "eta-late": async (context, page, path) => {   // board E1b
+    const net = await setup(context, page, [order("out_for_delivery", "2020-01-01T10:05:00Z")]);
+    net.state.tracking = { rider_lat: null, rider_lng: null, eta_lo_min: 8, eta_hi_min: 18, eta_late: true, updated_at: NINE.toISOString() };
+    await page.goto(path); await expect(page.getByText("Running late, sorry")).toBeVisible(); },
+  "eta-working": async (context, page, path) => {   // board E1c
+    const net = await setup(context, page, [order("preparing", "2020-01-01T10:02:00Z")]);
+    net.state.tracking = { rider_lat: null, rider_lng: null, eta_lo_min: null, eta_hi_min: null, eta_late: false, updated_at: NINE.toISOString() };
+    await page.goto(path); await expect(page.getByText("Working out the time")).toBeVisible(); },
   "add-dish": async (context, page, path) => {   // story 923: the admin's Add dish form
     const net = await setup(context, page); net.state.admin = true; await page.goto(path);
     await page.getByRole("button", { name: "City", exact: true }).click(); await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();
