@@ -19,9 +19,10 @@ async function placeOrder(page: Page) {
 const prompt = (page: Page) => page.getByText("Was your order delivered?");
 
 test("the bill and the placed screen say cash on delivery", async ({ page, context }) => {
-  await setup(context, page);
+  const net = await setup(context, page);
+  net.state.tracking = { eta_lo_min: 20, eta_hi_min: 30, eta_late: false, updated_at: new Date().toISOString() };   // story #1015: the server's time
   await placeOrder(page);
-  await expect(page.getByText(/About 20 min/)).toBeVisible();
+  await expect(page.getByText("20 min", { exact: true })).toBeVisible();
 });
 
 test("S1 the prompt comes after the kitchen taps Ready, not before", async ({ page, context }) => {

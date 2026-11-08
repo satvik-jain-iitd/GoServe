@@ -54,6 +54,7 @@ import { AdminScreen } from "./screens/AdminScreen";
 import { loadDraft, saveDraft } from "./lib/draft";
 import { PlacedScreen, type Track } from "./screens/PlacedScreen";
 import { readPinPoint, readRider, watchRider, type LatLng } from "./lib/riderTrack";
+import { readEta, type Eta } from "./lib/eta";
 import { readArriving, watchArriving } from "./lib/arriving";
 import type { Point } from "./lib/riderMap";
 import { KitchenScreen } from "./screens/KitchenScreen";
@@ -669,6 +670,19 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     const tick = setInterval(read, 30_000);
     return () => { alive = false; stop(); clearInterval(tick); };
   }, [placed?.id, onTheWay]);
+  // Story #1015 (board E2a): the delivery time is the server's. Read now, again on every realtime event of the tracking row and every 30 s; a failed read keeps the last answer.
+  const [eta, setEta] = useState<Eta | null>(null);
+  const etaLive = !!placed && !demo && !!riderStatus && riderStatus !== "delivered" && riderStatus !== "cancelled";
+  useEffect(() => {
+    if (!etaLive || !placed) return void setEta(null);
+    const c = getClient();
+    let alive = true;
+    const read = () => void readEta(c, placed.id).then((e) => { if (alive && e) setEta(e); }).catch(() => undefined);
+    read();
+    const stop = watchRider(c, placed.id, read, "eta");
+    const tick = setInterval(read, 30_000);
+    return () => { alive = false; stop(); clearInterval(tick); };
+  }, [placed?.id, etaLive]);
   // Story #922: the rider tapped Arriving. Read now, again on every realtime event and every 30 s (a missed event heals itself); a reload or a second device reads it on open.
   const [atDoor, setAtDoor] = useState(false);
   useEffect(() => {
@@ -917,7 +931,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             declined={tracked && cancelKind(tracked) === "declined" ? { reason: (tracked as Order).cancel_reason ?? "", at: tracked.updated_at } : null}
             asking={asking} busy={confirming} error={confirmError} reminder={reminder}
             onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} pay={paidNow || payState || resumedOnline ? { state: paidNow ? "paid" : payState ?? "waiting", method: payMethod === "cod" ? "upi" : payMethod, startedAt: payState ? payStart : null, error: payError, onPay: payNow, onCash: payCash, onSimulate: () => void simulatePaid(import.meta.env.VITE_PAYMENTS_DEV_SECRET ?? "", payRef.current) } : undefined}
-            onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} atDoor={atDoor} track={riderTrack} onCall={() => void tapCall(getClient(), placed.id)} />
+            onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} atDoor={atDoor} track={riderTrack} eta={eta} onCall={() => void tapCall(getClient(), placed.id)} />
         )}
     </>
   );

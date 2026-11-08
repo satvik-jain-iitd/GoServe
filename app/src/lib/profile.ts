@@ -8,7 +8,6 @@ export const isPhone = (text: string): boolean => /^[6-9]\d{9}$/.test(text);   /
 
 // Cooking 15 minutes, then 1.5 minutes a kilometre, never under 20. The distance is not known yet (the customer's place is not collected),
 // so the answer is the minimum until it is. (ponytail: pass km when coordinates exist.)
-export const etaMinutes = (km?: number): number => Math.max(20, Math.round(15 + (km ?? 0) * 1.5));
 
 export const orderSummary = (o: Pick<Order, "items">): string => o.items.map((i) => `${i.qty} × ${i.name}`).join(", ");
 

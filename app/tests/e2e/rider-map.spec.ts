@@ -11,7 +11,7 @@ async function onTheWay(page: Page, context: Parameters<typeof setup>[0], withPl
   const net = await setup(context, page, [order("out_for_delivery", "2020-01-01T10:05:00Z")]);
   net.state.riderCard = { name: "Ravi", phone: "9876500000" };
   Object.assign(net.state.kitchens[0], { lat: 28.57, lng: 77.24 });
-  if (withPlace) net.state.tracking = { rider_lat: 28.58, rider_lng: 77.25, updated_at: iso(SEEN.getTime() - 20_000) };
+  if (withPlace) net.state.tracking = { rider_lat: 28.58, rider_lng: 77.25, eta_lo_min: 8, eta_hi_min: 18, eta_late: false, updated_at: iso(SEEN.getTime() - 20_000) };
   const tiles: string[] = [];
   await context.route("https://tiles.test/**", (route) => { tiles.push(route.request().url()); return route.fulfill({ status: 200, contentType: "image/png", body: PNG }); });
   await page.clock.setFixedTime(SEEN);
