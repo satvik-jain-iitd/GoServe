@@ -3,10 +3,10 @@
 # Run: set -a; . ~/Desktop/Secrets/02_databases.env; set +a; python3 -m unittest scripts/test_place_search.py
 import os, sys, unittest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from test_schema import TOKEN, sql
+from test_schema import TOKEN, sql, migration_inside
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-MIG = "" if os.environ.get("SKIP_MIG") else open(os.path.join(HERE, "..", "supabase", "migrations", "20261108160000_place_search.sql")).read()
+MIG = migration_inside(["20261108160000_place_search.sql"], "select to_regclass('public.place_search_cache') is not null")   # empty once dev has it applied (the proof is the same)
 
 
 def ask(*stmts):
