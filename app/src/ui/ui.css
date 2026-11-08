@@ -221,7 +221,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 /* Story 1020: one field style on .ui-field itself, so a form outside .ui-form never shows the browser's own thin box. Same values as the .ui-form rule below. */
 .ui-field input:where(:not([type="checkbox"], [type="radio"], [type="file"], .ui-switch)), .ui-field textarea { box-sizing: border-box; width: 100%; min-width: 0; min-height: var(--gs-tap); padding: 10px 12px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font: inherit; resize: none; }
 .ui-field .mono-input { font-family: var(--gs-font-mono); }
-:not(.ui-form) > .ui-field + .ui-field { margin-top: var(--gs-space-4); }   /* story 1020: field rows outside .ui-form (the sheets, the step page) keep 16 px apart; .ui-form spaces them with its own gap */
+.ui-sheet > .ui-field + .ui-field, .ui-slip > .ui-field + .ui-field { margin-top: var(--gs-space-4); }   /* story 1020: stacked field rows in a sheet or on the step slip keep 16 px apart; .ui-form spaces its own with a gap, and side-by-side rows are not direct children */
 .ui-pin-input { font-family: var(--gs-font-mono); letter-spacing: 0.08em; }   /* story 1020: the box itself is the one .ui-field rule; the pin only adds its font */
 .ui-pin-input[aria-invalid="true"] { border: 1.5px solid var(--md-error); }
 .ui-pin-input:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
