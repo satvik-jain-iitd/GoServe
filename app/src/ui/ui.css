@@ -218,7 +218,10 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-slip-title { margin: 0; font-family: var(--gs-font-display); font-weight: 800; font-size: var(--gs-display-l); line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; }
 .ui-field { display: flex; flex-direction: column; gap: 6px; }
 .ui-field label { font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); text-transform: uppercase; color: var(--gs-text-muted); }
-.ui-pin-input { box-sizing: border-box; width: 100%; height: var(--gs-tap-big); padding: 0 14px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font-family: var(--gs-font-mono); font-size: var(--gs-mono-xl); font-weight: 500; letter-spacing: 0.12em; }
+/* Story 1020: one field style on .ui-field itself, so a form outside .ui-form never shows the browser's own thin box. Same values as the .ui-form rule below. */
+.ui-field input:where(:not([type="checkbox"], [type="radio"], [type="file"], .ui-switch)), .ui-field textarea { box-sizing: border-box; width: 100%; min-width: 0; min-height: var(--gs-tap); padding: 10px 12px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font: inherit; resize: none; }
+.ui-field .mono-input { font-family: var(--gs-font-mono); }
+.ui-pin-input { font-family: var(--gs-font-mono); letter-spacing: 0.08em; }   /* story 1020: the box itself is the one .ui-field rule; the pin only adds its font */
 .ui-pin-input[aria-invalid="true"] { border: 1.5px solid var(--md-error); }
 .ui-pin-input:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
 .ui-field-error { margin: 0; font-size: var(--gs-text-sm); font-weight: 600; color: var(--md-error); }

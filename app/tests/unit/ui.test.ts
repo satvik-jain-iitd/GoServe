@@ -100,6 +100,18 @@ describe("css rules", () => {
     expect(size, "own size rule").toBeGreaterThan(shared);
   });
 
+  // Story #1020: the field style lives on .ui-field, not on a wrapper, so a form outside .ui-form still gets styled boxes.
+  it("S1020 one rule styles every input and textarea inside .ui-field, and the pin box only adds its font", () => {
+    const rule = css.match(/(?:^|\n)\.ui-field input[^\n{]*\.ui-field textarea[^\n{]*\{([^}]*)\}/);
+    expect(rule, ".ui-field input, .ui-field textarea rule").not.toBeNull();
+    expect(rule![1]).toMatch(/min-height:\s*var\(--gs-tap\)/);
+    expect(rule![1]).toMatch(/border:\s*1px solid var\(--md-outline-variant\)/);
+    const pin = css.match(/(?:^|\n)\.ui-pin-input \{([^}]*)\}/)![1];
+    expect(pin).toMatch(/font-family:\s*var\(--gs-font-mono\)/);
+    expect(pin).not.toMatch(/height|padding|border|font-size/);
+    expect(css).toMatch(/\.ui-field \.mono-input\s*\{[^}]*font-family:\s*var\(--gs-font-mono\)/);
+  });
+
   it("S3 the big button is at least 56 px for one-thumb staff screens", () => {
     expect(css).toMatch(/\.ui-btn\.big \{[^}]*min-height:\s*var\(--gs-tap-big\)/);
     expect(readFileSync(resolve(__dirname, "../../src/styles/tokens.css"), "utf8")).toMatch(/--gs-tap-big:\s*56px/);
