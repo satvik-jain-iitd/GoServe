@@ -49,6 +49,12 @@ Standing rules, every session:
     No line, no review. Every UI mistake the owner finds is added to that file in the same PR that fixes it, with
     a `docs/LEARNINGS.md` row. The reviewer refuses a UI PR that skipped the file.
 
+24. **Build from the board (owner, 8 Nov 2026: "abhi se rule banao").** A screen is built by looking at its approved board, not from the story text. A human developer keeps the design open beside the code; so do we.
+    - **Before code**: render the board at 390x844 and look at it. Read its measurements from the board's markup (x, y, width, height, padding, gap, font, colour of every slip, heading, field, button, chip and row) into a short table.
+    - **Port, do not retell**: copy the board's markup and styles into the app. `ink.css` and `app/src/ui/ui.css` are one design system.
+    - **After every change**: render the app screen in the board's state and data, put it beside the board at the same scale and full height, and check all four edges. Open no PR until they match. A screenshot baseline is not the reference; the board is.
+    - **The PR body shows the board image, the app image and the measurement table.** The reviewer refuses a UI PR without them. A screen with no approved board is not built.
+
 ## Radar first (owner, 25 Oct 2026, strictest rule)
 
 Before any new component, script, skill, workflow or tool in this project: run the `radar` skill (`radar@agi`) on the need, read the top 3 READMEs, record the run in `docs/research/repo-radar.md`, reuse or borrow first. Build from scratch only when the run found nothing, and say so. No radar run, no new code. Full text: `~/.claude/CLAUDE.md` section 2, rule 0.
