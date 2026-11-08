@@ -104,7 +104,6 @@ export function AdminSim() {
         </details>
         <div className="ui-form ui-form-flush">
           <div className="ui-form-acts"><button type="button" className="ui-btn big ghost" disabled={busy} onClick={() => void seedRiders()}>Seed the riders</button></div>
-          <p className="ui-meta">Investor demos only. Real riders: add in City.</p>
         </div>
       </section>
       <section className="ui-group" aria-label="Start over">
@@ -118,7 +117,7 @@ export function AdminSim() {
       {clearing && (
         <DangerSheet id="clear-word" title="Clear everything?" kicker="Dev only · cannot be undone" sentence="This empties the dev city. Seed the kitchens brings it back."
           facts={[["Goes", "Every kitchen and dish, every rider, orders, order events, ratings, payments, tracking."], ["Stays", "Run log, decision log, and every account."]]}
-          word={CLEAR_WORD} value={word} onValue={setWord} confirmLabel="Clear everything" leaveLabel="Keep the city" after="After it, Seed the kitchens brings the city back."
+          word={CLEAR_WORD} value={word} onValue={setWord} confirmLabel="Clear everything" leaveLabel="Keep the city"
           busy={busy} onConfirm={() => void clear()} onClose={() => { setClearing(false); setWord(""); }} />
       )}
     </div>

@@ -13,7 +13,7 @@ test("S1 the City tab ends with a You section: Signed in as <first name>, the em
   await expect(you).toContainText("Signed in as Amit");   // the first name of the Google account
   await expect(you).toContainText("satvik.jain@example.com");
   await expect(you.getByRole("button", { name: /Sign out/ })).toBeVisible();
-  await expect(you).toContainText("Sign out brings the Google sign-in back. The city stays as it is.");
+  await expect(you).not.toContainText("Sign out brings the Google sign-in back");   // story #1044
   // it is the last section of the City tab
   const last = await page.locator(".ui-group").last().getAttribute("aria-label");
   expect(last).toBe("You");

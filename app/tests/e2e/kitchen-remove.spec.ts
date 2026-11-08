@@ -22,7 +22,7 @@ const admin = async (page: Page, context: Parameters<typeof setup>[0]) => {
 test("S1 the kitchen page has a red Remove row under Leaving GoServe; the sheet's button stays asleep until REMOVE is typed exactly", async ({ page, context }) => {
   const net = await admin(page, context);
   const sheet = await open(page);
-  await expect(sheet).toContainText("Ask 1 of 2");
+  await expect(sheet).not.toContainText("Ask 1 of 2");   // story #1044
   await expect(sheet).toContainText("The kitchen leaves GoServe today. Customers stop seeing it at once. Nothing is deleted.");
   await expect(sheet).toContainText("New orders, the menu, and every staff sign-in to this kitchen.");
   await expect(sheet).toContainText("Orders already placed, and today's slips and cash.");

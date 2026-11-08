@@ -43,7 +43,6 @@ export function AdminMenu({ kitchenId, kitchenName, onError }: { kitchenId: stri
           <span className="ui-go" aria-hidden="true">›</span>
         </button>
       ))}
-      {dishes.length > 0 && <p className="mono ui-meta ui-dish-hint">Tap a dish to change it, mark it sold out, or delete it.</p>}
       {!adding && <div className="ui-pad-y"><button type="button" className="ui-btn ghost" onClick={() => { onError(null); setAdding(true); }}>+ Add a dish</button></div>}
       {adding && (
         <div className="ui-form ui-form-flush">
@@ -137,13 +136,12 @@ function DishSheet({ dish, kitchenId, kitchenName, onError, onClose, onDone }: {
           <div><label className="ui-danger-label" htmlFor="d-cat">Category</label><input id="d-cat" className="ui-sheet-input" type="text" value={category} onChange={(e) => setCategory(e.target.value)} /></div>
         </div>
         <div className="ui-row ui-row-static ui-sheet-switch"><span>Veg</span><input className="ui-switch" type="checkbox" role="switch" aria-label="Veg" checked={veg} onChange={(e) => setVeg(e.target.checked)} /></div>
-        <div className="ui-row ui-row-static ui-sheet-switch"><span className="ui-stock"><span>In stock</span><span className="mono">Off = Sold out on the menu, the dish stays</span></span><input className="ui-switch" type="checkbox" role="switch" aria-label="In stock" checked={inStock} onChange={(e) => setInStock(e.target.checked)} /></div>
+        <div className="ui-row ui-row-static ui-sheet-switch"><span className="ui-stock"><span>In stock</span></span><input className="ui-switch" type="checkbox" role="switch" aria-label="In stock" checked={inStock} onChange={(e) => setInStock(e.target.checked)} /></div>
         {error && <p role="alert" className="ui-note error">{error}</p>}
         <div className="ui-danger-acts"><button type="button" className="ui-btn big" disabled={busy} onClick={() => void save()}>Save</button></div>
         <button type="button" className="ui-row ui-delete-row" onClick={() => setDeleting(true)}>
           <span><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" /></svg>Delete this dish</span><span aria-hidden="true">›</span>
         </button>
-        <p className="mono ui-danger-helper">Delete asks once more, the danger sheet way. Sold out keeps the dish; delete does not.</p>
       </section>
     </div>
   );
