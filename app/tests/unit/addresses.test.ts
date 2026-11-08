@@ -1,6 +1,6 @@
-// Story #976: saved addresses. The pick on open, the distance words, and the first row made from today's single saved address.
+// Story #976 and #1035: saved addresses. The pick on open (the last used one), the distance words, and the first row made from today's single saved address.
 import { describe, it, expect } from "vitest";
-import { distanceM, distanceWord, pickOnOpen, firstFromProfile, type SavedAddress } from "../../src/lib/addresses";
+import { distanceM, distanceWord, lastUsed, firstFromProfile, type SavedAddress } from "../../src/lib/addresses";
 
 const row = (id: string, label: string, lat: number | null, lng: number | null, used: string): SavedAddress => ({ id, label, address: `${label} street, town`, pin: "471001", lat, lng, last_used_at: used });
 const HOME = row("h", "Home", 24.9167, 79.5833, "2026-11-01T10:00:00Z");
@@ -19,26 +19,22 @@ describe("distanceM and distanceWord", () => {
   });
 });
 
-describe("pickOnOpen", () => {
-  it("picks the saved address within address_near_m of the phone", () => {
-    expect(pickOnOpen([HOME, OFFICE], { lat: 24.9168, lng: 79.5834 }, 200)).toEqual({ id: "h", asks: false });
+describe("lastUsed (story #1035: on open the address used last, always)", () => {
+  it("is the row with the newest last_used_at", () => {
+    expect(lastUsed([HOME, OFFICE])?.id).toBe("o");
+    expect(lastUsed([OFFICE, HOME])?.id).toBe("o");
   });
-  it("picks the nearest one when two are within the radius", () => {
-    const near = row("n", "Nani", 24.91671, 79.58331, "2026-10-01T10:00:00Z");
-    expect(pickOnOpen([HOME, near], { lat: 24.91671, lng: 79.58331 }, 500)).toEqual({ id: "n", asks: false });
-  });
-  it("is far from all: nothing is selected and the page asks", () => {
-    expect(pickOnOpen([HOME, OFFICE], { lat: 25.5, lng: 80.2 }, 200)).toEqual({ id: null, asks: true });
-  });
-  it("has no phone place (no permission): the last used one stays selected and nothing asks", () => {
-    expect(pickOnOpen([HOME, OFFICE], null, 200)).toEqual({ id: "o", asks: false });
-  });
-  it("skips a row that has no place of its own when it measures", () => {
+  it("does not look at where any row is", () => {
     const flat = row("f", "Flat", null, null, "2026-11-06T10:00:00Z");
-    expect(pickOnOpen([flat, HOME], { lat: 24.9167, lng: 79.5833 }, 200)).toEqual({ id: "h", asks: false });
+    expect(lastUsed([flat, HOME, OFFICE])?.id).toBe("f");
   });
-  it("is none for an empty list", () => {
-    expect(pickOnOpen([], { lat: 24, lng: 79 }, 200)).toEqual({ id: null, asks: false });
+  it("is null for an empty list", () => {
+    expect(lastUsed([])).toBeNull();
+  });
+  it("does not change the list it is given", () => {
+    const list = [HOME, OFFICE];
+    lastUsed(list);
+    expect(list.map((r) => r.id)).toEqual(["h", "o"]);
   });
 });
 

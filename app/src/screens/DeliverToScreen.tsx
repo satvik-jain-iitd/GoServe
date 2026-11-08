@@ -1,11 +1,11 @@
 // Story #976, board C2-AddressSheet: the Deliver to page. The saved addresses with their distance from the phone, a search, two ways to add one, and a small sheet to edit or remove.
 import { useState } from "react";
-import { distanceM, distanceWord, type Place, type SavedAddress } from "../lib/addresses";
+import { distanceM, distanceWord, NEAR_M, type Place, type SavedAddress } from "../lib/addresses";
 import { isPin } from "../lib/area";
 import { useSheetFit } from "../ui";
 
 type Props = {
-  list: SavedAddress[]; selectedId: string | null; here: Place | null; nearM: number;
+  list: SavedAddress[]; selectedId: string | null; here: Place | null;
   onBack: () => void; onSelect: (id: string) => void; onUseLocation: () => void; onAddNew: (words?: string) => void;
   onEdit: (id: string, a: { label: string; address: string; pin: string }) => Promise<boolean>; onRemove: (id: string) => Promise<void>;
 };
@@ -17,7 +17,7 @@ const SEND = I(<path d="M21 3L3 11l7 3 3 7z" />);
 const PIN = I(<><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.5" /></>);
 const iconFor = (label: string, near: boolean) => (near ? SEND : /home|ghar|nani|house/i.test(label) ? HOME : /office|work|shop/i.test(label) ? BRIEFCASE : PIN);
 
-export function DeliverToScreen({ list, selectedId, here, nearM, onBack, onSelect, onUseLocation, onAddNew, onEdit, onRemove }: Props) {
+export function DeliverToScreen({ list, selectedId, here, onBack, onSelect, onUseLocation, onAddNew, onEdit, onRemove }: Props) {
   const [query, setQuery] = useState("");
   const [menuFor, setMenuFor] = useState<SavedAddress | null>(null);
   const [editing, setEditing] = useState<SavedAddress | null>(null);
@@ -45,10 +45,10 @@ export function DeliverToScreen({ list, selectedId, here, nearM, onBack, onSelec
           <ul className="ui-saved-list">
             {shown.map((a) => {
               const m = here && a.lat !== null && a.lng !== null ? distanceM(here, { lat: a.lat, lng: a.lng }) : null;
-              const near = m !== null && m <= nearM;
+              const near = m !== null && m <= NEAR_M;
               return (
                 <li key={a.id} className="ui-saved-row">
-                  <span className="ui-chip-box" aria-hidden="true">{iconFor(a.label, near)}<span className="mono">{m === null ? "" : distanceWord(m, nearM)}</span></span>
+                  <span className="ui-chip-box" aria-hidden="true">{iconFor(a.label, near)}<span className="mono">{m === null ? "" : distanceWord(m, NEAR_M)}</span></span>
                   <button type="button" className="ui-saved-main" aria-label={`Deliver to ${a.label}`} onClick={() => onSelect(a.id)}>
                     <span className="ui-saved-label">{a.label}{a.id === selectedId && <span className="ui-tag ready">Selected</span>}</span>
                     <span className="ui-saved-addr">{a.address}</span>
@@ -59,7 +59,7 @@ export function DeliverToScreen({ list, selectedId, here, nearM, onBack, onSelec
             })}
           </ul>
         </section>
-        <p className="mono ui-deliver-foot">The one nearest you is picked when the app opens. Far from all of them, the app asks.</p>
+        <p className="mono ui-deliver-foot">The last address you used is picked when the app opens.</p>
       </div>
       {menuFor && <MenuSheet a={menuFor} onClose={() => setMenuFor(null)} onEdit={() => { setEditing(menuFor); setMenuFor(null); }} onRemove={async () => { const id = menuFor.id; setMenuFor(null); await onRemove(id); }} />}
       {editing && <EditSheet a={editing} onClose={() => setEditing(null)} onSave={async (v) => { if (await onEdit(editing.id, v)) setEditing(null); else return "That did not save. Try again."; }} />}

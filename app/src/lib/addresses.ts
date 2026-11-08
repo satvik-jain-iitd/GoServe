@@ -11,25 +11,13 @@ export const distanceM = (a: Place, b: Place): number => {   // haversine: right
   const h = Math.sin(rad(b.lat - a.lat) / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(rad(b.lng - a.lng) / 2) ** 2;
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
 };
+export const NEAR_M = 200;   // story #1035: only the "here" word on a row; nothing is picked by distance any more (the param address_near_m is dormant)
 export const distanceWord = (m: number, nearM: number): string => (m <= nearM ? "here" : `${Math.max(1, Math.round(m / 1000))} km`);
 
-const placeOf = (a: SavedAddress): Place | null => (typeof a.lat === "number" && typeof a.lng === "number" ? { lat: a.lat, lng: a.lng } : null);
 const byUsed = (a: SavedAddress, b: SavedAddress) => b.last_used_at.localeCompare(a.last_used_at);
 
-// On open: the saved address nearest the phone and within `nearM` is picked. Far from all of them, none is picked and the Deliver to page asks.
-// No phone place (no permission): the last used one stays picked. A row with no place of its own is never measured.
-export function pickOnOpen(list: SavedAddress[], here: Place | null, nearM: number): { id: string | null; asks: boolean } {
-  if (list.length === 0) return { id: null, asks: false };
-  if (!here) return { id: [...list].sort(byUsed)[0].id, asks: false };
-  let best: { id: string; m: number } | null = null;
-  for (const a of list) {
-    const p = placeOf(a);
-    if (!p) continue;
-    const m = distanceM(here, p);
-    if (m <= nearM && (!best || m < best.m)) best = { id: a.id, m };
-  }
-  return best ? { id: best.id, asks: false } : { id: null, asks: true };
-}
+// Story #1035: on open the address used last is picked, always. No nearest-200 m rule, no ask on open (owner, 8 Nov 2026). The row with the newest last_used_at; null for an empty list.
+export const lastUsed = (list: SavedAddress[]): SavedAddress | null => [...list].sort(byUsed)[0] ?? null;
 
 // The single address saved before this story becomes the first row, labelled Home. A missing address or a pin that is not six digits makes nothing.
 export function firstFromProfile(p: { address: string; pin: string | null }): NewAddress | null {
@@ -58,8 +46,4 @@ export async function removeAddress(c: Client, id: string): Promise<boolean> {
 }
 export async function touchAddress(c: Client, id: string): Promise<void> {
   await c.from("addresses").update({ last_used_at: new Date().toISOString() }).eq("id", id);
-}
-export async function nearMetres(c: Client): Promise<number> {
-  const { data, error } = await c.rpc("address_near_m");
-  return !error && typeof data === "number" && data > 0 ? data : 200;
 }

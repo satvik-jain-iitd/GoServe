@@ -18,25 +18,27 @@ async function open(page: Page, context: Parameters<typeof setup>[0], at: { lati
 const AT_HOME = { latitude: 28.5678, longitude: 77.2433 };
 const dialog = (page: Page) => page.getByRole("heading", { name: "Deliver to", exact: true });
 
-test("S1 phone at Home: Home is picked on open, the top says Home, and the page marks it Selected with here", async ({ page, context }) => {
+test("S1 story #1035: phone at Home, the one used last (Office) is still picked on open; Home shows here, Office 8 km", async ({ page, context }) => {
   await open(page, context, AT_HOME);
-  await expect(page.getByRole("button", { name: /^Home\b/ })).toContainText("Green Park");
-  await page.getByRole("button", { name: /^Home\b/ }).click();
+  await expect(page.getByRole("button", { name: /^Office\b/ })).toContainText("Connaught Place");
+  await expect(dialog(page)).toHaveCount(0);
+  await page.getByRole("button", { name: /^Office\b/ }).click();
   await expect(dialog(page)).toBeVisible();
   await expect(page.getByText("2 saved")).toBeVisible();
-  const home = page.getByRole("listitem").filter({ hasText: "Home" });
-  await expect(home).toContainText("Selected");
-  await expect(home).toContainText("here");
+  await expect(page.getByRole("listitem").filter({ hasText: "Office" })).toContainText("Selected");
+  await expect(page.getByRole("listitem").filter({ hasText: "Home" })).toContainText("here");
   await expect(page.getByRole("listitem").filter({ hasText: "Office" })).toContainText("8 km");
 });
 
-test("S2 phone 3 km from every saved address: the Deliver to page asks and nothing is Selected", async ({ page, context }) => {
+test("S2 story #1035: phone far from every saved address, the page does not open by itself, the last used one is picked, and the radius is never read", async ({ page, context }) => {
+  let reads = 0;
+  await context.route("**/rest/v1/rpc/address_near_m", (r) => { reads++; return r.abort(); });
   await open(page, context, { latitude: 28.5, longitude: 77.3 });
-  await expect(dialog(page)).toBeVisible();
-  await expect(page.getByText("Selected")).toHaveCount(0);
-  await expect(page.getByText(/Far from all of them, the app asks/)).toBeVisible();
-  await page.getByRole("listitem").filter({ hasText: "Office" }).getByRole("button", { name: "Deliver to Office" }).click();
-  await expect(page.getByRole("button", { name: /^Office\b/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Office\b/ })).toContainText("Connaught Place");
+  await expect(dialog(page)).toHaveCount(0);
+  expect(reads).toBe(0);
+  await page.getByRole("button", { name: /^Office\b/ }).click();
+  await expect(page.getByText(/The last address you used is picked when the app opens/)).toBeVisible();
 });
 
 test("S3 no location permission: the last used address stays picked and the page does not open by itself", async ({ page, context }) => {
@@ -47,7 +49,7 @@ test("S3 no location permission: the last used address stays picked and the page
 
 test("S4 Add new address with a label saves a row, shows it with its distance, and the Bill uses it", async ({ page, context }) => {
   const net = await open(page, context, AT_HOME);
-  await page.getByRole("button", { name: /^Home\b/ }).click();
+  await page.getByRole("button", { name: /^Office\b/ }).click();   // story #1035: the last used one is on top
   await page.getByRole("button", { name: "Add new address" }).click();
   await page.getByLabel(/^Label/).fill("Nani's house");
   await page.getByLabel(/Address/).fill("House 9, Hauz Khas Village, New Delhi");
@@ -60,18 +62,18 @@ test("S4 Add new address with a label saves a row, shows it with its distance, a
 
 test("S5 Remove the selected address: the next most recent is Selected; with none left the first-visit screen shows", async ({ page, context }) => {
   await open(page, context, AT_HOME);
-  await page.getByRole("button", { name: /^Home\b/ }).click();
-  await page.getByRole("button", { name: "Edit or remove Home" }).click();
-  await page.getByRole("button", { name: "Remove", exact: true }).click();
-  await expect(page.getByRole("listitem").filter({ hasText: "Office" })).toContainText("Selected");
+  await page.getByRole("button", { name: /^Office\b/ }).click();
   await page.getByRole("button", { name: "Edit or remove Office" }).click();
+  await page.getByRole("button", { name: "Remove", exact: true }).click();
+  await expect(page.getByRole("listitem").filter({ hasText: "Home" })).toContainText("Selected");
+  await page.getByRole("button", { name: "Edit or remove Home" }).click();
   await page.getByRole("button", { name: "Remove", exact: true }).click();
   await expect(page.getByRole("button", { name: "Use my location" })).toBeVisible();
 });
 
 test("S6 Edit changes the label and the words", async ({ page, context }) => {
   const net = await open(page, context, AT_HOME);
-  await page.getByRole("button", { name: /^Home\b/ }).click();
+  await page.getByRole("button", { name: /^Office\b/ }).click();
   await page.getByRole("button", { name: "Edit or remove Office" }).click();
   await page.getByRole("button", { name: "Edit", exact: true }).click();
   await page.getByLabel(/^Label/).fill("Work");
@@ -90,7 +92,7 @@ test("S7 today's single saved address becomes the first row labelled Home, once"
 
 test("S8 the search box on the Deliver to page is 48 px high, not stretched down the column", async ({ page, context }) => {
   await open(page, context, AT_HOME);
-  await page.getByRole("button", { name: /^(Home|Deliver to)\b/ }).click();
+  await page.getByRole("button", { name: /^(Office|Deliver to)\b/ }).click();
   const box = (await page.locator(".ui-deliver-to .ui-search-box").boundingBox())!;
   expect(Math.round(box.height)).toBe(48);
   const cards = (await page.locator(".ui-two-cards").boundingBox())!;
