@@ -99,6 +99,11 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     const net = await setup(context, page, [order("preparing", "2020-01-01T10:02:00Z")]);
     net.state.tracking = { rider_lat: null, rider_lng: null, eta_lo_min: null, eta_hi_min: null, eta_late: false, updated_at: NINE.toISOString() };
     await page.goto(path); await expect(page.getByText("Working out the time")).toBeVisible(); },
+  "menu-far": async (context, page, path) => {   // story #1056, board SW2: the menu with Home kept in the header and the strip "You are 6 km from Home · Deliver here"
+    const net = await setup(context, page, [], { pin: "110016" });
+    net.state.addresses = [{ id: "h1", label: "Home", address: "C-128, Green Avenue Colony, Satai Road, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" }];
+    await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.6139, longitude: 77.209 });
+    await page.goto(path); await expect(page.getByText("You are 6 km from Home")).toBeVisible(); },
   "add-dish": async (context, page, path) => {   // story 923: the admin's Add dish form
     const net = await setup(context, page); net.state.admin = true; await page.goto(path);
     await page.getByRole("button", { name: "City", exact: true }).click(); await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();

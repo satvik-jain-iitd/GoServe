@@ -32,7 +32,7 @@ import { AccountScreen } from "./screens/AccountScreen";
 import { DeliverToScreen } from "./screens/DeliverToScreen";
 import { placeSearch } from "./lib/placeSearch";
 import { PinMapScreen } from "./screens/PinMapScreen";
-import { addAddress, editAddress, firstFromProfile, listAddresses, lastUsed, removeAddress, touchAddress, type SavedAddress } from "./lib/addresses";
+import { distanceM, FAR_M, addAddress, editAddress, firstFromProfile, listAddresses, lastUsed, removeAddress, touchAddress, type SavedAddress } from "./lib/addresses";
 import { currentPlace, type Place } from "./lib/locate";
 import { currentSession, scopeFor } from "./lib/session";
 import { MenuScreen } from "./screens/MenuScreen";
@@ -828,7 +828,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       if (!kitchenId) throw new Error("Choose where the food goes first.");   // story #940: the order is placed for a kitchen by POST /orders, as the signed-in user
       const { order, confirm } = await placeOrderV2({ kitchenId, pin: pin ?? (lock ? "" : readPinOrEmpty()), items, address: address.trim(), key: keyRef.current.key, expectedPaise: total, code: offers.code, none: offers.none, drop: dropFor(from, fixAddress, address), instructions: note }, v2Deps());
       setPlaced(order);
-      capture("order_placed", { items_count: lines.length });
+      capture("order_placed", { items_count: lines.length, phone_to_address_m: farM === null ? null : Math.round(farM) });   // story #1056, rule 10: how often the phone is far from the chosen address at an order
       setPlacedLines(lines.map((l) => ({ name: l.dish.name, qty: l.qty, paise: l.line_paise })));
       if (!demo) void savePlatform(getClient(), order.id, clientPlatform(navigator.userAgent));   // story H14: the iPhone share of orders
       setConfirmCfg(confirm);
@@ -883,6 +883,11 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} onDecline={decline} onHandover={handover} gate={gate} />
   );
   const kitchenView = lock === "kitchen" ? <KitchenGate>{kitchenScreen}</KitchenGate> : kitchenScreen(null);
+  // Story #1056 (board SW2): the header keeps the chosen address; past 2 km from it the phone is far, and a strip offers "Deliver here" (the map at the phone, then the details).
+  // Only the phone's place when location is already allowed and the saved lat and lng: no map call, no geocode, nothing asked.
+  const chosen = (saved ?? []).find((r) => r.id === selectedId);
+  const farM = here && chosen && chosen.lat !== null && chosen.lng !== null ? distanceM(here, { lat: chosen.lat, lng: chosen.lng }) : null;
+  const far = farM !== null && farM > FAR_M && chosen ? { km: Math.round(farM / 1000), label: chosen.label, onHere: () => setPinMap({ center: here! }) } : null;
   const needArea = lock === "customer" && step !== "placed" && step !== "orders" && !(pin && (area?.kind === "ok" || area?.kind === "closed"));
   // Story #667: with the phone code on, the first screen is the number and the code (or Google); nothing else shows before it.
   const customerView = wall && (signedIn === null || otpSetting === undefined) ? <div className="ui-pad"><Skeleton lines={3} /></div> : wall && signedIn === false ? (
@@ -908,7 +913,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             closed={shown?.kind === "closed" ? closedCopy(shown.opens_at, shown.paused === true) : null}
             tellMe={tellMe} tellMeError={tellMeError} onTellMe={tellMeWhenOpen}
             onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
-            onChangePin={() => setStep("deliver")} onOrders={() => setStep("orders")} address={address} label={saved?.find((r) => r.id === selectedId)?.label ?? "Deliver to"} photo={photo} onProfile={() => setStep("account")} />
+            onChangePin={() => setStep("deliver")} onOrders={() => setStep("orders")} address={address} label={saved?.find((r) => r.id === selectedId)?.label ?? "Deliver to"} photo={photo} onProfile={() => setStep("account")} far={far} />
         )}
         {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} onAgain={orderAgain} againLine={againLine} />}
         {step === "account" && (
