@@ -104,7 +104,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await setup(context, page, [], { pin: null }); await page.goto(path); await expect(page.getByRole("button", { name: "Use my location" })).toBeVisible(); },
   "alerts-ask": async (context, page, path) => {   // story #1049 part 2, board N0: order alerts, step 2 of 4
     await setup(context, page, [], { pin: null });
-    await context.addInitScript(() => { Object.defineProperty(Notification, "permission", { get: () => "default", configurable: true }); });
+    await context.addInitScript(() => { if (typeof Notification === "undefined") (window as unknown as { Notification: unknown }).Notification = function () {}; Object.defineProperty(Notification, "permission", { get: () => "default", configurable: true }); });   // an iPhone tab has no Notification: the picture needs one
     await page.goto(path); await expect(page.getByRole("heading", { name: "Get order alerts" })).toBeVisible(); },
   "first-open-pin": async (context, page, path) => {   // board A1p: after Use my location, the full map, the same screen as C6
     const net = await setup(context, page, [], { pin: null });
