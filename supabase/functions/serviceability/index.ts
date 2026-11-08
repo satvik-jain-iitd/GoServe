@@ -17,14 +17,15 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
   const q = new URL(req.url).searchParams;
   const lat = num(q.get("lat"), 90), lng = num(q.get("lng"), 180);
   if (lat === null || lng === null) return json(400, { ok: false, error: "invalid_place" });
+  const pin = /^[0-9]{6}$/.test(q.get("pin") ?? "") ? q.get("pin") : null;   // story #1102: the pin the map read for this place, so the strip and the save use one rule
   try {
-    return json(200, serviceability({ lat, lng }, await deps.kitchens(), deps.now()));
+    return json(200, serviceability({ lat, lng }, await deps.kitchens(), deps.now(), pin));
   } catch {
     return json(502, { ok: false, error: "serviceability_unavailable" });   // no detail: a database message must never reach an app
   }
 };
 
-const COLUMNS = "id,name,lat,lng,radius_m,prep_minutes,open,active,opens_at,closes_at";
+const COLUMNS = "id,name,lat,lng,radius_m,prep_minutes,open,active,opens_at,closes_at,pin_codes";
 const live: Deps = {
   now: () => new Date(),
   kitchens: async () => {

@@ -23,10 +23,10 @@ type Props = {
   onPoint?: (p: { at: Place; words: Looked | null }) => void;
 
   onBack: () => void; onSearch: () => void; onSave: (a: Saved) => void;
-  lookup?: (p: Place) => Promise<Looked | null>; serve?: (p: Place) => Promise<Serve | null>;
+  lookup?: (p: Place) => Promise<Looked | null>; serve?: (p: Place, pin: string | null) => Promise<Serve | null>;
 };
 
-export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, kitchen, onPoint, onBack, onSearch, onSave, lookup = (p) => findAddress(p.lat, p.lng), serve = (p) => (kitchen ? Promise.resolve(null) : serveAt(p)) }: Props) {
+export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, kitchen, onPoint, onBack, onSearch, onSave, lookup = (p) => findAddress(p.lat, p.lng), serve = (p, pin) => (kitchen ? Promise.resolve(null) : serveAt(p, undefined, pin)) }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const live = useRef<{ map: LMap; L: typeof import("leaflet"); dot: Marker | null } | null>(null);
   const [point, setPoint] = useState<Place>(center);
@@ -49,7 +49,8 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(async () => {
       const mine = ++ask.current;
-      const [w, s] = await Promise.all([fns.current.lookup(p).catch(() => null), fns.current.serve(p).catch(() => null)]);
+      const w = await fns.current.lookup(p).catch(() => null);   // story #1102: the serviceability answer needs the pin the lookup read
+      const s = await fns.current.serve(p, w?.pin ?? null).catch(() => null);
       if (mine !== ask.current) return;   // a newer rest has taken over
       if (w) { setWords(w); setFailed(false); } else setFailed(true);   // the last words stay when this one fails; the point still counts
       if (s) setServed(s);

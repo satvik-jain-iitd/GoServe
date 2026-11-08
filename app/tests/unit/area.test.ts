@@ -137,3 +137,21 @@ describe("kitchen by location", () => {
     expect(SHOW_KITCHEN_NAME).toBe(false);
   });
 });
+
+
+// Story #1102: one serviceability rule, the same as supabase/functions/serviceability: a kitchen serves a place when it lists the pin OR the place is inside its radius.
+describe("chooseKitchen: the same rule as the map strip (story #1102)", () => {
+  const k: AreaKitchen = { id: "k", name: "Varca", pin_codes: ["403725"], lat: 15.25, lng: 73.9417, radius_m: 3000, open: true, active: true, opens_at: null, closes_at: null };
+  it("a place at the kitchen is served although the map read another pin (403721 next to a kitchen that lists 403725)", () => {
+    expect(chooseKitchen([k], "403721", { lat: 15.25, lng: 73.9417 })).toEqual({ kind: "ok", kitchen: k });
+  });
+  it("a place far outside the radius with an unlisted pin is none", () => {
+    expect(chooseKitchen([k], "403721", { lat: 15.5, lng: 73.9417 })).toEqual({ kind: "none" });
+  });
+  it("a listed pin with no place is served, as before", () => {
+    expect(chooseKitchen([k], "403725")).toEqual({ kind: "ok", kitchen: k });
+  });
+  it("an unlisted pin with no place is none, as before", () => {
+    expect(chooseKitchen([k], "403721")).toEqual({ kind: "none" });
+  });
+});

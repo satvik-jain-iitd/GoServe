@@ -25,10 +25,10 @@ export function stripsFor(o: { serve: Serve | null; here: Place | null; pin: Pla
 const kitchenWord = (m: number) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`);
 
 // One call to the serviceability function: can a kitchen reach this place, and how far is the nearest one. null = could not ask.
-export async function serveAt(p: Place, deps?: V2Deps): Promise<Serve | null> {
+export async function serveAt(p: Place, deps?: V2Deps, pin?: string | null): Promise<Serve | null> {   // story #1102: the pin the map read goes with the place
   try {
     const d = deps ?? (await import("./ordersV2")).v2Deps();
-    const res = await d.fetchFn(`${d.url}/functions/v1/serviceability?lat=${p.lat}&lng=${p.lng}`, { headers: { apikey: d.anon, authorization: `Bearer ${await d.token()}` } });
+    const res = await d.fetchFn(`${d.url}/functions/v1/serviceability?lat=${p.lat}&lng=${p.lng}${pin ? `&pin=${pin}` : ""}`, { headers: { apikey: d.anon, authorization: `Bearer ${await d.token()}` } });
     if (!res.ok) return null;
     const body = await res.json();
     if (body?.ok !== true || typeof body.serviceable !== "boolean" || !Array.isArray(body.kitchens)) return null;
