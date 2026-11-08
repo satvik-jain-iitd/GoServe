@@ -51,6 +51,7 @@ test("S4 Add new address with a label saves a row, shows it with its distance, a
   const net = await open(page, context, AT_HOME);
   await page.getByRole("button", { name: /^Office\b/ }).click();   // story #1035: the last used one is on top
   await page.getByRole("button", { name: "Add new address" }).click();
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();   // story #1037: the map is the door
   await page.getByLabel(/^Label/).fill("Nani's house");
   await page.getByLabel(/Address/).fill("House 9, Hauz Khas Village, New Delhi");
   await page.getByLabel("Pin code").fill("110016");

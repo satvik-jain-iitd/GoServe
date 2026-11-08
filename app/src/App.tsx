@@ -31,6 +31,7 @@ import { openTill } from "./lib/browse";
 import { AccountScreen } from "./screens/AccountScreen";
 import { DeliverToScreen } from "./screens/DeliverToScreen";
 import { placeSearch } from "./lib/placeSearch";
+import { PinMapScreen } from "./screens/PinMapScreen";
 import { addAddress, editAddress, firstFromProfile, listAddresses, lastUsed, removeAddress, touchAddress, type SavedAddress } from "./lib/addresses";
 import { currentPlace, type Place } from "./lib/locate";
 import { currentSession, scopeFor } from "./lib/session";
@@ -447,7 +448,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [saved, setSaved] = useState<SavedAddress[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [here, setHere] = useState<Place | null>(null);
-  const [adding, setAdding] = useState<null | { mode: "ask" | "hand"; words?: string }>(null);
+  const [adding, setAdding] = useState<null | { mode: "ask" | "hand"; words?: string; pin?: string; from?: Place; located?: string }>(null);
+  const [pinMap, setPinMap] = useState<null | { center: Place }>(null);   // story #1037: the one full-screen map, the door for Add new address, Use current location and a tapped search result
+  const mapStart = (): Place => {   // where the map opens when nothing says otherwise: the phone, else the picked address, else the city centre
+    const row = (saved ?? []).find((r) => r.id === selectedId);
+    return here ?? (row && row.lat !== null && row.lng !== null ? { lat: row.lat, lng: row.lng } : { lat: 28.6139, lng: 77.209 });
+  };
   const opened = useRef(false);
   const moved = useRef(false);   // true once the customer has left the first menu (the Bill, the placed screen, any page)
   if (step !== "menu") moved.current = true;
@@ -864,12 +870,15 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const customerView = wall && (signedIn === null || otpSetting === undefined) ? <div className="ui-pad"><Skeleton lines={3} /></div> : wall && signedIn === false ? (
     <OtpSheet welcome googleOnly={!gate} phone={phone} onClose={() => undefined}
       onVerified={(p) => { setPhone(p); setVerified(true); setSignedIn(true); }} />
+  ) : pinMap ? (
+    <PinMapScreen center={pinMap.center} confirmLabel="Confirm & proceed" onBack={() => setPinMap(null)} onSearch={() => setPinMap(null)}
+      onConfirm={(p) => { setPinMap(null); setAdding({ mode: "hand", words: p.words?.address ?? "", pin: p.words?.pin, from: p.at, located: p.words?.address }); }} />
   ) : adding ? (
     <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} adding={{ ...adding, onBack: () => setAdding(null) }} onPlace={(pl) => void saveNew(pl)} />
   ) : step === "deliver" ? (
-    <DeliverToScreen list={saved ?? []} selectedId={selectedId} here={here} search={(q) => placeSearch(q)} onPlace={(h) => setAdding({ mode: "hand", words: h.address })} onBack={() => setStep("menu")}
+    <DeliverToScreen list={saved ?? []} selectedId={selectedId} here={here} search={(q) => placeSearch(q)} onPlace={(h) => setPinMap({ center: { lat: h.lat, lng: h.lng } })} onBack={() => setStep("menu")}
       onSelect={(id) => { const r = (saved ?? []).find((x) => x.id === id); if (r) { useSaved(r, true); setStep("menu"); } }}
-      onUseLocation={() => setAdding({ mode: "ask" })} onAddNew={(words) => setAdding({ mode: "hand", words })}
+      onUseLocation={() => { void currentPlace().then((p) => setPinMap({ center: p }), () => setPinMap({ center: mapStart() })); }} onAddNew={() => setPinMap({ center: mapStart() })}
       onEdit={async (id, v) => { const ok = await editAddress(getClient(), id, v); if (ok) { setSaved((cur) => (cur ?? []).map((r) => (r.id === id ? { ...r, ...v } : r))); if (id === selectedId) { setAddress(v.address); if (v.pin !== pin) choosePin(v.pin); } } return ok; }}
       onRemove={dropSaved} />
   ) : needArea ? (

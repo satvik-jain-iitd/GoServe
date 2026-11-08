@@ -6,7 +6,7 @@ import type { Area } from "../lib/area";
 import { currentPlace, findAddress, type Place } from "../lib/locate";
 
 type Props = { pin: string | null; address: string; area: Area | null; busy: boolean; error: string | null; onPlace: (p: { pin: string; address: string; label?: string; from?: Place; located?: string }) => void;
-  adding?: { mode: "ask" | "hand"; words?: string; onBack: () => void };   // story #976: opened from the Deliver to page to add one more address; it asks for a label too
+  adding?: { mode: "ask" | "hand"; words?: string; pin?: string; from?: Place; located?: string; onBack: () => void };   // story #976: opened from the Deliver to page to add one more address; it asks for a label too
 };
 type Mode = "ask" | "found" | "hand";
 
@@ -14,11 +14,11 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace, ad
   const [mode, setMode] = useState<Mode>(adding ? adding.mode : pin ? "hand" : "ask");
   const [label, setLabel] = useState("");   // a pin that was already given (not served, or being looked up) goes straight to the form
   const [address, setAddress] = useState(adding ? adding.words ?? "" : start);
-  const [text, setText] = useState(adding ? "" : pin ?? "");
-  const [place, setPlace] = useState<Place | undefined>(undefined);
+  const [text, setText] = useState(adding ? adding.pin ?? "" : pin ?? "");   // story #1037: the pin map hands over the pin code, the place and the words it found
+  const [place, setPlace] = useState<Place | undefined>(adding?.from);
   const [pinMissing, setPinMissing] = useState(false);   // story #969: the location found an address but no pin, even from the nearest tagged object
   const [from, setFrom] = useState<"ola" | "osm" | null>(null);   // story #998: who named the words; the Ola credit shows only for Ola's
-  const [located, setLocated] = useState<string | undefined>(undefined);   // story #910: the address the location found, to tell a hand edit from it
+  const [located, setLocated] = useState<string | undefined>(adding?.located);   // story #910: the address the location found, to tell a hand edit from it
   const [finding, setFinding] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const none = area?.kind === "none";

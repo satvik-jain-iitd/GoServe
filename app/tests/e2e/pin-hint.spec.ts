@@ -30,6 +30,7 @@ test("S2 the saved address edit sheet and Add new address show the same hint", a
   await page.goto("/customer/");
   await page.getByRole("button", { name: /^(Home|Deliver to)\b/ }).click();
   await page.getByRole("button", { name: "Add new address" }).click();
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();   // story #1037: the map first, then the form
   await expect(page.getByLabel("Pin code")).toHaveAttribute("placeholder", "000000");
   await page.getByRole("button", { name: "Back", exact: true }).click();
   await page.getByRole("button", { name: "Edit or remove Home" }).click();
