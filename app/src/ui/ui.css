@@ -727,3 +727,9 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 
 /* Story 1049 part 2, board N0: the bell in a soft lime circle. */
 .ui-bellbadge { width: 96px; height: 96px; border-radius: var(--gs-radius-pill); background: var(--gs-lime-soft); display: flex; align-items: center; justify-content: center; color: var(--md-primary); margin: 8px auto; }
+
+/* Story 1049 part 3, board NK-A: the place of a pin no kitchen serves. */
+.ui-nkplace { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-top: 1px solid var(--md-outline-variant); border-bottom: 1px solid var(--md-outline-variant); color: var(--md-primary); }
+.ui-nkplace > span { display: flex; flex-direction: column; color: var(--md-on-surface); min-width: 0; }
+.ui-nkplace b { font-size: 16px; font-weight: 600; }
+.ui-nkplace > span > span { font-size: 14px; color: var(--gs-text-muted); }
