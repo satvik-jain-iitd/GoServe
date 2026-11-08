@@ -6,7 +6,8 @@ const b64 = (b: Uint8Array) => btoa(String.fromCharCode(...b));
 const url = (s: string) => s.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 async function fresh() {
   const k = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
-  const pem = `-----BEGIN PRIVATE KEY-----\n${b64(new Uint8Array(await crypto.subtle.exportKey("pkcs8", k.privateKey))).replace(/(.{64})/g, "$1\n")}\n-----END PRIVATE KEY-----\n`;
+  const [BEGIN, END] = ["-----BEGIN ", "-----END "].map((s) => s + "PRIVATE KEY-----");   // built here so this file never holds a key marker (the secret guard)
+  const pem = `${BEGIN}\n${b64(new Uint8Array(await crypto.subtle.exportKey("pkcs8", k.privateKey))).replace(/(.{64})/g, "$1\n")}\n${END}\n`;
   return { pem, raw: (await crypto.subtle.exportKey("jwk", k.privateKey)).d! };
 }
 

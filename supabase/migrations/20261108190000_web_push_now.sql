@@ -6,7 +6,7 @@
 --    each phone would have asked for (push_latest), so the words travel inside the encrypted push and the phone does not have to ask.
 -- 3. push_web_forget_v2 forgets a subscription the push service says is dead. push_web_done_v2 marks the row sent and writes the trace line push_sent (the end of the clock
 --    that starts at push_queued): the before and after numbers of the story come from those two lines.
--- 4. push_web_retry (pg_cron, every minute, the same cron that already prunes rider pings): a row still unsent after a minute is asked again, 3 times at most; older than 10 minutes it is dead. This
+-- 4. push_web_retry (pg_cron, every minute, the same cron that already prunes rider pings): a row never claimed after 30 seconds, or claimed and still unsent after a minute, is asked again, 3 times at most; older than 10 minutes it is dead. This
 --    is the retry path, so MAIN 34 (which only drained and retried) can be switched off once this runs on the database.
 -- The claim is atomic: the function and MAIN 34's push_outbox_take both take a row only while taken_at is null (an UPDATE re-checks it under the row lock), so exactly one of them sends.
 -- ORDER OF ROLLOUT: the Edge Function with the VAPID secrets first, then this migration. Without the secrets the function answers 503 and the row stays for MAIN 34.
@@ -88,8 +88,10 @@ begin
            returning order_id, status loop
     if r.order_id is not null then perform trace_write(r.order_id, 'db', 'push_dead', r.status, 'web: not sent', null); end if;
   end loop;
+  -- asked again: a claimed row stalled for a minute (the function died after the claim), or a row nobody ever claimed for 30 seconds (the pg_net call was lost)
   for r in update push_outbox set taken_at = null, reoffers = reoffers + 1
-           where sent_at is null and dead_at is null and taken_at < now() - interval '1 minute' and reoffers < 3 returning id loop
+           where sent_at is null and dead_at is null and reoffers < 3
+             and ((taken_at < now() - interval '1 minute') or (taken_at is null and created_at < now() - interval '30 seconds')) returning id loop
     perform push_outbox_ask(r.id);
     n := n + 1;
   end loop;

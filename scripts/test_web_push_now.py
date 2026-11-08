@@ -61,6 +61,11 @@ class WebPushNow(unittest.TestCase):
         old = run(*SUBS, PLACE, f"update push_outbox set created_at = now() - interval '11 minutes', taken_at = null where id = {ROW}", "select push_web_retry()",
                   f"select (select dead_at is not null from push_outbox where id = {ROW}) as dead")
         self.assertTrue(old["dead"])
+        lost = run(*SUBS, PLACE, f"update push_outbox set created_at = now() - interval '40 seconds' where id = {ROW}", "create temp table nn as select push_web_retry() as n",
+                   f"select (select n from nn) as n, (select reoffers from push_outbox where id = {ROW}) as re")
+        self.assertEqual([lost["n"], lost["re"]], [1, 1])   # never claimed for 30 s: the pg_net call was lost, ask again
+        fresh = run(*SUBS, PLACE, "create temp table nn as select push_web_retry() as n", "select (select n from nn) as n")
+        self.assertEqual(fresh["n"], 0)   # a new row is still on its way
         done = run(*SUBS, PLACE, f"update push_outbox set sent_at = now(), taken_at = now() - interval '2 minutes' where id = {ROW}", "create temp table nn as select push_web_retry() as n", "select (select n from nn) as n")
         self.assertEqual(done["n"], 0)
 
