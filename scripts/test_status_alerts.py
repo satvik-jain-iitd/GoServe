@@ -5,7 +5,7 @@ import os, sys, unittest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from test_schema import TOKEN, sql, migration_inside
 
-MIG = migration_inside(["20261109100000_status_alerts.sql"], "to_regproc('public.push_decline_words(text, text)') is not null")   # empty once dev has it
+MIG = migration_inside(["20261109100000_status_alerts.sql"], "to_regprocedure('public.push_decline_words(text,text)') is not null")   # empty once dev has it
 UID = "00000000-0000-0000-0000-0000000000e9"
 K = "00000000-0000-0000-0000-0000000000b9"
 PLACE = (f"insert into kitchens (id, name, pin_codes, lat, lng) values ('{K}', 'Test', array['110016'], 28.5494, 77.2001); "

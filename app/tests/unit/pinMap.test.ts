@@ -42,6 +42,12 @@ describe("serveAt", () => {
     expect(await serveAt({ lat: 28.55, lng: 77.2 }, deps(f))).toEqual({ serviceable: true, kitchenM: 1230 });
     expect(url).toBe("https://x.supabase.co/functions/v1/serviceability?lat=28.55&lng=77.2");
   });
+  it("sends the pin the map read, so the strip and the save use one rule (story #1102)", async () => {
+    let url = "";
+    const f = (async (u: string | URL | Request) => { url = String(u); return new Response(JSON.stringify({ ok: true, serviceable: true, request_here: false, kitchens: [] })); }) as typeof fetch;
+    await serveAt({ lat: 15.25, lng: 73.9417 }, deps(f), "403721");
+    expect(url).toBe("https://x.supabase.co/functions/v1/serviceability?lat=15.25&lng=73.9417&pin=403721");
+  });
   it("not serviceable has no kitchen distance", async () => {
     const f = (async () => new Response(JSON.stringify({ ok: true, serviceable: false, request_here: true, kitchens: [] }))) as typeof fetch;
     expect(await serveAt({ lat: 10, lng: 70 }, deps(f))).toEqual({ serviceable: false, kitchenM: null });
