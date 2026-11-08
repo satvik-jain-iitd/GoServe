@@ -59,7 +59,7 @@ test("S2 the pin colour is the primary green, and the pin sits at the centre of 
   expect(color).toBe(primary);
   const m = (await mapBox(page).boundingBox())!, p = (await pin.boundingBox())!;
   expect(Math.abs(p.x + p.width / 2 - (m.x + m.width / 2))).toBeLessThanOrEqual(2);   // centred across
-  expect(Math.abs(p.y + p.height - (m.y + m.height / 2))).toBeLessThanOrEqual(2);   // its tip is the centre of the map
+  expect(Math.abs(p.y + p.height * 0.625 - (m.y + m.height / 2))).toBeLessThanOrEqual(2);   // its tip (62.5 percent down the marker with its halo, board C6) is the centre of the map
 });
 
 test("S3 the card gives the place name, the address line, the lime served strip and the credit line", async ({ page, context }) => {

@@ -448,7 +448,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [saved, setSaved] = useState<SavedAddress[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [here, setHere] = useState<Place | null>(null);
-  const [pinMap, setPinMap] = useState<null | { center: Place }>(null);   // story #1037: the one full-screen map, the door for Add new address, Use current location and a tapped search result
+  const [pinMap, setPinMap] = useState<null | { center: Place; edit?: SavedAddress }>(null);   // story #1037: the one full-screen map, the door for Add new address, Use current location and a tapped search result
   const mapStart = (): Place => {   // where the map opens when nothing says otherwise: the phone, else the picked address, else the city centre
     const row = (saved ?? []).find((r) => r.id === selectedId);
     return here ?? (row && row.lat !== null && row.lng !== null ? { lat: row.lat, lng: row.lng } : { lat: 28.6139, lng: 77.209 });
@@ -496,6 +496,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     const row = await addAddress(getClient(), { label: pl.label || "Home", address: pl.address, pin: pl.pin, lat: pl.from?.lat ?? null, lng: pl.from?.lng ?? null });
     if (row) { setSaved((cur) => [row, ...(cur ?? [])]); useSaved(row, false); } else { setAddress(pl.address); choosePin(pl.pin, pl.from); }
     setStep("menu");
+  }
+  async function saveEdit(id: string, a: { pin: string; address: string; label: string; from: Place }) {   // story #1051: the same row, the new words and the new pin
+    const v = { label: a.label, address: a.address, pin: a.pin, lat: a.from.lat, lng: a.from.lng };
+    if (!(await editAddress(getClient(), id, v))) return;
+    setSaved((cur) => (cur ?? []).map((r) => (r.id === id ? { ...r, ...v } : r)));
+    if (id === selectedId) { setAddress(v.address); if (v.pin !== pin) choosePin(v.pin, a.from); }
   }
   async function dropSaved(id: string) {
     if (!(await removeAddress(getClient(), id))) return;
@@ -869,14 +875,13 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <OtpSheet welcome googleOnly={!gate} phone={phone} onClose={() => undefined}
       onVerified={(p) => { setPhone(p); setVerified(true); setSignedIn(true); }} />
   ) : pinMap ? (
-    <PinMapScreen center={pinMap.center} confirmLabel="Confirm & proceed" onBack={() => setPinMap(null)} onSearch={() => setPinMap(null)}
-      onSave={(a) => { setPinMap(null); void saveNew(a); }} />
+    <PinMapScreen center={pinMap.center} edit={pinMap.edit} kicker={pinMap.edit ? `Editing ${pinMap.edit.label}` : undefined} confirmLabel={pinMap.edit ? "Save changes" : "Confirm & proceed"} onBack={() => setPinMap(null)} onSearch={() => setPinMap(null)}
+      onSave={(a) => { const e = pinMap.edit; setPinMap(null); if (e) void saveEdit(e.id, a); else void saveNew(a); }} />
   ) : step === "deliver" ? (
     <DeliverToScreen list={saved ?? []} selectedId={selectedId} here={here} search={(q) => placeSearch(q)} onPlace={(h) => setPinMap({ center: { lat: h.lat, lng: h.lng } })} onBack={() => setStep("menu")}
       onSelect={(id) => { const r = (saved ?? []).find((x) => x.id === id); if (r) { useSaved(r, true); setStep("menu"); } }}
       onUseLocation={() => { void currentPlace().then((p) => setPinMap({ center: p }), () => setPinMap({ center: mapStart() })); }} onAddNew={() => setPinMap({ center: mapStart() })}
-      onEdit={async (id, v) => { const ok = await editAddress(getClient(), id, v); if (ok) { setSaved((cur) => (cur ?? []).map((r) => (r.id === id ? { ...r, ...v } : r))); if (id === selectedId) { setAddress(v.address); if (v.pin !== pin) choosePin(v.pin); } } return ok; }}
-      onRemove={dropSaved} />
+      onEditOnMap={(a) => setPinMap({ center: a.lat !== null && a.lng !== null ? { lat: a.lat, lng: a.lng } : mapStart(), edit: a })} onRemove={dropSaved} />
   ) : needArea ? (
     <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={(pl) => { setAddress(pl.address); setFixAddress(pl.located ?? null); choosePin(pl.pin, pl.from); }} />
   ) : (

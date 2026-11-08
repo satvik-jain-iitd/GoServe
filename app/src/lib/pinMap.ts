@@ -14,12 +14,12 @@ const FAR_FROM_PHONE_M = 2_000;   // assumption: past 2 km from where the phone 
 
 export function stripsFor(o: { serve: Serve | null; here: Place | null; pin: Place }): Strip[] {
   const out: Strip[] = [];
-  if (o.serve?.serviceable) out.push({ kind: "ready", text: `We deliver here · the kitchen is ${o.serve.kitchenM === null ? "near" : kitchenWord(o.serve.kitchenM)} from the pin` });
-  else if (o.serve) out.push({ kind: "error", text: "Not in our area yet" });
-  if (o.here) {
+  if (o.here) {   // board C6b: the far-from-you strip sits above the area strip
     const m = metres(o.here.lat, o.here.lng, o.pin.lat, o.pin.lng);
     if (m > FAR_FROM_PHONE_M) out.push({ kind: "warn", text: `${m < 10_000 ? (m / 1000).toFixed(1) : Math.round(m / 1000)} km from where you are now` });
   }
+  if (o.serve?.serviceable) out.push({ kind: "ready", text: `We deliver here · the kitchen is ${o.serve.kitchenM === null ? "near" : kitchenWord(o.serve.kitchenM)} from the pin` });
+  else if (o.serve) out.push({ kind: "error", text: "Not in our area yet" });
   return out.slice(0, 2);
 }
 const kitchenWord = (m: number) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`);
@@ -42,3 +42,11 @@ export async function serveAt(p: Place, deps?: V2Deps): Promise<Serve | null> {
 // What the rider reads (story #1038): the house, a landmark as "near ...", then the words the pin gave. Empty parts are left out.
 export const addressText = (house: string, landmark: string, words: string): string =>
   [house.trim(), landmark.trim() ? `near ${landmark.trim()}` : "", words.trim()].filter(Boolean).join(", ");
+
+// The other way round (story #1051, board C9): the house and the landmark at the front of a saved address, so Edit can fill the details.
+export function splitAddress(address: string): { house: string; landmark: string } {
+  const [first = "", second = ""] = address.split(",").map((p) => p.trim());
+  const near = (s: string) => (s.toLowerCase().startsWith("near ") ? s.slice(5).trim() : null);
+  if (near(first) !== null) return { house: "", landmark: near(first) as string };
+  return { house: first, landmark: near(second) ?? "" };
+}

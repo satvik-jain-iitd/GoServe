@@ -24,16 +24,15 @@ test("S1 the address step by hand: 123456 in grey, empty value, Continue off unt
   await expect(page.getByRole("button", { name: "See the menu" })).toBeEnabled();
 });
 
-test("S2 the saved address edit sheet shows the grey 123456 hint", async ({ page, context }) => {
+test("S2 the address details on the map show the grey 123456 hint when the map gave no pin code", async ({ page, context }) => {
   const net = await setup(context, page, [], { pin: "110016" });
   net.state.addresses = [{ id: "h1", label: "Home", address: "C-4, Green Park Extension, New Delhi", pin_code: "110016", lat: null, lng: null, last_used_at: new Date().toISOString() }];
+  net.state.geocode = { status: 200, body: { ok: true, address: "Green Park, New Delhi", pin: null, locality: "Green Park", town: "New Delhi" } };   // story #1051: the old edit sheet is gone; Edit opens the map and its details
   await page.goto("/customer/");
   await page.getByRole("button", { name: /^(Home|Deliver to)\b/ }).click();
-  await page.getByRole("button", { name: "Add new address" }).click();
-  await page.getByRole("button", { name: "Back", exact: true }).click();   // story #1037, #1038: Add new address is the map now; the pin box with its hint is on the edit sheet below
   await page.getByRole("button", { name: "Edit or remove Home" }).click();
   await page.getByRole("button", { name: "Edit", exact: true }).click();
-  await page.getByLabel("Pin code").fill("");
+  await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page.getByLabel("Pin code")).toHaveAttribute("placeholder", "123456");
 });
 
