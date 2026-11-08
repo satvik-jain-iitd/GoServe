@@ -6,7 +6,7 @@ import os, sys, unittest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from test_schema import TOKEN, sql, migration_inside
 
-MIG = migration_inside(["20261108190000_web_push_now.sql"], "to_regproc('public.push_web_job_v2') is not null")   # empty once dev has it applied
+MIG = migration_inside(["20261108190000_web_push_now.sql", "20261108210000_web_push_done_note.sql"], "to_regproc('public.push_web_job_v2') is not null and exists (select 1 from pg_proc where proname = 'push_web_done_v2' and pronargs = 4)")   # empty once dev has both applied
 UID = "00000000-0000-0000-0000-0000000000e7"
 DISH = "(select id from menu_items order by price_paise limit 1)"
 PLACE = f"select place_order('{UID}', 'key7', jsonb_build_array(jsonb_build_object('menu_item_id', {DISH}, 'qty', 1)), 'Flat 4')"
