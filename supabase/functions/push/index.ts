@@ -15,7 +15,7 @@ export type WebDeps = {
   send: WebSend | null;   // null: the VAPID secrets are not set, so the function does not claim anything
   job: (outbox: number) => Promise<WebJob>;
   forget: (endpoint: string) => Promise<void>;
-  done: (outbox: number, sent: number, failed: number) => Promise<void>;
+  done: (outbox: number, sent: number, failed: number, note?: string) => Promise<void>;
 };
 export type Deps = {
   web?: WebDeps;
@@ -42,6 +42,8 @@ const same = (a: string, b: string) => {
   return diff === 0;
 };
 
+// A database function that returns nothing (void) answers with an empty body: that is null, not an error (found on dev 8 Nov: every web push answered 502 after it had worked).
+export const parseBody = (text: string) => (text ? JSON.parse(text) : null);
 const GONE = new Set([404, 410]);   // the push service says this subscription is dead
 async function web(w: WebDeps | undefined, outbox: unknown): Promise<Response> {
   if (!Number.isSafeInteger(outbox) || (outbox as number) < 1) return json(400, { ok: false, error: "invalid_request" });
@@ -49,16 +51,16 @@ async function web(w: WebDeps | undefined, outbox: unknown): Promise<Response> {
   const id = outbox as number;
   const job = await w.job(id);
   if (job.done) return json(200, { ok: true, skipped: true });   // sent already, or claimed by the retry: nothing is sent twice
-  let sent = 0, failed = 0, forgotten = 0;
+  let sent = 0, failed = 0, forgotten = 0, note: string | undefined;   // note: why the last send failed (a status or the error's name and start), for the trace line; never a key or an address
   for (const s of job.subscriptions) {
     const m = s.message ?? {};
     const payload = JSON.stringify({ title: m.title ?? "GoServe", body: m.body ?? "Your order has an update.", order_id: m.order_id ?? null, status: m.status ?? null });
     try {
       const { status } = await w.send({ endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth }, payload);
-      if (GONE.has(status)) { await w.forget(s.endpoint); forgotten++; } else if (status >= 200 && status < 300) sent++; else failed++;
-    } catch { failed++; }
+      if (GONE.has(status)) { await w.forget(s.endpoint); forgotten++; } else if (status >= 200 && status < 300) sent++; else { failed++; note = `status ${status}`; }
+    } catch (e) { failed++; note = `threw ${String((e as Error)?.name ?? "error")}: ${String((e as Error)?.message ?? "").replace(/https?:\/\/\S+/g, "[url]").slice(0, 80)}`; }
   }
-  await w.done(id, sent, failed);
+  await w.done(id, sent, failed, note);
   return json(200, { ok: true, sent, failed, forgotten });
 }
 
@@ -102,7 +104,7 @@ const service = () => Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const rpc = async (fn: string, body: Record<string, unknown>) => {
   const res = await fetch(`${url()}/rest/v1/rpc/${fn}`, { method: "POST", headers: { apikey: service(), authorization: `Bearer ${service()}`, "content-type": "application/json" }, body: JSON.stringify(body) });
   if (!res.ok) throw new Error("rpc failed");
-  return await res.json();
+  return parseBody(await res.text());
 };
 const live = async (): Promise<Deps> => {
   const vapid = await vapidFromEnv();
@@ -111,7 +113,7 @@ const live = async (): Promise<Deps> => {
     send: vapid ? webSender(vapid) : null,
     job: (outbox) => rpc("push_web_job_v2", { p_outbox: outbox }),
     forget: async (endpoint) => { await rpc("push_web_forget_v2", { p_endpoint: endpoint }); },
-    done: async (outbox, sent, failed) => { await rpc("push_web_done_v2", { p_outbox: outbox, p_sent: sent, p_failed: failed }); },
+    done: async (outbox, sent, failed, note) => { await rpc("push_web_done_v2", { p_outbox: outbox, p_sent: sent, p_failed: failed, p_note: note ?? null }); },
   },
   session: async (req) => {
     const token = (req.headers.get("authorization") ?? "").replace(/^Bearer /i, "");
