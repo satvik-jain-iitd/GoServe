@@ -27,7 +27,7 @@ export function KitchenLocation({ loc, name, pins, onChange }: Props) {
   return (
     <div className="ui-field">
       <span className="ui-locrow-label">Location</span>
-      <button type="button" className="ui-locrow" aria-label={`Location, ${title}`} onClick={() => setOpen(true)}>
+      <button type="button" className="ui-locrow" onClick={() => setOpen(true)}>
         <span className="ui-locrow-icon">{PIN}</span>
         <span className="ui-locrow-words"><span className="ui-locrow-title">{title}</span><span className="ui-locrow-sub mono" data-testid="location-line">{loc ? locationLine(loc) : "No location yet. Nearest rider cannot be picked."}</span></span>
         <span className="ui-locrow-go">{GO}</span>

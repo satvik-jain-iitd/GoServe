@@ -94,8 +94,8 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
         <div className="ui-form ui-pad">
           <div className="ui-field"><label htmlFor="k-name">Kitchen name</label><input id="k-name" type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
           <div className="ui-field"><label htmlFor="k-addr">Address</label><input id="k-addr" type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
-          <div className="ui-field"><label htmlFor="k-phone">Phone</label><input id="k-phone" className="mono-input" type="tel" inputMode="numeric" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /><span className="ui-meta mono">10 digits</span></div>
-          <div className="ui-field"><label htmlFor="k-pins">Pin codes</label><input id="k-pins" className="mono-input" type="text" inputMode="numeric" value={form.pins} placeholder="123456, 123457" onChange={(e) => setForm({ ...form, pins: e.target.value })} /><span className="ui-meta mono">At least one · comma between pins</span></div>
+          <div className="ui-field"><label htmlFor="k-phone">Phone</label><input id="k-phone" className="mono-input" type="tel" inputMode="numeric" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+          <div className="ui-field"><label htmlFor="k-pins">Pin codes</label><input id="k-pins" className="mono-input" type="text" inputMode="numeric" value={form.pins} placeholder="123456, 123457" onChange={(e) => setForm({ ...form, pins: e.target.value })} /></div>
           <KitchenLocation loc={form.loc} name={form.name} pins={parsePins(form.pins).pins} onChange={(loc) => setForm({ ...form, loc })} />
           <div className="ui-two">
             <div className="ui-field"><label htmlFor="k-open">Opens at</label><input id="k-open" className="mono-input" type="time" value={form.opensAt} onChange={(e) => setForm({ ...form, opensAt: e.target.value })} /></div>

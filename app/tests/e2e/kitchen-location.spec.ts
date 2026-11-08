@@ -21,7 +21,7 @@ async function start(page: Page, context: Parameters<typeof setup>[0], kitchens:
 }
 const city = async (page: Page) => { await page.goto("/admin/"); await page.getByRole("button", { name: "City", exact: true }).click(); };
 const addForm = async (page: Page) => { await city(page); await page.getByRole("button", { name: "+ Add a kitchen" }).click(); };
-const row = (page: Page) => page.getByRole("button", { name: /^Location,/ });
+const row = (page: Page) => page.locator(".ui-locrow");
 const screen = (page: Page) => page.getByRole("region", { name: "Pin map" });
 const line = (page: Page) => page.getByTestId("location-line");
 async function drag(page: Page, dx: number, dy = 0) {

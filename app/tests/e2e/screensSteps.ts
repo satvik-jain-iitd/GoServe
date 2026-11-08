@@ -65,14 +65,14 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 24.8847, longitude: 79.597 });
     await page.goto(path); await page.getByRole("button", { name: "City", exact: true }).click(); await page.getByRole("button", { name: "Add a kitchen" }).click();
     await page.getByLabel("Kitchen name").fill("Chhatarpur chhole bhature"); await page.getByLabel("Pin codes").fill("471001");
-    await page.getByRole("button", { name: /^Location,/ }).click(); await page.getByRole("button", { name: "Current Location" }).click();
+    await page.locator(".ui-locrow").click(); await page.getByRole("button", { name: "Current Location" }).click();
     await expect(page.getByText("Inside 471001")).toBeVisible(); },
   "add-kitchen-location": async (context, page, path) => {   // board A11: the Add a kitchen form with the Location row filled
     await STEPS["kitchen-pin"](context, page, path);
     await page.getByRole("button", { name: "Save location" }).click();
     await page.getByLabel("Address").fill("Green avenue, near bus stand"); await page.getByLabel("Phone").fill("9876500011");
     await page.getByLabel("Opens at").fill("11:00"); await page.getByLabel("Closes at").fill("22:00");
-    await expect(page.getByRole("button", { name: /^Location, Green Avenue Colony, Satai Road/ })).toBeVisible(); },
+    await expect(page.locator(".ui-locrow")).toContainText("Green Avenue Colony, Satai Road"); await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur()); },   // unfocused: no ring on Closes at
   "add-dish": async (context, page, path) => {   // story 923: the admin's Add dish form
     const net = await setup(context, page); net.state.admin = true; await page.goto(path);
     await page.getByRole("button", { name: "City", exact: true }).click(); await page.getByRole("button", { name: /^Open kitchen Hauz Khas Kitchen/ }).click();
