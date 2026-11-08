@@ -194,7 +194,6 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-seg a.on svg { opacity: 1; }
 /* The zigzag: GoServe's own mark. Light green, 8 px tall, under the lockup, under the greeting, at the top of every slip. */
 .ui-zigzag { height: 8px; background: var(--gs-zigzag); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8'%3E%3Cpath d='M0 8L8 0L16 8Z'/%3E%3C/svg%3E") 0 0 / 16px 8px round no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8'%3E%3Cpath d='M0 8L8 0L16 8Z'/%3E%3C/svg%3E") 0 0 / 16px 8px round no-repeat; }   /* story 1046: the same one-triangle mask as the slip teeth */
-.ui-greet .ui-zigzag { width: 100%; margin-top: 8px; }   /* story 973: the zigzag always spans the content width */
 /* A count badge on a tab (new tickets) */
 .ui-tab { position: relative; }
 .ui-tab .badge { position: absolute; top: 6px; left: calc(50% + 8px); min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: var(--md-primary); color: var(--md-on-primary); font-family: var(--gs-font-mono); font-size: 11px; font-weight: 500; line-height: 18px; text-align: center; }

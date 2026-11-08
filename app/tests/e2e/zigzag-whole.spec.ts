@@ -24,12 +24,12 @@ async function columns(page: Page, selector: string, token = "--gs-zigzag"): Pro
 }
 
 for (const width of [412, 375]) {
-  test(`S1 at ${width} px the mark under the greeting starts and ends with a whole triangle`, async ({ page, context }) => {
+  test(`S1 at ${width} px the mark under the logo starts and ends with a whole triangle`, async ({ page, context }) => {
     await page.setViewportSize({ width, height: 800 });
-    await setup(context, page);
+    await setup(context, page, [], { pin: null });
     await page.goto("/customer/");
-    await expect(page.locator(".ui-greet .ui-zigzag")).toBeVisible();
-    const cols = await columns(page, ".ui-greet .ui-zigzag");
+    await expect(page.locator(".ui-landing-head .ui-zigzag")).toBeVisible();
+    const cols = await columns(page, ".ui-landing-head .ui-zigzag");
     const top = Math.max(...cols);
     expect(top).toBeGreaterThanOrEqual(7);                     // apexes in between (the picture is device pixels, so this is a floor)
     expect(cols[0]).toBeLessThanOrEqual(top / 4);              // the left edge is the base corner of a triangle, not the middle of a slope
@@ -38,10 +38,10 @@ for (const width of [412, 375]) {
 }
 
 test("S2 the mark and the slip teeth are one-triangle masks with round on x, not two gradients", async ({ page, context }) => {
-  await setup(context, page);
+  await setup(context, page, [], { pin: null });
   await page.goto("/customer/");
-  await expect(page.locator(".ui-greet .ui-zigzag")).toBeVisible();
-  const mark = await page.locator(".ui-greet .ui-zigzag").evaluate((e) => { const c = getComputedStyle(e); return { repeat: c.getPropertyValue("mask-repeat") || c.getPropertyValue("-webkit-mask-repeat"), image: c.getPropertyValue("mask-image") || c.getPropertyValue("-webkit-mask-image"), bg: c.backgroundImage }; });
+  await expect(page.locator(".ui-landing-head .ui-zigzag")).toBeVisible();
+  const mark = await page.locator(".ui-landing-head .ui-zigzag").evaluate((e) => { const c = getComputedStyle(e); return { repeat: c.getPropertyValue("mask-repeat") || c.getPropertyValue("-webkit-mask-repeat"), image: c.getPropertyValue("mask-image") || c.getPropertyValue("-webkit-mask-image"), bg: c.backgroundImage }; });
   expect(mark.repeat).toMatch(/^round/);
   expect(mark.image).toContain("svg");
   expect(mark.bg).not.toContain("gradient");

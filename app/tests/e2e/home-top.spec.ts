@@ -30,10 +30,10 @@ test("S1 the top shows the label and the address, the circle, search and the VEG
   await expect(page.getByRole("button", { name: "You (Account)" })).toHaveCount(0);
 });
 
-test("S2 no greeting sentence; the Open till line stays", async ({ page, context }) => {
+test("S2 no greeting sentence and no zigzag under it; the Open till line stays", async ({ page, context }) => {
   await home(page, context);
   await expect(page.getByText(/^Good (morning|afternoon|evening|night)/)).toHaveCount(0);
-  await expect(page.locator(".ui-zigzag")).toBeVisible();
+  await expect(page.locator(".ui-greet .ui-zigzag")).toHaveCount(0);   // story #1044: the small mark under the greeting is gone
 });
 
 test("S3 tapping the address opens the Deliver to page", async ({ page, context }) => {
