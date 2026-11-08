@@ -1,4 +1,4 @@
-// The push part of the service worker (story A7), as source text. vite.config.ts writes it to dist/push-sw.js with this project's address and public (anon) key;
+// The push part of the service worker (story A7, words inside the push since story #1067), as source text. vite.config.ts writes it to dist/push-sw.js with this project's address and public (anon) key;
 // the generated worker loads it with importScripts. A push carries no text: the worker asks the database for the latest order of this subscription
 // and shows that. A push must always show a notification, so if the database cannot be reached a general line is shown.
 export const pushWorkerSource = (supabaseUrl: string, anonKey: string): string => `
@@ -20,8 +20,14 @@ self.addEventListener('push', function (event) {
   event.waitUntil((async function () {
     var title = 'GoServe';
     var body = 'Your order has an update.';
+    var d = null;
+    // Story #1067: the words come inside the push (encrypted, sent at once by the database). Only a push with no words (MAIN 34's empty ones) asks the database.
     try {
-      var sub = await self.registration.pushManager.getSubscription();
+      var sent = event.data ? event.data.json() : null;
+      if (sent && sent.body) { title = sent.title || title; body = sent.body; d = { order_id: sent.order_id || null }; }
+    } catch (e) { /* not readable: ask the database */ }
+    try {
+      var sub = d ? null : await self.registration.pushManager.getSubscription();
       if (sub) {
         var res = await fetch(${JSON.stringify(supabaseUrl + "/rest/v1/rpc/push_latest")}, {
           method: 'POST',
