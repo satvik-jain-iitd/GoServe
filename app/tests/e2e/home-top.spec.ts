@@ -17,7 +17,7 @@ const home = async (page: Page, context: Parameters<typeof setup>[0], avatar: st
 
 test("S1 the top shows the label and the address, the circle, search and the VEG switch; the bar has two tabs", async ({ page, context }) => {
   await home(page, context);
-  const where = page.getByRole("button", { name: /^Home\b/ });
+  const where = page.getByRole("button", { name: /^(Home|Deliver to)\b/ });
   await expect(where).toContainText("Home");
   await expect(where).toContainText(ADDRESS);
   await expect(page.getByRole("button", { name: /^You: / })).toBeVisible();
@@ -36,11 +36,11 @@ test("S2 no greeting sentence; the Open till line stays", async ({ page, context
   await expect(page.locator(".ui-zigzag")).toBeVisible();
 });
 
-test("S3 tapping the address opens today's area screen", async ({ page, context }) => {
+test("S3 tapping the address opens the Deliver to page", async ({ page, context }) => {
   await home(page, context);
-  await page.getByRole("button", { name: /^Home\b/ }).click();
+  await page.getByRole("button", { name: /^(Home|Deliver to)\b/ }).click();
   await expect(page.getByRole("searchbox", { name: "Search dishes" })).toHaveCount(0);
-  await expect(page.getByLabel("Pin code").or(page.getByRole("group", { name: "Your address" }))).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();
 });
 
 test("S4 tapping the circle opens the profile; no You tab exists", async ({ page, context }) => {

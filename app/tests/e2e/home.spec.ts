@@ -81,7 +81,7 @@ test("S6 while the menu loads the page says it is busy; the saved pin is on the 
   await page.route("**/rest/v1/menu_items*", async (route) => { await gate; await route.fallback(); });
   await page.goto("/customer/");
   await expect(page.getByLabel("Loading the menu")).toHaveAttribute("aria-busy", "true");
-  await expect(page.getByRole("button", { name: /^Home\b/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^(Home|Deliver to)\b/ })).toBeVisible();
   release();
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
 });

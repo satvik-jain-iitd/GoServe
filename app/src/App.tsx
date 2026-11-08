@@ -29,6 +29,9 @@ import { FeedbackSheet } from "./screens/FeedbackSheet";
 import { ensureSession, fetchMenuRows, fetchRiderCard, getClient, type RiderCard } from "./lib/supabase";
 import { openTill } from "./lib/browse";
 import { AccountScreen } from "./screens/AccountScreen";
+import { DeliverToScreen } from "./screens/DeliverToScreen";
+import { addAddress, editAddress, firstFromProfile, listAddresses, nearMetres, pickOnOpen, removeAddress, touchAddress, type SavedAddress } from "./lib/addresses";
+import { currentPlace, type Place } from "./lib/locate";
 import { currentSession, scopeFor } from "./lib/session";
 import { MenuScreen } from "./screens/MenuScreen";
 import { BillScreen } from "./screens/BillScreen";
@@ -58,7 +61,7 @@ import { OpsScreen } from "./screens/OpsScreen";
 import { DemoBar } from "./screens/DemoBar";
 import { AUTOPILOT_MS, demoDecisions, demoOrder, nextAutoAction } from "./lib/autopilot";
 
-type Step = "menu" | "bill" | "placed" | "orders" | "account";
+type Step = "menu" | "bill" | "placed" | "orders" | "account" | "deliver";
 type Role = "customer" | "kitchen" | "rider" | "split" | "ops" | "admin";
 
 const api = orderDeps;
@@ -124,7 +127,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [payStart, setPayStart] = useState<string | null>(null);
   const payRef = useRef("");
   useEffect(() => {
-    if (lock === "customer") saveDraft({ step: step === "account" ? "menu" : step, cart, address, name, phone });
+    if (lock === "customer") saveDraft({ step: step === "account" || step === "deliver" ? "menu" : step, cart, address, name, phone });
   }, [lock, step, cart, address, name, phone]);
   // Saved details come back on the next visit (story B3); what the customer already typed this time is kept.
   useEffect(() => {
@@ -438,6 +441,71 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setMenuError(null);
     setPin(p);
     ensureSession().then((uid) => getClient().from("customers").upsert({ user_id: uid, pin_code: p, updated_at: new Date().toISOString() }, { onConflict: "user_id" })).catch(() => {});
+  }
+  // Story #976: the saved addresses. On open the one nearest the phone (within address_near_m) is picked; far from all of them none is picked and the Deliver to page asks.
+  const [saved, setSaved] = useState<SavedAddress[] | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [here, setHere] = useState<Place | null>(null);
+  const [nearM, setNearM] = useState(200);
+  const [adding, setAdding] = useState<null | { mode: "ask" | "hand"; words?: string }>(null);
+  const opened = useRef(false);
+  function useSaved(a: SavedAddress, touch: boolean) {   // the Bill reads `address`; a new pin code finds the kitchen again
+    setSelectedId(a.id);
+    setAddress(a.address);
+    if (a.pin !== pin) choosePin(a.pin, a.lat !== null && a.lng !== null ? { lat: a.lat, lng: a.lng } : undefined);
+    if (touch) {
+      const at = new Date().toISOString();
+      setSaved((cur) => (cur ?? []).map((r) => (r.id === a.id ? { ...r, last_used_at: at } : r)));
+      void touchAddress(getClient(), a.id);
+    }
+  }
+  useEffect(() => {
+    if (lock !== "customer" || signedIn !== true || opened.current) return;
+    opened.current = true;
+    (async () => {
+      const c = getClient();
+      const list = await listAddresses(c);
+      if (list === null) return;
+      setSaved(list);
+      const near = await nearMetres(c);
+      setNearM(near);
+      let at: Place | null = null;
+      try {
+        const perm = await navigator.permissions?.query({ name: "geolocation" as PermissionName });
+        if (perm?.state === "granted") at = await currentPlace();
+      } catch { /* no place: the last used one stays */ }
+      setHere(at);
+      const pick = pickOnOpen(list, at, near);
+      const row = list.find((r) => r.id === pick.id);
+      if (row) useSaved(row, false);
+      else if (pick.asks) setStep("deliver");
+    })().catch(() => undefined);
+  }, [signedIn]);   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {   // today's single saved address becomes the first row, Home, once (only while the list is empty)
+    if (saved === null || saved.length > 0 || adding) return;
+    const first = firstFromProfile({ address, pin });
+    if (!first) return;
+    let alive = true;
+    addAddress(getClient(), { ...first, lat: from?.lat ?? null, lng: from?.lng ?? null }).then((row) => { if (alive && row) { setSaved([row]); setSelectedId(row.id); } });
+    return () => { alive = false; };
+  }, [saved, address, pin]);   // eslint-disable-line react-hooks/exhaustive-deps
+  async function saveNew(pl: { pin: string; address: string; label?: string; from?: Place }) {
+    const row = await addAddress(getClient(), { label: pl.label || "Home", address: pl.address, pin: pl.pin, lat: pl.from?.lat ?? null, lng: pl.from?.lng ?? null });
+    setAdding(null);
+    if (row) { setSaved((cur) => [row, ...(cur ?? [])]); useSaved(row, false); } else { setAddress(pl.address); choosePin(pl.pin, pl.from); }
+    setStep("menu");
+  }
+  async function dropSaved(id: string) {
+    if (!(await removeAddress(getClient(), id))) return;
+    const rest = (saved ?? []).filter((r) => r.id !== id);
+    setSaved(rest);
+    if (id !== selectedId) return;
+    const next = [...rest].sort((a, b) => b.last_used_at.localeCompare(a.last_used_at))[0];
+    if (next) return void useSaved(next, false);
+    setSelectedId(null);
+    setAddress("");
+    setStep("menu");
+    changeArea();
   }
   function changeArea() {
     forgetArea();
@@ -798,6 +866,14 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const customerView = wall && (signedIn === null || otpSetting === undefined) ? <div className="ui-pad"><Skeleton lines={3} /></div> : wall && signedIn === false ? (
     <OtpSheet welcome googleOnly={!gate} phone={phone} onClose={() => undefined}
       onVerified={(p) => { setPhone(p); setVerified(true); setSignedIn(true); }} />
+  ) : adding ? (
+    <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} adding={{ ...adding, onBack: () => setAdding(null) }} onPlace={(pl) => void saveNew(pl)} />
+  ) : step === "deliver" ? (
+    <DeliverToScreen list={saved ?? []} selectedId={selectedId} here={here} nearM={nearM} onBack={() => setStep("menu")}
+      onSelect={(id) => { const r = (saved ?? []).find((x) => x.id === id); if (r) { useSaved(r, true); setStep("menu"); } }}
+      onUseLocation={() => setAdding({ mode: "ask" })} onAddNew={(words) => setAdding({ mode: "hand", words })}
+      onEdit={async (id, v) => { const ok = await editAddress(getClient(), id, v); if (ok) { setSaved((cur) => (cur ?? []).map((r) => (r.id === id ? { ...r, ...v } : r))); if (id === selectedId) { setAddress(v.address); if (v.pin !== pin) choosePin(v.pin); } } return ok; }}
+      onRemove={dropSaved} />
   ) : needArea ? (
     <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={(pl) => { setAddress(pl.address); setFixAddress(pl.located ?? null); choosePin(pl.pin, pl.from); }} />
   ) : (
@@ -810,7 +886,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             closed={shown?.kind === "closed" ? closedCopy(shown.opens_at, shown.paused === true) : null}
             tellMe={tellMe} tellMeError={tellMeError} onTellMe={tellMeWhenOpen}
             onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
-            onChangePin={changeArea} onOrders={() => setStep("orders")} address={address} photo={photo} onProfile={() => setStep("account")} />
+            onChangePin={() => setStep("deliver")} onOrders={() => setStep("orders")} address={address} label={saved?.find((r) => r.id === selectedId)?.label ?? "Deliver to"} photo={photo} onProfile={() => setStep("account")} />
         )}
         {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} onAgain={orderAgain} againLine={againLine} />}
         {step === "account" && (
