@@ -78,7 +78,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     const net = await setup(context, page, [order("out_for_delivery", "2020-01-01T10:05:00Z")]);
     net.state.riderCard = { name: "Rahul", phone: "9876543210" };
     Object.assign(net.state.kitchens[0], { lat: 28.57, lng: 77.24 });
-    net.state.tracking = { rider_lat: 28.5792, rider_lng: 77.26, updated_at: new Date(NINE.getTime() - 20_000).toISOString() };
+    net.state.tracking = { rider_lat: 28.5792, rider_lng: 77.26, eta_lo_min: 8, eta_hi_min: 18, eta_late: false, updated_at: new Date(NINE.getTime() - 20_000).toISOString() };
     await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+vg+AAVYAqhyXHCrAAAAAElFTkSuQmCC", "base64") }));
     await page.goto(path); await expect(page.getByRole("button", { name: "See the rider on the map" })).toBeVisible(); },
   "rider-map": async (context, page, path) => {   // board T5: the rider on the full-screen map
