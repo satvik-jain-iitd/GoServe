@@ -42,7 +42,6 @@ type Props = {
   pay?: Pay;                    // story #552: an online order waits for its payment
   track?: Track;                // story #691: On the way, with the rider's place known
   declined?: { reason: string; at: string } | null;   // story #934: the kitchen said no, in its own words
-  onOtherKitchen?: () => void;  // story #934: Try another kitchen
 };
 export type Track = { kitchen: LatLng; you: LatLng; rider: Point; name: string; phone: string | null };
 export type Pay = {
@@ -87,7 +86,7 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "At your door" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
-export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, declined, onOtherKitchen }: Props) {
+export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, declined }: Props) {
   const steps = trackerSteps(status);
   const eta = etaMinutes();
   const placed = new Date(placedAt);
@@ -188,7 +187,6 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
       </div>
       <div className="ui-bottom">
         {(delivered || cancelled) && <button type="button" className="ui-btn big" onClick={onMenu}>{declined ? "Order something else" : cancelled ? "Order again" : "See the menu"}</button>}
-        {declined && onOtherKitchen && <button type="button" className="ui-btn ghost big" onClick={onOtherKitchen}>Try another kitchen</button>}
         {(status === "placed" || status === "accepted") && <button type="button" className="ui-btn ghost big" disabled={cancelling} onClick={onCancel}>Cancel order</button>}
         {track?.phone && status === "out_for_delivery" && <a href={`tel:${track.phone}`} className="ui-btn ghost big" onClick={onCall}>Call the rider</a>}
         {kitchenPhone && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}

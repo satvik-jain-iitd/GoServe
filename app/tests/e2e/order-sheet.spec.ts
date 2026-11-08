@@ -71,7 +71,27 @@ test("S4 the Orders row says Declined with the kitchen's line, and the slip show
   await expect(page.getByText("Nothing to pay")).toBeVisible();
   await expect(page.getByText("Your money is not taken. If you paid online, it comes back in 5 to 7 days.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Order something else" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Try another kitchen" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Try another kitchen" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Order something else" }).click();
+  await expect(page.getByRole("button", { name: "Add Butter Chicken" }).first()).toBeVisible();
+});
+
+test("S4b a customer's own cancel, recorded as cancelled_by customer, reads Cancelled with no quoted words", async ({ page, context }) => {
+  await setup(context, page, [{ ...order("cancelled", "2020-01-01T10:02:00Z"), cancelled_by: "customer", cancel_reason: null }]);
+  await page.goto("/customer/");
+  await page.getByRole("button", { name: "History" }).click();
+  await expect(page.locator(".ui-order-row .ui-tag.error")).toHaveText("Cancelled");
+  await page.getByRole("button", { name: /Butter Chicken/ }).click();
+  await expect(page.getByRole("heading", { name: "Cancelled" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Declined" })).toHaveCount(0);
+});
+
+test("S4c an old row whose reason is the text 'cancelled by customer' reads Cancelled", async ({ page, context }) => {
+  await setup(context, page, [{ ...order("cancelled", "2020-01-01T10:02:00Z"), cancel_reason: "cancelled by customer" }]);
+  await page.goto("/customer/");
+  await page.getByRole("button", { name: "History" }).click();
+  await page.getByRole("button", { name: /Butter Chicken/ }).click();
+  await expect(page.getByRole("heading", { name: "Declined" })).toHaveCount(0);
 });
 
 test("S5 a customer's own cancel still says Cancelled", async ({ page, context }) => {
