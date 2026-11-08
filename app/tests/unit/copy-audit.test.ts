@@ -34,6 +34,11 @@ describe("story #1044: the removed texts stay removed", () => {
     expect(hits(/textTransform:\s*["']uppercase["']/)).toEqual([]);
   });
 
+  it("every pin code placeholder is 123456 (owner, 8 Nov 2026), never 000000", () => {
+    expect(hits(/placeholder=["{][^>]*000000/)).toEqual([]);
+    expect(hits('placeholder="123456, 123457"')).toEqual(["src/screens/AdminCity.tsx"]);
+  });
+
   it("a phone number shows as 10 digits together, with the country code in front", () => {
     expect(showPhone("9876543210")).toBe("+91 9876543210");
   });
