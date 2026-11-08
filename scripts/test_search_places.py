@@ -3,11 +3,11 @@
 # Run: set -a; . ~/Desktop/Secrets/02_databases.env; set +a; python3 -m unittest scripts/test_search_places.py
 import os, sys, unittest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from test_schema import TOKEN, sql
+from test_schema import TOKEN, sql, migration_inside
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NAMES = ["20261108170000_search_places.sql", "20261108170100_pincode_names_seed_1.sql", "20261108170200_pincode_names_seed_2.sql"]
-MIG = "" if os.environ.get("SKIP_MIG") else "; ".join(open(os.path.join(HERE, "..", "supabase", "migrations", n)).read() for n in NAMES)
+MIG = migration_inside(NAMES, "select to_regprocedure('public.search_places(text)') is not null")   # empty once dev has it applied (the proof is the same)
 
 
 def search(q):
@@ -40,9 +40,9 @@ class SearchPlaces(unittest.TestCase):
         self.assertEqual(search("ch"), [])
         self.assertEqual(search("%%%"), [])
 
-    def test_s6_at_most_twenty_candidates_each_with_a_place(self):
+    def test_s6_at_most_fifty_candidates_each_with_a_place(self):
         rows = search("new")
-        self.assertLessEqual(len(rows), 20)
+        self.assertLessEqual(len(rows), 50)   # story 1031: 50 (was 20)
         self.assertTrue(rows and all(r["place"] and r["lat"] is not None for r in rows), rows)
 
     def test_s7_a_customer_cannot_call_it(self):

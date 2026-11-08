@@ -3,11 +3,11 @@
 # Run: set -a; . ~/Desktop/Secrets/02_databases.env; set +a; python3 -m unittest scripts/test_nearest_pin.py
 import os, sys, unittest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from test_schema import TOKEN, sql
+from test_schema import TOKEN, sql, migration_inside
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NAMES = ["20261108140000_nearest_pin.sql", "20261108140100_pincodes_seed_1.sql", "20261108140200_pincodes_seed_2.sql"]
-MIG = "" if os.environ.get("SKIP_MIG") else "; ".join(open(os.path.join(HERE, "..", "supabase", "migrations", n)).read() for n in NAMES)
+MIG = migration_inside(NAMES, "select to_regclass('public.pincodes') is not null")   # empty once dev has it applied (the proof is the same)
 
 
 def ask(*stmts):
