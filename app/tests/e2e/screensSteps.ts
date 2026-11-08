@@ -102,10 +102,13 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
   // Story #1049: the first-open boards. The first-open screen is the location ask (A1, with step 3 of 4); Use my location opens the pin map at the phone (A1p).
   "first-open-ask": async (context, page, path) => {   // board A1
     await setup(context, page, [], { pin: null }); await page.goto(path); await expect(page.getByRole("button", { name: "Use my location" })).toBeVisible(); },
+<<<<<<< HEAD
   "alerts-ask": async (context, page, path) => {   // story #1049 part 2, board N0: order alerts, step 2 of 4
     await setup(context, page, [], { pin: null });
     await context.addInitScript(() => { if (typeof Notification === "undefined") (window as unknown as { Notification: unknown }).Notification = function () {}; Object.defineProperty(Notification, "permission", { get: () => "default", configurable: true }); });   // an iPhone tab has no Notification: the picture needs one
     await page.goto(path); await expect(page.getByRole("heading", { name: "Get order alerts" })).toBeVisible(); },
+=======
+>>>>>>> origin/dev
   "first-open-pin": async (context, page, path) => {   // board A1p: after Use my location, the full map, the same screen as C6
     const net = await setup(context, page, [], { pin: null });
     net.state.geocode = { status: 200, body: { ok: true, address: "Green Avenue Colony, Satai Road, Chhatarpur, Madhya Pradesh 471001", pin: "471001", locality: "Green Avenue Colony", town: "Chhatarpur" } };

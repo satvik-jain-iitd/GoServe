@@ -18,7 +18,10 @@ rider-map | /customer/ | 412x915 | rider-map
 eta-big | /customer/ | 412x915 | eta-big
 eta-late | /customer/ | 412x915 | eta-late
 eta-working | /customer/ | 412x915 | eta-working
+<<<<<<< HEAD
 alerts-ask | /customer/ | 412x915 | alerts-ask
+=======
+>>>>>>> origin/dev
 first-open-ask | /customer/ | 412x915 | first-open-ask
 first-open-pin | /customer/ | 412x915 | first-open-pin
 add-dish | /admin/ | 412x915 | add-dish

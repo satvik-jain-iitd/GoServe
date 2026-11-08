@@ -1,0 +1,44 @@
+# The screens every pull request renders and compares with the accepted picture (story 821, ShipQuick kit name: docs/screens.txt).
+# One screen per line:  name | path to open | viewport (WxH) | setup step
+# Setup steps are the ones the e2e harness already uses; they are named in app/tests/e2e/screens.spec.ts: welcome, welcome-phone, menu, bill, account, cancelled, add-kitchen, add-dish, dish-edit, edit-kitchen, deliver-to, deliver-to-search, pin-map, pin-details, remove-kitchen, clear-everything, orders.
+# Adding a screen means adding a line here, never a new spec. Blank lines and lines starting with # are ignored.
+# Not listed because the harness cannot reach them yet: the code sheet (step 2 of the welcome screen), the placed and tracker screens, rider and kitchen apps.
+welcome       | /customer/ | 412x915 | welcome
+welcome-phone | /customer/ | 412x915 | welcome-phone
+menu    | /customer/ | 412x915 | menu
+bill    | /customer/ | 412x915 | bill
+account | /customer/ | 412x915 | account
+orders  | /customer/ | 412x915 | orders
+cancelled | /customer/ | 412x915 | cancelled
+add-kitchen | /admin/ | 412x915 | add-kitchen
+add-kitchen-location | /admin/ | 412x915 | add-kitchen-location
+kitchen-pin | /admin/ | 412x915 | kitchen-pin
+tracker-rider-row | /customer/ | 412x915 | tracker-rider-row
+rider-map | /customer/ | 412x915 | rider-map
+eta-big | /customer/ | 412x915 | eta-big
+eta-late | /customer/ | 412x915 | eta-late
+eta-working | /customer/ | 412x915 | eta-working
+<<<<<<< HEAD
+alerts-ask | /customer/ | 412x915 | alerts-ask
+=======
+>>>>>>> origin/dev
+first-open-ask | /customer/ | 412x915 | first-open-ask
+first-open-pin | /customer/ | 412x915 | first-open-pin
+add-dish | /admin/ | 412x915 | add-dish
+dish-edit | /admin/ | 412x915 | dish-edit
+edit-kitchen | /admin/ | 412x915 | edit-kitchen
+deliver-to | /customer/ | 412x915 | deliver-to
+deliver-to-search | /customer/ | 412x915 | deliver-to-search
+pin-map | /customer/ | 412x915 | pin-map
+pin-details | /customer/ | 412x915 | pin-details
+remove-kitchen | /admin/ | 412x915 | remove-kitchen
+clear-everything | /admin/ | 412x915 | clear-everything
+order-sheet | /kitchen/ | 412x915 | order-sheet
+order-decline | /kitchen/ | 412x915 | order-decline
+declined | /customer/ | 412x915 | declined
+deliver-five | /customer/ | 412x915 | deliver-five
+deliver-all | /customer/ | 412x915 | deliver-all
+deliver-removed | /customer/ | 412x915 | deliver-removed
+deliver-empty | /customer/ | 412x915 | deliver-empty
+edit-on-map | /customer/ | 412x915 | edit-on-map
+pin-map-far | /customer/ | 412x915 | pin-map-far
