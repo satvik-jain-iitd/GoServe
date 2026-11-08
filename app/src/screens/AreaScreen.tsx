@@ -55,7 +55,7 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace, ad
       </div>
       <div className="ui-field">
         <label htmlFor="pin">Pin code</label>
-        <input id="pin" className="ui-pin-input" type="tel" inputMode="numeric" maxLength={6} placeholder="110024" value={text}
+        <input id="pin" className="ui-pin-input" type="tel" inputMode="numeric" maxLength={6} placeholder="000000" value={text}
           aria-invalid={!!(error || none) || undefined} aria-describedby={error || none || (pinMissing && text === "") ? "pin-help" : undefined}
           onChange={(e) => setText(e.target.value.trim())} />
         {error && <p id="pin-help" role="alert" className="ui-field-error">{error}</p>}
