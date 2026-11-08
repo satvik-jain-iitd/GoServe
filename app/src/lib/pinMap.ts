@@ -38,3 +38,7 @@ export async function serveAt(p: Place, deps?: V2Deps): Promise<Serve | null> {
     return null;
   }
 }
+
+// What the rider reads (story #1038): the house, a landmark as "near ...", then the words the pin gave. Empty parts are left out.
+export const addressText = (house: string, landmark: string, words: string): string =>
+  [house.trim(), landmark.trim() ? `near ${landmark.trim()}` : "", words.trim()].filter(Boolean).join(", ");

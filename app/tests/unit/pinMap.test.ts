@@ -1,6 +1,6 @@
 // Story #1037 (board C6-PinMap): the words and the strips of the pin map card, and the call that tells if a kitchen reaches the pin.
 import { describe, it, expect } from "vitest";
-import { cardWords, stripsFor, serveAt } from "../../src/lib/pinMap";
+import { addressText, cardWords, stripsFor, serveAt } from "../../src/lib/pinMap";
 
 describe("cardWords", () => {
   it("the first part of the words is the place name, the rest is the address line", () => {
@@ -49,5 +49,16 @@ describe("serveAt", () => {
     for (const f of [async () => new Response("{}", { status: 502 }), async () => new Response("nope"), async () => { throw new Error("offline"); }]) {
       expect(await serveAt({ lat: 1, lng: 2 }, deps(f as typeof fetch))).toBeNull();
     }
+  });
+});
+
+describe("addressText (story #1038: what the rider reads)", () => {
+  it("the house, then the place words; a landmark is added as near", () => {
+    expect(addressText("12B, 2nd floor", "", "Green Park, New Delhi, Delhi")).toBe("12B, 2nd floor, Green Park, New Delhi, Delhi");
+    expect(addressText("12B", "Metro gate 2", "Green Park, New Delhi")).toBe("12B, near Metro gate 2, Green Park, New Delhi");
+  });
+  it("trims the words and leaves out what is empty", () => {
+    expect(addressText("  12B  ", "  ", "")).toBe("12B");
+    expect(addressText("12B", "", "  Green Park  ")).toBe("12B, Green Park");
   });
 });

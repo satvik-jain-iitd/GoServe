@@ -217,6 +217,9 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-legal a { color: inherit; }
 .ui-slip-title { margin: 0; font-family: var(--gs-font-display); font-weight: 800; font-size: var(--gs-display-l); line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; }
 .ui-field { display: flex; flex-direction: column; gap: 6px; }
+/* Story 1020 and 1038: one field style on .ui-field itself (zero specificity, so a class like .ui-pin-input still wins), so a form outside .ui-form never shows the browser's own thin box. Same values as the .ui-form rule below. */
+:where(.ui-field input:not([type="checkbox"], [type="radio"], [type="file"], .ui-switch), .ui-field textarea) { box-sizing: border-box; width: 100%; min-width: 0; min-height: var(--gs-tap); padding: 10px 12px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font: inherit; resize: none; }
+:where(.ui-field .mono-input) { font-family: var(--gs-font-mono); }
 .ui-field label { font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); text-transform: uppercase; color: var(--gs-text-muted); }
 .ui-pin-input { box-sizing: border-box; width: 100%; height: var(--gs-tap-big); padding: 0 14px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font-family: var(--gs-font-mono); font-size: var(--gs-mono-xl); font-weight: 500; letter-spacing: 0.12em; }
 .ui-pin-input[aria-invalid="true"] { border: 1.5px solid var(--md-error); }
@@ -664,3 +667,17 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-pinmap-credit a { color: inherit; }
 .gs-here-dot { background: transparent; border: 0; }
 .gs-here-dot i { display: block; width: 18px; height: 18px; margin: 4px; box-sizing: border-box; border: 3px solid var(--gs-raised); border-radius: 50%; background: var(--gs-earth-mid); box-shadow: 0 0 0 4px color-mix(in srgb, var(--gs-earth-mid) 18%, transparent); }
+
+/* Story 1038 (board C7-PinDetails): the sheet over the same map. The map keeps the top part so the pin stays in view; the sheet is a column with one gap. */
+.ui-pinmap[data-step="details"] .ui-pinmap-map { bottom: var(--sheet-h, 62%); }
+.ui-pinmap[data-step="details"] .ui-pinmap-pin { top: calc((100% - var(--sheet-h, 62%)) / 2); }   /* the centre of the map box above the sheet (its height is measured) */
+.ui-pinmap-details { position: absolute; left: 0; right: 0; bottom: 0; z-index: 700; max-height: 62%; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 20px 16px calc(env(safe-area-inset-bottom, 0px) + 16px); border-radius: 20px 20px 0 0; background: var(--gs-raised); box-shadow: var(--gs-shadow-m); box-sizing: border-box; }
+.ui-pinmap-details-head { margin-bottom: 0; }   /* the sheet is a column with one gap; the head size is the shared .ui-sheet-head h2 */
+.ui-pinmap-details-head .mono { font-size: var(--gs-mono-sm); text-transform: uppercase; color: var(--gs-text-muted); }
+.ui-pinmap-where { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid var(--md-outline-variant); border-bottom: 1px solid var(--md-outline-variant); color: var(--md-primary); }
+.ui-pinmap-where-words { flex: 1; min-width: 0; display: flex; flex-direction: column; color: var(--md-on-surface); }
+.ui-pinmap-where-words span { font-size: 14px; color: var(--gs-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ui-pinmap-change { flex: none; border: 0; background: transparent; color: var(--md-primary); font: inherit; font-weight: 600; padding: 8px; cursor: pointer; }
+.ui-pinmap-saveas { display: flex; flex-direction: column; gap: 8px; }
+.ui-pinmap-saveas .ui-chips { margin-bottom: 0; }
+.ui-pinmap-saveas .ui-chip { min-height: 36px; padding: 0 18px; border-radius: var(--gs-radius-pill); font-size: 14px; }   /* pills, as the board draws them */

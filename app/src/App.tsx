@@ -448,7 +448,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [saved, setSaved] = useState<SavedAddress[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [here, setHere] = useState<Place | null>(null);
-  const [adding, setAdding] = useState<null | { mode: "ask" | "hand"; words?: string; pin?: string; from?: Place; located?: string }>(null);
   const [pinMap, setPinMap] = useState<null | { center: Place }>(null);   // story #1037: the one full-screen map, the door for Add new address, Use current location and a tapped search result
   const mapStart = (): Place => {   // where the map opens when nothing says otherwise: the phone, else the picked address, else the city centre
     const row = (saved ?? []).find((r) => r.id === selectedId);
@@ -486,7 +485,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     })().catch(() => undefined);
   }, [signedIn]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {   // today's single saved address becomes the first row, Home, once (only while the list is empty)
-    if (saved === null || saved.length > 0 || adding) return;
+    if (saved === null || saved.length > 0) return;
     const first = firstFromProfile({ address, pin });
     if (!first) return;
     let alive = true;
@@ -495,7 +494,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }, [saved, address, pin]);   // eslint-disable-line react-hooks/exhaustive-deps
   async function saveNew(pl: { pin: string; address: string; label?: string; from?: Place }) {
     const row = await addAddress(getClient(), { label: pl.label || "Home", address: pl.address, pin: pl.pin, lat: pl.from?.lat ?? null, lng: pl.from?.lng ?? null });
-    setAdding(null);
     if (row) { setSaved((cur) => [row, ...(cur ?? [])]); useSaved(row, false); } else { setAddress(pl.address); choosePin(pl.pin, pl.from); }
     setStep("menu");
   }
@@ -872,9 +870,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       onVerified={(p) => { setPhone(p); setVerified(true); setSignedIn(true); }} />
   ) : pinMap ? (
     <PinMapScreen center={pinMap.center} confirmLabel="Confirm & proceed" onBack={() => setPinMap(null)} onSearch={() => setPinMap(null)}
-      onConfirm={(p) => { setPinMap(null); setAdding({ mode: "hand", words: p.words?.address ?? "", pin: p.words?.pin, from: p.at, located: p.words?.address }); }} />
-  ) : adding ? (
-    <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} adding={{ ...adding, onBack: () => setAdding(null) }} onPlace={(pl) => void saveNew(pl)} />
+      onSave={(a) => { setPinMap(null); void saveNew(a); }} />
   ) : step === "deliver" ? (
     <DeliverToScreen list={saved ?? []} selectedId={selectedId} here={here} search={(q) => placeSearch(q)} onPlace={(h) => setPinMap({ center: { lat: h.lat, lng: h.lng } })} onBack={() => setStep("menu")}
       onSelect={(id) => { const r = (saved ?? []).find((x) => x.id === id); if (r) { useSaved(r, true); setStep("menu"); } }}
