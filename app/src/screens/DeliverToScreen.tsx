@@ -96,7 +96,7 @@ function EditSheet({ a, onClose, onSave }: { a: SavedAddress; onClose: () => voi
         <div className="ui-sheet-head"><h2>Edit {a.label}</h2></div>
         <div className="ui-field"><label htmlFor="sa-label">Label · Home, Office, Nani&apos;s house</label><input id="sa-label" type="text" maxLength={30} value={v.label} onChange={(e) => setV({ ...v, label: e.target.value })} /></div>
         <div className="ui-field"><label htmlFor="sa-addr">Address</label><textarea id="sa-addr" rows={2} maxLength={300} value={v.address} onChange={(e) => setV({ ...v, address: e.target.value })} /></div>
-        <div className="ui-field"><label htmlFor="sa-pin">Pin code</label><input id="sa-pin" className="mono-input" type="tel" inputMode="numeric" maxLength={6} value={v.pin} onChange={(e) => setV({ ...v, pin: e.target.value.trim() })} /></div>
+        <div className="ui-field"><label htmlFor="sa-pin">Pin code</label><input id="sa-pin" className="mono-input" type="tel" inputMode="numeric" maxLength={6} placeholder="000000" value={v.pin} onChange={(e) => setV({ ...v, pin: e.target.value.trim() })} /></div>
         {error && <p role="alert" className="ui-field-error">{error}</p>}
         <button type="button" className="ui-btn big" onClick={() => void save()}>Save</button>
         <button type="button" className="ui-btn ghost big" onClick={onClose}>Cancel</button>
