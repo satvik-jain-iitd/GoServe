@@ -13,6 +13,8 @@ cancelled | /customer/ | 412x915 | cancelled
 add-kitchen | /admin/ | 412x915 | add-kitchen
 add-kitchen-location | /admin/ | 412x915 | add-kitchen-location
 kitchen-pin | /admin/ | 412x915 | kitchen-pin
+tracker-rider-row | /customer/ | 412x915 | tracker-rider-row
+rider-map | /customer/ | 412x915 | rider-map
 add-dish | /admin/ | 412x915 | add-dish
 dish-edit | /admin/ | 412x915 | dish-edit
 edit-kitchen | /admin/ | 412x915 | edit-kitchen

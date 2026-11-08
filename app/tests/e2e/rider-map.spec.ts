@@ -18,35 +18,53 @@ async function onTheWay(page: Page, context: Parameters<typeof setup>[0], withPl
   return { net, tiles };
 }
 const map = (page: Page) => page.getByRole("region", { name: "Rider on the map" });
+const row = (page: Page) => page.getByRole("button", { name: "See the rider on the map" });
 
-test("S1 On the way with a place: the map shows K, You and the rider, the words under it, the attribution, and Call the rider", async ({ page, context }) => {
+test("S1 On the way with a place: a rider row and no map in the page; the row opens the full-screen map with K, Delivery and the rider, the card, the attribution and Call the rider", async ({ page, context }) => {
   const { tiles } = await onTheWay(page, context);
   await page.goto("/customer/");
+  await expect(row(page)).toContainText("Ravi is 1.5 km away");
+  await expect(row(page)).toContainText("On the map · updated 20 sec ago");
+  await expect(page.locator(".ui-map-box")).toHaveCount(0);   // no map in the page
+  expect(tiles).toEqual([]);   // and no tile asked for before the map is opened
+  await row(page).click();
   await expect(map(page)).toBeVisible();
   await expect(map(page).getByRole("img", { name: "Kitchen" })).toBeVisible();
-  await expect(map(page).getByRole("img", { name: "You" })).toBeVisible();
+  await expect(map(page).getByRole("img", { name: "Delivery" })).toBeVisible();
   await expect(map(page).getByRole("img", { name: "Rider" })).toBeVisible();
-  await expect(map(page).getByText("Ravi is 1.5 km away · updated 20 s ago")).toBeVisible();
+  await expect(map(page).getByText("Ravi is 1.5 km away")).toBeVisible();
+  await expect(map(page).getByText(/^At your door by .* · updated 20 sec ago$/)).toBeVisible();
+  await expect(map(page).getByText("Live", { exact: true })).toBeVisible();
   await expect(map(page).getByText("© OpenStreetMap contributors")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Call the rider" })).toHaveAttribute("href", "tel:9876500000");
+  await expect(map(page).getByRole("link", { name: "Call the rider" })).toHaveAttribute("href", "tel:9876500000");
+  const full = await map(page).boundingBox();
+  const vp = page.viewportSize()!;
+  expect([Math.round(full!.width), Math.round(full!.height)]).toEqual([vp.width, vp.height]);
   await expect.poll(() => tiles.length).toBeGreaterThan(0);
   await scan(page);
+  await map(page).getByRole("button", { name: "Back to your order" }).click();
+  await expect(map(page)).toHaveCount(0);
+  await expect(row(page)).toBeVisible();
 });
 
-test("S2 a new ping over realtime moves the rider and changes the words within seconds", async ({ page, context }) => {
+test("S2 a new ping over realtime changes the words of the row and of the map within seconds", async ({ page, context }) => {
   const { net } = await onTheWay(page, context);
   await page.goto("/customer/");
-  await expect(map(page).getByText("Ravi is 1.5 km away · updated 20 s ago")).toBeVisible();
+  await expect(row(page)).toContainText("Ravi is 1.5 km away");
   net.state.tracking = { rider_lat: 28.588, rider_lng: 77.258, updated_at: iso(SEEN.getTime() - 5_000) };
   net.push("UPDATE", { order_id: "x", ...net.state.tracking }, "order_tracking");
-  await expect(map(page).getByText("Ravi is 300 m away · updated 5 s ago")).toBeVisible({ timeout: 5000 });
+  await expect(row(page)).toContainText("Ravi is 300 m away", { timeout: 5000 });
+  await expect(row(page)).toContainText("updated 5 sec ago");
+  await row(page).click();
+  await expect(map(page).getByText("Ravi is 300 m away")).toBeVisible();
 });
 
-test("S3 no connection: the map is greyed, the yellow chip shows, and the line says when the rider was last seen", async ({ page, context }) => {
+test("S3 no connection: the row and the map card say when the rider was last seen, and the map is greyed", async ({ page, context }) => {
   await onTheWay(page, context);
   await page.clock.setFixedTime(new Date(SEEN.getTime() + 120_000));
   await page.goto("/customer/");
-  await expect(map(page).getByText(/^Ravi is/)).toBeVisible();
+  await expect(row(page)).toContainText("Ravi is");
+  await row(page).click();
   await context.setOffline(true);
   await expect(map(page).getByText("No connection")).toBeVisible();
   await expect(map(page).getByText("Last seen 7:59 pm, 2 min ago")).toBeVisible();
@@ -62,9 +80,10 @@ test("S4 no map before On the way, and none while the database has no place for 
   await expect(map(page)).toHaveCount(0);
 });
 
-test("S5 On the way but no place yet: no map, the rider card with its call link stays", async ({ page, context }) => {
+test("S5 On the way but no place yet: no row and no map, the rider card with its call link stays", async ({ page, context }) => {
   await onTheWay(page, context, false);
   await page.goto("/customer/");
   await expect(page.getByTestId("rider-card")).toContainText("Ravi");
+  await expect(row(page)).toHaveCount(0);
   await expect(map(page)).toHaveCount(0);
 });
