@@ -707,3 +707,4 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-locrow-title { font-size: 16px; font-weight: 600; line-height: 1.2; }
 .ui-locrow-sub { font-size: 12px; color: var(--gs-text-muted); text-transform: none; }
 .ui-locrow-go { color: var(--gs-text-muted); display: inline-flex; }
+.ui-today > .ui-field { margin: 16px 0; }   /* story 1052: on a kitchen page the Location row sits apart from the rows above and the Staff group below */
