@@ -210,8 +210,6 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-landing-head .ui-logo { display: block; width: 100%; height: auto; }
 .ui-kicker { margin: 0; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); letter-spacing: 0.04em; color: var(--gs-text-muted); }
 .ui-landing .ui-slip { margin-top: var(--gs-space-6); flex: 1; }   /* story 1044: the slip runs to the bottom of the screen on every onboarding step, so its height never changes between steps */
-.ui-landing { padding-bottom: 0; }
-.ui-landing .ui-slip-body { padding-bottom: max(18px, env(safe-area-inset-bottom)); }
 .ui-slip-title, .ui-welcome-title { text-align: center; }
 .ui-slip-line { margin: 0; text-align: center; }
 .ui-landing-head .ui-kicker, .ui-welcome-kicker { white-space: nowrap; font-size: clamp(10px, 2.9vw, 13px); }   /* the tagline is one line at every phone width */
@@ -437,14 +435,12 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-sticky .ui-bar-note { position: absolute; left: 0; right: 0; bottom: 100%; margin: 0; padding: 6px var(--gs-gutter); text-align: center; background: var(--md-background); }
 
 /* Story 667, boards O0 and O0b: the first full screen, the number and the code with Google under it. */
-.ui-welcome { height: 100dvh; overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; display: flex; flex-direction: column; padding: var(--gs-space-7) var(--gs-gutter) var(--gs-space-5); background: var(--md-background); color: var(--md-on-background); }
+.ui-welcome { height: 100dvh; overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; display: flex; flex-direction: column; padding: var(--gs-space-7) var(--gs-gutter) max(var(--gs-space-5), env(safe-area-inset-bottom)); background: var(--md-background); color: var(--md-on-background); }
 .ui-welcome header { display: flex; flex-direction: column; gap: 10px; }
 .ui-welcome h1 { margin: 0; }
 .ui-welcome .ui-lockup { display: block; width: 100%; height: auto; }
 .ui-welcome-kicker { margin: 0; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); letter-spacing: 0.04em; color: var(--gs-text-muted); }
 .ui-welcome .ui-slip { margin-top: 40px; flex: 1; }
-.ui-welcome { padding-bottom: 0; }
-.ui-welcome .ui-slip-body { padding-bottom: max(18px, env(safe-area-inset-bottom)); }
 .ui-welcome .ui-slip-body { gap: var(--gs-space-4); }
 .ui-welcome-title { margin: 0; font-family: var(--gs-font-display); font-weight: 800; font-size: var(--gs-display-l); line-height: 1; letter-spacing: -0.02em; }
 .ui-welcome-foot { margin: auto 0 0; text-align: center; font-family: var(--gs-font-mono); font-size: var(--gs-mono-xs); color: var(--gs-text-muted); }
