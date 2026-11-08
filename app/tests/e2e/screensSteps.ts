@@ -82,6 +82,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+vg+AAVYAqhyXHCrAAAAAElFTkSuQmCC", "base64") }));
     await page.goto(path); await expect(page.getByRole("button", { name: "See the rider on the map" })).toBeVisible(); },
   "rider-map": async (context, page, path) => {   // board T5: the rider on the full-screen map
+    await page.emulateMedia({ reducedMotion: "reduce" });   // the rider's mark pulses forever; a still picture needs it still
     await STEPS["tracker-rider-row"](context, page, path);
     await page.getByRole("button", { name: "See the rider on the map" }).click();
     await expect(page.getByRole("region", { name: "Rider on the map" }).getByRole("img", { name: "Rider" })).toBeVisible(); },
