@@ -53,7 +53,7 @@ test("S5 the admin's kitchen form takes opening and closing times", async ({ pag
   await page.getByLabel("Pin codes").fill("110085");
   await page.getByLabel("Opens at").fill("10:00");
   await page.getByLabel("Closes at").fill("22:30");
-  await page.getByRole("button", { name: "Add kitchen" }).click();
+  await page.getByRole("button", { name: "Save kitchen" }).click();
   await expect.poll(() => net.calls.kitchenWrites.length).toBe(1);
   expect(net.calls.kitchenWrites[0].body).toMatchObject({ name: "Rohini Kitchen", opens_at: "10:00", closes_at: "22:30" });
 });

@@ -1,77 +1,40 @@
-// Story #905, board A-AddKitchen-Pin (A10): where a kitchen stands. A small map with a draggable pin, one ghost button for the phone's place, one mono line.
-// Leaflet is loaded here (like the rider map, #691) and nowhere else. No search box and no geocoding: the admin stands at the kitchen, or moves the pin by hand.
-import { useEffect, useRef, useState } from "react";
-import type { Map as LMap, Marker } from "leaflet";
-import { currentFix } from "../lib/locate";
-import { tileUrl } from "../lib/riderMap";
+// Story #1052 (boards A11 the Location row, A12 the kitchen pin): where a kitchen stands. A row in the form shows the set place or "Set the location"; a tap opens the one shared
+// pin map screen (kitchen mode, Save location). No map inside the form (it replaces the inline map of story #905). Leaflet loads in PinMapScreen only.
+import { useEffect, useState } from "react";
+import { findAddress, type Place } from "../lib/locate";
 import type { Loc } from "../lib/admin";
+import { PinMapScreen } from "./PinMapScreen";
 
-const TILES = tileUrl(import.meta.env.VITE_MAP_TILES);
-const DELHI: [number, number] = [28.6139, 77.209];
+const DELHI: Place = { lat: 28.6139, lng: 77.209 };
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" });
-export const locationLine = (l: Loc): string =>
-  [`${l.lat.toFixed(5)}, ${l.lng.toFixed(5)}`, l.accuracy === null ? "moved by hand" : `±${Math.round(l.accuracy)} m`, l.at ? day(l.at) : ""].filter(Boolean).join(" · ");
+export const locationLine = (l: Loc): string => [`${l.lat.toFixed(4)}, ${l.lng.toFixed(4)}`, l.at ? `set ${day(l.at)}` : ""].filter(Boolean).join(" · ");
+const PIN = <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.6" fill="#ffffff" /></svg>;
+const GO = <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>;
 
-// Story #933: the kitchen is a pin (24 by 32, brand colour, tip at the location). Riders keep the initials circle.
-const PIN_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="32" viewBox="0 0 24 32" aria-hidden="true"><path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill="currentColor"/><circle cx="12" cy="12" r="4.5" fill="#fff"/></svg>';
+type Props = { loc: Loc | null; name: string; pins: string[]; onChange: (l: Loc) => void | Promise<void> };
 
-type Props = { loc: Loc | null; onChange: (l: Loc) => void | Promise<void> };
-
-export function KitchenLocation({ loc, onChange }: Props) {
-  const box = useRef<HTMLDivElement>(null);
-  const live = useRef<{ map: LMap; pin: Marker | null; L: typeof import("leaflet") } | null>(null);
-  const change = useRef(onChange);
-  change.current = onChange;
-  const [error, setError] = useState<string | null>(null);
-  const byHand = (lat: number, lng: number) => change.current({ lat, lng, accuracy: null, at: new Date().toISOString() });
-
+export function KitchenLocation({ loc, name, pins, onChange }: Props) {
+  const [open, setOpen] = useState(false);
+  const [said, setSaid] = useState<{ key: string; words: string } | null>(null);   // the words of the pin: from the save just made, else one lookup
+  const key = loc ? `${loc.lat},${loc.lng}` : "";
   useEffect(() => {
+    if (!loc || said?.key === key) return;
     let gone = false;
-    void Promise.all([import("leaflet"), import("leaflet/dist/leaflet.css")]).then(([L]) => {
-      if (gone || !box.current) return;
-      const map = L.map(box.current, { zoomControl: true, attributionControl: false, scrollWheelZoom: false, keyboard: false })   /* story #933: not a keyboard stop, so a tap leaves no focus rectangle */.setView(DELHI, 11);
-      if (TILES) L.tileLayer(TILES, { maxZoom: 19 }).addTo(map);
-      map.on("click", (e) => void byHand(e.latlng.lat, e.latlng.lng));   // a tap on the map moves the pin there
-      live.current = { map, pin: null, L };
-      show(L, map);
-    });
-    return () => { gone = true; live.current?.map.remove(); live.current = null; };
-  }, []);
-
-  const now = useRef(loc);
-  now.current = loc;
-  const show = (L: typeof import("leaflet"), map: LMap) => {
-    const l = now.current;
-    const m = live.current;
-    if (!l || !m) return;
-    if (!m.pin) {
-      m.pin = L.marker([l.lat, l.lng], { draggable: true, keyboard: false, title: "Kitchen pin", icon: L.divIcon({ className: "gs-kitchen-pin", iconSize: [24, 32], iconAnchor: [12, 32], html: PIN_SVG }) }).addTo(map);
-      m.pin.on("dragend", () => { const p = m.pin!.getLatLng(); void byHand(p.lat, p.lng); });
-      map.setView([l.lat, l.lng], 16, { animate: false });
-    } else if (m.pin.getLatLng().lat !== l.lat || m.pin.getLatLng().lng !== l.lng) {
-      m.pin.setLatLng([l.lat, l.lng]);
-      map.panTo([l.lat, l.lng], { animate: false });
-    }
-  };
-  useEffect(() => { if (live.current) show(live.current.L, live.current.map); }, [loc?.lat, loc?.lng]);
-
-  const useMine = async () => {
-    setError(null);
-    try {
-      const f = await currentFix();
-      await change.current({ lat: f.lat, lng: f.lng, accuracy: f.accuracy, at: new Date().toISOString() });
-    } catch {
-      setError("Could not get the phone's location. Allow location, or tap the map to place the pin.");
-    }
-  };
-
+    void findAddress(loc.lat, loc.lng).then((w) => { if (!gone && w) setSaid({ key, words: w.address }); }).catch(() => undefined);
+    return () => { gone = true; };
+  }, [key]);   // eslint-disable-line react-hooks/exhaustive-deps
+  const title = !loc ? "Set the location" : said?.key === key ? said.words.split(",").slice(0, 2).join(",").trim() : "Pinned on the map";
   return (
-    <section className="ui-group" aria-label="Location">
-      <h2>Location</h2>
-      <div className="ui-map"><div ref={box} className="ui-map-box" role="application" aria-label="Kitchen map" />{TILES && <span className="ui-map-credit">© OpenStreetMap contributors</span>}</div>
-      <button type="button" className="ui-btn ghost" onClick={() => void useMine()}>Use my phone's location here</button>
-      {error && <p role="alert" className="ui-note error">{error}</p>}
-      {loc ? <p className="ui-meta mono" data-testid="location-line">{locationLine(loc)}</p> : <p className="ui-meta">No location yet. Nearest rider cannot be picked.</p>}
-    </section>
+    <div className="ui-field">
+      <span className="ui-locrow-label">Location</span>
+      <button type="button" className="ui-locrow" aria-label={`Location, ${title}`} onClick={() => setOpen(true)}>
+        <span className="ui-locrow-icon">{PIN}</span>
+        <span className="ui-locrow-words"><span className="ui-locrow-title">{title}</span><span className="ui-locrow-sub mono" data-testid="location-line">{loc ? locationLine(loc) : "No location yet. Nearest rider cannot be picked."}</span></span>
+        <span className="ui-locrow-go">{GO}</span>
+      </button>
+      {open && <PinMapScreen center={loc ?? DELHI} zoom={loc ? 17 : 12} kicker={`Location of ${name.trim() || "the kitchen"}`} confirmLabel="Save location" kitchen={{ pins }}
+        onBack={() => setOpen(false)} onSearch={() => undefined} onSave={() => undefined}
+        onPoint={({ at, words }) => { setOpen(false); if (words) setSaid({ key: `${at.lat},${at.lng}`, words: words.address }); void onChange({ lat: at.lat, lng: at.lng, accuracy: null, at: new Date().toISOString() }); }} />}
+    </div>
   );
 }

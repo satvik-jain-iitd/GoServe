@@ -96,14 +96,14 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
           <div className="ui-field"><label htmlFor="k-addr">Address</label><input id="k-addr" type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
           <div className="ui-field"><label htmlFor="k-phone">Phone</label><input id="k-phone" className="mono-input" type="tel" inputMode="numeric" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /><span className="ui-meta mono">10 digits</span></div>
           <div className="ui-field"><label htmlFor="k-pins">Pin codes</label><input id="k-pins" className="mono-input" type="text" inputMode="numeric" value={form.pins} placeholder="123456, 123457" onChange={(e) => setForm({ ...form, pins: e.target.value })} /><span className="ui-meta mono">At least one · comma between pins</span></div>
-          <KitchenLocation loc={form.loc} onChange={(loc) => setForm({ ...form, loc })} />
+          <KitchenLocation loc={form.loc} name={form.name} pins={parsePins(form.pins).pins} onChange={(loc) => setForm({ ...form, loc })} />
           <div className="ui-two">
             <div className="ui-field"><label htmlFor="k-open">Opens at</label><input id="k-open" className="mono-input" type="time" value={form.opensAt} onChange={(e) => setForm({ ...form, opensAt: e.target.value })} /></div>
             <div className="ui-field"><label htmlFor="k-close">Closes at</label><input id="k-close" className="mono-input" type="time" value={form.closesAt} onChange={(e) => setForm({ ...form, closesAt: e.target.value })} /></div>
           </div>
         </div>
       </div>
-      <div className="ui-bottom"><button type="button" className="ui-btn big" onClick={() => void submitKitchen()}>Add kitchen</button></div>
+      <div className="ui-bottom"><button type="button" className="ui-btn big" onClick={() => void submitKitchen()}>Save kitchen</button></div>
     </>
   );
   const k = view.kind === "kitchen" ? kitchens.find((x) => x.id === view.id) ?? null : null;
@@ -120,7 +120,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
         <div className="ui-row ui-row-static"><span>Phone</span><span className="mono ui-row-sub">{k.phone ?? "Not set"}</span></div>
         <div className="ui-row ui-row-static"><span>Address</span><span className="ui-row-sub ui-right">{k.address ?? "Not set"}</span></div>
         <button type="button" className="ui-row" onClick={() => { onError(null); setEditing(true); }}><span>Edit details</span><span className="go" aria-hidden="true">›</span></button>
-        <KitchenLocation loc={locOf(k)} onChange={async (loc) => { const failed = await setKitchenLocation(getClient(), k.id, loc); onError(failed); if (!failed) await reload(); }} />
+        <KitchenLocation loc={locOf(k)} name={k.name} pins={k.pin_codes} onChange={async (loc) => { const failed = await setKitchenLocation(getClient(), k.id, loc); onError(failed); if (!failed) await reload(); }} />
         <section className="ui-group" aria-label="Staff">
           <h2>Staff <span className="mono">{staffOf(k.id).length}{invitesOf(k.id).length > 0 && ` · ${invitesOf(k.id).length} invited`}</span></h2>
           {staffOf(k.id).length === 0 && invitesOf(k.id).length === 0 && <p className="ui-meta">No staff yet. Add a person from the City tab.</p>}
