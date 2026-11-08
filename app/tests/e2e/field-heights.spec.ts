@@ -12,6 +12,11 @@ async function measure(page: Page) {
   return { label: await box(/^Label/), address: await box(/^Address/), pin: await box(/^Pin code/) };
 }
 
+// qa review: a field row starts 16 px under the box above it (UI_MISTAKES check 2), by one shared rule.
+async function gaps(page: Page) {
+  return page.locator(".ui-field + .ui-field").evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top - (el.previousElementSibling as HTMLElement).getBoundingClientRect().bottom)));
+}
+
 function same(m: Awaited<ReturnType<typeof measure>>) {
   expect(m.pin.h, "Pin and Label are the same height").toBe(m.label.h);
   expect(m.pin.h, "48 px as drawn").toBeLessThanOrEqual(48);
@@ -29,6 +34,7 @@ test("S1 on the Add address page Label, Address and Pin code are one family", as
   await page.getByRole("button", { name: /^Home\b/ }).click();
   await page.getByRole("button", { name: "Add new address" }).click();
   same(await measure(page));
+  for (const g of await gaps(page)) expect(g, "gap between field rows").toBeGreaterThanOrEqual(16);
 });
 
 test("S2 on the Edit sheet Label, Address and Pin code are one family", async ({ page, context }) => {
@@ -39,4 +45,5 @@ test("S2 on the Edit sheet Label, Address and Pin code are one family", async ({
   await page.getByRole("button", { name: "Edit or remove Home" }).click();
   await page.getByRole("button", { name: "Edit", exact: true }).click();
   same(await measure(page));
+  for (const g of await gaps(page)) expect(g, "gap between field rows").toBeGreaterThanOrEqual(16);
 });
