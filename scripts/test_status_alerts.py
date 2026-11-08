@@ -5,7 +5,7 @@ import os, sys, unittest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from test_schema import TOKEN, sql, migration_inside
 
-MIG = migration_inside(["20261109100000_status_alerts.sql"], "to_regproc('public.push_decline_words') is not null")   # empty once dev has it
+MIG = migration_inside(["20261109100000_status_alerts.sql"], "to_regproc('public.push_decline_words(text, text)') is not null")   # empty once dev has it
 UID = "00000000-0000-0000-0000-0000000000e9"
 K = "00000000-0000-0000-0000-0000000000b9"
 PLACE = (f"insert into kitchens (id, name, pin_codes, lat, lng) values ('{K}', 'Test', array['110016'], 28.5494, 77.2001); "
@@ -32,7 +32,7 @@ class StatusAlerts(unittest.TestCase):
         r = run(SUB, PLACE, f"update orders set status = 'cancelled', cancel_reason = 'We are out of paneer tonight', cancelled_by = 'kitchen' where id = {ORDER}",
                 f"select {QUEUED('cancelled')} as n, {WORDS} as body")
         self.assertEqual(r["n"], 1)
-        self.assertEqual(r["body"], "The kitchen declined your order: We are out of paneer tonight")
+        self.assertEqual(r["body"], "Test could not take your order: We are out of paneer tonight")
 
     def test_s3_the_customers_own_cancel_queues_nothing(self):
         r = run(SUB, PLACE, f"update orders set status = 'cancelled', cancelled_by = 'customer' where id = {ORDER}", f"select {QUEUED('cancelled')} as n")
@@ -46,7 +46,11 @@ class StatusAlerts(unittest.TestCase):
     def test_s5_a_long_reason_is_cut_at_120_characters(self):
         long = "x" * 300
         r = run(SUB, PLACE, f"update orders set status = 'cancelled', cancel_reason = '{long}', cancelled_by = 'kitchen' where id = {ORDER}", f"select {WORDS} as body")
-        self.assertEqual(r["body"], "The kitchen declined your order: " + "x" * 120)
+        self.assertEqual(r["body"], "Test could not take your order: " + "x" * 120)
+
+    def test_s5b_a_kitchen_with_no_name_falls_back_to_the_kitchen(self):
+        r = run(SUB, PLACE, "update kitchens set name = '' where id = '" + K + "'", f"update orders set status = 'cancelled', cancel_reason = 'Closing early', cancelled_by = 'kitchen' where id = {ORDER}", f"select {WORDS} as body")
+        self.assertEqual(r["body"], "The kitchen could not take your order: Closing early")
 
     def test_s6_no_subscription_no_row_and_the_trace_says_why(self):
         r = run(PLACE, f"update orders set status = 'accepted' where id = {ORDER}",
