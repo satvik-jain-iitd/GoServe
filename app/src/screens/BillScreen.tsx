@@ -88,7 +88,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
         )}
         {offers && (offers.quote.offers.length > 0 || offers.quote.coupon) && (
           <section aria-label="Offers" style={{ margin: "16px 20px 0 20px", display: "flex", flexDirection: "column", gap: 8 }}>
-            <h2 style={{ margin: "0 0 4px 0", fontFamily: "'DM Mono', monospace", fontSize: 12, fontWeight: 400, textTransform: "uppercase", color: "var(--gs-text-muted)" }}>Offers</h2>
+            <h2 style={{ margin: "0 0 4px 0", fontFamily: "'DM Mono', monospace", fontSize: 12, fontWeight: 400, color: "var(--gs-text-muted)" }}>Offers</h2>
             {offers.quote.offers.map((o) => {
               const on = offers.quote.coupon?.code === o.code;
               return (

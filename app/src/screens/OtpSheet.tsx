@@ -117,7 +117,7 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false, g
             <button type="button" className={welcome ? "ui-btn big" : "ui-btn bar"} disabled={!isMobile(phone) || busy || locked} onClick={() => send()}>Send code</button>
             {welcome ? (
               <>
-                <div className="ui-or" aria-hidden="true"><span /><span>or</span><span /></div>
+                <div className="ui-or" aria-hidden="true"><span /><span>Or</span><span /></div>
                 <SignIn mode="signin" big />
               </>
             ) : <button type="button" className="ui-btn ghost" onClick={onClose}>Not now</button>}
