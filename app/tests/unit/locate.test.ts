@@ -72,48 +72,43 @@ describe("dropFor", () => {
   });
 });
 
-// Story #969: Nominatim has no postcode in most of small-town India. The fallback asks Overpass for the nearest object with addr:postcode within 10 km.
-// Replies are recorded: the Chhatarpur reply is the one measured on 7 Nov 2026 (no postcode at any zoom); the Overpass reply is shaped like the real one (nodes, and ways with a center).
-describe("the nearest pin when the reverse lookup has none (story 969)", () => {
+// Story #987 (was #969): Nominatim has no postcode in most of small-town India. The fallback asks our own table (rpc nearest_pin, GeoNames), never a third party.
+// The Chhatarpur reply is the one measured on 7 Nov 2026 (no postcode at any zoom).
+describe("the nearest pin when the reverse lookup has none (story 987)", () => {
   const CHHATARPUR = { address: { road: "Link Road", village: "Rajnagar", state_district: "Chhatarpur", state: "Madhya Pradesh", country: "India" } };
-  const OVERPASS = { elements: [
-    { type: "node", lat: 24.95, lon: 79.7, tags: { "addr:postcode": "471105" } },
-    { type: "way", center: { lat: 24.7, lon: 79.6 }, tags: { "addr:postcode": "471001" } },
-    { type: "node", lat: 24.701, lon: 79.601, tags: { "addr:postcode": "47100" } },   // not six digits: skipped
-    { type: "node", lat: 24.7005, lon: 79.6005, tags: { name: "no pin here" } },
-  ] };
-  const route = (calls: string[], overpass: () => Promise<Response>, nominatim: unknown = CHHATARPUR) => async (u: string | URL | Request) => {
-    const url = String(u); calls.push(url);
-    return url.includes("nominatim") ? new Response(JSON.stringify(nominatim)) : overpass();
-  };
+  const deps = (fetchFn: typeof fetch) => ({ fetchFn, url: "https://x.supabase.co", anon: "anon-key", token: async () => "tok" });
+  const route = (calls: { url: string; init?: RequestInit }[], pin: () => Promise<Response>, nominatim: unknown = CHHATARPUR) => (async (u: string | URL | Request, init?: RequestInit) => {
+    const url = String(u); calls.push({ url, init });
+    return url.includes("nominatim") ? new Response(JSON.stringify(nominatim)) : pin();
+  }) as typeof fetch;
+  const ask = (f: typeof fetch, lat = 24.91, lng = 79.59) => reverseAddress(lat, lng, f, deps(f));
 
-  it("fills the pin from the nearest tagged object, with exactly two calls and the 10 km query", async () => {
-    const calls: string[] = [];
-    const r = await reverseAddress(24.699, 79.599, route(calls, async () => new Response(JSON.stringify(OVERPASS))) as typeof fetch);
-    expect(r).toEqual({ address: "Link Road, Rajnagar, Madhya Pradesh", pin: "471001" });   // the way 150 m away beats the node 30 km away
+  it("fills the pin from our own table with exactly two calls, the second to the Supabase rpc and nowhere else", async () => {
+    const calls: { url: string; init?: RequestInit }[] = [];
+    const r = await ask(route(calls, async () => new Response(JSON.stringify("471001"))));
+    expect(r).toEqual({ address: "Link Road, Rajnagar, Madhya Pradesh", pin: "471001" });
     expect(calls).toHaveLength(2);
-    const q = decodeURIComponent(calls[1]);
-    expect(q).toContain("around:10000,24.699,79.599");
-    expect(q).toContain('"addr:postcode"');
+    expect(calls[1].url).toBe("https://x.supabase.co/rest/v1/rpc/nearest_pin");
+    expect(JSON.parse(String(calls[1].init?.body))).toEqual({ p_lat: 24.91, p_lng: 79.59 });
+    expect(calls.some((c) => c.url.includes("overpass"))).toBe(false);
   });
 
   it("makes no second call when the first reply has a fitting pin", async () => {
-    const calls: string[] = [];
-    const r = await reverseAddress(28.57, 77.24, route(calls, async () => { throw new Error("must not be called"); }, NOMINATIM) as typeof fetch);
+    const calls: { url: string; init?: RequestInit }[] = [];
+    const r = await ask(route(calls, async () => { throw new Error("must not be called"); }, NOMINATIM), 28.57, 77.24);
     expect(r?.pin).toBe("110024");
     expect(calls).toHaveLength(1);
   });
 
-  it("skips a nearby pin that disagrees with the state of the reply and takes the next fitting one", async () => {
+  it("drops a pin from the table that disagrees with the state of the reply", async () => {
     const delhi = { address: { road: "Ring Road", city: "New Delhi", state: "Delhi" } };
-    const ov = { elements: [{ type: "node", lat: 28.5, lon: 77.2, tags: { "addr:postcode": "201301" } }, { type: "node", lat: 28.52, lon: 77.21, tags: { "addr:postcode": "110017" } }] };
-    const r = await reverseAddress(28.5, 77.2, route([], async () => new Response(JSON.stringify(ov)), delhi) as typeof fetch);
-    expect(r?.pin).toBe("110017");
+    const r = await ask(route([], async () => new Response(JSON.stringify("201301")), delhi), 28.5, 77.2);
+    expect(r?.pin).toBe("");
   });
 
-  it("leaves the pin empty (never a guess) when Overpass has nothing, fails, or answers with an error", async () => {
-    for (const overpass of [async () => new Response(JSON.stringify({ elements: [] })), async () => { throw new Error("offline"); }, async () => new Response("busy", { status: 429 }), async () => new Response("not json")]) {
-      const r = await reverseAddress(24.699, 79.599, route([], overpass) as typeof fetch);
+  it("leaves the pin empty (never a guess) when the table has nothing, fails, or answers with an error", async () => {
+    for (const pin of [async () => new Response("null"), async () => { throw new Error("offline"); }, async () => new Response("busy", { status: 429 }), async () => new Response("not json")]) {
+      const r = await ask(route([], pin));
       expect(r).toEqual({ address: "Link Road, Rajnagar, Madhya Pradesh", pin: "" });
     }
   });
@@ -121,9 +116,9 @@ describe("the nearest pin when the reverse lookup has none (story 969)", () => {
   it("gives up after 4 seconds and leaves the pin empty", async () => {
     vi.useFakeTimers();
     try {
-      const never = (_: string | URL | Request, init?: RequestInit) => new Promise<Response>((_res, rej) => init?.signal?.addEventListener("abort", () => rej(new DOMException("aborted", "AbortError"))));
-      const fetchFn = (async (u: string | URL | Request, init?: RequestInit) => String(u).includes("nominatim") ? new Response(JSON.stringify(CHHATARPUR)) : never(u, init)) as typeof fetch;
-      const p = reverseAddress(24.699, 79.599, fetchFn);
+      const f = (async (u: string | URL | Request, init?: RequestInit) => String(u).includes("nominatim") ? new Response(JSON.stringify(CHHATARPUR))
+        : new Promise<Response>((_res, rej) => init?.signal?.addEventListener("abort", () => rej(new DOMException("aborted", "AbortError"))))) as typeof fetch;
+      const p = ask(f);
       await vi.advanceTimersByTimeAsync(4100);
       expect(await p).toEqual({ address: "Link Road, Rajnagar, Madhya Pradesh", pin: "" });
     } finally { vi.useRealTimers(); }
