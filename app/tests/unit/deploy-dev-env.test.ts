@@ -7,8 +7,7 @@ import { describe, expect, it } from "vitest";
 const text = readFileSync(new URL("../../../.github/workflows/deploy-dev.yml", import.meta.url), "utf8");
 
 describe("deploy-dev.yml (the dev app)", () => {
-  it("turns the phone code on with the fixed sender, same as prod", () => {
-    expect(text).toMatch(/VITE_OTP_GATE:\s*["']?1/);
+  it("keeps the fixed sender, same as prod; the gate itself is off (story #1155)", () => {
     expect(text).toMatch(/VITE_OTP_SMS:\s*["']?(fixed|real)\b/);
   });
   // Story #900: removing a kitchen is the admin's job now; no build carries the kitchen-app flag (the dev flag of #898 is gone).
