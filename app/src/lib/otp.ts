@@ -2,6 +2,7 @@
 // (phone_in_use) can sign in with Supabase's own phone sign-in, and /otp/claim then moves the guest's orders to that account (story #558).
 // The words of a refusal are the server's (the contract's). A server fault with an error word but no message gets our line for that word (story #786); only a lost network, or an answer that is not JSON, gets the network line.
 import { getClient } from "./supabase";
+import { GUEST_KEY } from "./deviceOwner";
 
 export type OtpResult = { ok: true; phone?: string } | { ok: false; error: string; message: string };
 const NETWORK: OtpResult = { ok: false, error: "network", message: "Could not reach GoServe. Try again." };
@@ -36,6 +37,7 @@ export async function sendSignInCode(phone: string): Promise<OtpResult> {
   return error.status === 429 ? { ok: false, error: "too_many_sends", message: "Too many codes. Try again in a few minutes." } : NETWORK;
 }
 export async function finishSignIn(phone: string, code: string, guestToken: string): Promise<OtpResult> {
+  try { window.localStorage.setItem(GUEST_KEY, "1"); } catch { /* blocked storage */ }   // story #1139: this flow is a guest becoming the old account, with their orders; the phone keeps the guest's area and draft
   const { data, error } = await getClient().auth.verifyOtp({ phone: toPhone(phone), token: code, type: "sms" });
   if (error || !data.session) return { ok: false, error: "wrong_code", message: "That code is not right." };
   const claimed = await call("claim", { guest_token: guestToken }, data.session.access_token);
