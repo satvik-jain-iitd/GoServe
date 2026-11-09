@@ -18,6 +18,7 @@ export type PinPick = { at: Place; words: Looked | null; served: boolean | null 
 export type Saved = { pin: string; address: string; label: string; from: Place };   // story #1038: what the details step hands to the save
 type Props = {
   center: Place; zoom?: number; kicker?: string; confirmLabel: string;
+  onInvite?: (far: { at: Place; pin: string; address: string }) => Promise<string | null>;   // story #1128 (board C6d): a pin no kitchen reaches. The button reads Invite the founders here; it saves the ask and opens the founder note. Answers an error in words, or null; not used when editing
   edit?: { label: string; address: string };   // story #1051 (board C9): the saved row being changed; the details open filled with it
   kitchen?: { pins: string[] };   // story #1052 (board A12): a kitchen's place. No serviceability, no details step: Confirm hands the point back. "Inside <pin>" when the words are in one of its pin codes
   onPoint?: (p: { at: Place; words: Looked | null }) => void;
@@ -26,7 +27,7 @@ type Props = {
   lookup?: (p: Place) => Promise<Looked | null>; serve?: (p: Place, pin: string | null) => Promise<Serve | null>;
 };
 
-export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, kitchen, onPoint, onBack, onSearch, onSave, lookup = (p) => findAddress(p.lat, p.lng), serve = (p, pin) => (kitchen ? Promise.resolve(null) : serveAt(p, undefined, pin)) }: Props) {
+export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, kitchen, onInvite, onPoint, onBack, onSearch, onSave, lookup = (p) => findAddress(p.lat, p.lng), serve = (p, pin) => (kitchen ? Promise.resolve(null) : serveAt(p, undefined, pin)) }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const live = useRef<{ map: LMap; L: typeof import("leaflet"); dot: Marker | null } | null>(null);
   const [point, setPoint] = useState<Place>(center);
@@ -117,6 +118,15 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
   const name = cardWords(words?.address ?? null);
   const was = edit ? splitAddress(edit.address) : null;   // board C9: Editing shows the saved house and landmark in front of the words of the pin
   const editLine = was ? [was.house, was.landmark ? `near ${was.landmark}` : ""].filter(Boolean).join(", ") : "";
+  // story #1128 (board C6d): a pin no kitchen reaches, read as a valid pin. The main button invites the founders instead of confirming.
+  const far = !edit && !kitchen && onInvite && served?.serviceable === false && words?.pin && isPin(words.pin) ? { at: point, pin: words.pin, address: words.address } : null;
+  const [sending, setSending] = useState(false);
+  const invite = async (f: NonNullable<typeof far>) => {
+    setNote(null); setSending(true);
+    const err = await onInvite!(f).catch(() => "Could not set that up. Try again.");
+    setSending(false);
+    if (err) setNote(err);
+  };
   const strips: Strip[] = kitchen ? (words?.pin && kitchen.pins.includes(words.pin) ? [{ kind: "ready", text: `Inside ${words.pin}` }] : []) : stripsFor({ serve: served, here, pin: point });
   return (
     <section ref={root} className="ui-pinmap" role="region" aria-label="Pin map" data-step={pick ? "details" : "pin"}>
@@ -136,7 +146,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
         {failed && <span className="ui-pinmap-addr ui-pinmap-quiet">Could not read the address, the pin still counts</span>}
         {note && <span role="alert" className="ui-pinmap-addr ui-pinmap-quiet">{note}</span>}
         {strips.map((s) => <span key={s.kind} role="status" className={`ui-pinmap-strip ${s.kind}`}>{s.text}</span>)}
-        <button type="button" className="ui-btn big" disabled={busy} onClick={() => (onPoint ? onPoint({ at: point, words }) : setPick({ at: point, words, served: served ? served.serviceable : null }))}>{confirmLabel}</button>
+        <button type="button" className="ui-btn big" disabled={busy || sending} onClick={() => (onPoint ? onPoint({ at: point, words }) : far ? void invite(far) : setPick({ at: point, words, served: served ? served.serviceable : null }))}>{far ? "Invite the founders here" : confirmLabel}</button>
         <span className="mono ui-pinmap-credit">{words?.from === "ola" && <><a href={OSM} target="_blank" rel="noopener noreferrer">Ola Maps</a> · </>}<a href={OSM} target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a></span>
       </div>}
       {pick && <DetailsSheet pick={pick} edit={edit} onChange={() => setPick(null)} onSave={onSave} onHeight={(h) => { root.current?.style.setProperty("--sheet-h", `${h}px`); live.current?.map.invalidateSize({ pan: false }); const c = pick.at; live.current?.map.setView([c.lat, c.lng], live.current.map.getZoom(), { animate: false }); }} />}
