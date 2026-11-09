@@ -753,10 +753,11 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-lockup { aspect-ratio: 7 / 1; object-fit: contain; }
 
 /* Story 1129, board NK-L2: the co-founder's letter after Tell me. The slip runs to the bottom of the screen like every onboarding step; Share and Change location sit at its foot. */
+.ui-founder { display: flex; flex-direction: column; }
 .ui-founder .ui-slip-body { flex: 1; display: flex; flex-direction: column; gap: 12px; }
 .ui-founder-top { display: flex; align-items: center; gap: 12px; }
 .ui-founder-top svg { flex: none; }
-.ui-founder-top h2 { margin: 0; font-family: var(--gs-font-display); font-weight: 800; font-size: 22px; line-height: 1.1; letter-spacing: -0.02em; }
+.ui-founder-top h2 { margin: 0; font-family: var(--gs-font-display); font-weight: 800; font-size: 22px; line-height: 1.1; letter-spacing: -0.02em; text-wrap: balance; }
 .ui-founder-text { display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.45; }
 .ui-founder-text p { margin: 0; }
 .ui-founder-pause { height: 8px; }
