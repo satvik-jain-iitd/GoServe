@@ -25,11 +25,9 @@ for (const theme of ["day", "night"] as const) {
     await page.waitForTimeout(600);
     await shot("Main");
     await typePlace(page, "110099");
-    await page.getByRole("button", { name: "See the menu" }).click();
     await page.getByText("We are not in 110099").waitFor();
     await shot("S-NoKitchen");
     await typePlace(page, "110016");
-    await page.getByRole("button", { name: "See the menu" }).click();
     await page.getByRole("button", { name: "Add Dal Makhani" }).waitFor();
     await page.waitForTimeout(900);
     await page.getByRole("button", { name: "Add Dal Makhani" }).click();
@@ -52,7 +50,6 @@ for (const theme of ["day", "night"] as const) {
     net.state.kitchens = [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: false, active: true, lat: null, lng: null, opens_at: "11:00:00" }];
     await page.goto("/customer/");
     await typePlace(page, "110016");
-    await page.getByRole("button", { name: "See the menu" }).click();
     await page.getByRole("button", { name: "Add Dal Makhani" }).waitFor();
     await page.waitForTimeout(900);
     await page.screenshot({ path: `${OUT}/${theme}/S-Closed-${theme}.png` });
