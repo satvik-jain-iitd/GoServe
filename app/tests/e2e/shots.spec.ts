@@ -20,13 +20,11 @@ for (const theme of ["day", "night"] as const) {
     const shot = (name: string) => page.screenshot({ path: `${OUT}/${theme}/${name}-${theme}.png` });
     const net = await setup(context, page, [], { pin: null });
     net.state.menu = MENU;
+    net.state.kitchens = [KITCHEN];   // open at any hour of the day the shots are taken
     await page.goto("/customer/");
     await page.getByRole("heading", { name: "Where does the food go?" }).waitFor();
     await page.waitForTimeout(600);
     await shot("Main");
-    await typePlace(page, "110099");
-    await page.getByText("We are not in 110099").waitFor();
-    await shot("S-NoKitchen");
     await typePlace(page, "110016");
     await page.getByRole("button", { name: "Add Dal Makhani" }).waitFor();
     await page.waitForTimeout(900);
@@ -35,10 +33,13 @@ for (const theme of ["day", "night"] as const) {
     await shot("Menu");
     await page.getByRole("button", { name: "Filter" }).click();
     await shot("Categories");
-    await page.getByRole("button", { name: "Close", exact: true }).click();
+    await page.getByRole("button", { name: /Show \d+ dishes/ }).click();
     await page.getByRole("button", { name: "Chicken Curry details" }).click();
     await shot("Dish");
     await page.getByRole("button", { name: "Close", exact: true }).click();
+    await typePlace(page, "110099");
+    await page.getByRole("heading", { name: "We don't reach here yet" }).waitFor();
+    await shot("S-NoKitchen");
   });
 }
 
@@ -50,7 +51,7 @@ for (const theme of ["day", "night"] as const) {
     net.state.kitchens = [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: false, active: true, lat: null, lng: null, opens_at: "11:00:00" }];
     await page.goto("/customer/");
     await typePlace(page, "110016");
-    await page.getByRole("button", { name: "Add Dal Makhani" }).waitFor();
+    await page.getByText("Dal Makhani").first().waitFor();
     await page.waitForTimeout(900);
     await page.screenshot({ path: `${OUT}/${theme}/S-Closed-${theme}.png` });
     let release!: () => void;
@@ -117,6 +118,7 @@ for (const theme of ["day", "night"] as const) {
     await page.getByRole("button", { name: "History" }).click();
     await page.getByRole("heading", { name: "History", exact: true }).waitFor();
     await shot("Orders");
+    await page.getByRole("button", { name: "Delivery", exact: true }).click();
     await page.getByRole("button", { name: /^You: / }).click();
     await page.getByRole("dialog", { name: "You" }).waitFor();
     await page.evaluate(() => document.fonts.ready);
@@ -158,7 +160,7 @@ for (const theme of ["day", "night"] as const) {
     await page.getByRole("switch", { name: "Online" }).waitFor();
     await shot("R-Me");
     await page.getByRole("switch", { name: "Online" }).click();
-    await page.getByRole("button", { name: "Job", exact: true }).click();
+    await page.getByRole("button", { name: "Delivery", exact: true }).click();
     await page.getByRole("heading", { name: "You are offline" }).waitFor();
     await shot("R-Offline");
   });
@@ -167,6 +169,7 @@ for (const theme of ["day", "night"] as const) {
     const shot = (name: string) => page.screenshot({ path: `${OUT}/${theme}/${name}-${theme}.png` });
     const net = await setup(context, page);
     net.state.rider = null;
+    net.state.anonymous = true;
     await page.goto("/rider/");
     await page.getByRole("heading", { name: "Sign in to ride" }).waitFor();
     await page.evaluate(() => document.fonts.ready);
@@ -195,13 +198,13 @@ for (const theme of ["day", "night"] as const) {
     await page.evaluate(() => document.fonts.ready);
     await shot("K-Tickets");
     await page.getByRole("button", { name: "Open ticket 1043aaaa" }).click();
-    await page.getByRole("heading", { name: "Ticket" }).waitFor();
+    await page.getByRole("dialog", { name: "Order 1043aaaa" }).waitFor();
     await shot("K-Ticket");
-    await page.getByRole("button", { name: "Back to new tickets" }).click();
+    await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Cooking", exact: true }).click();
     await page.getByRole("heading", { name: "Ready · rider on the way" }).waitFor();
     await shot("K-Cooking");
-    await page.getByRole("button", { name: "Kitchen", exact: true }).click();
+    await page.getByRole("button", { name: "Today", exact: true }).click();
     await page.getByRole("switch", { name: "Open for orders" }).waitFor();
     await page.getByText("Paneer Butter Masala").waitFor();
     await shot("K-YourKitchen");
@@ -217,6 +220,7 @@ for (const theme of ["day", "night"] as const) {
     await page.evaluate(() => document.fonts.ready);
     await shot("K-NoTickets");
     net.state.kitchen = null;
+    net.state.anonymous = true;
     await page.reload();
     await page.getByRole("heading", { name: "Sign in to cook" }).waitFor();
     await shot("K-SignIn");
@@ -231,7 +235,7 @@ for (const theme of ["day", "night"] as const) {
     const K = (over: object) => ({ ...order("placed"), kitchen_id: "k", cancel_reason: null, ...over });
     const net = await setup(context, page, [
       K({ id: "1044aaaa-0000-0000-0000-000000000000", created_at: "2026-10-24T14:25:00Z", customer_name: "Meera Kapoor", customer_phone: "9876543210", total_paise: 48000, items: [{ menu_item_id: "t2", name: "Non-veg thali", qty: 2, price_paise: 24000 }] }),
-      K({ id: "1043aaaa-0000-0000-0000-000000000000", created_at: "2026-10-24T14:22:00Z", status: "preparing", customer_name: "Rahul Verma", customer_phone: "9876543210", total_paise: 26000, items: [{ menu_item_id: "t1", name: "Veg thali", qty: 1, price_paise: 18000 }, { menu_item_id: "d4", name: "Tandoori Roti", qty: 2, price_paise: 2000 }], address: "B-12, Lajpat Nagar II, near the park gate" }),
+      K({ id: "1043aaaa-0000-0000-0000-000000000000", created_at: "2026-10-24T14:22:00Z", status: "preparing", customer_name: "Rahul Verma", customer_phone: "9876543210", total_paise: 22000, items: [{ menu_item_id: "t1", name: "Veg thali", qty: 1, price_paise: 18000 }, { menu_item_id: "d4", name: "Tandoori Roti", qty: 2, price_paise: 2000 }], address: "B-12, Lajpat Nagar II, near the park gate" }),
       K({ id: "1042aaaa-0000-0000-0000-000000000000", created_at: "2026-10-24T14:10:00Z", status: "out_for_delivery", customer_name: "Rahul Verma", total_paise: 34000, rider_id: "r1" }),
       K({ id: "1040aaaa-0000-0000-0000-000000000000", created_at: "2026-10-24T14:06:00Z", status: "delivered", customer_name: "Priya Nair", total_paise: 18000 }),
       K({ id: "1039aaaa-0000-0000-0000-000000000000", created_at: "2026-10-24T14:00:00Z", status: "cancelled", customer_name: "Karan Mehta", total_paise: 36000, cancel_reason: "customer asked" })]);
@@ -250,6 +254,7 @@ for (const theme of ["day", "night"] as const) {
     await page.getByTestId("day-total").waitFor();
     await shot("A-Numbers");
     net.state.admin = false;
+    net.state.anonymous = true;
     await page.reload();
     await page.getByRole("heading", { name: "Sign in to run the city" }).waitFor();
     await shot("A-SignIn");
