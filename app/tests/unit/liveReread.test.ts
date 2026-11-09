@@ -35,6 +35,18 @@ describe("rereadEvery (the safety net)", () => {
     expect(reload).toHaveBeenCalledTimes(2);
     stop();
   });
+  it("S8 a hidden tab does not read; the wake read catches it up", async () => {
+    vi.stubGlobal("document", { visibilityState: "hidden" });
+    const reload = vi.fn().mockResolvedValue(undefined);
+    const stop = rereadEvery(reload);
+    await vi.advanceTimersByTimeAsync(90_000);
+    expect(reload).not.toHaveBeenCalled();
+    vi.stubGlobal("document", { visibilityState: "visible" });
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(reload).toHaveBeenCalledTimes(1);
+    stop();
+    vi.unstubAllGlobals();
+  });
   it("S4 stop ends the reading", async () => {
     const reload = vi.fn().mockResolvedValue(undefined);
     rereadEvery(reload)();
@@ -55,6 +67,15 @@ describe("watchOrders when the channel breaks", () => {
       expect(down).toHaveBeenCalledTimes(1);
     });
   }
+  it("S7 a stop we asked for does not read again (removeChannel reports CLOSED)", () => {
+    let cb: (s: string) => void = () => {};
+    const channel: any = { on: () => channel, subscribe: (f: (s: string) => void) => { cb = f; return channel; } };
+    const client: any = { channel: () => channel, removeChannel: () => { cb("CLOSED"); return Promise.resolve(); } };
+    const down = vi.fn();
+    const stop = watchOrders(client, { column: "session_id", value: "s" } as any, () => {}, undefined, undefined, down);
+    stop();
+    expect(down).not.toHaveBeenCalled();
+  });
   it("S6 SUBSCRIBED is not a break", () => {
     const down = vi.fn(); const ready = vi.fn();
     watchOrders(fake("SUBSCRIBED"), { column: "session_id", value: "s" } as any, () => {}, ready, undefined, down);

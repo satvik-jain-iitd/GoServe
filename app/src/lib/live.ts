@@ -14,6 +14,7 @@ export async function fetchOrders(client: SupabaseClient, scope: Scope): Promise
 // Returns a function that stops listening. onReady fires once the server confirms the subscription; the caller reads the list again
 // then, so an order that arrived in the first moments is not missed.
 export function watchOrders(client: SupabaseClient, scope: Scope, onOrder: (order: Order, event: string) => void, onReady?: () => void, onGone?: (id: string) => void, onDown?: () => void): () => void {
+  let stopped = false;   // story #967: our own stop() makes supabase-js report CLOSED; that is not a break
   const channel = client
     .channel(`orders-${scope.value}`)
     .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `${scope.column}=eq.${scope.value}` }, (payload) => {
@@ -26,9 +27,10 @@ export function watchOrders(client: SupabaseClient, scope: Scope, onOrder: (orde
     })
     .subscribe((status) => {
       if (status === "SUBSCRIBED") onReady?.();
-      else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") onDown?.();   // story #967: a broken channel reads at once, then the 30 s read keeps going
+      else if (!stopped && (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED")) onDown?.();   // story #967: a broken channel reads at once, then the 30 s read keeps going
     });
   return () => {
+    stopped = true;
     void client.removeChannel(channel);
   };
 }
@@ -38,7 +40,7 @@ export function watchOrders(client: SupabaseClient, scope: Scope, onOrder: (orde
 export function rereadEvery(reload: () => Promise<void>, everyMs = 30_000): () => void {
   let busy = false;
   const timer = setInterval(() => {
-    if (busy) return;
+    if (busy || (typeof document !== "undefined" && document.visibilityState === "hidden")) return;   // a hidden tab waits; the wake read catches it up
     busy = true;
     reload().catch(() => {}).finally(() => { busy = false; });
   }, everyMs);
