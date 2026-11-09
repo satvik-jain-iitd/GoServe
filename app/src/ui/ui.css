@@ -828,3 +828,10 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .closed-grey .ui-mark rect { stroke: var(--gs-text-muted); }
 .closed-grey .ui-mark circle, .closed-grey .ui-mark path { fill: var(--gs-text-muted); }
 .ui-closed-note { margin: 0 var(--gs-gutter) var(--gs-space-3); padding: 10px 12px; border: 1px solid var(--md-outline-variant); border-radius: 12px; background: var(--md-surface); font-size: var(--gs-text-sm); font-weight: 600; }   /* story 1162 */
+
+/* Story 1170: one disabled style for every .ui-btn, and the reason line above a disabled main button (centred, 12 px above). */
+.ui-btn:disabled:not(.danger-fill) { opacity: 1; background: var(--gs-disabled-bg); color: var(--gs-disabled-text); border: 0; box-shadow: none; cursor: not-allowed; }   /* pointer-events stay none (story 953): a touch does nothing, so the cursor shows only where a mouse can reach it elsewhere */
+.ui-btn:disabled:not(.danger-fill) .mono, .ui-btn:disabled:not(.danger-fill) .verb { color: inherit; }
+.ui-reason { margin: 0 0 12px; text-align: center; font-size: var(--gs-text-sm); color: var(--gs-text-muted); }
+.ui-sticky.float:has(.ui-reason) { flex-direction: column; align-items: center; }
+.ui-sticky.float:has(.ui-reason) .ui-btn { width: 100%; }

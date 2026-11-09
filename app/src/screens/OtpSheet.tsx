@@ -113,6 +113,7 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false, g
                   onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "")); setError(null); }} /></div>
             </div>
             {error && <p role="alert" className="ui-field-error">{error.message}</p>}
+            {!isMobile(phone) && !busy && !locked && <p role="status" className="ui-reason">Enter your 10 digit number.</p>}   {/* story #1170 */}
             <button type="button" className={welcome ? "ui-btn big" : "ui-btn bar"} disabled={!isMobile(phone) || busy || locked} onClick={() => send()}>Send code</button>
             {welcome ? (
               <>
@@ -141,6 +142,7 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false, g
                 <button type="button" className="ui-btn ghost" onClick={() => { setStep("number"); setError(null); setPhone(""); }}>Use another number</button>
               </div>
             )}
+            {code.length !== 6 && !busy && <p role="status" className="ui-reason">Enter the 6 digit code.</p>}   {/* story #1170 */}
             <button type="button" className={welcome ? "ui-btn big" : "ui-btn bar"} disabled={code.length !== 6 || busy} onClick={verify}>Verify</button>
             {wait > 0 ? <p role="timer" className="ui-meta">Resend code in {wait} sec</p>
               : <button type="button" className="ui-btn ghost" disabled={busy || locked} onClick={() => send()}>Resend code</button>}
