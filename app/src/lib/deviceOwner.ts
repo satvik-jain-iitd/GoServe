@@ -7,22 +7,29 @@ export const OWNER_KEY = "gs-device-user";
 const PERSONAL = ["gs-pin", "gs-kitchen", "gs-draft", "gs_alerts_asked", "gs-joined-session"];
 
 /** The id of the signed-in user in the Supabase session kept in storage (key sb-<project>-auth-token), or null. */
-const signedInId = (s: Store, keys: string[]): string | null => {
+const signedIn = (s: Store, keys: string[]): { id: string; guest: boolean } | null => {
   for (const k of keys) {
     if (!/^sb-.*-auth-token$/.test(k)) continue;
-    try { const id = JSON.parse(s.getItem(k) ?? "null")?.user?.id; if (typeof id === "string" && id) return id; } catch { /* not a session */ }
+    try { const u = JSON.parse(s.getItem(k) ?? "null")?.user; if (typeof u?.id === "string" && u.id) return { id: u.id, guest: u.is_anonymous === true }; } catch { /* not a session */ }
   }
   return null;
 };
+export const GUEST_KEY = "gs-device-guest";   // "1" when the account that holds the phone is a guest (an anonymous login)
 
-export function claimDevice(s: Store = window.localStorage): void {
+/** Answers true when it cleared another account's state (the caller may then reload, because the screens already hold the old state in memory). */
+export function claimDevice(s: Store = window.localStorage, live = false): boolean {
   try {
-    const me = signedInId(s, storageKeys(s));
-    if (!me) return;
+    const who = signedIn(s, storageKeys(s));
+    if (!who) return false;
+    const me = who.id;
     const owner = s.getItem(OWNER_KEY);
-    if (owner && owner !== me) for (const k of PERSONAL) s.removeItem(k);
+    // Live (a sign-in in this same tab): a guest who signs in to an account is the same person finishing their own order, so their area and draft go with them.
+    const other = !!owner && owner !== me && !(live && s.getItem(GUEST_KEY) === "1");
+    if (other) for (const k of PERSONAL) s.removeItem(k);
     if (owner !== me) s.setItem(OWNER_KEY, me);
-  } catch { /* blocked storage: the old behaviour */ }
+    if (who.guest) s.setItem(GUEST_KEY, "1"); else s.removeItem(GUEST_KEY);
+    return other;
+  } catch { return false; /* blocked storage: the old behaviour */ }
 }
 
 function storageKeys(s: Store): string[] {
