@@ -17,3 +17,5 @@
 :root { --gs-text-staff: 18px; }
 :root { --gs-number-xl: 28px; }   /* the big number on a Numbers tile (board A8) */
 :root { --gs-you-page: #EEEFE6; }   /* story #1118 (board Y4b): the You page background, the same in Day and Night */
+:root, [data-theme="day"] { --gs-switch-off: #C9CFC3; --gs-switch-edge: #7d8576; --gs-switch-knob: #ffffff; }   /* story #1157 (board SW5a, owner 9 Nov): a light grey off track, so off never looks like the dark green on; its 1 px edge #7d8576 is 3.03:1 against the cream page (WCAG 1.4.11) */
+[data-theme="night"] { --gs-switch-off: var(--md-surface-variant); --gs-switch-edge: #5e6b88; }   /* the night off track: surface-variant with a hairline, 3.5:1 against the night page */
