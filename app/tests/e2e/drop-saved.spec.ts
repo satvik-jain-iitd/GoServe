@@ -7,9 +7,9 @@ const HOME = { id: "h1", label: "Home", address: "C-4, Green Park Extension, New
 const quote = { ok: true, kitchen_id: "k-1", lines: [], item_total_paise: 32000, fees: { delivery_paise: 0, packaging_paise: 0, total_paise: 0 }, discount_paise: 0, coupon: null, tax_paise: 0, total_paise: 32000, offers: [] };
 const placed = { ok: true, created: true, order: { id: "0f0f0f0f-1111-4222-8333-444444444444", kitchen_id: "k-1", status: "placed", total_paise: 32000, address: "x", items: [], bill: {}, created_at: "2020-01-01T10:00:00Z", updated_at: "2020-01-01T10:00:00Z" } };
 
-test("S1 a saved address with its pin, in the same pin code, puts the pin on the order", async ({ page, context }) => {
+async function placeFrom(page: import("@playwright/test").Page, context: import("@playwright/test").BrowserContext, saved: object) {
   const net = await setup(context, page, [], { pin: "110016" });
-  net.state.addresses = [HOME];
+  net.state.addresses = [saved];
   const orders: any[] = [];
   await context.route("https://test.supabase.co/functions/v1/quote", (r) => r.request().method() === "OPTIONS" ? r.fulfill({ status: 204, headers: CORS }) : r.fulfill({ status: 200, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(quote) }));
   await context.route("https://test.supabase.co/functions/v1/orders", (r) => {
@@ -25,7 +25,19 @@ test("S1 a saved address with its pin, in the same pin code, puts the pin on the
   await expect(page.getByLabel("Address")).toHaveValue(HOME.address);
   await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
+  return orders;
+}
+
+test("S1 a saved address with its pin, in the same pin code, puts the pin on the order", async ({ page, context }) => {
+  const orders = await placeFrom(page, context, HOME);
   expect(orders).toHaveLength(1);
   expect(orders[0].address.lat).toBeCloseTo(HOME.lat, 4);
   expect(orders[0].address.lng).toBeCloseTo(HOME.lng, 4);
+});
+
+test("S2 an old saved address with no pin sends no pin: never a wrong place", async ({ page, context }) => {
+  const orders = await placeFrom(page, context, { ...HOME, lat: null, lng: null });
+  expect(orders).toHaveLength(1);
+  expect(orders[0].address.lat).toBeUndefined();
+  expect(orders[0].address.lng).toBeUndefined();
 });
