@@ -15,14 +15,17 @@ const signedInId = (s: Store, keys: string[]): string | null => {
   return null;
 };
 
-export function claimDevice(s: Store = window.localStorage): void {
+/** Answers true when it cleared another account's state (the caller may then reload, because the screens already hold the old state in memory). */
+export function claimDevice(s: Store = window.localStorage): boolean {
   try {
     const me = signedInId(s, storageKeys(s));
-    if (!me) return;
+    if (!me) return false;
     const owner = s.getItem(OWNER_KEY);
-    if (owner && owner !== me) for (const k of PERSONAL) s.removeItem(k);
+    const other = !!owner && owner !== me;
+    if (other) for (const k of PERSONAL) s.removeItem(k);
     if (owner !== me) s.setItem(OWNER_KEY, me);
-  } catch { /* blocked storage: the old behaviour */ }
+    return other;
+  } catch { return false; /* blocked storage: the old behaviour */ }
 }
 
 function storageKeys(s: Store): string[] {

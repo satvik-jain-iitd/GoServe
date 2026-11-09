@@ -31,4 +31,10 @@ describe("claimDevice", () => {
   it("blocked storage never throws", () => {
     expect(() => claimDevice({ getItem: () => { throw new Error("blocked"); }, setItem: () => { throw new Error("blocked"); }, removeItem: () => { throw new Error("blocked"); }, key: () => null, length: 1 })).not.toThrow();
   });
+  it("answers true only when it cleared another account's state (story #1139)", () => {
+    expect(claimDevice(mem({ ...session("B"), ...MINE, [OWNER_KEY]: "A" }))).toBe(true);
+    expect(claimDevice(mem({ ...session("A"), ...MINE, [OWNER_KEY]: "A" }))).toBe(false);
+    expect(claimDevice(mem({ ...session("A"), ...MINE }))).toBe(false);   // a phone with no owner yet
+    expect(claimDevice(mem({ ...MINE, [OWNER_KEY]: "A" }))).toBe(false);   // no session
+  });
 });
