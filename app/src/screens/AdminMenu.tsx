@@ -4,7 +4,7 @@ import { addDish, deleteDish, listDishes, photoProblem, rupeesToPaise, setDish, 
 import { dishProblem } from "../lib/validate";
 import { formatRupees } from "../lib/money";
 import { getClient } from "../lib/supabase";
-import { DangerSheet, VegMark, useSheetFit } from "../ui";
+import { DangerSheet, DishPlate, VegMark, useSheetFit } from "../ui";
 
 export function AdminMenu({ kitchenId, kitchenName, onError }: { kitchenId: string; kitchenName?: string; onError: (m: string | null) => void }) {
   const [dishes, setDishes] = useState<DishRow[]>([]);
@@ -35,7 +35,7 @@ export function AdminMenu({ kitchenId, kitchenName, onError }: { kitchenId: stri
       {dishes.map((d) => (
         <button key={d.id} type="button" className="ui-row ui-dish-line" aria-label={`Edit ${d.name}${d.available === false ? " Sold out" : ""} ${formatRupees(d.price_paise)}`}   /* the name holds all the visible text (WCAG 2.5.3) */ onClick={() => { onError(null); setEditing(d); }}>
           <span className={`ui-dish-main${d.available === false ? " off" : ""}`}>
-            {d.image_url ? <img className="ui-dish-thumb" src={d.image_url} alt="" width={40} height={40} /> : <span className="ui-dish-thumb ui-ph" aria-hidden="true" />}
+            {d.image_url ? <img className="ui-dish-thumb" src={d.image_url} alt="" width={40} height={40} /> : <span className="ui-dish-thumb ui-ph" aria-hidden="true"><DishPlate size={26} /></span>}
             <VegMark veg={d.veg !== false} />
             <span className="ui-dish-text"><span>{d.name}</span>{d.available === false && <span className="ui-tag error">Sold out</span>}</span>
           </span>

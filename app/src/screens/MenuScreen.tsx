@@ -5,7 +5,7 @@ import { categoryKey, filterDishes } from "../lib/browse";
 import { sectionsOf, thalisOf } from "../lib/home";
 import { creditLicence, creditLine, type Dish } from "../lib/menu";
 import { formatRupees } from "../lib/money";
-import { Empty, Stepper, TabBar, VegMark, useSheetFit } from "../ui";
+import { DishPlate, Empty, Stepper, TabBar, VegMark, useSheetFit } from "../ui";
 
 type Props = {
   dishes: Dish[] | null; fromCache: boolean; slow?: boolean; error: string | null; onRetry: () => void;
@@ -144,7 +144,7 @@ function Photo({ src, cls, alt = "", lazy, box }: { src: string | null; cls?: st
   if (!src || failed) {
     return (
       <span className={`${cls ?? ""} ui-ph`} aria-hidden="true">
-        <svg viewBox="0 0 48 48" width="40" height="40" fill="none" stroke="var(--md-outline)" strokeWidth="1.5"><circle cx="24" cy="24" r="18" /><circle cx="24" cy="24" r="11" /></svg>
+        <DishPlate size={cls === undefined || cls === "ui-dish-photo" ? 72 : 40} />
       </span>
     );
   }
