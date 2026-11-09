@@ -20,10 +20,12 @@ export function AppBar({ title, onBack, action }: { title: string; onBack?: () =
 }
 
 /** Story #937 (board P1, option A): the one placeholder for a dish with no photo, a plate with a fork and a spoon in line style. No words; the box around it gives the grey when sold out. */
-export function DishPlate({ size = 40 }: { size?: number }) {
+export function DishPlate({ size = 40, stroke = "var(--md-outline)", halo = false }: { size?: number; stroke?: string; halo?: boolean }) {
+  const fork = "M8 10v9a3 3 0 0 0 3 3v16M11 10v9M14 10v9", spoon = "M42 10c-3 0-4 4-4 8s1 5 3 5v15";
   return (
-    <svg viewBox="0 0 48 48" width={size} height={size} fill="none" stroke="var(--md-outline)" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
-      <circle cx="26" cy="24" r="12" /><circle cx="26" cy="24" r="6" /><path d="M8 10v9a3 3 0 0 0 3 3v16M11 10v9M14 10v9" /><path d="M42 10c-3 0-4 4-4 8s1 5 3 5v15" />
+    <svg viewBox="0 0 48 48" width={size} height={size} fill="none" stroke={stroke} strokeWidth={halo ? 2.8 : 1.6} strokeLinecap="round" aria-hidden="true">
+      {halo && <><circle cx="26" cy="24" r="13.5" fill="#fff" stroke="#fff" strokeWidth="4" /><path d={fork} stroke="#fff" strokeWidth="6" /><path d={spoon} stroke="#fff" strokeWidth="6" /></>}
+      <circle cx="26" cy="24" r="12" /><circle cx="26" cy="24" r="6" /><path d={fork} /><path d={spoon} />
     </svg>
   );
 }

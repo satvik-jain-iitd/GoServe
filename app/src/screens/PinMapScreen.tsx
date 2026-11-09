@@ -2,6 +2,10 @@
 // (never a Leaflet marker). 400 ms after it stops the words (Ola through lib/locate, OpenStreetMap as the fallback) and the served strip follow the centre. No zoom control (pinch and double tap
 // only), no inline map anywhere. The phone's place is a brown dot only when location is already allowed; this screen never asks for it by itself.
 import { useEffect, useRef, useState } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { DishPlate } from "../ui";
+import { fetchKitchens } from "../lib/area";
+import { getClient } from "../lib/supabase";
 import type { Map as LMap, Marker } from "leaflet";
 import { currentPlace, findAddress, type Looked, type Place } from "../lib/locate";
 import { isPin } from "../lib/area";
@@ -19,6 +23,7 @@ export type Saved = { pin: string; address: string; label: string; from: Place }
 type Props = {
   center: Place; zoom?: number; kicker?: string; confirmLabel: string;
   onInvite?: (far: { at: Place; pin: string; address: string }) => Promise<string | null>;   // story #1128 (board C6d): a pin no kitchen reaches. The button reads Invite the founders here; it saves the ask and opens the founder note. Answers an error in words, or null; not used when editing
+  kitchensNear?: () => Promise<{ lat: number | null; lng: number | null; synthetic?: boolean }[]>;   // story #1138 (board C6e): the GoServe kitchens drawn on the map; tests give their own
   edit?: { label: string; address: string };   // story #1051 (board C9): the saved row being changed; the details open filled with it
   kitchen?: { pins: string[] };   // story #1052 (board A12): a kitchen's place. No serviceability, no details step: Confirm hands the point back. "Inside <pin>" when the words are in one of its pin codes
   onPoint?: (p: { at: Place; words: Looked | null }) => void;
@@ -27,7 +32,7 @@ type Props = {
   lookup?: (p: Place) => Promise<Looked | null>; serve?: (p: Place, pin: string | null) => Promise<Serve | null>;
 };
 
-export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, kitchen, onInvite, onPoint, onBack, onSearch, onSave, lookup = (p) => findAddress(p.lat, p.lng), serve = (p, pin) => (kitchen ? Promise.resolve(null) : serveAt(p, undefined, pin)) }: Props) {
+export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, kitchen, onInvite, kitchensNear = async () => await fetchKitchens(getClient()), onPoint, onBack, onSearch, onSave, lookup = (p) => findAddress(p.lat, p.lng), serve = (p, pin) => (kitchen ? Promise.resolve(null) : serveAt(p, undefined, pin)) }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const live = useRef<{ map: LMap; L: typeof import("leaflet"); dot: Marker | null } | null>(null);
   const [point, setPoint] = useState<Place>(center);
@@ -65,6 +70,28 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
   const settleRef = useRef(settle);
   settleRef.current = settle;
 
+  // Story #1138 (board C6e): each GoServe kitchen with a place is drawn as the #937 plate with its tag. Not interactive. Where its art would touch the pin it is taken off the map,
+  // and where its tag would run under the pin or the card the tag is hidden, so the pin and the card are never covered.
+  const drawKitchens = (L: typeof import("leaflet"), map: LMap, list: { lat: number | null; lng: number | null; synthetic?: boolean }[]) => {
+    const html = renderToStaticMarkup(<span className="gs-kitchen-in"><DishPlate size={28} stroke="var(--md-primary)" halo /><span className="gs-kitchen-tag">GoServe Kitchen</span></span>);
+    const marks = list.filter((k): k is { lat: number; lng: number; synthetic?: boolean } => typeof k.lat === "number" && typeof k.lng === "number" && !k.synthetic)
+      .map((k) => L.marker([k.lat, k.lng], { interactive: false, keyboard: false, zIndexOffset: -500, icon: L.divIcon({ className: "gs-kitchen-mark", iconSize: [0, 0], html }) }));
+    const hits = (a: DOMRect, b: DOMRect) => !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+    const place = () => {
+      const avoid = [".ui-pinmap-pin", ".ui-pinmap-card", ".ui-pinmap-top"].map((q) => root.current?.querySelector(q)?.getBoundingClientRect()).filter((r): r is DOMRect => !!r);
+      for (const m of marks) {
+        if (!map.getBounds().pad(0.2).contains(m.getLatLng())) { if (map.hasLayer(m)) m.remove(); continue; }
+        if (!map.hasLayer(m)) m.addTo(map);
+        const el = m.getElement();
+        const art = el?.querySelector("svg")?.getBoundingClientRect(), tag = el?.querySelector(".gs-kitchen-tag")?.getBoundingClientRect();
+        if (art && avoid.some((r) => hits(art, r))) { m.remove(); continue; }   // never under the pin or the card
+        if (tag) el?.classList.toggle("no-tag", avoid.some((r) => hits(tag, r)));
+      }
+    };
+    map.on("moveend zoomend resize", place);
+    place();
+  };
+
   useEffect(() => {
     let gone = false;
     let watch: number | null = null;
@@ -74,6 +101,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
       if (TILES) L.tileLayer(TILES, { maxZoom: 19 }).addTo(map);
       map.on("moveend", () => { const c = map.getCenter(); settleRef.current({ lat: c.lat, lng: c.lng }); });
       live.current = { map, L, dot: null };
+      if (!kitchen) void kitchensNear().then((list) => drawKitchens(L, map, list), () => undefined);   // story #1138: not on the kitchen admin's own pin screen
       settleRef.current(center);
       void navigator.permissions?.query({ name: "geolocation" as PermissionName }).then((perm) => {   // only when already allowed: this screen never asks
         if (gone || perm.state !== "granted" || !("geolocation" in navigator)) return;
