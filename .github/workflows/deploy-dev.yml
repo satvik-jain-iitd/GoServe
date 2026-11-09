@@ -55,7 +55,7 @@ jobs:
           # gs-sim-prod, gs-engine and gs-engine-prod) and the copy chooses the DATABASE it writes to, so the
           # dev admin's Seed, Reset and Tick went to production while this used prod's secrets. Dev uses
           # its own three; a prod secret never builds dev (deploy-dev-env.test.ts says so).
-          VITE_OTP_GATE: "1"
+          # story #1155: no VITE_OTP_GATE (dev opens Google-first too; the admin switch otp_login_on is the only way on)
           VITE_OTP_SMS: fixed
           VITE_SIM_URL: ${{ secrets.DEV_VITE_SIM_URL }}
           VITE_ENGINE_URL: ${{ secrets.DEV_VITE_ENGINE_URL }}

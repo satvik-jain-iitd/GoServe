@@ -15,9 +15,8 @@ describe("deploy-app.yml (the real app)", () => {
   it("does not turn the native push seam on by itself", () => {
     expect(text).not.toMatch(/VITE_PUSH_NATIVE:\s*["']?real/);
   });
-  // Story #665 (owner, 28 Oct): the phone code is on in prod with the fixed code. The gate is allowed only together with `fixed` or `real`, never alone.
-  it("sets the phone code gate only together with the fixed or the real sender", () => {
-    expect(text).toMatch(/VITE_OTP_GATE:\s*["']?1/);
+  // Story #1155 (owner, 9 Nov): the build never turns the phone code gate on (see no-otp-gate.test.ts); the sender stays `fixed` or `real`.
+  it("keeps the phone code sender fixed or real", () => {
     expect(text).toMatch(/VITE_OTP_SMS:\s*["']?(fixed|real)\b/);
   });
   // Story 844: the same wall from the other side. The real app is built from prod secrets only.
