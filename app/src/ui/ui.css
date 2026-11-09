@@ -212,7 +212,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-landing .ui-slip { margin-top: var(--gs-space-6); flex: 1; }   /* story 1044: the slip runs to the bottom of the screen on every onboarding step, so its height never changes between steps */
 .ui-slip-title, .ui-welcome-title { text-align: center; }
 .ui-slip-line { margin: 0; text-align: center; }
-.ui-landing-head .ui-kicker, .ui-welcome-kicker { white-space: nowrap; font-size: clamp(10px, 2.9vw, 13px); }   /* the tagline is one line at every phone width */
+.ui-landing-head .ui-kicker, .ui-welcome-kicker { font-size: clamp(10px, 2.9vw, 13px); overflow-wrap: anywhere; }   /* one line at a normal phone width; a bigger text size on Android wraps under the logo instead of running past the edge (story 1123) */
 .ui-landing-foot { margin-top: auto; padding-top: var(--gs-space-5); display: flex; flex-direction: column; gap: var(--gs-space-2); text-align: center; }
 .ui-landing-foot .ui-kicker { font-size: var(--gs-mono-xs); }
 .ui-legal { margin: var(--gs-space-4) 0 var(--gs-space-2); text-align: center; font-size: var(--gs-mono-xs); color: var(--gs-text-muted); }   /* story 242: Privacy · Terms at the end of You */
@@ -689,7 +689,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 /* Story 1038 (board C7-PinDetails): the sheet over the same map. The map keeps the top part so the pin stays in view; the sheet is a column with one gap. */
 .ui-pinmap[data-step="details"] .ui-pinmap-map { bottom: var(--sheet-h, 62%); }
 .ui-pinmap[data-step="details"] .ui-pinmap-pin { top: calc((100% - var(--sheet-h, 62%)) / 2); }   /* the centre of the map box above the sheet (its height is measured) */
-.ui-pinmap-details { position: absolute; left: 0; right: 0; bottom: 0; z-index: 700; max-height: 62%; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 20px 16px calc(env(safe-area-inset-bottom, 0px) + 16px); border-radius: 20px 20px 0 0; background: var(--gs-raised); box-shadow: var(--gs-shadow-m); box-sizing: border-box; }
+.ui-pinmap-details { position: absolute; left: 0; right: 0; bottom: 0; z-index: 700; max-height: calc(100% - 24px); overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 20px 16px calc(env(safe-area-inset-bottom, 0px) + 16px); border-radius: 20px 20px 0 0; background: var(--gs-raised); box-shadow: var(--gs-shadow-m); box-sizing: border-box; }
 .ui-pinmap-details-head { margin-bottom: 0; }   /* the sheet is a column with one gap; the head size is the shared .ui-sheet-head h2 */
 .ui-pinmap-details-head .mono { font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
 .ui-pinmap-where { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid var(--md-outline-variant); border-bottom: 1px solid var(--md-outline-variant); color: var(--md-primary); }
@@ -752,3 +752,20 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 
 /* Story 1107: a failed logo keeps its shape (the lockup is 350 x 50), so offline it can never become a huge box. */
 .ui-lockup { aspect-ratio: 7 / 1; object-fit: contain; }
+
+/* Story 1129, board NK-L2: the co-founder's letter after Tell me. The slip runs to the bottom of the screen like every onboarding step; Share and Change location sit at its foot. */
+.ui-founder { display: flex; flex-direction: column; }
+.ui-founder .ui-slip-body { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+.ui-founder-top { display: flex; align-items: center; gap: 12px; }
+.ui-founder-top svg { flex: none; }
+.ui-founder-top h2 { margin: 0; font-family: var(--gs-font-display); font-weight: 800; font-size: 22px; line-height: 1.1; letter-spacing: -0.02em; }
+.ui-founder-top h2 span { display: inline-block; }   /* a sentence never breaks inside: the heading wraps between the two, as on the board */
+.ui-founder-text { display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.45; }
+.ui-founder-text p { margin: 0; }
+.ui-founder-pause { height: 8px; }
+.ui-founder-motto { margin-top: 4px !important; }
+.ui-founder-sign { margin: 4px 0 0; font-family: 'Caveat', cursive; font-weight: 600; font-size: 34px; line-height: 1.1; color: var(--md-on-background); }
+.ui-founder-links { margin: 2px 0 0; font-family: var(--gs-font-mono); font-size: 12px; color: var(--gs-text-muted); }
+.ui-founder-links a { color: inherit; }
+.ui-founder-share { margin-top: auto; }
+

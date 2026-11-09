@@ -334,15 +334,23 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // Story #1049 part 3 (board NK-A): no kitchen serves this pin. One stored ask per person and pin (area_request_add_v2); nothing is sent from here.
   const [areaAsk, setAreaAsk] = useState<"idle" | "busy" | "done">("idle");
   const [areaAskError, setAreaAskError] = useState<string | null>(null);
+  const [farPick, setFarPick] = useState<null | { at: Place; pin: string; address: string }>(null);   // story #1128 (board C6b): Confirm on a pin no kitchen reaches; NK-A shows for it, C7 never opens
+  const [areaOffer, setAreaOffer] = useState<number | null>(null);   // story #1129: the promise the stored row holds; the letter shows it only when the server said so
+  // One ask: the stored row for this account and pin (area_request_add_v2). Answers an error in words, or null. The Rs 100 promise comes back in the answer and the letter shows it only then.
+  async function askArea(askPin: string, at: { lat: number; lng: number } | null): Promise<string | null> {
+    const { data, error } = await getClient().rpc("area_request_add_v2", { p_pin: askPin, p_lat: at?.lat ?? null, p_lng: at?.lng ?? null });
+    const ans = data as { ok?: boolean; message?: string; offer_paise?: number } | null;
+    if (!error && ans?.ok) { setAreaOffer(ans.offer_paise && ans.offer_paise > 0 ? ans.offer_paise : null); return null; }
+    return ans?.message ?? "Could not set that up. Try again.";
+  }
   async function tellMeWhenWeCome() {
     if (!pin) return;
     setAreaAsk("busy");
     setAreaAskError(null);
-    const { data, error } = await getClient().rpc("area_request_add_v2", { p_pin: pin, p_lat: from?.lat ?? null, p_lng: from?.lng ?? null });
-    const ans = data as { ok?: boolean; message?: string } | null;
-    if (!error && ans?.ok) return setAreaAsk("done");
+    const err = await askArea(pin, from);
+    if (!err) return setAreaAsk("done");
     setAreaAsk("idle");
-    setAreaAskError(ans?.message ?? "Could not set that up. Try again.");
+    setAreaAskError(err);
   }
   useEffect(() => { setAreaAsk("idle"); setAreaAskError(null); }, [pin]);
   // Story #718 (board L1): a closed kitchen offers one push when it opens. Alerts are allowed first when they are not on yet.
@@ -936,7 +944,11 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       onVerified={(p) => { setPhone(p); setVerified(true); setSignedIn(true); }} />
   ) : pinMap ? (
     <PinMapScreen center={pinMap.center} edit={pinMap.edit} kicker={pinMap.edit ? `Editing ${pinMap.edit.label}` : undefined} confirmLabel={pinMap.edit ? "Save changes" : "Confirm & proceed"} onBack={() => setPinMap(null)} onSearch={() => { setPinMap(null); if (needArea) setStep("deliver"); }}
+      onInvite={async (f) => { const err = await askArea(f.pin, f.at); if (err) return err; setAreaAsk("done"); setPinMap(null); setFarPick(f); return null; }}
       onSave={(a) => { const e = pinMap.edit; setPinMap(null); if (e) void saveEdit(e.id, a); else void saveNew(a); }} />
+  ) : farPick ? (
+    <NoKitchen address={farPick.address} ask={areaAsk} error={areaAskError} offerPaise={areaOffer} onTell={() => undefined}
+      onChange={() => { const at = farPick.at; setFarPick(null); setAreaAsk("idle"); setPinMap({ center: at }); }} />
   ) : step === "deliver" ? (
     <DeliverToScreen list={saved ?? []} selectedId={selectedId} here={here} search={(q) => placeSearch(q)} onPlace={(h) => setPinMap({ center: { lat: h.lat, lng: h.lng } })} onBack={() => setStep("menu")}
       onSelect={(id) => { const r = (saved ?? []).find((x) => x.id === id); if (r) { useSaved(r, true); setStep("menu"); } }}
@@ -947,7 +959,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   ) : needArea && !alertsAsked && reminder === "ask" ? (
     <AlertsAsk busy={askingAlerts} onTurnOn={() => void turnOnFirst()} onNotNow={markAsked} />
   ) : needArea && pin && area?.kind === "none" ? (
-    <NoKitchen address={address} ask={areaAsk} error={areaAskError} onTell={() => void tellMeWhenWeCome()}
+    <NoKitchen address={address} ask={areaAsk} error={areaAskError} offerPaise={areaOffer} onTell={() => void tellMeWhenWeCome()}
       onChange={() => { const at = from; changeArea(); setPinMap({ center: at ?? mapStart() }); }} />
   ) : needArea ? (
     <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={(pl) => { setAddress(pl.address); setFixAddress(null); choosePin(pl.pin); }}

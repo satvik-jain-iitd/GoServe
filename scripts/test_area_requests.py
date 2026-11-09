@@ -36,7 +36,7 @@ class AreaRequests(unittest.TestCase):
         self.assertEqual(r["n"], 2, r)
 
     def test_a_bad_pin_or_place_is_refused_in_words_and_stores_nothing(self):
-        r = run(as_user("create temp table a as select area_request_add_v2('12') as p, area_request_add_v2('201301', 200, 10) as q"), "select (select p from a) as p, (select q from a) as q, (select count(*) from area_requests)::int as n")
+        r = run(as_user("create temp table a as select area_request_add_v2('12') as p, area_request_add_v2('201301', 200, 10) as q"), "select (select p from a) as p, (select q from a) as q, (select count(*) from area_requests where user_id = '" + UID + "')::int as n")
         self.assertEqual((r["p"]["error"], r["q"]["error"], r["n"]), ("invalid_pin", "invalid_place", 0), r)
 
     def test_a_customer_cannot_read_the_table(self):

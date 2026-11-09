@@ -116,6 +116,12 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await page.getByRole("button", { name: "Type it by hand" }).click();
     await page.getByLabel("Address", { exact: true }).fill("Sector 62, Noida, Uttar Pradesh 201301"); await page.getByLabel("Pin code").fill("110099");
     await page.getByRole("button", { name: "See the menu" }).click(); await expect(page.getByRole("heading", { name: "We don't reach here yet" })).toBeVisible(); },
+  "founder-note": async (context, page, path) => {   // story #1129, board NK-L2: the co-founder's letter after Tell me
+    await setup(context, page, [], { pin: null }); await page.goto(path);
+    await page.getByRole("button", { name: "Type it by hand" }).click();
+    await page.getByLabel("Address", { exact: true }).fill("Sector 62, Noida, Uttar Pradesh 201301"); await page.getByLabel("Pin code").fill("110099");
+    await page.getByRole("button", { name: "See the menu" }).click(); await page.getByRole("button", { name: "Tell me when you come here" }).click();
+    await expect(page.getByRole("heading", { name: "You found us early. Thank you." })).toBeVisible(); await page.evaluate(() => document.fonts.ready); },
   "first-open-pin": async (context, page, path) => {   // board A1p: after Use my location, the full map, the same screen as C6
     const net = await setup(context, page, [], { pin: null });
     net.state.geocode = { status: 200, body: { ok: true, address: "Green Avenue Colony, Satai Road, Chhatarpur, Madhya Pradesh 471001", pin: "471001", locality: "Green Avenue Colony", town: "Chhatarpur" } };

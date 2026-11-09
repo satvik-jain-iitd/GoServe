@@ -27,7 +27,7 @@ test("S2 Tell me when you come here stores the ask with the pin once and says so
   const net = await setup(context, page, [], { pin: null });
   await noKitchen(page);
   await page.getByRole("button", { name: "Tell me when you come here" }).click();
-  await expect(page.getByText("We will tell you when we come here.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "You found us early. Thank you." })).toBeVisible();   // story 1129: the founder note takes the place of the old one-liner
   const asks = net.calls.rpc.filter((c) => c.name === "area_request_add_v2");
   expect(asks).toHaveLength(1);
   expect(asks[0].body).toMatchObject({ p_pin: "110099" });
