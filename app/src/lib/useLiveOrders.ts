@@ -2,7 +2,7 @@
 // While `active` is true it reads the list, listens for changes, and reads again once the subscription is confirmed.
 import { useEffect, useState } from "react";
 import { mergeOrder, type Order } from "./kitchen";
-import { fetchOrders, watchOrders } from "./live";
+import { fetchOrders, rereadEvery, watchOrders } from "./live";
 import { currentSession, myKitchen, riderScope, scopeFor } from "./session";
 import { ensureSession, getClient } from "./supabase";
 
@@ -44,11 +44,12 @@ export function useLiveOrders(active: boolean, appRole?: "kitchen" | "rider") {
           if (!alive) return;
           setOrders((cur) => cur.filter((o) => o.id !== id));
           setLags([]);   // after a reset the old timings no longer describe this demo
-        });
+        }, () => void reload().catch(() => {}));   // story #967: the channel broke, read at once
         const onWake = () => { if (document.visibilityState === "visible") void reload().catch(() => {}); };   // #230: the phone wakes, the list reads again
         document.addEventListener("visibilitychange", onWake);
         const stopWatch = stop;
-        stop = () => { stopWatch(); document.removeEventListener("visibilitychange", onWake); };
+        const stopReread = rereadEvery(reload);   // story #967: the safety net, a read every 30 s
+        stop = () => { stopWatch(); stopReread(); document.removeEventListener("visibilitychange", onWake); };
         await reload();
       } catch {
         if (alive) setError("Could not load orders. Check your connection and try again.");
