@@ -1,13 +1,11 @@
 // Story #1129 (board NK-L2): after Tell me when you come here, a short letter from the co-founder with the Rs 100 first-order promise. The promise is shown only when the stored row holds it.
 import { test, expect, type Page } from "@playwright/test";
-import { setup } from "./helpers";
+import { setup, typePlace } from "./helpers";
 
 async function toNote(page: Page) {
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "Type it by hand" }).click();
-  await page.getByLabel("Address", { exact: true }).fill("Sector 62, Noida, Uttar Pradesh 201301");
-  await page.getByLabel("Pin code").fill("110099");
-  await page.getByRole("button", { name: "See the menu" }).click();
+  await typePlace(page, "110099", "Sector 62, Noida, Uttar Pradesh 201301");
+
   await page.getByRole("button", { name: "Tell me when you come here" }).click();
 }
 const slip = (page: Page) => page.getByRole("group", { name: "A letter from co-founder Satvik Jain" });

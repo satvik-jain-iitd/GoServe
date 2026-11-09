@@ -1,15 +1,17 @@
 // Story #525: the pin mark in the Menu header flies in once, right after the pin screen. Switching tabs back to the Menu never replays it.
 import { test, expect } from "@playwright/test";
-import { setup, typePlace } from "./helpers";
+import { setup } from "./helpers";
+import { firstOpenToMenu } from "./firstOpen";
 
 const mark = (page: import("@playwright/test").Page) => page.locator(".ui-pin-svg");
 
 test("S1 right after the pin screen the mark flies once into the header", async ({ page, context }) => {
   await setup(context, page, [], { pin: null });
+  await context.route("https://nominatim.openstreetmap.org/reverse**", (r) => r.fulfill({ status: 200, headers: { "access-control-allow-origin": "*", "content-type": "application/json" }, body: JSON.stringify({ address: { road: "Lajpat Nagar II", suburb: "Lajpat Nagar", city: "New Delhi", state: "Delhi", postcode: "110016", country: "India" } }) }));
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 28.5677, longitude: 77.2432 });
   await page.goto("/customer/");
-  await typePlace(page, "110016");
-  await page.getByRole("button", { name: "See the menu" }).click();
-  await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
+  await firstOpenToMenu(page);
   await expect(mark(page)).toHaveClass(/ui-mark-land/);
 });
 
@@ -28,9 +30,11 @@ test("S2 coming back to the Menu from History or the profile, the mark is alread
 
 test("S2 after the first fly-in a tab switch does not replay it", async ({ page, context }) => {
   await setup(context, page, [], { pin: null });
+  await context.route("https://nominatim.openstreetmap.org/reverse**", (r) => r.fulfill({ status: 200, headers: { "access-control-allow-origin": "*", "content-type": "application/json" }, body: JSON.stringify({ address: { road: "Lajpat Nagar II", suburb: "Lajpat Nagar", city: "New Delhi", state: "Delhi", postcode: "110016", country: "India" } }) }));
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 28.5677, longitude: 77.2432 });
   await page.goto("/customer/");
-  await typePlace(page, "110016");
-  await page.getByRole("button", { name: "See the menu" }).click();
+  await firstOpenToMenu(page);
   await expect(mark(page)).toHaveClass(/ui-mark-land/);
   await page.getByRole("button", { name: "History" }).click();
   await page.getByRole("button", { name: "Delivery", exact: true }).click();

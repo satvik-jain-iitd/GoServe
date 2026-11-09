@@ -31,7 +31,7 @@ test("S1 first open shows the number screen with Google under it, and no menu", 
   await expect(page.getByRole("button", { name: "Send code" })).toBeDisabled();
   await expect(page.getByTestId("google-signin")).toBeVisible();
   await expect(page.getByText("Butter Chicken")).toHaveCount(0);   // no menu before the number or Google
-  await expect(page.getByRole("button", { name: "Not now" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "I'll check the app myself" })).toHaveCount(0);
 });
 
 test("S2 a number then the code 123456 opens the app", async ({ page, context }) => {

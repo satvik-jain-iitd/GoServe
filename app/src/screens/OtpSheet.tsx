@@ -94,7 +94,7 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false, g
     return frame(
       <>
         {head("One tap and you are in")}
-        <img className="ui-welcome-pic" src="/brand/thali-welcome.png" srcSet="/brand/thali-welcome.png 1x, /brand/thali-welcome@2x.png 2x" width={306} height={181}
+        <img className="ui-welcome-pic ui-hero-abs-pic" src="/brand/thali-welcome.png" srcSet="/brand/thali-welcome.png 1x, /brand/thali-welcome@2x.png 2x" width={306} height={181}
           alt="A steel thali with dal, paneer, roti, rice and raita" />   {/* story #1103, board O0g-B: the picture sits between the title and the button */}
         <SignIn mode="signin" big filled />
       </>,

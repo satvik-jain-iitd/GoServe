@@ -9,9 +9,8 @@ test("S1 the first question is where the food goes, with two ways to answer", as
   await setup(context, page, [], { pin: null });
   await page.goto("/customer/");
   await expect(ask(page)).toBeVisible();
-  await expect(page.getByText("We have multiple kitchens with hygienic homely food")).toBeVisible();   // story #1044: the line under the heading
-  await expect(page.getByRole("button", { name: "Use my location" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Type it by hand" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Set delivery location" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Enter address manually" })).toBeVisible();   // story #1133: the path without location; the typed form is gone
   await expect(page.getByLabel("Pin code")).toHaveCount(0);
   await expect(page.locator("body")).not.toContainText("Hauz Khas Kitchen");
 });
@@ -23,7 +22,7 @@ test("S2 with location allowed Use my location opens the pin map at the phone; C
   await context.setGeolocation({ latitude: 28.5677, longitude: 77.2432 });
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64") }));
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "Use my location" }).click();
+  await page.getByRole("button", { name: "Set delivery location" }).click();
   await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
   await expect(page.getByText("B-12", { exact: false }).first()).toBeVisible();   // the words of the pin
   await page.getByRole("button", { name: "Confirm & proceed" }).click();
@@ -37,24 +36,9 @@ test("S2 with location allowed Use my location opens the pin map at the phone; C
   await expect(page.getByLabel("Address", { exact: true })).toHaveValue(/near the park gate/);
 });
 
-test("S3 without location the customer types the address and pin; See the menu waits for both", async ({ page, context }) => {
-  await setup(context, page, [], { pin: null });
-  await page.goto("/customer/");
-  await page.getByRole("button", { name: "Type it by hand" }).click();
-  await expect(ask(page)).toBeVisible();
-  const go = page.getByRole("button", { name: "See the menu" });
-  await expect(go).toBeDisabled();
-  await page.getByLabel("Address", { exact: true }).fill("Flat 4, Green Park");
-  await expect(go).toBeDisabled();
-  await page.getByLabel("Pin code").fill("110016");
-  await expect(go).toBeEnabled();
-  await go.click();
-  await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
-});
-
 test("S4 location not given: the search opens, and a picked place lands on the same pin map", async ({ page, context }) => {
   await setup(context, page, [], { pin: null });
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "Use my location" }).click();   // not allowed in this context
+  await page.getByRole("button", { name: "Set delivery location" }).click();   // not allowed in this context
   await expect(page.getByRole("searchbox", { name: "Search an area or address" })).toBeVisible();
 });

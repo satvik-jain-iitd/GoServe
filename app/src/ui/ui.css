@@ -769,3 +769,15 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-founder-links a { color: inherit; }
 .ui-founder-share { margin-top: auto; }
 
+/* Story 1133 (boards O0g-C, N0b, A1c; ShipQuick 164): the first-open steps share one layout. The slip runs to 24 px above the edge plus the safe area. The main button is last, at the
+   foot of the slip, so it has the same y on every step; an outline button sits above it. The hero (thali picture, bell, pin circle) is placed from the slip top, so its centre is at the
+   same height on every step: 268 px for the badges (top 220 and 48 of radius), the picture's top at 157. */
+.ui-landing .ui-slip, .ui-welcome .ui-slip { margin-top: 40px; }   /* the same gap under the title block on every step */
+.ui-landing, .ui-welcome { padding-top: calc(64px + env(safe-area-inset-top, 0px)); padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }   /* the logo starts 64 px from the top on every step, as on the boards */
+.ui-landing .ui-slip, .ui-welcome .ui-slip { display: flex; flex-direction: column; min-height: 420px; }
+.ui-landing .ui-slip-body, .ui-welcome .ui-slip-body { flex: 1; display: flex; flex-direction: column; }
+.ui-bottom, .ui-welcome .ui-slip-body > .ui-google-stack { margin-top: auto; }
+.ui-hero-abs { position: absolute; left: 50%; top: 220px; transform: translateX(-50%); margin: 0; }
+.ui-hero-abs-pic { position: absolute; left: 50%; top: 157px; width: min(306px, calc(100% - 36px)); transform: translateX(-50%); margin: 0; }
+.ui-pinbadge { width: 96px; height: 96px; border-radius: var(--gs-radius-pill); background: var(--gs-lime-soft); display: flex; align-items: center; justify-content: center; color: var(--md-primary); }
+

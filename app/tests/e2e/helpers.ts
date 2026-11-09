@@ -314,9 +314,9 @@ export async function scan(page: Page, tags?: string[]): Promise<string[]> {
   return r.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => `${v.id}: ${v.nodes.slice(0, 2).map((n) => n.target.join(" ")).join(" | ")}`);
 }
 
-// Story #668: the first question is "Where does the food go?". For the tests that only need a place: type it by hand.
+// Story #668, #1133: the first question is "Where does the food go?". The form to type it by hand is gone from the journey (the map and its search are the way), so a test that only needs a place
+// puts it where the app keeps it (the saved pin and the draft's address) and starts the page again: the same state a picked place leaves.
 export async function typePlace(page: import("@playwright/test").Page, pin: string, address = "Flat 4, Green Park") {
-  await page.getByRole("button", { name: "Type it by hand" }).click();
-  await page.getByLabel("Address", { exact: true }).fill(address);
-  await page.getByLabel("Pin code").fill(pin);
+  await page.evaluate(([p, a]) => { localStorage.setItem("gs-pin", p); localStorage.setItem("gs-draft", JSON.stringify({ step: "menu", cart: {}, address: a, name: "", phone: "" })); localStorage.setItem("gs_alerts_asked", "1"); }, [pin, address]);
+  await page.reload();
 }
