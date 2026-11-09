@@ -16,3 +16,4 @@
 /* Story D3: staff read with wet hands, one size up for ticket lines; taps use --gs-tap-big. */
 :root { --gs-text-staff: 18px; }
 :root { --gs-number-xl: 28px; }   /* the big number on a Numbers tile (board A8) */
+:root { --gs-you-page: #EEEFE6; }   /* story #1118 (board Y4b): the You page background, the same in Day and Night */

@@ -798,3 +798,22 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-pinmap-close { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: var(--gs-radius-pill); background: transparent; color: var(--md-on-surface); cursor: pointer; }
 .ui-pinmap-results { position: absolute; left: 16px; right: 16px; top: calc(env(safe-area-inset-top, 0px) + 72px); z-index: 700; max-height: 50%; overflow: auto; padding: 8px 12px; border: 1px solid var(--md-outline-variant); border-radius: 10px; background: var(--md-surface); box-shadow: 0 8px 24px rgba(38, 53, 40, 0.12); }
 .ui-landing .ui-slip-body > .ui-field-error, .ui-welcome .ui-slip-body > .ui-field-error { text-align: center; margin-bottom: -4px; }   /* story 1133 (T3): the error under the number is centred, 12 px above the main button */
+/* Story 1117 (board C7a): an example reads as an example, not as typed text (about 3.3:1), and the field edge is seen (3:1, WCAG 1.4.11). Typed text stays full ink. */
+.ui-field input.ui-eg { border-color: color-mix(in srgb, var(--gs-text-muted) 65%, var(--md-surface)); }
+.ui-field input.ui-eg::placeholder { color: color-mix(in srgb, var(--gs-text-muted) 65%, var(--md-surface)); opacity: 1; }
+
+/* Story 1118 (board Y4b-YouPageCards): You is a full page on the page background: a lime name card and white cards by group; the last card holds the two risky actions in the error colour, no arrow. */
+.ui-you-page { position: fixed; inset: 0; z-index: 40; overflow-y: auto; background: var(--gs-you-page); padding: calc(12px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom, 0px)); }
+.ui-you-top { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.ui-you-top h1 { margin: 0; font-family: var(--gs-font-display); font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+.ui-you-page .ui-account { padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.ui-you-card { display: flex; flex-direction: column; padding: 4px 16px; border: 1px solid var(--md-outline-variant); border-radius: 12px; background: var(--md-surface); }
+.ui-you-card.lime { padding: 16px; background: var(--gs-lime-soft); }
+.ui-you-card.lime .ui-profile-head { margin-bottom: 0; }
+.ui-you-card .ui-row { border: 0; background: transparent; padding-left: 0; padding-right: 0; }
+.ui-you-card.risky { margin-top: 12px; }   /* 12 px from the column gap plus 12 here: 24 px above it */
+.ui-you-card.risky .ui-row, .ui-you-card.risky .ui-row span { color: var(--md-error); }
+.ui-you-page ~ .ui-sheet-back { z-index: 50; }   /* the delete-account sheet sits over the page */
+.ui-you-card.lime, .ui-you-card.lime h2, .ui-you-card.lime .ui-profile-who .mono, .ui-you-card.lime label { color: var(--md-on-tertiary-container); }   /* dark ink on lime in Night too */
+.ui-you-card.lime .ui-link { color: var(--md-on-tertiary-container); font-weight: 700; text-decoration: underline; }   /* the Edit link reads on the lime card (contrast) */
+.ui-you-page .ui-you-top h1, .ui-you-page .ui-legal { color: var(--md-on-tertiary-container); }   /* the page is light in Night too, so the words on it stay dark */

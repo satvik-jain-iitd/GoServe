@@ -23,7 +23,7 @@ test("S2 You shows the details, and Edit delivery details changes them", async (
   await you(page).click();
   await page.getByRole("button", { name: "Edit delivery details" }).click();
   await page.getByLabel("Your name").fill("Asha Rao");
-  await page.getByRole("button", { name: "Save" }).click();
+  await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByTestId("account")).toContainText("Asha Rao");
 });
 
@@ -68,10 +68,10 @@ test("S6 Forget me asks first, then wipes what the phone remembers", async ({ pa
   await page.evaluate(() => localStorage.setItem("gs-pin", "110016"));
   await page.reload();
   await you(page).click();
-  await page.getByRole("button", { name: "Forget me on this phone" }).click();
+  await page.getByRole("button", { name: "Sign out of this phone" }).click();
   await page.getByRole("button", { name: "No", exact: true }).click();
   expect(await page.evaluate(() => localStorage.getItem("gs-pin"))).toBe("110016");
-  await page.getByRole("button", { name: "Forget me on this phone" }).click();
+  await page.getByRole("button", { name: "Sign out of this phone" }).click();
   await page.getByRole("button", { name: "Yes, forget" }).click();
   await expect(page.getByRole("heading", { name: "Where does the food go?" })).toBeVisible();   // after the reload the phone asks for the pin again
   expect(await page.evaluate(() => localStorage.getItem("gs-pin"))).toBeNull();
@@ -98,7 +98,7 @@ for (const t of ["day", "night"] as const) {
     await expect(page.getByRole("dialog", { name: "You" })).toBeVisible();
     const scan = () => axeScan(page);
     expect(await scan()).toEqual([]);
-    await page.getByRole("button", { name: "Close", exact: true }).click();
+    await page.getByRole("button", { name: "Back", exact: true }).click();
     await page.getByRole("button", { name: "History" }).click();
     await expect(page.getByRole("heading", { name: "History", exact: true })).toBeVisible();
     expect(await scan()).toEqual([]);

@@ -13,12 +13,12 @@ type Props = {
   onGivenName: (name: string) => void;   // story 527: the Google first name fills an empty name
   onForget: () => void;
   onDeleteAccount: () => Promise<string | null>;   // story #771: deletes the account on the server; the answer is a message when it was refused, null when it worked
-  onMenu: () => void;
+  onMenu: () => void; onAddresses: () => void; onOrders: () => void;   // story #1118: the Saved addresses and Your orders rows
 };
 
 const store = (): Storage | null => { try { return window.localStorage; } catch { return null; } };
 
-export function AccountScreen({ name, phone, address, pin, photo, email, onName, onPhone, onAddress, alerts, onAlerts, alertsError, live, onGivenName, onForget, onDeleteAccount, onMenu }: Props) {
+export function AccountScreen({ name, phone, address, pin, photo, email, onName, onPhone, onAddress, alerts, onAlerts, alertsError, live, onGivenName, onForget, onDeleteAccount, onMenu, onAddresses, onOrders }: Props) {
   const sheetRef = useSheetFit();   // story #975: the profile sheet follows the visual viewport too
   const [photoBad, setPhotoBad] = useState(false);
   const fit = useSheetFit();   // story #954: the overlay follows the visual viewport
@@ -29,62 +29,67 @@ export function AccountScreen({ name, phone, address, pin, photo, email, onName,
   const [deleting, setDeleting] = useState<null | { busy: boolean; error: string | null }>(null);   // story #771: the confirm sheet
   const pick = (t: Theme) => { pinTheme(store(), document, t === DEFAULT_THEME ? null : t); setLook(t); };   // Day is the default, not a pin (#225)
   const row = (label: string, value: string, mono = false) => (<><dt className="mono">{label}</dt><dd className={mono ? "mono" : undefined}>{value || "Not saved yet"}</dd></>);
+  const arrow = <span className="go" aria-hidden="true">›</span>;
   return (
     <>
-    <div ref={sheetRef} className="ui-sheet-back" onClick={onMenu}>
-    <section className="ui-sheet ui-profile" role="dialog" aria-modal="true" aria-label="You" onClick={(e) => e.stopPropagation()}>
-      <div className="ui-profile-head">
-        <span className="ui-profile-photo" aria-hidden="true">{photo && !photoBad ? <img src={photo} alt="" width={48} height={48} referrerPolicy="no-referrer" onError={() => setPhotoBad(true)} /> : name.trim().charAt(0).toUpperCase() || "·"}</span>
-        <div className="ui-profile-who"><h2>{name.trim() || "You"}</h2><span className="mono">{[phone, email].filter(Boolean).join(" · ") || "No details saved yet"}</span></div>
-        <button type="button" className="ui-btn ghost icon" aria-label="Close" onClick={onMenu}>
-          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+    <section ref={sheetRef} className="ui-you-page" role="dialog" aria-modal="true" aria-label="You">   {/* story #1118 (board Y4b): a full page, not a sheet */}
+      <header className="ui-you-top">
+        <button type="button" className="ui-pinmap-back" aria-label="Back" onClick={onMenu}>
+          <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M11 18l-6-6 6-6" /></svg>
         </button>
-      </div>
+        <h1>You</h1>
+      </header>
       {live && <button type="button" className="ui-live" onClick={live.onOpen}><span className="tag">{live.label}</span><span className="mono">No. {live.no}</span><span className="go" aria-hidden="true">›</span></button>}
       <div className="ui-account">
-        <section className="ui-slip ph-no-capture" aria-label="Delivery details">
-          <div className="ui-slip-body">
-            <div className="ui-slip-head"><span>Delivery details</span><span>Used on your bill</span></div>
-            {editing ? (
-              <div className="ui-form ui-form-flush">
-                <div className="ui-field"><label htmlFor="acc-name">Your name</label><input id="acc-name" type="text" value={draft.name} maxLength={80} onChange={(e) => setDraft({ ...draft, name: e.target.value })} /></div>
-                <div className="ui-field"><label htmlFor="acc-phone">Phone</label><input id="acc-phone" className="mono-input" type="tel" inputMode="numeric" maxLength={10} value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value.replace(/\D/g, "") })} /></div>
-                <div className="ui-field"><label htmlFor="acc-address">Address</label><textarea id="acc-address" rows={2} maxLength={300} value={draft.address} onChange={(e) => setDraft({ ...draft, address: e.target.value })} /></div>
-                <div className="ui-edit-actions"><button type="button" className="ui-btn small" onClick={() => { onName(draft.name); onPhone(draft.phone); onAddress(draft.address); setEditing(false); }}>Save</button><button type="button" className="ui-btn ghost small" onClick={() => setEditing(false)}>Cancel</button></div>
-              </div>
-            ) : (
-              <dl className="ui-dl" data-testid="account">
-                {row("Name", name)}{row("Phone", phone, true)}{row("Address", address)}{row("Pin", pin ?? "", true)}
-              </dl>
-            )}
+        <section className="ui-you-card lime ph-no-capture" aria-label="Delivery details" data-testid="account">
+          <div className="ui-profile-head">
+            <span className="ui-profile-photo" aria-hidden="true">{photo && !photoBad ? <img src={photo} alt="" width={48} height={48} referrerPolicy="no-referrer" onError={() => setPhotoBad(true)} /> : name.trim().charAt(0).toUpperCase() || "·"}</span>
+            <div className="ui-profile-who"><h2>{name.trim() || "You"}</h2><span className="mono">{[phone, email].filter(Boolean).join(" · ") || "No details saved yet"}</span></div>
+            {!editing && <button type="button" className="ui-link" aria-label="Edit delivery details" onClick={() => { setDraft({ name, phone, address }); setEditing(true); }}>Edit</button>}
           </div>
+          {editing && (
+            <div className="ui-form ui-form-flush">
+              <div className="ui-field"><label htmlFor="acc-name">Your name</label><input id="acc-name" type="text" value={draft.name} maxLength={80} onChange={(e) => setDraft({ ...draft, name: e.target.value })} /></div>
+              <div className="ui-field"><label htmlFor="acc-phone">Phone</label><input id="acc-phone" className="mono-input" type="tel" inputMode="numeric" maxLength={10} value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value.replace(/\D/g, "") })} /></div>
+              <div className="ui-field"><label htmlFor="acc-address">Address</label><textarea id="acc-address" rows={2} maxLength={300} value={draft.address} onChange={(e) => setDraft({ ...draft, address: e.target.value })} /></div>
+              <div className="ui-edit-actions"><button type="button" className="ui-btn small" onClick={() => { onName(draft.name); onPhone(draft.phone); onAddress(draft.address); setEditing(false); }}>Save</button><button type="button" className="ui-btn ghost small" onClick={() => setEditing(false)}>Cancel</button></div>
+            </div>
+          )}
         </section>
         <div className="ui-google"><SignIn returnTo="account" onGivenName={onGivenName} /></div>
-        {!editing && <button type="button" className="ui-row" onClick={() => { setDraft({ name, phone, address }); setEditing(true); }}><span>Edit delivery details</span><span className="go" aria-hidden="true">›</span></button>}
-        <div className="ui-row ui-row-static">
-          <label htmlFor="alerts" className="ui-row-label"><span>Order alerts</span><span className="ui-row-sub">{alerts === "none" ? "Blocked in your phone settings. Settings › Notifications › GoServe, then come back." : alerts === "on" ? "On for this phone" : alerts === "off" ? "Off for this phone" : ""}</span></label>
-          <input id="alerts" className="ui-switch" type="checkbox" role="switch" checked={alerts === "on"} disabled={alerts === "none"} onChange={onAlerts} />
+        <div className="ui-you-card">
+          <button type="button" className="ui-row" onClick={onAddresses}><span>Saved addresses</span>{arrow}</button>
+          <button type="button" className="ui-row" onClick={onOrders}><span>Your orders</span>{arrow}</button>
         </div>
-        {alertsError && <p role="alert" className="ui-field-error">{alertsError}</p>}
-        <section aria-label="Look" className="ui-look">
-          <h2 className="mono">Look</h2>
-          <div className="ui-chips">
-            <button type="button" className={look === "day" ? "ui-chip on" : "ui-chip"} aria-pressed={look === "day"} onClick={() => pick("day")}>Day</button>
-            <button type="button" className={look === "night" ? "ui-chip on" : "ui-chip"} aria-pressed={look === "night"} onClick={() => pick("night")}>Night</button>
+        <div className="ui-you-card">
+          <div className="ui-row ui-row-static">
+            <label htmlFor="alerts" className="ui-row-label"><span>Order alerts</span><span className="ui-row-sub">{alerts === "none" ? "Blocked in your phone settings. Settings › Notifications › GoServe, then come back." : alerts === "on" ? "On for this phone" : alerts === "off" ? "Off for this phone" : ""}</span></label>
+            <input id="alerts" className="ui-switch" type="checkbox" role="switch" checked={alerts === "on"} disabled={alerts === "none"} onChange={onAlerts} />
           </div>
-        </section>
-        <button type="button" className="ui-row" onClick={() => { onMenu(); window.dispatchEvent(new Event("gs-feedback")); }}><span className="ui-row-label"><span>Send feedback</span><span className="ui-row-sub">Two lines and a screenshot. We read every note.</span></span><span className="go" aria-hidden="true">›</span></button>
-        {sure ? (
-          <div className="ui-row ui-row-static"><span>Forget your details on this phone?</span><span className="ui-ask-act"><button type="button" className="ui-btn" onClick={onForget}>Yes, forget</button><button type="button" className="ui-btn ghost" onClick={() => setSure(false)}>No</button></span></div>
-        ) : (
-          <button type="button" className="ui-row" onClick={() => setSure(true)}><span>Forget me on this phone</span><span className="go" aria-hidden="true">›</span></button>
-        )}
-        <button type="button" className="ui-row" onClick={() => setDeleting({ busy: false, error: null })}><span>Delete my account</span><span className="go" aria-hidden="true">›</span></button>
+          {alertsError && <p role="alert" className="ui-field-error">{alertsError}</p>}
+          <section aria-label="Look" className="ui-look">
+            <h2 className="mono">Look</h2>
+            <div className="ui-chips">
+              <button type="button" className={look === "day" ? "ui-chip on" : "ui-chip"} aria-pressed={look === "day"} onClick={() => pick("day")}>Day</button>
+              <button type="button" className={look === "night" ? "ui-chip on" : "ui-chip"} aria-pressed={look === "night"} onClick={() => pick("night")}>Night</button>
+            </div>
+          </section>
+        </div>
+        <div className="ui-you-card">
+          <button type="button" className="ui-row" onClick={() => { onMenu(); window.dispatchEvent(new Event("gs-feedback")); }}><span className="ui-row-label"><span>Send feedback</span><span className="ui-row-sub">Two lines and a screenshot. We read every note.</span></span>{arrow}</button>
+        </div>
+        <div className="ui-you-card risky">
+          {sure ? (
+            <div className="ui-row ui-row-static"><span>Forget your details on this phone?</span><span className="ui-ask-act"><button type="button" className="ui-btn" onClick={onForget}>Yes, forget</button><button type="button" className="ui-btn ghost" onClick={() => setSure(false)}>No</button></span></div>
+          ) : (
+            <button type="button" className="ui-row" onClick={() => setSure(true)}><span>Sign out of this phone</span></button>
+          )}
+          <button type="button" className="ui-row" onClick={() => setDeleting({ busy: false, error: null })}><span>Delete my account</span></button>
+        </div>
         <p className="mono ui-legal"><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
         <p className="mono ui-legal">{buildLabel(import.meta.env.VITE_BUILD)}</p>
       </div>
     </section>
-    </div>
       {deleting && (
         <div ref={fit} className="ui-sheet-back">
           <div role="dialog" aria-modal="true" aria-label="Delete your account?" className="ui-sheet">
