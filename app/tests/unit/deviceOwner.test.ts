@@ -37,4 +37,16 @@ describe("claimDevice", () => {
     expect(claimDevice(mem({ ...session("A"), ...MINE }))).toBe(false);   // a phone with no owner yet
     expect(claimDevice(mem({ ...MINE, [OWNER_KEY]: "A" }))).toBe(false);   // no session
   });
+  it("a guest who signs in to an account in the same tab keeps the area and the draft (story #1139)", () => {
+    const guest = (id: string) => ({ "sb-abc-auth-token": JSON.stringify({ user: { id, is_anonymous: true } }) });
+    const s = mem({ ...guest("G"), ...MINE });
+    claimDevice(s);   // the guest takes the phone, flagged as a guest
+    s.setItem("sb-abc-auth-token", JSON.stringify({ user: { id: "B" } }));
+    expect(claimDevice(s, true)).toBe(false);
+    expect(s.getItem("gs-pin")).toBe("110016");
+    expect(s.getItem(OWNER_KEY)).toBe("B");
+    s.setItem("sb-abc-auth-token", JSON.stringify({ user: { id: "C" } }));   // a real account, then another one: that clears
+    expect(claimDevice(s, true)).toBe(true);
+    expect(s.getItem("gs-pin")).toBeNull();
+  });
 });

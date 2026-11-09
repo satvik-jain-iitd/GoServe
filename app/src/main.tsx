@@ -26,7 +26,7 @@ applyTheme(store, document);   // Day or Night; index.html already did it for th
 dropOldJoin();   // story #938: a key an older version saved is removed before anything reads a session
 claimDevice();   // story 1115 (and 1139, below, for a sign-in with no reload): a different account on this phone never opens with the previous one's address (before anything reads the area, the draft or the alerts choice)
 if (typeof window !== "undefined" && roleFromPath(window.location.pathname) === "customer") {   // story #1139: a sign-in as another account in this same tab (the phone-code path) takes the phone too; the screens hold the old state, so the page starts again
-  try { getClient().auth.onAuthStateChange((event) => { if (event === "SIGNED_IN" && claimDevice()) window.location.reload(); }); } catch { /* no client (a page without the backend): nothing to watch */ }
+  try { getClient().auth.onAuthStateChange((event) => { if (event === "SIGNED_IN" && claimDevice(window.localStorage, true)) window.location.reload(); }); } catch { /* no client (a page without the backend): nothing to watch */ }
 }
 const path = window.location.pathname;
 const role = roleFromPath(path);
