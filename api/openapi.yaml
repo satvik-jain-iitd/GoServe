@@ -1323,6 +1323,7 @@ components:
         tax_mode: { enum: [inclusive, exclusive] }
         to_pay_paise: { type: integer, minimum: 0 }
         saved_paise: { type: integer, minimum: 0 }
+        early_friend_paise: { type: integer, minimum: 1, description: "Story 1145. The early-friend gift the database gives this customer at this pin, already taken off to_pay_paise. Absent when there is none. A request never names it." }
         swap_discount_paise: { type: integer, minimum: 0, description: "Only after a swap: the part of discount_paise that is the swap discount." }
         swaps:
           description: "Only after a swap: what was swapped for what. The lines above already show the new dish."
