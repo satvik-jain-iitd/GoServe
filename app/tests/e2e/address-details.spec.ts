@@ -33,8 +33,8 @@ test("S1 the sheet opens over the same map: Step 2 of 2, the place and a Change 
   for (const c of ["Home", "Office", "Other"]) await expect(sheet(page).getByRole("button", { name: c, exact: true })).toBeVisible();
   await expect(sheet(page).getByRole("button", { name: "Save address" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Search an area or address" })).toHaveCount(0);   // the top shows only Back while the sheet is open
-  await expect(sheet(page).getByLabel("House, flat, floor")).toHaveAttribute("placeholder", "C-128, second floor");
-  await expect(sheet(page).getByLabel("Landmark (optional)")).toHaveAttribute("placeholder", "near the park gate");
+  await expect(sheet(page).getByLabel("House, flat, floor")).toHaveAttribute("placeholder", "e.g. C-128, second floor");
+  await expect(sheet(page).getByLabel("Landmark (optional)")).toHaveAttribute("placeholder", "e.g. near the park gate");
   const chip = (await sheet(page).getByRole("button", { name: "Office", exact: true }).boundingBox())!;
   expect(Math.round(chip.height)).toBe(36);
   await expect(page.getByText(/The pin takes the rider/)).toHaveCount(0);   // owner rule 8 Nov: no hint under the chips
@@ -113,4 +113,20 @@ test("S8 when the lookup found no words or no pin code, the sheet asks for them"
   await sheet(page).getByRole("button", { name: "Save address" }).click();
   await expect.poll(() => net.state.addresses.length).toBe(2);
   expect(net.state.addresses.at(-1)).toMatchObject({ address: "12B, Green Park", pin_code: "110016" });
+});
+
+// Story #1117 (board C7a): the example looks like an example, not like typed text, and the field edge is seen (WCAG 1.4.11, 3:1).
+const lum = (rgb: number[]) => { const [r, g, b] = rgb.map((v) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+const ratio = (a: number[], b: number[]) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
+test("S-1117 the example is lighter than typed text (3:1 to 3.6:1 on the field) and the field edge is 3:1", async ({ page, context }) => {
+  await toDetails(page, context);
+  const f = sheet(page).getByLabel("House, flat, floor");
+  const c = await f.evaluate((el) => {
+    const px = (v: string) => { const cv = document.createElement("canvas").getContext("2d")!; cv.fillStyle = v; cv.fillRect(0, 0, 1, 1); return Array.from(cv.getImageData(0, 0, 1, 1).data).slice(0, 3); };
+    const ph = getComputedStyle(el, "::placeholder"), st = getComputedStyle(el);
+    return { ph: px(ph.color), bg: px(st.backgroundColor), border: px(st.borderTopColor) };
+  });
+  expect(ratio(c.ph, c.bg)).toBeGreaterThanOrEqual(3);
+  expect(ratio(c.ph, c.bg)).toBeLessThanOrEqual(3.6);
+  expect(ratio(c.border, c.bg)).toBeGreaterThanOrEqual(3);
 });

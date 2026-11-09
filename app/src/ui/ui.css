@@ -776,3 +776,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .gs-kitchen-tag { padding: 2px 8px; border: 1px solid var(--md-outline-variant); border-radius: 999px; background: var(--md-surface); color: var(--md-on-surface); font-size: 10px; font-weight: 600; line-height: 12px; white-space: nowrap; }
 .gs-kitchen-mark.no-tag .gs-kitchen-tag { display: none; }
 
+
+/* Story 1117 (board C7a): an example reads as an example, not as typed text (about 3.3:1), and the field edge is seen (3:1, WCAG 1.4.11). Typed text stays full ink. */
+.ui-field input.ui-eg { border-color: color-mix(in srgb, var(--gs-text-muted) 65%, var(--md-surface)); }
+.ui-field input.ui-eg::placeholder { color: color-mix(in srgb, var(--gs-text-muted) 65%, var(--md-surface)); opacity: 1; }
