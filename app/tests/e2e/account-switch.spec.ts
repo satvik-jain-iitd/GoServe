@@ -33,12 +33,15 @@ test("TC 1.16 a sign-in as another account with no reload never shows the first 
     localStorage.setItem("gs_alerts_asked", "1");   // account A is past its first open
   });
   await page.goto("/customer/");
-  await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();   // account A is on its menu
+  await expect(page.getByRole("heading", { name: "Get order alerts" })).toHaveCount(0);   // account A is past its first open
+  await page.waitForLoadState("networkidle");
   // account B signs in in this same tab (the phone-code path): no reload by the app; the client announces SIGNED_IN
+  const reloaded = page.waitForEvent("load");   // the app starts again so no screen keeps A's state in memory
   await page.evaluate(() => {
     localStorage.setItem("sb-test-auth-token", JSON.stringify({ access_token: "t", refresh_token: "r", expires_at: Math.floor(Date.now() / 1000) + 3600, user: { id: "account-B" } }));
     new BroadcastChannel("sb-test-auth-token").postMessage({ event: "SIGNED_IN", session: JSON.parse(localStorage.getItem("sb-test-auth-token")!) });
   });
+  await reloaded;
   await expect(page.getByRole("heading", { name: "Get order alerts" })).toBeVisible();   // B gets its own first open, not A's menu
   expect(await page.evaluate(() => localStorage.getItem("gs-pin"))).toBeNull();
   expect(await page.evaluate(() => localStorage.getItem("gs-device-user"))).toBe("account-B");
