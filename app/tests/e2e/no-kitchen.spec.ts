@@ -1,13 +1,11 @@
 // Story #1049 part 3 (board NK-A, replaces the old pin-code screen): no kitchen serves this pin. "We don't reach here yet", the place, Change location, Tell me when you come here.
 import { test, expect } from "@playwright/test";
-import { setup } from "./helpers";
+import { setup, typePlace } from "./helpers";
 
 async function noKitchen(page: import("@playwright/test").Page) {
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "Type it by hand" }).click();
-  await page.getByLabel("Address", { exact: true }).fill("Sector 62, Noida, Uttar Pradesh 201301");
-  await page.getByLabel("Pin code").fill("110099");
-  await page.getByRole("button", { name: "See the menu" }).click();
+  await typePlace(page, "110099", "Sector 62, Noida, Uttar Pradesh 201301");
+
 }
 const screen = (page: import("@playwright/test").Page) => page.getByRole("group", { name: "No kitchen here" });
 

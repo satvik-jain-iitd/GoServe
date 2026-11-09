@@ -59,12 +59,11 @@ test("D3 D11 D12 the staff apps have a Send feedback row that opens the sheet, a
 test("D4 D5 the pin screen has one button and plain words", async ({ page, context }) => {
   await setup(context, page, [], { pin: null });
   await page.goto("/customer/");
-  await expect(page.getByRole("button", { name: "Use my location" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Set delivery location" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Track an order" })).toHaveCount(0);
   await expect(page.getByText("We serve a few pin codes for now.")).toHaveCount(0);
   await expect(page.getByText("Cash only")).toHaveCount(0);
   await typePlace(page, "110099");
-  await page.getByRole("button", { name: "See the menu" }).click();
   await expect(page.getByRole("heading", { name: "We don't reach here yet" })).toBeVisible();   // story #1049, board NK-A
 });
 

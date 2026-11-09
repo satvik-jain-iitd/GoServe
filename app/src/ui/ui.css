@@ -769,6 +769,18 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-founder-links a { color: inherit; }
 .ui-founder-share { margin-top: auto; }
 
+/* Story 1133 (boards O0g-C, N0b, A1c; ShipQuick 164): the first-open steps share one layout. The slip runs to 24 px above the edge plus the safe area. The main button is last, at the
+   foot of the slip, so it has the same y on every step; an outline button sits above it. The hero (thali picture, bell, pin circle) is placed from the slip top, so its centre is at the
+   same height on every step: 268 px for the badges (top 220 and 48 of radius), the picture's top at 157. */
+.ui-landing .ui-slip, .ui-welcome .ui-slip { margin-top: 40px; }   /* the same gap under the title block on every step */
+.ui-landing, .ui-welcome { --gs-first-top: 64px; padding-top: calc(var(--gs-first-top) + env(safe-area-inset-top, 0px)); padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }   /* the logo starts 64 px from the top on every step, as on the boards */
+.ui-landing .ui-slip, .ui-welcome .ui-slip { display: flex; flex-direction: column; min-height: 420px; }
+.ui-landing .ui-slip-body, .ui-welcome .ui-slip-body { flex: 1; display: flex; flex-direction: column; }
+.ui-bottom, .ui-welcome .ui-slip-body > .ui-google-stack { margin-top: auto; }
+.ui-hero-abs { position: absolute; left: 50%; top: 220px; transform: translateX(-50%); margin: 0; }
+.ui-hero-abs-pic { position: absolute; left: 50%; top: 157px; width: min(306px, calc(100% - 36px)); transform: translateX(-50%); margin: 0; }
+.ui-pinbadge { width: 96px; height: 96px; border-radius: var(--gs-radius-pill); background: var(--gs-lime-soft); display: flex; align-items: center; justify-content: center; color: var(--md-primary); }
+
 /* Story 1138, board C6e: a GoServe kitchen on the pin map. The plate, fork and spoon (the dish placeholder component) with a white halo, and a small tag beside it. Nothing to tap. */
 .gs-kitchen-mark { background: transparent; border: 0; pointer-events: none; }
 .gs-kitchen-in { display: inline-flex; align-items: center; gap: 4px; transform: translate(-14px, -14px); }
@@ -776,3 +788,10 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .gs-kitchen-tag { padding: 2px 8px; border: 1px solid var(--md-outline-variant); border-radius: 999px; background: var(--md-surface); color: var(--md-on-surface); font-size: 10px; font-weight: 600; line-height: 12px; white-space: nowrap; }
 .gs-kitchen-mark.no-tag .gs-kitchen-tag { display: none; }
 
+
+/* Story 1127 (boards C6, C8): the search runs on the map. The bar is a text box; the places list sits over the map under it. */
+.ui-pinmap-search.open { padding: 0 6px 0 18px; cursor: text; }
+.ui-pinmap-search.open input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--md-on-surface); font: inherit; outline: none; }
+.ui-pinmap-close { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: var(--gs-radius-pill); background: transparent; color: var(--md-on-surface); cursor: pointer; }
+.ui-pinmap-results { position: absolute; left: 16px; right: 16px; top: calc(env(safe-area-inset-top, 0px) + 72px); z-index: 700; max-height: 50%; overflow: auto; padding: 8px 12px; border: 1px solid var(--md-outline-variant); border-radius: 10px; background: var(--md-surface); box-shadow: 0 8px 24px rgba(38, 53, 40, 0.12); }
+.ui-landing .ui-slip-body > .ui-field-error, .ui-welcome .ui-slip-body > .ui-field-error { text-align: center; margin-bottom: -4px; }   /* story 1133 (T3): the error under the number is centred, 12 px above the main button */

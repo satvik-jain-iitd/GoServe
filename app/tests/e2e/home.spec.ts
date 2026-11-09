@@ -68,7 +68,6 @@ test("S5 a closed kitchen shows its menu with Add switched off and says when it 
   net.state.kitchens = [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: false, active: true, lat: null, lng: null, opens_at: "10:00:00" }];
   await page.goto("/customer/");
   await typePlace(page, "110016");
-  await page.getByRole("button", { name: "See the menu" }).click();
   await expect(page.getByText("Kitchen closed. Opens at 10:00 am.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeDisabled();
 });
@@ -90,7 +89,6 @@ test("S7 a pin code that no kitchen serves shows the no-kitchen screen (board NK
   await setup(context, page, [], { pin: null });
   await page.goto("/customer/");
   await typePlace(page, "110099");
-  await page.getByRole("button", { name: "See the menu" }).click();
   await expect(page.getByRole("heading", { name: "We don't reach here yet" })).toBeVisible();
   await expect(page.getByLabel("Pin code")).toHaveCount(0);
 });
