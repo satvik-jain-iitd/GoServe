@@ -44,5 +44,5 @@ const pushWorker = (): Plugin => ({
 
 export default defineConfig({
   build: { rollupOptions: { input: { main: resolve(__dirname, "index.html"), story: resolve(__dirname, "story.html") } } },
-  plugins: [react(), rolePages(), pushWorker(), VitePWA({ registerType: "autoUpdate", manifest, includeAssets: ["icons/*", "fonts/*"], workbox: { importScripts: ["push-sw.js"] } })],
+  plugins: [react(), rolePages(), pushWorker(), VitePWA({ registerType: "autoUpdate", manifest, includeAssets: ["icons/*", "fonts/*", "brand/*"], workbox: { importScripts: ["push-sw.js"] } })],
 });

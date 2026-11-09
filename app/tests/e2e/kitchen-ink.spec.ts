@@ -14,12 +14,12 @@ test("S1 a new ticket sits on the New tab with Accept, opens as one ticket, and 
   await expect(page.getByText("2 × Butter Chicken")).toBeVisible();
   await expect(page.getByLabel("1 new")).toBeVisible();   // the badge on the New tab
   await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
-  await expect(page.getByRole("heading", { name: "Ticket" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Order 0f0f0f0f" })).toBeVisible();   // story 934: a new order opens as a sheet
   await expect(page.getByText("Rider collects")).toBeVisible();
   await page.getByRole("button", { name: "Accept 0f0f0f0f" }).click();
   await expect(page.getByRole("heading", { name: "Cooking" })).toBeVisible();   // K4 Accept lands on the Cooking tab
   await expect(page.getByRole("button", { name: "Start 0f0f0f0f" })).toBeVisible();
-  expect(net.calls.status[0].body).toMatchObject({ order_id: ID, session_id: SESSION, to_status: "accepted", actor: "kitchen" });
+  expect(net.calls.status[0].body).toEqual({ order_id: ID, action: "accept" });
 });
 
 test("S2 the Cooking tab holds Start and Ready, and a ready ticket waits for the rider below", async ({ page, context }) => {
@@ -68,7 +68,7 @@ test("S5 an account that is not kitchen staff sees the gate with Check again", a
 });
 
 test("S6 a phone with no Google sign-in sees Sign in to cook", async ({ page, context }) => {
-  await setup(context, page);
+  await setup(context, page, [], { guest: true });
   await page.goto("/kitchen/");
   await expect(page.getByRole("heading", { name: "Sign in to cook" })).toBeVisible();
   await expect(page.getByTestId("google-signin")).toBeVisible();
@@ -77,17 +77,27 @@ test("S6 a phone with no Google sign-in sees Sign in to cook", async ({ page, co
 for (const theme of ["day", "night"] as const) {
   test(`S7 the kitchen screens have no serious contrast or role violation in ${theme}`, async ({ page, context }) => {
     await context.addInitScript((v) => localStorage.setItem("gs-theme", v), theme);
-    const net = await setup(context, page, [order("placed"), { ...order("preparing"), id: "0b0b0b0b-0000-0000-0000-000000000000" }]);
+    const net = await setup(context, page, [order("placed"), { ...order("preparing"), id: "0b0b0b0b-0000-0000-0000-000000000000" }], { guest: true });
     net.state.kitchen = "k-1";
     await page.goto("/kitchen/");
     await expect(page.getByText("No. 0f0f0f0f")).toBeVisible();
     const scan = async () => expect(await axeScan(page, ["wcag2a", "wcag2aa"])).toEqual([]);
     await scan();   // K3
     await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
+    await expect(page.getByRole("dialog", { name: "Order 0f0f0f0f" })).toBeVisible();
+    await scan();   // K3 order sheet (story 934)
+    await page.getByRole("button", { name: "Decline, with a reason" }).click();
+    await expect(page.getByRole("dialog", { name: "Decline order 0f0f0f0f" })).toBeVisible();
+    await scan();   // K3 decline sheet
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await tab(page, "Cooking").click();
+    await scan();   // K3b
+    await page.getByRole("button", { name: "Open ticket 0b0b0b0b" }).click();
     await expect(page.getByRole("heading", { name: "Ticket" })).toBeVisible();
     await scan();   // K4
-    await page.getByRole("button", { name: "Back to new tickets" }).click();
-    for (const name of ["Cooking", "Today"]) { await tab(page, name).click(); await scan(); }   // K3b, K5
+    await page.getByRole("button", { name: "Back to cooking tickets" }).click();
+    await tab(page, "Today").click(); await scan();   // K5
     net.state.kitchen = null;
     await page.reload();
     await expect(page.getByRole("heading", { name: "Sign in to cook" })).toBeVisible();

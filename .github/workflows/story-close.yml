@@ -1,13 +1,13 @@
 name: Close the stories of a merged pull request
 
 # Plan v2, lifecycle step L10. GitHub closes issues by itself only when a PR merges into the default branch (main).
-# Our PRs merge into dev, staging and documents, so this closes the stories named after "Closes #n", writes the India
+# Our PRs merge into dev and documents, so this closes the stories named after "Closes #n", writes the India
 # time of the close, removes the label doing, and closes the epic when its last story closes. This file must also sit on
-# dev, staging and documents: a pull_request event runs the workflow file of the branch the PR merges into.
+# dev and documents: a pull_request event runs the workflow file of the branch the PR merges into.
 on:
   pull_request:
     types: [closed]
-    branches: [dev, staging, documents]
+    branches: [dev, documents]
 
 permissions:
   issues: write

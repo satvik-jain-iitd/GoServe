@@ -2,7 +2,7 @@
 import { clock12 } from "../lib/clock";
 import { formatRupees } from "../lib/money";
 import { shortId, statusLabel, trackerSteps } from "../lib/kitchen";
-import { etaMinutes } from "../lib/profile";
+import { etaView, type Eta } from "../lib/eta";
 import type { PlacedOrder } from "../lib/orders";
 import type { RiderCard } from "../lib/supabase";
 import { useEffect, useState } from "react";
@@ -10,8 +10,9 @@ import { PAY_WINDOW_S, PAY_METHODS, type PayMethod } from "../lib/payments";
 import { devHelperOn } from "../lib/payGateway";
 import { Timeline } from "../ui";
 import { BackChevron } from "./BillScreen";
-import { RiderMap } from "./RiderMap";
-import { distanceText, lastSeenText, riderLine, type Point } from "../lib/riderMap";
+import { RiderMapScreen } from "./RiderMapScreen";
+import { agoText, distanceText, lastSeenText, type Point } from "../lib/riderMap";
+import { useNowOnline } from "../lib/useNowOnline";
 import type { LatLng } from "../lib/riderTrack";
 
 type Props = {
@@ -34,12 +35,15 @@ type Props = {
   onAllowReminder: () => void;
   onMenu: () => void;           // See the menu, with an empty cart (a delivered or cancelled order)
   onBack: () => void;           // the chevron: back to the menu
-  onCancel: () => void;         // story B3: allowed only while the order is placed
+  onCancel: () => void;         // story B3, #904: allowed while the order is placed or accepted
   cancelling: boolean;
   rider: RiderCard | null;      // story D2: shown once a rider has the order
+  atDoor?: boolean;             // story #922: the rider tapped Arriving
   onCall?: () => void;          // story H14: the Call tap is counted ("where is my food" calls)
   pay?: Pay;                    // story #552: an online order waits for its payment
   track?: Track;                // story #691: On the way, with the rider's place known
+  eta?: Eta | null;             // story #1015: the server's delivery time
+  declined?: { reason: string; at: string } | null;   // story #934: the kitchen said no, in its own words
 };
 export type Track = { kitchen: LatLng; you: LatLng; rider: Point; name: string; phone: string | null };
 export type Pay = {
@@ -51,24 +55,20 @@ export type Pay = {
 };
 
 const placeholderGone = import.meta.env.VITE_PAYMENTS_PROVIDER === "razorpay";
-// Story #691 (boards T2, T3): the map card. The words refresh every 10 s; a phone with no connection greys the map and says when the rider was last seen.
-function MapCard({ t }: { t: Track }) {
-  const [now, setNow] = useState(() => Date.now());
-  const [online, setOnline] = useState(() => navigator.onLine);
-  useEffect(() => {
-    const tick = setInterval(() => setNow(Date.now()), 10_000);
-    const up = () => { setOnline(true); setNow(Date.now()); }, down = () => setOnline(false);
-    window.addEventListener("online", up); window.addEventListener("offline", down);
-    return () => { clearInterval(tick); window.removeEventListener("online", up); window.removeEventListener("offline", down); };
-  }, []);
-  const last = lastSeenText(t.rider.at, now);
+// Story 1053 (boards T4, T5; before: #691 T2, T3): one rider row, no map in the page. A tap opens the full-screen map. The words refresh every 10 s; with no connection the row says when the rider was last seen.
+const MAP_ICON = <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z" /><path d="M9 3v15M15 6v15" /></svg>;
+const GO = <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>;
+function RiderRow({ t, onOpen }: { t: Track; onOpen: () => void }) {
+  const { now, online } = useNowOnline();
   return (
-    <section className="ui-mapcard" aria-label="Rider on the map">
-      <RiderMap kitchen={t.kitchen} you={t.you} rider={t.rider} offline={!online} />
-      {online
-        ? <div className="ui-map-line"><span aria-hidden="true" className="ui-live-dot" /><span><b>{t.name}</b>{riderLine("", distanceText(t.rider.lat, t.rider.lng, t.you.lat, t.you.lng), t.rider.at, now)}</span></div>
-        : <div className="ui-map-line offline"><span className="ui-chip-warn">No connection</span><span><b>{last.slice(0, last.indexOf(","))}</b>{last.slice(last.indexOf(","))}</span></div>}
-    </section>
+    <button type="button" className="ui-locrow ui-riderrow" aria-label="See the rider on the map" onClick={onOpen}>
+      <span className="ui-locrow-icon">{MAP_ICON}</span>
+      <span className="ui-locrow-words">
+        <span className="ui-locrow-title"><b>{t.name}</b> is {distanceText(t.rider.lat, t.rider.lng, t.you.lat, t.you.lng)} away</span>
+        <span className="ui-locrow-sub mono">{online ? `On the map · updated ${agoText(t.rider.at, now)}` : `No connection · ${lastSeenText(t.rider.at, now)}`}</span>
+      </span>
+      <span className="ui-locrow-go">{GO}</span>
+    </button>
   );
 }
 
@@ -82,16 +82,18 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
 
 // The customer says it in his words: the kitchen's "Ready" is "Ready, rider picks up", the last step is "At your door".
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "At your door" };
-const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "error" };
+const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
-export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track }: Props) {
+export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, declined, eta }: Props) {
+  const [mapOpen, setMapOpen] = useState(false);   // story 1053: the full-screen rider map
   const steps = trackerSteps(status);
-  const eta = etaMinutes();
+  const { now } = useNowOnline();
+  const view = etaView(eta, now);
   const placed = new Date(placedAt);
-  const door = new Date(placed.getTime() + eta * 60_000);
+  const door = view.kind === "time" ? clock12(view.by) : null;   // the clock the server's estimate lands on
   const delivered = status === "delivered";
   const cancelled = status === "cancelled";
-  const title = status === "placed" ? "Order placed" : delivered ? "Delivered" : cancelled ? "Cancelled" : "Your order";
+  const title = status === "placed" ? "Order placed" : delivered ? "Delivered" : cancelled ? (declined ? "Declined" : "Cancelled") : "Your order";
   const head = [kitchenName, pin].filter(Boolean).join(" · ");
   return (
     <>
@@ -129,9 +131,11 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
         <section className="ui-slip ui-slip-pad" aria-label={delivered ? "Order, delivered" : "Order"}>
           <div className="ui-slip-body">
             <div className="ui-slip-head"><span>{head}</span><span>{delivered ? `${placed.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${clock12(placed)}` : `No. ${shortId(order.id)}`}</span></div>
-            <div className="ui-slip-stamp"><span className={`ui-stamp ${STAMP[status] ?? "placed"}`}>{statusLabel(status)}</span></div>
+            <div className="ui-slip-stamp"><span className={`ui-stamp ${STAMP[status] ?? "placed"}`}>{declined ? "Declined" : statusLabel(status)}</span></div>
             {pay && status === "placed" && (pay.state === "ready" || pay.state === "starting" || pay.state === "waiting") && <Countdown startedAt={pay.startedAt} />}
-            {!cancelled && !delivered && <p className="ui-clock">About <b>{eta} min</b> · at your door by {clock12(door)}</p>}
+            {!cancelled && !delivered && view.kind === "time" && <><p className="display ui-eta-big">{view.min} min</p><p className="ui-clock ui-eta-by">By {clock12(view.by)}</p></>}
+            {!cancelled && !delivered && view.kind === "late" && <p className="ui-clock ui-eta-late" role="status">Running late, sorry</p>}
+            {!cancelled && !delivered && view.kind === "working" && <p className="ui-clock ui-eta-by">Working out the time</p>}
             {delivered && confirmedAt && <p className="ui-clock">At your door <b>{clock12(new Date(confirmedAt))}</b></p>}
             <div className="ui-slip-rule" />
             <div className="ui-slip-lines">
@@ -139,21 +143,30 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
               <div><span>Delivery</span><span>Free</span></div>
             </div>
             <div className="ui-slip-rule" />
-            <div className="ui-slip-total"><b>{pay?.state === "paid" ? "Paid online" : pay ? "To pay online" : delivered && paidBy === "cash" ? "Cash paid" : "Cash at door"}</b><span>{formatRupees(order.total_paise)}</span></div>
+            <div className="ui-slip-total"><b>{declined || cancelled ? "Nothing to pay" : pay?.state === "paid" ? "Paid online" : pay ? "To pay online" : delivered && paidBy === "cash" ? "Cash paid" : "Cash at door"}</b><span>{declined || cancelled ? formatRupees(0) : formatRupees(order.total_paise)}</span></div>
           </div>
         </section>
         <div className="ui-after">
           {status === "placed" && <p>The kitchen has your order. This page updates on its own.</p>}
-          {!delivered && !cancelled && <Timeline steps={steps.map((x) => STEP_WORDS[x.status] ?? x.label)} current={steps.findIndex((x) => x.state === "current")} label="Order progress" />}
+          {track && status === "out_for_delivery" && <RiderRow t={track} onOpen={() => setMapOpen(true)} />}   {/* board T4: the row sits under the slip, above the timeline */}
+          {!delivered && !cancelled && <Timeline steps={steps.map((x) => (atDoor && x.status === "out_for_delivery" ? "Rider at your door" : STEP_WORDS[x.status] ?? x.label))} current={steps.findIndex((x) => x.state === "current")} label="Order progress" />}
           {!delivered && !cancelled && address && <p className="mono ui-addr ph-no-capture">{address}</p>}
-          {track && status === "out_for_delivery" && <MapCard t={track} />}
           {rider && !(track && status === "out_for_delivery") && (
             <div className="notice" data-testid="rider-card">
-              <strong>{rider.name}</strong> is bringing your order.{" "}
+              <strong>{atDoor ? rider.name.split(" ")[0] : rider.name}</strong> {atDoor ? "is at your door." : "is bringing your order."}{" "}
               <a className="ui-btn" href={`tel:${rider.phone}`} onClick={onCall}>Call {rider.name}</a>
             </div>
           )}
-          {cancelled && <p role="status"><strong>Your order was cancelled. Nothing to pay.</strong></p>}
+          {declined ? (
+            <>
+              <div role="status" className="ui-declined">
+                <p><strong>{kitchenName || "The kitchen"} could not take this order.</strong></p>
+                <p>“{declined.reason}”</p>
+                <p className="mono ui-declined-when">Declined {clock12(new Date(declined.at))} · {Math.max(0, Math.round((Date.parse(declined.at) - placed.getTime()) / 60_000))} min after you ordered</p>
+              </div>
+              <p className="ui-meta">Your money is not taken. If you paid online, it comes back in 5 to 7 days.</p>
+            </>
+          ) : cancelled && <p role="status"><strong>Your order was cancelled. Nothing to pay.</strong></p>}
           {asking && (
             <div role="group" aria-label="Delivery check" className="ui-closed ui-ask">
               <h3>Was your order delivered?</h3>
@@ -174,9 +187,10 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
           )}
         </div>
       </div>
+      {mapOpen && track && status === "out_for_delivery" && <RiderMapScreen t={track} orderNo={shortId(order.id)} door={door} onBack={() => setMapOpen(false)} onCall={onCall} />}
       <div className="ui-bottom">
-        {(delivered || cancelled) && <button type="button" className="ui-btn big" onClick={onMenu}>{cancelled ? "Order again" : "See the menu"}</button>}
-        {status === "placed" && <button type="button" className="ui-btn ghost big" disabled={cancelling} onClick={onCancel}>Cancel order</button>}
+        {(delivered || cancelled) && <button type="button" className="ui-btn big" onClick={onMenu}>{declined ? "Order something else" : cancelled ? "Order again" : "See the menu"}</button>}
+        {(status === "placed" || status === "accepted") && <button type="button" className="ui-btn ghost big" disabled={cancelling} onClick={onCancel}>Cancel order</button>}
         {track?.phone && status === "out_for_delivery" && <a href={`tel:${track.phone}`} className="ui-btn ghost big" onClick={onCall}>Call the rider</a>}
         {kitchenPhone && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
       </div>

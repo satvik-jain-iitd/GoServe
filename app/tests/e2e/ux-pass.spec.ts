@@ -21,14 +21,13 @@ test("D1 D2 nothing sits under any board: no title, no floating Feedback, no leg
 test("D2 D10 the customer You tab ends with Send feedback and then Privacy · Terms", async ({ page, context }) => {
   await setup(context, page);
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "You (Account)", exact: true }).click();
-  await expect(page.getByText("Used on your bill")).toBeVisible();
-  const rows = page.locator(".ui-scroll");
+  await page.getByRole("button", { name: /^You: / }).click();
+  const rows = page.locator(".ui-you-page");
   await expect(rows.getByRole("button", { name: "Send feedback" })).toBeVisible();
   const legal = rows.locator(".ui-legal");
   await expect(legal.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy/");
   await expect(legal.getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/terms/");
-  expect(await page.evaluate(() => { const b = document.querySelector(".ui-scroll button:has(span)")!; const l = document.querySelector(".ui-legal")!; return b.compareDocumentPosition(l) & Node.DOCUMENT_POSITION_FOLLOWING; })).toBeTruthy();   // legal comes after
+  expect(await page.evaluate(() => { const b = document.querySelector(".ui-you-page .ui-row")!; const l = document.querySelector(".ui-legal")!; return b.compareDocumentPosition(l) & Node.DOCUMENT_POSITION_FOLLOWING; })).toBeTruthy();   // legal comes after
   await page.getByRole("button", { name: "Send feedback" }).click();
   await expect(page.getByRole("dialog", { name: "Feedback" })).toBeVisible();
 });
@@ -59,13 +58,12 @@ test("D3 D11 D12 the staff apps have a Send feedback row that opens the sheet, a
 test("D4 D5 the pin screen has one button and plain words", async ({ page, context }) => {
   await setup(context, page, [], { pin: null });
   await page.goto("/customer/");
-  await expect(page.getByRole("button", { name: "Use my location" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Set delivery location" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Track an order" })).toHaveCount(0);
   await expect(page.getByText("We serve a few pin codes for now.")).toHaveCount(0);
   await expect(page.getByText("Cash only")).toHaveCount(0);
   await typePlace(page, "110099");
-  await page.getByRole("button", { name: "See the menu" }).click();
-  await expect(page.getByText("Not here yet. We do not deliver to 110099 yet.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "We don't reach here yet" })).toBeVisible();   // story #1049, board NK-A
 });
 
 test("D6 D7 D8 D9 D13 the bill, placed and orders screens use the agreed words", async ({ page, context }) => {
@@ -78,7 +76,7 @@ test("D6 D7 D8 D9 D13 the bill, placed and orders screens use the agreed words",
   await expect(page.locator(".ui-slip-head").getByText("Cash", { exact: true })).toHaveCount(0);
   await expect(page.locator("header .meta").getByText("Cash", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Back to menu" }).click();
-  await page.getByRole("button", { name: "My orders", exact: true }).click();
+  await page.getByRole("button", { name: "History", exact: true }).click();
   await expect(page.getByRole("heading", { name: "No orders yet" })).toBeVisible();
   await expect(page.getByText("Your orders will show here.")).toBeVisible();
 });

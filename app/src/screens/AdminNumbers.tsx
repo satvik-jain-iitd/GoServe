@@ -4,6 +4,7 @@ import { dayNumbers, sumNumbers, type DayNumbers, type KitchenRow } from "../lib
 import { formatRupees } from "../lib/money";
 import { Skeleton } from "../ui";
 import { getClient } from "../lib/supabase";
+import { readOtpSwitchAdmin, saveOtpSwitch } from "../lib/otpSwitch";
 import { readSwapSetting, saveSwapSetting, swapPctProblem, type SwapSetting } from "../lib/swapSetting";
 
 // Board A9: the admin-only Settings row for the sold-out swap discount.
@@ -36,6 +37,29 @@ function SwapSettings() {
   );
 }
 
+// Story 829: the phone code login switch. Off until an SMS provider is live; flipping it reaches an open customer app in seconds.
+function PhoneCodeSetting() {
+  const [on, setOn] = useState<boolean | null>(null);
+  const [line, setLine] = useState<string | null>(null);
+  useEffect(() => { readOtpSwitchAdmin(getClient()).then((s) => setOn(s.on), () => setLine("Could not load the setting. Try again.")); }, []);
+  async function flip(next: boolean) {
+    setOn(next);
+    const failed = await saveOtpSwitch(getClient(), next);
+    setLine(failed);
+    if (failed) setOn(!next);
+  }
+  return (
+    <section className="ui-group" aria-label="Login">
+      <h2>Login</h2>
+      <div className="ui-row ui-row-static">
+        <label htmlFor="otp-login" className="ui-row-label"><b>Phone code login</b><span className="ui-row-sub">Needs an SMS provider. Off until one is live.</span></label>
+        <input id="otp-login" className="ui-switch" type="checkbox" role="switch" checked={on === true} disabled={on === null} onChange={(e) => void flip(e.target.checked)} />
+      </div>
+      {line && <p role="alert" className="ui-note error">{line}</p>}
+    </section>
+  );
+}
+
 export function AdminNumbers({ live, kitchens, settings }: { live?: number; kitchens?: KitchenRow[]; settings?: boolean }) {
   const [rows, setRows] = useState<DayNumbers[] | null>(null);
   const [error, setError] = useState(false);
@@ -63,6 +87,7 @@ export function AdminNumbers({ live, kitchens, settings }: { live?: number; kitc
         ))}
       </section>
       {settings && <SwapSettings />}
+      {settings && <PhoneCodeSetting />}
       <button type="button" className="ui-row" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}><span>Send feedback</span><span className="go" aria-hidden="true">›</span></button>
     </div>
   );

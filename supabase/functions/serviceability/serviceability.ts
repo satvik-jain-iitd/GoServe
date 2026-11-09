@@ -3,9 +3,9 @@
 export type Place = { lat: number; lng: number };
 export type KitchenRow = {
   id: string; name: string; lat: number | null; lng: number | null; radius_m: number; prep_minutes: number;
-  open: boolean; active: boolean; opens_at: string | null; closes_at: string | null;   // opens_at / closes_at: "HH:MM:SS" in Delhi time
+  open: boolean; active: boolean; opens_at: string | null; closes_at: string | null; pin_codes?: string[];   // opens_at / closes_at: "HH:MM:SS" in Delhi time
 };
-export type Served = { kitchen_id: string; name: string; distance_m: number; eta_min: number; open: boolean };
+export type Served = { kitchen_id: string; name: string; distance_m: number | null; eta_min: number; open: boolean };   // distance_m is null for a kitchen with no position that lists the pin
 export type Answer = { ok: true; serviceable: boolean; request_here: boolean; kitchens: Served[] };
 
 export const RIDER_M_PER_MIN = 250;   // 15 km/h: an assumption (docs/assumptions.md), tuned from real rides later
@@ -27,14 +27,17 @@ export function isOpenAt(opens: string | null, closes: string | null, now: Date)
   return o < c ? m >= o && m < c : m >= o || m < c;
 }
 
-export function serviceability(place: Place, kitchens: KitchenRow[], now: Date): Answer {
+// Story #1102: the one rule. A kitchen serves a place when its pin_codes list the place's pin OR the place is inside its radius. app/src/lib/area.ts holds the same rule for the menu and the save.
+export function serviceability(place: Place, kitchens: KitchenRow[], now: Date, pin?: string | null): Answer {
   const served: Served[] = [];
   for (const k of kitchens) {
-    if (!k.active || k.lat == null || k.lng == null) continue;
-    const d = distanceM(place, { lat: k.lat, lng: k.lng });
-    if (d > k.radius_m) continue;
-    served.push({ kitchen_id: k.id, name: k.name, distance_m: Math.round(d), eta_min: k.prep_minutes + Math.ceil(d / RIDER_M_PER_MIN), open: k.open && isOpenAt(k.opens_at, k.closes_at, now) });
+    // The one rule (shared cases: spec/serviceability_cases.json): the pin is listed, OR the place is inside the radius. The active switch is not part of it:
+    // it only decides open (the menu then says closed or paused). A listed pin needs no position.
+    const d = k.lat == null || k.lng == null ? null : distanceM(place, { lat: k.lat, lng: k.lng });
+    const listed = !!pin && !!k.pin_codes?.includes(pin);
+    if (!listed && (d === null || d > k.radius_m)) continue;
+    served.push({ kitchen_id: k.id, name: k.name, distance_m: d === null ? null : Math.round(d), eta_min: k.prep_minutes + (d === null ? 0 : Math.ceil(d / RIDER_M_PER_MIN)), open: k.active && k.open && isOpenAt(k.opens_at, k.closes_at, now) });
   }
-  served.sort((a, b) => a.distance_m - b.distance_m);
+  served.sort((a, b) => (a.distance_m ?? Infinity) - (b.distance_m ?? Infinity));
   return { ok: true, serviceable: served.length > 0, request_here: served.length === 0, kitchens: served };
 }

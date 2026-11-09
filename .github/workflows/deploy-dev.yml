@@ -2,7 +2,7 @@ name: Deploy app to Vercel (dev)
 
 on:
   push:
-    branches: [staging]
+    branches: [dev]
     paths:
       - "app/**"
       - "design/tokens.json"
@@ -27,6 +27,18 @@ jobs:
           cache: npm
           cache-dependency-path: app/package-lock.json
 
+      # Story 844: a missing dev webhook secret stops the build. It never falls back to a prod one, and an empty address must not ship quietly.
+      - name: The dev webhook secrets are set
+        env:
+          SIM_URL: ${{ secrets.DEV_VITE_SIM_URL }}
+          ENGINE_URL: ${{ secrets.DEV_VITE_ENGINE_URL }}
+        run: |
+          missing=""
+          test -n "$SIM_URL" || missing="$missing DEV_VITE_SIM_URL"
+          test -n "$ENGINE_URL" || missing="$missing DEV_VITE_ENGINE_URL"
+          if [ -n "$missing" ]; then echo "These repository secrets are not set:$missing. The owner adds them (the dev simulator and engine webhooks, never the PROD_ ones). The dev build stops here."; exit 1; fi
+          case "$SIM_URL$ENGINE_URL" in *-prod*) echo "A dev webhook address names a prod copy (gs-sim-prod or gs-engine-prod). The dev build stops here."; exit 1;; esac
+
       - name: Build
         working-directory: app
         env:
@@ -37,6 +49,17 @@ jobs:
           VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
           VITE_POSTHOG_KEY: ${{ secrets.DEV_VITE_POSTHOG_KEY }}   # story #207: dev only; empty means no analytics
           VITE_MAP_TILES: https://tile.openstreetmap.org/{z}/{x}/{y}.png   # story #691: dev only (OSM public tiles: light test use, no SLA); prod has none until the PMTiles test
+          # Story #797: dev turns on the same features prod has on, so checking something on dev
+          # means something real.
+          # Story 844: the sim and engine webhooks are NOT shared. n8n has two copies of each (gs-sim and
+          # gs-sim-prod, gs-engine and gs-engine-prod) and the copy chooses the DATABASE it writes to, so the
+          # dev admin's Seed, Reset and Tick went to production while this used prod's secrets. Dev uses
+          # its own three; a prod secret never builds dev (deploy-dev-env.test.ts says so).
+          # story #1155: no VITE_OTP_GATE (dev opens Google-first too; the admin switch otp_login_on is the only way on)
+          VITE_OTP_SMS: fixed
+          VITE_SIM_URL: ${{ secrets.DEV_VITE_SIM_URL }}
+          VITE_ENGINE_URL: ${{ secrets.DEV_VITE_ENGINE_URL }}
+          VITE_SIM_CLEAR: "1"   # story 848: the Clear everything button is drawn in a dev build only (the database must also allow it)
           VITE_BUILD: ${{ github.sha }}
         run: |
           npm ci

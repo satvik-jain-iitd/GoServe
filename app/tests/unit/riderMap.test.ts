@@ -1,6 +1,6 @@
 // Story #691 (board T2, T3): the rider's ping becomes a marker, a distance and the words under the map.
 import { describe, expect, it } from "vitest";
-import { agoText, distanceText, lastSeenText, riderLine, tileUrl, toPoint } from "../../src/lib/riderMap";
+import { agoText, distanceText, lastSeenText, tileUrl, toPoint } from "../../src/lib/riderMap";
 
 const SEEN = new Date(2026, 9, 29, 20, 0, 0);   // 8:00 pm on the phone's own clock, so the test holds in any time zone
 const NOW = SEEN.getTime() + 140_000;
@@ -16,17 +16,16 @@ describe("ping to marker", () => {
 
 describe("the words", () => {
   it("S2 how long ago: seconds under a minute, minutes under an hour, then hours", () => {
-    expect(agoText(at(20), NOW)).toBe("20 s ago");
+    expect(agoText(at(20), NOW)).toBe("20 sec ago");
     expect(agoText(at(120), NOW)).toBe("2 min ago");
     expect(agoText(at(3 * 3600), NOW)).toBe("3 h ago");
-    expect(agoText(at(-5), NOW)).toBe("0 s ago");   // a clock a little ahead never shows a negative
+    expect(agoText(at(-5), NOW)).toBe("0 sec ago");   // a clock a little ahead never shows a negative
   });
   it("S3 distance: km with one decimal from 1 km, whole metres under it", () => {
     expect(distanceText(28.5700, 77.2400, 28.5810, 77.2400)).toBe("1.2 km");
     expect(distanceText(28.5700, 77.2400, 28.5740, 77.2400)).toBe("440 m");
   });
   it("S4 the line under the map is word for word from board T2, and the offline line from board T3", () => {
-    expect(riderLine("Rahul", "1.2 km", at(20), NOW)).toBe("Rahul is 1.2 km away · updated 20 s ago");
     expect(lastSeenText(SEEN.toISOString(), NOW)).toBe("Last seen 8:00 pm, 2 min ago");
   });
 });

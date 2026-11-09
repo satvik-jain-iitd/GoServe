@@ -36,7 +36,7 @@ describe("number helpers", () => {
     expect(["1234567890", "98765", "98765432101", "98765abcde"].some(isMobile)).toBe(false);
   });
   it("shows and sends the number with +91", () => {
-    expect(showPhone("9876543210")).toBe("+91 98765 43210");
+    expect(showPhone("9876543210")).toBe("+91 9876543210");
     expect(toPhone("9876543210")).toBe("+919876543210");
   });
 });

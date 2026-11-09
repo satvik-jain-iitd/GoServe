@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Plan v2, lifecycle step L10: a merged pull request closes the stories it names, with the time, and closes the epic when its last story closes.
-GitHub closes issues by itself only when a PR merges into the default branch (main); ours merge into dev, staging and documents.
+GitHub closes issues by itself only when a PR merges into the default branch (main); ours merge into dev and documents.
 Usage (from .github/workflows/story-close.yml): story_close.py <pr number>   (needs GH_TOKEN, reads the PR with `gh`)"""
 from __future__ import annotations
 import json, re, subprocess, sys

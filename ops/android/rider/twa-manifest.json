@@ -38,7 +38,7 @@
   "isMetaQuest": false,
   "fullScopeUrl": "https://goserve-app.pages.dev/rider/",
   "minSdkVersion": 24,
-  "orientation": "default",
+  "orientation": "portrait",
   "fingerprints": [],
   "additionalTrustedOrigins": [],
   "retainedBundles": [],

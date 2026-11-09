@@ -2,13 +2,14 @@
 // (phone_in_use) can sign in with Supabase's own phone sign-in, and /otp/claim then moves the guest's orders to that account (story #558).
 // The words of a refusal are the server's (the contract's). A server fault with an error word but no message gets our line for that word (story #786); only a lost network, or an answer that is not JSON, gets the network line.
 import { getClient } from "./supabase";
+import { GUEST_KEY } from "./deviceOwner";
 
 export type OtpResult = { ok: true; phone?: string } | { ok: false; error: string; message: string };
 const NETWORK: OtpResult = { ok: false, error: "network", message: "Could not reach GoServe. Try again." };
 const FAULTS: Record<string, string> = { otp_unavailable: "Codes are down for a moment. Try again in a minute." };
 const FAULT = "Something went wrong on our side. Try again in a minute.";
 export const toPhone = (digits: string) => `+91${digits}`;
-export const showPhone = (d: string) => `+91 ${d.slice(0, 5)} ${d.slice(5)}`;
+export const showPhone = (d: string) => `+91 ${d}`;   // story #1044: ten digits together, never split
 export const isMobile = (d: string) => /^[6-9]\d{9}$/.test(d);
 
 async function call(route: "send" | "verify" | "claim", body: object, token?: string): Promise<OtpResult> {
@@ -36,6 +37,7 @@ export async function sendSignInCode(phone: string): Promise<OtpResult> {
   return error.status === 429 ? { ok: false, error: "too_many_sends", message: "Too many codes. Try again in a few minutes." } : NETWORK;
 }
 export async function finishSignIn(phone: string, code: string, guestToken: string): Promise<OtpResult> {
+  try { window.localStorage.setItem(GUEST_KEY, "1"); } catch { /* blocked storage */ }   // story #1139: this flow is a guest becoming the old account, with their orders; the phone keeps the guest's area and draft
   const { data, error } = await getClient().auth.verifyOtp({ phone: toPhone(phone), token: code, type: "sms" });
   if (error || !data.session) return { ok: false, error: "wrong_code", message: "That code is not right." };
   const claimed = await call("claim", { guest_token: guestToken }, data.session.access_token);

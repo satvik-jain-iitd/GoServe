@@ -1,4 +1,4 @@
-// Story #590: the order goes through POST /orders (backend v2) when this phone has gs-orders-v2=1 (VITE_ORDERS_V2 is off in every deploy until the switch).
+// Story #590, #940: the order always goes through POST /orders (backend v2) as the signed-in user.
 import { test, expect } from "@playwright/test";
 import { setup } from "./helpers";
 
@@ -10,7 +10,6 @@ const quoteOf = (toPay: number) => ({
 const placed = { ok: true, created: true, order: { id: "0f0f0f0f-1111-4222-8333-444444444444", kitchen_id: "k-1", status: "placed", total_paise: 30000, address: "Flat 4, Green Park", items: [], bill: {}, created_at: new Date().toISOString() } };
 
 async function start(context: any, page: any, orderAnswers: { status: number; body: unknown }[]) {
-  await context.addInitScript(() => { try { localStorage.setItem("gs-orders-v2", "1"); } catch { /* blocked */ } });
   await setup(context, page);
   const seen = { quotes: 0, orders: [] as any[], v1: 0 };
   let toPay = 29000;
@@ -74,19 +73,4 @@ test("S3 a refusal shows our line, not the server's words", async ({ page, conte
   await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByText("Something in the bill did not go through. Check it and try again.")).toBeVisible();
   await expect(page.getByText("Butter Chicken is sold out.")).toHaveCount(0);
-});
-
-test("S4 without the flag the order still goes through the v1 webhook", async ({ page, context }) => {
-  await setup(context, page);
-  let v2 = 0;
-  await context.route("https://test.supabase.co/functions/v1/orders", async (route: any) => { v2++; return route.fulfill({ status: 500, body: "{}" }); });
-  await page.goto("/customer/");
-  await page.getByRole("button", { name: "Add Butter Chicken" }).click();
-  await page.getByRole("button", { name: /View bill/ }).click();
-  await page.getByLabel("Your name").fill("Asha");
-  await page.getByLabel("Phone").fill("9876543210");
-  await page.getByLabel("Address").fill("Flat 4, Green Park");
-  await page.getByRole("button", { name: /Place order/ }).click();
-  await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
-  expect(v2).toBe(0);
 });

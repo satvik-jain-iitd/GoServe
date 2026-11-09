@@ -1,24 +1,28 @@
 // The kitchen app's door on the Ink v3 boards K1 and K2 (story H11, #194; story H3): only a kitchen's staff see its tickets. The gate also holds the open switch.
 import { useEffect, useState, type ReactNode } from "react";
+import { claimInvites } from "../lib/admin";
 import { hhmmOf } from "../lib/kitchen";
 import { myKitchen } from "../lib/session";
 import { ensureSession, getClient } from "../lib/supabase";
 import { SignIn } from "./SignIn";
 import { Skeleton, StaffLanding } from "../ui";
 
-export type KitchenGateState = { kitchenId: string; name: string; open: boolean | null; opensAt: string | null; closesAt: string | null; lat: number | null; lng: number | null; flipOpen: () => Promise<void>; retry: () => void; signOut: () => void };   // open null: the row could not be read
+export type KitchenGateState = { kitchenId: string; name: string; open: boolean | null; opensAt: string | null; closesAt: string | null; lat: number | null; lng: number | null; email: string | null; flipOpen: () => Promise<void>; retry: () => void; signOut: () => void };   // open null: the row could not be read
 type Row = { name: string; open: boolean | null; opens_at: string | null; closes_at: string | null; lat: number | null; lng: number | null };
 
 export function KitchenGate({ children }: { children: (gate: KitchenGateState) => ReactNode }) {
   const [kitchenId, setKitchenId] = useState<string | null | undefined>(undefined);   // undefined: still loading
   const [row, setRow] = useState<Row | null>(null);
   const [anonymous, setAnonymous] = useState(true);
+  const [email, setEmail] = useState<string | null>(null);   // story 849: the Google account shown on the Today tab
   const [error, setError] = useState<string | null>(null);
   const [tries, setTries] = useState(0);
   useEffect(() => {
     ensureSession().then(async (id) => {
-      try { const { data } = await getClient().auth.getUser(); setAnonymous(data.user?.is_anonymous !== false); } catch { /* unknown: treat as not signed in */ }
-      const k = await myKitchen(getClient(), id);
+      let guest = true;
+      try { const { data } = await getClient().auth.getUser(); guest = data.user?.is_anonymous !== false; setAnonymous(guest); setEmail(data.user?.email ?? null); } catch { /* unknown: treat as not signed in */ }
+      let k = await myKitchen(getClient(), id);
+      if (!k && !guest && (await claimInvites(getClient())) > 0) k = await myKitchen(getClient(), id);   // story 875: an invite the sign-up trigger missed
       if (k) {
         const { data, error } = await getClient().from("kitchens").select("name, open, opens_at, closes_at, lat, lng").eq("id", k).limit(1);
         const r = data?.[0] as Partial<Row> | undefined;
@@ -28,14 +32,13 @@ export function KitchenGate({ children }: { children: (gate: KitchenGateState) =
     }, () => setKitchenId(null)).catch(() => { setError("Could not load your kitchen. Check your connection."); setKitchenId(null); });
   }, [tries]);
   const signOut = async () => { try { await getClient().auth.signOut(); } catch { /* offline */ } window.location.reload(); };
-  if (kitchenId === undefined) return <><header className="ui-head"><h1>New</h1></header><div className="ui-pad"><Skeleton lines={3} /></div></>;
+  if (kitchenId === undefined) return <><header className="ui-head"><h1>Your kitchen</h1><span className="meta">Loading…</span></header><div className="ui-pad"><Skeleton lines={3} /></div></>;
   if (!kitchenId || !row) return (   // K1 when there is no Google sign-in yet, K2 when the account is not on the staff list
     <StaffLanding kicker="Kitchen app · tickets in, food out" app="Kitchen" right={anonymous ? "Google" : "Signed in"} label={anonymous ? "Sign in" : "Not kitchen staff"} error={error}>
           {anonymous ? (
             <>
               <h2 className="ui-slip-title">Sign in to cook</h2>
-              <p className="ui-meta">Only the staff the admin has added can sign in. No password, no form.</p>
-              <SignIn mode="signin" />
+              <SignIn mode="signin" big filled />
             </>
           ) : (
             <>
@@ -57,7 +60,7 @@ export function KitchenGate({ children }: { children: (gate: KitchenGateState) =
   return (
     <>
       {error && <p role="alert" className="ui-note error">{error}</p>}
-      {children({ kitchenId, name: row.name, open: row.open, opensAt: hhmmOf(row.opens_at), closesAt: hhmmOf(row.closes_at), lat: row.lat, lng: row.lng, flipOpen, retry: () => setTries((n) => n + 1), signOut })}
+      {children({ kitchenId, name: row.name, open: row.open, opensAt: hhmmOf(row.opens_at), closesAt: hhmmOf(row.closes_at), lat: row.lat, lng: row.lng, email, flipOpen, retry: () => setTries((n) => n + 1), signOut })}
     </>
   );
 }

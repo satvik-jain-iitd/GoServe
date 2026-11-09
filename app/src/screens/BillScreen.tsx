@@ -9,14 +9,16 @@ import { useState } from "react";
 type Props = {
   lines: Line[]; total: number; kitchenName: string; pin: string | null;
   address: string; onAddress: (v: string) => void;
+  note: string; onNote: (v: string) => void;   // story #935: one optional line for the kitchen, up to 200 characters
   details?: { name: string; phone: string; onName: (v: string) => void; onPhone: (v: string) => void; gate?: boolean };   // the customer app also asks who and which phone (story B3)
   offers?: { quote: Quote; codeError: string | null; onApply: (code: string) => void; onRemove: () => void };   // story #588: the quote's bill and the Offers block (boards C1, C2)
   soldOut?: { id: string; name: string; alt: Alternative | null | undefined; canSwap: boolean; onSwap: () => void; onRemove: () => void };   // story #619, board L3: the first dish in the bill that is sold out
   pay?: { value: PayMethod; onChange: (v: PayMethod) => void };   // story #552: how you pay (the customer app only)
-  sending: boolean; error: string | null;
+  sending: boolean; error: string | null; notice?: string | null;   // story #977: what the History button could not put back
   onBack: () => void; onPlace: () => void;
 };
 
+export const NOTE_MAX = 200;
 const plain = (paise: number) => formatRupees(paise).replace("₹", "");
 export const BackChevron = ({ label, onClick }: { label: string; onClick: () => void }) => (
   <button type="button" className="ui-back" aria-label={label} onClick={onClick}>
@@ -24,7 +26,7 @@ export const BackChevron = ({ label, onClick }: { label: string; onClick: () => 
   </button>
 );
 
-export function BillScreen({ lines, total, kitchenName, pin, address, onAddress, details, offers, soldOut, pay, sending, error, onBack, onPlace }: Props) {
+export function BillScreen({ lines, total, kitchenName, pin, address, onAddress, note, onNote, details, offers, soldOut, pay, sending, error, notice, onBack, onPlace }: Props) {
   const [typed, setTyped] = useState("");
   const q = offers?.quote;
   const empty = lines.length === 0;
@@ -36,6 +38,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
         <BackChevron label="Back to menu" onClick={onBack} />
         <h1>Your bill</h1>
       </header>
+      {notice && <p role="status" className="ui-note ui-again-line">{notice}</p>}
       <div className="ui-scroll">
         <section className="ui-slip ui-slip-pad" aria-label={empty ? "Empty bill" : "Items"}>
           <div className="ui-slip-body">
@@ -55,6 +58,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
                 {q && q.fees.packaging_paise > 0 && <div><span>Packaging</span><span>{plain(q.fees.packaging_paise)}</span></div>}
                 {q && q.tax_mode === "exclusive" && q.tax_paise > 0 && <div><span>Tax</span><span>{plain(q.tax_paise)}</span></div>}
                 {q && q.coupon && q.discount_paise - (q.swap_discount_paise ?? 0) > 0 && <div><span>Discount · {q.coupon.code}</span><span>−{plain(q.discount_paise - (q.swap_discount_paise ?? 0))}</span></div>}
+                {q && (q.early_friend_paise ?? 0) > 0 && <div><span>Early friend gift</span><span>−{plain(q.early_friend_paise!)}</span></div>}
                 {q && (q.swap_discount_paise ?? 0) > 0 && <div><span>Swap discount</span><span>−{plain(q.swap_discount_paise!)}</span></div>}
               </div>
             )}
@@ -85,7 +89,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
         )}
         {offers && (offers.quote.offers.length > 0 || offers.quote.coupon) && (
           <section aria-label="Offers" style={{ margin: "16px 20px 0 20px", display: "flex", flexDirection: "column", gap: 8 }}>
-            <h2 style={{ margin: "0 0 4px 0", fontFamily: "'DM Mono', monospace", fontSize: 12, fontWeight: 400, textTransform: "uppercase", color: "var(--gs-text-muted)" }}>Offers</h2>
+            <h2 style={{ margin: "0 0 4px 0", fontFamily: "'DM Mono', monospace", fontSize: 12, fontWeight: 400, color: "var(--gs-text-muted)" }}>Offers</h2>
             {offers.quote.offers.map((o) => {
               const on = offers.quote.coupon?.code === o.code;
               return (
@@ -115,10 +119,11 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
             {details && !details.gate && (
               <>
                 <div className="ui-field"><label htmlFor="name">Your name</label><input id="name" type="text" value={details.name} maxLength={80} autoComplete="name" onChange={(e) => details.onName(e.target.value)} /></div>
-                <div className="ui-field"><label htmlFor="phone">Phone · the rider calls this</label><input id="phone" className="mono-input" type="tel" value={details.phone} inputMode="numeric" maxLength={10} autoComplete="tel-national" onChange={(e) => details.onPhone(e.target.value.replace(/\D/g, ""))} /></div>
+                <div className="ui-field"><label htmlFor="phone">Phone</label><input id="phone" className="mono-input" type="tel" value={details.phone} inputMode="numeric" maxLength={10} autoComplete="tel-national" onChange={(e) => details.onPhone(e.target.value.replace(/\D/g, ""))} /></div>
               </>
             )}
-            <div className="ui-field"><label htmlFor="address">Address · food gets delivered here</label><textarea id="address" rows={2} value={address} maxLength={300} onChange={(e) => onAddress(e.target.value)} /></div>
+            <div className="ui-field"><label htmlFor="address">Address</label><textarea id="address" className="ui-eg" rows={2} value={address} maxLength={300} placeholder="e.g. C-128, Green Avenue Colony" onChange={(e) => onAddress(e.target.value)} /></div>
+            <div className="ui-field"><label htmlFor="note">Note for the kitchen (optional)</label><textarea id="note" className="ui-eg" rows={2} value={note} maxLength={NOTE_MAX} placeholder="e.g. less spicy, no onion" onChange={(e) => onNote(e.target.value)} /><p className="mono ui-note-count"><span>{note.length} / {NOTE_MAX}</span></p></div>
             {pay && (
               <fieldset className="ui-pay" role="radiogroup" aria-label="How you pay">
                 <legend>How you pay</legend>
@@ -134,7 +139,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
       </div>
       {!empty && (
         <div className="ui-sticky float">
-          {!ready && <p className="ui-note ui-bar-note">Add your name, phone and address to place the order.</p>}
+          {!ready && !sending && !soldOut && <p role="status" className="ui-reason">{address.trim().length === 0 ? "Add your address to place the order." : "Add your name and phone."}</p>}   {/* story #1170: why the button is off */}
           <button type="button" className="ui-btn bar" disabled={!ready || sending} onClick={onPlace}>
             <span className="mono">{pay && pay.value !== "cod" ? PAY_METHODS.find((m) => m.id === pay.value)!.label : "Cash"} · {formatRupees(total)}</span><span className="verb">{sending ? "Placing…" : soldOut ? "Fix the bill first" : "Place order ›"}</span>
           </button>

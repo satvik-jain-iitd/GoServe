@@ -1,5 +1,6 @@
 // The phone code sheets of the Ink journeys boards O1 to O9 (story #551): number, code with a resend timer, the contract's errors, a number that is already used, the name.
 import { useEffect, useRef, useState } from "react";
+import { useSheetFit } from "../ui";
 import { capture } from "../lib/analytics";
 import { finishSignIn, isMobile, sendCode, sendSignInCode, showPhone, verifyCode, type OtpResult } from "../lib/otp";
 import { getClient } from "../lib/supabase";
@@ -9,7 +10,9 @@ const RESEND_S = 30;
 type Step = "number" | "code";
 
 // `welcome` (story #667, boards O0 and O0b): the same steps as the first full screen of the app, with Google under the number and no way to close it.
-export function OtpSheet({ phone: start, onVerified, onClose, welcome = false }: { phone: string; onVerified: (phone: string) => void; onClose: () => void; welcome?: boolean }) {
+// `googleOnly` (story 829, board O0g-B-GoogleFirst): the phone code switch is off, so the welcome screen is one tap: Continue with Google, nothing else.
+export function OtpSheet({ phone: start, onVerified, onClose, welcome = false, googleOnly = false }: { phone: string; onVerified: (phone: string) => void; onClose: () => void; welcome?: boolean; googleOnly?: boolean }) {
+  const fit = useSheetFit();   // story #954: the overlay follows the visual viewport
   const [phone, setPhone] = useState(isMobile(start) ? start : "");
   const [step, setStep] = useState<Step>("number");
   const [mode, setMode] = useState<"link" | "signin">("link");   // signin = the returning customer (O7)
@@ -73,39 +76,49 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false }:
       <header>
         <h1><img className="ui-logo ui-lockup" src="/brand/lockup-day.png" alt="GoServe" width="350" height="50" /></h1>
         <div className="ui-zigzag" aria-hidden="true" />
-        <p className="ui-welcome-kicker">Hot meals from our kitchen · cash at the door</p>
+        <p className="ui-welcome-kicker">Hot meals from our kitchen for you in 20 mins</p>
       </header>
       <section className="ui-slip" aria-label="Welcome"><div className="ui-slip-body">
-        <div className="ui-slip-head"><span>Welcome</span><span>Step 1 of 3</span></div>
+        <div className="ui-slip-head"><span>Welcome</span><span>Step 1 of 4</span></div>
         {inner}
       </div></section>
-      <p className="ui-welcome-foot">No app to install · no card needed</p>
     </main>
   ) : (
-    <div className="ui-sheet-back">
+    <div ref={fit} className="ui-sheet-back">
       <div role="dialog" aria-modal="true" aria-label="Confirm your number" className="ui-sheet">{inner}</div>
     </div>
   );
   const head = (text: string) => (welcome ? <h2 className="ui-welcome-title">{text}</h2> : <div className="ui-sheet-head"><h2>{text}</h2></div>);
+
+  if (welcome && googleOnly) {
+    return frame(
+      <>
+        {head("One tap and you are in")}
+        <img className="ui-welcome-pic ui-hero-abs-pic" src="/brand/thali-welcome.png" srcSet="/brand/thali-welcome.png 1x, /brand/thali-welcome@2x.png 2x" width={306} height={181}
+          alt="A steel thali with dal, paneer, roti, rice and raita" />   {/* story #1103, board O0g-B: the picture sits between the title and the button */}
+        <SignIn mode="signin" big filled />
+      </>,
+    );
+  }
 
   return frame(
     <>
         {step === "number" ? (
           <>
             {head(welcome ? "Where do we reach you?" : "Your mobile number")}
-            {welcome && <p className="ui-meta">Your mobile number, then a 6 digit code. The rider calls this number.</p>}
             <div className="ui-field">
-              <label htmlFor="otp-phone">Mobile number</label>
-              <div className="otp-phone">
-                <input id="otp-phone" className="mono-input" type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={10} value={phone}
+              <label htmlFor="otp-phone">{welcome ? "Mobile" : "Mobile number"}</label>
+              <div className={welcome ? "otp-phone otp-box" : "otp-phone"}>
+                <input id="otp-phone" className="mono-input" type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={10} value={phone} placeholder={welcome ? "10 digit number" : undefined}
                   onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "")); setError(null); }} /></div>
             </div>
             {error && <p role="alert" className="ui-field-error">{error.message}</p>}
+            {!isMobile(phone) && !busy && !locked && <p role="status" className="ui-reason">Enter your 10 digit number.</p>}   {/* story #1170 */}
             <button type="button" className={welcome ? "ui-btn big" : "ui-btn bar"} disabled={!isMobile(phone) || busy || locked} onClick={() => send()}>Send code</button>
             {welcome ? (
               <>
-                <div className="ui-or" aria-hidden="true"><span /><span>or</span><span /></div>
-                <SignIn mode="signin" />
+                <div className="ui-or" aria-hidden="true"><span /><span>Or</span><span /></div>
+                <SignIn mode="signin" big />
               </>
             ) : <button type="button" className="ui-btn ghost" onClick={onClose}>Not now</button>}
           </>
@@ -129,8 +142,9 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false }:
                 <button type="button" className="ui-btn ghost" onClick={() => { setStep("number"); setError(null); setPhone(""); }}>Use another number</button>
               </div>
             )}
+            {code.length !== 6 && !busy && <p role="status" className="ui-reason">Enter the 6 digit code.</p>}   {/* story #1170 */}
             <button type="button" className={welcome ? "ui-btn big" : "ui-btn bar"} disabled={code.length !== 6 || busy} onClick={verify}>Verify</button>
-            {wait > 0 ? <p role="timer" className="ui-meta">Resend code in 0:{String(wait).padStart(2, "0")}</p>
+            {wait > 0 ? <p role="timer" className="ui-meta">Resend code in {wait} sec</p>
               : <button type="button" className="ui-btn ghost" disabled={busy || locked} onClick={() => send()}>Resend code</button>}
           </>
         )}
@@ -140,9 +154,10 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false }:
 
 // O9: asked once, after the first sign in. Skippable.
 export function NameSheet({ onDone }: { onDone: (name: string | null) => void }) {
+  const fit = useSheetFit();   // story #954
   const [name, setName] = useState("");
   return (
-    <div className="ui-sheet-back">
+    <div ref={fit} className="ui-sheet-back">
       <div role="dialog" aria-modal="true" aria-label="Your name" className="ui-sheet">
         <div className="ui-sheet-head"><h2>What should we call you?</h2></div>
         <div className="ui-field"><label htmlFor="otp-name">Your name</label><input id="otp-name" type="text" maxLength={80} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} /></div>

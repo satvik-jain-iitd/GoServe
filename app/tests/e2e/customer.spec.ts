@@ -21,19 +21,18 @@ async function mockNetwork(context: BrowserContext): Promise<Net> {
   await context.route("https://test.supabase.co/**", async (route) => {
     const req = route.request();
     if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: CORS });
+    if (req.url().includes("/functions/v1/orders")) {   // story #940: the order is placed with POST /orders as the signed-in user
+      net.orders.push({ headers: req.headers(), body: JSON.parse(req.postData() ?? "{}") });
+      return reply(route, net.orderReply.status, net.orderReply.body);
+    }
     if (req.url().includes("/auth/v1/signup")) {
       return reply(route, 200, { access_token: JWT, token_type: "bearer", expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: "r",
         user: { id: SESSION, aud: "authenticated", role: "authenticated", is_anonymous: true, app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() } });
     }
+    if (req.url().includes("/auth/v1/user")) return reply(route, 200, { id: SESSION, aud: "authenticated", role: "authenticated", is_anonymous: false, app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() });   // story 829: a customer on the menu is signed in
     if (req.url().includes("/rest/v1/kitchens")) return reply(route, 200, [{ id: "k-1", name: "Hauz Khas Kitchen", pin_codes: ["110016"], lat: null, lng: null, open: true, active: true }]);
     if (req.url().includes("/rest/v1/menu_items")) return net.menuUp ? reply(route, 200, MENU) : route.abort("internetdisconnected");
     return reply(route, 404, {});
-  });
-  await context.route("https://orders.test/**", async (route) => {
-    const req = route.request();
-    if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: CORS });
-    net.orders.push({ headers: req.headers(), body: JSON.parse(req.postData() ?? "{}") });
-    return reply(route, net.orderReply.status, net.orderReply.body);
   });
   await context.route("https://img.test/**", (route) => route.abort());
   return net;
@@ -60,13 +59,14 @@ test("S1 order path: add 2 dishes, see the bill, place the order (cash on delive
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   await expect(page.getByText("₹380.50")).toBeVisible();
   expect(net.orders).toHaveLength(1);
-  expect(net.orders[0].headers["x-gs-token"]).toBe("demo-token");
+  expect(net.orders[0].headers["authorization"]).toBe(`Bearer ${JWT}`);   // the order is the signed-in user's
+  expect(net.orders[0].headers["x-gs-token"]).toBeUndefined();
   expect(net.orders[0].body).toMatchObject({
-    action: "place", session_id: SESSION, address: "Flat 4, Green Park, Delhi",
-    items: [{ menu_item_id: "d1", qty: 1 }, { menu_item_id: "d2", qty: 1 }],
+    address: { pin_code: "110016", text: "Flat 4, Green Park, Delhi" },
+    lines: [{ menu_item_id: "d1", qty: 1 }, { menu_item_id: "d2", qty: 1 }],
   });
-  expect(net.orders[0].body.client_order_key).toMatch(/^[0-9a-f-]{36}$/);
-  expect(JSON.stringify(net.orders[0].body)).not.toMatch(/price|total/);   // the server prices the order
+  expect(net.orders[0].body.idempotency_key).toMatch(/^[0-9a-f-]{36}$/);
+  expect(JSON.stringify(net.orders[0].body)).not.toMatch(/session_id/);   // who is ordering comes from the token, not from the body
 });
 
 test("S1 the address is required before the bill", async ({ page, context }) => {
@@ -104,7 +104,7 @@ test("S1 a refused order shows the reason, and the retry sends the same order ke
   await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   expect(net.orders).toHaveLength(2);
-  expect(net.orders[1].body.client_order_key).toBe(net.orders[0].body.client_order_key);
+  expect(net.orders[1].body.idempotency_key).toBe(net.orders[0].body.idempotency_key);
 });
 
 test("S2 the menu still shows with the network off, after it was loaded once", async ({ page, context }) => {
@@ -140,8 +140,8 @@ for (const theme of ["day", "night"]) {
     await page.reload();
     await expect(page.getByText("Butter Chicken")).toBeVisible();
     await expect(page.getByText("No connection. Showing the menu you saw last.")).toBeVisible();
-    await expect(page.locator(".ui-pin svg")).toBeVisible();   // the pin mark is drawn in the page, not a picture that can break
-    await expect(page.locator(".ui-pin img")).toHaveCount(0);
+    await expect(page.locator(".ui-where svg").first()).toBeVisible();   // the pin mark is drawn in the page, not a picture that can break
+    await expect(page.locator(".ui-where img")).toHaveCount(0);
     await expect(page.locator(".ui-ph").first()).toBeVisible();   // a photo that cannot load shows the plate
     const broken = await page.evaluate(() => [...document.images].filter((i) => i.complete && i.naturalWidth === 0).length);
     expect(broken).toBe(0);
@@ -159,7 +159,7 @@ for (const theme of ["day", "night"]) {
     await expect(page.getByText("Could not connect to the internet.")).toBeVisible();
     await expect(page.getByText("Check your network, then try again.")).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Main" })).toHaveCount(0);   // no tabs, no header
-    await expect(page.getByRole("button", { name: /Change area/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^Home\b/ })).toHaveCount(0);
     net.menuUp = true;
     await page.getByRole("button", { name: "Try again" }).click();
     await expect(page.getByText("Butter Chicken")).toBeVisible();

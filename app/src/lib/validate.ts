@@ -17,11 +17,12 @@ export function kitchenProblem(f: KitchenForm): string | null {
   return null;
 }
 
-export function dishProblem(f: { name: string; price: string; category: string }): string | null {
+export function dishProblem(f: { name: string; price: string; category: string; description?: string }): string | null {
   if (!len(f.name, 2, 60)) return "The dish name must be 2 to 60 characters.";
   const paise = rupeesToPaise(f.price);
   if (paise === null) return "Type the price in rupees, for example 220 or 220.50. It must be more than zero.";
   if (paise > MAX_PRICE_PAISE) return "The price can be ₹5,000 at most.";
   if (f.category.trim().length > 30) return "The category can be 30 characters at most.";
+  if ((f.description ?? "").trim().length > 60) return "The short line can be 60 characters at most.";
   return null;
 }

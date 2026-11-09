@@ -1,6 +1,7 @@
 // GoServe design system (story D1, #160). Every screen is built from these. Look and spacing come from ui.css and the tokens.
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { useCallback, useRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import "./ui.css";
+import { bindSheetFit } from "./sheetFit";
 
 const cx = (...a: (string | false | undefined)[]) => a.filter(Boolean).join(" ");
 
@@ -18,10 +19,21 @@ export function AppBar({ title, onBack, action }: { title: string; onBack?: () =
   );
 }
 
+/** Story #937 (board P1, option A): the one placeholder for a dish with no photo, a plate with a fork and a spoon in line style. No words; the box around it gives the grey when sold out. */
+export function DishPlate({ size = 40, stroke = "var(--md-outline)", halo = false }: { size?: number; stroke?: string; halo?: boolean }) {
+  const fork = "M8 10v9a3 3 0 0 0 3 3v16M11 10v9M14 10v9", spoon = "M42 10c-3 0-4 4-4 8s1 5 3 5v15";
+  return (
+    <svg viewBox="0 0 48 48" width={size} height={size} fill="none" stroke={stroke} strokeWidth={halo ? 2.8 : 1.6} strokeLinecap="round" aria-hidden="true">
+      {halo && <><circle cx="26" cy="24" r="13.5" fill="#fff" stroke="#fff" strokeWidth="4" /><path d={fork} stroke="#fff" strokeWidth="6" /><path d={spoon} stroke="#fff" strokeWidth="6" /></>}
+      <circle cx="26" cy="24" r="12" /><circle cx="26" cy="24" r="6" /><path d={fork} /><path d={spoon} />
+    </svg>
+  );
+}
+
 export function Tile({ title, meta, price, image, veg, children }: { title: string; meta?: string; price?: string; image?: string; veg?: boolean; children?: ReactNode }) {
   return (
     <article className="ui-tile">
-      {image ? <img src={image} alt="" loading="lazy" /> : <div className="ui-photo" aria-hidden="true" />}
+      {image ? <img src={image} alt="" loading="lazy" /> : <div className="ui-photo ui-ph" aria-hidden="true"><DishPlate /></div>}
       <div className="ui-tile-body">
         <h3>{veg !== undefined && <span className={cx("ui-dot", veg ? "veg" : "nonveg")} role="img" aria-label={veg ? "Veg" : "Non-veg"} />}{title}</h3>
         {meta && <p className="ui-meta">{meta}</p>}
@@ -60,13 +72,62 @@ export function Timeline({ steps, current, label }: { steps: string[]; current: 
   );
 }
 
+// Stories #954 and #980: the overlay follows the visual viewport only while the keyboard is up (see sheetFit.ts).
+export function useSheetFit() {
+  const off = useRef<(() => void) | null>(null);
+  return useCallback((el: HTMLElement | null) => {
+    off.current?.();
+    off.current = null;
+    const vv = typeof window === "undefined" ? null : window.visualViewport;
+    if (!el || !vv) return;
+    off.current = bindSheetFit(el, vv, window);
+  }, []);
+}
+
 export function Sheet({ open, title, onClose, children }: { open: boolean; title: string; onClose: () => void; children: ReactNode }) {
+  const fit = useSheetFit();   // story #954: the overlay follows the visual viewport
   if (!open) return null;
   return (
-    <div className="ui-sheet-back" onClick={onClose}>
+    <div ref={fit} className="ui-sheet-back" onClick={onClose}>
       <section className="ui-sheet" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <div className="ui-sheet-head"><h2>{title}</h2><Button variant="ghost" onClick={onClose}>Close</Button></div>
         {children}
+      </section>
+    </div>
+  );
+}
+
+// Story #955: the one danger sheet. Remove kitchen, Clear everything and every later sheet that destroys something are this shape (boards D1 and D2, canvas row 2n).
+// Title and a muted mono line, a round 44 px close, one sentence, a facts table, the word gate with its helper line, red first and asleep until the word matches, ghost to leave, one last line.
+export type DangerFact = [label: string, text: string];
+export type DangerProps = {
+  title: string; kicker?: string; sentence: string; facts: DangerFact[]; word: string; value: string; onValue: (v: string) => void;
+  confirmLabel: string; leaveLabel: string; after?: string; busy: boolean; error?: string | null; onConfirm: () => void; onClose: () => void; id?: string;
+};
+export function DangerSheet(p: DangerProps) {
+  const fit = useSheetFit();   // story #954: the overlay follows the visual viewport
+  const id = p.id ?? "danger-word";
+  return (
+    <div ref={fit} className="ui-sheet-back" onClick={p.onClose}>
+      <section className="ui-sheet ui-danger" role="dialog" aria-modal="true" aria-label={p.title} onClick={(e) => e.stopPropagation()}>
+        <div className="ui-danger-head">
+          <div><h2>{p.title}</h2>{p.kicker && <span className="mono ui-danger-kicker">{p.kicker}</span>}</div>
+          <button type="button" className="ui-btn ghost icon" aria-label="Close" onClick={p.onClose}>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        </div>
+        <p className="ui-danger-sentence">{p.sentence}</p>
+        <div className="ui-danger-facts">
+          {p.facts.map(([label, text]) => <div key={label} className="ui-danger-fact"><span className="mono">{label}</span><span>{text}</span></div>)}
+        </div>
+        <label className="ui-danger-label" htmlFor={id}>Type <span className="mono">{p.word}</span> to go on</label>
+        <input id={id} className="ui-danger-input" type="text" autoCapitalize="characters" autoComplete="off" placeholder={p.word} aria-label={`Type ${p.word} to go on`} value={p.value} onChange={(e) => p.onValue(e.target.value)} />
+        {p.error && <p role="alert" className="ui-note error">{p.error}</p>}
+        <div className="ui-danger-acts">
+          <button type="button" className="ui-btn big danger-fill" disabled={p.value !== p.word || p.busy} aria-disabled={p.value !== p.word || p.busy} onClick={p.onConfirm}>{p.confirmLabel}</button>
+          <button type="button" className="ui-btn ghost big" onClick={p.onClose}>{p.leaveLabel}</button>
+        </div>
+        {p.after && <p className="mono ui-danger-after">{p.after}</p>}
       </section>
     </div>
   );
@@ -103,6 +164,7 @@ export function VegMark({ veg, size = 12 }: { veg: boolean; size?: number }) {
 
 const TAB_ICONS = {
   menu: <><path d="M5 3h14v18l-2-1.5L15 21l-2-1.5L11 21l-2-1.5L7 21l-2-1.5z" /><path d="M8 8h8M8 12h8M8 16h5" /></>,
+  home: <><path d="M4 11l8-7 8 7" /><path d="M6 10v10h12V10" /><path d="M10 20v-6h4v6" /></>,
   orders: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
   you: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" /></>,
   job: <><circle cx="6" cy="17" r="3" /><circle cx="18" cy="17" r="3" /><path d="M6 17l4-8h5l3 8M10 9l-2-4h3" /></>,
@@ -129,14 +191,14 @@ export function Tabs<K extends string>({ current, tabs, onPick }: { current: K; 
     </nav>
   );
 }
-// Bottom tabs of the customer app: Tabs with the names the tests already use ("My orders", "You (Account)").
-export function TabBar({ current, onMenu, onOrders, onYou }: { current: "menu" | "orders" | "you"; onMenu: () => void; onOrders: () => void; onYou: () => void }) {
-  const go = { menu: onMenu, orders: onOrders, you: onYou };
-  return <Tabs current={current} onPick={(k) => go[k]()} tabs={[
-    { key: "menu", label: "Menu", icon: "menu", name: "Menu" },
-    { key: "orders", label: "Orders", icon: "orders", name: "My orders" },
-    { key: "you", label: "You", icon: "you", name: "You (Account)" },
-  ]} />;
+// Bottom tabs of the customer app (story #975, board C1-HomeTop): Delivery and History. The profile sits behind the circle at the top of the home screen.
+export const CUSTOMER_TABS: { key: "menu" | "orders"; label: string; icon: TabIcon; name: string }[] = [
+  { key: "menu", label: "Delivery", icon: "home", name: "Delivery" },
+  { key: "orders", label: "History", icon: "orders", name: "History" },
+];
+export function TabBar({ current, onMenu, onOrders }: { current: "menu" | "orders"; onMenu: () => void; onOrders: () => void }) {
+  const go = { menu: onMenu, orders: onOrders };
+  return <Tabs current={current} onPick={(k) => go[k]()} tabs={CUSTOMER_TABS} />;
 }
 
 // The landing of the staff apps on the Ink boards R1, R2, K1, K2, A1, A2 (story H12): lockup, zigzag, a kicker, one slip, a footer line.
@@ -155,7 +217,6 @@ export function StaffLanding({ kicker, app, right, label, error, children }: { k
           {error && <p role="alert" className="ui-field-error">{error}</p>}
         </div>
       </div>
-      <footer className="ui-landing-foot"><p className="ui-kicker">No app to install · works in the browser</p></footer>
     </section>
   );
 }

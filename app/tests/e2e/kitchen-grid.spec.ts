@@ -32,10 +32,12 @@ test("S1 New, Cooking and Ready share one grid; the action or rider column is 11
   await tab(page, "Cooking").click();
   const cooking = await look(page, "0b0b0b0b");
   const ready = await look(page, "0c0c0c0c");
-  for (const t of [fresh, cooking, ready]) {
+  for (const t of [cooking, ready]) {
     expect(t).toMatchObject({ display: "grid", columns: "112px", gap: "12px", align: "start", numberLines: 1, tagAfterNumber: true, headWithinLeft: true, lineSize: "20px", lineCase: "none", rightWidth: 112 });
   }
-  expect(new Set([fresh.rightEdge, cooking.rightEdge, ready.rightEdge]).size).toBe(1);
+  // Story 934: a new order has no action column (Accept and Decline live on its sheet); the rest of the row is the same.
+  expect(fresh).toMatchObject({ display: "grid", numberLines: 1, tagAfterNumber: true, lineSize: "20px", lineCase: "none" });
+  expect(cooking.rightEdge).toBe(ready.rightEdge);
 });
 
 test("S2 a long dish name wraps in the lines, never in the number line, and the order of the parts is number, tag, lines, action", async ({ page, context }) => {
@@ -44,9 +46,9 @@ test("S2 a long dish name wraps in the lines, never in the number line, and the 
   await page.goto("/kitchen/");
   const t = page.locator(".ui-ticket").first();
   const order_ = await t.evaluate((el) => {
-    const num = el.querySelector(".ui-ticket-head .mono")!, tag = el.querySelector(".ui-ticket-head .ui-tag")!, lines = el.querySelector(".ui-slip-lines")!, act = el.querySelector(".ui-btn")!;
+    const num = el.querySelector(".ui-ticket-head .mono")!, tag = el.querySelector(".ui-ticket-head .ui-tag")!, lines = el.querySelector(".ui-slip-lines")!, act = el.querySelector(".ui-btn") ?? lines;   // a new order has no button (story 934)
     const pos = (n: Element) => (n.compareDocumentPosition(act) & Node.DOCUMENT_POSITION_FOLLOWING ? 0 : 1);
-    const all = [num, tag, lines, act];
+    const all = act === lines ? [num, tag, lines] : [num, tag, lines, act];
     return all.every((n, i) => i === 0 || !!(all[i - 1].compareDocumentPosition(n) & Node.DOCUMENT_POSITION_FOLLOWING)) && pos(num) === 0;
   });
   expect(order_).toBe(true);

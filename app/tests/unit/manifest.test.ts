@@ -2,13 +2,21 @@
 import { describe, it, expect } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { manifest } from "../../src/pwa-manifest";
+import { manifest, roleManifest } from "../../src/pwa-manifest";
 
 const root = resolve(__dirname, "../../..");
 const tokens = JSON.parse(readFileSync(resolve(root, "design/tokens.json"), "utf8"));
 const colours = new Set<string>(
   [...Object.values(tokens.color.core), ...Object.values(tokens.color.supporting)].map((h) => (h as string).toUpperCase()),
 );
+
+// Story #983: an installed app stays upright; the phone turning does not turn it (iOS ignores the field, the landscape layout covers that).
+describe("orientation", () => {
+  it("the console and every role app ask for portrait", () => {
+    expect(manifest.orientation).toBe("portrait");
+    for (const r of ["customer", "kitchen", "rider", "ops", "admin"] as const) expect(roleManifest(r).orientation).toBe("portrait");
+  });
+});
 
 describe("web app manifest", () => {
   it("is installable: name, standalone display, start url", () => {

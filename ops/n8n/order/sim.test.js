@@ -7,19 +7,23 @@ const path = require('path');
 const { build } = require('./build');
 const { checkLayout } = require('../lib/layout_checks');
 
+const JWT = 'Bearer aaa.bbb.ccc';
 const IDS = { main01: 'MAIN1', sub30: 'SUB30', main30: 'MAIN30', main31: 'MAIN31', alert: 'ALERT1' };
-const wf = build({ ids: IDS, chatId: '42', simToken: 'SIMTOKEN' });
+const wf = build({ ids: IDS, chatId: '42', });
 const src = (f) => fs.readFileSync(path.join(__dirname, 'code', f), 'utf8');
-const run = (file, input) => new Function('$input', '$', src(file))({ first: () => ({ json: input }) }, () => { throw new Error('no named node in a SUB'); })[0].json;
+const run = (file, input, named) => new Function('$input', '$', src(file))({ first: () => ({ json: input }) }, () => { if (!named) throw new Error('no named node in a SUB'); return { first: () => ({ json: named.first }) }; })[0].json;
 const byName = (w, n) => w.nodes.find((x) => x.name === n);
 const next = (w, n, i = 0) => w.connections[n].main[i].map((x) => x.node);
 
-test('H5 the token check accepts only the sim token in x-gs-sim-token and only seed or reset', () => {
-  const ok = run('sim_token.js', { headers: { 'x-gs-sim-token': 'S' }, body: { action: 'seed' }, sim_token: 'S', kill_switch: false, supabase_url: 'u' });
-  assert.equal(ok.token_ok, true); assert.equal(ok.action, 'seed');
-  assert.equal(run('sim_token.js', { headers: { 'x-gs-token': 'S' }, body: { action: 'seed' }, sim_token: 'S' }).token_ok, false);   // the demo token header is not enough
-  assert.equal(run('sim_token.js', { headers: { 'x-gs-sim-token': 'S' }, body: { action: 'fly' }, sim_token: 'S' }).action, 'bad');
-  assert.equal(run('sim_token.js', { headers: { 'x-gs-sim-token': '' }, body: { action: 'reset' }, sim_token: '' }).token_ok, false);   // an empty token never matches
+test('#941 the request check accepts only a signed-in admin token shape and only the known actions; no shared token exists', () => {
+  const ok = run('sim_check.js', { headers: { authorization: JWT }, body: { action: 'seed' }, kill_switch: false, supabase_url: 'u', anon_key: 'k' });
+  assert.equal(ok.auth_ok, true); assert.equal(ok.action, 'seed'); assert.equal(ok.auth, JWT); assert.equal(ok.anon_key, 'k');
+  assert.equal(run('sim_check.js', { headers: { 'x-gs-sim-token': 'S' }, body: { action: 'seed' }, sim_token: 'S' }).auth_ok, false);   // the old shared token opens nothing
+  assert.equal(run('sim_check.js', { headers: { 'x-gs-token': 'S' }, body: { action: 'seed' } }).auth_ok, false);   // nor the demo token
+  assert.equal(run('sim_check.js', { headers: { authorization: 'Bearer not-a-jwt' }, body: { action: 'reset' } }).auth_ok, false);
+  assert.equal(run('sim_check.js', { headers: { authorization: '' }, body: { action: 'reset' } }).auth_ok, false);
+  assert.equal(run('sim_check.js', { headers: { authorization: JWT }, body: { action: 'fly' } }).action, 'bad');
+  assert.equal(run('sim_check.js', { headers: {}, body: { action: 'seed' } }).auth, '');   // no token, nothing carried on
 });
 
 test('H5 the guard fills defaults, clamps the numbers and picks the database function', () => {
@@ -37,28 +41,48 @@ test('H5 the guard fills defaults, clamps the numbers and picks the database fun
 });
 
 test('#284 the token check lets the knobs action through', () => {
-  assert.equal(run('sim_token.js', { headers: { 'x-gs-sim-token': 'S' }, body: { action: 'knobs' }, sim_token: 'S' }).action, 'knobs');
+  assert.equal(run('sim_check.js', { headers: { authorization: JWT }, body: { action: 'knobs' } }).action, 'knobs');
 });
 
-test('H5 MAIN 30 wiring: webhook, Config, token, kill switch, route to SUB 30, respond; the sim token never sits in a node', () => {
+test('#941 MAIN 30 wiring: webhook, Config, request check, kill switch, action, database admin check, SUB 30, respond; no token in any node', () => {
   const m = wf.main30;
   assert.equal(byName(m, 'Sim webhook').parameters.path, 'gs-sim');
   assert.deepEqual(next(m, 'Sim webhook'), ['Config']);
-  assert.deepEqual(next(m, 'Config'), ['Check token']);
-  assert.deepEqual(next(m, 'Token ok?', 0), ['Kill switch?']);
-  assert.deepEqual(next(m, 'Token ok?', 1), ['Respond 401']);
+  assert.deepEqual(next(m, 'Config'), ['Check request']);
+  assert.deepEqual(next(m, 'Check request'), ['Signed in?']);
+  assert.deepEqual(next(m, 'Signed in?', 0), ['Kill switch?']);
+  assert.deepEqual(next(m, 'Signed in?', 1), ['Respond 401']);
   assert.deepEqual(next(m, 'Kill switch?', 0), ['Respond 503']);
   assert.deepEqual(next(m, 'Kill switch?', 1), ['Action ok?']);
-  assert.deepEqual(next(m, 'Action ok?', 0), ['Call SUB 30 Simulator write']);
+  assert.deepEqual(next(m, 'Action ok?', 0), ['Is admin?']);
   assert.deepEqual(next(m, 'Action ok?', 1), ['Respond 400']);
+  const adm = byName(m, 'Is admin?').parameters;   // the database decides, with the caller's own token
+  assert.equal(adm.url, '={{ $json.supabase_url }}/rest/v1/rpc/is_admin');
+  assert.equal(adm.authentication, 'none');
+  assert.deepEqual(adm.headerParameters.parameters.map((p) => p.name).sort(), ['Authorization', 'apikey']);
+  assert.deepEqual(next(m, 'Is admin?'), ['Admin answer']);
+  assert.deepEqual(next(m, 'Admin answer'), ['Admin?']);
+  assert.deepEqual(next(m, 'Admin?', 0), ['Call SUB 30 Simulator write']);
+  assert.deepEqual(next(m, 'Admin?', 1), ['Respond 403']);
   assert.equal(byName(m, 'Call SUB 30 Simulator write').parameters.workflowId.value, 'SUB30');
   assert.deepEqual(next(m, 'Call SUB 30 Simulator write'), ['Respond result']);
   const rr = byName(m, 'Respond result').parameters;   // the body is a JSON string and the code the SUB's status_code, exactly like MAIN 01 (prod 502 on 25 Oct with an object body)
   assert.equal(rr.responseBody, '={{ JSON.stringify($json) }}');
   assert.equal(rr.options.responseCode, '={{ $json.status_code }}');
   assert.equal(rr.respondWith, 'json');
-  assert.ok(!JSON.stringify(m.nodes.filter((n) => n.name !== 'Config')).includes('SIMTOKEN'), 'the token lives in Config only');
-  assert.ok(JSON.stringify(byName(m, 'Config')).includes('SIMTOKEN'));
+  const text = JSON.stringify(m);
+  assert.ok(!/sim_token|x-gs-sim-token|SIMTOKEN/.test(text), 'no shared simulator token anywhere in MAIN 30');
+  assert.equal(m.settings.saveDataSuccessExecution, 'none');   // the admin's token passes through as an item field: n8n keeps no run data
+  assert.equal(m.settings.saveDataErrorExecution, 'none');
+});
+
+test('#941 a refused admin check answers 403 with a plain line and never reaches SUB 30', () => {
+  const m = wf.main30;
+  assert.equal(byName(m, 'Respond 403').parameters.options.responseCode, 403);
+  assert.ok(/admin/i.test(byName(m, 'Respond 403').parameters.responseBody));
+  const merge = run('sim_admin.js', { statusCode: 200, body: true }, { first: { action: 'seed', body: {}, kill_switch: false, supabase_url: 'u' } });
+  assert.equal(merge.admin, true);
+  for (const bad of [{ statusCode: 200, body: false }, { statusCode: 401, body: { message: 'JWT expired' } }, { statusCode: 200, body: 'true' }, {}]) assert.equal(run('sim_admin.js', bad, { first: { action: 'seed' } }).admin, false);
 });
 
 test('H5 SUB 30: only MAIN 30 may call it, the write is the dynamic rpc (sim_seed or sim_reset) with the service credential', () => {
@@ -85,7 +109,7 @@ test('H6 the guard knows tick, enable and disable, with clamped movement numbers
   assert.deepEqual(run('guard_sim.js', { action: 'enable', body: {}, kill_switch: false, supabase_url: 'u' }).rpc_body, { p: { enabled: true } });
   const off = run('guard_sim.js', { action: 'disable', body: {}, kill_switch: false, supabase_url: 'u' });
   assert.equal(off.rpc_fn, 'sim_enable'); assert.deepEqual(off.rpc_body, { p: { enabled: false } });
-  assert.equal(run('sim_token.js', { headers: { 'x-gs-sim-token': 'S' }, body: { action: 'enable' }, sim_token: 'S' }).action, 'enable');
+  assert.equal(run('sim_check.js', { headers: { authorization: JWT }, body: { action: 'enable' } }).action, 'enable');
 });
 
 test('H6 MAIN 31 wiring: a schedule every minute, Config, kill switch, then SUB 30 with action tick; nothing else', () => {
@@ -108,7 +132,7 @@ test('H6 MAIN 31 wiring: a schedule every minute, Config, kill switch, then SUB 
 test('H7 the guard knows status (sim_status, no body) and the token check lets it through', () => {
   const st = run('guard_sim.js', { action: 'status', body: {}, kill_switch: false, supabase_url: 'u' });
   assert.equal(st.rpc_fn, 'sim_status'); assert.deepEqual(st.rpc_body, {});
-  assert.equal(run('sim_token.js', { headers: { 'x-gs-sim-token': 'S' }, body: { action: 'status' }, sim_token: 'S' }).action, 'status');
+  assert.equal(run('sim_check.js', { headers: { authorization: JWT }, body: { action: 'status' } }).action, 'status');
 });
 
 test('H7 MAIN 31 saves no successful execution, errors still go to GS ERR 00', () => {
@@ -133,8 +157,8 @@ test('H7 fix: a database refusal on a sim call is still a 502 with no raw text, 
   assert.equal(run('shape.js', { statusCode: 200, body: { riders: [{ id: 'r1' }] } }).riders.length, 1);
 });
 
-test('H7 fix: the 400 text of MAIN 30 names all six actions', () => {
-  assert.match(byName(wf.main30, 'Respond 400').parameters.responseBody, /seed, reset, tick, enable, disable or status/);
+test('H7 fix: the 400 text of MAIN 30 names every action the guard accepts', () => {
+  assert.match(byName(wf.main30, 'Respond 400').parameters.responseBody, /seed, seed_kitchens, seed_riders, reset, tick, enable, disable, status or knobs\./);
 });
 
 // ---- Story #454: demo mode is one more key on the knobs action; a call without it must not touch the switch ----
@@ -147,4 +171,17 @@ test('#454 the knobs action passes demo only when it is a real boolean', () => {
     const p = run('guard_sim.js', { action: 'knobs', body: { demo }, kill_switch: false, supabase_url: 'u' }).rpc_body.p;
     assert.equal('demo' in p, false);
   }
+});
+
+test('#848 the token check lets seed_kitchens and seed_riders through', () => {
+  for (const a of ['seed_kitchens', 'seed_riders']) assert.equal(run('sim_check.js', { headers: { authorization: JWT }, body: { action: a } }).action, a);
+  assert.equal(run('sim_check.js', { headers: { authorization: JWT }, body: { action: 'clear' } }).action, 'bad');   // Clear everything never goes through n8n or the sim token
+});
+
+test('#848 the guard maps the two seed groups to sim_seed with a part, and refuses clear', () => {
+  const k = run('guard_sim.js', { action: 'seed_kitchens', body: {}, kill_switch: false, supabase_url: 'u' });
+  assert.deepEqual(k, { ok: true, supabase_url: 'u', rpc_fn: 'sim_seed', rpc_body: { p: { part: 'kitchens' } } });
+  const r = run('guard_sim.js', { action: 'seed_riders', body: { riders_per_kitchen: 9999, online_pct: -5 }, kill_switch: false, supabase_url: 'u' });
+  assert.deepEqual(r, { ok: true, supabase_url: 'u', rpc_fn: 'sim_seed', rpc_body: { p: { part: 'riders', riders_per_kitchen: 20, online_pct: 0 } } });
+  assert.equal(run('guard_sim.js', { action: 'clear', body: {}, kill_switch: false, supabase_url: 'u' }).status_code, 400);
 });

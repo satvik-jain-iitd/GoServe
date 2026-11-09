@@ -11,5 +11,11 @@ export const handler = makeHandler({
     ? { ok: false, error: "order_not_found", message: "This order was not found." }
     : { ok: true, status: "accepted", devices: [{ platform: "android", token: "tok-a" }] }),
   forget: async () => {},
+  web: {
+    send: async () => ({ status: 201 }),
+    job: async (id) => (id === 2 ? { ok: true, done: true, subscriptions: [] } : { ok: true, done: false, subscriptions: [{ endpoint: "https://p.example/a", p256dh: "k", auth: "a", message: { body: "Your order is ready." } }] }),
+    forget: async () => {},
+    done: async () => {},
+  },
   secret: () => CONTRACT_SECRET,
 });

@@ -1,13 +1,17 @@
 // The customer flow in one place: menu, cart, bill, placed (story #48). No router yet: four steps in state.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { addDish, cartLines, cartTotal, changeQty, toOrderItems, type Cart } from "./lib/cart";
-import { mergeOrder, riderOrders, shortId, statusLabel, type Order, type RiderAction, confirmHandover, isCash } from "./lib/kitchen";
+import { addDish, cartLines, cartTotal, changeQty, reorderCart, toOrderItems, type Cart } from "./lib/cart";
+import { mergeOrder, riderOrders, cancelKind, shortId, statusLabel, type Order, type RiderAction, confirmHandover, isCash } from "./lib/kitchen";
 import { clientPlatform } from "./lib/platform";
 import { riderRefused, savePlatform, tapCall } from "./lib/signals";
 import { useLiveOrders } from "./lib/useLiveOrders";
 import { loadMenu, MENU_KEY, type Dish } from "./lib/menu";
-import { fetchKitchens, forgetArea, loadArea, loadPin, closedCopy, openingText, resolveArea, savePin, shownArea, type Area } from "./lib/area";
+import { fetchKitchens, forgetArea, loadArea, loadPin, closedCopy, clearedLine, openingText, resolveArea, savePin, shownArea, type Area } from "./lib/area";
+import { dropFor } from "./lib/locate";
 import { AreaScreen } from "./screens/AreaScreen";
+import { AlertsAsk } from "./screens/AlertsAsk";
+import { LocationOffSheet } from "./screens/LocationOffSheet";
+import { NoKitchen } from "./screens/NoKitchen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { AdminGate } from "./screens/AdminGate";
 import { RiderGate } from "./screens/RiderGate";
@@ -18,28 +22,34 @@ import { takeReturn } from "./lib/auth";
 import { alertsState, readOff, turnAlertsOff, writeOff, type Alerts } from "./lib/alerts";
 import { loadProfile, saveProfile } from "./lib/profile";
 import { capture } from "./lib/analytics";
-import { addEvent, changeStatus, confirmDelivery, orderDeps, placeOrder, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
+import { actDeps, addEvent, changeStatus, confirmDelivery, declineOrder, orderDeps, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
 import { confirmAt, DEFAULT_CFG, mayAsk, notYet, reaskMs, type ConfirmCfg } from "./lib/confirm";
 import { fetchOrders } from "./lib/live";
 import { pushTrail } from "./lib/trail";
 import { trace } from "./lib/trace";
-import { NO_INTERNET } from "./lib/errorLines";
+import { cancelLine, NO_INTERNET } from "./lib/errorLines";
 import { FeedbackSheet } from "./screens/FeedbackSheet";
 import { ensureSession, fetchMenuRows, fetchRiderCard, getClient, type RiderCard } from "./lib/supabase";
 import { openTill } from "./lib/browse";
 import { AccountScreen } from "./screens/AccountScreen";
-import { currentSession, scopeFor, joinCode, joinLink, joinSession, rememberJoin, resetSession } from "./lib/session";
+import { DeliverToScreen } from "./screens/DeliverToScreen";
+import { placeSearch } from "./lib/placeSearch";
+import { PinMapScreen } from "./screens/PinMapScreen";
+import { distanceM, FAR_M, addAddress, editAddress, firstFromProfile, listAddresses, lastUsed, removeAddress, touchAddress, type SavedAddress } from "./lib/addresses";
+import { currentPlace, type Place } from "./lib/locate";
+import { currentSession, scopeFor } from "./lib/session";
 import { MenuScreen } from "./screens/MenuScreen";
 import { BillScreen } from "./screens/BillScreen";
 import { OFFERS_ON } from "./lib/quote";
 import { watchMenu } from "./lib/liveMenu";
-import { ordersV2On, placeOrderV2, PriceChanged, v2Deps } from "./lib/ordersV2";
+import { placeOrderV2, PriceChanged, v2Deps } from "./lib/ordersV2";
 import { useOffers } from "./lib/useOffers";
 import { openOrderToResume } from "./lib/resume";
 import { SignIn } from "./screens/SignIn";
 import { NameSheet, OtpSheet } from "./screens/OtpSheet";
 import { Skeleton } from "./ui";
-import { otpGateOn } from "./lib/otpGate";
+import { otpLoginOn, rememberOtpSetting } from "./lib/otpGate";
+import { watchOtpSwitch } from "./lib/otpSwitch";
 import { createPayment, switchToCash, simulatePaid, type PayMethod } from "./lib/payments";
 import { openGateway } from "./lib/payGateway";
 import { registerNative, wrapperToken } from "./lib/pushNative";
@@ -47,6 +57,8 @@ import { AdminScreen } from "./screens/AdminScreen";
 import { loadDraft, saveDraft } from "./lib/draft";
 import { PlacedScreen, type Track } from "./screens/PlacedScreen";
 import { readPinPoint, readRider, watchRider, type LatLng } from "./lib/riderTrack";
+import { readEta, type Eta } from "./lib/eta";
+import { readArriving, watchArriving } from "./lib/arriving";
 import type { Point } from "./lib/riderMap";
 import { KitchenScreen } from "./screens/KitchenScreen";
 import { RiderScreen } from "./screens/RiderScreen";
@@ -55,14 +67,15 @@ import { OpsScreen } from "./screens/OpsScreen";
 import { DemoBar } from "./screens/DemoBar";
 import { AUTOPILOT_MS, demoDecisions, demoOrder, nextAutoAction } from "./lib/autopilot";
 
-type Step = "menu" | "bill" | "placed" | "orders" | "account";
+type Step = "menu" | "bill" | "placed" | "orders" | "account" | "deliver";
 type Role = "customer" | "kitchen" | "rider" | "split" | "ops" | "admin";
 
 const api = orderDeps;
 
 // `lock` makes this one of the role apps (story #83): that role only, no role tabs, no demo tools. Without it, this is the demo console.
+const LOC_WAIT_MS = 5000;   // story #1056: how long the app waits for a position before it shows the location-off sheet
 export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
-  const [menu, setMenu] = useState<{ dishes: Dish[]; fromCache: boolean } | null>(null);
+  const [menu, setMenu] = useState<{ dishes: Dish[]; fromCache: boolean; slow?: boolean } | null>(null);
   // The customer app asks for a pin code and shows the menu of the kitchen that serves it (story B2). The demo console and the other apps keep the plain menu.
   const land = useRef(false);
   const [pin, setPin] = useState<string | null>(() => (lock === "customer" ? loadPin() : null));
@@ -77,6 +90,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const shown = shownArea(area, clock);
   const [looking, setLooking] = useState(false);
   const [menuError, setMenuError] = useState<string | null>(null);
+  const [fixAddress, setFixAddress] = useState<string | null>(null);   // story #910: the address the fix belongs to; a hand edit after it clears the drop point
   const [from, setFrom] = useState<{ lat: number; lng: number } | null>(null);   // story #668: where the customer is, when they allowed location; it picks the nearest kitchen
   const [menuTry, setMenuTry] = useState(0);   // story #637: Try again and the phone coming back online read the menu again
   useEffect(() => {
@@ -89,13 +103,25 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [step, setStep] = useState<Step>(lock === "customer" && takeReturn() ? "account" : draft0 && draft0.step !== "placed" && draft0.step !== "orders" ? draft0.step === "cart" ? "bill" : (draft0.step as Step) : "menu");   // an older draft may hold the cart step: the bill replaced it (H10c)
   const [cart, setCart] = useState<Cart>(draft0?.cart ?? {});
   const [address, setAddress] = useState(draft0?.address ?? "");
+  const [note, setNote] = useState("");   // story #935: the note for the kitchen is for this order only, never kept
   const [name, setName] = useState(draft0?.name ?? "");
   const [phone, setPhone] = useState(draft0?.phone ?? "");
-  // Story #551: the phone code at checkout (off unless the gate is on). verified = this user already has a phone linked.
-  const gate = lock === "customer" && otpGateOn(import.meta.env, window.localStorage);
-  const ordersV2 = lock === "customer" && ordersV2On(import.meta.env, window.localStorage);   // story #590: POST /orders instead of the v1 webhook
+  // Story #551: the phone code at checkout. verified = this user already has a phone linked.
+  // Story 829: the phone code is a switch the admin flips (settings row otp_login_on), off until an SMS provider is live. The login wall (Google, or the code) shows to
+  // a signed-out customer either way. otpSetting: undefined = not read yet, null = could not be read (then VITE_OTP_GATE, then off).
+  const [otpSetting, setOtpSetting] = useState<boolean | null | undefined>(undefined);
+  useEffect(() => {
+    if (lock !== "customer") return;
+    const giveUp = setTimeout(() => setOtpSetting((cur) => (cur === undefined ? null : cur)), 4000);   // a slow network never holds the first screen
+    const stop = watchOtpSwitch(getClient(), (v) => { if (typeof v === "boolean") rememberOtpSetting(v); setOtpSetting(v); });   // story #1106: the last read is kept for offline
+    return () => { clearTimeout(giveUp); stop(); };
+  }, [lock]);
+  const wall = lock === "customer";   // the customer app's front door: a signed-out customer meets Google (or the phone code) before the menu
+  const gate = lock === "customer" && otpSetting !== undefined && otpLoginOn(otpSetting, import.meta.env, window.localStorage);
   const [verified, setVerified] = useState(false);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);   // story #667: null = not asked yet; the first screen waits so a returning customer never sees it flash
+  const [email, setEmail] = useState<string | null>(null);
+  const [photo, setPhoto] = useState<string | null>(null);   // story #975: the Google photo in the profile circle; none for a phone or guest account
   const [otpOpen, setOtpOpen] = useState(false);
   const [nameOpen, setNameOpen] = useState(false);
   const [nameAsked, setNameAsked] = useState(false);
@@ -108,7 +134,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [payStart, setPayStart] = useState<string | null>(null);
   const payRef = useRef("");
   useEffect(() => {
-    if (lock === "customer") saveDraft({ step: step === "account" ? "menu" : step, cart, address, name, phone });
+    if (lock === "customer") saveDraft({ step: step === "account" || step === "deliver" ? "menu" : step, cart, address, name, phone });
   }, [lock, step, cart, address, name, phone]);
   // Saved details come back on the next visit (story B3); what the customer already typed this time is kept.
   useEffect(() => {
@@ -127,14 +153,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [arrived, setArrived] = useState<Set<string>>(new Set());
   // The live list runs for the kitchen, the rider, and the customer while the tracker is on screen.
-  // A device that opened a ?join= link joins that session first; the live list waits for it (story #52).
-  const [ready, setReady] = useState(() => !joinCode(window.location.search));
   // Autopilot (story #53): 'demo' is the offline story played from local data; 'auto' is the autopilot moving a real order.
   const [auto, setAuto] = useState(false);
   const [demo, setDemo] = useState(false);
   const [autoNote, setAutoNote] = useState<string | null>(null);
   const [resumed, setResumed] = useState(false);   // only the customer app (not the demo console) looks once, at load, for an order that is still open
-  const live = useLiveOrders(ready && !demo && (auto || role === "kitchen" || role === "rider" || role === "split" || role === "ops" || (role === "customer" && (step === "placed" || step === "orders" || (lock === "customer" && !resumed)))), lock === "kitchen" || lock === "rider" ? lock : undefined);
+  const live = useLiveOrders(!demo && (auto || role === "kitchen" || role === "rider" || role === "split" || role === "ops" || (role === "customer" && (step === "placed" || step === "orders" || (lock === "customer" && !resumed)))), lock === "kitchen" || lock === "rider" ? lock : undefined);
   const { orders, setOrders } = live;
   const sawLoading = useRef(false);
   useEffect(() => {
@@ -149,7 +173,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       setStep("placed");
     }
   }, [live.loading, orders, resumed, lock, demo, step, placed]);
-  const ops = useOps(ready && !demo && role === "ops", orders, api);   // the offline story never asks the server
+  const ops = useOps(!demo && role === "ops", orders);   // the offline story never asks the server
   const keyRef = useRef<{ fingerprint: string; key: string } | null>(null);
   // Delivered by hand (story S-C): the delivery question for the customer's order, the Yes, and the Not yet.
   const [confirmCfg, setConfirmCfg] = useState<ConfirmCfg>(DEFAULT_CFG);
@@ -185,7 +209,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   useEffect(() => {
     if (!placed) return void (trackedSeen.current = false);
     if (orders.some((o) => o.id === placed.id)) trackedSeen.current = true;
-    else if (trackedSeen.current) {
+    else if (trackedSeen.current && lock !== "customer") {   // story #1014: only the demo console leaves a vanished order; a customer leaves the placed screen by their own tap
       trackedSeen.current = false;
       setPlaced(null);
       setStep("menu");
@@ -296,15 +320,50 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     });
     return ok;
   }
+  // Story #1049 part 2 (board N0): first open, after the number and before the location, alerts are asked once. Turn on asks the phone's permission and moves on either way; Not now moves on.
+  const ASKED_KEY = "gs_alerts_asked";
+  const [alertsAsked, setAlertsAsked] = useState(() => { try { return window.localStorage.getItem(ASKED_KEY) === "1"; } catch { return false; } });
+  const [askingAlerts, setAskingAlerts] = useState(false);
+  const markAsked = () => { try { window.localStorage.setItem(ASKED_KEY, "1"); } catch { /* asked again next visit */ } setAlertsAsked(true); };
+  // Story #1116: moves on either way. A permission call that never settles (iPhone Safari outside the home-screen app) must not hold the screen: after 8 s it goes on.
+  const ALERTS_WAIT_MS = 8000;
+  async function turnOnFirst() {
+    setAskingAlerts(true);
+    try { await Promise.race([allowReminder(), new Promise((go) => setTimeout(go, ALERTS_WAIT_MS))]); } finally { setAskingAlerts(false); markAsked(); }
+  }
+  // Story #1049 part 3 (board NK-A): no kitchen serves this pin. One stored ask per person and pin (area_request_add_v2); nothing is sent from here.
+  const [areaAsk, setAreaAsk] = useState<"idle" | "busy" | "done">("idle");
+  const [areaAskError, setAreaAskError] = useState<string | null>(null);
+  const [focusSearch, setFocusSearch] = useState(false);   // story #1133: Enter address manually opens the search with the cursor in it
+  const [farPick, setFarPick] = useState<null | { at: Place; pin: string; address: string }>(null);   // story #1128 (board C6b): Confirm on a pin no kitchen reaches; NK-A shows for it, C7 never opens
+  const [areaOffer, setAreaOffer] = useState<number | null>(null);   // story #1129: the promise the stored row holds; the letter shows it only when the server said so
+  // One ask: the stored row for this account and pin (area_request_add_v2). Answers an error in words, or null. The Rs 100 promise comes back in the answer and the letter shows it only then.
+  async function askArea(askPin: string, at: { lat: number; lng: number } | null): Promise<string | null> {
+    const { data, error } = await getClient().rpc("area_request_add_v2", { p_pin: askPin, p_lat: at?.lat ?? null, p_lng: at?.lng ?? null });
+    const ans = data as { ok?: boolean; message?: string; offer_paise?: number } | null;
+    if (!error && ans?.ok) { setAreaOffer(ans.offer_paise && ans.offer_paise > 0 ? ans.offer_paise : null); return null; }
+    return ans?.message ?? "Could not set that up. Try again.";
+  }
+  async function tellMeWhenWeCome() {
+    if (!pin) return;
+    setAreaAsk("busy");
+    setAreaAskError(null);
+    const err = await askArea(pin, from);
+    if (!err) return setAreaAsk("done");
+    setAreaAsk("idle");
+    setAreaAskError(err);
+  }
+  useEffect(() => { setAreaAsk("idle"); setAreaAskError(null); }, [pin]);
   // Story #718 (board L1): a closed kitchen offers one push when it opens. Alerts are allowed first when they are not on yet.
   const [tellMe, setTellMe] = useState<"idle" | "busy" | "done">("idle");
   const [tellMeError, setTellMeError] = useState<string | null>(null);
   async function tellMeWhenOpen() {
-    if (shown?.kind !== "closed") return;
+    const kitchenId = shown?.kind === "closed" ? shown.id : (menu?.dishes.length === 0 && areaKitchenId) || null;   // closed kitchen (#718), or an open one with no dishes yet (#891, board M7)
+    if (!kitchenId) return;
     setTellMe("busy");
     setTellMeError(null);
     const allowed = reminder === "on" || (await allowReminder());
-    const { data, error } = allowed ? await getClient().rpc("open_alert_add_v2", { p_kitchen: shown.id }) : { data: null, error: null };
+    const { data, error } = allowed ? await getClient().rpc("open_alert_add_v2", { p_kitchen: kitchenId }) : { data: null, error: null };
     const ans = data as { ok?: boolean; message?: string } | null;
     if (allowed && !error && ans?.ok) return setTellMe("done");
     setTellMe("idle");
@@ -351,7 +410,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setConfirming(true);
     setConfirmError(null);
     try {
-      const answer = await confirmDelivery({ sessionId: await currentSession(), orderId: placed.id }, api());
+      const answer = await confirmDelivery({ orderId: placed.id }, actDeps());
       const saved = answer.order ?? { ...placed, status: "delivered", updated_at: new Date().toISOString() };   // "Already done": show the delivered state, no line
       setOrders((cur) => (cur.some((o) => o.id === saved.id) ? mergeOrder(cur, { ...cur.find((o) => o.id === saved.id)!, status: saved.status, updated_at: saved.updated_at, paid_by: saved.paid_by ?? null }) : cur));
       setPlaced({ ...placed, status: saved.status, updated_at: saved.updated_at, paid_by: saved.paid_by ?? null });
@@ -376,25 +435,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }
 
   useEffect(() => {
-    const code = joinCode(window.location.search);
-    if (!code) return;
-    (async () => {
-      try {
-        await ensureSession();
-        await joinSession(getClient(), code);
-        rememberJoin(code);
-      } catch (e) {
-        live.setError(e instanceof Error ? e.message : "Could not join that demo.");
-      } finally {
-        window.history.replaceState(null, "", window.location.pathname);
-        setReady(true);
-      }
-    })();
-  }, []);
-
-  useEffect(() => {
     if (lock && lock !== "customer") return;   // story H2: the kitchen, rider, ops and admin apps have nothing to sell
-    if (!lock) return void loadMenu(() => fetchMenuRows(), window.localStorage).then((m) => { setMenu(m); setMenuError(null); }, (e: Error) => setMenuError(e.message));
+    if (!lock) return void loadMenu(() => fetchMenuRows(), window.localStorage, MENU_KEY, { onLater: setMenu }).then((m) => { setMenu(m); setMenuError(null); }, (e: Error) => setMenuError(e.message));
     if (!pin) return;
     let alive = true;
     setLooking(true);
@@ -406,11 +448,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }, [lock, pin, from, menuTry]);
   // The menu of the kitchen that serves the pin; a closed kitchen still shows its menu (board 02c). Reads as soon as the kitchen is known,
   // so a saved kitchen (D15, #242) shows its menu before the kitchens read answers.
+  useEffect(() => { if (menu?.fromCache) capture("error_shown", { line_key: menu.slow ? "menu_slow" : "menu_offline" }); }, [menu?.fromCache, menu?.slow]);   // story #930: how often the banner shows
   const areaKitchenId = area?.kind === "ok" ? area.kitchen.id : area?.kind === "closed" ? area.id : null;
   useEffect(() => {
     if (lock !== "customer" || !areaKitchenId) return;
     let alive = true;
-    loadMenu(() => fetchMenuRows(areaKitchenId), window.localStorage, `${MENU_KEY}.${areaKitchenId}`)
+    loadMenu(() => fetchMenuRows(areaKitchenId), window.localStorage, `${MENU_KEY}.${areaKitchenId}`, { onLater: (m) => { if (alive) setMenu(m); } })   // story #930: a second read lands, or fails, after the first
       .then((loaded) => { if (alive) { setMenu(loaded); setMenuError(null); } }, (e: Error) => { if (alive) setMenuError(e.message); });
     return () => { alive = false; };
   }, [lock, areaKitchenId, menuTry]);
@@ -426,7 +469,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     if (liveTick === 0 || lock !== "customer" || !pin || !areaKitchenId) return;
     let alive = true;
     resolveArea(pin, () => fetchKitchens(getClient()), window.localStorage, from ?? undefined).then((found) => { if (alive) setArea(found); }, () => undefined);
-    loadMenu(() => fetchMenuRows(areaKitchenId), window.localStorage, `${MENU_KEY}.${areaKitchenId}`).then((loaded) => { if (alive) { setMenu(loaded); setMenuError(null); } }, () => undefined);
+    loadMenu(() => fetchMenuRows(areaKitchenId), window.localStorage, `${MENU_KEY}.${areaKitchenId}`, { onLater: (m) => { if (alive) setMenu(m); } }).then((loaded) => { if (alive) { setMenu(loaded); setMenuError(null); } }, () => undefined);
     return () => { alive = false; };
   }, [liveTick]);   // eslint-disable-line react-hooks/exhaustive-deps
   function choosePin(p: string, at?: { lat: number; lng: number }) {
@@ -439,6 +482,109 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setMenuError(null);
     setPin(p);
     ensureSession().then((uid) => getClient().from("customers").upsert({ user_id: uid, pin_code: p, updated_at: new Date().toISOString() }, { onConflict: "user_id" })).catch(() => {});
+  }
+  // Story #976, changed by #1035: the saved addresses. On open the one used last is picked, always; the phone's place only shows "here" or "N km" on the rows.
+  const [saved, setSaved] = useState<SavedAddress[] | null>(null);
+  const [addrTried, setAddrTried] = useState(false);   // story #1112: the saved addresses were asked for (answered or failed): until then a signed-in phone with no pin is loading, not new
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [here, setHere] = useState<Place | null>(null);
+  const [locOff, setLocOff] = useState<null | { denied: boolean; busy: boolean; how: boolean }>(null);   // story #1056: the location-off sheet, shown once per app open
+  // Story #1162 (owner, 9 Nov): the kitchen closes (live, or by the clock) under a customer who has items but has NOT placed the order: the app goes to the closed menu, the bill is cleared, and a line says so.
+  // A placed order is never moved (the step is "placed" or "orders"), and an order being sent is let finish first.
+  const [closedNote, setClosedNote] = useState<string | null>(null);
+  const wasOpen = useRef(false);
+  const [pinMap, setPinMap] = useState<null | { center: Place; edit?: SavedAddress }>(null);   // story #1037: the one full-screen map, the door for Add new address, Use current location and a tapped search result
+  useEffect(() => {
+    if (lock !== "customer" || !shown) return;
+    const open = shown.kind === "ok";
+    const justClosed = shown.kind === "closed" && wasOpen.current;
+    wasOpen.current = open;
+    if (!justClosed || sending) return;
+    const items = Object.values(cart).some((q) => q > 0);
+    if (!items || !(step === "menu" || step === "bill" || step === "deliver" || pinMap)) return;
+    setCart({}); setNote(""); setPinMap(null); setStep("menu");
+    setClosedNote(clearedLine(shown.opens_at, shown.paused === true));
+  }, [shown?.kind]);   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!closedNote) return;
+    const off = () => setClosedNote(null);
+    window.addEventListener("pointerdown", off, { once: true, capture: true });
+    return () => window.removeEventListener("pointerdown", off, { capture: true });
+  }, [closedNote]);
+  const mapStart = (): Place => {   // where the map opens when nothing says otherwise: the phone, else the picked address, else the city centre
+    const row = (saved ?? []).find((r) => r.id === selectedId);
+    return here ?? (row && row.lat !== null && row.lng !== null ? { lat: row.lat, lng: row.lng } : { lat: 28.6139, lng: 77.209 });
+  };
+  const opened = useRef(false);
+  const moved = useRef(false);   // true once the customer has left the first menu (the Bill, the placed screen, any page)
+  if (step !== "menu") moved.current = true;
+  function useSaved(a: SavedAddress, touch: boolean) {   // the Bill reads `address`; a new pin code finds the kitchen again
+    setSelectedId(a.id);
+    setAddress(a.address);
+    setFixAddress(a.lat !== null && a.lng !== null ? a.address : null);   // story #1049: a saved place with its pin carries its drop point while the words stay as saved
+    const at = a.lat !== null && a.lng !== null ? { lat: a.lat, lng: a.lng } : undefined;
+    if (a.pin !== pin) choosePin(a.pin, at); else setFrom(at ?? null);   // story #1182: the same pin code still moves the drop point to this address's own pin
+    if (touch) {
+      const at = new Date().toISOString();
+      setSaved((cur) => (cur ?? []).map((r) => (r.id === a.id ? { ...r, last_used_at: at } : r)));
+      void touchAddress(getClient(), a.id);
+    }
+  }
+  useEffect(() => {
+    if (lock !== "customer" || signedIn !== true || opened.current) return;
+    opened.current = true;
+    (async () => {
+      const c = getClient();
+      const list = await listAddresses(c);
+      setAddrTried(true);
+      if (list === null) return;
+      setSaved(list);
+      const row = lastUsed(list);
+      if (row && !moved.current) useSaved(row, false);   // story #1014: a customer who already moved on (the Bill, the placed screen) is never pulled back
+      let at: Place | null = null;
+      let off: "denied" | "silent" | null = null;   // story #1056 (board SW3): blocked, or allowed but no position within 5 s
+      try {
+        const perm = await navigator.permissions?.query({ name: "geolocation" as PermissionName });
+        if (perm?.state === "denied") off = "denied";
+        if (perm?.state === "granted") {
+          at = await Promise.race([currentPlace(), new Promise<null>((res) => setTimeout(() => res(null), LOC_WAIT_MS))]);
+          if (!at) off = "silent";
+        }
+      } catch { /* no place: the rows show no distance */ if (!at) off = "silent"; }
+      setHere(at);
+      if (off && !moved.current) setLocOff({ denied: off === "denied", busy: false, how: false });
+    })().catch(() => undefined);
+  }, [signedIn]);   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {   // today's single saved address becomes the first row, Home, once (only while the list is empty)
+    if (saved === null || saved.length > 0) return;
+    const first = firstFromProfile({ address, pin });
+    if (!first) return;
+    let alive = true;
+    addAddress(getClient(), { ...first, lat: from?.lat ?? null, lng: from?.lng ?? null }).then((row) => { if (alive && row) { setSaved([row]); setSelectedId(row.id); } });
+    return () => { alive = false; };
+  }, [saved, address, pin]);   // eslint-disable-line react-hooks/exhaustive-deps
+  async function saveNew(pl: { pin: string; address: string; label?: string; from?: Place }) {
+    const row = await addAddress(getClient(), { label: pl.label || "Home", address: pl.address, pin: pl.pin, lat: pl.from?.lat ?? null, lng: pl.from?.lng ?? null });
+    if (row) { setSaved((cur) => [row, ...(cur ?? [])]); useSaved(row, false); } else { setAddress(pl.address); choosePin(pl.pin, pl.from); }
+    setStep("menu");
+  }
+  async function saveEdit(id: string, a: { pin: string; address: string; label: string; from: Place }) {   // story #1051: the same row, the new words and the new pin
+    const v = { label: a.label, address: a.address, pin: a.pin, lat: a.from.lat, lng: a.from.lng };
+    if (!(await editAddress(getClient(), id, v))) return;
+    setSaved((cur) => (cur ?? []).map((r) => (r.id === id ? { ...r, ...v } : r)));
+    if (id === selectedId) { setAddress(v.address); if (v.pin !== pin) choosePin(v.pin, a.from); }
+  }
+  async function dropSaved(id: string) {
+    if (!(await removeAddress(getClient(), id))) return;
+    const rest = (saved ?? []).filter((r) => r.id !== id);
+    setSaved(rest);
+    if (id !== selectedId) return;
+    const next = [...rest].sort((a, b) => b.last_used_at.localeCompare(a.last_used_at))[0];
+    if (next) return void useSaved(next, false);
+    setSelectedId(null);
+    setAddress("");
+    setStep("menu");
+    changeArea();
   }
   function changeArea() {
     forgetArea();
@@ -466,8 +612,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         setOrders((cur) => mergeOrder(cur, { ...order, status: "cancelled", updated_at: new Date().toISOString() }));
         return null;
       }
-      const deps = { sessionId: order.session_id, orderId: order.id, actor };
-      const { order: saved } = action.kind === "status" ? await changeStatus({ ...deps, to: action.to }, api()) : await addEvent({ ...deps, event: action.event }, api());
+      const deps = { orderId: order.id };
+      const { order: saved } = action.kind === "status" ? await changeStatus({ ...deps, to: action.to }, actDeps()) : await addEvent({ ...deps, event: action.event }, actDeps());
       setOrders((cur) => mergeOrder(cur, { ...order, status: saved.status, updated_at: saved.updated_at }));
       if (action.kind === "event") setArrived((cur) => new Set(cur).add(order.id));
       return null;
@@ -481,6 +627,23 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       pushTrail(`error: ${message}`);
       live.setError(message);
       return { code: e instanceof PlaceError ? e.code : "unknown", message };
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  // Story #934: the kitchen declines a new order with a reason the customer reads. Returns null when it worked, or the error line.
+  async function decline(order: Order, reason: string): Promise<string | null> {
+    if (demo) { setOrders((cur) => mergeOrder(cur, { ...order, status: "cancelled", cancel_reason: reason, updated_at: new Date().toISOString() })); return null; }
+    setBusyId(order.id);
+    live.setError(null);
+    pushTrail("kitchen: declined");
+    try {
+      const { order: saved } = await declineOrder({ orderId: order.id, reason }, actDeps());
+      setOrders((cur) => mergeOrder(cur, { ...order, status: saved.status, cancel_reason: reason, updated_at: saved.updated_at }));
+      return null;
+    } catch (e) {
+      return e instanceof Error ? e.message : "Something went wrong. Please try again.";
     } finally {
       setBusyId(null);
     }
@@ -552,18 +715,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     else setAuto(true);
   }
 
-  async function reset() {
-    pushTrail("reset demo");
-    await resetSession(getClient(), await currentSession());
-    setOrders([]);
-    live.setLags([]);
-    setPlaced(null);
-    setStep("menu");
-    setCart({});
-    setArrived(new Set());
-    keyRef.current = null;
-  }
-  const shareLink = async () => joinLink(window.location.href, await currentSession());
 
   // Story D2: the rider card appears once a rider has the order; the database answers only for this customer's own order.
   const [rider, setRider] = useState<RiderCard | null>(null);
@@ -589,6 +740,31 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     const tick = setInterval(read, 30_000);
     return () => { alive = false; stop(); clearInterval(tick); };
   }, [placed?.id, onTheWay]);
+  // Story #1015 (board E2a): the delivery time is the server's. Read now, again on every realtime event of the tracking row and every 30 s; a failed read keeps the last answer.
+  const [eta, setEta] = useState<Eta | null>(null);
+  const etaLive = !!placed && !demo && !!riderStatus && riderStatus !== "delivered" && riderStatus !== "cancelled";
+  useEffect(() => {
+    if (!etaLive || !placed) return void setEta(null);
+    const c = getClient();
+    let alive = true;
+    const read = () => void readEta(c, placed.id).then((e) => { if (alive && e) setEta(e); }).catch(() => undefined);
+    read();
+    const stop = watchRider(c, placed.id, read, "eta");
+    const tick = setInterval(read, 30_000);
+    return () => { alive = false; stop(); clearInterval(tick); };
+  }, [placed?.id, etaLive]);
+  // Story #922: the rider tapped Arriving. Read now, again on every realtime event and every 30 s (a missed event heals itself); a reload or a second device reads it on open.
+  const [atDoor, setAtDoor] = useState(false);
+  useEffect(() => {
+    if (!onTheWay || !placed) return void setAtDoor(false);
+    const c = getClient();
+    let alive = true;
+    const read = () => void readArriving(c, placed.id).then((yes) => { if (alive && yes) setAtDoor(true); }).catch(() => undefined);   // a failed read keeps what is shown
+    read();
+    const stop = watchArriving(c, placed.id, read);
+    const tick = setInterval(read, 30_000);
+    return () => { alive = false; stop(); clearInterval(tick); };
+  }, [placed?.id, onTheWay]);
   useEffect(() => {
     if (!onTheWay || !pin) return void setYouPoint(null);
     let alive = true;
@@ -603,6 +779,18 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setPlaced({ id: o.id, status: o.status, total_paise: o.total_paise, updated_at: o.updated_at, paid_by: o.paid_by ?? null });
     setPlacedAt(o.created_at);
     setStep("placed");
+  }
+  // Story #977: Order again puts a delivered order back in the cart at today's menu; what cannot go back is named, a closed kitchen adds nothing.
+  const [againLine, setAgainLine] = useState<string | null>(null);
+  useEffect(() => { if (step !== "bill" && step !== "orders") setAgainLine(null); }, [step]);
+  function orderAgain(o: Order) {
+    if (shown?.kind === "closed") return setAgainLine(`${kitchenName || "The kitchen"} is closed now. Try again when it opens.`);
+    const { cart: next, left } = reorderCart(o.items, menu?.dishes ?? []);
+    if (Object.keys(next).length === 0) return setAgainLine(left.length ? `${left.join(", ")} ${left.length === 1 ? "is" : "are"} not on the menu today.` : "Nothing from this order can be added today.");
+    setCart(next);
+    setAgainLine(left.length ? `${left.join(", ")} ${left.length === 1 ? "is" : "are"} not on the menu today.` : null);
+    setError(null);
+    setStep("bill");
   }
   const openOrderNow = orders.find((o) => !["delivered", "cancelled"].includes(o.status));
   const openLive = openOrderNow ? { label: statusLabel(openOrderNow.status), no: shortId(openOrderNow.id), onOpen: () => openOrder(openOrderNow) } : null;
@@ -633,10 +821,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // Story #619, board L3: a dish the customer chose to swap goes to the server with swap true; the server puts its own alternative in its place.
   const [swapped, setSwapped] = useState<string[]>([]);
   const orderItems = useMemo(() => toOrderItems(cart).map((i) => (swapped.includes(i.menu_item_id) ? { ...i, swap: true } : i)), [cart, swapped]);
-  const offers = useOffers(OFFERS_ON && lock === "customer" && step === "bill", area?.kind === "ok" ? area.kitchen.id : null, pin, orderItems);   // story #588
+  const offers = useOffers(lock === "customer" && step === "bill", area?.kind === "ok" ? area.kitchen.id : null, pin, orderItems, !OFFERS_ON);   // story #588; story #995: the quote is always asked on the Bill so the total is the server's; with the offers off it asks for no coupon
   const total = offers.quote ? offers.quote.to_pay_paise : cartTotal(lines);
   const dead = lines.find((l) => l.dish.available === false && !swapped.includes(l.dish.id));   // the first dish in the bill that is sold out
-  const canSwap = ordersV2 && OFFERS_ON;   // the swap is priced by POST /quote and ordered by POST /orders
+  const canSwap = OFFERS_ON;   // the swap is priced by POST /quote and ordered by POST /orders
   const takeOut = (id: string) => { setCart((c) => changeQty(c, id, -(c[id] ?? 0))); setSwapped((s) => s.filter((x) => x !== id)); };
   // No alternative (or no way to ask): the item goes out, the rest of the bill is kept, and the menu opens with the dish stamped Sold out.
   useEffect(() => {
@@ -650,35 +838,45 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const count = lines.reduce((n, l) => n + l.qty, 0);
 
   const [cancelling, setCancelling] = useState(false);
-  // The customer cancels while the order is still placed (story B3). The database checks the rule; the live list brings the new status.
+  // The customer cancels until cooking starts: placed or accepted (stories B3, #904). The database checks the rule; the live list brings the new status.
   async function cancelOrder() {
     if (!placed) return;
     setCancelling(true);
     setConfirmError(null);
     const { data, error: failed } = await getClient().rpc("cancel_order", { p_order: placed.id, p_reason: null });
-    if (failed) setConfirmError("The kitchen has started, so this order cannot be cancelled now. Call the kitchen if you need to.");
+    if (failed) { setConfirmError(cancelLine(failed.message)); capture("cancel_failed", { error: failed.message?.split(":")[0] ?? "unknown" }); }
     else if (data?.order) setOrders((cur) => mergeOrder(cur, data.order as Order));
     setCancelling(false);
   }
 
   // Story #551: a guest confirms a phone number before the order goes; the continuation runs once the sheets are closed (so it sees the new name and phone).
   useEffect(() => {
-    if (!gate) return;
+    if (!gate && !wall) return;
     let alive = true;
     ensureSession().then(() => getClient().auth.getUser()).then(({ data }) => {
       const p = data.user && !data.user.is_anonymous ? data.user.phone : null;
       const n = (data.user?.user_metadata?.full_name ?? data.user?.user_metadata?.name) as string | undefined;
       if (alive) setSignedIn(!!data.user && !data.user.is_anonymous);
+      const m = data.user && !data.user.is_anonymous ? data.user.user_metadata : null;
+      const url = String(m?.avatar_url ?? m?.picture ?? "");
+      if (alive) setPhoto(/^https:\/\//.test(url) ? url : null);
+      if (alive) setEmail(data.user && !data.user.is_anonymous ? data.user.email ?? null : null);
       if (alive && p) { setVerified(true); setPhone(p.replace(/^91/, "")); if (n) setName((cur) => cur || n); }
     }).catch(() => { if (alive) setSignedIn(false); });
     return () => { alive = false; };
-  }, [gate]);
+  }, [gate, wall]);
   useEffect(() => {
     if (!pendingPlace || otpOpen || nameOpen) return;
     if (!name.trim() && !nameAsked) return void setNameOpen(true);
     setPendingPlace(false);
     void place();
   }, [pendingPlace, otpOpen, nameOpen, nameAsked, name]);   // eslint-disable-line react-hooks/exhaustive-deps
+
+  const readPinOrEmpty = () => { try { return window.localStorage.getItem("gs-pin") ?? ""; } catch { return ""; } };   // the console has no area step; it uses the pin this phone saved
+  async function demoKitchenId(): Promise<string | null> {
+    const { data } = await getClient().from("kitchens").select("id").eq("active", true).eq("open", true).limit(1);
+    return (data?.[0] as { id?: string } | undefined)?.id ?? null;
+  }
 
   async function place() {
     if (lock && lock !== "customer") return;   // story H2: only the customer app and the demo console place orders
@@ -691,16 +889,16 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       const items = orderItems;
       const fingerprint = JSON.stringify([items, address.trim()]);
       if (keyRef.current?.fingerprint !== fingerprint) keyRef.current = { fingerprint, key: crypto.randomUUID() };
-      const sessionId = await currentSession();
+      await currentSession();   // the sign-in must exist before the order is sent
       if (lock === "customer" && !(await saveProfile(getClient(), await ensureSession(), { name, phone, address, pin }))) {   // the kitchen and the rider need the name and phone; place_order copies them
         setError("Could not save your details. Try again.");
         return;
       }
-      const { order, confirm } = ordersV2 && areaKitchenId
-        ? await placeOrderV2({ kitchenId: areaKitchenId, pin: pin ?? "", items, address: address.trim(), key: keyRef.current.key, expectedPaise: total, code: offers.code, none: offers.none }, v2Deps())
-        : await placeOrder({ sessionId, key: keyRef.current.key, items, address: address.trim() }, api());
+      const kitchenId = areaKitchenId ?? (lock ? null : await demoKitchenId());   // the demo console has no area step: it orders from the first open kitchen
+      if (!kitchenId) throw new Error("Choose where the food goes first.");   // story #940: the order is placed for a kitchen by POST /orders, as the signed-in user
+      const { order, confirm } = await placeOrderV2({ kitchenId, pin: pin ?? (lock ? "" : readPinOrEmpty()), items, address: address.trim(), key: keyRef.current.key, expectedPaise: total, code: offers.code, none: offers.none, drop: dropFor(from, fixAddress, address), instructions: note }, v2Deps());
       setPlaced(order);
-      capture("order_placed", { items_count: lines.length });
+      capture("order_placed", { items_count: lines.length, phone_to_address_m: farM === null ? null : Math.round(farM) });   // story #1056, rule 10: how often the phone is far from the chosen address at an order
       setPlacedLines(lines.map((l) => ({ name: l.dish.name, qty: l.qty, paise: l.line_paise })));
       if (!demo) void savePlatform(getClient(), order.id, clientPlatform(navigator.userAgent));   // story H14: the iPhone share of orders
       setConfirmCfg(confirm);
@@ -714,6 +912,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       setPayStart(new Date().toISOString());
       setPayError(null);
       setCart({});
+      setNote("");
       keyRef.current = null;
     } catch (e) {
       if (e instanceof PlaceError && e.code === "sold_out") setLiveTick((n) => n + 1);   // story #619: read the menu again, the Bill then names the dish
@@ -751,36 +950,63 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }
   const kitchenScreen = (gate: KitchenGateState | null) => (
     <KitchenScreen orders={orders} loading={live.loading} error={live.error} busyId={busyId}
-      onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} onHandover={handover} gate={gate} />
+      onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} onDecline={decline} onHandover={handover} gate={gate} />
   );
   const kitchenView = lock === "kitchen" ? <KitchenGate>{kitchenScreen}</KitchenGate> : kitchenScreen(null);
+  // Story #1056 (board SW2): the header keeps the chosen address; past 2 km from it the phone is far, and a strip offers "Deliver here" (the map at the phone, then the details).
+  // Only the phone's place when location is already allowed and the saved lat and lng: no map call, no geocode, nothing asked.
+  const chosen = (saved ?? []).find((r) => r.id === selectedId);
+  const farM = here && chosen && chosen.lat !== null && chosen.lng !== null ? distanceM(here, { lat: chosen.lat, lng: chosen.lng }) : null;
+  const far = farM !== null && farM > FAR_M && chosen ? { km: Math.round(farM / 1000), label: chosen.label, onHere: () => setPinMap({ center: here! }) } : null;
+  // Story #1112 (TC 1.6): signed in, no pin yet and the saved addresses not answered: the first screen waits (a returning customer never sees N0). The wait ends when they answer or fail.
+  const waitingForAddresses = lock === "customer" && signedIn === true && step !== "placed" && step !== "orders" && ((!pin && !addrTried) || (!!pin && area === null && !areaError));   // or the pin is known and the kitchen of that pin is still being found
   const needArea = lock === "customer" && step !== "placed" && step !== "orders" && !(pin && (area?.kind === "ok" || area?.kind === "closed"));
   // Story #667: with the phone code on, the first screen is the number and the code (or Google); nothing else shows before it.
-  const customerView = gate && signedIn === null ? <div className="ui-pad"><Skeleton lines={3} /></div> : gate && signedIn === false ? (
-    <OtpSheet welcome phone={phone} onClose={() => undefined}
+  const customerView = wall && (signedIn === null || otpSetting === undefined) ? <div className="ui-pad"><Skeleton lines={3} /></div> : wall && signedIn === false ? (
+    <OtpSheet welcome googleOnly={!gate} phone={phone} onClose={() => undefined}
       onVerified={(p) => { setPhone(p); setVerified(true); setSignedIn(true); }} />
+  ) : pinMap ? (
+    <PinMapScreen center={pinMap.center} edit={pinMap.edit} kicker={pinMap.edit ? `Editing ${pinMap.edit.label}` : undefined} confirmLabel={pinMap.edit ? "Save changes" : "Confirm & proceed"} onBack={() => { setFocusSearch(false); setPinMap(null); }} search={(q) => placeSearch(q)} searchOpen={focusSearch} onSearch={() => { setPinMap(null); if (needArea) setStep("deliver"); }}
+      onInvite={async (f) => { const err = await askArea(f.pin, f.at); if (err) return err; setAreaAsk("done"); setPinMap(null); setFarPick(f); return null; }}
+      onSave={(a) => { const e = pinMap.edit; setPinMap(null); if (e) void saveEdit(e.id, a); else void saveNew(a); }} />
+  ) : farPick ? (
+    <NoKitchen address={farPick.address} ask={areaAsk} error={areaAskError} offerPaise={areaOffer} onTell={() => undefined}
+      onChange={() => { const at = farPick.at; setFarPick(null); setAreaAsk("idle"); setPinMap({ center: at }); }} />
+  ) : step === "deliver" ? (
+    <DeliverToScreen focusSearch={focusSearch} list={saved ?? []} selectedId={selectedId} here={here} search={(q) => placeSearch(q)} onPlace={(h) => { setFocusSearch(false); setPinMap({ center: { lat: h.lat, lng: h.lng } }); }} onBack={() => { setFocusSearch(false); setStep("menu"); }}
+      onSelect={(id) => { const r = (saved ?? []).find((x) => x.id === id); if (r) { useSaved(r, true); setStep("menu"); } }}
+      onUseLocation={() => { void currentPlace().then((p) => setPinMap({ center: p }), () => setPinMap({ center: mapStart() })); }} onAddNew={() => setPinMap({ center: mapStart() })}
+      onEditOnMap={(a) => setPinMap({ center: a.lat !== null && a.lng !== null ? { lat: a.lat, lng: a.lng } : mapStart(), edit: a })} onRemove={dropSaved} />
+  ) : waitingForAddresses ? (
+    <div className="ui-pad"><Skeleton lines={3} /></div>
+  ) : needArea && !alertsAsked && reminder === "ask" ? (
+    <AlertsAsk busy={askingAlerts} onTurnOn={() => void turnOnFirst()} onNotNow={markAsked} />
+  ) : needArea && pin && area?.kind === "none" ? (
+    <NoKitchen address={address} ask={areaAsk} error={areaAskError} offerPaise={areaOffer} onTell={() => void tellMeWhenWeCome()}
+      onChange={() => { const at = from; changeArea(); setPinMap({ center: at ?? mapStart() }); }} />
   ) : needArea ? (
-    <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={(pl) => { setAddress(pl.address); choosePin(pl.pin, pl.from); }} />
+    <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={(pl) => { setAddress(pl.address); setFixAddress(null); choosePin(pl.pin); }}
+      onMap={(at) => setPinMap({ center: at })} onSearch={() => { setFocusSearch(true); setPinMap({ center: mapStart() }); }} />
   ) : (
     <>
         {step === "menu" && (
-          <MenuScreen land={land.current} onLanded={() => { land.current = false; }} dishes={menu?.dishes ?? null} fromCache={menu?.fromCache ?? false} error={menuError} onRetry={() => setMenuTry((n) => n + 1)}
+          <MenuScreen land={land.current} onLanded={() => { land.current = false; }} dishes={menu?.dishes ?? null} fromCache={menu?.fromCache ?? false} slow={menu?.slow ?? false} error={menuError} onRetry={() => setMenuTry((n) => n + 1)}
             pin={pin} name={name} qty={cart} cartCount={count} cartTotal={total}
             kitchenName={kitchenName}
             openText={shown?.kind === "ok" ? openTill(shown.kitchen.closes_at) : ""}
-            closed={shown?.kind === "closed" ? closedCopy(shown.opens_at, shown.paused === true) : null}
+            closed={shown?.kind === "closed" ? closedCopy(shown.opens_at, shown.paused === true) : null} closedNote={closedNote}
             tellMe={tellMe} tellMeError={tellMeError} onTellMe={tellMeWhenOpen}
             onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
-            onChangePin={changeArea} onOrders={() => setStep("orders")} onYou={() => setStep("account")} />
+            onChangePin={() => setStep("deliver")} onOrders={() => setStep("orders")} address={address} label={saved?.find((r) => r.id === selectedId)?.label ?? "Deliver to"} photo={photo} onProfile={() => setStep("account")} far={far} />
         )}
-        {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} onYou={() => setStep("account")} />}
+        {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} onAgain={orderAgain} againLine={againLine} />}
         {step === "account" && (
-          <AccountScreen onGivenName={(n) => setName((v) => v || n)} name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone} onAddress={setAddress}
+          <AccountScreen photo={photo} email={email} onGivenName={(n) => setName((v) => v || n)} name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone} onAddress={setAddress}
             alerts={reminder} onAlerts={toggleAlerts} alertsError={alertsError} live={openLive} onForget={forgetMe} onDeleteAccount={deleteAccount}
-            onMenu={() => setStep("menu")} onOrders={() => setStep("orders")} />
+            onMenu={() => setStep("menu")} onAddresses={() => setStep("deliver")} onOrders={() => setStep("orders")} />
         )}
         {menu && step === "bill" && (
-          <BillScreen lines={billLines} total={total} soldOut={dead && step === "bill" ? { id: dead.dish.id, name: dead.dish.name, alt: offers.alt, canSwap, onSwap: () => setSwapped((s) => [...s, dead.dish.id]), onRemove: () => takeOut(dead.dish.id) } : undefined} offers={offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove } : undefined} kitchenName={kitchenName} pin={pin} address={address} onAddress={setAddress}
+          <BillScreen notice={againLine} note={note} onNote={setNote} lines={billLines} total={total} soldOut={dead && step === "bill" ? { id: dead.dish.id, name: dead.dish.name, alt: offers.alt, canSwap, onSwap: () => setSwapped((s) => [...s, dead.dish.id]), onRemove: () => takeOut(dead.dish.id) } : undefined} offers={OFFERS_ON && offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove } : undefined} kitchenName={kitchenName} pin={pin} address={address} onAddress={setAddress}
             details={lock === "customer" ? { name, phone, onName: setName, onPhone: setPhone, gate } : undefined}
             pay={lock === "customer" ? { value: payMethod, onChange: setPayMethod } : undefined} sending={sending} error={error}
             onBack={() => setStep("menu")} onPlace={place} />
@@ -791,9 +1017,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             lines={tracked && "items" in tracked ? tracked.items.map((i) => ({ name: i.name, qty: i.qty, paise: i.price_paise * i.qty })) : placedLines}
             address={tracked && "address" in tracked ? tracked.address : address.trim()}
             confirmedAt={tracked && tracked.status === "delivered" ? tracked.updated_at : null}
+            declined={tracked && cancelKind(tracked) === "declined" ? { reason: (tracked as Order).cancel_reason ?? "", at: tracked.updated_at } : null}
             asking={asking} busy={confirming} error={confirmError} reminder={reminder}
             onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} pay={paidNow || payState || resumedOnline ? { state: paidNow ? "paid" : payState ?? "waiting", method: payMethod === "cod" ? "upi" : payMethod, startedAt: payState ? payStart : null, error: payError, onPay: payNow, onCash: payCash, onSimulate: () => void simulatePaid(import.meta.env.VITE_PAYMENTS_DEV_SECRET ?? "", payRef.current) } : undefined}
-            onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} track={riderTrack} onCall={() => void tapCall(getClient(), placed.id)} />
+            onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} atDoor={atDoor} track={riderTrack} eta={eta} onCall={() => void tapCall(getClient(), placed.id)} />
         )}
     </>
   );
@@ -814,10 +1041,15 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       </nav>}
       {otpOpen && <OtpSheet phone={phone} onClose={() => setOtpOpen(false)}
         onVerified={(p) => { setPhone(p); setVerified(true); setOtpOpen(false); setToast("Number confirmed"); setTimeout(() => setToast(null), 2500); setPendingPlace(true); }} />}
+      {locOff && step === "menu" && !pinMap && (
+        <LocationOffSheet list={saved ?? []} denied={locOff.how} busy={locOff.busy} onClose={() => setLocOff(null)}
+          onTurnOn={() => { if (locOff.denied) return setLocOff({ ...locOff, how: true }); setLocOff({ ...locOff, busy: true }); currentPlace().then((p) => { setHere(p); setLocOff(null); }, () => setLocOff({ denied: true, busy: false, how: true })); }}
+          onPick={(a) => { useSaved(a, true); setLocOff(null); }} onViewAll={() => { setLocOff(null); setStep("deliver"); }} onSearch={() => { setLocOff(null); setStep("deliver"); }} />
+      )}
       {nameOpen && <NameSheet onDone={(n) => { if (n) setName(n); setNameAsked(true); setNameOpen(false); }} />}
       {toast && <p role="status" className="otp-toast">{toast}</p>}
       {demo && <p role="status" className="notice"><strong>Offline demo</strong></p>}
-      {!lock && <DemoBar onReset={reset} getLink={shareLink} autoOn={auto || demo} autoNote={autoNote} onAuto={toggleAuto} />}
+      {!lock && <DemoBar autoOn={auto || demo} autoNote={autoNote} onAuto={toggleAuto} />}
       {role === "kitchen" && !framed && kitchenView}
       {role === "rider" && !framed && riderView}
       {role === "ops" && (lock === "ops" ? <AdminGate>{opsView}</AdminGate> : opsView)}
