@@ -16,6 +16,7 @@ export type Deps = {
   // story #619 layer b (optional, so a caller without them just has no alternatives): every dish of the kitchen, and the admin's swap discount percent
   menu?: (kitchenId: string) => Promise<MenuRow[]>;
   swapPct?: () => Promise<number>;
+  earlyFriend?: (session: string, pin: string, itemTotal: number) => Promise<number>;   // story #1145: the early-friend gift in paise the database would give this customer at this pin for this cart (0 when none)
 };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_LINES = 30;
@@ -23,7 +24,7 @@ const json = (status: number, body: unknown) => new Response(JSON.stringify(body
 const bad = () => json(400, { ok: false, error: "invalid_request" });
 
 type Line = { menu_item_id: string; qty: number; option_ids: string[]; swap?: boolean };
-export function parse(b: any): { kitchen: string; lines: Line[]; code: string | null; none: boolean } | null {
+export function parse(b: any): { kitchen: string; lines: Line[]; code: string | null; none: boolean; pin: string } | null {
   if (!b || typeof b !== "object" || !UUID.test(b.kitchen_id) || !Array.isArray(b.lines) || b.lines.length > MAX_LINES) return null;
   if (typeof b.address?.pin_code !== "string" || !/^\d{6}$/.test(b.address.pin_code)) return null;
   if (b.coupon_code != null && (typeof b.coupon_code !== "string" || b.coupon_code.length > 40)) return null;
@@ -35,11 +36,11 @@ export function parse(b: any): { kitchen: string; lines: Line[]; code: string | 
     if (!UUID.test(l?.menu_item_id) || !Array.isArray(ids) || ids.length > 20 || !ids.every((i: unknown) => typeof i === "string" && UUID.test(i))) return null;
     lines.push({ menu_item_id: l.menu_item_id, qty: l.qty, option_ids: ids, ...(l.swap === true ? { swap: true } : {}) });
   }
-  return { kitchen: b.kitchen_id, lines, code: b.coupon_code ? b.coupon_code.trim().toUpperCase() : null, none: b.no_coupon === true };
+  return { kitchen: b.kitchen_id, lines, code: b.coupon_code ? b.coupon_code.trim().toUpperCase() : null, none: b.no_coupon === true, pin: b.address.pin_code };
 }
 
 // The quote itself, shared with POST /orders (#347): one way to price a cart. Throws when a data source fails.
-export async function runQuote(deps: Deps, q: { kitchen: string; lines: Line[]; code: string | null; none: boolean }, session: string | null = null): Promise<(Extract<ReturnType<typeof quote>, { ok: true }> & { offers: Offer[] }) | { ok: false; error: string; message: string }> {
+export async function runQuote(deps: Deps, q: { kitchen: string; lines: Line[]; code: string | null; none: boolean; pin: string }, session: string | null = null): Promise<(Extract<ReturnType<typeof quote>, { ok: true }> & { offers: Offer[]; early_friend_paise?: number }) | { ok: false; error: string; message: string }> {
   const catalog = await deps.catalog(q.kitchen, q.lines.map((l) => l.menu_item_id), q.lines.flatMap((l) => l.option_ids));
   const checks = new Map<string, Awaited<ReturnType<Deps["validate"]>>>();
   for (const l of q.lines) if (catalog.dishes[l.menu_item_id] && l.option_ids.every((o) => catalog.options[o])) checks.set(l.menu_item_id + l.option_ids.join(), await deps.validate(l.menu_item_id, l.option_ids));
@@ -68,7 +69,10 @@ export async function runQuote(deps: Deps, q: { kitchen: string; lines: Line[]; 
   offers.sort((a, b) => b.saves_paise - a.saves_paise || (a.code < b.code ? -1 : 1));
   const chosen = q.none ? null : typed ?? list.find((c) => c.code === offers[0]?.code) ?? null;
   const out = quote(input, catalog, rules, chosen, validate);
-  return out.ok ? { ...out, offers } : out;
+  if (!out.ok) return out;
+  // story #1145: the early-friend gift, from the database's one rule; shown on the bill and taken off what is paid. A request can never name it.
+  const gift = session && deps.earlyFriend ? Math.max(0, Math.floor(await deps.earlyFriend(session, q.pin, out.item_total_paise))) : 0;
+  return gift > 0 ? { ...out, offers, early_friend_paise: gift, to_pay_paise: Math.max(out.to_pay_paise - gift, 0) } : { ...out, offers };
 }
 
 export const makeHandler = (deps: Deps) => async (req: Request): Promise<Response> => {
@@ -125,6 +129,7 @@ export const live: Deps = {
     const res = await fetch(`${url()}/auth/v1/user`, { headers: { apikey: Deno.env.get("SUPABASE_ANON_KEY")!, authorization: `Bearer ${token}` } });
     return res.ok ? ((await res.json()).id ?? null) : null;
   },
+  earlyFriend: async (session, pin, itemTotal) => Number(await rpc("early_friend_for", { p_session: session, p_pin: pin, p_items: itemTotal })) || 0,
   coupon: async (code, session) => (await rpc("coupon_by_code_v2", { p_code: code, p_session: session })) as Coupon | null,
   coupons: async (session) => (await rpc("coupons_for_session_v2", { p_session: session })) as Coupon[],
   firstOrder: async () => false,

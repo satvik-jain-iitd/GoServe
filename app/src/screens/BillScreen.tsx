@@ -58,6 +58,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
                 {q && q.fees.packaging_paise > 0 && <div><span>Packaging</span><span>{plain(q.fees.packaging_paise)}</span></div>}
                 {q && q.tax_mode === "exclusive" && q.tax_paise > 0 && <div><span>Tax</span><span>{plain(q.tax_paise)}</span></div>}
                 {q && q.coupon && q.discount_paise - (q.swap_discount_paise ?? 0) > 0 && <div><span>Discount · {q.coupon.code}</span><span>−{plain(q.discount_paise - (q.swap_discount_paise ?? 0))}</span></div>}
+                {q && (q.early_friend_paise ?? 0) > 0 && <div><span>Early friend gift</span><span>−{plain(q.early_friend_paise!)}</span></div>}
                 {q && (q.swap_discount_paise ?? 0) > 0 && <div><span>Swap discount</span><span>−{plain(q.swap_discount_paise!)}</span></div>}
               </div>
             )}
