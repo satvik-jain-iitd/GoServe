@@ -32,4 +32,8 @@ describe("deploy-app.yml (the real app)", () => {
   it("never turns the Remove this kitchen row on in the real app (story 850)", () => {
     expect(text).not.toContain("VITE_KITCHEN_REMOVE");
   });
+  // Story #1181 (owner, 9 Nov): the Play closed test (12 to 20 testers) needs map tiles in the real app. OSM public tiles, light use; Ola tiles (#1043) before more users.
+  it("sets the map tiles so the pin map is not blank in the closed test (story #1181)", () => {
+    expect(text).toMatch(/VITE_MAP_TILES:\s*https:\/\/tile\.openstreetmap\.org\/\{z\}\/\{x\}\/\{y\}\.png/);
+  });
 });

@@ -41,6 +41,7 @@ jobs:
           VITE_ENGINE_URL: ${{ secrets.PROD_VITE_ENGINE_URL }}
           VITE_VAPID_PUBLIC_KEY: ${{ secrets.PROD_VITE_VAPID_PUBLIC_KEY }}
           # story #1155 (owner, 9 Nov): no VITE_OTP_GATE here. Prod opens Google-first; the phone code login is paused and only the admin switch otp_login_on (settings row) turns it on. prod's otp_login_on must be false.
+          VITE_MAP_TILES: https://tile.openstreetmap.org/{z}/{x}/{y}.png   # story #1181: closed test only (12 to 20 testers, light use under the OSM tile policy, no SLA). Ola tiles (#1043) before more users or production at scale.
           VITE_OTP_SMS: fixed
           VITE_BUILD: ${{ github.sha }}
         run: |
