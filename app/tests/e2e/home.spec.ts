@@ -69,7 +69,7 @@ test("S5 a closed kitchen shows its menu with Add switched off and says when it 
   await page.goto("/customer/");
   await typePlace(page, "110016");
   await expect(page.getByText("Kitchen closed. Opens at 10:00 am.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toHaveCount(0);
 });
 
 test("S6 while the menu loads the page says it is busy; the saved pin is on the pin chip", async ({ page, context }) => {

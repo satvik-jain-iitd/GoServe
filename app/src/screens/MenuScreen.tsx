@@ -9,7 +9,7 @@ import { DishPlate, Empty, Stepper, TabBar, VegMark, useSheetFit } from "../ui";
 
 type Props = {
   dishes: Dish[] | null; fromCache: boolean; slow?: boolean; error: string | null; onRetry: () => void;
-  pin: string | null; kitchenName: string; openText: string; name: string; closed: { main: string; sub: string } | null;
+  pin: string | null; kitchenName: string; openText: string; name: string; closed: { main: string; sub: string } | null; closedNote?: string | null;   // story #1162: the kitchen closed under a bill, which was cleared
   tellMe: "idle" | "busy" | "done"; tellMeError: string | null; onTellMe: () => void;   // #718: ask for one push when the closed kitchen opens
   qty: Record<string, number>; cartCount: number; cartTotal: number;
   onAdd: (id: string) => void; onChange: (id: string, delta: number) => void; onOpenCart: () => void;
@@ -64,6 +64,7 @@ export function MenuScreen(p: Props) {
   const [photoBad, setPhotoBad] = useState(false);   // story #975: a photo that cannot load leaves the first letter, never a broken picture
   const [filterOpen, setFilterOpen] = useState(false);
   const [dish, setDish] = useState<Dish | null>(null);
+  useEffect(() => { if (p.closed !== null) setDish(null); }, [p.closed !== null]);   // eslint-disable-line react-hooks/exhaustive-deps -- story #1162: a closing kitchen closes the dish sheet
   const where = p.address.trim() || (p.pin ? `Pin code ${p.pin}` : "Choose where to deliver");   // story #975: the one saved address until the saved list (#976) lands
   const initial = p.name.trim().charAt(0).toUpperCase();
   const all = p.dishes ?? [];
@@ -79,7 +80,7 @@ export function MenuScreen(p: Props) {
   const view = useFirstView(p.dishes !== null, firstUrls);
   const closed = p.closed !== null;
   const empty = p.dishes !== null && all.length === 0 && !p.error;   // story 891, board M7: the server answered and the kitchen has no dishes yet
-  const add = (d: Dish) => <button type="button" className="ui-btn" aria-label={`Add ${d.name}`} disabled={closed} onClick={() => p.onAdd(d.id)}>Add</button>;
+  const add = (d: Dish) => (closed ? null : <button type="button" className="ui-btn" aria-label={`Add ${d.name}`} onClick={() => p.onAdd(d.id)}>Add</button>);   // story #1160 (owner, 9 Nov): a closed kitchen shows no Add at all
   if (p.dishes === null && p.error) return <OfflineEmpty onRetry={p.onRetry} />;   // story #637, board M6: nothing saved and no connection
   const control = (d: Dish) => d.available === false ? <span className="ui-stamp placed small" aria-label="Sold out for today">Sold out</span>
     : (p.qty[d.id] ?? 0) > 0 && !closed ? <Stepper label={d.name} value={p.qty[d.id]} onChange={(n) => p.onChange(d.id, n - p.qty[d.id])} /> : add(d);
@@ -107,6 +108,7 @@ export function MenuScreen(p: Props) {
         <div className="ui-greet">
           {(SHOW_KITCHEN_NAME ? p.kitchenName : "") || p.openText ? <h2 className="ui-greet-line">{[SHOW_KITCHEN_NAME ? p.kitchenName : "", p.openText].filter(Boolean).join(" · ")}</h2> : null}
         </div>
+        {p.closedNote && <p role="status" className="ui-closed-note">{p.closedNote}</p>}
         {closed && (
           <div className="ui-closed">
             <span className="ui-stamp placed small">Closed</span>
@@ -142,7 +144,7 @@ export function MenuScreen(p: Props) {
         {(view.ready ? sections : []).map((s) => (
           <div key={s.id}>
             <div className="ui-section"><h2 id={s.id}>{s.title}</h2></div>
-            <div className="ui-list">
+            <div className={closed ? "ui-list closed-grey" : "ui-list"}>
               {s.dishes.map((d) => (
                 <article key={d.id} className={d.available === false ? "ui-tile sold" : "ui-tile"}>
                   <button type="button" className="ui-photo-btn" aria-label={`${d.name} details`} onClick={() => setDish(d)}>
@@ -161,7 +163,7 @@ export function MenuScreen(p: Props) {
         ))}
       </div>
       {empty && <div className="ui-menu-empty-foot"><button type="button" className="ui-btn ghost big" onClick={p.onChangePin}>Try another pin code</button></div>}
-      {p.cartCount > 0 && (
+      {p.cartCount > 0 && !closed && (   // story #1160: no View bill bar while the kitchen is closed
         <div className="ui-sticky float">
           <button type="button" className="ui-btn bar" aria-label={`View bill (${p.cartCount}) · ${formatRupees(p.cartTotal)}`} onClick={p.onOpenCart}>
             <span className="mono">{p.cartCount} {p.cartCount === 1 ? "item" : "items"} · {formatRupees(p.cartTotal)}</span><span className="verb">View bill ›</span>
@@ -246,16 +248,16 @@ function Hero({ veg, nonveg, closed, qty, onAdd, onChange }: { veg?: Dish; nonve
       <div className="photo"><Photo src={d.image_url} alt={d.name} /><span className="ui-tag">Today</span></div>
       <div className="body">
         <div><h3>{d.veg !== undefined && <VegMark veg={d.veg} />}{d.name}</h3><p className="price-pair"><span className="ui-price">{formatRupees(d.price_paise)}</span></p></div>
-        {(qty[d.id] ?? 0) > 0 && !closed
+        {closed ? null : (qty[d.id] ?? 0) > 0
           ? <Stepper label={d.name} value={qty[d.id]} onChange={(n) => onChange(d.id, n - qty[d.id])} />
-          : <button type="button" className="ui-btn" aria-label={`Add ${d.name}`} disabled={closed} onClick={() => onAdd(d.id)}>Add</button>}
+          : <button type="button" className="ui-btn" aria-label={`Add ${d.name}`} onClick={() => onAdd(d.id)}>Add</button>}
       </div>
     </div>
   );
   // Story 779: the switch follows the page that is showing, so a swipe moves the tint too (the owner, 3 Nov: it did not follow the swipe).
   const [side, setSide] = useState<"veg" | "nonveg">("veg");
   return (
-    <section className="ui-hero" aria-label="Today's thali">
+    <section className={closed ? "ui-hero closed-grey" : "ui-hero"} aria-label="Today's thali">
       {veg && nonveg && (
         <nav className="ui-seg" aria-label="Veg or non-veg thali">
           <a href="#thali-veg" className={side === "veg" ? "on" : ""} aria-label="Veg thali"><VegMark veg /></a>
@@ -313,10 +315,10 @@ function DishSheet({ dish, closed, qty, onAdd, onClose }: { dish: Dish; closed: 
         <p className="ui-kicker">{dish.veg === undefined ? "" : dish.veg ? "Veg" : "Non-veg"}{dish.category ? ` · ${dish.category}` : ""}</p>
         {dish.description && <p className="ui-meta">{dish.description}</p>}
         {dish.image_credit && <CreditLine credit={dish.image_credit} />}
-        <div className="ui-dish-count"><span className="ui-kicker">How many</span><Stepper label={dish.name} value={n} min={1} onChange={setN} /></div>
+        {!closed && <div className="ui-dish-count"><span className="ui-kicker">How many</span><Stepper label={dish.name} value={n} min={1} onChange={setN} /></div>}
       </div>
       <div className="ui-dish-act">
-        <button type="button" className="ui-btn big" disabled={closed} onClick={() => onAdd(n)}>Add to bill · {formatRupees(dish.price_paise * n)}</button>
+        {!closed && <button type="button" className="ui-btn big" onClick={() => onAdd(n)}>Add to bill · {formatRupees(dish.price_paise * n)}</button>}
         <button type="button" className="ui-btn ghost big" onClick={onClose}>Close</button>
       </div>
     </Modal>
