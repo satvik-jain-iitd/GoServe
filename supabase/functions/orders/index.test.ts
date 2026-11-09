@@ -214,3 +214,21 @@ Deno.test("with a personal coupon in the list: no_coupon expects the item total;
   assertEquals(res.status, 201);
   assertEquals((placed.at(-1) as unknown[])[6] && ((placed.at(-1) as unknown[])[6] as Record<string, number>).to_pay_paise, 23000);
 });
+
+// Story #1145 (#1113): the order goes to the database with the pin of the address it is for, and the bill carries the quote's early-friend gift.
+Deno.test("the address pin goes to the database, and the gift the quote showed is on the bill it checks", async () => {
+  placed.length = 0;
+  const gift = deps({ earlyFriend: async () => 10000 });
+  const res = await post(makeHandler(gift), body({ expected_to_pay_paise: 18000 }));
+  assertEquals(res.status, 201);
+  const [, , , , , , bill, , , pin] = placed[0] as [string, string, string, unknown, string, number, Record<string, number>, unknown, unknown, string];
+  assertEquals([bill.early_friend_paise, bill.to_pay_paise, pin], [10000, 18000, "110016"]);
+});
+
+Deno.test("the customer saw the full price but the promise now gives a gift: the order is a changed price", async () => {
+  placed.length = 0;
+  const res = await post(makeHandler(deps({ earlyFriend: async () => 10000 })), body());   // body() expects 28000
+  assertEquals(res.status, 409);
+  assertEquals((await res.json()).error, "price_changed");
+  assertEquals(placed.length, 0);
+});

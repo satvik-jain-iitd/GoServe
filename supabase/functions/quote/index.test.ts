@@ -140,3 +140,27 @@ Deno.test("no_coupon true with a code, or no_coupon that is not true or false, i
     assertEquals([res.status, (await res.json()).error], [400, "invalid_request"]);
   }
 });
+
+// Story #1145: the early-friend gift is on the quote, before Place order, from the database's rule (earlyFriend), never from the request.
+Deno.test("a customer with the promise sees the gift on the bill and pays that much less", async () => {
+  const asked: unknown[][] = [];
+  const h = makeHandler(deps({ coupons: async () => [], earlyFriend: async (...a) => { asked.push(a); return 10000; } }));
+  const q = await (await post(h, body(), "POST", true)).json();
+  assertEquals([q.item_total_paise, q.early_friend_paise, q.to_pay_paise], [32000, 10000, 22000]);
+  assertEquals(asked, [["s1", "110016", 32000]]);   // the session, the pin of the address, the item total
+});
+
+Deno.test("no promise, no line: the bill is as before", async () => {
+  const q = await (await post(makeHandler(deps({ coupons: async () => [], earlyFriend: async () => 0 })), body(), "POST", true)).json();
+  assertEquals([q.early_friend_paise, q.to_pay_paise], [undefined, 32000]);
+});
+
+Deno.test("the gift never takes the bill below zero, and a request cannot ask for one", async () => {
+  const q = await (await post(makeHandler(deps({ coupons: async () => [], earlyFriend: async () => 40000 })), body({ early_friend_paise: 99999 }), "POST", true)).json();
+  assertEquals(q.to_pay_paise, 0);
+});
+
+Deno.test("no login, no gift", async () => {
+  const q = await (await post(makeHandler(deps({ coupons: async () => [], earlyFriend: async () => 10000 })), body())).json();
+  assertEquals(q.early_friend_paise, undefined);
+});
