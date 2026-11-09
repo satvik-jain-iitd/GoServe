@@ -7,23 +7,6 @@ const muted = (page: Page, sel: string) => page.evaluate((s) => {
   return { hint: getComputedStyle(el, "::placeholder").color, text: getComputedStyle(el).color };
 }, sel);
 
-test("S1 the address step by hand: 123456 in grey, empty value, Continue off until six digits", async ({ page, context }) => {
-  await setup(context, page, [], { pin: null });
-  await page.goto("/customer/");
-  await page.getByRole("button", { name: "Type it by hand" }).click();
-  const pin = page.getByLabel("Pin code");
-  await expect(pin).toHaveAttribute("placeholder", "123456");   // story #1044: the by-hand step shows 123456
-  await expect(pin).toHaveValue("");
-  const c = await muted(page, "#pin");
-  expect(c.hint).not.toBe(c.text);
-  await page.getByLabel(/Address/).fill("Flat 4, Green Park");
-  await expect(page.getByRole("button", { name: "See the menu" })).toBeDisabled();
-  await pin.fill("1100");
-  await expect(page.getByRole("button", { name: "See the menu" })).toBeDisabled();
-  await pin.fill("110016");
-  await expect(page.getByRole("button", { name: "See the menu" })).toBeEnabled();
-});
-
 test("S2 the address details on the map show the grey 123456 hint when the map gave no pin code", async ({ page, context }) => {
   const net = await setup(context, page, [], { pin: "110016" });
   net.state.addresses = [{ id: "h1", label: "Home", address: "C-4, Green Park Extension, New Delhi", pin_code: "110016", lat: null, lng: null, last_used_at: new Date().toISOString() }];

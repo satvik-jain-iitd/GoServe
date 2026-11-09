@@ -19,7 +19,7 @@ test("S1 first open shows Order alerts as step 2 of 4 before the location ask", 
   await expect(step2(page)).toBeVisible();
   await expect(step2(page)).toContainText("Step 2 of 4");
   await expect(page.getByRole("heading", { name: "Get order alerts" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Use my location" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Set delivery location" })).toHaveCount(0);
   expect(await asked(page)).toBe(0);   // nothing is asked until the tap
 });
 
@@ -28,11 +28,11 @@ test("S2 Turn on alerts asks the permission and moves on to the location, even w
   await phone(context, "default", "denied");
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Turn on alerts" }).click();
-  await expect(page.getByRole("button", { name: "Use my location" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Set delivery location" })).toBeVisible();
   await expect(page.getByText("Step 3 of 4")).toBeVisible();
   expect(await asked(page)).toBe(1);
   await page.reload();
-  await expect(page.getByRole("button", { name: "Use my location" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Set delivery location" })).toBeVisible();
   await expect(step2(page)).toHaveCount(0);
 });
 
@@ -40,8 +40,8 @@ test("S3 Not now moves on without asking the phone", async ({ page, context }) =
   await setup(context, page, [], { pin: null });
   await phone(context, "default");
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "Not now" }).click();
-  await expect(page.getByRole("button", { name: "Use my location" })).toBeVisible();
+  await page.getByRole("button", { name: "I'll check the app myself" }).click();
+  await expect(page.getByRole("button", { name: "Set delivery location" })).toBeVisible();
   expect(await asked(page)).toBe(0);
 });
 
@@ -49,7 +49,7 @@ test("S4 alerts blocked in the phone settings: the step is not shown", async ({ 
   await setup(context, page, [], { pin: null });
   await phone(context, "denied");
   await page.goto("/customer/");
-  await expect(page.getByRole("button", { name: "Use my location" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Set delivery location" })).toBeVisible();
   await expect(step2(page)).toHaveCount(0);
 });
 
@@ -65,6 +65,6 @@ test("TC 2.1 Turn on alerts always moves on, even when the phone never answers (
   await page.getByRole("button", { name: "Turn on alerts" }).click();
   await expect(step2(page)).toBeVisible();   // still waiting
   await page.clock.fastForward(8_500);
-  await expect(page.getByRole("button", { name: "Use my location" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Set delivery location" })).toBeVisible();
   await expect(page.getByText("Step 3 of 4")).toBeVisible();
 });

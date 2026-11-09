@@ -2,7 +2,7 @@
 import { expect, type BrowserContext, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { order, setup } from "./helpers";
+import { order, setup, typePlace } from "./helpers";
 
 export type Screen = { name: string; path: string; width: number; height: number; step: string };
 export const screens: Screen[] = readFileSync(resolve(import.meta.dirname, "../../../docs/screens.txt"), "utf8")
@@ -106,28 +106,26 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await page.goto(path); await expect(page.getByText("You are 6 km from Home")).toBeVisible(); },
   // Story #1049: the first-open boards. The first-open screen is the location ask (A1, with step 3 of 4); Use my location opens the pin map at the phone (A1p).
   "first-open-ask": async (context, page, path) => {   // board A1
-    await setup(context, page, [], { pin: null }); await page.goto(path); await expect(page.getByRole("button", { name: "Use my location" })).toBeVisible(); },
+    await setup(context, page, [], { pin: null }); await page.goto(path); await expect(page.getByRole("button", { name: "Set delivery location" })).toBeVisible(); },
   "alerts-ask": async (context, page, path) => {   // story #1049 part 2, board N0: order alerts, step 2 of 4
     await setup(context, page, [], { pin: null });
     await context.addInitScript(() => { if (typeof Notification === "undefined") (window as unknown as { Notification: unknown }).Notification = function () {}; Object.defineProperty(Notification, "permission", { get: () => "default", configurable: true }); });   // an iPhone tab has no Notification: the picture needs one
     await page.goto(path); await expect(page.getByRole("heading", { name: "Get order alerts" })).toBeVisible(); },
   "no-kitchen": async (context, page, path) => {   // story #1049 part 3, board NK-A: no kitchen near this pin
     await setup(context, page, [], { pin: null }); await page.goto(path);
-    await page.getByRole("button", { name: "Type it by hand" }).click();
-    await page.getByLabel("Address", { exact: true }).fill("Sector 62, Noida, Uttar Pradesh 201301"); await page.getByLabel("Pin code").fill("110099");
-    await page.getByRole("button", { name: "See the menu" }).click(); await expect(page.getByRole("heading", { name: "We don't reach here yet" })).toBeVisible(); },
+    await typePlace(page, "110099", "Sector 62, Noida, Uttar Pradesh 201301");
+ await expect(page.getByRole("heading", { name: "We don't reach here yet" })).toBeVisible(); },
   "founder-note": async (context, page, path) => {   // story #1129, board NK-L2: the co-founder's letter after Tell me
     await setup(context, page, [], { pin: null }); await page.goto(path);
-    await page.getByRole("button", { name: "Type it by hand" }).click();
-    await page.getByLabel("Address", { exact: true }).fill("Sector 62, Noida, Uttar Pradesh 201301"); await page.getByLabel("Pin code").fill("110099");
-    await page.getByRole("button", { name: "See the menu" }).click(); await page.getByRole("button", { name: "Tell me when you come here" }).click();
+    await typePlace(page, "110099", "Sector 62, Noida, Uttar Pradesh 201301");
+ await page.getByRole("button", { name: "Tell me when you come here" }).click();
     await expect(page.getByRole("heading", { name: "You found us early. Thank you." })).toBeVisible(); await page.evaluate(() => document.fonts.ready); },
   "first-open-pin": async (context, page, path) => {   // board A1p: after Use my location, the full map, the same screen as C6
     const net = await setup(context, page, [], { pin: null });
     net.state.geocode = { status: 200, body: { ok: true, address: "Green Avenue Colony, Satai Road, Chhatarpur, Madhya Pradesh 471001", pin: "471001", locality: "Green Avenue Colony", town: "Chhatarpur" } };
     await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+vg+AAVYAqhyXHCrAAAAAElFTkSuQmCC", "base64") }));
     await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 24.8847, longitude: 79.597 });
-    await page.goto(path); await page.getByRole("button", { name: "Use my location" }).click();
+    await page.goto(path); await page.getByRole("button", { name: "Set delivery location" }).click();
     await expect(page.getByText("We deliver here · the kitchen is 1.2 km from the pin")).toBeVisible(); },
   "location-off": async (context, page, path) => {   // story #1056, board SW3: the location-off sheet over the menu
     const net = await setup(context, page, [], { pin: "110016" });

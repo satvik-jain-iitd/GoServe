@@ -9,6 +9,7 @@ import { getClient } from "../lib/supabase";
 import type { Map as LMap, Marker } from "leaflet";
 import { currentPlace, findAddress, type Looked, type Place } from "../lib/locate";
 import { isPin } from "../lib/area";
+import type { PlaceHit } from "../lib/placeSearch";
 import { addressText, cardWords, serveAt, splitAddress, stripsFor, type Serve, type Strip } from "../lib/pinMap";
 import { tileUrl } from "../lib/riderMap";
 
@@ -28,11 +29,12 @@ type Props = {
   kitchen?: { pins: string[] };   // story #1052 (board A12): a kitchen's place. No serviceability, no details step: Confirm hands the point back. "Inside <pin>" when the words are in one of its pin codes
   onPoint?: (p: { at: Place; words: Looked | null }) => void;
 
+  search?: (q: string) => Promise<PlaceHit[] | null>; searchOpen?: boolean;   // story #1127 (boards C6, C8): with a search function the bar searches ON the map: results over it, a pick moves the pin. Without one, onSearch leaves the map as before
   onBack: () => void; onSearch: () => void; onSave: (a: Saved) => void;
   lookup?: (p: Place) => Promise<Looked | null>; serve?: (p: Place, pin: string | null) => Promise<Serve | null>;
 };
 
-export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, kitchen, onInvite, kitchensNear = async () => await fetchKitchens(getClient()), onPoint, onBack, onSearch, onSave, lookup = (p) => findAddress(p.lat, p.lng), serve = (p, pin) => (kitchen ? Promise.resolve(null) : serveAt(p, undefined, pin)) }: Props) {
+export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, kitchen, onInvite, kitchensNear = async () => await fetchKitchens(getClient()), onPoint, search, searchOpen, onBack, onSearch, onSave, lookup = (p) => findAddress(p.lat, p.lng), serve = (p, pin) => (kitchen ? Promise.resolve(null) : serveAt(p, undefined, pin)) }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const live = useRef<{ map: LMap; L: typeof import("leaflet"); dot: Marker | null } | null>(null);
   const [point, setPoint] = useState<Place>(center);
@@ -43,6 +45,17 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
   const [here, setHere] = useState<Place | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const root = useRef<HTMLElement>(null);
+  const [sOpen, setSOpen] = useState(!!searchOpen && !!search);   // story #1127: the search bar is open (a text box and, after Enter, the places)
+  const [sq, setSq] = useState("");
+  const [found, setFound] = useState<{ words: string; state: "busy" | "short" | "error" | "ok"; hits: PlaceHit[] } | null>(null);
+  const runSearch = async () => {
+    const w = sq.trim();
+    if (w.length < 3) return setFound({ words: w, state: "short", hits: [] });
+    setFound({ words: w, state: "busy", hits: [] });
+    const hits = await search!(w);
+    setFound((c) => (c && c.words === w ? { words: w, state: hits === null ? "error" : "ok", hits: hits ?? [] } : c));
+  };
+  const take = (h: PlaceHit) => { setSOpen(false); setFound(null); setSq(""); live.current?.map.setView([h.lat, h.lng], 17, { animate: false }); };   // the move settles the pin through the map's own move end
   const [pick, setPick] = useState<PinPick | null>(null);   // story #1038: set when Confirm is tapped; the details sheet shows over the same map
   const ask = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -164,8 +177,19 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
           <path d="M207 360 c-9 0 -15 7 -15 15 c0 11 15 29 15 29 s15 -18 15 -29 c0 -8 -6 -15 -15 -15z" fill="var(--md-primary)" /><circle cx="207" cy="375" r="5" fill="#ffffff" /></svg></span>
       <div className="ui-pinmap-top">
         <button type="button" className="ui-pinmap-back" aria-label="Back" onClick={onBack}>{I(<path d="M19 12H5M11 18l-6-6 6-6" />)}</button>
-        {!pick && !kitchen && <button type="button" className="ui-pinmap-search" aria-label="Search an area or address" onClick={onSearch}><span>Search an area or address</span>{I(<><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></>, 20)}</button>}
+        {!pick && !kitchen && !(search && sOpen) && <button type="button" className="ui-pinmap-search" aria-label="Search an area or address" onClick={search ? () => setSOpen(true) : onSearch}><span>Search an area or address</span>{I(<><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></>, 20)}</button>}
+        {!pick && !kitchen && search && sOpen && <form className="ui-pinmap-search open" onSubmit={(e) => { e.preventDefault(); void runSearch(); }}>
+          <input type="search" role="searchbox" aria-label="Search an area or address" placeholder="Search an area or address" autoFocus value={sq} onChange={(e) => { setSq(e.target.value); setFound(null); }} />
+          <button type="button" className="ui-pinmap-close" aria-label="Close search" onClick={() => { setSOpen(false); setFound(null); setSq(""); }}>{I(<path d="M6 6l12 12M18 6L6 18" />, 20)}</button>
+        </form>}
       </div>
+      {!pick && search && sOpen && found && <section className="ui-pinmap-results" aria-label="Places">
+        {found.state === "busy" && <p className="mono ui-saved-head">Searching…</p>}
+        {found.state === "short" && <p className="ui-field-error" role="alert">Type at least 3 letters to search places.</p>}
+        {found.state === "error" && <p className="ui-field-error" role="alert">Could not search places. Try again.</p>}
+        {found.state === "ok" && found.hits.length === 0 && <p className="ui-row-sub">No place found. Try the start of a colony name or a pin code.</p>}
+        <ul className="ui-saved-list">{found.hits.map((h) => <li key={`${h.pin}-${h.name}`} className="ui-saved-row ui-place-row"><button type="button" className="ui-saved-main" onClick={() => take(h)}><span className="ui-saved-label"><span>{h.name}</span><span className={`ui-tag ${h.served ? "ready" : "placed"}`}>{h.served ? "We deliver here" : "Not yet"}</span></span><span className="ui-saved-addr">{h.address}</span></button></li>)}</ul>
+      </section>}
       {!pick && <div className="ui-pinmap-card">
         <button type="button" className="ui-pinmap-here" onClick={() => void toPhone()}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg><span>Current Location</span></button>
         {kicker && <span className="mono ui-pinmap-kicker">{kicker}</span>}

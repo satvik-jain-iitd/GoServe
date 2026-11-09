@@ -1,6 +1,6 @@
 // Story #905: the order keeps the customer's drop point. A device fix is saved as drop_lat and drop_lng; a typed address sends none.
 import { test, expect, type Page } from "@playwright/test";
-import { setup } from "./helpers";
+import { setup, typePlace } from "./helpers";
 import { firstOpenToMenu } from "./firstOpen";
 
 const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
@@ -44,10 +44,8 @@ test("S1 an order placed after the pin map carries the drop point", async ({ pag
 test("S2 an order placed from a typed address carries no drop point", async ({ page, context }) => {
   const orders = await start(context, page);
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "Type it by hand" }).click();
-  await page.getByLabel("Address", { exact: true }).fill("Flat 4, Green Park");
-  await page.getByLabel("Pin code").fill("110016");
-  await page.getByRole("button", { name: "See the menu" }).click();
+  await typePlace(page, "110016", "Flat 4, Green Park");
+
   await orderFromBill(page);
   expect(orders).toHaveLength(1);
   expect(orders[0].address.lat).toBeUndefined();

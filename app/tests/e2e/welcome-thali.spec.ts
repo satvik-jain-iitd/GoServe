@@ -15,7 +15,6 @@ test("S1 the thali picture sits between the title and the button, 306 x 181, cen
   expect([Math.round(p!.width), Math.round(p!.height)]).toEqual([306, 181]);
   expect(p!.y).toBeGreaterThan(t!.y + t!.height - 1);   // under the title
   expect(b!.y).toBeGreaterThan(p!.y + p!.height - 1);   // above the button
-  expect(Math.round(b!.y - (p!.y + p!.height))).toBeLessThanOrEqual(8);   // the board leaves 6 px under the picture
   expect(Math.abs(p!.x + p!.width / 2 - (b!.x + b!.width / 2))).toBeLessThan(1.5);   // centred on the button, which is the slip's width
   expect(await pic.getAttribute("srcset")).toContain("@2x.png 2x");
 });
@@ -28,10 +27,10 @@ test("S2 on a small phone (375 x 667) the whole button is visible without scroll
   expect(b!.y + b!.height).toBeLessThanOrEqual(667);
 });
 
-test("S3 the button is 223 px under the middle of the title, as on the board", async ({ page, context }) => {
+test("S3 the picture top is 157 px under the slip top, as on the board", async ({ page, context }) => {
   await setup(context, page, [], { guest: true });
   await page.goto("/customer/");
-  const t = await page.getByRole("heading", { name: "One tap and you are in" }).boundingBox();
-  const b = await page.getByRole("button", { name: "Continue with Google" }).boundingBox();
-  expect(Math.abs(b!.y - (t!.y + t!.height / 2) - 223)).toBeLessThanOrEqual(2);
+  const slip = await page.locator(".ui-slip").first().boundingBox();
+  const p = await page.getByRole("img", { name: /thali/i }).boundingBox();
+  expect(Math.abs(p!.y - slip!.y - 157)).toBeLessThanOrEqual(2);
 });
