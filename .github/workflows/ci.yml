@@ -121,6 +121,41 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  regression:
+    name: Regression (every screen, case by case, report only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run the regression cases
+        # Report only: failures are a warning, so the check stays green for the merge script. It becomes a real gate once the first round is green (story #1178).
+        run: npm run test:regression || echo "::warning::regression cases failed, see the regression report artifact"
+
+      - name: Upload the regression report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression
+          path: app/playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
+
   guard:
     name: Guard (secrets, size, markers, commit messages, PR size)
     runs-on: ubuntu-latest

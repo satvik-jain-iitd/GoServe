@@ -231,7 +231,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
     if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: CORS });
     const body = JSON.parse(req.postData() ?? "{}");
     calls.place.push({ headers: req.headers(), body });
-    const r = state.reply ?? { status: 201, body: { ok: true, created: true, order: { ...order("placed", new Date(Date.now() + 1000).toISOString()), total_paise: 32000 }, ...state.confirmCfg } };
+    const r = state.reply ?? { status: 201, body: { ok: true, created: true, order: { ...order("placed", new Date(Date.now() + 1000).toISOString()), items: [{ menu_item_id: "d1", name: "Butter Chicken", qty: 1, price_paise: 32000 }], total_paise: 32000 }, ...state.confirmCfg } };
     return json(route, r.status, r.body);
   });
   await context.route("https://test.supabase.co/functions/v1/order-actions", async (route) => {
