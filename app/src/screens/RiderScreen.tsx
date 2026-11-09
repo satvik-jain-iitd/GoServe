@@ -46,12 +46,19 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
       <span className="mono ui-kicker">Deliver to</span>
       <b>{o.customer_name || "The customer"}</b>
       <span>{o.address}</span>
+      {o.instructions && <span className="ui-meta">{o.instructions}</span>}
     </div>
   );
   const callRow = (o: Order) => o.customer_phone ? (
     <a className="ui-row ui-call" href={`tel:${o.customer_phone}`}>
       <span className="ui-call-name"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" /></svg>Call {firstName(o.customer_name)}</span>
       <span className="mono ui-call-no">{o.customer_phone}</span>
+    </a>
+  ) : null;
+  // Story #1182: Google Maps directions to the customer's exact pin (a link, no API cost). No pin on the order: no link, never a wrong place.
+  const navRow = (o: Order) => typeof o.drop_lat === "number" && typeof o.drop_lng === "number" ? (
+    <a className="ui-row ui-call" href={`https://www.google.com/maps/dir/?api=1&destination=${o.drop_lat},${o.drop_lng}&travelmode=two-wheeler`} target="_blank" rel="noopener noreferrer">
+      <span className="ui-call-name">Navigate</span>
     </a>
   ) : null;
   const todayLine = <p className="mono ui-foot">Today · {today.length} delivered</p>;
@@ -121,6 +128,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
                   <div className="ui-slip-head"><span>{kitchen?.name ?? "Picked up"}</span><span>Picked up {hhmm(job.updated_at)}</span></div>
                   <div className="ui-slip-stamp"><span className="ui-stamp out">On the way</span></div>
                   {deliverTo(job)}
+                  {navRow(job)}
                 </>
               ) : (
                 <>
