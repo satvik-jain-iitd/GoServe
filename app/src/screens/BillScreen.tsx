@@ -123,7 +123,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
               </>
             )}
             <div className="ui-field"><label htmlFor="address">Address</label><textarea id="address" rows={2} value={address} maxLength={300} onChange={(e) => onAddress(e.target.value)} /></div>
-            <div className="ui-field"><label htmlFor="note">Note for the kitchen (optional)</label><textarea id="note" rows={2} value={note} maxLength={NOTE_MAX} placeholder="Allergies, spice, no onion" onChange={(e) => onNote(e.target.value)} /><p className="mono ui-note-count"><span>{note.length} / {NOTE_MAX}</span></p></div>
+            <div className="ui-field"><label htmlFor="note">Note for the kitchen (optional)</label><textarea id="note" className="ui-eg" rows={2} value={note} maxLength={NOTE_MAX} placeholder="e.g. less spicy, no onion" onChange={(e) => onNote(e.target.value)} /><p className="mono ui-note-count"><span>{note.length} / {NOTE_MAX}</span></p></div>
             {pay && (
               <fieldset className="ui-pay" role="radiogroup" aria-label="How you pay">
                 <legend>How you pay</legend>
