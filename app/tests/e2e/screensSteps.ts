@@ -209,9 +209,9 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
   "order-decline": async (context, page, path) => {   // story 934: board K3-OrderDecline
     const net = await setup(context, page, [order("placed")]); net.state.kitchen = "k-1"; await page.goto(path);
     await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click(); await page.getByRole("button", { name: "Decline, with a reason" }).click();
-    await page.getByLabel("Reason").fill("We are out of paneer tonight, so the veg thali cannot be made."); },
+    await page.getByLabel("Reason").fill("We are out of butter chicken tonight, so this order cannot be made."); },
   declined: async (context, page, path) => {   // story 934: board T2-Declined
-    await setup(context, page, [{ ...order("cancelled", "2020-01-01T10:02:00Z"), cancel_reason: "We are out of paneer tonight, so the veg thali cannot be made." }]);
+    await setup(context, page, [{ ...order("cancelled", "2020-01-01T10:02:00Z"), cancel_reason: "We are out of butter chicken tonight, so this order cannot be made." }]);
     await page.goto(path); await page.getByRole("button", { name: "History" }).click(); await page.getByRole("button", { name: /Butter Chicken/ }).click();
     await expect(page.getByRole("heading", { name: "Declined" })).toBeVisible(); },
   orders: async (context, page, path) => { await setup(context, page); await page.goto(path); await page.getByRole("button", { name: "History" }).click(); await page.waitForLoadState("networkidle"); },

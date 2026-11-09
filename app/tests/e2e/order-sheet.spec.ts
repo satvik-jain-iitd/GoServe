@@ -3,7 +3,7 @@
 import { test, expect } from "@playwright/test";
 import { ID, order, setup } from "./helpers";
 
-const REASON = "We are out of paneer tonight, so the veg thali cannot be made.";
+const REASON = "We are out of butter chicken tonight, so this order cannot be made.";
 
 test("S1 the New row has no Accept; a tap opens the order sheet with Accept and Decline", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);

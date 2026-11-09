@@ -13,6 +13,7 @@
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "test:boards": "BOARD_MATCH=1 playwright test board-match",
+    "test:regression": "REGRESSION=1 PLAYWRIGHT_HTML_OPEN=never playwright test regression --reporter=list,html",
     "test:live": "playwright test -c playwright.live.config.ts",
     "verify": "npm run lint && npm run test:unit && npm run build",
     "test:integration": "vitest run --config vitest.integration.config.ts",

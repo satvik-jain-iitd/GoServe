@@ -8,7 +8,11 @@ const jobs = Object.fromEntries([...text.split(/^jobs:\n/m)[1].matchAll(/^  ([a-
 const lockVersion = (dir: string): string => JSON.parse(readFileSync(new URL(`../../../${dir}/package-lock.json`, import.meta.url), "utf8")).packages["node_modules/@playwright/test"].version;
 
 describe("ci.yml (story #895)", () => {
-  it("has the five jobs and the board-match job (story #1168)", () => expect(Object.keys(jobs).sort()).toEqual(["app", "boards", "gate", "guard", "site"]));
+  it("has the five jobs, the board-match job (story #1168) and the regression job (story #1178)", () => expect(Object.keys(jobs).sort()).toEqual(["app", "boards", "gate", "guard", "regression", "site"]));
+  it("the regression job is report only: failures are a warning, and the gate does not wait for it (story #1178)", () => {
+    expect(jobs.regression).toMatch(/npm run test:regression \|\| echo "::warning::/);
+    expect(jobs.gate).not.toMatch(/regression/);
+  });
   it("the board-match job is report only: mismatches are a warning, the check stays green, and the gate does not wait for it (story #1168)", () => {
     expect(jobs.boards).toMatch(/npm run test:boards \|\| echo "::warning::/);
     expect(jobs.gate).not.toMatch(/boards/);
