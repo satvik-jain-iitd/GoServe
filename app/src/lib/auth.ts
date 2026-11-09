@@ -6,6 +6,17 @@ type UserLike = { is_anonymous?: boolean; email?: string; user_metadata?: Record
 export const signedInName = (u: UserLike): string | null =>
   !u || u.is_anonymous ? null : (u.user_metadata?.full_name as string | undefined) || (u.user_metadata?.name as string | undefined) || u.email || null;
 
+/** Story #1134: who is signed in, read from the session the app already holds in storage (no call), so a banner can say it on the first paint. Null when nobody real is signed in. */
+export function cachedSignedInName(store: Pick<Storage, "getItem" | "key" | "length"> = window.localStorage): string | null {
+  try {
+    for (let i = 0; i < store.length; i++) {
+      const k = store.key(i);
+      if (k && /^sb-.*-auth-token$/.test(k)) return signedInName(JSON.parse(store.getItem(k) ?? "null")?.user);
+    }
+  } catch { /* blocked storage or a broken value: the banner waits for the call as before */ }
+  return null;
+}
+
 // The first name from the Google profile (story 527), or null while the user is still anonymous.
 export const givenNameOf = (u: UserLike): string | null => {
   if (!u || u.is_anonymous) return null;
