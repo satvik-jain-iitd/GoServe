@@ -522,7 +522,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setSelectedId(a.id);
     setAddress(a.address);
     setFixAddress(a.lat !== null && a.lng !== null ? a.address : null);   // story #1049: a saved place with its pin carries its drop point while the words stay as saved
-    if (a.pin !== pin) choosePin(a.pin, a.lat !== null && a.lng !== null ? { lat: a.lat, lng: a.lng } : undefined);
+    const at = a.lat !== null && a.lng !== null ? { lat: a.lat, lng: a.lng } : undefined;
+    if (a.pin !== pin) choosePin(a.pin, at); else setFrom(at ?? null);   // story #1182: the same pin code still moves the drop point to this address's own pin
     if (touch) {
       const at = new Date().toISOString();
       setSaved((cur) => (cur ?? []).map((r) => (r.id === a.id ? { ...r, last_used_at: at } : r)));
