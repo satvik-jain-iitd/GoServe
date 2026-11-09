@@ -34,7 +34,7 @@ function FounderNote({ place, offerPaise, onChange }: { place: string; offerPais
           <div className="ui-slip-head"><span>A letter from co-founder Satvik Jain</span></div>
           <div className="ui-founder-top">
             <svg role="img" aria-label="Photo of Satvik (placeholder)" width="52" height="52" viewBox="0 0 52 52"><circle cx="26" cy="26" r="26" fill="var(--md-surface-variant)" /><circle cx="26" cy="21" r="9" fill="var(--gs-text-muted)" /><path d="M9 45c3-9 10-13 17-13s14 4 17 13" fill="var(--gs-text-muted)" /></svg>
-            <h2>You found us early. Thank you.</h2>
+            <h2><span>You found us early.</span> <span>Thank you.</span></h2>
           </div>
           <div className="ui-founder-text">
             <p>We don't reach {place} yet. I am sorry you came all this way for nothing today.</p>
