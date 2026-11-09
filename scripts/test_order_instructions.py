@@ -4,10 +4,10 @@
 # Run: set -a; . ~/Desktop/Secrets/02_databases.env; set +a; python3 -m unittest scripts/test_order_instructions.py
 import os, sys, unittest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from test_schema import TOKEN, sql
+from test_schema import TOKEN, sql, migration_inside
 
 _MIGS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "supabase", "migrations")
-MIG = "" if os.environ.get("SKIP_MIG") else open(os.path.join(_MIGS, "20261107130000_order_instructions.sql")).read()
+MIG = migration_inside(["20261107130000_order_instructions.sql"], "exists (select 1 from pg_proc where proname = 'place_order_v2' and pronargs >= 10)")   # story #1145: a later migration gave the function one more argument, so the old one must not be created again beside it
 K = "00000000-0000-0000-0000-0000000009a1"
 D = "00000000-0000-0000-0000-0000000009a2"
 SETUP = [
