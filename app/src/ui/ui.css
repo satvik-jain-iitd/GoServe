@@ -827,3 +827,4 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .closed-grey h3, .closed-grey .ui-price, .closed-grey .ui-meta { color: var(--gs-text-muted); }
 .closed-grey .ui-mark rect { stroke: var(--gs-text-muted); }
 .closed-grey .ui-mark circle, .closed-grey .ui-mark path { fill: var(--gs-text-muted); }
+.ui-closed-note { margin: 0 var(--gs-gutter) var(--gs-space-3); padding: 10px 12px; border: 1px solid var(--md-outline-variant); border-radius: 12px; background: var(--md-surface); font-size: var(--gs-text-sm); font-weight: 600; }   /* story 1162 */

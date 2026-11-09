@@ -6,7 +6,7 @@ import { clientPlatform } from "./lib/platform";
 import { riderRefused, savePlatform, tapCall } from "./lib/signals";
 import { useLiveOrders } from "./lib/useLiveOrders";
 import { loadMenu, MENU_KEY, type Dish } from "./lib/menu";
-import { fetchKitchens, forgetArea, loadArea, loadPin, closedCopy, openingText, resolveArea, savePin, shownArea, type Area } from "./lib/area";
+import { fetchKitchens, forgetArea, loadArea, loadPin, closedCopy, clearedLine, openingText, resolveArea, savePin, shownArea, type Area } from "./lib/area";
 import { dropFor } from "./lib/locate";
 import { AreaScreen } from "./screens/AreaScreen";
 import { AlertsAsk } from "./screens/AlertsAsk";
@@ -489,7 +489,28 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [here, setHere] = useState<Place | null>(null);
   const [locOff, setLocOff] = useState<null | { denied: boolean; busy: boolean; how: boolean }>(null);   // story #1056: the location-off sheet, shown once per app open
+  // Story #1162 (owner, 9 Nov): the kitchen closes (live, or by the clock) under a customer who has items but has NOT placed the order: the app goes to the closed menu, the bill is cleared, and a line says so.
+  // A placed order is never moved (the step is "placed" or "orders"), and an order being sent is let finish first.
+  const [closedNote, setClosedNote] = useState<string | null>(null);
+  const wasOpen = useRef(false);
   const [pinMap, setPinMap] = useState<null | { center: Place; edit?: SavedAddress }>(null);   // story #1037: the one full-screen map, the door for Add new address, Use current location and a tapped search result
+  useEffect(() => {
+    if (lock !== "customer" || !shown) return;
+    const open = shown.kind === "ok";
+    const justClosed = shown.kind === "closed" && wasOpen.current;
+    wasOpen.current = open;
+    if (!justClosed || sending) return;
+    const items = Object.values(cart).some((q) => q > 0);
+    if (!items || !(step === "menu" || step === "bill" || step === "deliver" || pinMap)) return;
+    setCart({}); setNote(""); setPinMap(null); setStep("menu");
+    setClosedNote(clearedLine(shown.opens_at, shown.paused === true));
+  }, [shown?.kind]);   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!closedNote) return;
+    const off = () => setClosedNote(null);
+    window.addEventListener("pointerdown", off, { once: true, capture: true });
+    return () => window.removeEventListener("pointerdown", off, { capture: true });
+  }, [closedNote]);
   const mapStart = (): Place => {   // where the map opens when nothing says otherwise: the phone, else the picked address, else the city centre
     const row = (saved ?? []).find((r) => r.id === selectedId);
     return here ?? (row && row.lat !== null && row.lng !== null ? { lat: row.lat, lng: row.lng } : { lat: 28.6139, lng: 77.209 });
@@ -972,7 +993,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             pin={pin} name={name} qty={cart} cartCount={count} cartTotal={total}
             kitchenName={kitchenName}
             openText={shown?.kind === "ok" ? openTill(shown.kitchen.closes_at) : ""}
-            closed={shown?.kind === "closed" ? closedCopy(shown.opens_at, shown.paused === true) : null}
+            closed={shown?.kind === "closed" ? closedCopy(shown.opens_at, shown.paused === true) : null} closedNote={closedNote}
             tellMe={tellMe} tellMeError={tellMeError} onTellMe={tellMeWhenOpen}
             onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
             onChangePin={() => setStep("deliver")} onOrders={() => setStep("orders")} address={address} label={saved?.find((r) => r.id === selectedId)?.label ?? "Deliver to"} photo={photo} onProfile={() => setStep("account")} far={far} />

@@ -18,7 +18,7 @@ test("S1 the kitchen's hours change to after now: within 5 s the phone says clos
   Object.assign(net.state.kitchens[0], { opens_at: "18:00:00", closes_at: "22:00:00" });
   net.push("UPDATE", net.state.kitchens[0], "kitchens");
   await expect(page.getByText("Kitchen closed. Opens at 6:00 pm.")).toBeVisible({ timeout: 5000 });
-  await expect(page.getByText("Your bill is kept. Order from 6:00 pm.")).toBeVisible();
+  await expect(page.getByText("Order from 6:00 pm.")).toBeVisible();
   await expect(add(page, "Butter Chicken")).toHaveCount(0);
   Object.assign(net.state.kitchens[0], { opens_at: "00:00:00", closes_at: "23:59:00" });
   net.push("UPDATE", net.state.kitchens[0], "kitchens");

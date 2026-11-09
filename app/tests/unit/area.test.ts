@@ -1,6 +1,6 @@
 // Story B2 (#158): pin code to kitchen to menu.
 import { describe, expect, it } from "vitest";
-import { chooseKitchen, isPin, loadPin, resolveArea, savePin, shownArea, SHOW_KITCHEN_NAME, type AreaKitchen } from "../../src/lib/area";
+import { chooseKitchen, clearedLine, isPin, loadPin, resolveArea, savePin, shownArea, SHOW_KITCHEN_NAME, type AreaKitchen } from "../../src/lib/area";
 import { MENU_KEY, loadMenu } from "../../src/lib/menu";
 
 const k = (id: string, name: string, pins: string[], over: Partial<AreaKitchen> = {}): AreaKitchen => ({ id, name, pin_codes: pins, lat: null, lng: null, open: true, active: true, opens_at: null, ...over });
@@ -108,8 +108,10 @@ import { creditLicence, creditLine } from "../../src/lib/menu";
 
 describe("the menu's closed line and the photo credit (story #274)", () => {
   it("says one line, with or without an opening time", () => {
-    expect(closedCopy("11:00:00")).toEqual({ main: "Kitchen closed. Opens at 11:00 am.", sub: "Your bill is kept. Order from 11:00 am." });
-    expect(closedCopy(null)).toEqual({ main: "Kitchen closed.", sub: "Your bill is kept. Please look again soon." });
+    expect(closedCopy("11:00:00")).toEqual({ main: "Kitchen closed. Opens at 11:00 am.", sub: "Order from 11:00 am." });
+    expect(closedCopy(null)).toEqual({ main: "Kitchen closed.", sub: "Please look again soon." });
+    expect(clearedLine("18:00:00")).toBe("The kitchen just closed. Your bill was cleared. Order again from 6:00 pm.");
+    expect(clearedLine(null)).toBe("The kitchen just closed. Your bill was cleared. Please look again soon.");
     expect(openingText("A", "07:30:00", true)).toBe("A is closed for a little while. Please look again soon.");   // the pin screen says the same
     expect(openingText("A", "07:30:00")).toBe("A is closed right now. It opens at 7:30 am.");
     expect(closedCopy("07:30:00", true).main).toBe("Kitchen closed.");   // #452: no opening time in the middle of the day

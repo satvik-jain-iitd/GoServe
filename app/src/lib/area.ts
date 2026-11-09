@@ -50,8 +50,11 @@ export const openingText = (name: string, opensAt: string | null, paused = false
 // The menu's closed state (boards L1, story #619): the one fact and the one next step. A kitchen switched off, or with no opening time, has no time to name.
 export const closedCopy = (opensAt: string | null, paused = false): { main: string; sub: string } =>
   opensAt && !paused
-    ? { main: `Kitchen closed. Opens at ${openingClock(opensAt)}.`, sub: `Your bill is kept. Order from ${openingClock(opensAt)}.` }
-    : { main: "Kitchen closed.", sub: "Your bill is kept. Please look again soon." };
+    ? { main: `Kitchen closed. Opens at ${openingClock(opensAt)}.`, sub: `Order from ${openingClock(opensAt)}.` }
+    : { main: "Kitchen closed.", sub: "Please look again soon." };
+// Story #1162: the line on the menu when the kitchen closed under a customer who had items. The bill is cleared, so it says so and when to come back.
+export const clearedLine = (opensAt: string | null, paused = false): string =>
+  `The kitchen just closed. Your bill was cleared. ${opensAt && !paused ? `Order again from ${openingClock(opensAt)}.` : "Please look again soon."}`;
 
 const PIN_KEY = "gs-pin";
 const KITCHEN_KEY = "gs-kitchen";

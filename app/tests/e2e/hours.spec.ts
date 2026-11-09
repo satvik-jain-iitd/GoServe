@@ -42,7 +42,7 @@ test("S4 #452 a kitchen switched off in the middle of its day says a little whil
   Object.assign(net.state.kitchens[0], { ...HOURS, open: false });
   await page.clock.setFixedTime(new Date("2026-10-24T07:30:00Z"));   // 13:00 India, inside 10:00 to 22:00
   await page.goto("/customer/");
-  await expect(page.getByText("Your bill is kept. Please look again soon.")).toBeVisible();
+  await expect(page.getByText("Please look again soon.")).toBeVisible();
   await expect(page.getByText(/Opens at/)).toHaveCount(0);
   await expect(add(page)).toHaveCount(0);
 });

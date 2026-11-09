@@ -9,7 +9,7 @@ import { DishPlate, Empty, Stepper, TabBar, VegMark, useSheetFit } from "../ui";
 
 type Props = {
   dishes: Dish[] | null; fromCache: boolean; slow?: boolean; error: string | null; onRetry: () => void;
-  pin: string | null; kitchenName: string; openText: string; name: string; closed: { main: string; sub: string } | null;
+  pin: string | null; kitchenName: string; openText: string; name: string; closed: { main: string; sub: string } | null; closedNote?: string | null;   // story #1162: the kitchen closed under a bill, which was cleared
   tellMe: "idle" | "busy" | "done"; tellMeError: string | null; onTellMe: () => void;   // #718: ask for one push when the closed kitchen opens
   qty: Record<string, number>; cartCount: number; cartTotal: number;
   onAdd: (id: string) => void; onChange: (id: string, delta: number) => void; onOpenCart: () => void;
@@ -64,6 +64,7 @@ export function MenuScreen(p: Props) {
   const [photoBad, setPhotoBad] = useState(false);   // story #975: a photo that cannot load leaves the first letter, never a broken picture
   const [filterOpen, setFilterOpen] = useState(false);
   const [dish, setDish] = useState<Dish | null>(null);
+  useEffect(() => { if (p.closed !== null) setDish(null); }, [p.closed !== null]);   // eslint-disable-line react-hooks/exhaustive-deps -- story #1162: a closing kitchen closes the dish sheet
   const where = p.address.trim() || (p.pin ? `Pin code ${p.pin}` : "Choose where to deliver");   // story #975: the one saved address until the saved list (#976) lands
   const initial = p.name.trim().charAt(0).toUpperCase();
   const all = p.dishes ?? [];
@@ -107,6 +108,7 @@ export function MenuScreen(p: Props) {
         <div className="ui-greet">
           {(SHOW_KITCHEN_NAME ? p.kitchenName : "") || p.openText ? <h2 className="ui-greet-line">{[SHOW_KITCHEN_NAME ? p.kitchenName : "", p.openText].filter(Boolean).join(" · ")}</h2> : null}
         </div>
+        {p.closedNote && <p role="status" className="ui-closed-note">{p.closedNote}</p>}
         {closed && (
           <div className="ui-closed">
             <span className="ui-stamp placed small">Closed</span>
