@@ -8,7 +8,11 @@ const jobs = Object.fromEntries([...text.split(/^jobs:\n/m)[1].matchAll(/^  ([a-
 const lockVersion = (dir: string): string => JSON.parse(readFileSync(new URL(`../../../${dir}/package-lock.json`, import.meta.url), "utf8")).packages["node_modules/@playwright/test"].version;
 
 describe("ci.yml (story #895)", () => {
-  it("has the five jobs", () => expect(Object.keys(jobs).sort()).toEqual(["app", "gate", "guard", "site"]));
+  it("has the five jobs and the board-match job (story #1168)", () => expect(Object.keys(jobs).sort()).toEqual(["app", "boards", "gate", "guard", "site"]));
+  it("the board-match job is not blocking: continue-on-error, and the gate does not wait for it (story #1168)", () => {
+    expect(jobs.boards).toMatch(/continue-on-error: true/);
+    expect(jobs.gate).not.toMatch(/boards/);
+  });
   it("every job has a timeout-minutes, so a hung step is cancelled and the check fails", () => {
     for (const [name, body] of Object.entries(jobs)) expect(body, name).toMatch(/^ {4}timeout-minutes: \d+$/m);
   });

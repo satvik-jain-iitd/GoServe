@@ -85,6 +85,42 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  # Story #1168: the board-match report. Not a merge gate yet (continue-on-error): it becomes blocking once the first round of mismatches is fixed.
+  boards:
+    name: Boards (match the app to its approved boards, not blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Match each screen to its board
+        run: npm run test:boards
+
+      - name: Upload the board-match report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: board-match
+          path: app/test-results/board-match
+          if-no-files-found: ignore
+          retention-days: 14
+
   guard:
     name: Guard (secrets, size, markers, commit messages, PR size)
     runs-on: ubuntu-latest

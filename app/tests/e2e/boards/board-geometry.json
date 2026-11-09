@@ -1,0 +1,6385 @@
+{
+ "C1-BillOffers": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "Your bill",
+   "box": [
+    72,
+    62,
+    261,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "Tau Ka Dhaba · 110024 Cash 1 × Dal Makhani 220 4 × Tandoori ",
+   "box": [
+    20,
+    117,
+    350,
+    233
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Offers",
+   "box": [
+    20,
+    366,
+    350,
+    17
+   ],
+   "font": "12px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "",
+   "text": "Remove",
+   "box": [
+    303,
+    411,
+    53,
+    20
+   ],
+   "font": "14px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "",
+   "text": "Apply",
+   "box": [
+    318,
+    470,
+    39,
+    20
+   ],
+   "font": "14px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "Have a code?",
+   "box": [
+    20,
+    518,
+    268,
+    46
+   ],
+   "font": "14px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "",
+   "text": "Apply",
+   "box": [
+    296,
+    518,
+    74,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    34,
+    614,
+    20,
+    20
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    33,
+    675,
+    20,
+    20
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    33,
+    735,
+    20,
+    20
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Cash · ₹290 Place order ›",
+   "box": [
+    20,
+    764,
+    350,
+    56
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  }
+ ],
+ "C2-BillCode": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "Your bill",
+   "box": [
+    72,
+    62,
+    261,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "Tau Ka Dhaba · 110024 Cash 1 × Dal Makhani 220 4 × Tandoori ",
+   "box": [
+    20,
+    117,
+    350,
+    233
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Offers",
+   "box": [
+    20,
+    366,
+    350,
+    17
+   ],
+   "font": "12px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "",
+   "text": "Remove",
+   "box": [
+    303,
+    411,
+    53,
+    20
+   ],
+   "font": "14px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "",
+   "text": "Apply",
+   "box": [
+    318,
+    470,
+    39,
+    20
+   ],
+   "font": "14px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "Have a code?",
+   "box": [
+    20,
+    518,
+    268,
+    46
+   ],
+   "font": "14px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "",
+   "text": "Apply",
+   "box": [
+    296,
+    518,
+    74,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "p",
+   "role": "alert",
+   "cls": "",
+   "text": "SAVE99 is not a valid code.",
+   "box": [
+    20,
+    572,
+    350,
+    19
+   ],
+   "font": "13px",
+   "color": "rgb(179, 38, 30)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    34,
+    641,
+    20,
+    20
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    33,
+    702,
+    20,
+    20
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    33,
+    762,
+    20,
+    20
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Cash · ₹280 Place order ›",
+   "box": [
+    20,
+    764,
+    350,
+    56
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  }
+ ],
+ "P1-BillCash": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "Your bill",
+   "box": [
+    72,
+    62,
+    261,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "Tau Ka Dhaba · 110024 Cash 1 × Dal Makhani 220 4 × Tandoori ",
+   "box": [
+    20,
+    117,
+    350,
+    205
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    34,
+    379,
+    20,
+    20
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    33,
+    446,
+    20,
+    20
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    33,
+    512,
+    20,
+    20
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Cash · ₹340 Place order ›",
+   "box": [
+    20,
+    764,
+    350,
+    56
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  }
+ ],
+ "P2-BillUpi": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "Your bill",
+   "box": [
+    72,
+    62,
+    268,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "Tau Ka Dhaba · 110024 UPI 1 × Dal Makhani 220 4 × Tandoori R",
+   "box": [
+    20,
+    117,
+    350,
+    205
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    33,
+    378,
+    20,
+    20
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    34,
+    445,
+    20,
+    20
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    33,
+    512,
+    20,
+    20
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "UPI · ₹340 Place order ›",
+   "box": [
+    20,
+    764,
+    350,
+    56
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  }
+ ],
+ "P2b-PlacedPay": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "Order placed",
+   "box": [
+    72,
+    62,
+    268,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "Tau Ka Dhaba · 110024 No. 1042 Placed Waiting for payment · ",
+   "box": [
+    20,
+    125,
+    350,
+    336
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "UPI · ₹340 Pay now ›",
+   "box": [
+    20,
+    712,
+    350,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Pay cash instead",
+   "box": [
+    20,
+    764,
+    350,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "P4-PayFailed": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "Payment",
+   "box": [
+    72,
+    62,
+    268,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "The payment did not go through",
+   "box": [
+    20,
+    229,
+    350,
+    48
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Try again",
+   "box": [
+    20,
+    700,
+    350,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Pay cash instead",
+   "box": [
+    20,
+    764,
+    350,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "P5-Paid": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "Paid",
+   "box": [
+    72,
+    62,
+    268,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Paid · ₹340",
+   "box": [
+    134,
+    229,
+    123,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Track the order ›",
+   "box": [
+    20,
+    764,
+    350,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  }
+ ],
+ "M7-MenuEmpty": [
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    334,
+    14,
+    36,
+    36
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "switch",
+   "cls": "ui-switch",
+   "text": "Veg only, whole menu",
+   "box": [
+    326,
+    90,
+    44,
+    24
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "ui-greet-line",
+   "text": "Open till 10:00 pm",
+   "box": [
+    20,
+    145,
+    350,
+    17
+   ],
+   "font": "12px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "div",
+   "role": "status",
+   "cls": "",
+   "text": "Soon No dishes on the menu yet. No dishes yet. Tell me when ",
+   "box": [
+    20,
+    199,
+    350,
+    133
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Tell me when the menu is ready",
+   "box": [
+    37,
+    273,
+    316,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Try another pin code",
+   "box": [
+    20,
+    715,
+    350,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-tab",
+   "text": "Delivery",
+   "box": [
+    8,
+    788,
+    187,
+    56
+   ],
+   "font": "13px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-tab",
+   "text": "History",
+   "box": [
+    195,
+    788,
+    187,
+    56
+   ],
+   "font": "13px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "Menu-DishLine-Tint": [
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    334,
+    14,
+    36,
+    36
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "switch",
+   "cls": "ui-switch",
+   "text": "Veg only, whole menu",
+   "box": [
+    326,
+    90,
+    44,
+    24
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "ui-greet-line",
+   "text": "Open till 10:00 pm",
+   "box": [
+    20,
+    145,
+    350,
+    17
+   ],
+   "font": "12px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "Veg thali",
+   "box": [
+    21,
+    200,
+    350,
+    200
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Veg thali",
+   "box": [
+    20,
+    413,
+    263,
+    24
+   ],
+   "font": "20px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Add",
+   "box": [
+    295,
+    431,
+    75,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "Non-veg thali",
+   "box": [
+    371,
+    200,
+    350,
+    200
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Non-veg thali",
+   "box": [
+    370,
+    413,
+    263,
+    24
+   ],
+   "font": "20px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Add",
+   "box": [
+    645,
+    431,
+    75,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Mains",
+   "box": [
+    20,
+    509,
+    51,
+    26
+   ],
+   "font": "18px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-photo-btn",
+   "text": "Dal Makhani details",
+   "box": [
+    20,
+    559,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-photo",
+   "text": "",
+   "box": [
+    20,
+    559,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(191, 207, 180)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Dal Makhani",
+   "box": [
+    108,
+    555,
+    140,
+    20
+   ],
+   "font": "17px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "",
+   "text": "−",
+   "box": [
+    261,
+    575,
+    40,
+    44
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "span",
+   "role": "status",
+   "cls": "",
+   "text": "1",
+   "box": [
+    301,
+    575,
+    28,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "",
+   "text": "+",
+   "box": [
+    329,
+    575,
+    40,
+    44
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-photo-btn",
+   "text": "Paneer Butter Masala details",
+   "box": [
+    20,
+    669,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-photo",
+   "text": "",
+   "box": [
+    20,
+    669,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(191, 207, 180)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Paneer Butter Masala",
+   "box": [
+    108,
+    664,
+    175,
+    41
+   ],
+   "font": "17px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Add",
+   "box": [
+    295,
+    685,
+    75,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-photo-btn",
+   "text": "Chicken Curry details",
+   "box": [
+    20,
+    776,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-photo",
+   "text": "",
+   "box": [
+    20,
+    776,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(191, 207, 180)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Chicken Curry",
+   "box": [
+    108,
+    781,
+    175,
+    20
+   ],
+   "font": "17px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Add",
+   "box": [
+    295,
+    792,
+    75,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "2 items · ₹300 View bill ›",
+   "box": [
+    20,
+    715,
+    350,
+    56
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-tab",
+   "text": "Delivery",
+   "box": [
+    8,
+    780,
+    187,
+    56
+   ],
+   "font": "13px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-tab",
+   "text": "History",
+   "box": [
+    195,
+    780,
+    187,
+    56
+   ],
+   "font": "13px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "T2-Declined": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "Declined",
+   "box": [
+    72,
+    62,
+    232,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "Tau Ka Dhaba · 110024 No. 1043 Declined 1 × Veg thali 180 2 ",
+   "box": [
+    20,
+    125,
+    350,
+    292
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "div",
+   "role": "status",
+   "cls": "",
+   "text": "Tau Ka Dhaba could not take this order. “We are out of panee",
+   "box": [
+    20,
+    433,
+    350,
+    125
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Order something else",
+   "box": [
+    20,
+    700,
+    350,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Try another kitchen",
+   "box": [
+    20,
+    764,
+    350,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "A2-AddressMap": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-logo ui-lockup",
+   "text": "GoServe",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "Your address Step 3 of 3 Is the pin on your door? Your pin W",
+   "box": [
+    20,
+    156,
+    350,
+    480
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Is the pin on your door?",
+   "box": [
+    39,
+    194,
+    312,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "textarea",
+   "role": "",
+   "cls": "",
+   "text": "B-12, second floor, near the park gate",
+   "box": [
+    39,
+    440,
+    312,
+    68
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Use this spot",
+   "box": [
+    39,
+    562,
+    312,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  }
+ ],
+ "D2-BillNote": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "Your bill",
+   "box": [
+    72,
+    62,
+    298,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "Tau Ka Dhaba · 110024 1 × Dal Makhani 220 4 × Tandoori Roti ",
+   "box": [
+    20,
+    125,
+    350,
+    253
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "+ Add more",
+   "box": [
+    39,
+    315,
+    312,
+    44
+   ],
+   "font": "14px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    415,
+    350,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    497,
+    350,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "textarea",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    578,
+    350,
+    68
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "textarea",
+   "role": "",
+   "cls": "",
+   "text": "Allergies, spice, no onion",
+   "box": [
+    20,
+    684,
+    350,
+    68
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Cash · ₹340 Place order ›",
+   "box": [
+    20,
+    764,
+    350,
+    56
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  }
+ ],
+ "C1-HomeTop": [
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    334,
+    14,
+    36,
+    36
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "switch",
+   "cls": "ui-switch",
+   "text": "Veg only, whole menu",
+   "box": [
+    326,
+    90,
+    44,
+    24
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "ui-greet-line",
+   "text": "Open till 10:00 pm",
+   "box": [
+    20,
+    145,
+    350,
+    17
+   ],
+   "font": "12px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "Veg thali",
+   "box": [
+    21,
+    200,
+    350,
+    200
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Veg thali",
+   "box": [
+    20,
+    413,
+    263,
+    24
+   ],
+   "font": "20px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Add",
+   "box": [
+    295,
+    431,
+    75,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "Non-veg thali",
+   "box": [
+    371,
+    200,
+    350,
+    200
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Non-veg thali",
+   "box": [
+    370,
+    413,
+    263,
+    24
+   ],
+   "font": "20px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Add",
+   "box": [
+    645,
+    431,
+    75,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Mains",
+   "box": [
+    20,
+    509,
+    51,
+    26
+   ],
+   "font": "18px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-photo-btn",
+   "text": "Dal Makhani details",
+   "box": [
+    20,
+    555,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-photo",
+   "text": "",
+   "box": [
+    20,
+    555,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(191, 207, 180)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Dal Makhani",
+   "box": [
+    108,
+    570,
+    140,
+    20
+   ],
+   "font": "17px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "",
+   "text": "−",
+   "box": [
+    261,
+    571,
+    40,
+    44
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "span",
+   "role": "status",
+   "cls": "",
+   "text": "1",
+   "box": [
+    301,
+    571,
+    28,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "",
+   "text": "+",
+   "box": [
+    329,
+    571,
+    40,
+    44
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-photo-btn",
+   "text": "Paneer Butter Masala details",
+   "box": [
+    20,
+    656,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Paneer Butter Masala",
+   "box": [
+    108,
+    660,
+    175,
+    41
+   ],
+   "font": "17px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Add",
+   "box": [
+    295,
+    672,
+    75,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-photo-btn",
+   "text": "Chicken Curry details",
+   "box": [
+    20,
+    757,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-photo",
+   "text": "",
+   "box": [
+    20,
+    757,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(191, 207, 180)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Chicken Curry",
+   "box": [
+    108,
+    772,
+    175,
+    20
+   ],
+   "font": "17px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Add",
+   "box": [
+    295,
+    773,
+    75,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "2 items · ₹300 View bill ›",
+   "box": [
+    20,
+    715,
+    350,
+    56
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-tab",
+   "text": "Delivery",
+   "box": [
+    8,
+    780,
+    187,
+    56
+   ],
+   "font": "13px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-tab",
+   "text": "History",
+   "box": [
+    195,
+    780,
+    187,
+    56
+   ],
+   "font": "13px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "C2-AddressSheet": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "Deliver to",
+   "box": [
+    72,
+    62,
+    240,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Saved addresses",
+   "box": [
+    20,
+    305,
+    350,
+    17
+   ],
+   "font": "12px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Edit or remove Home",
+   "box": [
+    338,
+    340,
+    32,
+    32
+   ],
+   "font": "16px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Edit or remove Office",
+   "box": [
+    338,
+    430,
+    32,
+    32
+   ],
+   "font": "16px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Edit or remove Bhopal home",
+   "box": [
+    338,
+    519,
+    32,
+    32
+   ],
+   "font": "16px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "F1-Filter": [
+  {
+   "tag": "section",
+   "role": "dialog",
+   "cls": "",
+   "text": "Filter 5 of 11 dishes Veg only · whole menu, thali too Mains",
+   "box": [
+    0,
+    324,
+    390,
+    520
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Filter",
+   "box": [
+    20,
+    345,
+    59,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "switch",
+   "cls": "ui-switch",
+   "text": "",
+   "box": [
+    318,
+    385,
+    52,
+    32
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    441,
+    22,
+    22
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    494,
+    22,
+    22
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    547,
+    22,
+    22
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    600,
+    22,
+    22
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    653,
+    22,
+    22
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    706,
+    22,
+    22
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Show 5 dishes",
+   "box": [
+    20,
+    769,
+    350,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  }
+ ],
+ "P1-Placeholder": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "No photo yet",
+   "box": [
+    20,
+    52,
+    277,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Option A · plate, fork and spoon, line style",
+   "box": [
+    20,
+    101,
+    350,
+    35
+   ],
+   "font": "12px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Option B · thali, five bowls, line style",
+   "box": [
+    20,
+    496,
+    350,
+    17
+   ],
+   "font": "12px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "H1-History": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "History",
+   "box": [
+    20,
+    52,
+    263,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Order again",
+   "box": [
+    270,
+    230,
+    100,
+    36
+   ],
+   "font": "14px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Order again",
+   "box": [
+    270,
+    328,
+    100,
+    36
+   ],
+   "font": "14px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "Y1-ProfileSheet": [
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    334,
+    14,
+    36,
+    36
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "switch",
+   "cls": "ui-switch",
+   "text": "Veg only, whole menu",
+   "box": [
+    326,
+    90,
+    44,
+    24
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "ui-greet-line",
+   "text": "Open till 10:00 pm",
+   "box": [
+    20,
+    145,
+    350,
+    17
+   ],
+   "font": "12px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "Veg thali",
+   "box": [
+    21,
+    200,
+    350,
+    200
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Veg thali",
+   "box": [
+    20,
+    413,
+    263,
+    24
+   ],
+   "font": "20px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Add",
+   "box": [
+    295,
+    431,
+    75,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "Non-veg thali",
+   "box": [
+    371,
+    200,
+    350,
+    200
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Non-veg thali",
+   "box": [
+    370,
+    413,
+    263,
+    24
+   ],
+   "font": "20px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Add",
+   "box": [
+    645,
+    431,
+    75,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Mains",
+   "box": [
+    20,
+    509,
+    51,
+    26
+   ],
+   "font": "18px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-photo-btn",
+   "text": "Dal Makhani details",
+   "box": [
+    20,
+    555,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-photo",
+   "text": "",
+   "box": [
+    20,
+    555,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(191, 207, 180)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Dal Makhani",
+   "box": [
+    108,
+    570,
+    140,
+    20
+   ],
+   "font": "17px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "",
+   "text": "−",
+   "box": [
+    261,
+    571,
+    40,
+    44
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "span",
+   "role": "status",
+   "cls": "",
+   "text": "1",
+   "box": [
+    301,
+    571,
+    28,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "",
+   "text": "+",
+   "box": [
+    329,
+    571,
+    40,
+    44
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-photo-btn",
+   "text": "Paneer Butter Masala details",
+   "box": [
+    20,
+    656,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-photo",
+   "text": "",
+   "box": [
+    20,
+    656,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(191, 207, 180)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Paneer Butter Masala",
+   "box": [
+    108,
+    660,
+    175,
+    41
+   ],
+   "font": "17px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Add",
+   "box": [
+    295,
+    672,
+    75,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-photo-btn",
+   "text": "Chicken Curry details",
+   "box": [
+    20,
+    757,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-photo",
+   "text": "",
+   "box": [
+    20,
+    757,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(191, 207, 180)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Chicken Curry",
+   "box": [
+    108,
+    772,
+    175,
+    20
+   ],
+   "font": "17px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Add",
+   "box": [
+    295,
+    773,
+    75,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "2 items · ₹300 View bill ›",
+   "box": [
+    20,
+    715,
+    350,
+    56
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-tab",
+   "text": "Delivery",
+   "box": [
+    8,
+    780,
+    187,
+    56
+   ],
+   "font": "13px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-tab",
+   "text": "History",
+   "box": [
+    195,
+    780,
+    187,
+    56
+   ],
+   "font": "13px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "dialog",
+   "cls": "ui-sheet",
+   "text": "Rahul Verma 9876543210 · rahul.v@gmail.com ✕ Name and phone ",
+   "box": [
+    0,
+    306,
+    390,
+    538
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    331,
+    48,
+    48
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Rahul Verma",
+   "box": [
+    80,
+    334,
+    234,
+    22
+   ],
+   "font": "22px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "✕",
+   "box": [
+    326,
+    343,
+    44,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-row",
+   "text": "Name and phone What the rider sees and calls ›",
+   "box": [
+    20,
+    403,
+    350,
+    52
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-row",
+   "text": "Saved addresses Home, Work, and 1 more ›",
+   "box": [
+    20,
+    455,
+    350,
+    52
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "switch",
+   "cls": "ui-switch",
+   "text": "",
+   "box": [
+    318,
+    522,
+    52,
+    32
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Look",
+   "box": [
+    20,
+    582,
+    350,
+    17
+   ],
+   "font": "12px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-chip",
+   "text": "Day",
+   "box": [
+    20,
+    607,
+    54,
+    44
+   ],
+   "font": "13px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-chip",
+   "text": "Night",
+   "box": [
+    82,
+    607,
+    64,
+    44
+   ],
+   "font": "13px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-chip",
+   "text": "By the clock · 6 pm to 6 am",
+   "box": [
+    154,
+    607,
+    180,
+    44
+   ],
+   "font": "13px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-row",
+   "text": "Send feedback ›",
+   "box": [
+    20,
+    664,
+    350,
+    52
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-row",
+   "text": "Forget me on this phone ›",
+   "box": [
+    20,
+    716,
+    350,
+    52
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-row",
+   "text": "Delete my account ›",
+   "box": [
+    20,
+    768,
+    350,
+    52
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "A2-AddressOla": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-logo ui-lockup",
+   "text": "GoServe",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "Your address Step 3 of 3 Is the pin on your door? Your pin W",
+   "box": [
+    20,
+    156,
+    350,
+    546
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Is the pin on your door?",
+   "box": [
+    39,
+    194,
+    312,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "textarea",
+   "role": "",
+   "cls": "",
+   "text": "B-12, second floor, near the park gate",
+   "box": [
+    39,
+    440,
+    312,
+    68
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    39,
+    566,
+    150,
+    48
+   ],
+   "font": "18px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "123456",
+   "box": [
+    201,
+    566,
+    150,
+    48
+   ],
+   "font": "18px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(191, 207, 180)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Use this spot",
+   "box": [
+    39,
+    628,
+    312,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  }
+ ],
+ "C6-PinMap": [],
+ "C7-PinDetails": [
+  {
+   "tag": "section",
+   "role": "dialog",
+   "cls": "",
+   "text": "Address details Step 2 of 2 Green Avenue Colony Satai Road, ",
+   "box": [
+    0,
+    364,
+    390,
+    480
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Address details",
+   "box": [
+    20,
+    384,
+    176,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "C-128, second floor",
+   "box": [
+    20,
+    531,
+    350,
+    48
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "near the park gate",
+   "box": [
+    20,
+    619,
+    350,
+    48
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Save address",
+   "box": [
+    20,
+    760,
+    350,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": true
+  }
+ ],
+ "C8-SearchResults": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "Deliver to",
+   "box": [
+    72,
+    62,
+    240,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Saved · 1 match",
+   "box": [
+    16,
+    193,
+    358,
+    17
+   ],
+   "font": "12px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Places · 3 found",
+   "box": [
+    16,
+    323,
+    358,
+    17
+   ],
+   "font": "12px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "C9-EditOnMap": [],
+ "C10-RemoveUndo": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "Deliver to",
+   "box": [
+    72,
+    62,
+    240,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Saved addresses",
+   "box": [
+    16,
+    291,
+    358,
+    17
+   ],
+   "font": "12px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Edit or remove Office",
+   "box": [
+    326,
+    330,
+    32,
+    32
+   ],
+   "font": "16px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Edit or remove Bhopal home",
+   "box": [
+    326,
+    420,
+    32,
+    32
+   ],
+   "font": "16px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "div",
+   "role": "status",
+   "cls": "",
+   "text": "Home removed 6 sec Undo",
+   "box": [
+    16,
+    764,
+    358,
+    56
+   ],
+   "font": "16px",
+   "color": "rgb(228, 230, 217)",
+   "bg": "rgb(38, 53, 40)",
+   "disabled": false
+  }
+ ],
+ "C11-Empty": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "Deliver to",
+   "box": [
+    72,
+    62,
+    240,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "No saved address yet",
+   "box": [
+    103,
+    397,
+    184,
+    24
+   ],
+   "font": "20px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "C6b-PinMapFar": [],
+ "C12-ListViewAll": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "Deliver to",
+   "box": [
+    72,
+    62,
+    240,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Saved addresses",
+   "box": [
+    16,
+    291,
+    358,
+    17
+   ],
+   "font": "12px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Edit or remove Home",
+   "box": [
+    326,
+    330,
+    32,
+    32
+   ],
+   "font": "16px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Edit or remove Office",
+   "box": [
+    326,
+    420,
+    32,
+    32
+   ],
+   "font": "16px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Edit or remove Bhopal home",
+   "box": [
+    326,
+    509,
+    32,
+    32
+   ],
+   "font": "16px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "C13-ListExpanded": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "Deliver to",
+   "box": [
+    72,
+    62,
+    240,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Saved addresses",
+   "box": [
+    16,
+    291,
+    358,
+    17
+   ],
+   "font": "12px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Edit or remove Home",
+   "box": [
+    326,
+    330,
+    32,
+    32
+   ],
+   "font": "16px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Edit or remove Office",
+   "box": [
+    326,
+    420,
+    32,
+    32
+   ],
+   "font": "16px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Edit or remove Bhopal home",
+   "box": [
+    326,
+    509,
+    32,
+    32
+   ],
+   "font": "16px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Edit or remove Work",
+   "box": [
+    326,
+    598,
+    32,
+    32
+   ],
+   "font": "16px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Edit or remove Shubhi",
+   "box": [
+    326,
+    687,
+    32,
+    32
+   ],
+   "font": "16px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "A2c-AddressDoors": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-logo ui-lockup",
+   "text": "GoServe",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "Your address Step 3 of 4 Where does the food go? Use current",
+   "box": [
+    20,
+    156,
+    350,
+    200
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Where does the food go?",
+   "box": [
+    39,
+    196,
+    312,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "T4-TrackerMapRow": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "Your order",
+   "box": [
+    72,
+    62,
+    247,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "Tau Ka Dhaba · 110024 No. 1042 On the way About 8 min · at y",
+   "box": [
+    20,
+    125,
+    350,
+    356
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  }
+ ],
+ "T5-RiderMapFull": [],
+ "A1p-OnboardPin": [],
+ "NK-A-NoKitchenNotify": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-logo ui-lockup",
+   "text": "GoServe",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "Your address Step 4 of 4 We don't reach here yet Sector 62 N",
+   "box": [
+    20,
+    200,
+    350,
+    620
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "We don't reach here yet",
+   "box": [
+    39,
+    239,
+    312,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Change location",
+   "box": [
+    39,
+    361,
+    312,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Tell me when you come here",
+   "box": [
+    39,
+    433,
+    312,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "E2a-EtaBig": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "Your order",
+   "box": [
+    72,
+    62,
+    247,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "Tau Ka Dhaba · 110024 No. 1042 Cooking 25 min By 8:12 pm 1 ×",
+   "box": [
+    20,
+    125,
+    350,
+    398
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Call the kitchen",
+   "box": [
+    20,
+    823,
+    350,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "SW2-HomeKeep": [
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    334,
+    14,
+    36,
+    36
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "switch",
+   "cls": "ui-switch",
+   "text": "Veg only, whole menu",
+   "box": [
+    326,
+    90,
+    44,
+    24
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "div",
+   "role": "status",
+   "cls": "",
+   "text": "You are 6 km from Home Deliver here",
+   "box": [
+    0,
+    129,
+    390,
+    39
+   ],
+   "font": "14px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(207, 217, 152)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "ui-greet-line",
+   "text": "Open till 10:00 pm",
+   "box": [
+    20,
+    184,
+    350,
+    17
+   ],
+   "font": "12px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "Veg thali",
+   "box": [
+    21,
+    219,
+    350,
+    200
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Veg thali",
+   "box": [
+    20,
+    432,
+    263,
+    24
+   ],
+   "font": "20px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Add",
+   "box": [
+    295,
+    450,
+    75,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "Non-veg thali",
+   "box": [
+    371,
+    219,
+    350,
+    200
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Non-veg thali",
+   "box": [
+    370,
+    432,
+    263,
+    24
+   ],
+   "font": "20px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Add",
+   "box": [
+    645,
+    450,
+    75,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Mains",
+   "box": [
+    20,
+    527,
+    51,
+    26
+   ],
+   "font": "18px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-photo-btn",
+   "text": "Dal Makhani details",
+   "box": [
+    20,
+    574,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-photo",
+   "text": "",
+   "box": [
+    20,
+    574,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(191, 207, 180)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Dal Makhani",
+   "box": [
+    108,
+    588,
+    140,
+    20
+   ],
+   "font": "17px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "",
+   "text": "−",
+   "box": [
+    261,
+    590,
+    40,
+    44
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "span",
+   "role": "status",
+   "cls": "",
+   "text": "1",
+   "box": [
+    301,
+    590,
+    28,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "",
+   "text": "+",
+   "box": [
+    329,
+    590,
+    40,
+    44
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-photo-btn",
+   "text": "Paneer Butter Masala details",
+   "box": [
+    20,
+    675,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Paneer Butter Masala",
+   "box": [
+    108,
+    679,
+    175,
+    41
+   ],
+   "font": "17px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Add",
+   "box": [
+    295,
+    691,
+    75,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-photo-btn",
+   "text": "Chicken Curry details",
+   "box": [
+    20,
+    776,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-photo",
+   "text": "",
+   "box": [
+    20,
+    776,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(191, 207, 180)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Chicken Curry",
+   "box": [
+    108,
+    790,
+    175,
+    20
+   ],
+   "font": "17px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Add",
+   "box": [
+    295,
+    792,
+    75,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "2 items · ₹300 View bill ›",
+   "box": [
+    20,
+    715,
+    350,
+    56
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-tab",
+   "text": "Delivery",
+   "box": [
+    8,
+    780,
+    187,
+    56
+   ],
+   "font": "13px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-tab",
+   "text": "History",
+   "box": [
+    195,
+    780,
+    187,
+    56
+   ],
+   "font": "13px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "SW3-LocationOff": [
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    334,
+    14,
+    36,
+    36
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "switch",
+   "cls": "ui-switch",
+   "text": "Veg only, whole menu",
+   "box": [
+    326,
+    90,
+    44,
+    24
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "ui-greet-line",
+   "text": "Open till 10:00 pm",
+   "box": [
+    20,
+    145,
+    350,
+    17
+   ],
+   "font": "12px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "Veg thali",
+   "box": [
+    21,
+    180,
+    350,
+    200
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Veg thali",
+   "box": [
+    20,
+    393,
+    263,
+    24
+   ],
+   "font": "20px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Add",
+   "box": [
+    295,
+    411,
+    75,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "Non-veg thali",
+   "box": [
+    371,
+    180,
+    350,
+    200
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Non-veg thali",
+   "box": [
+    370,
+    393,
+    263,
+    24
+   ],
+   "font": "20px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Add",
+   "box": [
+    645,
+    411,
+    75,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Mains",
+   "box": [
+    20,
+    489,
+    51,
+    26
+   ],
+   "font": "18px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-photo-btn",
+   "text": "Dal Makhani details",
+   "box": [
+    20,
+    535,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-photo",
+   "text": "",
+   "box": [
+    20,
+    535,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(191, 207, 180)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Dal Makhani",
+   "box": [
+    108,
+    550,
+    140,
+    20
+   ],
+   "font": "17px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "",
+   "text": "−",
+   "box": [
+    261,
+    551,
+    40,
+    44
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "span",
+   "role": "status",
+   "cls": "",
+   "text": "1",
+   "box": [
+    301,
+    551,
+    28,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "",
+   "text": "+",
+   "box": [
+    329,
+    551,
+    40,
+    44
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-photo-btn",
+   "text": "Paneer Butter Masala details",
+   "box": [
+    20,
+    636,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Paneer Butter Masala",
+   "box": [
+    108,
+    640,
+    175,
+    41
+   ],
+   "font": "17px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Add",
+   "box": [
+    295,
+    652,
+    75,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-photo-btn",
+   "text": "Chicken Curry details",
+   "box": [
+    20,
+    737,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-photo",
+   "text": "",
+   "box": [
+    20,
+    737,
+    76,
+    76
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(191, 207, 180)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Chicken Curry",
+   "box": [
+    108,
+    752,
+    175,
+    20
+   ],
+   "font": "17px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Add",
+   "box": [
+    295,
+    753,
+    75,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Breads",
+   "box": [
+    20,
+    842,
+    60,
+    26
+   ],
+   "font": "18px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "2 items · ₹300 View bill ›",
+   "box": [
+    20,
+    715,
+    350,
+    56
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-tab",
+   "text": "Delivery",
+   "box": [
+    8,
+    780,
+    187,
+    56
+   ],
+   "font": "13px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-tab",
+   "text": "History",
+   "box": [
+    195,
+    780,
+    187,
+    56
+   ],
+   "font": "13px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "dialog",
+   "cls": "",
+   "text": "Location is off Turn on location Your addresses View all Hom",
+   "box": [
+    0,
+    435,
+    390,
+    409
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Location is off",
+   "box": [
+    20,
+    531,
+    350,
+    26
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Turn on location",
+   "box": [
+    20,
+    572,
+    350,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Search your area",
+   "box": [
+    20,
+    760,
+    350,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "N0-AlertsAsk": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-logo ui-lockup",
+   "text": "GoServe",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "Order alerts Step 2 of 4 Get order alerts Turn on alerts Not",
+   "box": [
+    20,
+    200,
+    350,
+    620
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Get order alerts",
+   "box": [
+    39,
+    239,
+    312,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Turn on alerts",
+   "box": [
+    39,
+    407,
+    312,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Not now",
+   "box": [
+    39,
+    479,
+    312,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "NK-L2-FounderNoteHand": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-logo ui-lockup",
+   "text": "GoServe",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "A letter from co-founder Satvik Jain You found us early. Tha",
+   "box": [
+    20,
+    172,
+    350,
+    648
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "You found us early. Thank you.",
+   "box": [
+    94,
+    209,
+    257,
+    48
+   ],
+   "font": "22px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Share this note",
+   "box": [
+    39,
+    677,
+    312,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Change location",
+   "box": [
+    39,
+    745,
+    312,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "O0g-C-GoogleBottom": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-logo ui-lockup",
+   "text": "GoServe",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "Welcome Step 1 of 4 One tap and you are in Continue with Goo",
+   "box": [
+    20,
+    200,
+    350,
+    620
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "One tap and you are in",
+   "box": [
+    39,
+    239,
+    312,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "A thali from our kitchen",
+   "box": [
+    39,
+    357,
+    312,
+    194
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Continue with Google",
+   "box": [
+    39,
+    745,
+    312,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  }
+ ],
+ "A1b-LocationBottom": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-logo ui-lockup",
+   "text": "GoServe",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "Your address Step 3 of 4 Where does the food go? Set deliver",
+   "box": [
+    20,
+    200,
+    350,
+    620
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Where does the food go?",
+   "box": [
+    39,
+    239,
+    312,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "span",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    147,
+    420,
+    96,
+    96
+   ],
+   "font": "16px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgb(207, 217, 152)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Set delivery location",
+   "box": [
+    39,
+    745,
+    312,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  }
+ ],
+ "O0g-D-GoogleMobile": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-logo ui-lockup",
+   "text": "GoServe",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "Welcome Step 1 of 4 One tap and you are in Continue with mob",
+   "box": [
+    20,
+    200,
+    350,
+    620
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "One tap and you are in",
+   "box": [
+    39,
+    239,
+    312,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "A thali from our kitchen",
+   "box": [
+    39,
+    357,
+    312,
+    194
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Continue with mobile number",
+   "box": [
+    39,
+    673,
+    312,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Continue with Google",
+   "box": [
+    39,
+    745,
+    312,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  }
+ ],
+ "O0m-Number": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-logo ui-lockup",
+   "text": "GoServe",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "Your number Step 1 of 4 Where do we reach you? Mobile Send c",
+   "box": [
+    20,
+    200,
+    350,
+    620
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Where do we reach you?",
+   "box": [
+    39,
+    239,
+    312,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "10 digit number",
+   "box": [
+    52,
+    301,
+    286,
+    46
+   ],
+   "font": "18px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Send code",
+   "box": [
+    39,
+    745,
+    312,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": true
+  }
+ ],
+ "O0m-Code": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-logo ui-lockup",
+   "text": "GoServe",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "Your number Step 1 of 4 Enter the 6 digit code Sent to +91 9",
+   "box": [
+    20,
+    200,
+    350,
+    620
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Enter the 6 digit code",
+   "box": [
+    39,
+    239,
+    312,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "Digit 1",
+   "box": [
+    39,
+    315,
+    45,
+    56
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "Digit 2",
+   "box": [
+    92,
+    315,
+    45,
+    56
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "Digit 3",
+   "box": [
+    146,
+    315,
+    45,
+    56
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "Digit 4",
+   "box": [
+    199,
+    315,
+    45,
+    56
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "Digit 5",
+   "box": [
+    252,
+    315,
+    45,
+    56
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "Digit 6",
+   "box": [
+    306,
+    315,
+    45,
+    56
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Verify",
+   "box": [
+    39,
+    745,
+    312,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": true
+  }
+ ],
+ "N0b-AlertsBottom": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-logo ui-lockup",
+   "text": "GoServe",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "Order alerts Step 2 of 4 Get order alerts I'll check the app",
+   "box": [
+    20,
+    200,
+    350,
+    620
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Get order alerts",
+   "box": [
+    39,
+    239,
+    312,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "span",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    147,
+    420,
+    96,
+    96
+   ],
+   "font": "16px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgb(207, 217, 152)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "I'll check the app myself",
+   "box": [
+    39,
+    673,
+    312,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Turn on alerts",
+   "box": [
+    39,
+    745,
+    312,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  }
+ ],
+ "A1c-LocationManual": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-logo ui-lockup",
+   "text": "GoServe",
+   "box": [
+    20,
+    64,
+    350,
+    50
+   ],
+   "font": "32px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "cls": "ui-slip",
+   "text": "Your address Step 3 of 4 Where does the food go? Enter addre",
+   "box": [
+    20,
+    200,
+    350,
+    620
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Where does the food go?",
+   "box": [
+    39,
+    239,
+    312,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "span",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    147,
+    420,
+    96,
+    96
+   ],
+   "font": "16px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgb(207, 217, 152)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Enter address manually",
+   "box": [
+    39,
+    673,
+    312,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Set delivery location",
+   "box": [
+    39,
+    745,
+    312,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  }
+ ],
+ "C6e-PinMapPlate": [],
+ "C6d-PinMapInvite": [],
+ "C7a-ExampleInside": [
+  {
+   "tag": "section",
+   "role": "dialog",
+   "cls": "",
+   "text": "Address details Step 2 of 2 Green Avenue Colony Satai Road, ",
+   "box": [
+    0,
+    364,
+    390,
+    480
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Address details",
+   "box": [
+    20,
+    384,
+    176,
+    24
+   ],
+   "font": "24px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "e.g. C-128, second floor",
+   "box": [
+    20,
+    531,
+    350,
+    48
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "",
+   "cls": "",
+   "text": "e.g. near the park gate",
+   "box": [
+    20,
+    619,
+    350,
+    48
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Save address",
+   "box": [
+    20,
+    760,
+    350,
+    56
+   ],
+   "font": "18px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": true
+  }
+ ],
+ "Y4b-YouPageCards": [
+  {
+   "tag": "h1",
+   "role": "",
+   "cls": "",
+   "text": "You",
+   "box": [
+    64,
+    61,
+    314,
+    26
+   ],
+   "font": "26px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    36,
+    127,
+    56,
+    56
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-row",
+   "text": "Saved addresses Home, Work, and 1 more ›",
+   "box": [
+    37,
+    212,
+    316,
+    62
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-row",
+   "text": "Your orders Past orders and bills ›",
+   "box": [
+    37,
+    274,
+    316,
+    61
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "switch",
+   "cls": "ui-switch",
+   "text": "",
+   "box": [
+    301,
+    365,
+    52,
+    32
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-chip",
+   "text": "Day",
+   "box": [
+    37,
+    456,
+    54,
+    44
+   ],
+   "font": "13px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-chip",
+   "text": "Night",
+   "box": [
+    99,
+    456,
+    64,
+    44
+   ],
+   "font": "13px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-row",
+   "text": "Send feedback Tell the founders what to fix ›",
+   "box": [
+    37,
+    526,
+    316,
+    61
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-row",
+   "text": "Sign out of this phone",
+   "box": [
+    37,
+    613,
+    316,
+    52
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-row",
+   "text": "Delete my account Your orders and addresses go too",
+   "box": [
+    37,
+    665,
+    316,
+    61
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ],
+ "SW5a-SwitchGrey": [
+  {
+   "tag": "input",
+   "role": "switch",
+   "cls": "ui-switch",
+   "text": "Veg only",
+   "box": [
+    326,
+    78,
+    44,
+    24
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(201, 207, 195)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "switch",
+   "cls": "ui-switch",
+   "text": "Veg off",
+   "box": [
+    309,
+    189,
+    44,
+    24
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(201, 207, 195)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "switch",
+   "cls": "ui-switch",
+   "text": "Veg on",
+   "box": [
+    309,
+    254,
+    44,
+    24
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "switch",
+   "cls": "ui-switch",
+   "text": "Alerts off",
+   "box": [
+    301,
+    366,
+    52,
+    32
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(201, 207, 195)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "switch",
+   "cls": "ui-switch",
+   "text": "Alerts on",
+   "box": [
+    301,
+    431,
+    52,
+    32
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(69, 101, 78)",
+   "disabled": false
+  }
+ ],
+ "L4d-ClosedGreyMenu": [
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "",
+   "box": [
+    334,
+    14,
+    36,
+    36
+   ],
+   "font": "16px",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "input",
+   "role": "switch",
+   "cls": "ui-switch",
+   "text": "Veg only, whole menu",
+   "box": [
+    326,
+    90,
+    44,
+    24
+   ],
+   "font": "13.3333px",
+   "color": "rgb(0, 0, 0)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "div",
+   "role": "status",
+   "cls": "",
+   "text": "Closed Kitchen closed. Opens at 6:00 pm. Order from 6:00 pm.",
+   "box": [
+    20,
+    145,
+    350,
+    158
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(247, 243, 239)",
+   "disabled": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "cls": "ui-btn",
+   "text": "Tell me when it opens",
+   "box": [
+    37,
+    244,
+    316,
+    44
+   ],
+   "font": "16px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "Veg thali",
+   "box": [
+    21,
+    320,
+    350,
+    200
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Today's thali",
+   "box": [
+    20,
+    533,
+    338,
+    24
+   ],
+   "font": "20px",
+   "color": "rgb(94, 106, 96)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "",
+   "text": "Non-veg thali",
+   "box": [
+    371,
+    320,
+    350,
+    200
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Today's thali",
+   "box": [
+    370,
+    533,
+    338,
+    24
+   ],
+   "font": "20px",
+   "color": "rgb(94, 106, 96)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "cls": "",
+   "text": "Mains",
+   "box": [
+    20,
+    649,
+    51,
+    26
+   ],
+   "font": "18px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-photo",
+   "text": "",
+   "box": [
+    20,
+    695,
+    76,
+    76
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(191, 207, 180)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Dal Makhani",
+   "box": [
+    108,
+    699,
+    250,
+    20
+   ],
+   "font": "17px",
+   "color": "rgb(94, 106, 96)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "img",
+   "role": "",
+   "cls": "ui-photo",
+   "text": "",
+   "box": [
+    20,
+    796,
+    76,
+    76
+   ],
+   "font": "16px",
+   "color": "rgb(38, 53, 40)",
+   "bg": "rgb(191, 207, 180)",
+   "disabled": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "cls": "",
+   "text": "Paneer Butter Masala",
+   "box": [
+    108,
+    800,
+    250,
+    20
+   ],
+   "font": "17px",
+   "color": "rgb(94, 106, 96)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-tab",
+   "text": "Delivery",
+   "box": [
+    8,
+    788,
+    187,
+    56
+   ],
+   "font": "13px",
+   "color": "rgb(69, 101, 78)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "cls": "ui-tab",
+   "text": "History",
+   "box": [
+    195,
+    788,
+    187,
+    56
+   ],
+   "font": "13px",
+   "color": "rgb(70, 82, 74)",
+   "bg": "rgba(0, 0, 0, 0)",
+   "disabled": false
+  }
+ ]
+}
