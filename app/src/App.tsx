@@ -471,6 +471,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }
   // Story #976, changed by #1035: the saved addresses. On open the one used last is picked, always; the phone's place only shows "here" or "N km" on the rows.
   const [saved, setSaved] = useState<SavedAddress[] | null>(null);
+  const [addrTried, setAddrTried] = useState(false);   // story #1112: the saved addresses were asked for (answered or failed): until then a signed-in phone with no pin is loading, not new
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [here, setHere] = useState<Place | null>(null);
   const [locOff, setLocOff] = useState<null | { denied: boolean; busy: boolean; how: boolean }>(null);   // story #1056: the location-off sheet, shown once per app open
@@ -499,6 +500,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     (async () => {
       const c = getClient();
       const list = await listAddresses(c);
+      setAddrTried(true);
       if (list === null) return;
       setSaved(list);
       const row = lastUsed(list);
@@ -920,6 +922,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const chosen = (saved ?? []).find((r) => r.id === selectedId);
   const farM = here && chosen && chosen.lat !== null && chosen.lng !== null ? distanceM(here, { lat: chosen.lat, lng: chosen.lng }) : null;
   const far = farM !== null && farM > FAR_M && chosen ? { km: Math.round(farM / 1000), label: chosen.label, onHere: () => setPinMap({ center: here! }) } : null;
+  // Story #1112 (TC 1.6): signed in, no pin yet and the saved addresses not answered: the first screen waits (a returning customer never sees N0). The wait ends when they answer or fail.
+  const waitingForAddresses = lock === "customer" && signedIn === true && step !== "placed" && step !== "orders" && ((!pin && !addrTried) || (!!pin && area === null && !areaError));   // or the pin is known and the kitchen of that pin is still being found
   const needArea = lock === "customer" && step !== "placed" && step !== "orders" && !(pin && (area?.kind === "ok" || area?.kind === "closed"));
   // Story #667: with the phone code on, the first screen is the number and the code (or Google); nothing else shows before it.
   const customerView = wall && (signedIn === null || otpSetting === undefined) ? <div className="ui-pad"><Skeleton lines={3} /></div> : wall && signedIn === false ? (
@@ -933,6 +937,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       onSelect={(id) => { const r = (saved ?? []).find((x) => x.id === id); if (r) { useSaved(r, true); setStep("menu"); } }}
       onUseLocation={() => { void currentPlace().then((p) => setPinMap({ center: p }), () => setPinMap({ center: mapStart() })); }} onAddNew={() => setPinMap({ center: mapStart() })}
       onEditOnMap={(a) => setPinMap({ center: a.lat !== null && a.lng !== null ? { lat: a.lat, lng: a.lng } : mapStart(), edit: a })} onRemove={dropSaved} />
+  ) : waitingForAddresses ? (
+    <div className="ui-pad"><Skeleton lines={3} /></div>
   ) : needArea && !alertsAsked && reminder === "ask" ? (
     <AlertsAsk busy={askingAlerts} onTurnOn={() => void turnOnFirst()} onNotNow={markAsked} />
   ) : needArea && pin && area?.kind === "none" ? (
