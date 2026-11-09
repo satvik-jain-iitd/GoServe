@@ -790,8 +790,8 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 
 
 /* Story 1117 (board C7a): an example reads as an example, not as typed text (about 3.3:1), and the field edge is seen (3:1, WCAG 1.4.11). Typed text stays full ink. */
-.ui-field input.ui-eg { border-color: color-mix(in srgb, var(--gs-text-muted) 65%, var(--md-surface)); }
-.ui-field input.ui-eg::placeholder { color: color-mix(in srgb, var(--gs-text-muted) 65%, var(--md-surface)); opacity: 1; }
+.ui-field input.ui-eg, .ui-field textarea.ui-eg { border-color: color-mix(in srgb, var(--gs-text-muted) 65%, var(--md-surface)); }
+.ui-field input.ui-eg::placeholder, .ui-field textarea.ui-eg::placeholder { color: color-mix(in srgb, var(--gs-text-muted) 65%, var(--md-surface)); opacity: 1; }
 /* Story 1127 (boards C6, C8): the search runs on the map. The bar is a text box; the places list sits over the map under it. */
 .ui-pinmap-search.open { padding: 0 6px 0 18px; cursor: text; }
 .ui-pinmap-search.open input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--md-on-surface); font: inherit; outline: none; }
