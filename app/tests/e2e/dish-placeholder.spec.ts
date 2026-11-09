@@ -43,3 +43,12 @@ test("S4 the admin dish row shows it too", async ({ page, context }) => {
   const thumb = page.locator(".ui-dish-thumb.ui-ph").first();
   await expect(thumb.locator(FORK)).toHaveCount(1);
 });
+
+test("S5 the plate sits in the middle of its tile", async ({ page, context }) => {
+  await setup(context, page);
+  await page.goto("/customer/");
+  const box = (await page.locator(".ui-tile .ui-ph").first().boundingBox())!;
+  const svg = (await page.locator(".ui-tile .ui-ph svg").first().boundingBox())!;
+  expect(Math.abs(svg.x + svg.width / 2 - (box.x + box.width / 2))).toBeLessThan(2);
+  expect(Math.abs(svg.y + svg.height / 2 - (box.y + box.height / 2))).toBeLessThan(2);
+});
