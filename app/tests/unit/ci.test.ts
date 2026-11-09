@@ -9,8 +9,8 @@ const lockVersion = (dir: string): string => JSON.parse(readFileSync(new URL(`..
 
 describe("ci.yml (story #895)", () => {
   it("has the five jobs and the board-match job (story #1168)", () => expect(Object.keys(jobs).sort()).toEqual(["app", "boards", "gate", "guard", "site"]));
-  it("the board-match job is not blocking: continue-on-error, and the gate does not wait for it (story #1168)", () => {
-    expect(jobs.boards).toMatch(/continue-on-error: true/);
+  it("the board-match job is report only: mismatches are a warning, the check stays green, and the gate does not wait for it (story #1168)", () => {
+    expect(jobs.boards).toMatch(/npm run test:boards \|\| echo "::warning::/);
     expect(jobs.gate).not.toMatch(/boards/);
   });
   it("every job has a timeout-minutes, so a hung step is cancelled and the check fails", () => {

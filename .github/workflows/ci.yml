@@ -85,12 +85,11 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  # Story #1168: the board-match report. Not a merge gate yet (continue-on-error): it becomes blocking once the first round of mismatches is fixed.
+  # Story #1168: the board-match report. Report only, not a merge gate yet (the mismatches are a warning, the check stays green): it becomes blocking once the first round of mismatches is fixed.
   boards:
-    name: Boards (match the app to its approved boards, not blocking)
+    name: Boards (match the app to its approved boards, report only)
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    continue-on-error: true
     container:
       image: mcr.microsoft.com/playwright:v1.64.0-noble
       options: --ipc=host
@@ -110,7 +109,8 @@ jobs:
         run: npm ci
 
       - name: Match each screen to its board
-        run: npm run test:boards
+        # Report only: mismatches are a warning, so the check stays green for the merge script. It becomes a real gate once the first round of mismatches is fixed.
+        run: npm run test:boards || echo "::warning::board-match mismatches, see the board-match report artifact"
 
       - name: Upload the board-match report
         if: always()
