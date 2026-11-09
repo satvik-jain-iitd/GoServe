@@ -788,3 +788,10 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .gs-kitchen-tag { padding: 2px 8px; border: 1px solid var(--md-outline-variant); border-radius: 999px; background: var(--md-surface); color: var(--md-on-surface); font-size: 10px; font-weight: 600; line-height: 12px; white-space: nowrap; }
 .gs-kitchen-mark.no-tag .gs-kitchen-tag { display: none; }
 
+
+/* Story 1127 (boards C6, C8): the search runs on the map. The bar is a text box; the places list sits over the map under it. */
+.ui-pinmap-search.open { padding: 0 6px 0 18px; cursor: text; }
+.ui-pinmap-search.open input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--md-on-surface); font: inherit; outline: none; }
+.ui-pinmap-close { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: var(--gs-radius-pill); background: transparent; color: var(--md-on-surface); cursor: pointer; }
+.ui-pinmap-results { position: absolute; left: 16px; right: 16px; top: calc(env(safe-area-inset-top, 0px) + 72px); z-index: 700; max-height: 50%; overflow: auto; padding: 8px 12px; border: 1px solid var(--md-outline-variant); border-radius: 10px; background: var(--md-surface); box-shadow: 0 8px 24px rgba(38, 53, 40, 0.12); }
+.ui-landing .ui-slip-body > .ui-field-error, .ui-welcome .ui-slip-body > .ui-field-error { text-align: center; margin-bottom: -4px; }   /* story 1133 (T3): the error under the number is centred, 12 px above the main button */

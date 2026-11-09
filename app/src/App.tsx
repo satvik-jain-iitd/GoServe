@@ -944,7 +944,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <OtpSheet welcome googleOnly={!gate} phone={phone} onClose={() => undefined}
       onVerified={(p) => { setPhone(p); setVerified(true); setSignedIn(true); }} />
   ) : pinMap ? (
-    <PinMapScreen center={pinMap.center} edit={pinMap.edit} kicker={pinMap.edit ? `Editing ${pinMap.edit.label}` : undefined} confirmLabel={pinMap.edit ? "Save changes" : "Confirm & proceed"} onBack={() => setPinMap(null)} onSearch={() => { setPinMap(null); if (needArea) setStep("deliver"); }}
+    <PinMapScreen center={pinMap.center} edit={pinMap.edit} kicker={pinMap.edit ? `Editing ${pinMap.edit.label}` : undefined} confirmLabel={pinMap.edit ? "Save changes" : "Confirm & proceed"} onBack={() => { setFocusSearch(false); setPinMap(null); }} search={(q) => placeSearch(q)} searchOpen={focusSearch} onSearch={() => { setPinMap(null); if (needArea) setStep("deliver"); }}
       onInvite={async (f) => { const err = await askArea(f.pin, f.at); if (err) return err; setAreaAsk("done"); setPinMap(null); setFarPick(f); return null; }}
       onSave={(a) => { const e = pinMap.edit; setPinMap(null); if (e) void saveEdit(e.id, a); else void saveNew(a); }} />
   ) : farPick ? (
@@ -964,7 +964,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       onChange={() => { const at = from; changeArea(); setPinMap({ center: at ?? mapStart() }); }} />
   ) : needArea ? (
     <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={(pl) => { setAddress(pl.address); setFixAddress(null); choosePin(pl.pin); }}
-      onMap={(at) => setPinMap({ center: at })} onSearch={() => { setFocusSearch(true); setStep("deliver"); }} />
+      onMap={(at) => setPinMap({ center: at })} onSearch={() => { setFocusSearch(true); setPinMap({ center: mapStart() }); }} />
   ) : (
     <>
         {step === "menu" && (

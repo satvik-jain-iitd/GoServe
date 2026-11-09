@@ -81,6 +81,23 @@ test("S5 Type it by hand is gone; Enter address manually opens the search, focus
   const search = page.getByRole("searchbox", { name: "Search an area or address" });
   await expect(search).toBeVisible();
   await expect(search).toBeFocused();
+  await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();   // story #1127: the search runs on the map, the saved list never opens
+  await expect(page.getByRole("heading", { name: "Deliver to" })).toHaveCount(0);
+});
+
+const PLACES = { status: 200, body: { ok: true, results: [{ name: "Green Park", address: "Green Park, Delhi, 110016", lat: 28.5599, lng: 77.2065, pin: "110016", served: true }] } };
+test("S7 a search on the map shows results over the map and a pick moves the pin, never leaving the map", async ({ page, context }) => {
+  const net = await open(page, context, AREA);
+  net.state.places = PLACES;
+  await page.getByRole("button", { name: "Enter address manually" }).click();
+  const search = page.getByRole("searchbox", { name: "Search an area or address" });
+  await search.fill("green park");
+  await search.press("Enter");
+  await page.getByRole("button", { name: /Green Park/ }).first().click();
+  await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Places" })).toHaveCount(0);
+  await expect(page.getByRole("searchbox")).toHaveCount(0);   // the results close after a pick
 });
 
 test("S6 Set delivery location with the location denied lands on the same search, focused", async ({ page, context }) => {
@@ -90,4 +107,21 @@ test("S6 Set delivery location with the location denied lands on the same search
   await page.reload();
   await page.getByRole("button", { name: "Set delivery location" }).click();
   await expect(page.getByRole("searchbox", { name: "Search an area or address" })).toBeFocused();
+});
+
+// Story #1133 (owner test T3): the error under the number is centred, role alert, and 12 px above the main button.
+test("S8 the number error line is centred and sits 12 px above Send code", async ({ page, context }) => {
+  await setup(context, page, [], { guest: true });
+  await context.addInitScript(() => { try { localStorage.setItem("gs-otp-gate", "1"); } catch { /* blocked */ } });
+  const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
+  await context.route("https://test.supabase.co/functions/v1/otp/*", (r) => r.request().method() === "OPTIONS" ? r.fulfill({ status: 204, headers: CORS }) : r.fulfill({ status: 429, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify({ ok: false, error: "too_many_sends", message: "Too many codes. Try again in a few minutes." }) }));
+  await page.goto("/customer/");
+  await page.getByLabel("Mobile", { exact: true }).fill("9876543210");
+  await page.getByRole("button", { name: "Send code" }).click();
+  const err = page.getByRole("alert").filter({ hasText: "Too many codes" });
+  await expect(err).toBeVisible();
+  const [e, b, vp] = [(await err.boundingBox())!, (await page.getByRole("button", { name: "Send code" }).boundingBox())!, page.viewportSize()!];
+  expect(Math.abs(e.x + e.width / 2 - vp.width / 2)).toBeLessThanOrEqual(2);
+  expect(await err.evaluate((el) => getComputedStyle(el).textAlign)).toBe("center");
+  expect(Math.abs(b.y - (e.y + e.height) - 12)).toBeLessThanOrEqual(2);
 });
