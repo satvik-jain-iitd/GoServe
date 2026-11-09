@@ -21,26 +21,37 @@ async function toMap(page: Page, context: Parameters<typeof setup>[0], serve: { 
   return net;
 }
 
-test("S1 a pin outside every area: Confirm & proceed shows NK-A with the place, and C7 does not open", async ({ page, context }) => {
-  await toMap(page, context, FAR);
+test("S1 a pin outside every area: the button reads Invite the founders here; one tap saves the ask and opens the founder note, never C7 or NK-A", async ({ page, context }) => {
+  const net = await toMap(page, context, FAR);
   await expect(page.getByText("Not in our area yet")).toBeVisible();
-  await page.getByRole("button", { name: "Confirm & proceed" }).click();
-  await expect(page.getByRole("heading", { name: "We don't reach here yet" })).toBeVisible();
-  await expect(page.getByRole("group", { name: "No kitchen here" })).toContainText("Green Park");
+  await expect(page.getByRole("button", { name: "Confirm & proceed" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Invite the founders here" }).click();
+  await expect(page.getByRole("heading", { name: "You found us early. Thank you." })).toBeVisible();
+  await expect(page.getByRole("group", { name: "A letter from co-founder Satvik Jain" })).toContainText("Green Park");
+  const asks = net.calls.rpc.filter((c) => c.name === "area_request_add_v2");
+  expect(asks).toHaveLength(1);
+  expect(asks[0].body).toMatchObject({ p_pin: "110016" });
   await expect(page.getByRole("dialog", { name: "Address details" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "We don't reach here yet" })).toHaveCount(0);
 });
 
-test("S2 Tell me from there stores the ask with that pin, and Change location returns to the map", async ({ page, context }) => {
-  const net = await toMap(page, context, FAR);
-  await page.getByRole("button", { name: "Confirm & proceed" }).click();
-  await page.getByRole("button", { name: "Tell me when you come here" }).click();
-  await expect(page.getByRole("heading", { name: "You found us early. Thank you." })).toBeVisible();
-  expect(net.calls.rpc.filter((c) => c.name === "area_request_add_v2")[0].body).toMatchObject({ p_pin: "110016" });
+test("S2 Change location on the letter returns to the map", async ({ page, context }) => {
+  await toMap(page, context, FAR);
+  await page.getByRole("button", { name: "Invite the founders here" }).click();
   await page.getByRole("button", { name: "Change location" }).click();
   await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
 });
 
-test("S3 a served pin still goes on to C7", async ({ page, context }) => {
+test("S2b when the ask cannot be saved the words say so on the map and the button stays", async ({ page, context }) => {
+  const net = await toMap(page, context, FAR);
+  net.state.areaRequest = { ok: false, message: "That pin code is not valid." };
+  await page.getByRole("button", { name: "Invite the founders here" }).click();
+  await expect(page.getByRole("alert")).toContainText("That pin code is not valid.");
+  await expect(page.getByRole("button", { name: "Invite the founders here" })).toBeEnabled();
+  await expect(page.getByRole("heading", { name: "You found us early. Thank you." })).toHaveCount(0);
+});
+
+test("S3 a served pin keeps Confirm & proceed and goes on to C7", async ({ page, context }) => {
   await toMap(page, context, null);
   await expect(page.getByText(/We deliver here/)).toBeVisible();
   await page.getByRole("button", { name: "Confirm & proceed" }).click();
