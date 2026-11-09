@@ -52,3 +52,16 @@ test("a slow place-only answer cannot overwrite the pin answer", async ({ page, 
   await expect(page.getByText("Not in our area yet")).toBeVisible();
   await expect(page.getByText(/We deliver here/)).toHaveCount(0);
 });
+
+test("C7 the details sheet is tall enough for its content: no inner scroll, the title fully in view (360 x 740, story 1124)", async ({ page, context }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await open(page, context, false);
+  await expect(page.getByText(/We deliver here/)).toBeVisible();
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();
+  const sheet = page.getByRole("dialog", { name: "Address details" });
+  await expect(sheet).toBeVisible();
+  const m = await sheet.evaluate((e) => ({ scroll: e.scrollHeight, client: e.clientHeight, top: e.getBoundingClientRect().top, title: e.querySelector("h2")!.getBoundingClientRect().top }));
+  expect(m.scroll).toBeLessThanOrEqual(m.client);   // no scroll inside the sheet
+  expect(m.title).toBeGreaterThanOrEqual(0);        // the title is inside the screen
+  expect(m.title).toBeGreaterThanOrEqual(m.top);    // and inside its own sheet
+});
