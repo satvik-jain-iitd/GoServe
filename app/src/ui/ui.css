@@ -212,7 +212,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-landing .ui-slip { margin-top: var(--gs-space-6); flex: 1; }   /* story 1044: the slip runs to the bottom of the screen on every onboarding step, so its height never changes between steps */
 .ui-slip-title, .ui-welcome-title { text-align: center; }
 .ui-slip-line { margin: 0; text-align: center; }
-.ui-landing-head .ui-kicker, .ui-welcome-kicker { white-space: nowrap; font-size: clamp(10px, 2.9vw, 13px); }   /* the tagline is one line at every phone width */
+.ui-landing-head .ui-kicker, .ui-welcome-kicker { font-size: clamp(10px, 2.9vw, 13px); overflow-wrap: anywhere; }   /* one line at a normal phone width; a bigger text size on Android wraps under the logo instead of running past the edge (story 1123) */
 .ui-landing-foot { margin-top: auto; padding-top: var(--gs-space-5); display: flex; flex-direction: column; gap: var(--gs-space-2); text-align: center; }
 .ui-landing-foot .ui-kicker { font-size: var(--gs-mono-xs); }
 .ui-legal { margin: var(--gs-space-4) 0 var(--gs-space-2); text-align: center; font-size: var(--gs-mono-xs); color: var(--gs-text-muted); }   /* story 242: Privacy · Terms at the end of You */
