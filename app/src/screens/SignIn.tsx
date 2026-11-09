@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { friendlyAuth, givenNameOf, linkGoogle, markTried, rememberReturn, signedInName, takeTried, type ReturnScreen } from "../lib/auth";
+import { cachedSignedInName, friendlyAuth, givenNameOf, linkGoogle, markTried, rememberReturn, signedInName, takeTried, type ReturnScreen } from "../lib/auth";
 import { ensureSession, getClient } from "../lib/supabase";
 import { Button } from "../ui";
 
 // One line under the title: "Continue with Google", or "Signed in as <name>". No password, no email form.
 // `returnTo` is the screen Google comes back to (story #801). Only You asks for "account"; everywhere else the menu is right.
 export function SignIn({ mode = "link", returnTo = "menu", big, filled, onGivenName, help }: { mode?: "link" | "signin"; returnTo?: ReturnScreen; big?: boolean; filled?: boolean; onGivenName?: (name: string) => void; help?: string }) {
-  const [name, setName] = useState<string | null>(null);
+  const [name, setName] = useState<string | null>(() => cachedSignedInName());   // story #1134: the banner is there on the first paint; the call below only confirms it
   const [back] = useState(() => friendlyAuth(window.location.search, window.location.hash));
   const [error, setError] = useState<string | null>(back?.message ?? null);
   useEffect(() => {
