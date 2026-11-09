@@ -4,7 +4,7 @@ import { assertEquals } from "jsr:@std/assert@1";
 import { distanceM, isOpenAt, serviceability, type KitchenRow } from "./serviceability.ts";
 
 const HK = { lat: 28.5494, lng: 77.2001 };   // Hauz Khas
-const k = (o: Partial<KitchenRow> = {}): KitchenRow => ({ id: "k1", name: "Hauz Khas Kitchen", lat: HK.lat, lng: HK.lng, radius_m: 3000, prep_minutes: 20, open: true, active: true, opens_at: null, closes_at: null, ...o });
+const k = (o: Partial<KitchenRow> = {}): KitchenRow => ({ id: "k1", name: "Hauz Khas Kitchen", lat: HK.lat, lng: HK.lng, radius_m: 3000, prep_minutes: 20, open: true, active: true, opens_at: null, closes_at: null, pin_codes: ["110016"], ...o });
 // A point due north of the kitchen, so the distance is easy to set: 1 degree of latitude is about 111,195 m.
 const north = (m: number) => ({ lat: HK.lat + m / 111195, lng: HK.lng });
 const noon = new Date("2026-10-27T06:30:00Z");   // 12:00 in Delhi
@@ -19,7 +19,7 @@ Deno.test("a place just inside the radius is served, with the kitchen's name, th
   assertEquals(r.serviceable, true);
   assertEquals(r.request_here, false);
   assertEquals([r.kitchens[0].kitchen_id, r.kitchens[0].name, r.kitchens[0].open], ["k1", "Hauz Khas Kitchen", true]);
-  assertEquals(r.kitchens[0].eta_min, 20 + Math.ceil(r.kitchens[0].distance_m / 250));   // prep + a rider at 15 km/h
+  assertEquals(r.kitchens[0].eta_min, 20 + Math.ceil((r.kitchens[0].distance_m ?? 0) / 250));   // prep + a rider at 15 km/h
 });
 
 Deno.test("a place just outside the radius gets no kitchen and 'Request here'", () => {
@@ -27,9 +27,10 @@ Deno.test("a place just outside the radius gets no kitchen and 'Request here'", 
   assertEquals([r.serviceable, r.request_here, r.kitchens.length], [false, true, 0]);
 });
 
-Deno.test("kitchens come nearest first; inactive kitchens and kitchens with no place are skipped", () => {
+Deno.test("kitchens come nearest first; a switched-off kitchen still serves (not open); a kitchen with no place and no listed pin is skipped", () => {
   const r = serviceability(north(500), [k({ id: "far", lat: north(2000).lat }), k({ id: "near" }), k({ id: "off", active: false }), k({ id: "nowhere", lat: null, lng: null })], noon);
-  assertEquals(r.kitchens.map((x) => x.kitchen_id), ["near", "far"]);
+  assertEquals(r.kitchens.map((x) => x.kitchen_id), ["near", "off", "far"]);   // story #1102: the switch is not part of the rule
+  assertEquals(r.kitchens.find((x) => x.kitchen_id === "off")?.open, false);
 });
 
 Deno.test("a kitchen switched off, or outside its hours, is served but not open", () => {
@@ -46,4 +47,17 @@ Deno.test("hours: closed at the closing minute, open at the opening minute, and 
   assertEquals(isOpenAt("20:00:00", "02:00:00", at("01:00")), true);
   assertEquals(isOpenAt("20:00:00", "02:00:00", at("12:00")), false);
   assertEquals(isOpenAt(null, null, at("04:00")), true);
+});
+
+// Story #1102: one serviceability rule. A kitchen serves a place when its pin_codes list the place's pin OR the place is inside its radius. The same rule is in app/src/lib/area.ts.
+Deno.test("#1102 a place inside the radius is served whatever pin the map read for it", () => {
+  assertEquals(serviceability(north(100), [k({ pin_codes: ["403725"] })], noon, "403721").serviceable, true);
+});
+Deno.test("#1102 a pin the kitchen lists is served even outside the radius, with the real distance", () => {
+  const r = serviceability(north(5000), [k({ pin_codes: ["403725"] })], noon, "403725");
+  assertEquals([r.serviceable, r.kitchens[0].distance_m], [true, 5000]);
+});
+Deno.test("#1102 outside the radius and no listed pin: not served", () => {
+  assertEquals(serviceability(north(5000), [k({ pin_codes: ["403725"] })], noon, "403721").serviceable, false);
+  assertEquals(serviceability(north(5000), [k()], noon).serviceable, false);
 });

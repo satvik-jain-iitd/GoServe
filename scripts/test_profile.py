@@ -10,7 +10,7 @@ from test_payments import O, CUST, OTHER, SETUP, q, run
 
 PERSONAL = [
     f"insert into customers (user_id, name, phone, address, pin_code) values ('{CUST}', 'Asha', '9876543210', 'Flat 4', '110016')",
-    f"insert into addresses (user_id, label, house, building, pin_code, lat, lng) values ('{CUST}', 'Home', '4', 'Green Park', '110016', 28.5, 77.2)",
+    f"insert into addresses (user_id, label, address, house, building, pin_code, lat, lng) values ('{CUST}', 'Home', '4, Green Park, New Delhi', '4', 'Green Park', '110016', 28.5, 77.2)",
     f"insert into push_devices (session_id, platform, token) values ('{CUST}', 'android', 'tok-a')",
     f"update orders set customer_name = 'Asha', customer_phone = '9876543210' where id = '{O}'",
 ]

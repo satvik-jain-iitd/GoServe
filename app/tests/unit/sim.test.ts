@@ -1,19 +1,20 @@
 // Story H7 (#190): the admin Simulator tab talks to n8n GS MAIN 30 (webhook gs-sim) with the simulator token, never to the database.
-import { describe, expect, it } from "vitest";
-import { KNOB_DEFAULTS, SEED_DEFAULTS, callSim, SimError, tickLine } from "../../src/lib/sim";
+import { describe, expect, it, vi } from "vitest";
+import { CLEAR_WORD, KNOB_DEFAULTS, SEED_DEFAULTS, callSim, clearAll, clearShown, groupLine, SimError, tickLine } from "../../src/lib/sim";
 
 const deps = (res: () => Promise<Response>, seen: { url?: string; init?: RequestInit } = {}) => ({
-  url: "https://n8n.test/webhook/gs-sim", token: "sim-token",
+  url: "https://n8n.test/webhook/gs-sim", token: async () => "aaa.bbb.ccc",
   fetchFn: (async (url: string, init: RequestInit) => { seen.url = url; seen.init = init; return res(); }) as typeof fetch,
 });
 const json = (status: number, body: unknown) => async () => new Response(JSON.stringify(body), { status });
 
 describe("callSim", () => {
-  it("posts the action and the parameters with the simulator token header", async () => {
+  it("posts the action and the parameters with the signed-in admin token and no shared token", async () => {
     const seen: { url?: string; init?: RequestInit } = {};
     const a = await callSim("seed", { kitchens: 12, riders: 20, dishes_per_kitchen: 6, seed: 42 }, deps(json(200, { ok: true, kitchens: 12, riders: 20, dishes: 72 }), seen));
     expect(seen.url).toBe("https://n8n.test/webhook/gs-sim");
-    expect((seen.init?.headers as Record<string, string>)["x-gs-sim-token"]).toBe("sim-token");
+    expect((seen.init?.headers as Record<string, string>)["authorization"]).toBe("Bearer aaa.bbb.ccc");
+    expect((seen.init?.headers as Record<string, string>)["x-gs-sim-token"]).toBeUndefined();
     expect((seen.init?.headers as Record<string, string>)["x-gs-token"]).toBeUndefined();
     expect(JSON.parse(seen.init?.body as string)).toEqual({ action: "seed", kitchens: 12, riders: 20, dishes_per_kitchen: 6, seed: 42 });
     expect(a).toEqual({ ok: true, kitchens: 12, riders: 20, dishes: 72 });
@@ -34,5 +35,75 @@ describe("the #284 numbers", () => {
   it("the tick line says what the orders did", () => {
     expect(tickLine({ ok: true, riders_moved: 3, orders: { accepted: 2, cancelled: 1, delivered: 1, dropped: 0 } })).toContain("Orders: 2 accepted, 1 turned away, 1 delivered, 0 riders dropped.");
     expect(tickLine({ ok: true, riders_moved: 3 })).not.toContain("Orders:");
+  });
+});
+
+// Story #848 (board A-Sim-Groups, A-Sim-Clear): two seed groups, and Clear everything through the admin's own session.
+describe("the two seed groups", () => {
+  it("seed_kitchens and seed_riders go to the webhook with the admin token", async () => {
+    const seen: { url?: string; init?: RequestInit } = {};
+    await callSim("seed_kitchens", {}, deps(json(200, { ok: true, kitchens: 10 }), seen));
+    expect(JSON.parse(seen.init?.body as string)).toEqual({ action: "seed_kitchens" });
+    await callSim("seed_riders", { riders_per_kitchen: 3, online_pct: 70 }, deps(json(200, { ok: true, riders: 30 }), seen));
+    expect(JSON.parse(seen.init?.body as string)).toEqual({ action: "seed_riders", riders_per_kitchen: 3, online_pct: 70 });
+  });
+  it("a group line says how many are synthetic and how many are real", () => {
+    expect(groupLine(10, 6)).toBe("10 synthetic · 6 real");
+    expect(groupLine(undefined, undefined)).toBe("0 synthetic · 0 real");
+  });
+});
+
+describe("Clear everything", () => {
+  it("is the typed word CLEAR", () => expect(CLEAR_WORD).toBe("CLEAR"));
+  it("shows at once with the dev build flag, until the database says no (story 941)", () => {
+    expect(clearShown("1", true)).toBe(true);
+    expect(clearShown("1", null)).toBe(true);   // the answer has not come yet: the button is there, asleep
+    expect(clearShown("1", false)).toBe(false);
+    expect(clearShown(undefined, true)).toBe(false);
+    expect(clearShown("0", true)).toBe(false);
+  });
+  const slice = (o: object) => ({ data: { ok: true, done: false, logs_detached: 0, orders: 0, kitchens: 0, riders: 0, dishes: 0, ...o }, error: null });
+  it("calls sim_clear_all with the admin's client, never the webhook, slice after slice until done, and adds the counts up", async () => {
+    const calls: unknown[][] = [];
+    const answers = [slice({ logs_detached: 500 }), slice({ logs_detached: 120 }), slice({ orders: 500 }), slice({ orders: 41 }), slice({ done: true, kitchens: 16, riders: 33, dishes: 120 })];
+    const c = { rpc: async (...a: unknown[]) => { calls.push(a); return answers.shift(); } };
+    const seen: object[] = [];
+    expect(await clearAll(c as never, (t) => seen.push({ ...t }))).toEqual({ ok: true, kitchens: 16, riders: 33, dishes: 120, orders: 541 });
+    expect(calls).toHaveLength(5);
+    expect(calls[0]).toEqual(["sim_clear_all", { p_limit: 500 }]);
+    expect(seen.map((t) => (t as { orders: number }).orders)).toEqual([0, 0, 500, 541, 541]);   // the screen can say "541 orders gone" after each slice
+  });
+  it("stops with the true reason when a slice fails, and does not call again", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    let n = 0;
+    const c = { rpc: async () => (++n === 1 ? slice({ orders: 500 }) : { data: null, error: { message: "canceling statement due to statement timeout", code: "57014" } }) };
+    await expect(clearAll(c as never)).rejects.toMatchObject({ message: "canceling statement due to statement timeout (57014)", code: "57014" });
+    expect(n).toBe(2);
+    spy.mockRestore();
+  });
+  it("gives up with a plain line when slices keep coming back empty and never say done", async () => {
+    let n = 0;
+    const c = { rpc: async () => { n++; return slice({}); } };
+    await expect(clearAll(c as never)).rejects.toMatchObject({ code: "no_progress" });
+    expect(n).toBeLessThan(10);
+  });
+  it("turns a refusal into a plain line", async () => {
+    const off = { rpc: async () => ({ data: { ok: false, error: "clear_not_allowed", message: "Clear everything is switched off on this database." }, error: null }) };
+    await expect(clearAll(off as never)).rejects.toMatchObject({ message: "Clear everything is switched off on this database.", code: "clear_not_allowed" });
+    const nobody = { rpc: async () => ({ data: null, error: { message: "not_admin" } }) };
+    await expect(clearAll(nobody as never)).rejects.toMatchObject({ message: "Only an admin can clear the city.", code: "not_admin" });
+    const down = { rpc: async () => ({ data: null, error: { message: "fetch failed" } }) };
+    await expect(clearAll(down as never)).rejects.toMatchObject({ code: "unknown" });
+  });
+  // Story #869: an admin reads the true reason when the call fails, and the full error goes to the console.
+  it("shows the message and the code of the database error, and keeps the plain line for not_admin", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const jwt = { message: "JWT expired", code: "PGRST301", details: null, hint: null };
+    await expect(clearAll({ rpc: async () => ({ data: null, error: jwt }) } as never)).rejects.toMatchObject({ message: "JWT expired (PGRST301)", code: "PGRST301" });
+    expect(spy).toHaveBeenCalledWith("sim_clear_all failed", jwt);
+    await expect(clearAll({ rpc: async () => ({ data: null, error: { message: "TypeError: Failed to fetch" } }) } as never)).rejects.toMatchObject({ message: "TypeError: Failed to fetch", code: "unknown" });
+    await expect(clearAll({ rpc: async () => ({ data: null, error: { message: "not_admin", code: "42501" } }) } as never)).rejects.toMatchObject({ message: "Only an admin can clear the city.", code: "not_admin" });
+    await expect(clearAll({ rpc: async () => ({ data: null, error: { message: "", code: "" } }) } as never)).rejects.toMatchObject({ message: "Something went wrong. Please try again." });
+    spy.mockRestore();
   });
 });

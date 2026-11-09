@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 // What the kitchen sees: the orders of this session, newest first, and the one button each order can have (story #49).
 // The rider's steps (out for delivery, delivered) belong to story #50, so after Ready the kitchen has no button.
 export type OrderLine = { menu_item_id: string; name: string; qty: number; price_paise: number };
@@ -5,7 +6,7 @@ export type Order = {
   id: string; session_id: string; status: string; address: string; items: OrderLine[]; total_paise: number; created_at: string; updated_at: string; paid_by?: string | null;
   payment_method?: string | null; paid_at?: string | null;   // story #552: online orders wait for the payment
   customer_name?: string | null; customer_phone?: string | null;
-  kitchen_id?: string; rider_id?: string | null; cash_handed_at?: string | null; cancel_reason?: string | null;
+  kitchen_id?: string; rider_id?: string | null; cash_handed_at?: string | null; cancel_reason?: string | null; cancelled_by?: string | null; instructions?: string | null;
 };
 
 export const shortId = (id: string): string => id.slice(0, 8);   // the order number the customer and the kitchen both say
@@ -19,6 +20,17 @@ export const nextStep = (status: string) => STEPS[status] ?? null;
 
 // One label map for the kitchen, the rider and the customer tracker.
 const LABELS: Record<string, string> = { placed: "Placed", accepted: "Accepted", preparing: "Cooking", ready: "Ready", out_for_delivery: "On the way", delivered: "Delivered", cancelled: "Cancelled" };
+/** Story #1017: who cancelled, from the recorded fact `cancelled_by`. customer: the customer's own change of mind (Cancelled). declined: the kitchen or an admin said no, in words (Declined). rider: refused at the door.
+ *  A row from before the column existed is read from its text, once: the old customer text and no text are the customer's, a code is the rider's, any other words are the kitchen's. */
+export type CancelKind = "customer" | "declined" | "rider" | null;
+export const cancelKind = (o: { status: string; cancelled_by?: string | null; cancel_reason?: string | null }): CancelKind => {
+  if (o.status !== "cancelled") return null;
+  if (o.cancelled_by === "customer") return "customer";
+  if (o.cancelled_by === "kitchen" || o.cancelled_by === "admin") return "declined";
+  if (o.cancelled_by === "rider") return "rider";
+  const why = o.cancel_reason?.trim();
+  return !why || why === "cancelled by customer" ? "customer" : why === "refused_at_door" ? "rider" : "declined";
+};
 export const statusLabel = (status: string): string => LABELS[status] ?? status;
 /** The staff apps (kitchen, admin) say "New" for a placed order; the customer sees "Placed". One place for the difference (H12). */
 export const staffLabel = (status: string): string => (status === "placed" ? "New" : statusLabel(status));

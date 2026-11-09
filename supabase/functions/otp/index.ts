@@ -20,6 +20,8 @@ export type Deps = {
 };
 const STATUS: Record<string, number> = { invalid_phone: 400, too_many_sends: 429, too_many_attempts: 429, wrong_code: 422, code_expired: 422, no_code: 422, phone_in_use: 409, not_signed_in: 403, not_a_guest: 409, same_user: 400, claim_failed: 502 };
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+// Indian mobiles are stored as 91 plus the ten digits, in otp_codes and in Supabase Auth (migration 20261027210000_otp.sql).
+export const stored = (digits: string) => "91" + digits;
 const refuse = (r: Refusal) => json(STATUS[r.error] ?? 422, { ok: false, error: r.error, message: r.message });
 
 export const makeHandler = (deps: Deps) => async (req: Request): Promise<Response> => {
@@ -94,7 +96,7 @@ const live: Deps = {
   link: async (userId, phone) => {
     const res = await fetch(`${url()}/auth/v1/admin/users/${userId}`, { method: "PUT", headers: { apikey: service(), authorization: `Bearer ${service()}`, "content-type": "application/json" }, body: JSON.stringify({ phone, phone_confirm: true }) });
     if (res.ok) return { ok: true };
-    if ((await res.text()).includes("users_phone_key")) return { ok: false, error: "phone_in_use", message: "This number is already used by another account." };
+    if ((await res.text()).includes("users_phone_key")) return { ok: false, error: "phone_in_use", message: "This number already has a GoServe account." };
     throw new Error("link failed");
   },
 };
@@ -103,7 +105,7 @@ const live: Deps = {
 // number while this is set; it is the owner's call for the test phase (the privacy page already says the app is in testing).
 export const withFixedCode = (deps: Deps, fixed: string | undefined): Deps =>
   fixed && /^[0-9]{6}$/.test(fixed)
-    ? { ...deps, check: (phone, code) => (code === fixed ? Promise.resolve({ ok: true as const, phone }) : deps.check(phone, code)) }
+    ? { ...deps, check: (phone, code) => (code === fixed ? Promise.resolve({ ok: true as const, phone: stored(phone) }) : deps.check(phone, code)) }
     : deps;
 // The env is read when a code is checked, not at import: the test run has no env permission.
 const liveWithFixed: Deps = { ...live, check: (phone, code) => withFixedCode(live, Deno.env.get("OTP_FIXED_CODE")).check(phone, code) };

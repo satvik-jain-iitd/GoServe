@@ -151,6 +151,115 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /geocode:
+    get:
+      operationId: getGeocode
+      summary: The address words and pin code of one place, from Ola Maps. The key stays in the function; the answer is shown to the customer and never stored.
+      x-handler: ../supabase/functions/geocode/index.ts
+      x-contract-handler: ../supabase/functions/geocode/fixture.ts
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema: { type: number, minimum: -90, maximum: 90 }
+          example: 24.9167
+        - name: lng
+          in: query
+          required: true
+          schema: { type: number, minimum: -180, maximum: 180 }
+          example: 79.5833
+      responses:
+        "200":
+          description: The words (sublocality, town, state) and the six-digit pin code. The pin is empty when Ola gives none.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Geocoded"
+        "400":
+          description: The place is missing, not a number, or out of range (invalid_place).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: No login (unauthorized).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Ola has no address words for this place (not_found).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "405":
+          description: Only GET is answered.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: More than 10 calls a minute from this caller (slow_down).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "502":
+          description: Ola could not be asked. No detail is given (geocode_unavailable).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          description: The provider switch is off (provider_off) or the month's free calls are used (over_cap).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /place-search:
+    get:
+      operationId: getPlaceSearch
+      summary: Find places by words (a colony, a post office) or by a pin code, from our own pincodes table (GeoNames). No third party. Served places come first, five at most. Search on submit.
+      x-handler: ../supabase/functions/place-search/index.ts
+      x-contract-handler: ../supabase/functions/place-search/fixture.ts
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 3, maxLength: 100 }
+          example: Green Park
+      responses:
+        "200":
+          description: Up to five places, each with the one-line address, the place, the pin, and whether one of our kitchens reaches it. An empty list when nothing matches.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaceSearch"
+        "400":
+          description: The query is missing or not 3 to 100 characters (invalid_query).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: No login (unauthorized).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: Too many searches from this caller (slow_down). Try again in a moment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "502":
+          description: The places could not be read. No detail is given (search_unavailable).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /orders:
     post:
       operationId: postOrders
@@ -1089,6 +1198,56 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /push/web:
+    post:
+      operationId: postPushWeb
+      summary: The database says an outbox row is new; every web subscription of its customer gets a push with the words inside
+      description: "Not for apps. The caller is the database (pg_net) and proves it with our own secret in the x-push-secret header (PUSH_NOTIFY_SECRET). The function claims the row, sends one encrypted VAPID push per subscription (urgency high, ttl 600 s), forgets a subscription the push service says is dead (404, 410) and reports the row. A row already sent or claimed by the retry sends nothing (skipped). Without the VAPID secrets it answers 503 and claims nothing."
+      x-handler: ../supabase/functions/push/index.ts
+      x-contract-handler: ../supabase/functions/push/fixture.ts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [outbox_id]
+              properties:
+                outbox_id: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: The pushes were tried (sent, failed, forgotten), or the row needed none (skipped).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/PushNotified"
+                  - $ref: "#/components/schemas/PushSkipped"
+        "400":
+          description: The request is malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: The secret is wrong or missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          description: The notify secret or the VAPID secrets are not set (notify_not_configured, web_not_configured).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "502":
+          description: The database could not be reached. No detail is given.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   schemas:
     Error:
@@ -1164,6 +1323,7 @@ components:
         tax_mode: { enum: [inclusive, exclusive] }
         to_pay_paise: { type: integer, minimum: 0 }
         saved_paise: { type: integer, minimum: 0 }
+        early_friend_paise: { type: integer, minimum: 1, description: "Story 1145. The early-friend gift the database gives this customer at this pin, already taken off to_pay_paise. Absent when there is none. A request never names it." }
         swap_discount_paise: { type: integer, minimum: 0, description: "Only after a swap: the part of discount_paise that is the swap discount." }
         swaps:
           description: "Only after a swap: what was swapped for what. The lines above already show the new dish."
@@ -1187,6 +1347,38 @@ components:
               code: { type: string }
               title: { type: string }
               saves_paise: { type: integer, minimum: 1 }
+    Geocoded:
+      type: object
+      additionalProperties: false
+      required: [ok, address, pin, locality, town]
+      properties:
+        ok:
+          const: true
+        address: { type: string, minLength: 1 }
+        pin: { type: string, pattern: "^(\\d{6})?$" }
+        locality: { type: string }
+        town: { type: string }
+    PlaceSearch:
+      type: object
+      additionalProperties: false
+      required: [ok, results]
+      properties:
+        ok:
+          const: true
+        results:
+          type: array
+          maxItems: 5
+          items:
+            type: object
+            additionalProperties: false
+            required: [name, address, lat, lng, pin, served]
+            properties:
+              name: { type: string, minLength: 1 }
+              address: { type: string, minLength: 1 }
+              lat: { type: number, minimum: -90, maximum: 90 }
+              lng: { type: number, minimum: -180, maximum: 180 }
+              pin: { type: string, pattern: "^(\\d{6})?$" }
+              served: { type: boolean }
     Serviceability:
       type: object
       additionalProperties: false
@@ -1339,6 +1531,15 @@ components:
         sent: { type: integer, minimum: 0 }
         failed: { type: integer, minimum: 0 }
         forgotten: { type: integer, minimum: 0 }
+    PushSkipped:
+      type: object
+      additionalProperties: false
+      required: [ok, skipped]
+      properties:
+        ok:
+          const: true
+        skipped:
+          const: true
     CouponList:
       type: object
       additionalProperties: false

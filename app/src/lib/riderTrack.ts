@@ -16,9 +16,9 @@ export async function readPinPoint(client: SupabaseClient, pin: string): Promise
   return error || !data ? null : { lat: data.lat, lng: data.lng };
 }
 
-export function watchRider(client: SupabaseClient, orderId: string, onChange: () => void): () => void {
+export function watchRider(client: SupabaseClient, orderId: string, onChange: () => void, tag = "track"): () => void {   // one channel name per watcher: a name can only be subscribed once
   const channel = client
-    .channel(`track-${orderId}`)
+    .channel(`${tag}-${orderId}`)
     .on("postgres_changes", { event: "*", schema: "public", table: "order_tracking", filter: `order_id=eq.${orderId}` }, onChange)
     .subscribe();
   return () => {

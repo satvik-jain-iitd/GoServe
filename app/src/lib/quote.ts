@@ -9,6 +9,7 @@ export type Quote = {
   item_total_paise: number; fees: { delivery_paise: number; packaging_paise: number; total_paise: number };
   discount_paise: number; coupon: { code: string; title: string } | null; tax_paise: number; tax_mode: "inclusive" | "exclusive"; to_pay_paise: number; offers: Offer[];
   lines?: { menu_item_id: string; name: string; qty: number; unit_paise: number; line_paise: number }[];   // the priced lines; after a swap the new dish is here
+  early_friend_paise?: number;   // story #1145: the early-friend gift the server gave; to_pay_paise already has it off
   swap_discount_paise?: number; swaps?: { from: string; to: string; discount_paise: number }[];   // only after a swap (layer b); discount_paise includes the swap discount
 };
 export type QuoteResult = { ok: true; quote: Quote } | { ok: false; error: string; message: string; alternative?: Alternative | null };
@@ -30,3 +31,6 @@ export async function fetchQuote(input: { kitchenId: string; pin: string; items:
     return down;
   }
 }
+// Story #995: the Bill and Place order ask the server the same question. With the offers off in this build the question is "no coupon", because the server picks a personal coupon
+// (the apology coupon of a late order) by itself when nobody says otherwise, and then its total is not the one the Bill shows.
+export const askFor = (off: boolean, pick: { code: string | null; none: boolean }): { code: string | null; none: boolean } => (off ? { code: null, none: true } : pick);

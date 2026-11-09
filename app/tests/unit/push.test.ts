@@ -103,3 +103,11 @@ describe("the push service worker", () => {
     expect(w.opened).toEqual(["/customer/"]);
   });
 });
+
+describe("one notification per order (story #920)", () => {
+  const src = pushWorkerSource("https://x.supabase.co", "anon");
+  it("tags the notification with the order id the database sends, and keeps the general tag when there is none", () => {
+    expect(src).toContain("tag: d && d.order_id ? d.order_id : 'gs-order'");
+    expect(src).not.toContain("tag: 'gs-order' }");
+  });
+});

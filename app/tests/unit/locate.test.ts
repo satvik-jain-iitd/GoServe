@@ -1,12 +1,32 @@
 // Story #668 (boards A1 to A3): the customer's own address from the phone's location, through OpenStreetMap's reverse lookup (no key). Any failure means "type it by hand".
-import { describe, expect, it } from "vitest";
-import { addressFrom, reverseAddress } from "../../src/lib/locate";
+import { describe, expect, it, vi } from "vitest";
+import { addressFrom, reverseAddress, dropFor } from "../../src/lib/locate";
 
 const NOMINATIM = { display_name: "B-12, Lajpat Nagar II, Lajpat Nagar, South Delhi, New Delhi, Delhi, 110024, India", address: { house_number: "B-12", road: "Lajpat Nagar II", suburb: "Lajpat Nagar", city: "New Delhi", state: "Delhi", postcode: "110024", country: "India" } };
 
 describe("addressFrom", () => {
-  it("makes a short street address and a pin code, never the state or the country", () => {
-    expect(addressFrom(NOMINATIM)).toEqual({ address: "B-12, Lajpat Nagar II, Lajpat Nagar, New Delhi", pin: "110024" });
+  it("makes a short street address with the city and the state, and a pin code, never the country", () => {
+    expect(addressFrom(NOMINATIM)).toEqual({ address: "B-12, Lajpat Nagar II, Lajpat Nagar, New Delhi, Delhi", pin: "110024" });
+  });
+  // Story 827: OpenStreetMap holds a Gurgaon object tagged postcode 110058 (a Delhi pin). The same reply says Haryana, so the pin and the state disagree.
+  const GURGAON = { address: { road: "Sector 13 Road", city: "Gurugram", state: "Haryana", postcode: "110058", country: "India" } };
+  it("drops a pin that contradicts its own state (Gurugram, Haryana, but a Delhi 110 pin)", () => {
+    expect(addressFrom(GURGAON)).toEqual({ address: "Sector 13 Road, Gurugram, Haryana", pin: "" });
+  });
+  it("keeps a pin that agrees with its state (Gurugram, Haryana, 122004)", () => {
+    expect(addressFrom({ address: { ...GURGAON.address, postcode: "122004" } })?.pin).toBe("122004");
+  });
+  it("keeps the pin when the state is one we have no table for, or no state came back", () => {
+    expect(addressFrom({ address: { ...GURGAON.address, state: "Kerala" } })?.pin).toBe("110058");
+    expect(addressFrom({ address: { road: "Sector 13 Road", city: "Gurugram", postcode: "110058" } })?.pin).toBe("110058");
+  });
+  it("accepts each state's own series and the border ones (Delhi 110, Noida in Uttar Pradesh 201, Faridabad in Haryana 121)", () => {
+    const pin = (state: string, postcode: string) => addressFrom({ address: { road: "R", state, postcode } })?.pin;
+    expect([pin("Delhi", "110024"), pin("Uttar Pradesh", "201301"), pin("Haryana", "121001"), pin("Rajasthan", "302001"), pin("Punjab", "160055")]).toEqual(["110024", "201301", "121001", "302001", "160055"]);
+    expect([pin("Delhi", "201301"), pin("Uttar Pradesh", "110024"), pin("Rajasthan", "122004")]).toEqual(["", "", ""]);
+  });
+  it("does not repeat the state when the city already is the state", () => {
+    expect(addressFrom({ address: { road: "R", city: "Delhi", state: "Delhi", postcode: "110001" } })?.address).toBe("R, Delhi");
   });
   it("keeps what it has when parts are missing, and drops a pin that is not six digits", () => {
     expect(addressFrom({ address: { road: "Ring Road", postcode: "1100" } })).toEqual({ address: "Ring Road", pin: "" });
@@ -21,7 +41,7 @@ describe("reverseAddress", () => {
   it("asks once with the coordinates and reads the answer", async () => {
     const urls: string[] = [];
     const r = await reverseAddress(28.57, 77.24, async (u) => { urls.push(String(u)); return new Response(JSON.stringify(NOMINATIM)); });
-    expect(r).toEqual({ address: "B-12, Lajpat Nagar II, Lajpat Nagar, New Delhi", pin: "110024" });
+    expect(r).toEqual({ address: "B-12, Lajpat Nagar II, Lajpat Nagar, New Delhi, Delhi", pin: "110024" });
     expect(urls).toHaveLength(1);
     expect(urls[0]).toContain("lat=28.57");
     expect(urls[0]).toContain("lon=77.24");
@@ -29,5 +49,78 @@ describe("reverseAddress", () => {
   it("is null when the network or the service fails", async () => {
     expect(await reverseAddress(1, 2, async () => { throw new Error("offline"); })).toBeNull();
     expect(await reverseAddress(1, 2, async () => new Response("no", { status: 429 }))).toBeNull();
+  });
+});
+
+// Story #910: the drop point follows the address. A hand edit after a location fix clears the fix; the same address keeps it; a new fix brings its own address.
+describe("dropFor", () => {
+  const fix = { lat: 28.5677, lng: 77.2432 };
+  it("keeps the fix while the address is the one the location found", () => {
+    expect(dropFor(fix, "B-12, Lajpat Nagar II", "B-12, Lajpat Nagar II")).toEqual(fix);
+    expect(dropFor(fix, "B-12, Lajpat Nagar II", "  B-12, Lajpat Nagar II  ")).toEqual(fix);
+  });
+  it("clears the fix when the customer typed a different address", () => {
+    expect(dropFor(fix, "B-12, Lajpat Nagar II", "B-12, Lajpat Nagar II, near the park gate")).toBeNull();
+  });
+  it("is null with no fix, or with no located address", () => {
+    expect(dropFor(null, null, "Flat 4")).toBeNull();
+    expect(dropFor(fix, null, "Flat 4")).toBeNull();
+  });
+  it("a second location from another place carries its own fix and its own address", () => {
+    const again = { lat: 28.6, lng: 77.3 };
+    expect(dropFor(again, "C-4, Hauz Khas", "C-4, Hauz Khas")).toEqual(again);
+  });
+});
+
+// Story #987 (was #969): Nominatim has no postcode in most of small-town India. The fallback asks our own table (rpc nearest_pin, GeoNames), never a third party.
+// The Chhatarpur reply is the one measured on 7 Nov 2026 (no postcode at any zoom).
+describe("the nearest pin when the reverse lookup has none (story 987)", () => {
+  const CHHATARPUR = { address: { road: "Link Road", village: "Rajnagar", state_district: "Chhatarpur", state: "Madhya Pradesh", country: "India" } };
+  const deps = (fetchFn: typeof fetch) => ({ fetchFn, url: "https://x.supabase.co", anon: "anon-key", token: async () => "tok" });
+  const route = (calls: { url: string; init?: RequestInit }[], pin: () => Promise<Response>, nominatim: unknown = CHHATARPUR) => (async (u: string | URL | Request, init?: RequestInit) => {
+    const url = String(u); calls.push({ url, init });
+    return url.includes("nominatim") ? new Response(JSON.stringify(nominatim)) : pin();
+  }) as typeof fetch;
+  const ask = (f: typeof fetch, lat = 24.91, lng = 79.59) => reverseAddress(lat, lng, f, deps(f));
+
+  it("fills the pin from our own table with exactly two calls, the second to the Supabase rpc and nowhere else", async () => {
+    const calls: { url: string; init?: RequestInit }[] = [];
+    const r = await ask(route(calls, async () => new Response(JSON.stringify("471001"))));
+    expect(r).toEqual({ address: "Link Road, Rajnagar, Madhya Pradesh", pin: "471001" });
+    expect(calls).toHaveLength(2);
+    expect(calls[1].url).toBe("https://x.supabase.co/rest/v1/rpc/nearest_pin");
+    expect(JSON.parse(String(calls[1].init?.body))).toEqual({ p_lat: 24.91, p_lng: 79.59 });
+    expect(calls.some((c) => c.url.includes("overpass"))).toBe(false);
+  });
+
+  it("makes no second call when the first reply has a fitting pin", async () => {
+    const calls: { url: string; init?: RequestInit }[] = [];
+    const r = await ask(route(calls, async () => { throw new Error("must not be called"); }, NOMINATIM), 28.57, 77.24);
+    expect(r?.pin).toBe("110024");
+    expect(calls).toHaveLength(1);
+  });
+
+  it("drops a pin from the table that disagrees with the state of the reply", async () => {
+    const delhi = { address: { road: "Ring Road", city: "New Delhi", state: "Delhi" } };
+    const r = await ask(route([], async () => new Response(JSON.stringify("201301")), delhi), 28.5, 77.2);
+    expect(r?.pin).toBe("");
+  });
+
+  it("leaves the pin empty (never a guess) when the table has nothing, fails, or answers with an error", async () => {
+    for (const pin of [async () => new Response("null"), async () => { throw new Error("offline"); }, async () => new Response("busy", { status: 429 }), async () => new Response("not json")]) {
+      const r = await ask(route([], pin));
+      expect(r).toEqual({ address: "Link Road, Rajnagar, Madhya Pradesh", pin: "" });
+    }
+  });
+
+  it("gives up after 4 seconds and leaves the pin empty", async () => {
+    vi.useFakeTimers();
+    try {
+      const f = (async (u: string | URL | Request, init?: RequestInit) => String(u).includes("nominatim") ? new Response(JSON.stringify(CHHATARPUR))
+        : new Promise<Response>((_res, rej) => init?.signal?.addEventListener("abort", () => rej(new DOMException("aborted", "AbortError"))))) as typeof fetch;
+      const p = ask(f);
+      await vi.advanceTimersByTimeAsync(4100);
+      expect(await p).toEqual({ address: "Link Road, Rajnagar, Madhya Pradesh", pin: "" });
+    } finally { vi.useRealTimers(); }
   });
 });

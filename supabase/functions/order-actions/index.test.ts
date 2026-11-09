@@ -72,3 +72,18 @@ Deno.test("cancel: after a successful cancel the refund step runs once, and a fa
   assertEquals((await post(refused, { order_id: O, action: "cancel", reason: "x" })).status, 409);
   assertEquals(refunded.length, 1);   // a refused cancel refunds nothing
 });
+
+// Story #940: the n8n status route used to start the rider search after Ready. That route is off, so this door does it.
+Deno.test("ready starts the rider search for that order, only after the step worked, and a failed search does not undo Ready", async () => {
+  const sought: string[] = [];
+  const h = makeHandler({ ...deps(async () => ({ ok: true, order: { ...order, status: "ready" } })), dispatchAfterReady: async (id) => { sought.push(id); } });
+  assertEquals((await post(h, { order_id: O, action: "ready" })).status, 200);
+  assertEquals(sought, [O]);
+  await post(h, { order_id: O, action: "accept" });
+  assertEquals(sought, [O]);   // no search for other steps
+  const refused = makeHandler({ ...deps(async () => ({ ok: false, error: "not_allowed", message: "m" })), dispatchAfterReady: async (id) => { sought.push(id); } });
+  assertEquals((await post(refused, { order_id: O, action: "ready" })).status, 403);
+  assertEquals(sought, [O]);   // a refused tap starts nothing
+  const broken = makeHandler({ ...deps(async () => ({ ok: true, order })), dispatchAfterReady: () => Promise.reject(new Error("db down")) });
+  assertEquals((await post(broken, { order_id: O, action: "ready" })).status, 200);
+});

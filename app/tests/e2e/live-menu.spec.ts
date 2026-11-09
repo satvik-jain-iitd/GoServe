@@ -18,8 +18,8 @@ test("S1 the kitchen's hours change to after now: within 5 s the phone says clos
   Object.assign(net.state.kitchens[0], { opens_at: "18:00:00", closes_at: "22:00:00" });
   net.push("UPDATE", net.state.kitchens[0], "kitchens");
   await expect(page.getByText("Kitchen closed. Opens at 6:00 pm.")).toBeVisible({ timeout: 5000 });
-  await expect(page.getByText("Your bill is kept. Order from 6:00 pm.")).toBeVisible();
-  await expect(add(page, "Butter Chicken")).toBeDisabled();
+  await expect(page.getByText("Order from 6:00 pm.")).toBeVisible();
+  await expect(add(page, "Butter Chicken")).toHaveCount(0);
   Object.assign(net.state.kitchens[0], { opens_at: "00:00:00", closes_at: "23:59:00" });
   net.push("UPDATE", net.state.kitchens[0], "kitchens");
   await expect(page.getByText("Kitchen closed. Opens at 6:00 pm.")).toHaveCount(0, { timeout: 5000 });
@@ -36,8 +36,8 @@ test("S2 the closed state has no live stepper or Add, and the bill is kept", asy
   net.push("UPDATE", net.state.kitchens[0], "kitchens");
   await expect(page.getByText(/^Kitchen closed/).first()).toBeVisible({ timeout: 5000 });
   await expect(page.getByRole("button", { name: "More Butter Chicken" })).toHaveCount(0);
-  await expect(add(page, "Butter Chicken")).toBeDisabled();
-  await expect(page.getByRole("button", { name: /View bill/ })).toBeVisible();   // the bill is kept
+  await expect(add(page, "Butter Chicken")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /View bill/ })).toHaveCount(0);   // story #1160: no View bill bar while closed (the bill clearing itself is story #1162)
 });
 
 test("S3 a dish sold out: within 5 s its card says Sold out and cannot be added; it recovers when the dish is back", async ({ page, context }) => {

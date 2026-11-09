@@ -1,6 +1,6 @@
 // Story #659 (copy audit A.4 and table L): the server's words never reach the customer's screen. Every server code or line maps to one line of ours.
 import { describe, expect, it } from "vitest";
-import { customerLine, NO_INTERNET } from "../../src/lib/errorLines";
+import { cancelLine, customerLine, NO_INTERNET } from "../../src/lib/errorLines";
 
 const GENERIC = "Something went wrong. Please try again.";
 const DELIVERED = "Could not mark it delivered. Try again in a minute.";
@@ -31,6 +31,7 @@ describe("customerLine", () => {
   });
   it("the session cap has its line", () => {
     expect(customerLine("place", "session_order_cap", "Too many orders in this demo session.")).toBe("That is the most orders one phone can place today.");
+    expect(customerLine("place", "instructions_too_long", "Keep the note to 200 characters.")).toBe("Keep the note to 200 characters.");   // story 935
   });
   it("a dish gone sold out says the bill did not go through (story 619: the Bill then names it)", () => {
     expect(customerLine("place", "sold_out", "Dal is sold out.")).toBe(BILL);
@@ -55,5 +56,20 @@ describe("customerLine", () => {
   it("a refused feedback note says so in our words", () => {
     expect(customerLine("feedback", "invalid_request", "The report is not valid.")).toBe("Could not send the note. Try again.");
     expect(customerLine("feedback", "database_error", "Something went wrong. Please try again.")).toBe("Could not send the note. Try again.");
+  });
+});
+
+// Story #904: the line matches the error. The cooking line only for cannot_cancel; a connection line for everything else.
+describe("cancelLine", () => {
+  it("says the kitchen has started cooking only when the database says cannot_cancel", () => {
+    expect(cancelLine("cannot_cancel: preparing")).toBe("The kitchen has started cooking, so this order cannot be cancelled now. Call the kitchen if you need to.");
+    expect(cancelLine("cannot_cancel")).toContain("started cooking");
+  });
+  it("says the connection line for a dead network, an expired session or any other error", () => {
+    const line = "Could not reach GoServe. Check your connection and try again.";
+    expect(cancelLine("TypeError: Failed to fetch")).toBe(line);
+    expect(cancelLine("reason_required")).toBe(line);
+    expect(cancelLine("JWT expired")).toBe(line);
+    expect(cancelLine(undefined)).toBe(line);
   });
 });

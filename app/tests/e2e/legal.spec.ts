@@ -34,7 +34,7 @@ test("S4 the customer app links Privacy and Terms from the You tab (story #242 t
   await setup(context, page, []);
   await page.goto("/customer/");
   await expect(page.getByRole("contentinfo")).toHaveCount(0);
-  await page.getByRole("button", { name: "You (Account)", exact: true }).click();
+  await page.getByRole("button", { name: /^You: / }).click();
   await expect(page.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy/");
   await expect(page.getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/terms/");
 });

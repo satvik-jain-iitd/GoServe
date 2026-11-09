@@ -1,10 +1,5 @@
-// What the Ink v3 home screen needs from the menu rows (story H10b, #193): the greeting, the thali hero and the sections.
+// What the Ink v3 home screen needs from the menu rows (story H10b, #193): the thali hero and the sections.
 import type { Dish } from "./menu";
-
-export const greeting = (hour: number, name: string): string => {
-  const part = hour >= 5 && hour < 12 ? "morning" : hour >= 12 && hour < 17 ? "afternoon" : hour >= 17 && hour < 21 ? "evening" : "night";
-  return name.trim() ? `Good ${part}, ${name.trim().split(/\s+/)[0]}.` : `Good ${part}!`;   // story 527: no name known, no comma; never a default name
-};
 
 const isThali = (d: Dish) => /thali/i.test(d.category ?? "");
 

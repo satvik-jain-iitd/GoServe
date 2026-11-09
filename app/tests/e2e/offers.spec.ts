@@ -106,3 +106,21 @@ test("S6 Remove asks the quote with no_coupon, the Discount line goes, every off
   expect(seen.bodies.at(-1).coupon_code).toBe("FLAT50");
   expect(seen.bodies.at(-1).no_coupon ?? false).toBe(false);
 });
+
+// Story #1145: the early-friend gift is on the Bill before Place order, from the quote (the server's rule), and the amount to pay already has it taken off.
+test("S10 the early-friend gift shows on the slip, To pay has it off, and Place order shows that amount", async ({ page, context }) => {
+  const seen = await withQuote(context, page, () => ({ status: 200, body: { ...bill(null, 0, []), early_friend_paise: 10000, to_pay_paise: 26000 } }));
+  await toBill(page);
+  const slip = page.getByRole("region", { name: "Items" });
+  await expect(slip.getByText("Early friend gift")).toBeVisible();
+  await expect(slip.getByText("−100")).toBeVisible();
+  await expect(page.getByTestId("bill-total")).toHaveText("₹260");
+  await expect(page.getByRole("button", { name: /Place order/ })).toContainText("₹260");
+  expect(seen.bodies[0].early_friend_paise).toBeUndefined();   // the app never sends it
+});
+
+test("S11 no gift in the quote, no gift line", async ({ page, context }) => {
+  await withQuote(context, page, best);
+  await toBill(page);
+  await expect(page.getByRole("region", { name: "Items" }).getByText("Early friend gift")).toHaveCount(0);
+});

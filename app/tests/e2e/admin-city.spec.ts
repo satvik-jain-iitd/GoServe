@@ -36,7 +36,9 @@ test("S2 one kitchen shows its details, staff, menu and a Call button; the menu 
   await expect(page.getByText("11:00 to 22:00")).toBeVisible();
   await expect(page.getByRole("region", { name: "Staff" })).toContainText("sunita@example.com");
   await expect(page.getByRole("region", { name: "Menu" })).toContainText("Butter Chicken");
-  await page.getByRole("button", { name: "Mark Butter Chicken sold out" }).click();
+  await page.getByRole("button", { name: "Edit Butter Chicken" }).click();
+  await page.getByRole("switch", { name: "In stock" }).uncheck();
+  await page.getByRole("button", { name: "Save" }).click();
   await expect.poll(() => net.calls.menuWrites.length).toBe(1);
   await expect(page.getByRole("link", { name: "Call Hauz Khas Kitchen" })).toHaveAttribute("href", "tel:9876500011");
   await page.getByRole("button", { name: "Back to city" }).click();
@@ -53,7 +55,7 @@ test("S3 Add a kitchen opens the form; a complete kitchen is sent", async ({ pag
   await page.getByLabel("Address").fill("A-12, Greater Kailash I");
   await page.getByLabel("Phone").fill("9810022334");
   await page.getByLabel("Pin codes").fill("110048");
-  await page.getByRole("button", { name: "Add kitchen" }).click();
+  await page.getByRole("button", { name: "Save kitchen" }).click();
   await expect.poll(() => net.calls.kitchenWrites.length).toBe(1);
   expect(net.calls.kitchenWrites[0].body).toMatchObject({ name: "Punjab Rasoi", pin_codes: ["110048"] });
   await expect(page.getByRole("heading", { name: "City", exact: true })).toBeVisible();   // back on the city after the save

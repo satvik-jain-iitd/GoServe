@@ -34,9 +34,9 @@ test('S1 answers: a wrong state or a repeat gives 409, an unknown event 400, nev
   assert.equal(err('invalid_status: flying').message, 'Unknown status.');
 });
 
-test('check token: event is a known action', () => {
+test('check token: event is no longer a known action (story #940: the rider taps through POST /order-actions)', () => {
   const r = run('check_token.js', { demo_token: 'a', headers: { 'x-gs-token': 'a' }, body: { action: 'event' } });
-  assert.equal(r.action, 'event');
+  assert.equal(r.action, 'bad');
 });
 
 test('wiring: MAIN 01 routes event to SUB 15 and answers through Respond result', () => {

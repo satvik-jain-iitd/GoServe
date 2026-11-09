@@ -152,3 +152,83 @@ Deno.test("rating: refusals keep their code (404, 409, 422); no login is 401; a 
 Deno.test("rating: placing an order still works at /orders", async () => {
   assertEquals((await post(makeHandler(deps()), body())).status, 201);
 });
+
+// Story #905: the order keeps the customer's drop point. A good fix is passed to the DB; a missing or bad one is passed as null, and never refuses the order.
+Deno.test("a drop point in the address reaches the DB as lat and lng", async () => {
+  placed.length = 0;
+  const b = body({ address: { pin_code: "110016", text: "Flat 4, Green Park", lat: 28.5677, lng: 77.2432 } });
+  assertEquals((await post(makeHandler(deps()), b)).status, 201);
+  assertEquals(placed[0][7], { lat: 28.5677, lng: 77.2432 });
+});
+
+Deno.test("no drop point, or a bad one, reaches the DB as null and the order still goes", async () => {
+  for (const address of [{ pin_code: "110016", text: "Flat 4" }, { pin_code: "110016", text: "Flat 4", lat: 91, lng: 77 }, { pin_code: "110016", text: "Flat 4", lat: "x", lng: 77 }, { pin_code: "110016", text: "Flat 4", lat: 28.5 }]) {
+    placed.length = 0;
+    assertEquals((await post(makeHandler(deps()), body({ address }))).status, 201);
+    assertEquals(placed[0][7], null);
+  }
+});
+
+// Story #935: an optional note for the kitchen, up to 200 characters, trimmed, null when blank; a longer one is refused before anything is written.
+Deno.test("a note reaches the DB trimmed, and the placed order answers with it", async () => {
+  placed.length = 0;
+  const res = await post(makeHandler(deps({ place: async (...a) => { placed.push(a); return { ok: true, created: true, order: { ...row, instructions: "No onion" } }; } })), body({ instructions: "  No onion  " }));
+  assertEquals(res.status, 201);
+  assertEquals((await res.json()).order.instructions, "No onion");
+  assertEquals(placed[0][8], "No onion");
+});
+
+Deno.test("no note, or a blank one, reaches the DB as null", async () => {
+  for (const b of [body(), body({ instructions: "   " }), body({ instructions: null })]) {
+    placed.length = 0;
+    assertEquals((await post(makeHandler(deps()), b)).status, 201);
+    assertEquals(placed[0][8], null);
+  }
+});
+
+Deno.test("a note of 201 characters is 422 instructions_too_long with a plain line, and nothing is placed; 200 is fine", async () => {
+  placed.length = 0;
+  const res = await post(makeHandler(deps()), body({ instructions: "x".repeat(201) }));
+  const o = await res.json();
+  assertEquals([res.status, o.ok, o.error], [422, false, "instructions_too_long"]);
+  assertEquals(o.message.includes("200"), true);
+  assertEquals(placed.length, 0);
+  assertEquals((await post(makeHandler(deps()), body({ instructions: "x".repeat(200) }))).status, 201);
+});
+
+Deno.test("a note that is not text is 400 invalid_request", async () => {
+  for (const v of [5, {}, ["a"], true]) assertEquals((await post(makeHandler(deps()), body({ instructions: v }))).status, 400);
+});
+
+// Story #995: a personal coupon (the apology coupon of a late order) is in the customer's list. With nothing said the server applies it by itself, so an order that expects the item total is
+// answered price_changed with the coupon's total; the same order that says no_coupon, or expects the discounted total, is placed. The app now asks the question it expects the answer to.
+const LATE = { code: "LATE-1", title: "Sorry we were late", kind: "flat" as const, amount_paise: 5000, percent: 0, cap_paise: 0, min_order_paise: 0, first_order_only: false };
+Deno.test("with a personal coupon in the list: no_coupon expects the item total; nothing said expects the discounted total", async () => {
+  placed.length = 0;
+  const h = makeHandler(deps({ coupons: async () => [LATE] }));
+  let res = await post(h, body({ no_coupon: true }));
+  assertEquals(res.status, 201);
+  res = await post(h, body());
+  assertEquals([res.status, (await res.json()).quote.to_pay_paise], [409, 23000]);   // the server applied the coupon by itself
+  res = await post(h, body({ expected_to_pay_paise: 23000 }));
+  assertEquals(res.status, 201);
+  assertEquals((placed.at(-1) as unknown[])[6] && ((placed.at(-1) as unknown[])[6] as Record<string, number>).to_pay_paise, 23000);
+});
+
+// Story #1145 (#1113): the order goes to the database with the pin of the address it is for, and the bill carries the quote's early-friend gift.
+Deno.test("the address pin goes to the database, and the gift the quote showed is on the bill it checks", async () => {
+  placed.length = 0;
+  const gift = deps({ earlyFriend: async () => 10000 });
+  const res = await post(makeHandler(gift), body({ expected_to_pay_paise: 18000 }));
+  assertEquals(res.status, 201);
+  const [, , , , , , bill, , , pin] = placed[0] as [string, string, string, unknown, string, number, Record<string, number>, unknown, unknown, string];
+  assertEquals([bill.early_friend_paise, bill.to_pay_paise, pin], [10000, 18000, "110016"]);
+});
+
+Deno.test("the customer saw the full price but the promise now gives a gift: the order is a changed price", async () => {
+  placed.length = 0;
+  const res = await post(makeHandler(deps({ earlyFriend: async () => 10000 })), body());   // body() expects 28000
+  assertEquals(res.status, 409);
+  assertEquals((await res.json()).error, "price_changed");
+  assertEquals(placed.length, 0);
+});

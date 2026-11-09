@@ -9,6 +9,10 @@ jobs:
   site:
     name: Site (lint, typecheck, unit, e2e, build)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble   # browsers and their system libraries are in the image; no apt on the runner (story #895)
+      options: --ipc=host
     defaults:
       run:
         working-directory: site
@@ -30,9 +34,6 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium webkit
-
       - name: End-to-end tests
         run: npm run test:e2e
 
@@ -42,6 +43,10 @@ jobs:
   app:
     name: App (typecheck, unit, e2e, build)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble   # browsers and their system libraries are in the image; no apt on the runner (story #895)
+      options: --ipc=host
     defaults:
       run:
         working-directory: app
@@ -63,15 +68,98 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium webkit
-
       - name: End-to-end tests (build included)
         run: npm run test:e2e
+        env:
+          SCREENS_OUT: ${{ github.workspace }}/app/screens-out
+
+      # Story 821: the screen renders and, when a screen changed, the diff images, on every run, pass or fail. The reviewer looks at these instead of building the branch.
+      - name: Upload the screen renders and diffs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screens
+          path: |
+            app/screens-out
+            app/test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # Story #1168: the board-match report. Report only, not a merge gate yet (the mismatches are a warning, the check stays green): it becomes blocking once the first round of mismatches is fixed.
+  boards:
+    name: Boards (match the app to its approved boards, report only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Match each screen to its board
+        # Report only: mismatches are a warning, so the check stays green for the merge script. It becomes a real gate once the first round of mismatches is fixed.
+        run: npm run test:boards || echo "::warning::board-match mismatches, see the board-match report artifact"
+
+      - name: Upload the board-match report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: board-match
+          path: app/test-results/board-match
+          if-no-files-found: ignore
+          retention-days: 14
+
+  regression:
+    name: Regression (every screen, case by case, report only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run the regression cases
+        # Report only: failures are a warning, so the check stays green for the merge script. It becomes a real gate once the first round is green (story #1178).
+        run: npm run test:regression || echo "::warning::regression cases failed, see the regression report artifact"
+
+      - name: Upload the regression report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression
+          path: app/playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
 
   guard:
     name: Guard (secrets, size, markers, commit messages, PR size)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -93,6 +181,19 @@ jobs:
           # PRs into main are releases: they skip the file cap (owner, 15 Oct 2026)
           [ "${{ github.base_ref }}" = main ] || python3 scripts/guard.py count "$(git diff --name-only "$base"...HEAD | wc -l)" "$PR_TITLE"   # chore(sync) skips the cap too
 
+      # Story 822: a pull request that touches app/src names its board, its render and every changed screen picture. The description is read live,
+      # not from the event, so editing it and re-running this job is enough.
+      - name: Screen change
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          gh pr view "$PR_NUMBER" --json body --jq .body > "$RUNNER_TEMP/pr-body.txt"
+          python3 scripts/check_screen_change.py --body-file "$RUNNER_TEMP/pr-body.txt" --base "origin/$BASE_REF" --head "$HEAD_REF"
+
       - name: Commit messages
         if: github.event_name == 'pull_request'
         run: |
@@ -103,3 +204,16 @@ jobs:
           done < <(git log --no-merges --format=%s origin/${{ github.base_ref }}..HEAD --not origin/main)
           exit $rc
 
+
+  # ShipQuick's review_merge.sh merges only when a check named exactly `gate` is SUCCESS. This is the one name for the three checks above.
+  gate:
+    name: gate
+    if: always()
+    needs: [site, app, guard]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every check passed
+        run: |
+          echo '${{ toJSON(needs) }}'
+          [ "${{ needs.site.result }}${{ needs.app.result }}${{ needs.guard.result }}" = successsuccesssuccess ]

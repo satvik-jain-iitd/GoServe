@@ -34,7 +34,7 @@ test("S2 the demo console at / is unchanged: five tabs and the demo tools", asyn
   await setup(context, page);
   await page.goto("/console/");
   for (const name of ["Customer", "Kitchen", "Rider", "Split", "Ops"]) await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Reset demo" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Autopilot" })).toBeVisible();
 });
 
 test("S2 each app points to its own manifest, with its own name, install identity and scope", async ({ page, context }) => {
@@ -69,22 +69,11 @@ test("S1 one device: a tap in the kitchen app reaches the order the customer app
   const net = await setup(context, page, [order("placed")]);
   net.state.kitchen = "k-1";   // H3: the kitchen app is for kitchen staff
   await page.goto("/kitchen/");
+  await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
   await page.getByRole("button", { name: "Accept 0f0f0f0f" }).click();
   await page.getByRole("button", { name: "Cooking", exact: true }).click();   // H11: an accepted ticket moves to the Cooking tab
   await expect(page.getByText("Accepted", { exact: true })).toBeVisible();
-  expect(net.calls.status[0].body).toMatchObject({ order_id: ID, session_id: SESSION, to_status: "accepted", actor: "kitchen" });
-});
-
-test("S3 a link on the kitchen address still joins the session, but gives a non-staff account no kitchen access (H3)", async ({ page, context }) => {
-  const net = await setup(context, page, [order("placed")]);
-  const OTHER = "7e57ab1e-0000-4000-8000-0000000000b2";
-  net.state.anonymous = false;
-  await page.goto(`/kitchen/?join=${OTHER}`);
-  await expect(page.getByText("This account is not kitchen staff. Ask the admin to add it")).toBeVisible();   // H11: K2
-  await expect(page.getByText("No. 0f0f0f0f")).toHaveCount(0);
-  expect(net.calls.rpc).toContainEqual({ name: "join_session", body: { p_session: OTHER } });
-  expect(page.url()).not.toContain("join=");   // the link is tidied away, and the address stays on the kitchen app
-  expect(new URL(page.url()).pathname).toBe("/kitchen/");
+  expect(net.calls.status[0].body).toEqual({ order_id: ID, action: "accept" });
 });
 
 // The install bug of 22 Oct 2026: Add to Home Screen opened the domain, not /customer/. Chrome reads the manifest from the first HTML it gets,

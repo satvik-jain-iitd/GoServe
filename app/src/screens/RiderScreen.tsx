@@ -106,13 +106,13 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, ga
     }
     if (gate && !gate.online) return (   // R3
       <>
-        <div className="ui-scroll ui-center"><div className="ui-empty"><h2>You are offline</h2><p className="ui-meta">Go online to get deliveries. While online, this phone shares your location {locationLabel()}.</p>{todayLine}</div></div>
+        <div className="ui-scroll ui-center"><div className="ui-empty"><h2>You are offline</h2><p className="ui-meta">While online, this phone shares your location.</p>{todayLine}</div></div>
         <div className="ui-bottom"><button type="button" className="ui-btn big" onClick={() => void gate.flip()}>Go online</button></div>
       </>
     );
     return (   // R4
       <>
-        <div className="ui-scroll ui-center"><div className="ui-empty"><h2>Waiting for a delivery</h2><p className="ui-meta">No deliveries yet. The nearest ready order comes to this screen. Keep the page open.</p>{todayLine}</div></div>
+        <div className="ui-scroll ui-center"><div className="ui-empty"><h2>Waiting for a delivery</h2><p className="ui-meta">No deliveries yet. Keep this page open.</p>{todayLine}</div></div>
         {gate && <div className="ui-bottom"><button type="button" className="ui-btn ghost big" onClick={() => void gate.flip()}>Go offline</button></div>}
       </>
     );

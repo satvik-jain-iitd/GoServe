@@ -6,6 +6,17 @@ type UserLike = { is_anonymous?: boolean; email?: string; user_metadata?: Record
 export const signedInName = (u: UserLike): string | null =>
   !u || u.is_anonymous ? null : (u.user_metadata?.full_name as string | undefined) || (u.user_metadata?.name as string | undefined) || u.email || null;
 
+/** Story #1134: who is signed in, read from the session the app already holds in storage (no call), so a banner can say it on the first paint. Null when nobody real is signed in. */
+export function cachedSignedInName(store: Pick<Storage, "getItem" | "key" | "length"> = window.localStorage): string | null {
+  try {
+    for (let i = 0; i < store.length; i++) {
+      const k = store.key(i);
+      if (k && /^sb-.*-auth-token$/.test(k)) return signedInName(JSON.parse(store.getItem(k) ?? "null")?.user);
+    }
+  } catch { /* blocked storage or a broken value: the banner waits for the call as before */ }
+  return null;
+}
+
 // The first name from the Google profile (story 527), or null while the user is still anonymous.
 export const givenNameOf = (u: UserLike): string | null => {
   if (!u || u.is_anonymous) return null;
@@ -18,7 +29,10 @@ export const givenNameOf = (u: UserLike): string | null => {
 // that may already exist, because linking fails when that Google account belongs to another user.
 type AuthLike = Pick<SupabaseClient["auth"], "linkIdentity"> & Partial<Pick<SupabaseClient["auth"], "signInWithOAuth">>;
 export async function linkGoogle(client: { auth: AuthLike }, redirectTo: string, mode: "link" | "signin" = "link"): Promise<string | null> {
-  const args = { provider: "google" as const, options: { redirectTo } };
+  // Story #842: GoTrue builds the return as redirectTo + "#" + tokens. A kept "#" (supabase-js leaves one after a return) makes "##access_token" and the sign-in is lost.
+  // Signing in shows Google's account chooser, so the person can pick another account after a sign out. Linking keeps the account the person already chose.
+  const options = { redirectTo: redirectTo.split("#")[0], ...(mode === "signin" ? { queryParams: { prompt: "select_account" } } : {}) };
+  const args = { provider: "google" as const, options };
   const { error } = mode === "signin" ? await client.auth.signInWithOAuth!(args) : await client.auth.linkIdentity(args);
   return error ? "Could not start Google sign-in. Try again." : null;
 }
@@ -38,9 +52,11 @@ export function friendlyAuth(search: string, hash: string): { message: string; s
   return { message: "Could not sign in with Google. Try again.", signIn: false };
 }
 
-// Back from Google the customer app opens on You (the tap came from there), not on the menu.
+// Back from Google the app opens the screen the tap came from. Story #801: the welcome screen (O0, story #667) shows the same button to a
+// first-time customer, and they came for the menu, not for an empty account page, so every caller says where it is and the default is the menu.
+export type ReturnScreen = "account" | "menu";
 const RETURN = "gs-return", TRIED = "gs-signin-tried";
-export const rememberReturn = (): void => { try { window.sessionStorage.setItem(RETURN, "account"); } catch { /* the menu opens */ } };
+export const rememberReturn = (to: ReturnScreen): void => { try { window.sessionStorage.setItem(RETURN, to); } catch { /* the menu opens */ } };
 export const takeReturn = (): boolean => { try { const v = window.sessionStorage.getItem(RETURN) === "account"; window.sessionStorage.removeItem(RETURN); return v; } catch { return false; } };
 // One automatic sign in per tap: if Google comes back with the same error after it, the line stays and nothing loops.
 export const takeTried = (): boolean => { try { const v = window.sessionStorage.getItem(TRIED) === "1"; window.sessionStorage.removeItem(TRIED); return v; } catch { return false; } };

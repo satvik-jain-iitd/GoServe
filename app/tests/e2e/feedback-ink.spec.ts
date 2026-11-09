@@ -6,7 +6,7 @@ import { scan, setup } from "./helpers";
 test("S1 the sheet uses the ui classes, with Send as ui-btn and Close as ui-btn ghost, and none of the old classes", async ({ page, context }) => {
   await setup(context, page);
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "You" }).click();
+  await page.getByRole("button", { name: /^You: / }).click();
   await page.getByRole("button", { name: /Send feedback/ }).click();
   const sheet = page.getByRole("dialog", { name: "Feedback" });
   await expect(sheet).toBeVisible();
@@ -20,7 +20,7 @@ test("S1 the sheet uses the ui classes, with Send as ui-btn and Close as ui-btn 
 test("S2 the words are the boards' words and the sheet has no serious contrast or role violation", async ({ page, context }) => {
   await setup(context, page);
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "You" }).click();
+  await page.getByRole("button", { name: /^You: / }).click();
   await page.getByRole("button", { name: /Send feedback/ }).click();
   const sheet = page.getByRole("dialog", { name: "Feedback" });
   await expect(sheet.getByLabel("What happened?")).toBeVisible();

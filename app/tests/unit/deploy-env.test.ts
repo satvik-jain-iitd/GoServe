@@ -15,12 +15,25 @@ describe("deploy-app.yml (the real app)", () => {
   it("does not turn the native push seam on by itself", () => {
     expect(text).not.toMatch(/VITE_PUSH_NATIVE:\s*["']?real/);
   });
-  // Story #665 (owner, 28 Oct): the phone code is on in prod with the fixed code. The gate is allowed only together with `fixed` or `real`, never alone.
-  it("sets the phone code gate only together with the fixed or the real sender", () => {
-    expect(text).toMatch(/VITE_OTP_GATE:\s*["']?1/);
+  // Story #1155 (owner, 9 Nov): the build never turns the phone code gate on (see no-otp-gate.test.ts); the sender stays `fixed` or `real`.
+  it("keeps the phone code sender fixed or real", () => {
     expect(text).toMatch(/VITE_OTP_SMS:\s*["']?(fixed|real)\b/);
+  });
+  // Story 844: the same wall from the other side. The real app is built from prod secrets only.
+  it("references no DEV_ secret at all", () => {
+    expect(text).not.toMatch(/secrets\.DEV_/);
   });
   it("does not turn the offers on: the order still goes through the v1 path (stories #588, #590)", () => {
     expect(text).not.toContain("VITE_OFFERS");
+  });
+  it("never turns Clear everything on in the real app (story 848)", () => {
+    expect(text).not.toContain("VITE_SIM_CLEAR");
+  });
+  it("never turns the Remove this kitchen row on in the real app (story 850)", () => {
+    expect(text).not.toContain("VITE_KITCHEN_REMOVE");
+  });
+  // Story #1181 (owner, 9 Nov): the Play closed test (12 to 20 testers) needs map tiles in the real app. OSM public tiles, light use; Ola tiles (#1043) before more users.
+  it("sets the map tiles so the pin map is not blank in the closed test (story #1181)", () => {
+    expect(text).toMatch(/VITE_MAP_TILES:\s*https:\/\/tile\.openstreetmap\.org\/\{z\}\/\{x\}\/\{y\}\.png/);
   });
 });

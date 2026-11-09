@@ -14,6 +14,7 @@ export function customerLine(action: CustomerAction, code: string, message: stri
   if (code === "kill_switch") return "Orders are paused. Please try again soon.";
   if (code === "kitchen_closed") return opensAt ? `The kitchen closed just now. It opens at ${openingClock(opensAt)}.` : "The kitchen closed just now. Check back later.";
   if (code === "zone_closed") return "We are very busy right now. Please try again in a few minutes.";
+  if (code === "instructions_too_long") return "Keep the note to 200 characters.";   // story #935
   if (code === "session_order_cap") return "That is the most orders one phone can place today.";
   if (action === "feedback") return "Could not send the note. Try again.";
   if (code === "sold_out" || code === "dish_sold_out") return BILL;   // story #619: a dish went sold out; the Bill says which and offers the way out
@@ -21,3 +22,7 @@ export function customerLine(action: CustomerAction, code: string, message: stri
   if (action === "confirm" && message !== "Only the customer can confirm.") return DELIVERED;
   return GENERIC;
 }
+
+// Story #904: the line matches the error. The cooking line only when the database says cannot_cancel; anything else (a dead network, an expired session) is the connection line.
+export const cancelLine = (message?: string): string =>
+  message?.startsWith("cannot_cancel") ? "The kitchen has started cooking, so this order cannot be cancelled now. Call the kitchen if you need to." : "Could not reach GoServe. Check your connection and try again.";

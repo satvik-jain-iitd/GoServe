@@ -19,9 +19,10 @@ async function placeOrder(page: Page) {
 const prompt = (page: Page) => page.getByText("Was your order delivered?");
 
 test("the bill and the placed screen say cash on delivery", async ({ page, context }) => {
-  await setup(context, page);
+  const net = await setup(context, page);
+  net.state.tracking = { eta_lo_min: 20, eta_hi_min: 30, eta_late: false, updated_at: new Date().toISOString() };   // story #1015: the server's time
   await placeOrder(page);
-  await expect(page.getByText(/About 20 min/)).toBeVisible();
+  await expect(page.getByText("20 min", { exact: true })).toBeVisible();
 });
 
 test("S1 the prompt comes after the kitchen taps Ready, not before", async ({ page, context }) => {
@@ -58,8 +59,8 @@ test("S3 Yes closes the order: Paid cash, and the server got the Yes once", asyn
   await expect(page.getByText("Delivered. Thank you for eating with GoServe.")).toBeVisible();   // story #660: no Paid tail
   await expect(prompt(page)).toHaveCount(0);
   expect(net.calls.confirm).toHaveLength(1);
-  expect(net.calls.confirm[0].body).toMatchObject({ action: "confirm", order_id: ID });
-  expect(net.calls.confirm[0].headers["x-gs-token"]).toBe("demo-token");
+  expect(net.calls.confirm[0].body).toEqual({ order_id: ID, action: "confirm" });
+  expect(net.calls.confirm[0].headers["authorization"]).toMatch(/^Bearer .+/);
 });
 
 test("S4 a second Yes is not an error", async ({ page, context }) => {
@@ -108,6 +109,7 @@ test("S6 a double tap on a kitchen step: the second answer already_done is not s
   net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
   net.state.reply = { status: 409, body: { ok: false, error: "already_done", message: "Already done." } };
+  await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
   await page.getByRole("button", { name: "Accept 0f0f0f0f" }).click();
   await expect(page.getByText("Already done.")).toHaveCount(0);
   await expect(page.getByRole("alert")).toHaveCount(0);

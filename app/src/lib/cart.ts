@@ -18,3 +18,14 @@ export const cartTotal = (lines: Line[]): number => lines.reduce((sum, l) => sum
 
 // What the server receives: ids and quantities only.
 export const toOrderItems = (cart: Cart) => Object.entries(cart).map(([menu_item_id, qty]) => ({ menu_item_id, qty }));
+// Story #977: Order again. Dishes that are on today's menu and not sold out go back in the cart (quantity kept within the limit); the others are named, so the customer knows.
+export const reorderCart = (items: { menu_item_id: string; name: string; qty: number }[], menu: Dish[]): { cart: Cart; left: string[] } => {
+  const cart: Cart = {};
+  const left: string[] = [];
+  for (const i of items) {
+    const dish = menu.find((d) => d.id === i.menu_item_id);
+    if (!dish || dish.available === false) left.push(i.name);
+    else cart[dish.id] = Math.min(MAX_QTY, (cart[dish.id] ?? 0) + i.qty);
+  }
+  return { cart, left };
+};

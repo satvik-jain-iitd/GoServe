@@ -1,20 +1,23 @@
+html { touch-action: pan-x pan-y; }   /* story 932: pan and scroll, never pinch */
+/* Story 932, part two: the document never moves. iOS rubber-bands the whole document when a drag starts on something that does not scroll (the tab bar); only inner boxes scroll. */
+html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 /* GoServe Ink v3 component sheet (story H10). Same class names as before. Colours, spacing, radius and type come from tokens.css. Source: the approved J2 boards, ink.css. */
 body { margin: 0; background: var(--md-background); color: var(--md-on-background); font-family: var(--gs-font); font-size: var(--gs-text-base); line-height: 1.45; }
-.mono { font-family: var(--gs-font-mono); text-transform: uppercase; }
-.display { font-family: var(--gs-font-display); font-weight: 800; line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; }
+.mono { font-family: var(--gs-font-mono); }
+.display { font-family: var(--gs-font-display); font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
 
 /* Actions */
 .ui-btn { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--gs-tap); min-width: var(--gs-tap); padding: 0 var(--gs-space-5); border: 0; border-radius: var(--gs-radius-pill); background: var(--md-primary); color: var(--md-on-primary); font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; transition: transform 120ms ease, opacity 120ms ease; }
-.ui-btn:active { transform: scale(0.97); }
+.ui-btn:not(:disabled):active { transform: scale(0.97); }   /* story 953: a disabled control gives no feedback of any kind */
 .ui-btn.ghost { background: transparent; color: var(--md-primary); border: 1px solid var(--md-outline); }
 .ui-btn.big { min-height: var(--gs-tap-big); width: 100%; font-size: var(--gs-display-m); }
-.ui-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ui-btn:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; -webkit-tap-highlight-color: transparent; }
 .ui-btn:focus-visible, .ui-chip:focus-visible, .ui-step button:focus-visible, .ui-back:focus-visible, .ui-search:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
 
 /* App bar */
 .ui-appbar { display: flex; align-items: flex-end; gap: var(--gs-space-3); padding: max(env(safe-area-inset-top), var(--gs-space-2)) 0 var(--gs-space-3); margin-bottom: var(--gs-space-4); border-bottom: 1px solid var(--md-outline-variant); }
 .ui-appbar-text { flex: 1; display: grid; gap: 2px; min-width: 0; }
-.ui-appbar h1 { margin: 0; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; }
+.ui-appbar h1 { margin: 0; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
 .ui-back { width: var(--gs-tap); height: var(--gs-tap); flex: none; display: flex; align-items: center; justify-content: center; border: 0; border-radius: var(--gs-radius-pill); background: transparent; color: var(--md-primary); font-size: 24px; line-height: 1; text-decoration: none; cursor: pointer; }
 
 /* Lists */
@@ -33,12 +36,12 @@ body { margin: 0; background: var(--md-background); color: var(--md-on-backgroun
 .ui-chip { flex: none; min-height: var(--gs-tap); padding: 0 var(--gs-space-4); border: 1px solid var(--md-outline); border-radius: var(--gs-radius-s); background: transparent; color: var(--md-on-background); font: inherit; font-size: var(--gs-text-xs); font-weight: 500; cursor: pointer; transition: background 120ms ease, color 120ms ease; }
 .ui-chip.on { background: var(--md-primary); color: var(--md-on-primary); border-color: var(--md-primary); }
 .ui-step { display: inline-flex; align-items: stretch; height: var(--gs-tap); border: 1px solid var(--md-outline); border-radius: var(--gs-radius-s); background: var(--md-surface); }
-.ui-step button { width: 40px; border: 0; background: transparent; color: var(--md-primary); font: inherit; font-size: 18px; cursor: pointer; }
+.ui-step button { width: 44px; border: 0; background: transparent; color: var(--md-primary); font: inherit; font-size: 18px; cursor: pointer; }
 .ui-step button:first-child { border-right: 1px solid var(--md-outline-variant); }
 .ui-step button:last-child { border-left: 1px solid var(--md-outline-variant); }
-.ui-step button:disabled { opacity: 0.4; cursor: not-allowed; }
+.ui-step button:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; -webkit-tap-highlight-color: transparent; }
 .ui-step span { min-width: 28px; display: flex; align-items: center; justify-content: center; font-family: var(--gs-font-mono); font-weight: 500; }
-.ui-search { width: 100%; box-sizing: border-box; min-height: var(--gs-tap); margin-bottom: var(--gs-space-3); padding: 0 var(--gs-space-4); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font-family: var(--gs-font-mono); font-size: var(--gs-text-sm); text-transform: uppercase; }
+.ui-search { width: 100%; box-sizing: border-box; min-height: var(--gs-tap); margin-bottom: var(--gs-space-3); padding: 0 var(--gs-space-4); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font-family: var(--gs-font-mono); font-size: var(--gs-text-sm); }
 .ui-search::placeholder { color: var(--gs-text-muted); }
 
 /* Sticky bar */
@@ -50,26 +53,26 @@ body { margin: 0; background: var(--md-background); color: var(--md-on-backgroun
 
 /* Slip and stamp */
 .ui-slip { position: relative; margin-top: 8px; background: var(--md-surface); border: 1px solid var(--md-outline-variant); border-top: 0; border-radius: var(--gs-radius-none); }
-.ui-slip::before { content: ""; display: block; height: 8px; margin: -8px -1px 0; background: linear-gradient(-45deg, var(--md-surface) 5.66px, transparent 0), linear-gradient(45deg, var(--md-surface) 5.66px, transparent 0); background-size: 16px 8px; background-repeat: repeat-x; }
+.ui-slip::before { content: ""; display: block; height: 8px; margin: -8px -1px 0; background: var(--md-surface); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8'%3E%3Cpath d='M0 8L8 0L16 8Z'/%3E%3C/svg%3E") 0 0 / 16px 8px round no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8'%3E%3Cpath d='M0 8L8 0L16 8Z'/%3E%3C/svg%3E") 0 0 / 16px 8px round no-repeat; }   /* story 1046: one triangle per tile, round on x, so the row starts and ends with a whole triangle */
 .ui-slip-body { display: grid; gap: var(--gs-space-3); padding: 6px 18px 18px; }
-.ui-slip-head { display: flex; justify-content: space-between; gap: 12px; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); color: var(--gs-text-muted); text-transform: uppercase; }
+.ui-slip-head { display: flex; justify-content: space-between; gap: 12px; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
 .ui-slip-stamp { display: flex; justify-content: center; padding: 10px 0 4px; }
-.ui-clock { margin: 0; text-align: center; font-family: var(--gs-font-mono); font-size: var(--gs-mono-base); text-transform: uppercase; }
+.ui-clock { margin: 0; text-align: center; font-family: var(--gs-font-mono); font-size: var(--gs-mono-base); }
 .ui-clock b { font-size: var(--gs-mono-lg); font-weight: 500; }
 .ui-slip-rule { border-top: 1px dashed var(--md-outline-variant); }
-.ui-slip-lines { display: grid; gap: var(--gs-space-2); font-family: var(--gs-font-mono); font-size: var(--gs-mono-base); text-transform: uppercase; }
+.ui-slip-lines { display: grid; gap: var(--gs-space-2); font-family: var(--gs-font-mono); font-size: var(--gs-mono-base); }
 .ui-slip-lines div { display: flex; justify-content: space-between; gap: 12px; }
 .ui-slip-total { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-.ui-slip-total b { font-family: var(--gs-font-display); font-weight: 800; font-size: var(--gs-text-base); letter-spacing: 0.04em; text-transform: uppercase; }
+.ui-slip-total b { font-family: var(--gs-font-display); font-weight: 800; font-size: var(--gs-text-base); letter-spacing: 0.04em; }
 .ui-slip-total span { font-family: var(--gs-font-mono); font-weight: 500; font-size: var(--gs-mono-xl); }
-.ui-stamp { display: inline-block; padding: 8px 16px; border: 3px solid currentColor; border-radius: var(--gs-radius-none); color: var(--md-primary); font-family: var(--gs-font-display); font-weight: 800; font-size: var(--gs-stamp); line-height: 1; letter-spacing: 0.06em; text-transform: uppercase; transform: rotate(-6deg); animation: ui-stamp 90ms linear; }
+.ui-stamp { display: inline-block; padding: 8px 16px; border: 3px solid currentColor; border-radius: var(--gs-radius-none); color: var(--md-primary); font-family: var(--gs-font-display); font-weight: 800; font-size: var(--gs-stamp); line-height: 1; letter-spacing: 0.06em; transform: rotate(-6deg); animation: ui-stamp 90ms linear; }
 .ui-stamp.placed { color: var(--gs-status-placed); }
 .ui-stamp.accepted { color: var(--gs-status-accepted); }
 .ui-stamp.cooking { color: var(--md-on-tertiary); background: var(--gs-status-cooking); border-color: var(--md-on-tertiary); }
 .ui-stamp.ready { color: var(--md-on-tertiary); background: var(--gs-status-ready); border-color: var(--md-on-tertiary); }
 .ui-stamp.out { color: var(--gs-status-out-for-delivery); }
 .ui-stamp.delivered { color: var(--gs-status-delivered); }
-.ui-stamp.error { color: var(--md-error); }
+.ui-stamp.cancelled { color: var(--md-error); }
 .ui-stamp.small { padding: 4px 10px; border-width: 2px; font-size: var(--gs-display-m); }
 
 /* Timeline */
@@ -86,20 +89,20 @@ body { margin: 0; background: var(--md-background); color: var(--md-on-backgroun
 
 /* Sheet, empty, skeleton */
 .ui-sheet-back { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end; justify-content: center; background: rgb(38 53 40 / 0.5); }
-.ui-sheet { width: 100%; max-width: 32rem; max-height: 90vh; overflow-y: auto; box-sizing: border-box; padding: var(--gs-space-5) var(--gs-gutter) max(var(--gs-space-5), env(safe-area-inset-bottom)); border-top: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s) var(--gs-radius-s) 0 0; background: var(--md-surface); color: var(--md-on-surface); animation: ui-rise 200ms ease; }
+.ui-sheet { width: 100%; max-width: 32rem; max-height: min(90vh, 100%); overflow-x: hidden; overflow-y: auto; box-sizing: border-box; padding: var(--gs-space-5) var(--gs-gutter) max(var(--gs-space-5), env(safe-area-inset-bottom)); border-top: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s) var(--gs-radius-s) 0 0; background: var(--md-surface); color: var(--md-on-surface); animation: ui-rise 200ms ease; }
 .ui-sheet-head { display: flex; justify-content: space-between; align-items: center; gap: var(--gs-space-3); margin-bottom: var(--gs-space-4); }
-.ui-sheet-head h2, .ui-empty h2 { margin: 0; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; }
+.ui-sheet-head h2, .ui-empty h2 { margin: 0; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
 .ui-empty { display: grid; gap: var(--gs-space-2); justify-items: center; padding: var(--gs-space-7) var(--gs-gutter); text-align: center; }
 .ui-skel { display: grid; gap: var(--gs-space-3); }
 .ui-skel span { display: block; height: 16px; border-radius: 3px; background: var(--md-surface-variant); animation: ui-pulse 1.2s steps(2, end) infinite; }
 
 /* Staff screens: one thumb, wet hands */
-.ui-ticket-lines { display: grid; gap: var(--gs-space-1); font-family: var(--gs-font-mono); font-size: var(--gs-mono-lg); font-weight: 500; text-transform: uppercase; }
+.ui-ticket-lines { display: grid; gap: var(--gs-space-1); font-family: var(--gs-font-mono); font-size: var(--gs-mono-lg); font-weight: 500; }
 .ui-table { width: 100%; border-collapse: collapse; }
 .ui-table th, .ui-table td { padding: var(--gs-space-2) var(--gs-space-3); text-align: right; border-bottom: 1px solid var(--md-outline-variant); font-family: var(--gs-font-mono); }
 .ui-table th:first-child, .ui-table td:first-child { text-align: left; }
-.ui-table th { color: var(--gs-text-muted); font-weight: 400; font-size: var(--gs-mono-xs); text-transform: uppercase; }
-.ui-kitchen h2 { margin: 0; font-family: var(--gs-font-display); font-size: var(--gs-display-xl); font-weight: 800; line-height: 0.98; letter-spacing: -0.02em; text-transform: uppercase; }
+.ui-table th { color: var(--gs-text-muted); font-weight: 400; font-size: var(--gs-mono-xs); }
+.ui-kitchen h2 { margin: 0; font-family: var(--gs-font-display); font-size: var(--gs-display-xl); font-weight: 800; line-height: 0.98; letter-spacing: -0.02em; }
 
 @keyframes ui-rise { from { transform: translateY(2rem); } to { transform: none; } }
 @keyframes ui-stamp { from { transform: rotate(-6deg) scale(1.15); opacity: 0.6; } to { transform: rotate(-6deg) scale(1); opacity: 1; } }
@@ -114,14 +117,14 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 [data-theme="night"] .ui-logo { filter: none; }
 
 /* Tab bar: the three homes (Menu, Orders, You). Only on home screens; sub-screens push over it. */
-.ui-tabs { display: flex; flex: none; padding: 0 var(--gs-space-2) max(var(--gs-space-2), env(safe-area-inset-bottom)); border-top: 1px solid var(--md-outline-variant); background: var(--md-surface); }
+.ui-tabs { touch-action: none; display: flex; flex: none; padding: 0 var(--gs-space-2) max(var(--gs-space-2), env(safe-area-inset-bottom)); border-top: 1px solid var(--md-outline-variant); background: var(--md-surface); }
 .ui-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: var(--gs-tap-big); color: var(--gs-text-muted); font: inherit; font-size: var(--gs-text-xs); font-weight: 500; text-decoration: none; background: transparent; border: 0; border-radius: var(--gs-radius-s); cursor: pointer; }
 .ui-tab svg { width: 24px; height: 24px; }
 .ui-tab.on { color: var(--md-primary); font-weight: 600; }
 .ui-tab.on svg { stroke-width: 2.5; }
 /* Live strip: the running order, one line under the app bar on every home screen. Tap = the tracker. */
 .ui-live { display: flex; align-items: center; gap: var(--gs-space-3); min-height: var(--gs-tap); margin: var(--gs-space-4) var(--gs-gutter) 0; padding: 0 var(--gs-space-3) 0 var(--gs-space-2); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); text-decoration: none; }
-.ui-tag, .ui-live .tag { display: inline-block; padding: 3px 8px; background: var(--gs-status-cooking); color: var(--md-on-tertiary); font-family: var(--gs-font-display); font-weight: 800; font-size: 12px; line-height: 1.3; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+.ui-tag, .ui-live .tag { display: inline-block; padding: 3px 8px; background: var(--gs-status-cooking); color: var(--md-on-tertiary); font-family: var(--gs-font-display); font-weight: 800; font-size: 12px; line-height: 1.3; letter-spacing: 0.06em; white-space: nowrap; }
 .ui-tag.delivered { background: var(--gs-status-delivered); color: var(--gs-on-action); }
 .ui-tag.ready { background: var(--gs-status-ready); color: var(--md-on-tertiary); }
 .ui-tag.out { background: var(--gs-status-out-for-delivery); color: var(--gs-paper); }
@@ -131,10 +134,10 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-live .mono { flex: 1; font-size: var(--gs-mono-sm); }
 .ui-live .go { color: var(--md-primary); font-size: 20px; line-height: 1; }
 /* Switch: a real checkbox drawn as a printed toggle */
-.ui-switch { position: relative; flex: none; width: 52px; height: 32px; margin: 0; appearance: none; border: 1px solid var(--md-outline); border-radius: var(--gs-radius-pill); background: var(--md-surface); cursor: pointer; transition: background 120ms ease; }
-.ui-switch::before { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 999px; background: var(--md-primary); transition: transform 120ms ease; }
-.ui-switch:checked { background: var(--md-primary); border-color: var(--md-primary); }
-.ui-switch:checked::before { background: var(--md-on-primary); transform: translateX(20px); }
+.ui-switch { position: relative; flex: none; width: 52px; height: 32px; margin: 0; appearance: none; border: 0; border-radius: var(--gs-radius-pill); background: var(--gs-switch-off); box-shadow: inset 0 0 0 1px var(--gs-switch-edge); cursor: pointer; transition: background 120ms ease; }
+.ui-switch::before { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 999px; background: var(--gs-switch-knob); box-shadow: 0 1px 3px rgba(38, 53, 40, 0.35); transition: transform 120ms ease; }
+.ui-switch:checked { background: var(--md-primary); box-shadow: none; }
+.ui-switch:checked::before { transform: translateX(20px); }
 .ui-switch:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
 /* A floating cart bar above the tab bar: no shadow line between them, the bar sits on the page colour */
 .ui-sticky.float { position: static; padding: var(--gs-space-2) var(--gs-gutter); background: transparent; box-shadow: none; }
@@ -143,9 +146,9 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
    A pushed screen adds the 44 px chevron on the left; a home screen has none. */
 .ui-head { display: flex; align-items: center; gap: var(--gs-space-2); padding: max(env(safe-area-inset-top), var(--gs-space-3)) var(--gs-gutter) var(--gs-space-3); border-bottom: 1px solid var(--md-outline-variant); }
 .ui-head-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.ui-head h1 { margin: 0; flex: 1; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; }
+.ui-head h1 { margin: 0; flex: 1; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
 .ui-head-text h1 { flex: none; }
-.ui-head .meta { flex: none; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); text-transform: uppercase; color: var(--gs-text-muted); }
+.ui-head .meta { flex: none; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
 /* Section head over a list: 16 px display, 8 above, 4 below, a 2 px rule */
 .ui-section { display: flex; align-items: baseline; justify-content: space-between; margin: var(--gs-space-4) var(--gs-gutter) 0; padding-bottom: 6px; border-bottom: 2px solid var(--md-outline); }
 .ui-section h2 { margin: 0; font-family: var(--gs-font-display); font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
@@ -165,8 +168,8 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 @media (prefers-reduced-motion: reduce) { .ui-mark-land { animation: none; } }
 /* Home screen: greeting, the Tonight hero, the veg toggle */
 .ui-greet { display: grid; gap: 4px; padding: var(--gs-space-4) var(--gs-gutter) 0; }
-.ui-greet h1 { margin: 0; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; }
-.ui-greet p { margin: 0; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); text-transform: uppercase; color: var(--gs-text-muted); }
+.ui-greet h1 { margin: 0; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
+.ui-greet p { margin: 0; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
 .ui-hero { margin: var(--gs-space-4) var(--gs-gutter) 0; }
 .ui-hero .photo { position: relative; display: block; width: 100%; aspect-ratio: 7 / 4; overflow: hidden; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface-variant); }
 .ui-hero .photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
@@ -184,14 +187,13 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-seg { position: absolute; top: 12px; right: 12px; z-index: 1; display: grid; grid-template-columns: 46px 46px; padding: 0; box-sizing: border-box; overflow: hidden; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-pill); background: var(--md-surface); }
 .ui-seg a { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; border-radius: 0; text-decoration: none; color: var(--md-on-surface); }
 .ui-seg a svg { width: 16px; height: 16px; opacity: 0.6; }
-/* Story 638, board M4 option A: the chosen half is filled with the raised surface, the pill's own clip makes it D-shaped. No ring, no inset. */
-.ui-seg a.on, .ui-hero:has(#thali-nonveg:target) .ui-seg a.nonveg { background: var(--gs-raised); }
-.ui-seg a.on svg, .ui-hero:has(#thali-nonveg:target) .ui-seg a.nonveg svg { opacity: 1; }
-.ui-hero:has(#thali-nonveg:target) .ui-seg a.on { background: transparent; }
-.ui-hero:has(#thali-nonveg:target) .ui-seg a.on svg { opacity: 0.6; }
+/* Story 638, board M4 option A: the chosen half is filled, the pill's own clip makes it D-shaped. No ring, no inset.
+   Story 779, board Menu-DishLine-Tint: the fill is light green for veg and light red for non-veg, and it follows the side that is showing, also after a swipe (the page sets .on). */
+.ui-seg a.on { background: color-mix(in srgb, var(--gs-veg) 18%, var(--gs-raised)); }
+.ui-seg a.nonveg.on { background: color-mix(in srgb, var(--gs-nonveg) 18%, var(--gs-raised)); }
+.ui-seg a.on svg { opacity: 1; }
 /* The zigzag: GoServe's own mark. Light green, 8 px tall, under the lockup, under the greeting, at the top of every slip. */
-.ui-zigzag { height: 8px; background: linear-gradient(-45deg, var(--gs-zigzag) 5.66px, transparent 0), linear-gradient(45deg, var(--gs-zigzag) 5.66px, transparent 0); background-size: 16px 8px; background-repeat: repeat-x; }
-.ui-greet .ui-zigzag { width: 96px; margin-top: 8px; }
+.ui-zigzag { height: 8px; background: var(--gs-zigzag); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8'%3E%3Cpath d='M0 8L8 0L16 8Z'/%3E%3C/svg%3E") 0 0 / 16px 8px round no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8'%3E%3Cpath d='M0 8L8 0L16 8Z'/%3E%3C/svg%3E") 0 0 / 16px 8px round no-repeat; }   /* story 1046: the same one-triangle mask as the slip teeth */
 /* A count badge on a tab (new tickets) */
 .ui-tab { position: relative; }
 .ui-tab .badge { position: absolute; top: 6px; left: calc(50% + 8px); min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: var(--md-primary); color: var(--md-on-primary); font-family: var(--gs-font-mono); font-size: 11px; font-weight: 500; line-height: 18px; text-align: center; }
@@ -206,15 +208,21 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-landing { flex: 1; display: flex; flex-direction: column; padding: calc(var(--gs-space-7) + var(--gs-space-4) + env(safe-area-inset-top)) var(--gs-gutter) max(var(--gs-space-5), env(safe-area-inset-bottom)); overflow-y: auto; }
 .ui-landing-head { display: flex; flex-direction: column; gap: 10px; }
 .ui-landing-head .ui-logo { display: block; width: 100%; height: auto; }
-.ui-kicker { margin: 0; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); letter-spacing: 0.04em; text-transform: uppercase; color: var(--gs-text-muted); }
-.ui-landing .ui-slip { margin-top: var(--gs-space-6); }
+.ui-kicker { margin: 0; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); letter-spacing: 0.04em; color: var(--gs-text-muted); }
+.ui-landing .ui-slip { margin-top: var(--gs-space-6); flex: 1; }   /* story 1044: the slip runs to the bottom of the screen on every onboarding step, so its height never changes between steps */
+.ui-slip-title, .ui-welcome-title { text-align: center; }
+.ui-slip-line { margin: 0; text-align: center; }
+.ui-landing-head .ui-kicker, .ui-welcome-kicker { font-size: clamp(10px, 2.9vw, 13px); overflow-wrap: anywhere; }   /* one line at a normal phone width; a bigger text size on Android wraps under the logo instead of running past the edge (story 1123) */
 .ui-landing-foot { margin-top: auto; padding-top: var(--gs-space-5); display: flex; flex-direction: column; gap: var(--gs-space-2); text-align: center; }
 .ui-landing-foot .ui-kicker { font-size: var(--gs-mono-xs); }
 .ui-legal { margin: var(--gs-space-4) 0 var(--gs-space-2); text-align: center; font-size: var(--gs-mono-xs); color: var(--gs-text-muted); }   /* story 242: Privacy · Terms at the end of You */
 .ui-legal a { color: inherit; }
-.ui-slip-title { margin: 0; font-family: var(--gs-font-display); font-weight: 800; font-size: var(--gs-display-l); line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; }
+.ui-slip-title { margin: 0; font-family: var(--gs-font-display); font-weight: 800; font-size: var(--gs-display-l); line-height: 1; letter-spacing: -0.02em; }
 .ui-field { display: flex; flex-direction: column; gap: 6px; }
-.ui-field label { font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); text-transform: uppercase; color: var(--gs-text-muted); }
+/* Story 1020 and 1038: one field style on .ui-field itself (zero specificity, so a class like .ui-pin-input still wins), so a form outside .ui-form never shows the browser's own thin box. Same values as the .ui-form rule below. */
+:where(.ui-field input:not([type="checkbox"], [type="radio"], [type="file"], .ui-switch), .ui-field textarea) { box-sizing: border-box; width: 100%; min-width: 0; min-height: var(--gs-tap); padding: 10px 12px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font: inherit; resize: none; }
+:where(.ui-field .mono-input) { font-family: var(--gs-font-mono); }
+.ui-field label { font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
 .ui-pin-input { box-sizing: border-box; width: 100%; height: var(--gs-tap-big); padding: 0 14px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font-family: var(--gs-font-mono); font-size: var(--gs-mono-xl); font-weight: 500; letter-spacing: 0.12em; }
 .ui-pin-input[aria-invalid="true"] { border: 1.5px solid var(--md-error); }
 .ui-pin-input:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
@@ -223,7 +231,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-scroll { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
 .ui-list { display: flex; flex-direction: column; padding: 0 var(--gs-gutter); }
 .ui-pad { padding: 0 var(--gs-gutter); }
-.ui-greet-line { margin: 0; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); font-weight: 400; text-transform: uppercase; color: var(--gs-text-muted); }
+.ui-greet-line { margin: 0; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); font-weight: 400; color: var(--gs-text-muted); }
 .ui-greet .ui-greet-line { color: var(--gs-text-muted); }
 .ui-photo-btn { display: block; padding: 0; border: 0; background: transparent; cursor: pointer; }
 .ui-tile-skel { display: grid; grid-template-columns: 76px 1fr; gap: var(--gs-space-3); align-items: center; padding: var(--gs-space-3) 0; border-bottom: 1px solid var(--md-outline-variant); }
@@ -240,7 +248,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-swap-price .was { color: var(--gs-text-muted); text-decoration: line-through; }
 .ui-swap-actions { display: flex; gap: var(--gs-space-2); }
 .ui-swap-actions .ui-btn { flex: 1; min-height: 44px; justify-content: center; }
-.ui-closed-ask { display: flex; flex-direction: column; align-items: flex-start; gap: var(--gs-space-2); padding: 0 var(--gs-space-4) var(--gs-space-3); }
+.ui-closed-ask { display: flex; flex-direction: column; align-items: flex-start; gap: var(--gs-space-2); padding: var(--gs-space-3) var(--gs-gutter) var(--gs-space-3); }   /* story 984: 12 px under the banner, on its left edge */
 .ui-closed-ask p { margin: 0; }
 .ui-closed-sub { font-size: var(--gs-text-xs); color: var(--gs-text-muted); }
 /* story 619, board L2: a dish that is sold out keeps its card, greyed, with a Sold out stamp in place of Add */
@@ -258,7 +266,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-dish-photo { display: block; width: 100%; height: 200px; object-fit: cover; border-radius: var(--gs-radius-s) var(--gs-radius-s) 0 0; border-bottom: 1px solid var(--md-outline-variant); background: var(--md-surface-variant); }
 .ui-dish-body { display: flex; flex-direction: column; gap: var(--gs-space-3); padding: var(--gs-space-4) var(--gs-gutter) 0; }
 .ui-dish-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--gs-space-3); }
-.ui-dish-head h2 { display: flex; align-items: center; gap: var(--gs-space-2); margin: 0; font-family: var(--gs-font-display); font-weight: 800; font-size: var(--gs-display-l); line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; }
+.ui-dish-head h2 { display: flex; align-items: center; gap: var(--gs-space-2); margin: 0; font-family: var(--gs-font-display); font-weight: 800; font-size: var(--gs-display-l); line-height: 1; letter-spacing: -0.02em; }
 .ui-dish-price { font-family: var(--gs-font-mono); font-size: var(--gs-mono-lg); font-weight: 500; }
 .ui-dish-count { display: flex; align-items: center; justify-content: space-between; gap: var(--gs-space-3); padding-top: var(--gs-space-3); border-top: 1px dashed var(--md-outline-variant); }
 .ui-dish-act { display: flex; flex-direction: column; gap: var(--gs-space-2); margin-top: auto; padding: var(--gs-space-4) var(--gs-gutter) var(--gs-space-5); }
@@ -266,12 +274,13 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-landing-head h1 { margin: 0; }
 .ui-pin { padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; }
 .ui-photo-btn .ui-photo { display: block; }
+.ui-photo-btn .ui-photo.ui-ph { display: flex; }   /* story 937: the plate stays centred in the tile */
 .ui-slip-pad { margin: var(--gs-space-4) var(--gs-gutter) 0; }
 .ui-empty-slip { padding: var(--gs-space-6) var(--gs-space-2) var(--gs-space-5); }
 .ui-muted { color: var(--gs-text-muted); }
 .ui-add-more { justify-self: start; width: auto; min-height: var(--gs-tap); padding: 0 var(--gs-space-4); font-size: var(--gs-text-sm); }
 .ui-form { display: flex; flex-direction: column; gap: var(--gs-space-4); padding: var(--gs-space-4) var(--gs-gutter) var(--gs-space-5); }
-.ui-form input, .ui-form textarea { box-sizing: border-box; width: 100%; min-height: var(--gs-tap); padding: 10px 12px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font: inherit; resize: none; }
+.ui-form input:where(:not(.ui-switch)), .ui-form textarea, .otp-phone input { box-sizing: border-box; width: 100%; min-height: var(--gs-tap); padding: 10px 12px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font: inherit; resize: none; }
 .ui-form .mono-input { font-family: var(--gs-font-mono); }
 .ui-form input:focus-visible, .ui-form textarea:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
 .ui-form .ui-field { gap: 4px; }
@@ -306,6 +315,8 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 /* Story 640, boards Y1 and Y2: the Google row sits 16 px under the details card, never over it; the card has no fixed height. */
 .ui-google { display: flex; flex-direction: column; gap: 6px; padding: 16px 0 12px; border-bottom: 1px solid var(--md-outline-variant); }
 .ui-google > div { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+/* Story 829 (board O0g-B): the welcome screen's button and the line under it sit on the slip's one 16 px gap. */
+.ui-google-stack { display: flex; flex-direction: column; gap: var(--gs-space-4); }
 .ui-google-help { margin: 0; font-size: 13px; color: var(--gs-text-muted); }
 .ui-edit-actions { display: flex; gap: 8px; padding-top: 4px; }
 .ui-row-label { display: flex; flex-direction: column; gap: 2px; padding: var(--gs-space-2) 0; }
@@ -348,14 +359,14 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-ticket-wait { width: 112px; display: flex; flex-direction: column; align-items: flex-end; text-align: right; font-size: 12px; color: var(--gs-text-muted); }
 .ui-ticket .ui-btn { width: 112px; min-width: 0; box-sizing: border-box; justify-content: center; }
 .ui-group { padding-top: var(--gs-space-4); }
-.ui-group h2 { margin: 0 0 var(--gs-space-2); font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); text-transform: uppercase; color: var(--gs-text-muted); }
+.ui-group h2 { margin: 0 0 var(--gs-space-2); font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
 .ui-dish-name { display: inline-flex; align-items: center; gap: 10px; }
 .ui-btn.small { min-height: var(--gs-tap); padding: 0 14px; font-size: var(--gs-text-sm); }
 
 /* Admin app, boards A3, A4, A8 (story H12) */
 .ui-stats { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--gs-space-5); }
 .ui-stat { display: flex; flex-direction: column; gap: 2px; padding: var(--gs-space-3) 0; border-bottom: 1px solid var(--md-outline-variant); }
-.ui-stat-k { font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); text-transform: uppercase; color: var(--gs-text-muted); }
+.ui-stat-k { font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
 .ui-stat-v { font-size: var(--gs-number-xl); font-weight: 500; line-height: 1.1; }
 .ui-stat-s { font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
 .ui-day-total { margin: var(--gs-space-2) 0 0; text-align: left; }
@@ -367,8 +378,18 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 
 /* Admin City, boards A5 to A7 (story H12b) */
 .ui-pad-y { padding: var(--gs-space-3) 0; }
-.ui-two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gs-space-3); }
+.ui-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--gs-space-3); }
+.ui-two > * { min-width: 0; }
+input[type="time"], input[type="date"], input[type="datetime-local"] { min-width: 0; -webkit-appearance: none; appearance: none; }   /* stories 923 and 999: iOS Safari gives a time or date box its own minimum width and pushes the page or a sheet sideways; one rule for every form and sheet */
+.ui-map, .ui-map-box { width: 100%; max-width: 100%; box-sizing: border-box; }
 .ui-right { text-align: right; max-width: 60%; }
+/* Story 875, board A-AddPerson-Invite: the box under the add-a-person form, and the email of an invited row. */
+.ui-invite { display: flex; flex-direction: column; gap: 10px; margin-top: var(--gs-space-4); padding: 14px 16px; border: 1px solid var(--md-outline-variant); border-radius: 6px; background: var(--md-surface); }
+.ui-invite p { margin: 0; }
+.ui-invite-title { font-size: 16px; font-weight: 600; }
+.ui-invite-link { display: flex; gap: var(--gs-space-2); align-items: center; }
+.ui-invite-link .mono { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: none; font-size: 12px; }
+.ui-invite-email { text-transform: none; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ui-row-acts { display: inline-flex; align-items: center; gap: var(--gs-space-2); }
 .ui-dish-row { border-bottom: 1px solid var(--md-outline-variant); }
 .ui-dish-row .ui-row { border-bottom: 0; }
@@ -381,25 +402,29 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 
 /* Phone code sheets (story 551, boards O1 to O9). */
 /* Stories 785 and 793: the number field has no +91 (India only; the app adds +91 when it signs in, the otp function adds 91). 17px is over the 16px where iOS Safari zooms on focus. */
-.otp-phone input { font-size: var(--gs-text-lg); }
-.otp-boxes { display: flex; gap: var(--gs-space-2); margin: var(--gs-space-3) 0; }
-.otp-boxes input { width: 100%; min-width: 0; min-height: var(--gs-tap); text-align: center; font-size: var(--gs-text-lg, 1.25rem); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius, 6px); background: var(--md-surface); color: var(--md-on-surface); }
+.otp-phone input { font-size: var(--gs-text-lg); }   /* Story 796: the box itself comes from the .ui-form input rule above (full width, 44 px, border); only the size is its own. */
+/* Story 803 (board O0): on the welcome screen the 48 px bordered box is the wrapper and the input fills it. This selector is more specific than the shared input rule, so it does not depend on source order. */
+.otp-phone.otp-box { display: flex; align-items: center; box-sizing: border-box; height: 48px; border: 1px solid var(--md-outline-variant); border-radius: 6px; background: var(--md-surface); }
+.otp-phone.otp-box input { height: 44px; min-height: 0; border: 0; background: transparent; padding: 0 12px; font-family: var(--gs-font-mono); font-size: 18px; }
+.otp-boxes { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin: var(--gs-space-3) 0; }
+.otp-boxes input { box-sizing: border-box; width: 100%; min-width: 0; height: 56px; min-height: 0; padding: 0; text-align: center; font-size: var(--gs-text-lg, 1.25rem); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius, 6px); background: var(--md-surface); color: var(--md-on-surface); }
 .otp-choices { display: flex; flex-direction: column; gap: var(--gs-space-2); margin: var(--gs-space-3) 0; }
 .ui-sheet .ui-btn { width: 100%; margin-top: var(--gs-space-3); }
 .ui-link { background: none; border: 0; padding: 0; font: inherit; color: var(--md-primary); text-decoration: underline; cursor: pointer; min-height: 24px; }
+.ui-meta .ui-link { text-decoration: none; }
 .otp-toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 40; padding: var(--gs-space-2) var(--gs-space-4); border-radius: var(--gs-radius-s); background: var(--md-primary); color: var(--md-on-primary); }
 
 /* How you pay and the pay bar (story 552, boards P1 to P5). */
 .ui-pay { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: var(--gs-space-2); }
-.ui-pay legend { padding: 0; margin-bottom: var(--gs-space-2); font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); text-transform: uppercase; color: var(--gs-text-muted); }
+.ui-pay legend { padding: 0; margin-bottom: var(--gs-space-2); font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
 .ui-pay-row { display: flex; align-items: center; gap: var(--gs-space-3); min-height: var(--gs-tap); padding: 0 var(--gs-space-3); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); cursor: pointer; }
 .ui-pay-row input { width: 20px; height: 20px; accent-color: var(--md-primary); }
 .ui-paybox { display: flex; flex-direction: column; gap: var(--gs-space-3); margin: var(--gs-space-3) 0; }
-.ui-wait { margin: 0; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); text-transform: uppercase; }
+.ui-wait { margin: 0; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); }
 
 /* Story 637, boards M5 and M6: no connection. */
 .ui-pin svg { display: block; height: 22px; width: auto; }
-.ui-offline { margin: 0; padding: 10px var(--gs-gutter); font-size: 14px; background: var(--md-surface-variant, var(--md-surface)); color: var(--md-on-surface); border-bottom: 1px solid var(--md-outline-variant); }
+.ui-offline { margin: 12px 0 0; padding: 10px var(--gs-gutter); font-size: 14px; background: var(--md-surface-variant, var(--md-surface)); color: var(--md-on-surface); border-bottom: 1px solid var(--md-outline-variant); }
 .ui-ph { display: flex; align-items: center; justify-content: center; box-sizing: border-box; background: var(--md-surface-variant, var(--md-surface)); border: 1px solid var(--md-outline-variant); }
 .ui-hero .photo > .ui-ph { width: 100%; height: 100%; border: 0; }
 .ui-dish-photo.ui-ph { height: 200px; border: 0; border-bottom: 1px solid var(--md-outline-variant); }
@@ -411,29 +436,402 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-sticky .ui-bar-note { position: absolute; left: 0; right: 0; bottom: 100%; margin: 0; padding: 6px var(--gs-gutter); text-align: center; background: var(--md-background); }
 
 /* Story 667, boards O0 and O0b: the first full screen, the number and the code with Google under it. */
-.ui-welcome { min-height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; padding: var(--gs-space-7) var(--gs-gutter) var(--gs-space-5); background: var(--md-background); color: var(--md-on-background); }
+.ui-welcome { height: 100dvh; overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; display: flex; flex-direction: column; padding: var(--gs-space-7) var(--gs-gutter) max(var(--gs-space-5), env(safe-area-inset-bottom)); background: var(--md-background); color: var(--md-on-background); }
 .ui-welcome header { display: flex; flex-direction: column; gap: 10px; }
 .ui-welcome h1 { margin: 0; }
 .ui-welcome .ui-lockup { display: block; width: 100%; height: auto; }
-.ui-welcome-kicker { margin: 0; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); letter-spacing: 0.04em; text-transform: uppercase; color: var(--gs-text-muted); }
-.ui-welcome .ui-slip { margin-top: 40px; }
+.ui-welcome-kicker { margin: 0; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); letter-spacing: 0.04em; color: var(--gs-text-muted); }
+.ui-welcome .ui-slip { margin-top: 40px; flex: 1; }
 .ui-welcome .ui-slip-body { gap: var(--gs-space-4); }
-.ui-welcome-title { margin: 0; font-family: var(--gs-font-display); font-weight: 800; font-size: var(--gs-display-l); line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; }
-.ui-welcome-foot { margin: auto 0 0; text-align: center; font-family: var(--gs-font-mono); font-size: var(--gs-mono-xs); text-transform: uppercase; color: var(--gs-text-muted); }
-.ui-or { display: flex; align-items: center; gap: var(--gs-space-3); color: var(--gs-text-muted); font-family: var(--gs-font-mono); font-size: var(--gs-mono-xs); text-transform: uppercase; }
+.ui-welcome-title { margin: 0; font-family: var(--gs-font-display); font-weight: 800; font-size: var(--gs-display-l); line-height: 1; letter-spacing: -0.02em; }
+.ui-welcome-foot { margin: auto 0 0; text-align: center; font-family: var(--gs-font-mono); font-size: var(--gs-mono-xs); color: var(--gs-text-muted); }
+.ui-or { display: flex; align-items: center; gap: var(--gs-space-3); color: var(--gs-text-muted); font-family: var(--gs-font-mono); font-size: var(--gs-mono-xs); }
 .ui-or span:first-child, .ui-or span:last-child { flex: 1; height: 1px; background: var(--md-outline-variant); }
 /* story 691, boards T2 and T3: the rider on a map */
 .ui-mapcard { margin: var(--gs-space-3) 0 0; border: 1px solid var(--md-outline-variant); border-radius: 6px; overflow: hidden; background: var(--md-surface); }
 .ui-map { position: relative; }
 .ui-map[data-offline="true"] .ui-map-box { opacity: 0.55; filter: grayscale(1); }
+.ui-map { margin-bottom: 12px; }   /* story 923: the location button must not touch the map */
 .ui-map-box { height: 220px; background: var(--md-surface-variant, var(--md-surface)); }
 .ui-map-credit { position: absolute; right: 6px; bottom: 4px; z-index: 500; font-size: 10px; color: var(--gs-text-muted); background: var(--md-surface); padding: 1px 4px; border-radius: 3px; }
 .ui-map-line { display: flex; align-items: center; gap: var(--gs-space-2); padding: 10px var(--gs-space-3); border-top: 1px solid var(--md-outline-variant); font-size: var(--gs-text-sm); }
 .ui-map-line.offline { border-top: 3px solid var(--gs-warm-yellow); gap: var(--gs-space-3); }
-.ui-chip-warn { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 6px; background: var(--gs-warm-yellow); color: var(--gs-ink-green); font-family: var(--gs-font-mono); font-size: 12px; font-weight: 500; text-transform: uppercase; white-space: nowrap; }
+.ui-chip-warn { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 6px; background: var(--gs-warm-yellow); color: var(--gs-ink-green); font-family: var(--gs-font-mono); font-size: 12px; font-weight: 500; white-space: nowrap; }
 .gs-pin-wrap { background: transparent; border: 0; }
+.gs-kitchen-pin { background: transparent; border: 0; color: var(--md-primary); }   /* story 933: the kitchen pin */
+.gs-kitchen-pin svg { display: block; }
+.leaflet-container:focus, .leaflet-container:focus-visible { outline: none; }   /* story 933: no focus rectangle after a tap */
+.ui-map, .leaflet-container { isolation: isolate; z-index: 0; }   /* story 933: the map panes and controls keep their z-index inside the map, never above a sheet */
 .gs-pin { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 999px; background: var(--md-surface); border: 2px solid var(--md-on-surface); color: var(--md-on-surface); font-family: var(--gs-font-mono); font-size: 10px; box-sizing: border-box; }
+.gs-pin.small { width: 22px; height: 22px; font-size: 9px; }
 .gs-pin.rider { background: var(--md-primary); border-color: var(--md-surface); box-shadow: 0 0 0 7px color-mix(in srgb, var(--md-primary) 25%, transparent); animation: gs-pulse 2s ease-out infinite; }
 .gs-route { stroke: var(--md-primary); fill: none; }
 @keyframes gs-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--md-primary) 45%, transparent); } 100% { box-shadow: 0 0 0 14px color-mix(in srgb, var(--md-primary) 0%, transparent); } }
 @media (prefers-reduced-motion: reduce) { .gs-pin.rider { animation: none; } }
+
+/* Story 848: the red buttons of Clear everything (board A-Sim-Clear). Error colour on the page, white (day) or ink (night) on the error fill, both over 4.5:1. */
+.ui-btn.danger { color: var(--md-error); border-color: var(--md-error); }
+.ui-btn.danger-fill { background: var(--md-error); color: var(--md-on-error); }
+.ui-row-pair { display: flex; gap: var(--gs-space-3); }
+.ui-row-pair > .ui-btn { flex: 1; }
+/* Story 848: a scenario row that opens (board A-Sim-Groups): name and one line of numbers, a chevron on the right. */
+.ui-details > summary { display: flex; flex-direction: column; gap: 2px; padding: var(--gs-space-3) var(--gs-space-6) var(--gs-space-3) 0; border-bottom: 1px solid var(--md-outline-variant); cursor: pointer; position: relative; list-style: none; font-weight: 600; min-height: var(--gs-tap); justify-content: center; }
+.ui-details > summary::-webkit-details-marker { display: none; }
+.ui-details > summary::after { content: "\203A"; position: absolute; right: var(--gs-space-2); top: 50%; transform: translateY(-50%); font-size: var(--gs-display-m); }
+.ui-details[open] > summary::after { transform: translateY(-50%) rotate(90deg); }
+.ui-details > summary:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
+
+/* Story 850: the red words of "Remove this kitchen" (board K-Account) use the error token, no new colour. */
+.ui-danger-text { color: var(--md-error); font-weight: 600; }
+
+/* Story 891, board M7: a kitchen with no dishes yet. */
+.ui-menu-empty { display: flex; flex-direction: column; gap: var(--gs-space-3); margin: var(--gs-space-3) var(--gs-gutter) 0; padding: var(--gs-space-3); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); }
+.ui-menu-empty-row { display: grid; grid-template-columns: auto 1fr; gap: var(--gs-space-3); align-items: center; }
+.ui-menu-empty h2 { margin: 0; font-size: var(--gs-text-sm); font-weight: 600; }
+.ui-menu-empty p { margin: 0; }
+.ui-menu-empty .ui-btn { width: 100%; }
+.ui-menu-empty-note { margin: var(--gs-space-3) var(--gs-gutter) 0; color: var(--gs-text-muted); font-size: var(--gs-text-xs); }
+.ui-menu-empty-foot { padding: var(--gs-space-3) var(--gs-gutter); }
+.ui-menu-empty-foot .ui-btn { width: 100%; min-height: var(--gs-tap-big); }
+
+/* Story 892, board K7: the three rows of the Remove this kitchen sheet. */
+
+/* Story 955: the danger sheet (boards D1-RemoveKitchen and D2-ClearEverything, canvas row 2n). One 20 px margin for the whole sheet. */
+.ui-sheet.ui-danger { padding: 20px 20px max(28px, env(safe-area-inset-bottom)); border-radius: 16px 16px 0 0; background: var(--md-surface); color: var(--md-on-surface); }
+.ui-danger-head { display: flex; align-items: flex-start; gap: 12px; }
+.ui-danger-head > div { flex: 1; min-width: 0; }
+.ui-danger-head h2 { margin: 0; font-family: var(--gs-font-display); font-size: 24px; font-weight: 800; line-height: 1.1; letter-spacing: -0.01em; }
+.ui-danger-kicker { display: block; margin: 4px 0 0; font-size: 12px; color: var(--gs-text-muted); }
+.ui-sheet .ui-danger-head .ui-btn.icon { flex: none; width: 44px; height: 44px; min-width: 44px; min-height: 44px; margin: 0; padding: 0; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; }
+.ui-danger-sentence { margin: 12px 0 4px; font-size: 15px; }
+.ui-danger-fact { display: grid; grid-template-columns: 88px 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--md-outline-variant); text-align: left; }
+.ui-danger-fact .mono { font-size: 12px; color: var(--gs-text-muted); padding-top: 2px; }
+.ui-danger-fact span:last-child { font-size: 14px; }
+.ui-danger-label { display: block; margin: 16px 0 6px; font-size: 14px; }
+.ui-danger-label .mono { font-weight: 600; }
+.ui-danger-input { box-sizing: border-box; width: 100%; height: 48px; padding: 0 12px; border: 1px solid var(--md-outline); border-radius: 8px; background: var(--md-surface); color: var(--md-on-surface); font-family: var(--gs-font-mono); font-size: 18px; letter-spacing: 0.1em; }
+.ui-danger-helper { margin: 6px 0 0; font-size: 12px; color: var(--gs-text-muted); }
+.ui-danger-acts { display: flex; flex-direction: column; gap: 8px; padding: 16px 0 0; }
+.ui-sheet .ui-danger-acts .ui-btn { margin-top: 0; }
+.ui-danger .ui-btn.danger-fill:disabled { opacity: 0.4; }
+.ui-danger-after { margin: 12px 0 0; text-align: center; font-size: 12px; color: var(--gs-text-muted); }
+
+/* Story 936: dish rows with no buttons (board M1-DishRows-B), the Edit sheet (board M2-DishEdit) and the invite trash icon. */
+.ui-dish-line { width: 100%; min-height: 60px; gap: 10px; background: transparent; border: 0; border-bottom: 1px solid var(--md-outline-variant); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.ui-dish-main { display: inline-flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.ui-dish-main.off, .ui-dish-price.off { opacity: 0.55; }
+.ui-dish-text { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.ui-dish-text .ui-tag { font-size: 11px; line-height: 1.2; padding: 2px 6px; }
+.ui-dish-price { font-size: 13px; flex: none; }
+.ui-go { color: var(--md-primary); font-size: 22px; line-height: 1; }
+.ui-dish-photo-row { display: flex; align-items: center; gap: 12px; margin: 16px 0 0; }
+.ui-dish-photo-row img, .ui-dish-photo-ph { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; border: 1px solid var(--md-outline-variant); }
+.ui-file-btn { min-height: 40px; display: inline-flex; align-items: center; justify-content: center; }
+.ui-sheet .ui-file-btn { width: auto; margin-top: 0; }
+.ui-sheet-input { box-sizing: border-box; width: 100%; height: 48px; padding: 0 12px; border: 1px solid var(--md-outline); border-radius: 8px; background: var(--md-surface); color: var(--md-on-surface); font: inherit; }
+.ui-sheet-input.mono-input { font-family: var(--gs-font-mono); font-size: 18px; }
+.ui-dish-sheet .ui-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.ui-sheet-switch { min-height: 48px; }
+.ui-stock { display: flex; flex-direction: column; gap: 2px; }
+.ui-stock .mono { font-size: 12px; color: var(--gs-text-muted); }
+.ui-delete-row { width: 100%; margin-top: 8px; min-height: 48px; background: transparent; border: 0; color: var(--md-error); font: inherit; cursor: pointer; justify-content: space-between; }
+.ui-delete-row > span:first-child { display: inline-flex; align-items: center; gap: 8px; }
+.ui-sheet .ui-btn.ui-trash, .ui-btn.ui-trash { flex: none; width: 40px; height: 40px; min-width: 40px; min-height: 40px; margin: 0; padding: 0; border-radius: 999px; color: var(--md-error); border-color: var(--md-error); display: inline-flex; align-items: center; justify-content: center; }
+.ui-dish-hint { margin: 8px 0 12px; font-size: 12px; color: var(--gs-text-muted); }   /* story 936: air between the hint and the Add dish form */
+.ui-signout { color: var(--md-primary); font-weight: 600; white-space: nowrap; }   /* story 957: Sign out in the primary colour on the You row */
+
+/* Story 934: the kitchen order sheet and its decline sheet (boards K3-OrderSheet, K3-OrderDecline) */
+.ui-order-sheet { padding: 20px 20px max(28px, env(safe-area-inset-bottom)); border-radius: 16px 16px 0 0; background: var(--md-surface); color: var(--md-on-surface); }
+.ui-order-sheet .ui-sheet-head { margin-bottom: 12px; }
+.ui-order-sheet .ui-sheet-head h2 { font-size: var(--gs-text-l, 22px); }
+.ui-sheet-when { font-size: 12px; color: var(--gs-text-muted); white-space: nowrap; }
+.ui-sheet-block { display: flex; flex-direction: column; gap: 2px; font-size: 15px; }
+.ui-sheet-block .ui-kicker, .ui-order-sheet label.ui-kicker { font-size: 12px; color: var(--gs-text-muted); }
+.ui-order-sheet label.ui-kicker { display: block; margin: 0 0 6px; }
+.ui-sheet-acts { display: flex; flex-direction: column; gap: 8px; padding: 20px 0 0; }
+.ui-sheet .ui-sheet-acts .ui-btn { margin-top: 0; }
+.ui-btn.ui-decline { color: var(--md-error); border-color: var(--md-error); }
+.ui-sheet-foot { margin: 12px 0 0; text-align: center; font-size: 12px; color: var(--gs-text-muted); }
+.ui-sheet-lead { margin: 0 0 12px; font-size: 15px; }
+.ui-sheet-text { box-sizing: border-box; width: 100%; padding: 10px 12px; border: 1px solid var(--md-outline); border-radius: 6px; background: var(--md-surface); color: var(--md-on-surface); font: inherit; font-size: 16px; resize: none; }
+.ui-sheet-count { margin: 6px 0 0; display: flex; justify-content: space-between; font-size: 12px; color: var(--gs-text-muted); }
+.ui-sheet-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; }
+.ui-order-sheet .ui-btn.danger-fill:disabled { opacity: 0.4; }
+.ui-declined { margin: 0; padding: 12px 14px; border-left: 4px solid var(--md-error); background: var(--md-surface); border-radius: 0 6px 6px 0; }
+.ui-declined p { margin: 0; font-size: 16px; }
+.ui-declined p + p { margin-top: 6px; }
+.ui-declined .ui-declined-when { margin-top: 8px; font-size: 12px; color: var(--gs-text-muted); }
+.ui-ticket.ui-ticket-solo { grid-template-columns: minmax(0, 1fr); }   /* story 934: a new order has no action column */
+
+/* Story 935: the note for the kitchen (boards D2-BillNote and K2-TicketsNote) */
+.ui-note-count { margin: 0; display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--gs-text-muted); }
+.ui-ticket-note { display: flex; align-items: baseline; gap: 6px; min-width: 0; font-size: 14px; }
+.ui-ticket-note .mono { flex: none; font-size: 11px; color: var(--gs-text-muted); }
+.ui-ticket-note-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Story 972, board F1-Filter: a checkbox per category */
+.ui-switch-note { font-size: 11px; font-weight: 400; color: var(--gs-text-muted); }
+.ui-cats { display: flex; flex-direction: column; padding: 0 var(--gs-gutter); }
+.ui-cat-row { display: grid; grid-template-columns: 24px 1fr auto; gap: 12px; align-items: center; cursor: pointer; }
+.ui-cat-row input { width: 22px; height: 22px; margin: 0; accent-color: var(--md-primary); }
+.ui-cat-row span { font-weight: 400; }
+.ui-cat-row span.on { font-weight: 600; }
+.ui-cat-row .ui-count { font-weight: 400; }
+.ui-clear { align-self: flex-end; margin: 8px 0 0; font-size: 12px; color: var(--md-primary); }
+
+/* Story 983: on a short landscape screen the lockup keeps a phone-sized width (it scales with the width and would fill the screen). After the base rules on purpose. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .ui-landing-head .ui-logo, .ui-welcome .ui-lockup { width: min(100%, 10rem); }
+}
+
+/* Story 975, board C1-HomeTop: the top of the home screen. Line one the label, line two the address; the profile circle at the right; search and the VEG switch under them. */
+.ui-top { display: grid; grid-template-columns: 1fr auto; gap: 8px var(--gs-space-3); align-items: start; padding: max(env(safe-area-inset-top), var(--gs-space-3)) var(--gs-gutter) var(--gs-space-3); border-bottom: 1px solid var(--md-outline-variant); background: var(--md-background); }
+.ui-where { min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.ui-where-label { display: inline-flex; align-items: center; gap: 4px; font-family: var(--gs-font-display); font-size: 22px; font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; }
+.ui-where-label svg { color: var(--md-primary); flex: none; }
+.ui-where-line { font-size: 14px; line-height: 1.3; color: var(--gs-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ui-circle { box-sizing: border-box; width: 36px; height: 36px; margin-top: 2px; padding: 0; border: 0; border-radius: var(--gs-radius-pill); overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--md-primary); color: var(--md-on-primary); font-family: var(--gs-font-display); font-size: 16px; font-weight: 800; cursor: pointer; }
+.ui-circle img { display: block; width: 36px; height: 36px; object-fit: cover; }
+.ui-top-search { grid-column: 1 / -1; display: flex; align-items: center; gap: var(--gs-space-3); margin-top: 4px; }
+.ui-search-box { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; box-sizing: border-box; border: 1px solid var(--md-outline); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--gs-text-muted); }
+.ui-search-go { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: var(--gs-radius-pill); background: var(--md-primary); color: var(--md-on-primary); cursor: pointer; }   /* story 1036: the round arrow inside the box */
+.ui-search-go:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
+.ui-search-box input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--md-on-surface); font: inherit; font-size: 16px; }
+.ui-search-box:focus-within { outline: 3px solid var(--md-primary); outline-offset: 2px; }
+.ui-search-filter { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; margin-right: -6px; padding: 0; border: 0; border-radius: var(--gs-radius-s); background: transparent; color: var(--md-primary); cursor: pointer; }
+.ui-search-filter svg { width: 20px; height: 20px; }
+.ui-veg-top { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 48px; }
+.ui-veg-top .mono { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; color: var(--gs-text-muted); }
+.ui-switch.small { width: 44px; height: 24px; }
+.ui-switch.small::before { top: 2px; left: 2px; width: 18px; height: 18px; }
+.ui-switch.small:checked::before { transform: translateX(20px); }
+
+/* Story 975, board Y1-ProfileSheet: the profile sheet behind the circle. */
+.ui-profile-head { display: flex; align-items: center; gap: var(--gs-space-3); margin-bottom: var(--gs-space-3); }
+.ui-profile-photo { flex: none; box-sizing: border-box; width: 48px; height: 48px; border-radius: var(--gs-radius-pill); overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--md-primary); color: var(--md-on-primary); font-family: var(--gs-font-display); font-size: 20px; font-weight: 800; }
+.ui-profile-photo img { display: block; width: 48px; height: 48px; object-fit: cover; }
+.ui-profile-who { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ui-profile-who h2 { margin: 0; font-family: var(--gs-font-display); font-size: 22px; font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ui-profile-who .mono { font-size: 13px; color: var(--gs-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ui-profile .ui-account { padding: 0; display: flex; flex-direction: column; }
+.ui-profile-foot { margin: var(--gs-space-3) 0 0; text-align: center; font-size: 11px; color: var(--gs-text-muted); }
+.ui-profile .ui-btn { width: auto; margin-top: 0; }   /* the sheet rule makes every button full width; the You rows keep their own sizes */
+.ui-profile .ui-btn.icon { flex: none; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; border-radius: 999px; }
+
+/* Story 977, board H1-History: the state tag with its second button under it; the row's two parts are siblings, never a button in a button. */
+.ui-order-row-wrap { align-items: start; }
+.ui-order-open { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.ui-order-side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.ui-order-side .ui-btn.small { min-height: 36px; padding: 0 14px; font-size: 14px; width: auto; margin: 0; }
+.ui-again-line { margin: var(--gs-space-3) var(--gs-gutter) 0; }
+
+/* Story 998, board A2-AddressOla: the credit line Ola's terms ask for (clauses 15.2, 15.3), under the address form. */
+.ui-credit { margin: var(--gs-space-3) 0 0; text-align: center; font-size: 11px; letter-spacing: 0.04em; color: var(--gs-text-muted); }
+.ui-credit a { color: inherit; text-decoration: underline; }
+
+/* Story 976, board C2-AddressSheet: the Deliver to page. */
+.ui-deliver-to { padding: 16px 16px 24px; gap: 16px; }   /* boards C9 to C13: 16 px at the sides */
+.ui-two-cards { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.ui-card-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; box-sizing: border-box; padding: 14px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font: inherit; font-size: 16px; font-weight: 600; text-align: left; cursor: pointer; }
+.ui-card-btn svg { width: 22px; height: 22px; color: var(--md-primary); }
+.ui-saved-head { margin: 0 0 8px; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; color: var(--gs-text-muted); }
+.ui-saved-list { margin: 0; padding: 0; list-style: none; }
+.ui-saved-row { display: grid; grid-template-columns: 56px minmax(0, 1fr) 32px; gap: 12px; align-items: start; padding: 14px 0; border-bottom: 1px solid var(--md-outline-variant); }
+.ui-chip-box { display: flex; flex-direction: column; align-items: center; gap: 2px; box-sizing: border-box; padding: 8px 0; border-radius: var(--gs-radius-s); background: var(--md-surface-variant); color: var(--md-primary); }
+.ui-chip-box .mono { min-height: 14px; font-size: 11px; color: var(--gs-text-muted); }
+.ui-saved-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.ui-saved-row.ui-place-row { grid-template-columns: minmax(0, 1fr); }   /* story 1036: a place has no icon tile and no menu button */
+.ui-place-row .ui-saved-label { flex-wrap: wrap; }
+.ui-saved-label { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 600; line-height: 1.2; }
+.ui-saved-label .ui-tag { font-size: 11px; }
+.ui-saved-addr { font-size: 14px; line-height: 1.35; color: var(--gs-text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ui-saved-row .ui-btn.icon { width: 32px; height: 32px; min-width: 32px; min-height: 32px; padding: 0; margin: 0; border: 0; color: var(--md-primary); }
+/* Story 1051, boards C10 to C13: the saved rows sit in one card, three show and View all opens the rest; an empty list is one line; the Undo bar stays 6 seconds. */
+.ui-saved-card { border-radius: 16px; background: var(--md-surface); overflow: hidden; }
+.ui-saved-card .ui-saved-row { padding: 14px 16px; }
+.ui-saved-card .ui-saved-row:last-child { border-bottom: 0; }
+.ui-saved-card .ui-chip-box { width: 56px; height: 56px; padding: 0; justify-content: center; color: var(--md-on-surface); }
+.ui-view-all { display: flex; align-items: center; justify-content: center; gap: 6px; width: calc(100% - 32px); min-height: 48px; margin: 0 16px; padding: 0; border: 0; border-top: 1px solid var(--md-outline-variant); background: transparent; color: var(--md-primary); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
+.ui-saved-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px 20px 0; text-align: center; }
+.ui-saved-empty h2 { margin: 0; font-size: 20px; font-weight: 600; line-height: 1.2; }
+.ui-saved-empty-icon { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 999px; background: var(--md-surface-variant); color: var(--md-on-surface); }
+.ui-undo-bar { position: fixed; left: 16px; right: 16px; bottom: 24px; z-index: 30; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 0 8px 0 16px; box-sizing: border-box; border-radius: 12px; background: var(--md-on-background); color: var(--md-background); box-shadow: 0 8px 24px rgba(38, 53, 40, 0.2); }
+.ui-undo-bar > span:first-child { flex: 1; font-size: 15px; }
+.ui-undo-bar .mono { font-size: 11px; opacity: 0.8; }
+.ui-undo-bar button { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; color: var(--gs-lime); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+.ui-deliver-to > * { flex: none; }   /* a child of the column keeps its own height; the search box has flex: 1 from the home row (found in the review of story 976) */
+
+/* Story 1037 (board C6-PinMap): the one full-screen map. The pin is a plain element at the centre of the map box (primary green), the card floats 16 px from the edges. */
+.ui-pinmap { position: fixed; inset: 0; z-index: 900; background: var(--md-surface-variant, var(--md-surface)); overflow: hidden; }
+.ui-pinmap-map { position: absolute; inset: 0; background: var(--md-surface-variant, var(--md-surface)); }
+.ui-pinmap-pin { position: absolute; left: 50%; top: 50%; width: 60px; height: 80px; transform: translate(-50%, -62.5%); color: var(--md-primary); pointer-events: none; z-index: 600; display: block; }   /* boards C6, C6b, C9: the marker, its halo and its shadow; the tip is the centre of the map */
+.ui-pinmap-pin svg { display: block; width: 60px; height: 80px; }
+.ui-pinmap-top { position: absolute; left: 16px; right: 16px; top: calc(env(safe-area-inset-top, 0px) + 12px); z-index: 700; display: flex; gap: 12px; align-items: center; }
+.ui-pinmap-back { flex: none; width: 48px; height: 48px; display: grid; place-items: center; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-pill); background: var(--md-surface); color: var(--md-on-surface); box-shadow: 0 8px 24px rgba(38, 53, 40, 0.12); cursor: pointer; }
+.ui-pinmap-search { flex: 1; min-width: 0; height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 16px 0 18px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-pill); background: var(--md-surface); color: var(--gs-text-muted); font: inherit; font-size: 16px; text-align: left; box-shadow: 0 8px 24px rgba(38, 53, 40, 0.12); cursor: pointer; }
+.ui-pinmap-search span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ui-pinmap-here { position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, -16px); display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 20px; white-space: nowrap; border: 1px solid var(--md-outline-variant); border-radius: 10px; background: var(--md-surface); color: var(--md-on-surface); font: inherit; font-size: 16px; font-weight: 600; box-shadow: 0 8px 24px rgba(38, 53, 40, 0.12); cursor: pointer; }
+.ui-pinmap-here svg { color: var(--md-primary); }
+.ui-pinmap-card { position: absolute; left: 16px; right: 16px; bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); z-index: 700; display: flex; flex-direction: column; gap: 12px; padding: 24px 20px; border-radius: 16px; background: var(--md-surface); box-shadow: 0 8px 24px rgba(38, 53, 40, 0.12); box-sizing: border-box; }
+.ui-pinmap-kicker { font-size: 12px; letter-spacing: 0.06em; color: var(--gs-text-muted); }
+.ui-pinmap-place { display: flex; align-items: center; gap: 10px; color: var(--md-primary); }
+.ui-pinmap-name { font-size: 22px; font-weight: 600; line-height: 1.2; color: var(--md-on-surface); overflow-wrap: anywhere; }
+.ui-pinmap-addr { font-size: 15px; line-height: 1.35; color: var(--gs-text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ui-pinmap-quiet { font-size: 13px; }
+.ui-pinmap-strip { padding: 10px 12px; border-radius: 6px; font-size: 14px; line-height: 1.35; }   /* board C6b: 6 px corners, regular weight */
+.ui-pinmap-strip.ready { background: var(--gs-lime-soft, var(--gs-lime)); color: var(--md-on-tertiary); }
+.ui-pinmap-strip.warn { background: var(--gs-warm-yellow); color: var(--md-on-tertiary); }
+.ui-pinmap-strip.error { background: var(--md-error); color: var(--md-on-error); }
+.ui-pinmap-credit { font-size: 11px; color: var(--gs-text-muted); text-transform: none; }
+.ui-pinmap-credit a { color: inherit; text-decoration: none; }   /* boards C6b, C9: links without the underline */
+.gs-here-dot { background: transparent; border: 0; }
+.gs-here-dot i { display: block; width: 18px; height: 18px; margin: 4px; box-sizing: border-box; border: 3px solid var(--gs-raised); border-radius: 50%; background: var(--gs-earth-mid); box-shadow: 0 0 0 4px color-mix(in srgb, var(--gs-earth-mid) 18%, transparent); }
+
+/* Story 1038 (board C7-PinDetails): the sheet over the same map. The map keeps the top part so the pin stays in view; the sheet is a column with one gap. */
+.ui-pinmap[data-step="details"] .ui-pinmap-map { bottom: var(--sheet-h, 62%); }
+.ui-pinmap[data-step="details"] .ui-pinmap-pin { top: calc((100% - var(--sheet-h, 62%)) / 2); }   /* the centre of the map box above the sheet (its height is measured) */
+.ui-pinmap-details { position: absolute; left: 0; right: 0; bottom: 0; z-index: 700; max-height: calc(100% - 24px); overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 20px 16px calc(env(safe-area-inset-bottom, 0px) + 16px); border-radius: 20px 20px 0 0; background: var(--gs-raised); box-shadow: var(--gs-shadow-m); box-sizing: border-box; }
+.ui-pinmap-details-head { margin-bottom: 0; }   /* the sheet is a column with one gap; the head size is the shared .ui-sheet-head h2 */
+.ui-pinmap-details-head .mono { font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
+.ui-pinmap-where { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid var(--md-outline-variant); border-bottom: 1px solid var(--md-outline-variant); color: var(--md-primary); }
+.ui-pinmap-where-words { flex: 1; min-width: 0; display: flex; flex-direction: column; color: var(--md-on-surface); }
+.ui-pinmap-where-words span { font-size: 14px; color: var(--gs-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ui-pinmap-change { flex: none; border: 0; background: transparent; color: var(--md-primary); font: inherit; font-weight: 600; padding: 8px; cursor: pointer; }
+.ui-pinmap-saveas { display: flex; flex-direction: column; gap: 8px; }
+.ui-pinmap-saveas .ui-chips { margin-bottom: 0; }
+.ui-pinmap-saveas .ui-chip { min-height: 36px; padding: 0 18px; border-radius: var(--gs-radius-pill); font-size: 14px; }   /* pills, as the board draws them */
+
+/* Story 1052, board A11: the Location row of the kitchen form. */
+.ui-locrow-label { font-family: var(--gs-font-mono, "DM Mono", monospace); font-size: 12px; color: var(--gs-text-muted); }
+.ui-locrow { display: grid; grid-template-columns: 40px 1fr 24px; gap: 12px; align-items: center; width: 100%; min-height: 64px; padding: 12px 14px; box-sizing: border-box; border: 1px solid var(--md-outline-variant); border-radius: 6px; background: var(--md-surface); color: var(--md-on-surface); font: inherit; text-align: left; cursor: pointer; }
+.ui-locrow-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 6px; background: var(--md-surface-variant); color: var(--md-primary); }
+.ui-locrow-words { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ui-locrow-title { font-size: 16px; font-weight: 600; line-height: 1.2; }
+.ui-locrow-sub { font-size: 12px; color: var(--gs-text-muted); text-transform: none; }
+.ui-locrow-go { color: var(--gs-text-muted); display: inline-flex; }
+.ui-today > .ui-field { margin: 16px 0; }   /* story 1052: on a kitchen page the Location row sits apart from the rows above and the Staff group below */
+
+/* Story 1053, boards T4 and T5: the rider row, the full-screen rider map. */
+.ui-riderrow { margin: 0; }   /* board T4: 16 px under the slip (the page gap keeps it); the page already keeps 20 px at the sides */
+.ui-livepill { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: var(--gs-radius-pill); background: var(--md-surface); color: var(--md-primary); font-size: 14px; font-weight: 600; box-shadow: 0 8px 24px color-mix(in srgb, var(--md-on-background) 12%, transparent); }
+.ui-bigdot { flex: none; width: 14px; height: 14px; border-radius: var(--gs-radius-pill); background: var(--md-primary); box-shadow: 0 0 0 5px color-mix(in srgb, var(--md-primary) 20%, transparent); }
+.ui-map.full, .ui-map.full .ui-map-box { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; }
+.gs-lab { display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--md-primary); }
+.gs-lab b { font-family: var(--gs-font-mono); font-size: 11px; font-weight: 400; color: var(--md-on-surface); white-space: nowrap; }
+.gs-lab svg { display: block; }
+.gs-rdot { display: block; width: 18px; height: 18px; box-sizing: border-box; border: 3px solid var(--gs-raised, var(--md-surface)); border-radius: 50%; background: var(--md-primary); box-shadow: 0 0 0 7px color-mix(in srgb, var(--md-primary) 20%, transparent); }
+.gs-lab-you { display: block; text-align: center; font-family: var(--gs-font-mono); font-size: 11px; font-weight: 400; color: var(--md-on-surface); margin-top: -2px; }
+
+/* Story 1015, board E2a: one big number of minutes under the stamp, the clock time under it. */
+.ui-eta-big { margin: 10px 0 0 0; text-align: center; font-size: 48px; color: var(--md-primary); }
+.ui-eta-by { margin-top: 4px; color: var(--gs-text-muted); }
+.ui-eta-late { color: var(--gs-nonveg); }
+
+/* Story 1056, board SW2: the strip under the header when the phone is far from the chosen address. */
+.ui-farstrip { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px var(--gs-gutter); background: var(--gs-lime-soft); color: var(--md-on-tertiary); font-size: 14px; line-height: 1.35; }
+.ui-farstrip button { border: 0; background: transparent; color: var(--md-on-tertiary); font: inherit; font-weight: 600; padding: 4px 0; cursor: pointer; white-space: nowrap; }
+/* Story 1049 part 2, board N0: the bell in a soft lime circle. */
+.ui-bellbadge { width: 96px; height: 96px; border-radius: var(--gs-radius-pill); background: var(--gs-lime-soft); display: flex; align-items: center; justify-content: center; color: var(--md-primary); margin: 8px auto; }
+
+/* Story 1056, board SW3: the location-off sheet. */
+.ui-locoff { display: flex; flex-direction: column; align-items: stretch; gap: 12px; text-align: center; }
+.ui-locoff h2 { margin: 0; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
+.ui-locoff-icon { align-self: center; display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; box-sizing: border-box; border: 1px solid var(--md-outline-variant); border-radius: 14px; background: var(--md-surface); color: var(--md-on-surface); }
+.ui-locoff-how { margin: 0; font-size: 14px; color: var(--gs-text-muted); }
+.ui-locoff-head { display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid var(--md-outline-variant); text-align: left; }
+.ui-locoff-all { border: 0; background: transparent; padding: 8px 0; min-height: 44px; color: var(--md-primary); font: inherit; font-weight: 700; font-size: 14px; }
+.ui-locoff-row { display: grid; grid-template-columns: 28px 1fr 16px; gap: 12px; align-items: center; width: 100%; min-height: 56px; padding: 8px 0; border: 0; border-bottom: 1px solid var(--md-outline-variant); background: transparent; color: var(--md-on-surface); font: inherit; text-align: left; }
+.ui-locoff-home { color: var(--md-primary); display: inline-flex; }
+/* Story 1049 part 3, board NK-A: the place of a pin no kitchen serves. */
+.ui-nkplace { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-top: 1px solid var(--md-outline-variant); border-bottom: 1px solid var(--md-outline-variant); color: var(--md-primary); }
+.ui-nkplace > span { display: flex; flex-direction: column; color: var(--md-on-surface); min-width: 0; }
+.ui-nkplace b { font-size: 16px; font-weight: 600; }
+.ui-nkplace > span > span { font-size: 14px; color: var(--gs-text-muted); }
+
+/* Story 1103, board O0g-B: the thali picture of the welcome screen, 306 x 181, centred between the title and Continue with Google. */
+.ui-welcome-pic { display: block; width: 306px; max-width: 100%; height: auto; aspect-ratio: 306 / 181; margin: 8px auto -10px; }   /* the button above brings its own 16 px; the board leaves 6 px between the picture and the button */
+
+/* Story 1107: a failed logo keeps its shape (the lockup is 350 x 50), so offline it can never become a huge box. */
+.ui-lockup { aspect-ratio: 7 / 1; object-fit: contain; }
+
+/* Story 1129, board NK-L2: the co-founder's letter after Tell me. The slip runs to the bottom of the screen like every onboarding step; Share and Change location sit at its foot. */
+.ui-founder { display: flex; flex-direction: column; }
+.ui-founder .ui-slip-body { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+.ui-founder-top { display: flex; align-items: center; gap: 12px; }
+.ui-founder-top svg { flex: none; }
+.ui-founder-top h2 { margin: 0; font-family: var(--gs-font-display); font-weight: 800; font-size: 22px; line-height: 1.1; letter-spacing: -0.02em; }
+.ui-founder-top h2 span { display: inline-block; }   /* a sentence never breaks inside: the heading wraps between the two, as on the board */
+.ui-founder-text { display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.45; }
+.ui-founder-text p { margin: 0; }
+.ui-founder-pause { height: 8px; }
+.ui-founder-motto { margin-top: 4px !important; }
+.ui-founder-sign { margin: 4px 0 0; font-family: 'Caveat', cursive; font-weight: 600; font-size: 34px; line-height: 1.1; color: var(--md-on-background); }
+.ui-founder-links { margin: 2px 0 0; font-family: var(--gs-font-mono); font-size: 12px; color: var(--gs-text-muted); }
+.ui-founder-links a { color: inherit; }
+.ui-founder-share { margin-top: auto; }
+
+/* Story 1133 (boards O0g-C, N0b, A1c; ShipQuick 164): the first-open steps share one layout. The slip runs to 24 px above the edge plus the safe area. The main button is last, at the
+   foot of the slip, so it has the same y on every step; an outline button sits above it. The hero (thali picture, bell, pin circle) is placed from the slip top, so its centre is at the
+   same height on every step: 268 px for the badges (top 220 and 48 of radius), the picture's top at 157. */
+.ui-landing .ui-slip, .ui-welcome .ui-slip { margin-top: 40px; }   /* the same gap under the title block on every step */
+.ui-landing, .ui-welcome { --gs-first-top: 64px; padding-top: calc(var(--gs-first-top) + env(safe-area-inset-top, 0px)); padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }   /* the logo starts 64 px from the top on every step, as on the boards */
+.ui-landing .ui-slip, .ui-welcome .ui-slip { display: flex; flex-direction: column; min-height: 420px; }
+.ui-landing .ui-slip-body, .ui-welcome .ui-slip-body { flex: 1; display: flex; flex-direction: column; }
+.ui-bottom, .ui-welcome .ui-slip-body > .ui-google-stack { margin-top: auto; }
+.ui-hero-abs { position: absolute; left: 50%; top: 220px; transform: translateX(-50%); margin: 0; }
+.ui-hero-abs-pic { position: absolute; left: 50%; top: 157px; width: min(306px, calc(100% - 36px)); transform: translateX(-50%); margin: 0; }
+.ui-pinbadge { width: 96px; height: 96px; border-radius: var(--gs-radius-pill); background: var(--gs-lime-soft); display: flex; align-items: center; justify-content: center; color: var(--md-primary); }
+
+/* Story 1138, board C6e: a GoServe kitchen on the pin map. The plate, fork and spoon (the dish placeholder component) with a white halo, and a small tag beside it. Nothing to tap. */
+.gs-kitchen-mark { background: transparent; border: 0; pointer-events: none; }
+.gs-kitchen-in { display: inline-flex; align-items: center; gap: 4px; transform: translate(-14px, -14px); }
+.gs-kitchen-in svg { flex: none; filter: drop-shadow(0 1px 2px rgba(38, 53, 40, 0.25)); }
+.gs-kitchen-tag { padding: 2px 8px; border: 1px solid var(--md-outline-variant); border-radius: 999px; background: var(--md-surface); color: var(--md-on-surface); font-size: 10px; font-weight: 600; line-height: 12px; white-space: nowrap; }
+.gs-kitchen-mark.no-tag .gs-kitchen-tag { display: none; }
+
+
+/* Story 1117 (board C7a): an example reads as an example, not as typed text (about 3.3:1), and the field edge is seen (3:1, WCAG 1.4.11). Typed text stays full ink. */
+.ui-field input.ui-eg, .ui-field textarea.ui-eg { border-color: color-mix(in srgb, var(--gs-text-muted) 65%, var(--md-surface)); }
+.ui-field input.ui-eg::placeholder, .ui-field textarea.ui-eg::placeholder { color: color-mix(in srgb, var(--gs-text-muted) 65%, var(--md-surface)); opacity: 1; }
+/* Story 1127 (boards C6, C8): the search runs on the map. The bar is a text box; the places list sits over the map under it. */
+.ui-pinmap-search.open { padding: 0 6px 0 18px; cursor: text; }
+.ui-pinmap-search.open input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--md-on-surface); font: inherit; outline: none; }
+.ui-pinmap-close { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: var(--gs-radius-pill); background: transparent; color: var(--md-on-surface); cursor: pointer; }
+.ui-pinmap-results { position: absolute; left: 16px; right: 16px; top: calc(env(safe-area-inset-top, 0px) + 72px); z-index: 700; max-height: 50%; overflow: auto; padding: 8px 12px; border: 1px solid var(--md-outline-variant); border-radius: 10px; background: var(--md-surface); box-shadow: 0 8px 24px rgba(38, 53, 40, 0.12); }
+.ui-landing .ui-slip-body > .ui-field-error, .ui-welcome .ui-slip-body > .ui-field-error { text-align: center; margin-bottom: -4px; }   /* story 1133 (T3): the error under the number is centred, 12 px above the main button */
+/* Story 1117 (board C7a): an example reads as an example, not as typed text (about 3.3:1), and the field edge is seen (3:1, WCAG 1.4.11). Typed text stays full ink. */
+.ui-field input.ui-eg { border-color: color-mix(in srgb, var(--gs-text-muted) 65%, var(--md-surface)); }
+.ui-field input.ui-eg::placeholder { color: color-mix(in srgb, var(--gs-text-muted) 65%, var(--md-surface)); opacity: 1; }
+
+/* Story 1118 (board Y4b-YouPageCards): You is a full page on the page background: a lime name card and white cards by group; the last card holds the two risky actions in the error colour, no arrow. */
+.ui-you-page { position: fixed; inset: 0; z-index: 40; overflow-y: auto; background: var(--gs-you-page); padding: calc(12px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom, 0px)); }
+.ui-you-top { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.ui-you-top h1 { margin: 0; font-family: var(--gs-font-display); font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+.ui-you-page .ui-account { padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.ui-you-card { display: flex; flex-direction: column; padding: 4px 16px; border: 1px solid var(--md-outline-variant); border-radius: 12px; background: var(--md-surface); }
+.ui-you-card.lime { padding: 16px; background: var(--gs-lime-soft); }
+.ui-you-card.lime .ui-profile-head { margin-bottom: 0; }
+.ui-you-card .ui-row { border: 0; background: transparent; padding-left: 0; padding-right: 0; }
+.ui-you-card.risky { margin-top: 12px; }   /* 12 px from the column gap plus 12 here: 24 px above it */
+.ui-you-card.risky .ui-row, .ui-you-card.risky .ui-row span { color: var(--md-error); }
+.ui-you-page ~ .ui-sheet-back { z-index: 50; }   /* the delete-account sheet sits over the page */
+.ui-you-card.lime, .ui-you-card.lime h2, .ui-you-card.lime .ui-profile-who .mono, .ui-you-card.lime label { color: var(--md-on-tertiary-container); }   /* dark ink on lime in Night too */
+.ui-you-card.lime .ui-link { color: var(--md-on-tertiary-container); font-weight: 700; text-decoration: underline; }   /* the Edit link reads on the lime card (contrast) */
+.ui-you-page .ui-you-top h1, .ui-you-page .ui-legal { color: var(--gs-you-page-text); }   /* the page is light in Night too, so the words on it stay dark */
+
+/* Story 1163 (owner, 9 Nov): no zigzag anywhere. It keeps its 8 px, so nothing around it moves; the slip top is a straight hairline of the same 8 px. */
+.ui-zigzag { visibility: hidden; }
+.ui-slip::before { -webkit-mask: none; mask: none; box-sizing: border-box; border: 1px solid var(--md-outline-variant); border-bottom: 0; }
+
+/* Story 1160 (board L4d-ClosedGreyMenu): while the kitchen is closed the dishes look closed, with no Add and no View bill. Photos grayscale at 0.75, names, lines and prices muted, marks grey. The header, the Closed card and the tabs are outside these lists and keep their colour. */
+.closed-grey img { filter: grayscale(1); opacity: 0.75; }
+.closed-grey h3, .closed-grey .ui-price, .closed-grey .ui-meta { color: var(--gs-text-muted); }
+.closed-grey .ui-mark rect { stroke: var(--gs-text-muted); }
+.closed-grey .ui-mark circle, .closed-grey .ui-mark path { fill: var(--gs-text-muted); }
+.ui-closed-note { margin: 0 var(--gs-gutter) var(--gs-space-3); padding: 10px 12px; border: 1px solid var(--md-outline-variant); border-radius: 12px; background: var(--md-surface); font-size: var(--gs-text-sm); font-weight: 600; }   /* story 1162 */
+
+/* Story 1170: one disabled style for every .ui-btn, and the reason line above a disabled main button (centred, 12 px above). */
+.ui-btn:disabled:not(.danger-fill) { opacity: 1; background: var(--gs-disabled-bg); color: var(--gs-disabled-text); border: 0; box-shadow: none; cursor: not-allowed; }   /* pointer-events stay none (story 953): a touch does nothing, so the cursor shows only where a mouse can reach it elsewhere */
+.ui-btn:disabled:not(.danger-fill) .mono, .ui-btn:disabled:not(.danger-fill) .verb { color: inherit; }
+.ui-reason { margin: 0 0 12px; text-align: center; font-size: var(--gs-text-sm); color: var(--gs-text-muted); }
+.ui-sticky.float:has(.ui-reason) { flex-direction: column; align-items: center; }
+.ui-sticky.float:has(.ui-reason) .ui-btn { width: 100%; }

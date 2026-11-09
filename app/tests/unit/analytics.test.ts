@@ -74,8 +74,8 @@ describe("analytics", () => {
     expect(ph.init.mock.calls[0][1].api_host).toBe("https://x.example");
   });
 
-  it("S4 the six events, and capture sends the name and its props", async () => {
-    expect([...EVENTS]).toEqual(["first_open", "code_ok", "address_set", "order_placed", "delivered_yes", "feedback_sent"]);
+  it("S4 the seven events, and capture sends the name and its props", async () => {
+    expect([...EVENTS]).toEqual(["first_open", "code_ok", "address_set", "order_placed", "delivered_yes", "feedback_sent", "cancel_failed", "error_shown"]);
     resetAnalytics();
     const ph = fakePosthog();
     await initAnalytics({ VITE_POSTHOG_KEY: "k" }, (async () => ph) as never, store());

@@ -131,3 +131,12 @@ test('H15 wiring: MAIN 93 calls SUB 94 after the two SUB 91 calls and before the
 test('H15 canvas layout of SUB 94 and MAIN 93', () => {
   for (const k of ['sub94', 'main93']) assert.deepEqual(checkLayout(wf[k], wf[k].sections), [], k);
 });
+
+test('#920 the push queue line: waiting over 2 minutes is UNHEALTHY and reaches the alert; short or empty is fine', () => {
+  const at = (push_wait_s) => lines({ ...reads, 'Read database numbers': ok({ ...reads['Read database numbers'].body, push_wait_s }) });
+  assert.ok(at(180).includes('Push queue: oldest waits 180 s · UNHEALTHY (the sender may be off)'));
+  assert.ok(at(30).includes('Push queue: oldest waits 30 s · OK'));
+  assert.ok(at(null).includes('Push queue: empty · OK'));
+  const alert = run('health_alert.js', {}, { 'Call SUB 94 Health and cost numbers': { ok: true, lines: at(180) }, Config: { chat_id: '42' } });
+  assert.match(alert.text, /Push queue: oldest waits 180 s · UNHEALTHY/);
+});

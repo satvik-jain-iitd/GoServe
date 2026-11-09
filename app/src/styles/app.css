@@ -15,6 +15,7 @@ h1 {
 
 /* Customer screens (story #48). Colours and sizes come from the tokens only. */
 .shell { padding-bottom: var(--gs-space-9); }
+.shell:not(.below) { height: 100dvh; box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain; }   /* story 932: the document is locked, so the console and ops pages scroll inside their own box */
 h2 { font-size: var(--gs-text-xl); color: var(--md-on-background); }
 ul { list-style: none; margin: 0; padding: 0; }
 .dishes { display: grid; gap: var(--gs-space-4); }
@@ -96,3 +97,9 @@ select { font: inherit; padding: var(--gs-space-3); border: 1px solid var(--md-o
 .below { max-width: 28rem; margin: 0 auto; padding: 0; }   /* #242: nothing under a board; only the feedback sheet mounts here */
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .below .feedback-btn { position: static; box-shadow: none; }   /* on the Ink screens Feedback waits below the phone frame until You (H10d) holds it */
+
+/* Story 983: a phone turned sideways (iOS cannot be locked) fills the width instead of a 28 rem column in the middle of an empty screen.
+   Only a short landscape viewport (a phone); a desktop or tablet keeps the centred column. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .shell, .frame, .below { max-width: none; }
+}
