@@ -274,6 +274,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-landing-head h1 { margin: 0; }
 .ui-pin { padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; }
 .ui-photo-btn .ui-photo { display: block; }
+.ui-photo-btn .ui-photo.ui-ph { display: flex; }   /* story 937: the plate stays centred in the tile */
 .ui-slip-pad { margin: var(--gs-space-4) var(--gs-gutter) 0; }
 .ui-empty-slip { padding: var(--gs-space-6) var(--gs-space-2) var(--gs-space-5); }
 .ui-muted { color: var(--gs-text-muted); }
