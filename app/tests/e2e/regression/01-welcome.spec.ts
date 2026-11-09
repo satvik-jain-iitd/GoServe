@@ -65,13 +65,17 @@ test("TC 1.9 two fast taps start one Google sign-in, not two", async ({ page, co
   const button = page.getByRole("button", { name: "Continue with Google" });
   await button.dblclick();
   await page.waitForTimeout(800);
-  expect(starts).toBeLessThanOrEqual(1);
+  expect(starts).toBe(1);
 });
 
 test("TC 1.12 largest phone text size: the title wraps to 2 lines at most and the button shows", async ({ page, context }) => {
   await reach(context, page);
-  await page.addStyleTag({ content: "html { font-size: 24px !important; }" });
   const title = page.getByRole("heading", { name: "One tap and you are in" });
+  const before = await title.evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+  // Largest Android text size is a 1.5x scale of every text, px or rem: set each element's computed size x1.5 (the boxes keep their own widths).
+  await page.evaluate(() => { for (const e of document.querySelectorAll<HTMLElement>("main, main *")) e.style.setProperty("font-size", `${parseFloat(getComputedStyle(e).fontSize) * 1.5}px`, "important"); });
+  const after = await title.evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+  expect(after, "the text size really grew").toBeGreaterThan(before * 1.3);
   const lineHeight = await title.evaluate((e) => parseFloat(getComputedStyle(e).lineHeight));
   expect((await box(title)).height).toBeLessThanOrEqual(lineHeight * 2.2);
   const b = await box(page.getByRole("button", { name: "Continue with Google" }));
