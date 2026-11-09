@@ -821,3 +821,9 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 /* Story 1163 (owner, 9 Nov): no zigzag anywhere. It keeps its 8 px, so nothing around it moves; the slip top is a straight hairline of the same 8 px. */
 .ui-zigzag { visibility: hidden; }
 .ui-slip::before { -webkit-mask: none; mask: none; box-sizing: border-box; border: 1px solid var(--md-outline-variant); border-bottom: 0; }
+
+/* Story 1160 (board L4d-ClosedGreyMenu): while the kitchen is closed the dishes look closed, with no Add and no View bill. Photos grayscale at 0.75, names, lines and prices muted, marks grey. The header, the Closed card and the tabs are outside these lists and keep their colour. */
+.closed-grey img { filter: grayscale(1); opacity: 0.75; }
+.closed-grey h3, .closed-grey .ui-price, .closed-grey .ui-meta { color: var(--gs-text-muted); }
+.closed-grey .ui-mark rect { stroke: var(--gs-text-muted); }
+.closed-grey .ui-mark circle, .closed-grey .ui-mark path { fill: var(--gs-text-muted); }
