@@ -246,6 +246,7 @@ function DetailsSheet({ pick, edit, onChange, onSave, onHeight }: { pick: PinPic
       <div className="ui-pinmap-saveas"><span className="mono ui-pinmap-kicker">Save as</span>
         <div className="ui-chips">{CHIPS.map((c) => <button key={c} type="button" className={`ui-chip${chip === c ? " on" : ""}`} aria-pressed={chip === c} onClick={() => setChip(c)}>{c}</button>)}</div></div>
       {chip === "Other" && <div className="ui-field"><label htmlFor="pd-name">Name this place</label><input id="pd-name" type="text" maxLength={30} value={custom} onChange={(e) => setCustom(e.target.value)} /></div>}
+      {!ready && <p role="status" className="ui-reason">{house.trim().length < 1 ? "Add your house or flat number." : needArea && area.trim().length < 2 ? "Add the area or street." : !isPin(pin) ? "Add a 6 digit pin code." : "Choose a name for this place."}</p>}   {/* story #1170 */}
       <button type="button" className="ui-btn big" disabled={!ready} onClick={save}>{edit ? "Save changes" : "Save address"}</button>
     </section>
   );
