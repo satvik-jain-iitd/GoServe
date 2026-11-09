@@ -11,7 +11,9 @@ const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers
 const quote = { ok: true, kitchen_id: "k-1", lines: [], item_total_paise: 25000, fees: { delivery_paise: 4000, packaging_paise: 0, total_paise: 4000 }, discount_paise: 0, coupon: null, tax_paise: 0, tax_mode: "inclusive", to_pay_paise: 29000, saved_paise: 0, offers: [] };
 const placed = { ok: true, created: true, order: { id: "0f0f0f0f-1111-4222-8333-444444444444", kitchen_id: "k-1", status: "placed", total_paise: 29000, address: "x", items: [], bill: {}, created_at: "2026-11-06T10:00:00Z" } };
 const add = (page: Page, name: string) => page.getByRole("button", { name: `Add ${name}` });
-const close = (net: Awaited<ReturnType<typeof setup>>) => { Object.assign(net.state.kitchens[0], { open: false, opens_at: "18:00:00" }); net.push("UPDATE", net.state.kitchens[0], "kitchens"); };
+const close = (net: Awaited<ReturnType<typeof setup>>) => { Object.assign(net.state.kitchens[0], { open: false, opens_at: "18:00:00", closes_at: "22:00:00" }); net.push("UPDATE", net.state.kitchens[0], "kitchens"); };
+
+test.beforeEach(async ({ page }) => { await page.clock.setFixedTime(new Date("2026-10-24T06:30:00Z")); });   // 12:00 India: outside 18:00 to 22:00, so "closed" means closed by the hours, whatever the time of day the test runs
 
 test("S1 on the bill, the kitchen closes: the app lands on the closed menu, the bill is cleared, and the status line says so", async ({ page, context }) => {
   const net = await setup(context, page);
