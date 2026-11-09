@@ -325,7 +325,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [alertsAsked, setAlertsAsked] = useState(() => { try { return window.localStorage.getItem(ASKED_KEY) === "1"; } catch { return false; } });
   const [askingAlerts, setAskingAlerts] = useState(false);
   const markAsked = () => { try { window.localStorage.setItem(ASKED_KEY, "1"); } catch { /* asked again next visit */ } setAlertsAsked(true); };
-  async function turnOnFirst() { setAskingAlerts(true); try { await allowReminder(); } finally { setAskingAlerts(false); markAsked(); } }
+  // Story #1116: moves on either way. A permission call that never settles (iPhone Safari outside the home-screen app) must not hold the screen: after 8 s it goes on.
+  const ALERTS_WAIT_MS = 8000;
+  async function turnOnFirst() {
+    setAskingAlerts(true);
+    try { await Promise.race([allowReminder(), new Promise((go) => setTimeout(go, ALERTS_WAIT_MS))]); } finally { setAskingAlerts(false); markAsked(); }
+  }
   // Story #1049 part 3 (board NK-A): no kitchen serves this pin. One stored ask per person and pin (area_request_add_v2); nothing is sent from here.
   const [areaAsk, setAreaAsk] = useState<"idle" | "busy" | "done">("idle");
   const [areaAskError, setAreaAskError] = useState<string | null>(null);
