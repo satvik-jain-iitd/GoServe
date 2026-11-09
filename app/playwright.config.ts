@@ -13,7 +13,7 @@ export default defineConfig({
   expect: { toHaveScreenshot: { maxDiffPixels: 10, animations: "disabled" } },
   use: { baseURL: "http://localhost:4180" },
   projects: [
-    { name: "chromium", use: { ...devices["Pixel 7"] }, testIgnore: /\.webkit\.spec\.ts$/ },
+    { name: "chromium", use: { ...devices["Pixel 7"] }, testIgnore: process.env.BOARD_MATCH ? /\.webkit\.spec\.ts$/ : process.env.REGRESSION ? /\.webkit\.spec\.ts$|board-match\.spec\.ts$/ : /\.webkit\.spec\.ts$|board-match\.spec\.ts$|regression\// },   // story #1168: the board-match spec runs only in its own job (BOARD_MATCH=1), not in the merge gate
     { name: "webkit", use: { ...devices["iPhone 13"], serviceWorkers: "block" }, testMatch: /\.webkit\.spec\.ts$/ },   // story #616: the iPhone engine, for the few things that differ there (the switch). Story #646: in WebKit a request the service worker handles can skip context.route and reach the real network, so no service worker here.
   ],
   webServer: {

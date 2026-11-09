@@ -39,7 +39,7 @@ export function OrdersScreen({ orders, loading, kitchenName, onOpen, onMenu, onA
             <button type="button" className="ui-order-main ui-order-open" onClick={() => onOpen(o)}>
               <span className="mono ui-order-no">No. {shortId(o.id)} · {when(o.created_at)}</span>
               <span className="ui-order-items">{orderSummary(o)}</span>
-              <span className="ui-order-sub">{kitchenName ? `${kitchenName} · ` : ""}<span className="mono">{formatRupees(o.total_paise)}</span></span>
+              <span className="ui-order-sub">{kitchenName ? `${kitchenName} · ` : ""}<span className="mono">{formatRupees(o.status === "cancelled" ? 0 : o.total_paise)}</span></span>   {/* story #1172: a cancelled or declined order owes nothing */}
               {cancelKind(o) === "declined" && <span className="ui-order-sub">{kitchenName || "The kitchen"} could not take this order.</span>}
             </button>
             <span className="ui-order-side">
