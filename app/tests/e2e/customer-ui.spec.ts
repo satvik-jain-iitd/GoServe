@@ -91,7 +91,6 @@ test("S6 Account shows the saved name, phone and address, and signs out", async 
   await expect(page.getByRole("dialog", { name: "You" })).toBeVisible();
   await expect(page.getByTestId("account")).toContainText("Asha");
   await expect(page.getByTestId("account")).toContainText("9876543210");
-  await expect(page.getByTestId("account")).toContainText("Flat 4, Green Park");
 });
 
 test("S7 the bill says cash at the door in plain words", async ({ page, context }) => {

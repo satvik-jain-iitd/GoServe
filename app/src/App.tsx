@@ -981,7 +981,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         {step === "account" && (
           <AccountScreen photo={photo} email={email} onGivenName={(n) => setName((v) => v || n)} name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone} onAddress={setAddress}
             alerts={reminder} onAlerts={toggleAlerts} alertsError={alertsError} live={openLive} onForget={forgetMe} onDeleteAccount={deleteAccount}
-            onMenu={() => setStep("menu")} />
+            onMenu={() => setStep("menu")} onAddresses={() => setStep("deliver")} onOrders={() => setStep("orders")} />
         )}
         {menu && step === "bill" && (
           <BillScreen notice={againLine} note={note} onNote={setNote} lines={billLines} total={total} soldOut={dead && step === "bill" ? { id: dead.dish.id, name: dead.dish.name, alt: offers.alt, canSwap, onSwap: () => setSwapped((s) => [...s, dead.dish.id]), onRemove: () => takeOut(dead.dish.id) } : undefined} offers={OFFERS_ON && offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove } : undefined} kitchenName={kitchenName} pin={pin} address={address} onAddress={setAddress}
