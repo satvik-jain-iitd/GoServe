@@ -14,7 +14,7 @@ for (const theme of ["day", "night"] as const) {
     const sw = page.getByRole("switch", { name: /Veg only/ }).first();
     await expect(sw).toBeVisible();
     const read = () => sw.evaluate((el) => {
-      const px = (v: string) => { const c = document.createElement("canvas").getContext("2d")!; c.fillStyle = v; c.fillRect(0, 0, 1, 1); return Array.from(c.getImageData(0, 0, 1, 1).data).slice(0, 3); };
+      const px = (v: string) => { const t = document.createElement("i"); t.style.color = v; document.body.append(t); const c = getComputedStyle(t).color; t.remove(); return (c.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number); };   // the browser resolves var(--token) here
       const s = getComputedStyle(el), k = getComputedStyle(el, "::before");
       return { track: px(s.backgroundColor), knob: px(k.backgroundColor), border: s.borderTopWidth, page: px("var(--md-background)") };
     });
