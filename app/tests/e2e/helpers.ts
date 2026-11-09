@@ -32,7 +32,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
     if (req.url().includes("/auth/v1/signup")) {
       calls.signups++;
       return json(route, 200, { access_token: JWT, token_type: "bearer", expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: "r",
-        user: { id: SESSION, aud: "authenticated", role: "authenticated", is_anonymous: state.anonymous, app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() } });
+        user: { id: SESSION, aud: "authenticated", role: "authenticated", is_anonymous: state.anonymous, app_metadata: {}, email: state.userEmail ?? undefined, user_metadata: state.anonymous || state.phoneUser ? {} : { full_name: "Amit Kumar" }, created_at: new Date().toISOString() } });
     }
     if (req.url().includes("/rest/v1/rpc/")) {
       const name = req.url().split("/rest/v1/rpc/")[1].split("?")[0];

@@ -1,5 +1,5 @@
 // The menu of the Ink v3 boards 02, 02a, 02b, 02c and 03 (story H10b, #193): header, greeting, thali hero, sections, filter sheet, dish sheet.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SHOW_KITCHEN_NAME } from "../lib/area";
 import { categoryKey, filterDishes } from "../lib/browse";
 import { sectionsOf, thalisOf } from "../lib/home";
@@ -21,6 +21,40 @@ type Props = {
 
 const FunnelIcon = () => <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 5h18l-7 8v6l-4-2v-4z" /></svg>;
 
+// Story #1134: the menu appears in one go. The loading state stays until the data and the photos of the first screenful are decoded (or 1.2 s have passed: then the plate fills
+// each slot that is still waiting and the photo comes into the same fixed box later). A wait under 300 ms shows no loading state at all.
+const FIRST_VIEW = 6, CAP_MS = 1200, SKELETON_AFTER_MS = 300;
+const decoded = new Set<string>();   // photos already decoded in this page: shown at once, whatever screen asks for them
+function preload(url: string): Promise<void> {
+  if (decoded.has(url)) return Promise.resolve();
+  return new Promise((done) => {
+    const img = new Image();
+    img.src = url;
+    (typeof img.decode === "function" ? img.decode() : new Promise<void>((r) => { img.onload = () => r(); img.onerror = () => r(); })).then(() => { decoded.add(url); }, () => undefined).finally(done);
+  });
+}
+function useFirstView(loaded: boolean, urls: string[]): { ready: boolean; late: boolean } {
+  const key = urls.join("|");
+  const [settled, setSettled] = useState<string | null>(null);
+  const was = useRef(false);   // once the first view has shown, a filter or a new answer never hides it again
+  useEffect(() => {
+    if (!loaded || was.current) return;
+    let alive = true;
+    const cap = setTimeout(() => { if (alive) setSettled(key); }, CAP_MS);
+    void Promise.all(urls.map(preload)).then(() => { if (alive) setSettled(key); });
+    return () => { alive = false; clearTimeout(cap); };
+  }, [loaded, key]);   // eslint-disable-line react-hooks/exhaustive-deps
+  const ready = loaded && (was.current || urls.length === 0 || settled === key || urls.every((u) => decoded.has(u)));
+  if (ready) was.current = true;
+  const [late, setLate] = useState(false);
+  useEffect(() => {
+    if (ready) { setLate(false); return; }
+    const t = setTimeout(() => setLate(true), SKELETON_AFTER_MS);
+    return () => clearTimeout(t);
+  }, [ready]);
+  return { ready, late };
+}
+
 export function MenuScreen(p: Props) {
   const [land] = useState(p.land);   // read once at mount, so a re-render never cuts the fly-in short
   useEffect(() => { p.onLanded(); }, []);
@@ -37,6 +71,12 @@ export function MenuScreen(p: Props) {
   const thali = thalisOf(shown.filter((d) => d.available !== false));   // a sold-out thali is not today's thali
   const sections = sectionsOf(shown);
   const rank = new Map(sections.flatMap((s) => s.dishes).map((d, i) => [d.id, i] as const));   // story #921: the first two photos load at once, the rest when they near the screen
+  const firstUrls = (() => {   // the photos of the first screenful, in the order they are drawn: today's thali cards, then the first rows
+    const seen = new Set<string>();
+    for (const d of [thali.veg, thali.nonveg, ...sections.flatMap((x) => x.dishes).slice(0, FIRST_VIEW)]) if (d?.image_url) seen.add(d.image_url);
+    return [...seen];
+  })();
+  const view = useFirstView(p.dishes !== null, firstUrls);
   const closed = p.closed !== null;
   const empty = p.dishes !== null && all.length === 0 && !p.error;   // story 891, board M7: the server answered and the kitchen has no dishes yet
   const add = (d: Dish) => <button type="button" className="ui-btn" aria-label={`Add ${d.name}`} disabled={closed} onClick={() => p.onAdd(d.id)}>Add</button>;
@@ -63,7 +103,7 @@ export function MenuScreen(p: Props) {
         </div>
       </header>
       {p.far && <div className="ui-farstrip" role="status"><span>You are {p.far.km} km from {p.far.label}</span><button type="button" onClick={p.far.onHere}>Deliver here</button></div>}
-      <div className="ui-scroll" aria-busy={p.dishes === null && !p.error ? true : undefined} aria-label={p.dishes === null && !p.error ? "Loading the menu" : undefined}>
+      <div className="ui-scroll" aria-busy={!view.ready && !p.error ? true : undefined} aria-label={!view.ready && !p.error ? "Loading the menu" : undefined}>
         <div className="ui-greet">
           {(SHOW_KITCHEN_NAME ? p.kitchenName : "") || p.openText ? <h2 className="ui-greet-line">{[SHOW_KITCHEN_NAME ? p.kitchenName : "", p.openText].filter(Boolean).join(" · ")}</h2> : null}
         </div>
@@ -81,9 +121,9 @@ export function MenuScreen(p: Props) {
           </div>
         )}
         {p.fromCache && <p role="status" className="ui-offline">{p.slow ? "GoServe is slow right now. Showing the menu you saw last." : "No connection. Showing the menu you saw last."}</p>}
-                {p.dishes === null && !p.error && <Loading />}
-        {p.dishes !== null && (thali.veg || thali.nonveg) && <Hero veg={thali.veg} nonveg={thali.nonveg} closed={closed} qty={p.qty} onAdd={p.onAdd} onChange={p.onChange} />}
-        {empty && (
+        {!view.ready && !p.error && (view.late ? <Loading /> : null)}
+        {view.ready && (thali.veg || thali.nonveg) && <Hero veg={thali.veg} nonveg={thali.nonveg} closed={closed} qty={p.qty} onAdd={p.onAdd} onChange={p.onChange} />}
+        {view.ready && empty && (
           <div className="ui-menu-empty" data-testid="menu-empty">
             <div className="ui-menu-empty-row">
               <span className="ui-stamp placed small">Soon</span>
@@ -99,14 +139,14 @@ export function MenuScreen(p: Props) {
         )}
         {empty && <p className="ui-menu-empty-note mono">Nothing listed yet.</p>}
         {p.dishes !== null && all.length > 0 && shown.length === 0 && <div className="ui-pad"><Empty title="Nothing matches" hint="Try another word or clear the filters." /></div>}
-        {sections.map((s) => (
+        {(view.ready ? sections : []).map((s) => (
           <div key={s.id}>
             <div className="ui-section"><h2 id={s.id}>{s.title}</h2></div>
             <div className="ui-list">
               {s.dishes.map((d) => (
                 <article key={d.id} className={d.available === false ? "ui-tile sold" : "ui-tile"}>
                   <button type="button" className="ui-photo-btn" aria-label={`${d.name} details`} onClick={() => setDish(d)}>
-                    <Photo src={d.image_url} cls="ui-photo" lazy={(rank.get(d.id) ?? 9) >= 2} box={76} />
+                    <Photo src={d.image_url} cls="ui-photo" lazy={(rank.get(d.id) ?? 9) >= 2} box={76} gate={(rank.get(d.id) ?? 9) < FIRST_VIEW} />
                   </button>
                   <div className="ui-tile-body">
                     <h3>{d.veg !== undefined && <VegMark veg={d.veg} />}{d.name}</h3>
@@ -139,9 +179,16 @@ export function MenuScreen(p: Props) {
 }
 
 // A photo that is missing or cannot load shows the plate, never the browser's broken-image mark (story #637).
-function Photo({ src, cls, alt = "", lazy, box }: { src: string | null; cls?: string; alt?: string; lazy?: boolean; box?: number }) {
+function Photo({ src, cls, alt = "", lazy, box, gate }: { src: string | null; cls?: string; alt?: string; lazy?: boolean; box?: number; gate?: boolean }) {
   const [failed, setFailed] = useState(false);
-  if (!src || failed) {
+  const [ok, setOk] = useState(() => !gate || !src || decoded.has(src));   // story #1134: a first-view photo is drawn when decoded; until then (after the 1.2 s cap) the plate holds its box
+  useEffect(() => {
+    if (ok || !src) return;
+    let alive = true;
+    void preload(src).then(() => { if (alive) setOk(true); });
+    return () => { alive = false; };
+  }, [ok, src]);
+  if (!src || failed || !ok) {
     return (
       <span className={`${cls ?? ""} ui-ph`} aria-hidden="true">
         <DishPlate size={cls === undefined || cls === "ui-dish-photo" ? 72 : 40} />
