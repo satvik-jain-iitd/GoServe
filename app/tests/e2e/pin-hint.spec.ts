@@ -16,7 +16,7 @@ test("S2 the address details on the map show the grey 123456 hint when the map g
   await page.getByRole("button", { name: "Edit or remove Home" }).click();
   await page.getByRole("button", { name: "Edit", exact: true }).click();
   await page.getByRole("button", { name: "Save changes" }).click();
-  await expect(page.getByLabel("Pin code")).toHaveAttribute("placeholder", "123456");
+  await expect(page.getByLabel("Pin code")).toHaveAttribute("placeholder", "e.g. 123456");
 });
 
 test("S3 the admin pin code boxes (Add kitchen, Edit kitchen) show 123456 too", async ({ page, context }) => {
