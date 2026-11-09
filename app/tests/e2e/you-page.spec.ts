@@ -62,3 +62,12 @@ test("S5 Look has two chips only; a fresh install is Day, and a saved By the clo
   await expect(pageOf(page).getByRole("region", { name: "Look" }).getByRole("button")).toHaveText(["Day", "Night"]);
   await expect(page.getByRole("button", { name: /By the clock/ })).toHaveCount(0);
 });
+
+// Story #1173 (QA run 1, follow-up F314): in Night the You page background follows the night token; Day stays #EEEFE6.
+for (const [theme, want] of [["day", "rgb(238, 239, 230)"], ["night", "rgb(11, 18, 32)"]] as const) {
+  test(`S6 ${theme}: the You page background is ${want}`, async ({ page, context }) => {
+    await context.addInitScript((t) => { try { localStorage.setItem("gs-theme", t); } catch { /* default */ } }, theme);
+    await open(page, context);
+    expect(await pageOf(page).evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(want);
+  });
+}

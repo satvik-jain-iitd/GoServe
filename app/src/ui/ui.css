@@ -816,7 +816,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-you-page ~ .ui-sheet-back { z-index: 50; }   /* the delete-account sheet sits over the page */
 .ui-you-card.lime, .ui-you-card.lime h2, .ui-you-card.lime .ui-profile-who .mono, .ui-you-card.lime label { color: var(--md-on-tertiary-container); }   /* dark ink on lime in Night too */
 .ui-you-card.lime .ui-link { color: var(--md-on-tertiary-container); font-weight: 700; text-decoration: underline; }   /* the Edit link reads on the lime card (contrast) */
-.ui-you-page .ui-you-top h1, .ui-you-page .ui-legal { color: var(--md-on-tertiary-container); }   /* the page is light in Night too, so the words on it stay dark */
+.ui-you-page .ui-you-top h1, .ui-you-page .ui-legal { color: var(--gs-you-page-text); }   /* the page is light in Night too, so the words on it stay dark */
 
 /* Story 1163 (owner, 9 Nov): no zigzag anywhere. It keeps its 8 px, so nothing around it moves; the slip top is a straight hairline of the same 8 px. */
 .ui-zigzag { visibility: hidden; }
