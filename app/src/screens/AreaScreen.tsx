@@ -63,7 +63,7 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace, on
             <>
               <h2 className="ui-slip-title">Where does the food go?</h2>
               <span aria-hidden="true" className="ui-pinbadge ui-hero-abs"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.5" /></svg></span>
-              <button type="button" className="ui-btn ghost big ui-bottom" onClick={onSearch}>Enter address manually</button>
+              <button type="button" className="ui-btn ghost big ui-push" onClick={onSearch}>Enter address manually</button>
               <button type="button" className="ui-btn big" disabled={finding} onClick={useLocation}>{finding ? "Finding you…" : "Set delivery location"}</button>
             </>
           )}
