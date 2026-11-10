@@ -100,9 +100,8 @@ test("TC 23.5 Sad: Cancel order while placed asks first, then Cancelled with Not
   await placeFromBill(page);
   await answer(page, "/rest/v1/rpc/cancel_order", { ok: true, order: order("cancelled", new Date().toISOString()) });
   await page.getByRole("button", { name: "Cancel order" }).click();
-  test.fail(true, "#1227: Cancel order cancels on one tap with no confirm sheet (the case expects Confirm first)");
-  await expect(page.getByRole("dialog")).toBeVisible();   // Confirm: the app asks before it cancels
-  await page.getByRole("dialog").getByRole("button", { name: "Confirm", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Cancel this order?" })).toBeVisible();   // board CX1: the app asks before it cancels
+  await page.getByRole("dialog").getByRole("button", { name: "Yes, cancel the order" }).click();
   await expect(page.getByRole("heading", { name: "Cancelled", exact: true })).toBeVisible();
   await expect(page.getByText("Nothing to pay", { exact: true })).toBeVisible();
   await expect(page.getByText("₹0", { exact: true })).toBeVisible();
@@ -149,4 +148,22 @@ test("TC 23.10 Look: phone not asked yet, the placed screen has no Ping me butto
   await answer(page, "/rest/v1/orders", [order("preparing", new Date(Date.now() - 60_000).toISOString())]);
   await wake(page);
   await expect(page.getByRole("button", { name: /Ping me/ })).toHaveCount(0);
+});
+
+// Story #1227 (board CX1-CancelSheet): Keep my order and a dismiss leave the order as it was.
+test("TC 23.11 Sad: Cancel order, then Keep my order or Close: the order stays live and nothing is cancelled", async ({ page, context }) => {
+  await answer(page, "/rest/v1/kitchens", kitchen());
+  await STEPS["bill"](context, page, PATH);
+  await placeFromBill(page);
+  let cancels = 0;
+  await page.route(isPath("/rest/v1/rpc/cancel_order"), (route) => { cancels++; return reply(route, { ok: true, order: order("cancelled", new Date().toISOString()) }); });
+  await page.getByRole("button", { name: "Cancel order" }).click();
+  await page.getByRole("dialog", { name: "Cancel this order?" }).getByRole("button", { name: "Keep my order" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "Cancel order" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Close" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  expect(cancels).toBe(0);
+  await expect(page.getByRole("button", { name: "Cancel order" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Cancelled", exact: true })).toHaveCount(0);
 });

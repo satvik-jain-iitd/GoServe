@@ -857,3 +857,9 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 
 /* story 1263: a switch that cannot be turned on (UPI online, Card online: not set up yet) looks switched off and out of reach */
 .ui-switch.not-set-up { opacity: 0.4; cursor: not-allowed; }
+
+/* Story 1227, board CX1: the rows of the cancel sheet */
+.ui-cancel-rows { margin: 12px 0 0; }
+.ui-cancel-rows > div { display: grid; grid-template-columns: 88px 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--md-outline-variant); }
+.ui-cancel-rows dt { font-size: 12px; color: var(--gs-text-muted); padding-top: 2px; }
+.ui-cancel-rows dd { margin: 0; font-size: 14px; }
