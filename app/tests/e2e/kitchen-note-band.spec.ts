@@ -67,5 +67,9 @@ for (const theme of ["day", "night"]) {
       return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
     });
     expect(ratio).toBeGreaterThanOrEqual(4.5);
+    const want = await page.evaluate(() => { const d = document.createElement("i"); d.style.background = "var(--md-error)"; d.style.color = "var(--md-on-error)"; document.body.append(d); const s = getComputedStyle(d); const r = { bg: s.backgroundColor, fg: s.color }; d.remove(); return r; });
+    const got = await band(page).evaluate((el) => { const s = getComputedStyle(el); return { bg: s.backgroundColor, fg: getComputedStyle(el.querySelector(".ui-noteband-text")!).color, pad: s.padding, radius: s.borderTopLeftRadius }; });
+    expect(got.bg).toBe(want.bg); expect(got.fg).toBe(want.fg);   // board K5: the error fill with its own text colour, in both themes
+    expect(got.pad).toBe("8px 10px"); expect(got.radius).toBe("4px");
   });
 }
