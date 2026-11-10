@@ -1,4 +1,4 @@
-// Story #1275 (board K4-NewOrderBar): a new order shows as a filled full-width bar under the header on Cooking and Today, so a cook 1 to 2 metres away sees it on any tab.
+// Story #1275 (board K4-NewOrderBar): a new order shows as a filled bar across the screen, inside the gutters, under the header on Cooking and Today, so a cook 1 to 2 metres away sees it on any tab.
 import { test, expect, type Page } from "@playwright/test";
 import { order, setup } from "./helpers";
 
@@ -24,7 +24,9 @@ test("S1 two new orders, on Cooking: the bar reads 2 new orders and Oldest 7 min
   await expect(bar(page)).toContainText("Oldest 7 min");
   const box = (await bar(page).boundingBox())!;
   expect(box.height).toBeGreaterThanOrEqual(64);
-  expect(box.width).toBeGreaterThanOrEqual(page.viewportSize()!.width - 2);   // full width
+  expect(box.x).toBeCloseTo(20, 0);   // inside the gutters (20 px), as on board K4
+  expect(box.x + box.width).toBeCloseTo(page.viewportSize()!.width - 20, 0);   // full width between the gutters
+  expect(await bar(page).evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe("6px");
   await bar(page).click();
   await expect(page.getByRole("heading", { name: "New", exact: true })).toBeVisible();
 });
