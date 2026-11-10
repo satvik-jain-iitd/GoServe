@@ -28,6 +28,7 @@ async function phone(context: BrowserContext) {
 const asks = (page: Page) => page.evaluate(() => (window as unknown as { __asks: number }).__asks);
 
 test("TC 17.1 the kitchen is closed: the Closed stamp, Kitchen closed. Opens at 6:00 pm, and Tell me when it opens", async ({ page, context }) => {
+  await page.clock.setFixedTime(new Date("2026-10-24T06:30:00Z"));   // 12:00 India, before the 6:00 pm opening
   const net = await setup(context, page);
   Object.assign(net.state.kitchens[0], { open: false, opens_at: "18:00:00" });
   await page.goto("/customer/");
@@ -38,6 +39,7 @@ test("TC 17.1 the kitchen is closed: the Closed stamp, Kitchen closed. Opens at 
 });
 
 test("TC 17.2 the closed menu: no Add on any dish, no View bill bar, the list grey and the names muted", async ({ page, context }) => {
+  await page.clock.setFixedTime(new Date("2026-10-24T06:30:00Z"));   // 12:00 India, before the 6:00 pm opening
   await context.route("https://img.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
   const net = await setup(context, page);
   net.state.menu = DISHES.map((d) => ({ ...d, image_url: "https://img.test/" + d.id + ".png" }));
@@ -51,7 +53,7 @@ test("TC 17.2 the closed menu: no Add on any dish, no View bill bar, the list gr
   await expect(page.getByRole("button", { name: /View bill/ })).toHaveCount(0);
   // Grey list: the container, the photos (grayscale) and the names in the muted colour.
   await expect(page.locator(".ui-list.closed-grey")).toHaveCount(1);
-  await expect.poll(async () => page.locator(".closed-grey img").evaluateAll((els) => els.map((e) => getComputedStyle(e).filter))).toEqual(expect.arrayContaining(["grayscale(1)"]));
+  await expect.poll(async () => page.locator(".closed-grey img").evaluateAll((els) => els.map((e) => getComputedStyle(e).filter))).toEqual(["grayscale(1)", "grayscale(1)"]);
   const muted = await page.evaluate(() => {
     const t = document.createElement("i");
     t.style.color = "var(--gs-text-muted)";
@@ -60,11 +62,12 @@ test("TC 17.2 the closed menu: no Add on any dish, no View bill bar, the list gr
     t.remove();
     return c;
   });
-  const name = await page.locator(".ui-list.closed-grey h3").first().evaluate((e) => getComputedStyle(e).color);
-  expect(name).toBe(muted);
+  const names = await page.locator(".ui-list.closed-grey h3").evaluateAll((els) => els.map((e) => getComputedStyle(e).color));
+  expect(names).toEqual([muted, muted]);
 });
 
 test("TC 17.3 Tell me when it opens: alerts asked once, then the button says it will tell me", async ({ page, context }) => {
+  await page.clock.setFixedTime(new Date("2026-10-24T06:30:00Z"));   // 12:00 India, before the 6:00 pm opening
   await phone(context);
   const net = await setup(context, page);
   Object.assign(net.state.kitchens[0], { open: false });
@@ -96,6 +99,7 @@ test("TC 17.4 the kitchen closes while I have 2 items in the bill: the bill is c
 });
 
 test("TC 17.5 the kitchen opens while I look: the menu turns live without a reload", async ({ page, context }) => {
+  await page.clock.setFixedTime(new Date("2026-10-24T06:30:00Z"));   // 12:00 India, before the 6:00 pm opening
   const net = await setup(context, page);
   Object.assign(net.state.kitchens[0], { open: false });
   await page.goto("/customer/");
