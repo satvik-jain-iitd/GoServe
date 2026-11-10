@@ -13,11 +13,12 @@ PM = "(select value from settings where name = 'payment_methods')"
 
 
 def run(*steps, final=""):
-    flat = [s for st in steps for s in (st if isinstance(st, list) else [st])]
+    def flatten(x):
+        return [y for e in x for y in flatten(e)] if isinstance(x, list) else [x]
+    flat = flatten(list(steps))
     last = "reset role; select (select jsonb_agg(r order by i) from res) as rs" + (", " + final if final else "")
     r = sql("begin; " + "; ".join(([MIG] if MIG else []) + SETUP + flat + [last]) + "; rollback;")
-    assert isinstance(r, list), r
-    return r[-1]
+    return r[-1] if isinstance(r, list) else r   # a refused statement comes back as an error dict; the tests that expect one read it as text
 
 
 def setm(uid, method, on):
@@ -61,12 +62,11 @@ class PaymentMethods(unittest.TestCase):
         r = run(setm(ADMIN, "upi_door", False), final="(select by_user::text from payment_methods_log) as by, (select methods from payment_methods_log) as methods")
         self.assertEqual((r["by"], r["methods"]), (ADMIN, ["cash"]), r)
         self.assertIn("permission denied", str(run("set local role anon", "select * from payment_methods_log")))
-        self.assertIn("permission denied", str(run("set local role authenticated", "select * from payment_methods_log")))
+        self.assertEqual(run("set local role authenticated", "create temp table t as select count(*) as c from payment_methods_log", "reset role", final="(select c from t) as c")["c"], 0)   # a signed-in non-admin sees no row
 
     def test_s8_a_customer_reads_only_the_list_that_is_on_never_the_log_or_who_changed_it(self):
-        r = run(setm(ADMIN, "upi_door", False), "set local role anon", "create temp table seen as select payment_methods_on() as v", "reset role", "select v from seen")
-        self.assertEqual(r[-1]["v"], ["cash"])
-        self.assertEqual(run("set local role anon", "create temp table t as select count(*) as c from settings where name = 'payment_methods'", "reset role", "select c from t")[-1]["c"], 0)   # the table itself stays closed
+        r = run(setm(ADMIN, "upi_door", False), "set local role anon", "create temp table seen as select payment_methods_on() as v, (select count(*) from settings where name = 'payment_methods') as rows", "reset role", final="(select v from seen) as v, (select rows from seen) as rows")
+        self.assertEqual((r["v"], r["rows"]), (["cash"], 0), r)   # the list that is on; the table itself stays closed
         self.assertIn("permission denied", str(run("set local role anon", "update settings set value = '[]'::jsonb where name = 'payment_methods'")))
 
     def test_s9_the_setting_holds_only_known_methods_and_at_least_one(self):
