@@ -570,9 +570,9 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 
 /* Story 935: the note for the kitchen (boards D2-BillNote and K2-TicketsNote) */
 .ui-note-count { margin: 0; display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--gs-text-muted); }
-.ui-ticket-note { display: flex; align-items: baseline; gap: 6px; min-width: 0; font-size: 14px; }
-.ui-ticket-note .mono { flex: none; font-size: 11px; color: var(--gs-text-muted); }
-.ui-ticket-note-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ui-noteband { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 12px 14px; border-radius: 8px; background: var(--gs-warm-yellow); color: #263528; text-align: left; }   /* story #1276: the day ink on the warm yellow in both themes (the ink token turns light at night) */
+.ui-noteband-label { font-family: var(--gs-font-mono); font-size: 12px; letter-spacing: 0.04em; font-weight: 600; }
+.ui-noteband-text { font-size: 20px; font-weight: 700; line-height: 1.25; white-space: normal; overflow-wrap: anywhere; }
 /* Story 972, board F1-Filter: a checkbox per category */
 .ui-switch-note { font-size: 11px; font-weight: 400; color: var(--gs-text-muted); }
 .ui-cats { display: flex; flex-direction: column; padding: 0 var(--gs-gutter); }
