@@ -47,10 +47,16 @@ class UpiQr(unittest.TestCase):
         self.assertEqual((r["rs"][1]["object"], r["rs"][1]["updated_at"] is not None), (OBJ, True), r)
         self.assertIn("not_admin", str(run(who(RIDER), "select upi_qr_get_v2()")))
 
-    def test_q6_every_change_is_logged_with_the_object_and_only_an_admin_reads_the_log(self):
-        r = run(who(ADMIN), PUT, put(ADMIN), put(ADMIN), final="(select count(*) from upi_qr_log where object = '" + OBJ + "') as logs")
-        self.assertEqual(r["logs"], 2, r)
-        self.assertEqual(run(who(OTHER), "insert into res (r) select to_jsonb(count(*)) from upi_qr_log")["rs"][0], 0)
+    def test_q6_every_change_is_logged_and_only_an_admin_reads_the_log(self):
+        r = run(who(ADMIN), PUT, put(ADMIN), who(ADMIN), "insert into res (r) select to_jsonb(count(*)) from upi_qr_log", who(OTHER), "insert into res (r) select to_jsonb(count(*)) from upi_qr_log")
+        self.assertEqual((r["rs"][1], r["rs"][2]), (1, 0), r)   # the admin sees the row, another user sees none
+
+    def test_q6b_the_same_name_again_changes_nothing_and_logs_nothing(self):
+        r = run(who(ADMIN), PUT, put(ADMIN), put(ADMIN), final="(select count(*) from upi_qr_log) as logs")
+        self.assertEqual(([x["changed"] for x in r["rs"]], r["logs"]), ([True, False], 1), r)
+
+    def test_q6c_anon_cannot_call_upi_qr_object(self):
+        self.assertIn("permission denied", str(run("set local role anon", "select upi_qr_object()")))
 
     def test_q7_only_an_admin_can_write_a_picture_into_the_bucket(self):
         self.assertIn("row-level security", str(run(who(OTHER), PUT)))
@@ -59,6 +65,21 @@ class UpiQr(unittest.TestCase):
         r = run(final="(select file_size_limit from storage.buckets where id = 'upi-qr') as lim, (select allowed_mime_types from storage.buckets where id = 'upi-qr') as types")
         self.assertEqual((r["lim"], sorted(r["types"])), (2097152, ["image/jpeg", "image/png", "image/webp"]), r)
 
+    def test_q9_payment_methods_on_leaves_upi_out_while_no_qr_is_set_and_has_it_once_one_is(self):
+        r = run("set local role anon", "insert into res (r) select payment_methods_on()", "reset role", who(ADMIN), PUT, put(ADMIN), "set local role anon", "insert into res (r) select payment_methods_on()")
+        self.assertEqual((r["rs"][0], r["rs"][2]), (["cash"], ["cash", "upi_door"]), r)
+
+    def test_q10_cash_cannot_go_off_while_no_qr_is_set_and_can_once_one_is(self):
+        off = who(ADMIN) + ["insert into res (r) select payment_methods_set_v2('cash', false)"]
+        r = run(off, who(ADMIN), PUT, put(ADMIN), off, final="(select value from settings where name = 'payment_methods') as pm")
+        self.assertEqual((r["rs"][0]["error"], r["rs"][0]["message"], r["rs"][2]["ok"], r["pm"]), ("qr_missing", "Upload the UPI QR first.", True, ["upi_door"]), r)
+
+    def test_q11_a_picture_in_the_bucket_cannot_be_replaced_or_deleted_even_by_an_admin(self):
+        r = run(who(ADMIN), PUT, "with u as (update storage.objects set name = 'qr-changed.png' where bucket_id = 'upi-qr' returning 1) insert into res (r) select to_jsonb(count(*)) from u",
+                final=f"(select count(*) from storage.objects where bucket_id = 'upi-qr' and name = '{OBJ}') as still, (select count(*) from pg_policies where tablename = 'objects' and policyname in ('upi_qr_update', 'upi_qr_delete')) as writers")
+        self.assertEqual((r["rs"], r["still"], r["writers"]), ([0], 1, 0), r)   # an admin update changes no row; no update or delete policy exists
+        # a delete is refused: no policy allows it, and the platform also refuses direct deletes from its storage tables
+        self.assertIn("Direct deletion", str(run(who(ADMIN), PUT, "delete from storage.objects where bucket_id = 'upi-qr'")))
 
 if __name__ == "__main__":
     unittest.main()

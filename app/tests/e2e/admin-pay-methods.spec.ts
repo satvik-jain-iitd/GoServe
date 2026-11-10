@@ -13,7 +13,7 @@ const toSettings = async (page: Page, context: Parameters<typeof setup>[0], over
   await expect(page.getByRole("heading", { name: "Payment methods" })).toBeVisible();
   return net;
 };
-const sw = (page: Page, name: string) => page.getByRole("switch", { name, exact: true });
+const sw = (page: Page, name: string) => page.getByRole("switch", { name: new RegExp(`^${name}`) });   // the UPI switch also reads its one-line hint
 
 test("A1 Settings shows Cash at the door and UPI at the door on, UPI online and Card online off, greyed, Not set up yet", async ({ page, context }) => {
   await toSettings(page, context);
@@ -24,21 +24,39 @@ test("A1 Settings shows Cash at the door and UPI at the door on, UPI online and 
   await expect(page.getByText("Last changed by owner@goserve.test, 10 Nov")).toBeVisible();
 });
 
-test("A2 turning UPI at the door off saves, and the setting the customer's bill reads follows", async ({ page, context }) => {
-  const net = await toSettings(page, context);
+test("A2 turning UPI at the door on saves, is still on after a reload, and the customer's bill offers it", async ({ page, context }) => {
+  const net = await toSettings(page, context, { payAdmin: ["cash"], doorMethods: ["cash"], qrObject: OBJ });
+  await sw(page, "UPI at the door").click();
+  await expect(sw(page, "UPI at the door")).toBeChecked();
+  await expect.poll(() => net.calls.rpc.filter((r) => r.name === "payment_methods_set_v2").map((r) => r.body)).toEqual([{ p_method: "upi_door", p_on: true }]);
+  await page.reload();
+  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  await expect(sw(page, "UPI at the door")).toBeChecked();   // after a reload it is still on
+  await page.goto("/customer/");
+  await page.getByRole("button", { name: "Add Butter Chicken" }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
+  await expect(page.getByRole("radio", { name: /^UPI at the door/ })).toBeVisible();   // the customer's bill offers it
+});
+
+test("A2b turning UPI at the door off saves and the customer's bill no longer offers it", async ({ page, context }) => {
+  const net = await toSettings(page, context, { qrObject: OBJ });
   await sw(page, "UPI at the door").click();
   await expect(sw(page, "UPI at the door")).not.toBeChecked();
   expect(net.state.payAdmin).toEqual(["cash"]);
-  expect(net.calls.rpc.filter((r) => r.name === "payment_methods_set_v2").map((r) => r.body)).toEqual([{ p_method: "upi_door", p_on: false }]);
-  await page.reload();
-  await page.getByRole("button", { name: "Numbers", exact: true }).click();
-  await expect(sw(page, "UPI at the door")).not.toBeChecked();   // after a reload it is still off
 });
 
 test("A3 the last method stays on: the switch does not move and the line says one way always stays on", async ({ page, context }) => {
   await toSettings(page, context, { payAdmin: ["cash"] });
   await sw(page, "Cash at the door").click();
   await expect(page.getByRole("alert")).toHaveText("One way to pay must stay on.");
+  await expect(sw(page, "Cash at the door")).toBeChecked();
+});
+
+test("A3b Cash cannot go off while no QR is uploaded: the line says Upload the UPI QR first and the switch stays on", async ({ page, context }) => {
+  await toSettings(page, context);   // both methods on, no QR
+  await expect(page.getByText("Customers see it once a QR is uploaded.")).toBeVisible();
+  await sw(page, "Cash at the door").click();
+  await expect(page.getByRole("alert")).toHaveText("Upload the UPI QR first.");
   await expect(sw(page, "Cash at the door")).toBeChecked();
 });
 
@@ -50,9 +68,9 @@ test("A4 a failed save leaves the switch where the server holds it and shows an 
   await expect(sw(page, "UPI at the door")).toBeChecked();
 });
 
-test("A5 the QR row says Sample QR until one is uploaded; Change uploads the picture and sets it by its object name", async ({ page, context }) => {
+test("A5 the QR row says No QR yet until one is uploaded; Change uploads the picture and sets it by its object name", async ({ page, context }) => {
   const net = await toSettings(page, context);
-  await expect(page.getByText("Sample QR · Not a real account yet")).toBeVisible();
+  await expect(page.getByText("No QR yet. Riders cannot take UPI.")).toBeVisible();
   await page.getByLabel("Change the UPI QR").setInputFiles(PNG);
   await expect(page.getByText(/^Your QR · set by owner@goserve.test/)).toBeVisible();
   expect(net.calls.uploads.some((u) => /\/upi-qr\/qr-[0-9a-f-]{36}\.png$/.test(u))).toBe(true);
@@ -73,9 +91,20 @@ test("A6 a picture that is not PNG, JPG or WebP, or is over 2 MB, is refused wit
 test("A7 a failed upload shows a line and the QR stays as it was", async ({ page, context }) => {
   const net = await toSettings(page, context, { qrFail: "upload" });
   await page.getByLabel("Change the UPI QR").setInputFiles(PNG);
-  await expect(page.getByRole("alert")).toHaveText("The picture could not be uploaded. Try again.");
-  await expect(page.getByText("Sample QR · Not a real account yet")).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveText("The picture could not be uploaded. Check the network and try again.");
+  await expect(page.getByText("No QR yet. Riders cannot take UPI.")).toBeVisible();
   expect(net.state.qrSets).toEqual([]);
+});
+
+test("A7b a failed load of the settings shows a line with Try again, and Try again loads them", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.admin = true; net.state.payFail = true;
+  await page.goto("/admin/");
+  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  await expect(page.getByText("Could not load the payment settings.")).toBeVisible();
+  net.state.payFail = false;
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect(sw(page, "Cash at the door")).toBeChecked();
 });
 
 test("A8 the payment settings have no serious contrast or role violation, day and Night", async ({ page, context }) => {

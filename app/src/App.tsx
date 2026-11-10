@@ -954,7 +954,11 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // Story 1262 (board R7): the ways to collect at the door that are on. null until the read answers; [] when it failed. The rider screen names no method until it has the answer.
   const [riderMethods, setRiderMethods] = useState<DoorMethod[] | null>(demo ? ["cash", "upi_door"] : null);
   const [riderQr, setRiderQr] = useState<string | null | undefined>(undefined);   // undefined: the read has not answered yet
-  const loadRiderMethods = () => { if (demo) return; setRiderMethods(null); setRiderQr(undefined); void readRiderQr(getClient()).then(setRiderQr); void fetchDoorMethods(getClient()).then(setRiderMethods); };
+  const loadRiderMethods = () => {
+    if (demo) return;
+    setRiderMethods(null); setRiderQr(undefined);
+    void Promise.all([readRiderQr(getClient()), fetchDoorMethods(getClient())]).then(([q, m]) => { setRiderQr(q.ok ? q.url : null); setRiderMethods(q.ok ? m : []); });   // both answers land together; a failed QR read is the failed state, never "no QR"
+  };
   const riderScreen = (gate: RiderGateState | null) => (
     <RiderScreen orders={orders} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
       onAct={(o, a, method) => act(o, a, "rider", method)} methods={riderMethods} qrUrl={riderQr} onLoadMethods={loadRiderMethods} gate={gate} kitchen={jobKitchen} />

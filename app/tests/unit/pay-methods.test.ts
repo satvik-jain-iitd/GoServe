@@ -1,19 +1,6 @@
-// Story #1263: the pure parts of the payment settings. The QR choice never shows the sample unless the build says so.
+// Story #1263: the pure parts of the payment settings. 
 import { describe, expect, it } from "vitest";
-import { qrAddress, qrChoice, qrFileProblem, QR_MAX_BYTES } from "../../src/lib/payMethods";
-
-describe("qrChoice", () => {
-  it("shows the real QR when one is set, whatever the build says", () => {
-    expect(qrChoice("https://x/storage/v1/object/public/upi-qr/a.png", false, "/")).toEqual({ kind: "real", src: "https://x/storage/v1/object/public/upi-qr/a.png" });
-    expect(qrChoice("https://x/storage/v1/object/public/upi-qr/a.png", true, "/")).toMatchObject({ kind: "real" });
-  });
-  it("shows the sample only when the build allows it", () => {
-    expect(qrChoice(null, true, "/rider/")).toEqual({ kind: "sample", src: "/rider/qr-sample.svg" });
-  });
-  it("shows nothing on a prod build with no real QR", () => {
-    expect(qrChoice(null, false, "/")).toEqual({ kind: "none" });
-  });
-});
+import { qrAddress, qrFileProblem, QR_MAX_BYTES } from "../../src/lib/payMethods";
 
 describe("qrFileProblem", () => {
   it("takes PNG, JPG and WebP up to 2 MB and refuses the rest with a plain line", () => {

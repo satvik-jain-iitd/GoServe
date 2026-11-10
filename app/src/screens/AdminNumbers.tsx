@@ -48,10 +48,13 @@ function PaymentSettings() {
   const [line, setLine] = useState<string | null>(null);
   const [qrLine, setQrLine] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  useEffect(() => {
-    readPayMethodsAdmin(getClient()).then(setNow, () => setLine("Could not load the setting. Try again."));
-    readQrAdmin(getClient()).then(setQr, () => setQrLine("Could not load the QR. Try again."));
-  }, []);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const load = () => {
+    setLoadFailed(false);
+    readPayMethodsAdmin(getClient()).then(setNow, () => setLoadFailed(true));
+    readQrAdmin(getClient()).then(setQr, () => setLoadFailed(true));
+  };
+  useEffect(load, []);
   async function flip(method: DoorMethod, on: boolean) {
     if (!now) return;
     setLine(null); setBusy(method);
@@ -67,9 +70,9 @@ function PaymentSettings() {
     if (failed) { setBusy(null); return void setQrLine(failed); }
     readQrAdmin(getClient()).then(setQr, () => setQrLine("The QR is set, but we could not read it back.")).finally(() => setBusy(null));
   }
-  const sw = (id: DoorMethod, label: string) => (
+  const sw = (id: DoorMethod, label: string, sub?: string) => (
     <div className="ui-row ui-row-static">
-      <label htmlFor={`pay-${id}`} className="ui-row-label"><b>{label}</b></label>
+      <label htmlFor={`pay-${id}`} className="ui-row-label"><b>{label}</b>{sub && <span className="ui-row-sub">{sub}</span>}</label>
       <input id={`pay-${id}`} className="ui-switch" type="checkbox" role="switch" checked={now?.methods.includes(id) === true} disabled={!now || busy !== null} onChange={(e) => void flip(id, e.target.checked)} />
     </div>
   );
@@ -83,13 +86,14 @@ function PaymentSettings() {
     <section className="ui-group" aria-label="Payment methods">
       <h2>Payment methods</h2>
       {sw("cash", "Cash at the door")}
-      {sw("upi_door", "UPI at the door")}
+      {sw("upi_door", "UPI at the door", qr !== null && !qr.object ? "Customers see it once a QR is uploaded." : undefined)}
       {off("UPI online")}
       {off("Card online")}
       {now && <p className="mono ui-foot">Last changed by {now.updated_by ?? "the system"}, {when(now.updated_at)}</p>}
       {line && <p role="alert" className="ui-note error">{line}</p>}
+      {loadFailed && <p role="alert" className="ui-note error">Could not load the payment settings. <button type="button" className="ui-btn ghost" onClick={load}>Try again</button></p>}
       <div className="ui-row ui-row-static">
-        <span className="ui-row-label"><b>UPI QR</b><span className="ui-row-sub">{qr === null ? "Loading…" : qr.object ? `Your QR · set by ${qr.updated_by ?? "the system"}, ${when(qr.updated_at)}` : "Sample QR · Not a real account yet"}</span></span>
+        <span className="ui-row-label"><b>UPI QR</b><span className="ui-row-sub">{qr === null ? "Loading…" : qr.object ? `Your QR · set by ${qr.updated_by ?? "the system"}, ${when(qr.updated_at)}` : "No QR yet. Riders cannot take UPI."}</span></span>
         <label className="ui-btn ghost ui-file-btn" aria-disabled={busy !== null}>
           {busy === "qr" ? "Uploading…" : "Change"}
           <input type="file" accept="image/png,image/jpeg,image/webp" aria-label="Change the UPI QR" hidden disabled={busy !== null} onChange={(e) => { void pick(e.target.files?.[0]); e.target.value = ""; }} />

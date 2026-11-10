@@ -4,8 +4,11 @@ import { ID, SESSION, order, setup } from "./helpers";
 
 const NOW = new Date().toISOString();
 const onTheWay = () => ({ ...order("out_for_delivery", NOW, NOW), rider_id: SESSION, customer_name: "Rahul Verma", customer_phone: "9876543210" });
+const OBJ = "qr-0a1b2c3d-0000-4000-8000-0123456789ab.png";
+const SRC = `https://test.supabase.co/storage/v1/object/public/upi-qr/${OBJ}`;
 const open = async (context: Parameters<typeof setup>[0], page: Page, state: Record<string, unknown> = {}) => {
   const net = await setup(context, page, [onTheWay()]);
+  net.state.qrObject = OBJ;   // the admin has uploaded the QR; the cases without one say so
   Object.assign(net.state, state);
   await page.goto("/rider/");
   await page.getByRole("button", { name: "Delivered 0f0f0f0f", exact: true }).click();
@@ -17,9 +20,8 @@ test("C1 UPI at the door on: Delivered opens Collect payment with the name, the 
   const net = await open(context, page);
   await expect(page.getByText("Rahul Verma")).toBeVisible();
   await expect(page.getByTestId("collect-total")).toHaveText("₹640");
-  await expect(page.getByRole("img", { name: "Sample QR, not for payment" })).toBeVisible();
-  await expect(page.getByText("Sample QR · the real one comes later")).toBeVisible();
-  await expect(page.getByText("This QR is a sample. Do not ask the customer to scan it. Tap below once the customer has paid.")).toBeVisible();
+  await expect(page.getByRole("img", { name: "UPI QR to scan" })).toHaveAttribute("src", SRC);
+  await expect(page.getByText("Wait for the customer's paid screen. Then tap below.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Took cash ₹640" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Paid by UPI ₹640" })).toBeVisible();
   expect(deliverCalls(net)).toEqual([]);
@@ -49,7 +51,7 @@ test("C3 Took cash delivers with cash, and the cash in hand grows by the amount"
 test("C4 UPI at the door off: no QR, no UPI button, one filled Took cash button", async ({ page, context }) => {
   await open(context, page, { doorMethods: ["cash"] });
   await expect(page.getByRole("button", { name: "Took cash ₹640" })).toBeVisible();
-  await expect(page.getByRole("img", { name: "Sample QR, not for payment" })).toHaveCount(0);
+  await expect(page.getByRole("img", { name: "UPI QR to scan" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Paid by UPI/ })).toHaveCount(0);
   await expect(page.locator("body")).not.toContainText(/UPI/i);
   await expect(page.getByRole("button", { name: "Took cash ₹640" })).toHaveClass(/^ui-btn big$/);   // the only way is the filled one
@@ -120,7 +122,7 @@ test("C10 UPI is turned off while the rider is on the screen: method_off reads t
   await page.getByRole("button", { name: "Paid by UPI ₹640" }).click();
   await expect(page.getByRole("alert")).toContainText("UPI at the door is not on.");
   await expect(page.getByRole("button", { name: "Paid by UPI ₹640" })).toHaveCount(0);
-  await expect(page.getByRole("img", { name: "Sample QR, not for payment" })).toHaveCount(0);
+  await expect(page.getByRole("img", { name: "UPI QR to scan" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Took cash ₹640" })).toBeVisible();
 });
 
@@ -131,10 +133,27 @@ test("C9 Back leaves Collect payment without saving", async ({ page, context }) 
   expect(deliverCalls(net)).toEqual([]);
 });
 
-test("C11 when the admin has uploaded the QR, the rider's Collect payment shows that picture, no sample words, and the plain wait line", async ({ page, context }) => {
-  await open(context, page, { qrObject: "qr-0a1b2c3d-0000-4000-8000-0123456789ab.png" });
-  await expect(page.getByRole("img", { name: "UPI QR to scan" })).toHaveAttribute("src", "https://test.supabase.co/storage/v1/object/public/upi-qr/qr-0a1b2c3d-0000-4000-8000-0123456789ab.png");
-  await expect(page.getByText("Sample QR · the real one comes later")).toHaveCount(0);
-  await expect(page.getByText("Wait for the customer's paid screen. Then tap below.")).toBeVisible();
+test("C11 no QR uploaded yet (the server leaves UPI out): the rider sees cash only, no QR, no UPI button, no sample picture", async ({ page, context }) => {
+  await open(context, page, { qrObject: null, doorMethods: ["cash"] });
+  await expect(page.getByRole("button", { name: "Took cash ₹640" })).toBeVisible();
+  await expect(page.getByRole("img")).toHaveCount(0);
+  await expect(page.locator("body")).not.toContainText(/UPI|QR/i);
+  await expect(page.getByRole("button", { name: "Took cash ₹640" })).toHaveClass(/^ui-btn big$/);
+});
+
+test("C12 the QR picture will not load: the screen says UPI has no QR yet, hides the UPI button and keeps cash", async ({ page, context }) => {
+  await open(context, page, { qrFail: "image" });
+  await expect(page.getByText("UPI at the door has no QR yet. Take cash, or ask the admin to upload the QR.")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Paid by UPI/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Took cash ₹640" })).toBeVisible();
+});
+
+test("C13 the QR read fails: the screen says it could not check, names no method, and Try again reads it again", async ({ page, context }) => {
+  const net = await open(context, page, { qrFail: "read" });
+  await expect(page.getByText("We could not check how to collect. Try again.")).toBeVisible();
+  await expect(page.getByText(/ask the admin/i)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Took cash|Paid by UPI/ })).toHaveCount(0);
+  net.state.qrFail = "";
+  await page.getByRole("button", { name: "Try again" }).click();
   await expect(page.getByRole("button", { name: "Paid by UPI ₹640" })).toBeVisible();
 });

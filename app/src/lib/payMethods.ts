@@ -41,25 +41,18 @@ export async function uploadQr(c: Pick<SupabaseClient, "rpc" | "storage">, file:
   if (problem) return problem;
   const path = `qr-${crypto.randomUUID()}.${QR_TYPES[file.type]}`;
   const up = await c.storage.from("upi-qr").upload(path, file, { contentType: file.type, cacheControl: "31536000" });
-  if (up.error) return "The picture could not be uploaded. Try again.";
+  if (up.error) return /401|403|jwt|expired|not authori/i.test(`${(up.error as { statusCode?: string }).statusCode ?? ""} ${up.error.message}`) ? "Your session ended. Sign in again, then pick the picture." : "The picture could not be uploaded. Check the network and try again.";
   const { data, error } = await c.rpc("upi_qr_set_v2", { p_object: path });
   if (error || data?.ok !== true) return "The picture was uploaded but could not be set. Try again.";
   return null;
 }
 
-/** The rider's read: the address of the QR the admin uploaded, or null (none yet, or the read failed). */
-export async function readRiderQr(c: Pick<SupabaseClient, "rpc">): Promise<string | null> {
+/** The rider's read: the address of the QR the admin uploaded, null when none is set, and ok false when the read itself failed (the screen then says so, never "ask the admin"). */
+export async function readRiderQr(c: Pick<SupabaseClient, "rpc">): Promise<{ ok: true; url: string | null } | { ok: false }> {
   try {
     const { data, error } = await c.rpc("upi_qr_object");
-    return !error && typeof data === "string" ? qrAddress(data) : null;
+    return error ? { ok: false } : { ok: true, url: typeof data === "string" ? qrAddress(data) : null };
   } catch {
-    return null;
+    return { ok: false };
   }
-}
-
-/** What the Collect payment screen shows. The sample picture is for test and dev builds only (VITE_SAMPLE_QR=1); a prod build with no real QR shows no QR and no UPI button. */
-export type QrChoice = { kind: "real"; src: string } | { kind: "sample"; src: string } | { kind: "none" };
-export function qrChoice(url: string | null, sampleOn: boolean = import.meta.env.VITE_SAMPLE_QR === "1", base: string = import.meta.env.BASE_URL): QrChoice {
-  if (url) return { kind: "real", src: url };
-  return sampleOn ? { kind: "sample", src: `${base}qr-sample.svg` } : { kind: "none" };
 }

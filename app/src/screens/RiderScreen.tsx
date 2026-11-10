@@ -4,7 +4,6 @@ import { deliveredToday, hhmm, riderActions, riderOrders, shortId, type Order, t
 import { formatRupees } from "../lib/money";
 import { cashInHand, firstName, handedOver, hoursOf, locationLabel, type KitchenCard, type RiderGateState } from "../lib/rider";
 import type { DoorMethod } from "../lib/doorMethods";
-import { qrChoice } from "../lib/payMethods";
 import { Skeleton, Tabs } from "../ui";
 
 type Tab = "job" | "today" | "me";
@@ -30,6 +29,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
   const cash = cashInHand(today);
   const handed = handedOver(today);
   const paidLabel = (p: string | null | undefined) => (p === "upi_door" ? "Paid by UPI" : p === "cash" ? "Cash collected" : "Collected");   // never guess cash: an empty paid_by is just Collected
+  const [brokenQr, setBrokenQr] = useState<string | null>(null);
   const [collectId, setCollectId] = useState<string | null>(null);   // story 1262, board R7: "Delivered" opens Collect payment first
   const act = async (o: Order, a: RiderAction, method?: DoorMethod) => {
     const failed = await onAct(o, a, method);
@@ -62,10 +62,10 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
       const deliver = riderActions(collecting.status).find((a) => a.kind === "status" && a.to === "delivered");
       const amount = formatRupees(collecting.total_paise);
       const busy = busyId === collecting.id;
-      const qr = qrChoice(qrUrl ?? null);
+      const qrShown = qrUrl && brokenQr !== qrUrl ? qrUrl : null;   // a picture that will not load counts as no QR
       const upiOn = methods?.includes("upi_door") ?? false;
-      const upi = upiOn && qr.kind !== "none";   // no QR to show: no UPI button either
-      const upiNeedsQr = upiOn && qr.kind === "none";
+      const upi = upiOn && qrShown !== null;   // no QR to show: no UPI button either
+      const upiNeedsQr = upiOn && qrShown === null;
       const cash = methods?.includes("cash") ?? false;
       return (
         <>
@@ -77,12 +77,10 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
               {methods !== null && methods.length === 0 && <p className="ui-meta">We could not check how to collect. Try again.</p>}
               {upi && (
                 <div className="ui-qr">
-                  <img src={qr.src} width={200} height={200} alt={qr.kind === "sample" ? "Sample QR, not for payment" : "UPI QR to scan"} />
-                  {qr.kind === "sample" && <span className="mono">Sample QR · the real one comes later</span>}
+                  <img src={qrShown!} width={200} height={200} alt="UPI QR to scan" onError={() => setBrokenQr(qrUrl ?? null)} />
                 </div>
               )}
-              {upi && qr.kind === "sample" && <p className="ui-meta">This QR is a sample. Do not ask the customer to scan it. Tap below once the customer has paid.</p>}
-              {upi && qr.kind === "real" && <p className="ui-meta">Wait for the customer's paid screen. Then tap below.</p>}
+              {upi && <p className="ui-meta">Wait for the customer's paid screen. Then tap below.</p>}
               {upiNeedsQr && <p className="ui-meta">UPI at the door has no QR yet. Take cash, or ask the admin to upload the QR.</p>}
             </div>
           </section>

@@ -63,6 +63,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
         const b = JSON.parse(req.postData() ?? "{}");
         const next = b.p_on ? [...new Set([...state.payAdmin, b.p_method])] : state.payAdmin.filter((m) => m !== b.p_method);
         if (next.length === 0) return json(route, 200, { ok: false, error: "last_method", message: "One way to pay must stay on." });
+        if (!next.includes("cash") && !state.qrObject) return json(route, 200, { ok: false, error: "qr_missing", message: "Upload the UPI QR first." });
         state.payAdmin = next; state.doorMethods = next;
         return json(route, 200, { ok: true, changed: true, methods: next });
       }
@@ -72,7 +73,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
         const o = JSON.parse(req.postData() ?? "{}").p_object; state.qrSets.push(o); state.qrObject = o;
         return json(route, 200, { ok: true, object: o });
       }
-      if (name === "upi_qr_object") return json(route, 200, state.qrObject);
+      if (name === "upi_qr_object") return state.qrFail === "read" ? json(route, 500, { code: "XX000", message: "boom" }) : json(route, 200, state.qrObject);
       if (name === "payment_methods_on") { state.doorCalls++; if (state.doorDelayMs) await new Promise((r) => setTimeout(r, state.doorDelayMs)); } if (name === "payment_methods_on") return state.doorFail ? json(route, 500, { code: "XX000", message: "boom" }) : json(route, 200, state.doorMethods);   // story #1261: the ways to pay at the door that are on
       if (name === "kitchen_turn_on") {   // story #1280 (board A13): the admin turns an off kitchen back on; it stays closed for orders
         if (state.turnOnDelayMs) await new Promise((r) => setTimeout(r, state.turnOnDelayMs));
@@ -194,6 +195,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
     const req = route.request();
     if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: CORS });
     if (state.qrFail === "upload" && req.url().includes("/upi-qr/")) return json(route, 500, { message: "boom" });
+    if (req.method() === "GET" && req.url().includes("/object/public/upi-qr/")) return state.qrFail === "image" ? route.fulfill({ status: 404, headers: CORS, body: "not found" }) : route.fulfill({ status: 200, headers: { ...CORS, "content-type": "image/png" }, body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64") });   // story #1263: the QR picture itself
     calls.uploads.push(req.url());
     calls.uploadMeta.push({ headers: req.headers(), body: req.postDataBuffer() });
     return json(route, 200, { Key: "menu/x" });
