@@ -123,8 +123,13 @@ test("TC 23.9 Edge: the network is off for a minute, the page says it is offline
   await STEPS["eta-working"](context, page, PATH);
   await expect(page.getByText("Working out the time")).toBeVisible();   // proves the order shows before the network goes
   await context.setOffline(true);
-  test.fail(true, "#1228: with the network off the placed screen shows no offline line, it stays silent");
   await expect(page.getByRole("status").filter({ hasText: /offline|no connection/i })).toBeVisible();
+  const word = page.locator(".ui-head").getByText("Offline", { exact: true });
+  await expect(word).toBeVisible();
+  const col = await word.evaluate((el) => getComputedStyle(el).color);
+  const muted = await page.evaluate(() => { const d = document.createElement("i"); d.style.color = "var(--gs-text-muted)"; document.body.append(d); const c = getComputedStyle(d).color; d.remove(); return c; });
+  expect(col).toBe(muted);   // the muted text colour, not the brand green of Live
+  await expect(page.locator(".ui-head .ui-live-dot")).toHaveCount(0);   // no green dot while offline
   await context.setOffline(false);
   await answer(page, "/rest/v1/orders", [order("out_for_delivery", new Date(Date.now() - 60_000).toISOString())]);
   await wake(page);
