@@ -13,7 +13,7 @@ type Props = {
   details?: { name: string; phone: string; onName: (v: string) => void; onPhone: (v: string) => void; gate?: boolean };   // the customer app also asks who and which phone (story B3)
   offers?: { quote: Quote; codeError: string | null; onApply: (code: string) => void; onRemove: () => void };   // story #588: the quote's bill and the Offers block (boards C1, C2)
   soldOut?: { id: string; name: string; alt: Alternative | null | undefined; canSwap: boolean; onSwap: () => void; onRemove: () => void };   // story #619, board L3: the first dish in the bill that is sold out
-  door?: { methods: DoorMethod[]; value: DoorMethod; onChange: (v: DoorMethod) => void };   // story #1261, board P6: how you pay at the door, only the methods that are on (the customer app only)
+  door?: { methods: DoorMethod[]; value: DoorMethod | null; onChange: (v: DoorMethod) => void };   // story #1261, board P6: how you pay at the door, only the methods that are on (the customer app only)
   sending: boolean; error: string | null; notice?: string | null;   // story #977: what the History button could not put back
   onBack: () => void; onPlace: () => void;
 };
@@ -125,11 +125,12 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
             <div className="ui-field"><label htmlFor="address">Address</label><textarea id="address" className="ui-eg" rows={2} value={address} maxLength={300} placeholder="e.g. C-128, Green Avenue Colony" onChange={(e) => onAddress(e.target.value)} /></div>
             <div className="ui-field"><label htmlFor="note">Note for the kitchen (optional)</label><textarea id="note" className="ui-eg" rows={2} value={note} maxLength={NOTE_MAX} placeholder="e.g. less spicy, no onion" onChange={(e) => onNote(e.target.value)} /><p className="mono ui-note-count"><span>{note.length} / {NOTE_MAX}</span></p></div>
             {door && (
-              <fieldset className="ui-pay" role="radiogroup" aria-label="How you pay">
+              <fieldset className="ui-pay" role="radiogroup">
                 <legend>How you pay · nothing is charged now</legend>
                 {DOOR_METHODS.filter((m) => door.methods.includes(m.id)).map((m) => (
                   <label key={m.id} className="ui-pay-row"><input type="radio" name="pay" checked={door.value === m.id} onChange={() => door.onChange(m.id)} /><span><span>{m.label}</span>{m.sub && <small className="ui-pay-sub">{m.sub}</small>}</span></label>
                 ))}
+                {door.methods.length === 0 && <p className="ui-pay-sub">You pay at the door.</p>}
               </fieldset>
             )}
             {error && <p role="alert" className="ui-field-error">{error}</p>}
@@ -140,7 +141,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
         <div className="ui-sticky float">
           {!ready && !sending && !soldOut && <p role="status" className="ui-reason">{address.trim().length === 0 ? "Add your address to place the order." : "Add your name and phone."}</p>}   {/* story #1170: why the button is off */}
           <button type="button" className="ui-btn bar" disabled={!ready || sending} onClick={onPlace}>
-            <span className="mono">{door?.value === "upi_door" ? "UPI" : "Cash"} · {formatRupees(total)}</span><span className="verb">{sending ? "Placing…" : soldOut ? "Fix the bill first" : "Place order ›"}</span>
+            <span className="mono">{door?.value === "upi_door" ? "UPI" : door?.value === "cash" ? "Cash" : "At door"} · {formatRupees(total)}</span><span className="verb">{sending ? "Placing…" : soldOut ? "Fix the bill first" : "Place order ›"}</span>
           </button>
         </div>
       )}

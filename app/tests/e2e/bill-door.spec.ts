@@ -30,7 +30,8 @@ test("S1 cash and UPI at the door both on: two rows, cash selected, the line say
 });
 
 test("S2 only cash on: one row, selected, and no UPI words anywhere on the screen", async ({ page, context }) => {
-  await toBill(page, context, ["cash"]);
+  const net = await toBill(page, context, ["cash"]);
+  await expect.poll(() => net.state.doorCalls).toBeGreaterThan(0);   // the answer has come in, so the one row is the answer, not a start state
   await expect(group(page).getByRole("radio")).toHaveCount(1);
   await expect(group(page).getByRole("radio", { name: /^Cash at the door/ })).toBeChecked();
   await expect(page.locator("body")).not.toContainText(/UPI/i);
@@ -59,10 +60,29 @@ test("S5 pick UPI at the door and place the order: no payment screen opens, the 
   expect(net.calls.place).toHaveLength(1);
 });
 
-test("S6 when the list cannot be read the bill offers cash only, never a method it does not know", async ({ page, context }) => {
-  await toBill(page, context, undefined, { doorFail: true });
-  await expect(group(page).getByRole("radio")).toHaveCount(1);
-  await expect(group(page).getByRole("radio", { name: /^Cash at the door/ })).toBeChecked();
+test("S6 when the list cannot be read the bill names no method: one neutral line, no rows, and the order can still be placed", async ({ page, context }) => {
+  const net = await toBill(page, context, undefined, { doorFail: true });
+  await expect.poll(() => net.state.doorCalls).toBeGreaterThan(0);
+  await expect(page.getByText("You pay at the door.")).toBeVisible();
+  await expect(group(page).getByRole("radio")).toHaveCount(0);
+  await expect(page.getByText("Cash at the door")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /At door/ })).toBeVisible();
+  await page.getByRole("button", { name: /Place order/ }).click();
+  await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
+  expect(net.calls.place).toHaveLength(1);
+});
+
+test("S6b while the list is on its way, with only UPI on, the bill never shows Cash at the door", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.doorMethods = ["upi_door"]; net.state.doorDelayMs = 1500;
+  await page.goto("/customer/");
+  await page.getByRole("button", { name: "Add Butter Chicken" }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
+  await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
+  await expect(page.getByText("You pay at the door.")).toBeVisible();   // the neutral line while we wait
+  await expect(page.getByText("Cash at the door")).toHaveCount(0);
+  await expect(group(page).getByRole("radio", { name: /^UPI at the door/ })).toBeChecked();
+  await expect(page.getByText("Cash at the door")).toHaveCount(0);
 });
 
 test("S7 a declined pay-at-door order says nothing was charged and never 'paid online'", async ({ page, context }) => {
@@ -79,4 +99,23 @@ test("S8 an order that was placed online and paid still reads Paid online on its
   await page.goto("/customer/");
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();   // an open order resumes on its slip
   await expect(page.getByText("Paid online", { exact: true })).toBeVisible();
+});
+
+test("S9 a declined order that was paid online keeps the refund line", async ({ page, context }) => {
+  const o = { ...(await import("./helpers")).order("cancelled", "2020-01-01T10:02:00Z"), payment_method: "online", paid_at: "2026-11-10T09:00:00Z", cancel_reason: "We are out of butter chicken tonight, so this order cannot be made." };
+  await setup(context, page, [o]);
+  await page.goto("/customer/");
+  await page.getByRole("button", { name: "History" }).click();
+  await page.getByRole("button", { name: /Butter Chicken/ }).click();
+  await expect(page.getByText("Your money is not taken. If you paid online, it comes back in 5 to 7 days.")).toBeVisible();
+  await expect(page.getByText("Nothing was charged.")).toHaveCount(0);
+});
+
+test("S10 a delivered order the rider took UPI for reads Paid by UPI at the door", async ({ page, context }) => {
+  const o = { ...(await import("./helpers")).order("delivered", "2020-01-01T10:30:00Z"), paid_by: "upi_door" };
+  await setup(context, page, [o]);
+  await page.goto("/customer/");
+  await page.getByRole("button", { name: "History" }).click();
+  await page.getByRole("button", { name: /Butter Chicken/ }).click();
+  await expect(page.getByText("Paid by UPI at the door", { exact: true })).toBeVisible();
 });
