@@ -73,3 +73,20 @@ for (const theme of ["day", "night"]) {
     expect(got.pad).toBe("8px 10px"); expect(got.radius).toBe("4px");
   });
 }
+
+test("S5 a note of only spaces is no note: no band, no label, no empty rule on the row, the sheet or the ticket", async ({ page, context }) => {
+  await open(page, context, [{ ...order("placed"), instructions: "     " }]);
+  await expect(page.getByText("No. 0f0f0f0f")).toBeVisible();
+  await expect(band(page)).toHaveCount(0);
+  await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
+  const sheet = page.getByRole("dialog", { name: "Order 0f0f0f0f" });
+  await expect(sheet).toBeVisible();
+  await expect(band(page)).toHaveCount(0);
+  await sheet.getByRole("button", { name: "Accept 0f0f0f0f" }).click();
+  await tab(page, "Cooking").click();
+  await expect(band(page)).toHaveCount(0);
+  await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
+  await expect(page.getByRole("heading", { name: "Ticket" })).toBeVisible();
+  await expect(band(page)).toHaveCount(0);
+  await expect(page.getByText("Customer says")).toHaveCount(0);
+});
