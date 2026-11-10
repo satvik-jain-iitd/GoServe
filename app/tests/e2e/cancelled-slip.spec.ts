@@ -19,3 +19,11 @@ test("S2 the History row of a cancelled order shows ₹0", async ({ page, contex
   await expect(row).toContainText("₹0");
   await expect(row).not.toContainText("₹640");
 });
+
+test("S3 Order again on a cancelled slip opens the Bill with the same dishes at today's prices (bug #1229)", async ({ page, context }) => {
+  await STEPS.cancelled(context, page, "/customer/");
+  await page.getByRole("button", { name: "Order again", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
+  await expect(page.getByText("Butter Chicken")).toBeVisible();
+  await expect(page.getByText("₹640").first()).toBeVisible();   // 2 x 320 at today's price
+});
