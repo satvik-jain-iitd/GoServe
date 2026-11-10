@@ -119,3 +119,13 @@ test("S10 a delivered order the rider took UPI for reads Paid by UPI at the door
   await page.getByRole("button", { name: /Butter Chicken/ }).click();
   await expect(page.getByText("Paid by UPI at the door", { exact: true })).toBeVisible();
 });
+
+test("S11 a delivered order the customer confirmed, with no way recorded yet, reads Paid at the door, never Cash paid (story 1293)", async ({ page, context }) => {
+  const o = { ...(await import("./helpers")).order("delivered", "2020-01-01T10:30:00Z"), paid_by: null };
+  await setup(context, page, [o]);
+  await page.goto("/customer/");
+  await page.getByRole("button", { name: "History" }).click();
+  await page.getByRole("button", { name: /Butter Chicken/ }).click();
+  await expect(page.getByText("Paid at the door", { exact: true })).toBeVisible();
+  await expect(page.getByText("Cash paid")).toHaveCount(0);
+});
