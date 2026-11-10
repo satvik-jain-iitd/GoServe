@@ -34,6 +34,7 @@ type Props = {
   onNotYet: () => void;
   onAllowReminder: () => void;
   onMenu: () => void;           // See the menu, with an empty cart (a delivered or cancelled order)
+  onAgain: () => void;          // the cancelled order's button: the bill with the same dishes (bug #1229)
   onBack: () => void;           // the chevron: back to the menu
   onCancel: () => void;         // story B3, #904: allowed while the order is placed or accepted
   cancelling: boolean;
@@ -84,7 +85,7 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "At your door" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
-export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, declined, eta }: Props) {
+export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onMenu, onAgain, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, declined, eta }: Props) {
   const [mapOpen, setMapOpen] = useState(false);   // story 1053: the full-screen rider map
   const steps = trackerSteps(status);
   const { now } = useNowOnline();
@@ -189,7 +190,7 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
       </div>
       {mapOpen && track && status === "out_for_delivery" && <RiderMapScreen t={track} orderNo={shortId(order.id)} door={door} onBack={() => setMapOpen(false)} onCall={onCall} />}
       <div className="ui-bottom">
-        {(delivered || cancelled) && <button type="button" className="ui-btn big" onClick={onMenu}>{declined ? "Order something else" : cancelled ? "Order again" : "See the menu"}</button>}
+        {(delivered || cancelled) && <button type="button" className="ui-btn big" onClick={cancelled && !declined ? onAgain : onMenu}>{declined ? "Order something else" : cancelled ? "Order again" : "See the menu"}</button>}
         {(status === "placed" || status === "accepted") && <button type="button" className="ui-btn ghost big" disabled={cancelling} onClick={onCancel}>Cancel order</button>}
         {track?.phone && status === "out_for_delivery" && <a href={`tel:${track.phone}`} className="ui-btn ghost big" onClick={onCall}>Call the rider</a>}
         {kitchenPhone && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
