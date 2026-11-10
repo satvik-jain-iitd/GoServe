@@ -785,7 +785,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-landing .ui-slip, .ui-welcome .ui-slip { display: flex; flex-direction: column; min-height: 420px; }
 .ui-landing .ui-slip-body, .ui-welcome .ui-slip-body { flex: 1; display: flex; flex-direction: column; }
 .ui-bottom, .ui-welcome .ui-slip-body > .ui-google-stack { margin-top: auto; }
-.ui-push { margin-top: auto; }   /* story #1336: only pushes a button to the foot; .ui-bottom is the foot bar and adds padding */
+.ui-push { margin-top: auto; }   /* story 1336: only pushes a button to the foot; .ui-bottom is the foot bar and adds padding */
 .ui-landing .ui-slip:has(.ui-hero-abs) { min-height: 480px; }   /* the icon ends at 316; two big buttons and the foot need about 160 more, so a short phone grows the slip instead of covering the buttons */
 .ui-hero-abs { position: absolute; left: 50%; top: 220px; transform: translateX(-50%); margin: 0; }
 .ui-hero-abs-pic { position: absolute; left: 50%; top: 157px; width: min(306px, calc(100% - 36px)); transform: translateX(-50%); margin: 0; }
