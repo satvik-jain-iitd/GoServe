@@ -3,8 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import { cashByRider, cookingTickets, deliveredToday, hhmm, justCancelled, minutesAway, newTickets, nextStep, outsideHours, readyTickets, shortId, staffLabel, type Order } from "../lib/kitchen";
 import { listRiders, type RiderListRow } from "../lib/admin";
 import { getClient } from "../lib/supabase";
-import { formatRupees } from "../lib/money";
+import { formatRupees, linePaise } from "../lib/money";
 import { NoteBand, Skeleton, Tabs } from "../ui";
+import { AdjustLines } from "../ui/AdjustLines";
 import { DishList } from "./KitchenTools";
 import { OrderSheet } from "./OrderSheet";
 import type { KitchenGateState } from "./KitchenGate";
@@ -58,7 +59,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
     if (!failed && opened) { setOpenId(null); setTab(next.to === "accepted" ? "cooking" : tab); }
   };
   const lines = (o: Order, prices = false) => (
-    <div className="ui-slip-lines ui-ticket-big">{o.items.map((i) => <div key={i.menu_item_id}><span>{i.qty} × {i.name}</span>{prices && <span>{formatRupees(i.price_paise * i.qty)}</span>}</div>)}</div>
+    <div className="ui-slip-lines ui-ticket-big">{o.items.map((i) => <div key={i.menu_item_id}><span>{i.qty} × {i.name}</span>{prices && <span>{formatRupees(linePaise(i))}</span>}</div>)}{prices && <AdjustLines bill={o.bill} />}</div>
   );
   const row = (o: Order) => {
     const [word, cls] = stamp(o.status);

@@ -1,9 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { OrderBill } from "./orders";
 // What the kitchen sees: the orders of this session, newest first, and the one button each order can have (story #49).
 // The rider's steps (out for delivery, delivered) belong to story #50, so after Ready the kitchen has no button.
-export type OrderLine = { menu_item_id: string; name: string; qty: number; price_paise: number };
+export type OrderLine = { menu_item_id: string; name: string; qty: number; price_paise: number; extras_paise?: number };
 export type Order = {
-  id: string; session_id: string; status: string; address: string; items: OrderLine[]; total_paise: number; created_at: string; updated_at: string; paid_by?: string | null; bill?: { early_friend_paise?: number; discount_paise?: number } | null;
+  id: string; session_id: string; status: string; address: string; items: OrderLine[]; total_paise: number; created_at: string; updated_at: string; paid_by?: string | null; bill?: OrderBill | null;
   payment_method?: string | null; paid_at?: string | null;   // story #552: online orders wait for the payment
   customer_name?: string | null; customer_phone?: string | null;
   kitchen_id?: string; rider_id?: string | null; cash_handed_at?: string | null; cancel_reason?: string | null; cancelled_by?: string | null; instructions?: string | null;

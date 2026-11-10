@@ -57,6 +57,7 @@ test("L5 rider: an item with a paid option prints its full price and the lines a
   net.state.kitchens = [{ id: "k", name: "Tau Ka Dhaba", address: "C-4, Lajpat Nagar II", phone: "9876500000", pin_codes: ["110016"], open: true, active: true, opens_at: "10:00:00", closes_at: "22:00:00" }];
   await page.goto("/rider/");
   const slip = page.locator(".ui-slip").first();
+  await expect(slip.getByText("Early friend gift")).toBeVisible();
   expect(await sum(slip.locator(".ui-slip-lines"))).toBe(640);   // 740 − 100
   await expect(slip.locator(".ui-slip-total span")).toHaveText("₹640");
 });
