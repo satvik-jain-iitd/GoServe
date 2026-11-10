@@ -13,7 +13,7 @@ ALL = {m for _, m in V1 + V2 if m}
 class Fake:
     """Stands in for the Management API and the prod functions: records every write."""
     def __init__(self, present, name="GoServe"):
-        self.present, self.name, self.writes = set(present), name, []
+        self.present, self.name, self.writes, self.secrets = set(present), name, [], {}
 
     def sql(self, ref, query):
         if query == p.PRESENT_SQL:
@@ -26,7 +26,7 @@ class Fake:
 
     def call(self, method, ref, path, body=None):
         if method == "GET":
-            return {"/functions": [], "/secrets": []}[path]
+            return {"/functions": [], "/secrets": [{"name": n} for n in self.secrets.get(ref, [])]}[path]
         self.writes.append((method, path))
 
     def get_auth(self, ref):
@@ -149,6 +149,37 @@ class DroppedMarker(unittest.TestCase):
         self.assertNotIn("sql", kinds)
         self.assertNotIn("POST", kinds)
         self.assertIn("functions only", out)
+
+
+class SecretGaps(unittest.TestCase):
+    """Story #1191: a function secret name that dev has and prod lacks stops the release (VAPID_* were missing on prod for days)."""
+    def test_S30_a_dev_secret_prod_lacks_is_named(self):
+        self.assertEqual(p.secret_gaps(["VAPID_PUBLIC_KEY", "A_KEY"], ["A_KEY"], []), ["VAPID_PUBLIC_KEY"])
+
+    def test_S31_names_the_script_sets_itself_and_supabase_names_are_not_gaps(self):
+        self.assertEqual(p.secret_gaps(["OTP_FIXED_CODE", "PUSH_NOTIFY_SECRET", "SUPABASE_URL", "SUPABASE_DB_URL"], [], ["OTP_FIXED_CODE", "PUSH_NOTIFY_SECRET"]), [])
+
+    def test_S32_apply_stops_before_any_write_when_there_is_a_gap(self):
+        fake = Fake(ALL)
+        fake.secrets = {release_db.DEV_REF: ["VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY"], PROD: []}
+        with self.assertRaises(SystemExit) as e:
+            run(fake, ["--apply"])
+        self.assertIn("VAPID_PUBLIC_KEY", str(e.exception))
+        self.assertEqual(fake.writes, [])
+
+    def test_S33_a_dry_run_only_prints_the_gap(self):
+        fake = Fake(ALL)
+        fake.secrets = {release_db.DEV_REF: ["VAPID_PUBLIC_KEY"], PROD: []}
+        out = run(fake, [])
+        self.assertIn("VAPID_PUBLIC_KEY", out)
+        self.assertEqual(fake.writes, [])
+
+    def test_S34_functions_only_also_stops_on_a_gap(self):
+        fake = Fake(ALL)
+        fake.secrets = {release_db.DEV_REF: ["VAPID_PUBLIC_KEY"], PROD: []}
+        with self.assertRaises(SystemExit):
+            run(fake, ["--apply", "--functions-only"])
+        self.assertEqual(fake.writes, [])
 
 
 if __name__ == "__main__":
