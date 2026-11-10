@@ -100,6 +100,11 @@ begin
     end if;
   end if;
 
+  -- story #1293: read the order again with its row locked before the branch below. The customer's Yes locks the same row, so a deliver that lands
+  -- with the Yes waits for it and then sees the confirmed order, instead of reading a stale one and answering already_done.
+  if p_action = 'deliver' and v_method is not null then
+    select * into v from orders where id = v.id for update;
+  end if;
   -- story #1293: the customer confirmed first, so the order is delivered with no paid_by. The rider's deliver records the method once.
   -- Only when the confirmation is on record, and the update itself is the guard: two taps at once, the second finds no empty paid_by and answers already_done.
   if p_action = 'deliver' and v_method is not null and v.status = 'delivered' and v.paid_by is null
