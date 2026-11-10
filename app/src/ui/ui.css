@@ -563,14 +563,14 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-declined .ui-declined-when { margin-top: 8px; font-size: 12px; color: var(--gs-text-muted); }
 .ui-ticket.ui-ticket-solo { grid-template-columns: minmax(0, 1fr); }   /* story 934: a new order has no action column */
 
-/* Story #1275 (board K4-NewOrderBar): the full-width filled bar for a waiting order, on Cooking and Today */
+/* Story 1275 (board K4-NewOrderBar): the full-width filled bar for a waiting order, on Cooking and Today */
 .ui-newbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 64px; padding: 0 var(--gs-gutter); border: 0; border-radius: 0; background: var(--gs-action); color: var(--gs-on-action); font: inherit; font-size: 18px; text-align: left; cursor: pointer; }
 .ui-newbar b { font-weight: 700; }
 .ui-newbar span { font-size: 14px; font-weight: 600; white-space: nowrap; }
 
 /* Story 935: the note for the kitchen (boards D2-BillNote and K2-TicketsNote) */
 .ui-note-count { margin: 0; display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--gs-text-muted); }
-.ui-noteband { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 12px 14px; border-radius: 8px; background: var(--gs-warm-yellow); color: #263528; text-align: left; }   /* story #1276: the day ink on the warm yellow in both themes (the ink token turns light at night) */
+.ui-noteband { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 12px 14px; border-radius: 8px; background: var(--gs-ink-green); color: var(--gs-cream); text-align: left; }   /* story 1276: the inverse of the page, so it is the loudest thing on a ticket in both themes */
 .ui-noteband-label { font-family: var(--gs-font-mono); font-size: 12px; letter-spacing: 0.04em; font-weight: 600; }
 .ui-noteband-text { font-size: 20px; font-weight: 700; line-height: 1.25; white-space: normal; overflow-wrap: anywhere; }
 /* Story 972, board F1-Filter: a checkbox per category */
