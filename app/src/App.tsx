@@ -783,14 +783,15 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // Story #977: Order again puts a delivered order back in the cart at today's menu; what cannot go back is named, a closed kitchen adds nothing.
   const [againLine, setAgainLine] = useState<string | null>(null);
   useEffect(() => { if (step !== "bill" && step !== "orders") setAgainLine(null); }, [step]);
-  function orderAgain(o: Order) {
-    if (shown?.kind === "closed") return setAgainLine(`${kitchenName || "The kitchen"} is closed now. Try again when it opens.`);
+  function orderAgain(o: Order): boolean {   // true when the bill opened
+    if (shown?.kind === "closed") { setAgainLine(`${kitchenName || "The kitchen"} is closed now. Try again when it opens.`); return false; }
     const { cart: next, left } = reorderCart(o.items, menu?.dishes ?? []);
-    if (Object.keys(next).length === 0) return setAgainLine(left.length ? `${left.join(", ")} ${left.length === 1 ? "is" : "are"} not on the menu today.` : "Nothing from this order can be added today.");
+    if (Object.keys(next).length === 0) { setAgainLine(left.length ? `${left.join(", ")} ${left.length === 1 ? "is" : "are"} not on the menu today.` : "Nothing from this order can be added today."); return false; }
     setCart(next);
     setAgainLine(left.length ? `${left.join(", ")} ${left.length === 1 ? "is" : "are"} not on the menu today.` : null);
     setError(null);
     setStep("bill");
+    return true;
   }
   const openOrderNow = orders.find((o) => !["delivered", "cancelled"].includes(o.status));
   const openLive = openOrderNow ? { label: statusLabel(openOrderNow.status), no: shortId(openOrderNow.id), onOpen: () => openOrder(openOrderNow) } : null;
@@ -1020,7 +1021,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             declined={tracked && cancelKind(tracked) === "declined" ? { reason: (tracked as Order).cancel_reason ?? "", at: tracked.updated_at } : null}
             asking={asking} busy={confirming} error={confirmError} reminder={reminder}
             onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} pay={paidNow || payState || resumedOnline ? { state: paidNow ? "paid" : payState ?? "waiting", method: payMethod === "cod" ? "upi" : payMethod, startedAt: payState ? payStart : null, error: payError, onPay: payNow, onCash: payCash, onSimulate: () => void simulatePaid(import.meta.env.VITE_PAYMENTS_DEV_SECRET ?? "", payRef.current) } : undefined}
-            onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} atDoor={atDoor} track={riderTrack} eta={eta} onCall={() => void tapCall(getClient(), placed.id)} />
+            onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }}
+            onAgain={() => { const o = orders.find((x) => x.id === placed.id); setPlaced(null); if (!o || !orderAgain(o)) { setCart({}); setStep("menu"); } }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} atDoor={atDoor} track={riderTrack} eta={eta} onCall={() => void tapCall(getClient(), placed.id)} />
         )}
     </>
   );

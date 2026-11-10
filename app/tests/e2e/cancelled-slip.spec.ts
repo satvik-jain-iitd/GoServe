@@ -13,7 +13,7 @@ test("S1 a cancelled order's slip says Nothing to pay and ₹0, not Cash at door
 
 test("S2 the History row of a cancelled order shows ₹0", async ({ page, context }) => {
   await STEPS.cancelled(context, page, "/customer/");
-  await page.getByRole("button", { name: /^(See the menu|Order again)$/ }).first().click();
+  await page.getByRole("button", { name: "Back to menu" }).click();   // Order again now opens the Bill (#1229); the back arrow is the way to the tabs
   await page.getByRole("button", { name: "History" }).click();
   const row = page.locator(".ui-order-row").first();
   await expect(row).toContainText("₹0");
