@@ -39,8 +39,6 @@ test("TC 24.2 Order again: the Bill opens with the same dishes at today's prices
   await STEPS["cancelled"](context, page, PATH);
   await expect(page.getByRole("button", { name: "Order again", exact: true })).toBeVisible();   // proves the button shows before the tap
   await page.getByRole("button", { name: "Order again", exact: true }).click();
-  // The app's Order again on this slip goes to the menu with an empty cart, not to the Bill (the case expects the Bill).
-  test.fail(true, "#1229: Order again on a cancelled slip opens the menu with an empty cart, not the Bill with the same dishes");
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
   await expect(page.getByText("Butter Chicken")).toBeVisible();
   await expect(page.getByText("₹640").first()).toBeVisible();   // 2 x 320 at today's price
