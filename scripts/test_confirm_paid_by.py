@@ -54,6 +54,16 @@ class ConfirmKeepsPaidBy(unittest.TestCase):
         r = run(out(), act(CUST, "confirm"), act(CUST, "deliver", "upi_door"), final=PAID)
         self.assertEqual((r["rs"][-1]["error"], r["paid_by"]), ("not_allowed", None), r)
 
+    def test_c8_a_delivered_order_with_no_paid_by_and_no_confirmation_cannot_be_recorded_by_a_deliver(self):
+        # an old row: the rider delivered before paid_by existed, and the customer never said Yes
+        r = run(out(), act(RIDER, "deliver", "cash"), "reset role", f"update orders set paid_by = null where id = '{O}'", act(RIDER, "deliver", "upi_door"), final=PAID)
+        self.assertEqual((r["rs"][-1]["error"], r["paid_by"]), ("already_done", None), r)
+
+    def test_c9_a_deliver_after_the_method_was_already_recorded_by_another_tap_is_already_done(self):
+        # the update is the guard: with paid_by already set the branch is not taken and the normal path answers already_done
+        r = run(out(), act(CUST, "confirm"), "reset role", f"update orders set paid_by = 'cash' where id = '{O}'", act(RIDER, "deliver", "upi_door"), final=PAID)
+        self.assertEqual((r["rs"][-1]["error"], r["paid_by"]), ("already_done", "cash"), r)
+
 
 if __name__ == "__main__":
     unittest.main()

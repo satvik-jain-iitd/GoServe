@@ -101,8 +101,13 @@ begin
   end if;
 
   -- story #1293: the customer confirmed first, so the order is delivered with no paid_by. The rider's deliver records the method once.
-  if p_action = 'deliver' and v_method is not null and v.status = 'delivered' and v.paid_by is null then
-    update orders set paid_by = v_method where id = v.id returning * into v;
+  -- Only when the confirmation is on record, and the update itself is the guard: two taps at once, the second finds no empty paid_by and answers already_done.
+  if p_action = 'deliver' and v_method is not null and v.status = 'delivered' and v.paid_by is null
+     and exists (select 1 from order_events where order_id = v.id and event = 'order.confirmed') then
+    update orders set paid_by = v_method where id = v.id and paid_by is null returning * into v;
+    if v.id is null then
+      return jsonb_build_object('ok', false, 'error', 'already_done', 'message', 'This step was already done.');
+    end if;
     return jsonb_build_object('ok', true, 'order', to_jsonb(v));
   end if;
 
