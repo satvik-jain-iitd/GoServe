@@ -35,7 +35,7 @@ test("E2 turning it on saves it with the amount, and it is still on after a relo
 test("E3 changing the amount to 50 and tapping Save sends 5000 paise", async ({ page, context }) => {
   const net = await toSettings(page, context, { early: { on: true, amount_paise: 10000 } });
   await amount(page).fill("50");
-  await page.getByRole("button", { name: "Save", exact: true }).first().click();
+  await page.getByRole("button", { name: "Set amount", exact: true }).click();
   await expect.poll(() => net.state.earlySets).toEqual([{ p_on: true, p_amount_paise: 5000 }]);
   await expect(page.getByText(/^Now on, ₹50/)).toBeVisible();
 });
@@ -44,7 +44,7 @@ test("E4 an amount outside 10 to 500 gets a plain line and nothing is sent", asy
   const net = await toSettings(page, context);
   for (const bad of ["9", "501", "", "12.5"]) {
     await amount(page).fill(bad);
-    await page.getByRole("button", { name: "Save", exact: true }).first().click();
+    await page.getByRole("button", { name: "Set amount", exact: true }).click();
     await expect(page.getByRole("alert")).toHaveText("Pick a whole number of rupees from 10 to 500.");
   }
   expect(net.state.earlySets).toEqual([]);
