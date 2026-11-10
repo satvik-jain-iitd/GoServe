@@ -13,6 +13,14 @@ export const order = (status: string, updated = "2020-01-01T10:00:00Z", created 
   items: [{ menu_item_id: "d1", name: "Butter Chicken", qty: 2, price_paise: 32000 }], total_paise: 64000, created_at: created, updated_at: updated,
 });
 
+// Story #1222: a second, third... order with its own id, number and dish, so a test can hold more than one order. n is 1 to 9; the number shown is n eight times.
+const DISHES = ["Butter Chicken", "Dal Makhani", "Paneer Tikka", "Veg Biryani", "Jeera Rice", "Roti", "Gulab Jamun", "Raita", "Masala Chai"];
+export const idN = (n: number) => `${String(n).repeat(8)}-1111-4222-8333-444444444444`;
+export const orderN = (n: number, status: string, over: object = {}) => ({
+  ...order(status), id: idN(n), client_order_key: `k${n}`, kitchen_id: "k-1",
+  items: [{ menu_item_id: `d${n}`, name: DISHES[(n - 1) % DISHES.length], qty: n, price_paise: 10000 * n }], total_paise: 10000 * n * n, ...over,
+});
+
 export const decisionOf = (over: object = {}) => ({
   use_case: "D1", rule_pick: "r2", chosen_pick: "r2", chosen_by: "rule", jev_status: "ok", jev: { pick: "r2", confidence: 0.81, agrees: true, ms: 310 }, ...over,
 });
@@ -24,7 +32,10 @@ type Calls = { place: { headers: Record<string, string>; body: any }[]; riderWri
 export async function setup(context: BrowserContext, page: Page, initial: object[] = [], { pin = "110016" as string | null, guest = false } = {}) {
   if (pin) await context.addInitScript((p) => { try { if (!window.localStorage.getItem("gs-pin")) window.localStorage.setItem("gs-pin", p); } catch { /* blocked */ } }, pin);
   const calls: Calls = { place: [], riderWrites: [], customerWrites: [], menuReads: [], menuWrites: [], uploads: [], uploadMeta: [], kitchenWrites: [], signups: 0, status: [], decide: [], health: [], feedback: [], confirm: [], rpc: [], orderReads: [], staffReads: [], riderReads: [], sim: [], geocode: [], places: [], serve: [], addressWrites: [], engine: [] };
-  const state = { areaRequest: { ok: true, offer_paise: 10000 } as { ok?: boolean; message?: string; offer_paise?: number }, events: [] as { order_id: string; event: string }[], phoneUser: false, clearAllowedDelayMs: 0, simDelayMs: 0, otpLogin: false as boolean | null | "down", swapPct: 10, swapDelayMs: 0, tracking: null as null | { rider_lat?: number | null; rider_lng?: number | null; updated_at: string; eta_lo_min?: number | null; eta_hi_min?: number | null; eta_late?: boolean }, pinPoint: { pin: "110016", lat: 28.59, lng: 77.26 } as null | { pin: string; lat: number; lng: number }, openAlert: { ok: true } as object, deleteReply: { ok: true } as object, rpcError: null as null | { name: string; message: string; details?: string }, invites: [] as any[], inviteOnAdd: false, claimGrant: null as null | "kitchen" | "rider" | "admin", userEmail: null as null | string, avatar: null as null | string, geocode: null as null | { status: number; body: object }, places: null as null | { status: number; body: object }, serve: null as null | { status: number; body: object }, addresses: [] as any[], addressNear: 200, clearSlices: 1, clearCalls: 0, clearReply: null as null | object, removeReply: { ok: true } as object, confirmCfg: { confirm_after_ready_min: 3, confirm_after_place_min: 8 }, confirmDone: false, confirmAt: null as null | string, feedbackDown: false, orders: initial, reply: null as null | { status: number; body: unknown }, menuUp: true, kitchen: null as null | string, staffOther: null as null | string, otherRider: false, rider: { user_id: SESSION, name: "Rider", online: true, lat: null, lng: null } as null | { online: boolean; [k: string]: unknown }, customer: null as null | object, numbers: [] as object[], admin: false, people: [] as object[], kitchens: [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: true, active: true, opens_at: "00:00:00", closes_at: "23:59:00" }] as object[], menu: [{ id: "d1", name: "Butter Chicken", price_paise: 32000, image_url: null, image_credit: null }] as object[], riderCard: null as null | { name: string; phone: string }, anonymous: guest, riders: null as null | object[], ridersFail: false, decisions: [] as object[], runs: [] as object[], runCount: 0, sim: { enabled: false, kitchens: 10, riders: 40, riders_online: 29, dishes: 137, kitchens_real: 6, riders_real: 2, clear_allowed: true, knobs: { reject_pct: 5, sold_out_pct: 3, delay_pct: 10, rider_drop_pct: 2 } as Record<string, number | boolean | undefined> }, engine: { engine: "rules", version: 1, by: "system", changed_at: "2026-10-25T04:00:00Z" }, engineReply: null as null | { status: number; body: unknown } };
+  const state = { areaRequest: { ok: true, offer_paise: 10000 } as { ok?: boolean; message?: string; offer_paise?: number }, events: [] as { order_id: string; event: string }[], phoneUser: false, clearAllowedDelayMs: 0, simDelayMs: 0, otpLogin: false as boolean | null | "down", swapPct: 10, swapDelayMs: 0, tracking: null as null | { rider_lat?: number | null; rider_lng?: number | null; updated_at: string; eta_lo_min?: number | null; eta_hi_min?: number | null; eta_late?: boolean }, pinPoint: { pin: "110016", lat: 28.59, lng: 77.26 } as null | { pin: string; lat: number; lng: number }, openAlert: { ok: true } as object, deleteReply: { ok: true } as object, rpcError: null as null | { name: string; message: string; details?: string }, invites: [] as any[], inviteOnAdd: false, claimGrant: null as null | "kitchen" | "rider" | "admin", userEmail: null as null | string, avatar: null as null | string, geocode: null as null | { status: number; body: object }, places: null as null | { status: number; body: object }, serve: null as null | { status: number; body: object }, addresses: [] as any[], addressNear: 200, clearSlices: 1, clearCalls: 0, clearReply: null as null | object, removeReply: { ok: true } as object, confirmCfg: { confirm_after_ready_min: 3, confirm_after_place_min: 8 }, confirmDone: false, confirmAt: null as null | string, feedbackDown: false, orders: initial, reply: null as null | { status: number; body: unknown }, menuUp: true, kitchen: null as null | string, staffOther: null as null | string, otherRider: false, rider: { user_id: SESSION, name: "Rider", online: true, lat: null, lng: null } as null | { online: boolean; [k: string]: unknown }, customer: null as null | object, numbers: [] as object[], admin: false, people: [] as object[], kitchens: [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: null, pin_codes: ["110016"], open: true, active: true, opens_at: "00:00:00", closes_at: "23:59:00" }] as object[], menu: [{ id: "d1", name: "Butter Chicken", price_paise: 32000, image_url: null, image_credit: null }] as object[], riderCard: null as null | { name: string; phone: string }, anonymous: guest, riders: null as null | object[], ridersFail: false, decisions: [] as object[], runs: [] as object[], runCount: 0, sim: { enabled: false, kitchens: 10, riders: 40, riders_online: 29, dishes: 137, kitchens_real: 6, riders_real: 2, clear_allowed: true, knobs: { reject_pct: 5, sold_out_pct: 3, delay_pct: 10, rider_drop_pct: 2 } as Record<string, number | boolean | undefined> }, engine: { engine: "rules", version: 1, by: "system", changed_at: "2026-10-25T04:00:00Z" }, engineReply: null as null | { status: number; body: unknown },
+    // Story #1222: switches that fail or delay one call, and an opt-in filter on the orders read.
+    ordersFail: false, ordersDelayMs: 0, kitchensFail: false, staffFail: false, riderWriteFail: false, menuWriteFail: false, actionDelayMs: 0, authDelayMs: 0, ordersFilter: false };
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
   const json = (route: any, status: number, body: unknown) => route.fulfill({ status, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(body) });
   await context.route("https://test.supabase.co/**", async (route) => {
     const req = route.request();
@@ -108,6 +119,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
       }
       const body = JSON.parse(req.postData() ?? "{}");
       calls.riderWrites.push({ method: req.method(), body });
+      if (state.riderWriteFail) return json(route, 500, { message: "down" });
       if (state.rider) Object.assign(state.rider, body);
       return route.fulfill({ status: 204, headers: CORS, body: "" });
     }
@@ -130,14 +142,17 @@ export async function setup(context: BrowserContext, page: Page, initial: object
       return route.fulfill({ status: 201, headers: CORS, body: "" });
     }
     if (req.url().includes("/auth/v1/logout")) return route.fulfill({ status: 204, headers: CORS, body: "" });
+    if (req.url().includes("/auth/v1/user") && state.authDelayMs) await wait(state.authDelayMs);
     if (req.url().includes("/auth/v1/user")) return json(route, 200, { id: SESSION, aud: "authenticated", role: "authenticated", is_anonymous: state.anonymous, app_metadata: {}, email: state.userEmail ?? undefined, user_metadata: state.anonymous || state.phoneUser ? {} : { full_name: "Amit Kumar", ...(state.avatar ? { avatar_url: state.avatar } : {}) }, created_at: new Date().toISOString() });   // H11: who is signed in
     if (req.url().includes("/rest/v1/kitchens")) {   // A2: the admin's kitchen list and writes
+      if (state.kitchensFail) return json(route, 500, { message: "down" });
       if (req.method() === "GET") return json(route, 200, state.kitchens);
       calls.kitchenWrites.push({ method: req.method(), url: req.url(), body: JSON.parse(req.postData() ?? "{}") });
       return route.fulfill({ status: 201, headers: CORS, body: "" });
     }
     if (req.url().includes("/rest/v1/kitchen_staff")) {   // S-M5: the kitchen this user works for; H3: an admin also sees other people's rows, so the query must filter by user
       calls.staffReads.push(req.url());
+      if (state.staffFail) return json(route, 500, { message: "down" });
       const rows = [...(state.staffOther ? [{ kitchen_id: state.staffOther, user_id: "someone-else" }] : []), ...(state.kitchen ? [{ kitchen_id: state.kitchen, user_id: SESSION }] : [])];
       const who = new URL(req.url()).searchParams.get("user_id")?.replace("eq.", "");
       return json(route, 200, rows.filter((r) => !who || r.user_id === who).map((r) => ({ kitchen_id: r.kitchen_id })));
@@ -155,11 +170,16 @@ export async function setup(context: BrowserContext, page: Page, initial: object
     if (req.url().includes("/rest/v1/pin_points")) return json(route, 200, state.pinPoint ? [state.pinPoint] : []);
     if (req.url().includes("/rest/v1/orders")) {
       calls.orderReads.push(req.url());
-      return json(route, 200, state.orders);
+      if (state.ordersDelayMs) await wait(state.ordersDelayMs);
+      if (state.ordersFail) return json(route, 500, { message: "down" });
+      if (!state.ordersFilter) return json(route, 200, state.orders);
+      const q = new URL(req.url()).searchParams, eq = (k: string) => q.get(k)?.startsWith("eq.") ? q.get(k)!.slice(3) : null;   // opt-in: like PostgREST, honour rider_id and kitchen_id
+      return json(route, 200, state.orders.filter((o: any) => (!eq("rider_id") || o.rider_id === eq("rider_id")) && (!eq("kitchen_id") || o.kitchen_id === eq("kitchen_id"))));
     }
     if (req.url().includes("/rest/v1/menu_items") && req.method() === "GET") calls.menuReads.push(req.url());
     if (req.url().includes("/rest/v1/menu_items") && req.method() !== "GET") {   // A3: the admin's dish writes
       calls.menuWrites.push({ method: req.method(), url: req.url(), body: JSON.parse(req.postData() ?? "{}") });
+      if (state.menuWriteFail) return json(route, 500, { message: "down" });
       return route.fulfill({ status: 201, headers: CORS, body: "" });
     }
     if (req.url().includes("/rest/v1/menu_items") && !state.menuUp) return json(route, 500, {});
@@ -245,8 +265,10 @@ export async function setup(context: BrowserContext, page: Page, initial: object
       return json(route, 200, { ok: true, order: { ...order("delivered", state.confirmAt ?? later), paid_by: "cash" } });
     }
     calls.status.push({ headers: req.headers(), body });
+    if (state.actionDelayMs) await wait(state.actionDelayMs);
     const to: Record<string, string> = { accept: "accepted", prepare: "preparing", ready: "ready", pickup: "out_for_delivery", arriving: "out_for_delivery", deliver: "delivered", cancel: "cancelled" };
-    const r = state.reply ?? { status: 200, body: { ok: true, order: order(to[body.action] ?? "placed", later) } };
+    const held = (state.orders as any[]).find((o) => o.id === body.order_id && o.id !== ID);   // an orderN order answers as itself; the first order keeps the old answer
+    const r = state.reply ?? { status: 200, body: { ok: true, order: held ? { ...held, status: to[body.action] ?? held.status, updated_at: later } : order(to[body.action] ?? "placed", later) } };
     return json(route, r.status, r.body);
   });
   await context.route("https://orders.test/**", async (route) => {
@@ -270,6 +292,8 @@ export async function setup(context: BrowserContext, page: Page, initial: object
   // Story #619: more than one channel can be open (orders, and the kitchen's menu). Each join keeps its own list of what the screen asked to hear.
   const SETTLE_MS = 1500;   // the client needs a moment to bind the join answer; an event sent sooner is dropped
   const sockets: { topic: string; bindings: { event: string; table?: string }[]; send: (m: unknown) => void; joinedAt: number }[] = [];
+  const wires = new Set<{ close: (o?: { code?: number; reason?: string }) => Promise<void> }>();
+  const drop = async () => { sockets.length = 0; for (const w of [...wires]) { wires.delete(w); await w.close({ code: 1006, reason: "dropped by the test" }).catch(() => {}); } };   // story #1222: the live socket breaks
   const waiting: [string, object, string][] = [];
   const deliver = (type: string, record: object, table: string) => {
     const hits = sockets.filter((c) => Date.now() >= c.joinedAt + SETTLE_MS && c.bindings.some((b) => (b.table ?? "orders") === table));
@@ -288,6 +312,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
   await page.routeWebSocket(/realtime\/v1\/websocket/, (ws) => {
     // One socket carries every channel (supabase-js multiplexes), so each join is kept by its topic.
     const send = (m: unknown) => ws.send(JSON.stringify(m));
+    wires.add(ws);
     ws.onMessage((raw) => {
       const [join_ref, ref, t, event, payload] = JSON.parse(String(raw));
       if (event === "phx_join") {
@@ -302,7 +327,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
       }
     });
   });
-  return { calls, state, push };
+  return { calls, state, push, drop };
 }
 
 /** An axe scan after every CSS animation has finished (the stamp fades in from 0.6, which read as low contrast mid-animation). Returns the serious and critical violations as strings. */
