@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DoorMethod } from "./doorMethods";
 
 export type PayMethodsAdmin = { methods: DoorMethod[]; updated_by: string | null; updated_at: string };
-export type QrAdmin = { url: string | null; updated_by: string | null; updated_at: string };
+export type QrAdmin = { object: string | null; updated_by: string | null; updated_at: string };
 
 export async function readPayMethodsAdmin(c: Pick<SupabaseClient, "rpc">): Promise<PayMethodsAdmin> {
   const { data, error } = await c.rpc("payment_methods_get_v2");
@@ -26,6 +26,10 @@ export async function readQrAdmin(c: Pick<SupabaseClient, "rpc">): Promise<QrAdm
   return data as QrAdmin;
 }
 
+/** The public address of a QR object, built from this app's own project address: the database holds a name, never an address, so no other host can be shown. */
+export const qrAddress = (object: string | null, base: string = import.meta.env.VITE_SUPABASE_URL): string | null =>
+  object && /^qr-[0-9a-f-]{36}\.(png|jpg|webp)$/.test(object) ? `${base}/storage/v1/object/public/upi-qr/${object}` : null;
+
 export const QR_MAX_BYTES = 2 * 1024 * 1024;
 const QR_TYPES: Record<string, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
 export const qrFileProblem = (f: { type: string; size: number }): string | null =>
@@ -38,7 +42,7 @@ export async function uploadQr(c: Pick<SupabaseClient, "rpc" | "storage">, file:
   const path = `qr-${crypto.randomUUID()}.${QR_TYPES[file.type]}`;
   const up = await c.storage.from("upi-qr").upload(path, file, { contentType: file.type, cacheControl: "31536000" });
   if (up.error) return "The picture could not be uploaded. Try again.";
-  const { data, error } = await c.rpc("upi_qr_set_v2", { p_url: c.storage.from("upi-qr").getPublicUrl(path).data.publicUrl });
+  const { data, error } = await c.rpc("upi_qr_set_v2", { p_object: path });
   if (error || data?.ok !== true) return "The picture was uploaded but could not be set. Try again.";
   return null;
 }
@@ -46,8 +50,8 @@ export async function uploadQr(c: Pick<SupabaseClient, "rpc" | "storage">, file:
 /** The rider's read: the address of the QR the admin uploaded, or null (none yet, or the read failed). */
 export async function readRiderQr(c: Pick<SupabaseClient, "rpc">): Promise<string | null> {
   try {
-    const { data, error } = await c.rpc("upi_qr_url");
-    return !error && typeof data === "string" && data ? data : null;
+    const { data, error } = await c.rpc("upi_qr_object");
+    return !error && typeof data === "string" ? qrAddress(data) : null;
   } catch {
     return null;
   }

@@ -5,7 +5,7 @@ import { formatRupees } from "../lib/money";
 import { Skeleton } from "../ui";
 import { getClient } from "../lib/supabase";
 import { readOtpSwitchAdmin, saveOtpSwitch } from "../lib/otpSwitch";
-import { readPayMethodsAdmin, readQrAdmin, setPayMethod, uploadQr, type PayMethodsAdmin, type QrAdmin } from "../lib/payMethods";
+import { qrAddress, readPayMethodsAdmin, readQrAdmin, setPayMethod, uploadQr, type PayMethodsAdmin, type QrAdmin } from "../lib/payMethods";
 import type { DoorMethod } from "../lib/doorMethods";
 import { readSwapSetting, saveSwapSetting, swapPctProblem, type SwapSetting } from "../lib/swapSetting";
 
@@ -89,13 +89,13 @@ function PaymentSettings() {
       {now && <p className="mono ui-foot">Last changed by {now.updated_by ?? "the system"}, {when(now.updated_at)}</p>}
       {line && <p role="alert" className="ui-note error">{line}</p>}
       <div className="ui-row ui-row-static">
-        <span className="ui-row-label"><b>UPI QR</b><span className="ui-row-sub">{qr === null ? "Loading…" : qr.url ? `Your QR · set by ${qr.updated_by ?? "the system"}, ${when(qr.updated_at)}` : "Sample QR · Not a real account yet"}</span></span>
+        <span className="ui-row-label"><b>UPI QR</b><span className="ui-row-sub">{qr === null ? "Loading…" : qr.object ? `Your QR · set by ${qr.updated_by ?? "the system"}, ${when(qr.updated_at)}` : "Sample QR · Not a real account yet"}</span></span>
         <label className="ui-btn ghost ui-file-btn" aria-disabled={busy !== null}>
           {busy === "qr" ? "Uploading…" : "Change"}
           <input type="file" accept="image/png,image/jpeg,image/webp" aria-label="Change the UPI QR" hidden disabled={busy !== null} onChange={(e) => { void pick(e.target.files?.[0]); e.target.value = ""; }} />
         </label>
       </div>
-      {qr?.url && <img className="ui-qr-thumb" src={qr.url} width={120} height={120} alt="The UPI QR now in use" />}
+      {qr?.object && <img className="ui-qr-thumb" src={qrAddress(qr.object) ?? ""} width={120} height={120} alt="The UPI QR now in use" />}
       {qrLine && <p role="alert" className="ui-note error">{qrLine}</p>}
     </section>
   );
