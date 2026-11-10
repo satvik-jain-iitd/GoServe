@@ -12,14 +12,14 @@ const open = async (page: Page, context: Parameters<typeof setup>[0], orders: ob
   const net = await setup(context, page, orders);
   net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
-  await expect(page.getByRole("heading", { name: "New" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "New", exact: true })).toBeVisible();
   return net;
 };
 
 test("S1 two new orders, on Cooking: the bar reads 2 new orders and Oldest 7 min, and a tap opens New", async ({ page, context }) => {
   await open(page, context, [placed(1), placed(2, "2026-11-10T10:03:00Z")]);
   await tab(page, "Cooking").click();
-  await expect(page.getByRole("heading", { name: "Cooking" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Cooking", exact: true })).toBeVisible();
   await expect(bar(page)).toContainText("2 new orders");
   await expect(bar(page)).toContainText("Oldest 7 min");
   const box = (await bar(page).boundingBox())!;
@@ -47,7 +47,7 @@ test("S3 a new order arrives while the cook is on Today: the bar shows without a
   await page.getByRole("button", { name: /^Open ticket / }).click();
   await page.getByRole("button", { name: /^Accept / }).click();
   await tab(page, "Cooking").click();
-  await expect(page.getByRole("heading", { name: "Cooking" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Cooking", exact: true })).toBeVisible();
   await expect(bar(page)).toHaveCount(0);
 });
 
