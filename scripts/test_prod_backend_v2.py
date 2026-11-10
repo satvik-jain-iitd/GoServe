@@ -130,6 +130,26 @@ class Main(unittest.TestCase):
             if "=" in l:
                 self.assertNotIn(l.strip().split("=")[1], out)  # no value is printed
 
+class DroppedMarker(unittest.TestCase):
+    """Story #1340: a marker that a later migration drops on purpose is not a missing migration (sim_groups made sim_clear_all(), sim_clear_in_slices dropped it)."""
+    def test_S20_a_function_a_later_file_drops_does_not_make_its_file_missing(self):
+        have = ALL - {"function:sim_clear_all/0"}
+        self.assertEqual(p.build_plan(PROD, "GoServe", V1, V2, have)["v2_missing"], [])
+
+    def test_S21_a_real_gap_is_still_named(self):
+        gap = next(f for f, m in V2 if m == "function:early_friend_for/0" or (m and m.startswith("function:early_friend_for")))
+        have = ALL - {m for f, m in V2 if f == gap}
+        self.assertEqual(p.build_plan(PROD, "GoServe", V1, V2, have)["v2_missing"], [gap])
+
+    def test_S22_functions_only_deploys_the_functions_and_writes_no_migration_secret_or_vault_row(self):
+        fake = Fake(ALL - {m for f, m in V2[-1:]})
+        out = run(fake, ["--apply", "--functions-only"])
+        kinds = {w[0] for w in fake.writes}
+        self.assertIn("deploy", kinds)
+        self.assertNotIn("sql", kinds)
+        self.assertNotIn("POST", kinds)
+        self.assertIn("functions only", out)
+
 
 if __name__ == "__main__":
     unittest.main()
