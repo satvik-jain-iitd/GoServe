@@ -31,7 +31,12 @@ test("S2 an off kitchen's page: the Off tag, the one line, Staff 0 with its line
   await admin(page, context);
   await toPage(page);
   await expect(page.locator(".ui-head .ui-tag")).toHaveText("Off");
-  await expect(page.getByText(/^This kitchen is off\. Customers cannot see it or order from it\. Turned off by satvik@goserve\.test, /)).toBeVisible();
+  const notice = page.getByRole("status").filter({ hasText: /^This kitchen is off\. Customers cannot see it or order from it\. Turned off by satvik, / });   // board A13: the notice box, the name before the @
+  await expect(notice).toBeVisible();
+  await expect(notice.locator("b")).toHaveText("This kitchen is off.");   // the first sentence is bold
+  const want = await page.evaluate(() => { const d = document.createElement("i"); d.style.borderColor = "var(--md-error)"; document.body.append(d); const c = getComputedStyle(d).borderTopColor; d.remove(); return c; });
+  const got = await notice.evaluate((el) => { const s = getComputedStyle(el); return { w: s.borderTopWidth, c: s.borderTopColor, r: s.borderTopLeftRadius, p: s.padding, f: s.fontSize }; });
+  expect(got).toEqual({ w: "1px", c: want, r: "6px", p: "12px", f: "15px" });
   await expect(page.getByText("Staff were taken off when this kitchen was turned off. Add them again after you turn it on.")).toBeVisible();
   const call = page.getByRole("link", { name: "Call Tau Ka Dhaba" }), on = page.getByRole("button", { name: "Turn kitchen back on" });
   await expect(call).toBeVisible(); await expect(on).toBeVisible();
@@ -73,5 +78,5 @@ test("S5 two fast taps send one call", async ({ page, context }) => {
 test("S6 with no record of who turned it off the line still stands, without a name", async ({ page, context }) => {
   await admin(page, context, { offLog: [] });
   await toPage(page);
-  await expect(page.getByText("This kitchen is off. Customers cannot see it or order from it.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: /^This kitchen is off\. Customers cannot see it or order from it\.$/ })).toBeVisible();
 });
