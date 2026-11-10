@@ -30,7 +30,7 @@ const DELIVERED_FEE = { ...DELIVERED, total_paise: 87000 };
 const KITCHEN = { id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: "9876543210", pin_codes: ["110016"], open: true, active: true, lat: null, lng: null, opens_at: "00:00:00", closes_at: "23:59:00" };
 
 // The shared step (History, no orders yet), then this history and kitchen, the same page again, and History opened.
-async function reach(context: BrowserContext, page: Page, delivered: typeof DELIVERED = DELIVERED) {
+async function reach(context: BrowserContext, page: Page, delivered: Omit<typeof DELIVERED, "paid_by"> & { paid_by: string | null } = DELIVERED) {
   await STEPS["orders"](context, page, PATH);
   await context.route(isPath("/rest/v1/orders"), (r) => answer(r, [delivered]));
   await context.route(isPath("/rest/v1/kitchens"), (r) => answer(r, [KITCHEN]));
