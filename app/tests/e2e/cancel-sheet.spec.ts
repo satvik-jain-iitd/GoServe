@@ -85,3 +85,12 @@ test("C8 the kitchen started cooking while the sheet was open: the cooking line 
   await sheet(page).getByRole("button", { name: "Yes, cancel the order" }).click();
   await expect(page.getByText("The kitchen has started cooking, so this order cannot be cancelled now. Call the kitchen if you need to.")).toBeVisible();
 });
+
+test("C9 an order paid online: the You pay row says what happens to the money, not that you pay at the door", async ({ page, context }) => {
+  await setup(context, page, [{ ...order("placed", "2020-01-01T10:01:00Z"), payment_method: "online", paid_at: "2020-01-01T10:02:00Z" }]);
+  await page.goto("/customer/");
+  await page.getByRole("button", { name: "Cancel order" }).click();
+  const s = sheet(page);
+  await expect(s.getByText("If you paid online, it comes back in 5 to 7 days.")).toBeVisible();
+  await expect(s.getByText(/pay at the door/)).toHaveCount(0);
+});
