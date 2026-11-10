@@ -1,6 +1,6 @@
 // Regression: the early-friend offer (board A14-EarlyFriend, story #1329) and the placed slip lines that add up (story #1295). Rows also in docs/tests/test-cases.md.
 import { test, expect, type Page, type BrowserContext } from "@playwright/test";
-import { order, setup, typePlace } from "../helpers";
+import { SESSION, order, setup, typePlace } from "../helpers";
 
 test.use({ viewport: { width: 412, height: 915 } });
 const admin = async (page: Page, context: BrowserContext, over: Record<string, unknown> = {}) => {
@@ -65,4 +65,26 @@ test("TC A14.6 Turning the offer off with an empty amount box still works", asyn
   await page.getByLabel("Early friend amount, rupees").fill("");
   await page.getByRole("switch", { name: /^Give the early friend offer/ }).click();
   await expect.poll(() => net.state.earlySets).toEqual([{ p_on: false, p_amount_paise: 5000 }]);
+});
+
+// Story #1332: the staff slips list the gift too, so the rider's To collect at door adds up.
+test("TC A14.7 Rider slip: a first order with the gift lists it and the lines add up to To collect at door", async ({ page, context }) => {
+  const net = await setup(context, page, [{ ...order("ready"), total_paise: 54000, bill: { early_friend_paise: 10000, to_pay_paise: 54000 }, rider_id: SESSION, customer_name: "Rahul Verma", customer_phone: "9876543210" }]);
+  net.state.kitchens = [{ id: "k", name: "Tau Ka Dhaba", address: "C-4, Lajpat Nagar II", phone: "9876500000", pin_codes: ["110016"], open: true, active: true, opens_at: "10:00:00", closes_at: "22:00:00" }];
+  await page.goto("/rider/");
+  const slip = page.locator(".ui-slip").first();
+  await expect(slip.getByText("Early friend gift")).toBeVisible();
+  await expect(slip.locator(".ui-slip-lines")).toContainText("640");
+  await expect(slip.locator(".ui-slip-lines")).toContainText("−₹100");
+  await expect(slip.locator(".ui-slip-total span")).toHaveText("₹540");   // 640 − 100
+});
+
+test("TC A14.8 Kitchen ticket: the same order lists the gift and Rider collects the same amount", async ({ page, context }) => {
+  const net = await setup(context, page, [{ ...order("placed"), total_paise: 54000, bill: { early_friend_paise: 10000, to_pay_paise: 54000 } }]);
+  net.state.kitchen = "k-1";
+  await page.goto("/kitchen/");
+  await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
+  const sheet = page.getByRole("dialog", { name: "Order 0f0f0f0f" });
+  await expect(sheet.getByText("Early friend gift")).toBeVisible();
+  await expect(sheet.locator(".ui-slip-total span")).toHaveText("₹540");
 });

@@ -4,6 +4,7 @@ import { hhmm, isCash, shortId, type Order } from "../lib/kitchen";
 import { formatRupees } from "../lib/money";
 import { MIN_REASON } from "../lib/orders";
 import { NoteBand, useSheetFit } from "../ui";
+import { AdjustLines } from "../ui/AdjustLines";
 
 const CHIPS: [string, string][] = [
   ["Out of an ingredient", "We are out of an ingredient tonight, so this dish cannot be made."],
@@ -32,7 +33,7 @@ export function OrderSheet({ order, busy, error, onAccept, onDecline, onClose }:
         <section className="ui-sheet ui-order-sheet" role="dialog" aria-modal="true" aria-label={`Order ${no}`} onClick={(e) => e.stopPropagation()}
           onTouchStart={(e) => { startY.current = e.touches[0].clientY; }} onTouchEnd={swipe}>
           <div className="ui-sheet-head"><h2>No. {no}</h2><span className="mono ui-sheet-when">Placed {hhmm(order.created_at)} · {cash ? "Cash" : "Online"}</span></div>
-          <div className="ui-slip-lines ui-ticket-big">{order.items.map((i) => <div key={i.menu_item_id}><span>{i.qty} × {i.name}</span><span>{formatRupees(i.price_paise * i.qty)}</span></div>)}</div>
+          <div className="ui-slip-lines ui-ticket-big">{order.items.map((i) => <div key={i.menu_item_id}><span>{i.qty} × {i.name}</span><span>{formatRupees(i.price_paise * i.qty)}</span></div>)}<AdjustLines bill={order.bill} /></div>
           <div className="ui-slip-rule" />
           {order.instructions?.trim() && <><NoteBand text={order.instructions.trim()} /><div className="ui-slip-rule" /></>}
           <div className="ui-sheet-block"><span className="mono ui-kicker">Deliver to</span><span>{order.address}</span></div>

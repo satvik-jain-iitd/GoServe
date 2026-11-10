@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { PAY_WINDOW_S, PAY_METHODS, type PayMethod } from "../lib/payments";
 import { devHelperOn } from "../lib/payGateway";
 import { Timeline } from "../ui";
+import { AdjustLines } from "../ui/AdjustLines";
 import { BackChevron } from "./BillScreen";
 import { RiderMapScreen } from "./RiderMapScreen";
 import { agoText, distanceText, lastSeenText, type Point } from "../lib/riderMap";
@@ -142,8 +143,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
             <div className="ui-slip-lines">
               {lines.map((l) => <div key={l.name}><span>{l.qty} × {l.name}</span><span>{formatRupees(l.paise).replace("₹", "")}</span></div>)}
               <div><span>Delivery</span><span>Free</span></div>
-              {(bill?.discount_paise ?? 0) > 0 && <div><span>Discount</span><span>−{formatRupees(bill!.discount_paise!).replace("₹", "")}</span></div>}
-              {(bill?.early_friend_paise ?? 0) > 0 && <div><span>Early friend gift</span><span>−{formatRupees(bill!.early_friend_paise!).replace("₹", "")}</span></div>}
+              <AdjustLines bill={bill} plain />
             </div>
             <div className="ui-slip-rule" />
             <div className="ui-slip-total"><b>{declined || cancelled ? "Nothing to pay" : pay?.state === "paid" ? "Paid online" : pay ? "To pay online" : delivered && paidBy === "cash" ? "Cash paid" : delivered && paidBy === "upi_door" ? "Paid by UPI at the door" : delivered ? "Paid at the door" : "To pay at door"}</b><span>{declined || cancelled ? formatRupees(0) : formatRupees(order.total_paise)}</span></div>

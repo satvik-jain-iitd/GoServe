@@ -5,6 +5,7 @@ import { formatRupees } from "../lib/money";
 import { cashInHand, firstName, handedOver, hoursOf, locationLabel, type KitchenCard, type RiderGateState } from "../lib/rider";
 import type { DoorMethod } from "../lib/doorMethods";
 import { Skeleton, Tabs } from "../ui";
+import { AdjustLines } from "../ui/AdjustLines";
 
 type Tab = "job" | "today" | "me";
 type Props = {
@@ -128,7 +129,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
                   <div className="ui-slip-rule" />
                   {deliverTo(job)}
                   <div className="ui-slip-rule" />
-                  <div className="ui-slip-lines">{job.items.map((i) => <div key={i.menu_item_id}><span>{i.qty} × {i.name}</span><span>{formatRupees(i.price_paise * i.qty)}</span></div>)}</div>
+                  <div className="ui-slip-lines">{job.items.map((i) => <div key={i.menu_item_id}><span>{i.qty} × {i.name}</span><span>{formatRupees(i.price_paise * i.qty)}</span></div>)}<AdjustLines bill={job.bill} /></div>
                 </>
               )}
               <div className="ui-slip-rule" />
