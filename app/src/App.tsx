@@ -627,8 +627,14 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       // "Already done" for Arriving means an earlier tap went through (the page may have been reloaded): that is success, not an error.
       if (e instanceof PlaceError && e.code === "already_done") {   // story 1262: for Delivered a second tap changes nothing; the first way it was paid stands
         if (action.kind === "event") setArrived((cur) => new Set(cur).add(order.id));
+        if (action.kind === "status" && action.to === "delivered") {   // the first answer may have been lost: read the order again and show how it was really paid
+          const { data } = await getClient().from("orders").select("id,status,updated_at,paid_by").eq("id", order.id);
+          const row = (data as { id: string; status: string; updated_at: string; paid_by: string | null }[] | null)?.find((r) => r.id === order.id);
+          if (row) setOrders((cur) => mergeOrder(cur, { ...order, status: row.status, updated_at: row.updated_at, paid_by: row.paid_by }));
+        }
         return null;
       }
+      if (e instanceof PlaceError && e.code === "method_off") loadRiderMethods();   // the setting changed under the rider: the UPI button and the QR go with it
       const message = e instanceof Error ? e.message : "Something went wrong. Please try again.";
       pushTrail(`error: ${message}`);
       live.setError(message);

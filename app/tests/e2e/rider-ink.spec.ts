@@ -80,6 +80,8 @@ for (const theme of ["day", "night"] as const) {
     await scan();   // R5 pick up
     await page.getByRole("button", { name: "Pick up 0f0f0f0f" }).click();
     await page.getByRole("button", { name: "Delivered 0f0f0f0f", exact: true }).click();
+    await expect(page.getByRole("button", { name: /^Paid by UPI/ })).toBeVisible();
+    await scan();   // R7 collect payment, with the QR
     await page.getByRole("button", { name: /^Took cash/ }).click();   // story 1262
     await expect(page.getByText("Cash collected")).toBeVisible();
     await scan();   // R7 delivered

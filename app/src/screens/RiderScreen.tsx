@@ -26,6 +26,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
   const today = deliveredToday(orders, new Date(), hoursOf(kitchen));   // story #229: the day ends at the kitchen's closing time
   const cash = cashInHand(today);
   const handed = handedOver(today);
+  const paidLabel = (p: string | null | undefined) => (p === "upi_door" ? "Paid by UPI" : p === "cash" ? "Cash collected" : "Collected");   // never guess cash: an empty paid_by is just Collected
   const [collectId, setCollectId] = useState<string | null>(null);   // story 1262, board R7: "Delivered" opens Collect payment first
   const act = async (o: Order, a: RiderAction, method?: DoorMethod) => {
     const failed = await onAct(o, a, method);
@@ -66,15 +67,15 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
             <div className="ui-slip-body">
               <div className="ui-slip-head"><span>Collect payment</span><span>{collecting.customer_name || "The customer"}</span></div>
               <div className="ui-slip-total"><b>To collect</b><span data-testid="collect-total">{amount}</span></div>
-              {methods === null && <p className="ui-meta">Checking how this customer can pay…</p>}
+              {methods === null && <p className="ui-meta" role="status" aria-live="polite">Checking how this customer can pay…</p>}
               {methods !== null && methods.length === 0 && <p className="ui-meta">We could not check how to collect. Try again.</p>}
               {upi && (
                 <div className="ui-qr">
-                  <img src={`${import.meta.env.BASE_URL}qr-sample.svg`} width={200} height={200} alt="QR code to pay by UPI" />
+                  <img src={`${import.meta.env.BASE_URL}qr-sample.svg`} width={200} height={200} alt="Sample QR, not for payment" />
                   <span className="mono">Sample QR · the real one comes later</span>
                 </div>
               )}
-              {upi && <p className="ui-meta">Wait for the customer's paid screen. Then tap below.</p>}
+              {upi && <p className="ui-meta">This QR is a sample. Do not ask the customer to scan it. Tap below once the customer has paid.</p>}   {/* story 1262: while the picture is a sample (public/qr-sample.svg, gated by scripts/check_sample_qr.py), the line must not send a customer to pay it; with the real QR it returns to "Wait for the customer's paid screen. Then tap below." */}
             </div>
           </section>
           <div className="ui-bottom">
@@ -94,7 +95,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
             <div className="ui-slip-stamp"><span className="ui-stamp delivered">Delivered</span></div>
             <p className="ui-clock">At the door <b>{hhmm(done.updated_at)}</b></p>
             <div className="ui-slip-rule" />
-            <div className="ui-slip-total"><b>{done.paid_by === "upi_door" ? "Paid by UPI" : done.paid_by === "cash" ? "Cash collected" : "Collected"}</b><span>{formatRupees(done.total_paise)}</span></div>
+            <div className="ui-slip-total"><b>{paidLabel(done.paid_by)}</b><span>{formatRupees(done.total_paise)}</span></div>
           </div>
         </section>
         {todayLine}
@@ -176,7 +177,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
             <div key={o.id} className="ui-row ui-row-static">
               <span className="ui-row-label"><span className="ui-row-sub mono">No. {shortId(o.id)} · {hhmm(o.updated_at)}</span><span>{o.customer_name || "Customer"} · {o.address}</span></span>
               <span className="mono">{formatRupees(o.total_paise)}</span>
-              <span className="ui-row-sub mono">{o.paid_by === "upi_door" ? "Paid by UPI" : "Cash collected"}</span>
+              <span className="ui-row-sub mono">{paidLabel(o.paid_by)}</span>
             </div>
           ))}
         </div>
