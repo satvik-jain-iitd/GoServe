@@ -81,3 +81,20 @@ test("TC 26.2 Total equals the lines plus a delivery fee: the Delivery row adds 
   test.fail(true, "#1268: the Delivery row always reads Free (PlacedScreen.tsx:143) while the total carries the delivery fee, so the rows do not add up to Cash paid");
   expect(Number(amounts[0]) + Number(amounts[1]) + Number(amounts[2])).toBe(870);   // 640 + 190 + 40
 });
+
+// Story #1293: the customer's Yes never writes how the order was paid. The slip says what the record says, and never guesses cash.
+test("TC 26.3 Paid by UPI: the rider recorded UPI at the door, the total line reads Paid by UPI at the door and the amount", async ({ page, context }) => {
+  await reach(context, page, { ...DELIVERED, paid_by: "upi_door" });
+  const slip = page.getByRole("region", { name: "Order, delivered" });
+  await expect(slip.getByText("Paid by UPI at the door", { exact: true })).toBeVisible();
+  await expect(slip.locator(".ui-slip-total span")).toHaveText("₹830");
+  await expect(slip.getByText("Cash paid")).toHaveCount(0);
+});
+
+test("TC 26.4 No way recorded yet (the customer said Yes first): the total line reads Paid at the door, never Cash paid", async ({ page, context }) => {
+  await reach(context, page, { ...DELIVERED, paid_by: null });
+  const slip = page.getByRole("region", { name: "Order, delivered" });
+  await expect(slip.getByText("Paid at the door", { exact: true })).toBeVisible();
+  await expect(slip.locator(".ui-slip-total span")).toHaveText("₹830");
+  await expect(slip.getByText("Cash paid")).toHaveCount(0);
+});
