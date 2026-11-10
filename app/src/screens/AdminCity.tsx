@@ -130,7 +130,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
         <span className={`ui-tag ${stateOf(k)[1]}`}>{stateOf(k)[0]}</span>
       </header>
       <div className="ui-scroll ui-today">
-        {!k.active && <p className="ui-meta">This kitchen is off. Customers cannot see it or order from it.{off ? ` Turned off by ${off.by ?? "an admin"}, ${when(off.at)}.` : ""}</p>}
+        {!k.active && <p role="status" className="ui-off-notice"><b>This kitchen is off.</b> Customers cannot see it or order from it.{off ? ` Turned off by ${(off.by ?? "an admin").split("@")[0]}, ${when(off.at)}.` : ""}</p>}
         <div className="ui-row ui-row-static"><span>Pin codes</span><span className="mono ui-row-sub">{k.pin_codes.length ? k.pin_codes.join(" · ") : "none"}</span></div>
         <div className="ui-row ui-row-static"><span>Hours</span><span className="mono ui-row-sub">{hhmm(k.opens_at) && hhmm(k.closes_at) ? `${hhmm(k.opens_at)} to ${hhmm(k.closes_at)}` : "Not set"}</span></div>
         <div className="ui-row ui-row-static"><span>Phone</span><span className="mono ui-row-sub">{k.phone ?? "Not set"}</span></div>
