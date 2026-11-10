@@ -30,7 +30,7 @@ const DELIVERED_FEE = { ...DELIVERED, total_paise: 87000 };
 const KITCHEN = { id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: "9876543210", pin_codes: ["110016"], open: true, active: true, lat: null, lng: null, opens_at: "00:00:00", closes_at: "23:59:00" };
 
 // The shared step (History, no orders yet), then this history and kitchen, the same page again, and History opened.
-async function reach(context: BrowserContext, page: Page, delivered: typeof DELIVERED = DELIVERED) {
+async function reach(context: BrowserContext, page: Page, delivered: Omit<typeof DELIVERED, "paid_by"> & { paid_by: string | null } = DELIVERED) {
   await STEPS["orders"](context, page, PATH);
   await context.route(isPath("/rest/v1/orders"), (r) => answer(r, [delivered]));
   await context.route(isPath("/rest/v1/kitchens"), (r) => answer(r, [KITCHEN]));
@@ -80,4 +80,21 @@ test("TC 26.2 Total equals the lines plus a delivery fee: the Delivery row adds 
   // The Delivery row is written as Free for every order (PlacedScreen.tsx:143), so the rows do not add up when a fee is charged.
   test.fail(true, "#1268: the Delivery row always reads Free (PlacedScreen.tsx:143) while the total carries the delivery fee, so the rows do not add up to Cash paid");
   expect(Number(amounts[0]) + Number(amounts[1]) + Number(amounts[2])).toBe(870);   // 640 + 190 + 40
+});
+
+// Story #1293: the customer's Yes never writes how the order was paid. The slip says what the record says, and never guesses cash.
+test("TC 26.3 Paid by UPI: the rider recorded UPI at the door, the total line reads Paid by UPI at the door and the amount", async ({ page, context }) => {
+  await reach(context, page, { ...DELIVERED, paid_by: "upi_door" });
+  const slip = page.getByRole("region", { name: "Order, delivered" });
+  await expect(slip.getByText("Paid by UPI at the door", { exact: true })).toBeVisible();
+  await expect(slip.locator(".ui-slip-total span")).toHaveText("₹830");
+  await expect(slip.getByText("Cash paid")).toHaveCount(0);
+});
+
+test("TC 26.4 No way recorded yet (the customer said Yes first): the total line reads Paid at the door, never Cash paid", async ({ page, context }) => {
+  await reach(context, page, { ...DELIVERED, paid_by: null });
+  const slip = page.getByRole("region", { name: "Order, delivered" });
+  await expect(slip.getByText("Paid at the door", { exact: true })).toBeVisible();
+  await expect(slip.locator(".ui-slip-total span")).toHaveText("₹830");
+  await expect(slip.getByText("Cash paid")).toHaveCount(0);
 });
