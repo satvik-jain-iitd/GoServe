@@ -136,12 +136,14 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
     };
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
 
+  const held = useRef<Place | null>(null);   // the confirmed pin while the details sheet is open
   useEffect(() => {   // the map stays behind the sheet, still, and shrinks to the part above it so the pin stays in view
     const m = live.current;
     if (!m) return;
     const h = m.map;
     for (const x of [h.dragging, h.touchZoom, h.doubleClickZoom]) (pick ? x.disable() : x.enable());
-    const c = pick ? pick.at : null;
+    const c = pick ? pick.at : held.current;   // bug #1203: on Change the map box grows back; without this the centre, and so the pin, slid about 260 m
+    held.current = pick ? pick.at : null;
     h.invalidateSize({ pan: false });
     if (c) h.setView([c.lat, c.lng], h.getZoom(), { animate: false });
   }, [pick]);
