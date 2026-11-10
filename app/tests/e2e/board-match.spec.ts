@@ -9,7 +9,7 @@ import { setup } from "./helpers";
 
 const OUT = resolve(import.meta.dirname, "../../test-results/board-match");
 type Reach = (context: BrowserContext, page: Page) => Promise<void>;
-const via = (step: string): Reach => (context, page) => STEPS[step](context, page, "/customer/");
+const via = (step: string): Reach => async (context, page) => { await STEPS[step](context, page, "/customer/"); };
 
 // Journey order. Each screen: its board, how the app gets there (the same steps as the screen pictures), and the sample words that differ from the board's (a dish, a price, an address).
 const SCREENS: { board: string; reach: Reach; alias?: Record<string, string | string[]>; note?: string }[] = [

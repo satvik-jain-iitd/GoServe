@@ -2,7 +2,7 @@
 import { expect, type BrowserContext, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { order, setup, typePlace } from "./helpers";
+import { SESSION, idN, order, orderN, setup, typePlace } from "./helpers";
 
 export type Screen = { name: string; path: string; width: number; height: number; step: string };
 export const screens: Screen[] = readFileSync(resolve(import.meta.dirname, "../../../docs/screens.txt"), "utf8")
@@ -37,7 +37,65 @@ async function deliverFrom(context: BrowserContext, page: Page, path: string, ro
   await page.getByRole("button", { name: /^(Home|Deliver to)\b/ }).first().click(); await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();
 }
 
-export const STEPS: Record<string, (context: BrowserContext, page: Page, path: string) => Promise<void>> = {
+export type Net = Awaited<ReturnType<typeof setup>>;
+const tabOf = (page: Page, name: string) => page.getByRole("button", { name, exact: true });
+// Story #1222 and #1224: the test people and orders of the kitchen and rider regression cases. No real person's data.
+export const TEST_PHONE = "+910000000000";
+export const TEST_RIDER = { user_id: "r-test", name: "Test Rider", phone: TEST_PHONE, online: true, lat: 28.55, lng: 77.2, location_at: "2020-01-01T09:58:00Z" };
+export const J = { ...order("ready"), kitchen_id: "k-1", rider_id: SESSION, customer_name: "Test Customer", customer_phone: TEST_PHONE };
+export const W = { ...order("out_for_delivery"), kitchen_id: "k-1", rider_id: SESSION, customer_name: "Test Customer", customer_phone: TEST_PHONE };
+export const KITCHEN_MENU = [
+  { id: "d1", name: "Butter Chicken", price_paise: 32000, image_url: null, image_credit: null, category: "Mains", available: true },
+  { id: "d2", name: "Dal Makhani", price_paise: 19000, image_url: null, image_credit: null, category: "Mains", available: true },
+  { id: "d3", name: "Gulab Jamun", price_paise: 9000, image_url: null, image_credit: null, category: "Desserts", available: false },
+  { id: "d4", name: "Kheer", price_paise: 11000, image_url: null, image_credit: null, category: "Desserts", available: true },
+];
+const todayAt = (h: number, m: number) => { const d = new Date(2026, 10, 10, h, m, 0); return d.toISOString(); };
+export const STEPS: Record<string, (context: BrowserContext, page: Page, path: string) => Promise<Net | void>> = {
+  // Kitchen app (story #1222, case files 41 to 51). Each returns the stand-in so a spec can push events and read calls.
+  "kitchen-signin": async (context, page, path) => { const net = await setup(context, page, [], { guest: true }); await page.goto(path); await expect(page.getByRole("heading", { name: "Sign in to cook" })).toBeVisible(); return net; },
+  "kitchen-not-staff": async (context, page, path) => { const net = await setup(context, page); await page.goto(path); await expect(page.getByRole("heading", { name: "Not kitchen staff yet" })).toBeVisible(); return net; },
+  "kitchen-new-empty": async (context, page, path) => { const net = await setup(context, page); net.state.kitchen = "k-1"; await page.goto(path); await expect(page.getByRole("heading", { name: "No new tickets" })).toBeVisible(); return net; },
+  "kitchen-new": async (context, page, path) => {   // two placed orders: T (No. 0f0f0f0f) and T2 (No. 22222222)
+    const net = await setup(context, page, [{ ...order("placed"), kitchen_id: "k-1" }, orderN(2, "placed")]); net.state.kitchen = "k-1"; await page.goto(path);
+    await expect(page.getByRole("button", { name: "Open ticket 0f0f0f0f" })).toBeVisible(); return net; },
+  "kitchen-new-note": async (context, page, path) => {
+    const net = await setup(context, page, [{ ...order("placed"), kitchen_id: "k-1", customer_name: "Test Customer", instructions: "Less spicy please. No peanuts, allergy." }, orderN(2, "placed")]); net.state.kitchen = "k-1"; await page.goto(path);
+    await expect(page.getByText("Says").first()).toBeVisible(); return net; },
+  "kitchen-ticket": async (context, page, path) => {
+    const net = await setup(context, page, [{ ...order("accepted"), kitchen_id: "k-1" }]); net.state.kitchen = "k-1"; await page.goto(path);
+    await tabOf(page, "Cooking").click(); await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click(); await expect(page.getByRole("heading", { name: "Ticket" })).toBeVisible(); return net; },
+  "kitchen-cooking": async (context, page, path) => {   // A (No. 11111111) cooking, B (No. 22222222) accepted, C (No. 33333333) ready with the test rider
+    const net = await setup(context, page, [orderN(1, "preparing"), orderN(2, "accepted"), orderN(3, "ready", { rider_id: TEST_RIDER.user_id })]); net.state.kitchen = "k-1";
+    net.state.riders = [TEST_RIDER]; Object.assign(net.state.kitchens[0], { lat: 28.5494, lng: 77.2001 });
+    await page.goto(path); await tabOf(page, "Cooking").click(); await expect(page.getByRole("button", { name: `Ready ${idN(1).slice(0, 8)}` })).toBeVisible(); return net; },
+  "kitchen-today": async (context, page, path) => {   // 19:00 on a fixed day, hours 11:00 to 22:00, four dishes in two groups, one sold out
+    await page.clock.install({ time: new Date(2026, 10, 10, 19, 0, 0) });
+    const net = await setup(context, page); net.state.kitchen = "k-1"; net.state.userEmail = "cook@example.test";
+    Object.assign(net.state.kitchens[0], { opens_at: "11:00:00", closes_at: "22:00:00" }); net.state.menu = KITCHEN_MENU;
+    await page.goto(path); await tabOf(page, "Today").click(); await expect(page.getByRole("switch", { name: "Open for orders" })).toBeVisible(); return net; },
+  // Rider app (story #1224, case files 61 to 70).
+  "rider-signin": async (context, page, path) => { const net = await setup(context, page, [], { guest: true }); net.state.rider = null; await page.goto(path); await expect(page.getByRole("heading", { name: "Sign in to ride" })).toBeVisible(); return net; },
+  "rider-not-rider": async (context, page, path) => { const net = await setup(context, page); net.state.rider = null; await page.goto(path); await expect(page.getByRole("heading", { name: "Not a rider yet" })).toBeVisible(); return net; },
+  "rider-offline": async (context, page, path) => { const net = await setup(context, page); net.state.rider = { user_id: SESSION, name: "Test Rider", online: false, lat: null, lng: null }; await page.goto(path); await expect(page.getByRole("heading", { name: "You are offline" })).toBeVisible(); return net; },
+  "rider-online": async (context, page, path) => { const net = await setup(context, page); await page.goto(path); await expect(page.getByRole("heading", { name: "Waiting for a delivery" })).toBeVisible(); return net; },
+  "rider-pickup": async (context, page, path) => {
+    const net = await setup(context, page, [J]); Object.assign(net.state.kitchens[0], { name: "Hauz Khas Kitchen", address: "Test Lane 1" });
+    await page.goto(path); await expect(page.getByRole("button", { name: "Pick up 0f0f0f0f" })).toBeVisible(); return net; },
+  "rider-on-the-way": async (context, page, path) => {
+    const net = await setup(context, page, [W]); Object.assign(net.state.kitchens[0], { name: "Hauz Khas Kitchen" });
+    await page.goto(path); await expect(page.getByRole("button", { name: "Delivered 0f0f0f0f", exact: true })).toBeVisible(); return net; },
+  "rider-delivered": async (context, page, path) => {
+    const net = (await STEPS["rider-on-the-way"](context, page, path)) as Net;
+    await page.getByRole("button", { name: "Delivered 0f0f0f0f", exact: true }).click(); await expect(page.getByRole("button", { name: "Next delivery" })).toBeVisible(); return net; },
+  "rider-today": async (context, page, path) => {   // 20:30; four deliveries today: 340 at 20:08, 260 at 19:21, 400 at 13:40, 360 at 13:02 (1360 in hand)
+    await page.clock.install({ time: new Date(2026, 10, 10, 20, 30, 0) });
+    const d = (n: number, rupees: number, h: number, m: number) => orderN(n, "delivered", { rider_id: SESSION, customer_name: `Test Customer ${n}`, total_paise: rupees * 100, updated_at: todayAt(h, m), created_at: todayAt(h, m - 2) });
+    const net = await setup(context, page, [d(1, 340, 20, 8), d(2, 260, 19, 21), d(3, 400, 13, 40), d(4, 360, 13, 2)]); Object.assign(net.state.kitchens[0], { opens_at: "11:00:00", closes_at: "22:00:00" });
+    await page.goto(path); await tabOf(page, "Today").click(); await expect(page.getByTestId("cash")).toBeVisible(); return net; },
+  "rider-me": async (context, page, path) => {
+    const net = await setup(context, page); net.state.rider = { user_id: SESSION, name: "Test Rider", phone: TEST_PHONE, online: true, lat: null, lng: null };
+    await page.goto(path); await tabOf(page, "Me").click(); await expect(page.getByRole("switch", { name: "Online" })).toBeVisible(); return net; },
   welcome: async (context, page, path) => { await setup(context, page, [], { guest: true }); await page.goto(path); await expect(page.getByRole("heading", { name: "One tap and you are in" })).toBeVisible(); },
   "welcome-phone": async (context, page, path) => { const net = await setup(context, page, [], { guest: true }); net.state.otpLogin = true; await page.goto(path); await expect(page.getByLabel("Mobile", { exact: true })).toBeVisible(); },
   menu: async (context, page, path) => { await setup(context, page); await page.goto(path); await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible(); },
