@@ -51,6 +51,7 @@ test("S4 the tracker shows an estimate and a Cancel button while the order is pl
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   await expect(page.getByText("20 min", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Cancel order" }).click();
+  await page.getByRole("dialog", { name: "Cancel this order?" }).getByRole("button", { name: "Yes, cancel the order" }).click();
   await expect.poll(() => net.calls.rpc.filter((c) => c.name === "cancel_order").length).toBe(1);
   expect(net.calls.rpc.find((c) => c.name === "cancel_order")!.body).toEqual({ p_order: ID, p_reason: null });
   net.push("UPDATE", order("cancelled", "2020-01-01T10:01:00Z"));
