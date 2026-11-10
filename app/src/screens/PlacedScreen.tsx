@@ -34,6 +34,7 @@ type Props = {
   onNotYet: () => void;
   onAllowReminder: () => void;
   onMenu: () => void;           // See the menu, with an empty cart (a delivered or cancelled order)
+  onAgain: () => void;          // the cancelled order's button: the bill with the same dishes (bug #1229)
   onBack: () => void;           // the chevron: back to the menu
   onCancel: () => void;         // story B3, #904: allowed while the order is placed or accepted
   cancelling: boolean;
@@ -84,10 +85,10 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "At your door" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
-export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, declined, eta }: Props) {
+export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onMenu, onAgain, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, declined, eta }: Props) {
   const [mapOpen, setMapOpen] = useState(false);   // story 1053: the full-screen rider map
   const steps = trackerSteps(status);
-  const { now } = useNowOnline();
+  const { now, online } = useNowOnline();
   const view = etaView(eta, now);
   const placed = new Date(placedAt);
   const door = view.kind === "time" ? clock12(view.by) : null;   // the clock the server's estimate lands on
@@ -100,9 +101,10 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
       <header className="ui-head">
         <BackChevron label="Back to menu" onClick={onBack} />
         <h1>{title}</h1>
-        {!delivered && !cancelled && status !== "placed" ? <span className="meta ui-livemark"><span aria-hidden="true" className="ui-live-dot" />Live</span> : <span className="meta">No. {shortId(order.id)}</span>}
+        {!delivered && !cancelled && status !== "placed" ? online ? <span className="meta ui-livemark"><span aria-hidden="true" className="ui-live-dot" />Live</span> : <span className="meta">Offline</span> : <span className="meta">No. {shortId(order.id)}</span>}
       </header>
       <div className="ui-scroll">
+        {!online && <p role="status" className="ui-offline">No connection. This page shows your last update and catches up when you are back online.</p>}   {/* bug #1228 */}
         {pay && status === "placed" && pay.state !== "paid" && (
           <div className="ui-paybox">
             {(pay.state === "ready" || pay.state === "starting") && (
@@ -143,7 +145,7 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
               <div><span>Delivery</span><span>Free</span></div>
             </div>
             <div className="ui-slip-rule" />
-            <div className="ui-slip-total"><b>{declined || cancelled ? "Nothing to pay" : pay?.state === "paid" ? "Paid online" : pay ? "To pay online" : delivered && paidBy === "cash" ? "Cash paid" : "Cash at door"}</b><span>{declined || cancelled ? formatRupees(0) : formatRupees(order.total_paise)}</span></div>
+            <div className="ui-slip-total"><b>{declined || cancelled ? "Nothing to pay" : pay?.state === "paid" ? "Paid online" : pay ? "To pay online" : delivered && paidBy === "cash" ? "Cash paid" : delivered && paidBy === "upi_door" ? "Paid by UPI at the door" : delivered ? "Paid at the door" : "To pay at door"}</b><span>{declined || cancelled ? formatRupees(0) : formatRupees(order.total_paise)}</span></div>
           </div>
         </section>
         <div className="ui-after">
@@ -164,7 +166,7 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
                 <p>“{declined.reason}”</p>
                 <p className="mono ui-declined-when">Declined {clock12(new Date(declined.at))} · {Math.max(0, Math.round((Date.parse(declined.at) - placed.getTime()) / 60_000))} min after you ordered</p>
               </div>
-              <p className="ui-meta">Your money is not taken. If you paid online, it comes back in 5 to 7 days.</p>
+              <p className="ui-meta">{pay ? "Your money is not taken. If you paid online, it comes back in 5 to 7 days." : "Nothing was charged."}</p>   {/* story #1261: a pay-at-door order never talks about paying online */}
             </>
           ) : cancelled && <p role="status"><strong>Your order was cancelled. Nothing to pay.</strong></p>}
           {asking && (
@@ -189,7 +191,7 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
       </div>
       {mapOpen && track && status === "out_for_delivery" && <RiderMapScreen t={track} orderNo={shortId(order.id)} door={door} onBack={() => setMapOpen(false)} onCall={onCall} />}
       <div className="ui-bottom">
-        {(delivered || cancelled) && <button type="button" className="ui-btn big" onClick={onMenu}>{declined ? "Order something else" : cancelled ? "Order again" : "See the menu"}</button>}
+        {(delivered || cancelled) && <button type="button" className="ui-btn big" onClick={cancelled && !declined ? onAgain : onMenu}>{declined ? "Order something else" : cancelled ? "Order again" : "See the menu"}</button>}
         {(status === "placed" || status === "accepted") && <button type="button" className="ui-btn ghost big" disabled={cancelling} onClick={onCancel}>Cancel order</button>}
         {track?.phone && status === "out_for_delivery" && <a href={`tel:${track.phone}`} className="ui-btn ghost big" onClick={onCall}>Call the rider</a>}
         {kitchenPhone && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}

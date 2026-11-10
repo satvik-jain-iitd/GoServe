@@ -52,11 +52,11 @@ export const actDeps = (): ActDeps => ({
 });
 
 // The staff screens keep the server's line; the customer's Yes shows our own line for every refusal (story #659).
-async function act(orderId: string, action: string, deps: ActDeps, mine: CustomerAction | null = null, reason?: string): Promise<{ order: PlacedOrder; alreadyDone: boolean }> {
+async function act(orderId: string, action: string, deps: ActDeps, mine: CustomerAction | null = null, reason?: string, method?: string): Promise<{ order: PlacedOrder; alreadyDone: boolean }> {
   let res: Response;
   try {
     res = await deps.fetchFn(`${deps.url}/functions/v1/order-actions`, {
-      method: "POST", headers: { "content-type": "application/json", apikey: deps.anon, authorization: `Bearer ${await deps.token()}` }, body: JSON.stringify(reason === undefined ? { order_id: orderId, action } : { order_id: orderId, action, reason }),
+      method: "POST", headers: { "content-type": "application/json", apikey: deps.anon, authorization: `Bearer ${await deps.token()}` }, body: JSON.stringify({ order_id: orderId, action, ...(reason === undefined ? {} : { reason }), ...(method === undefined ? {} : { method }) }),
     });
   } catch {
     throw new PlaceError(NO_INTERNET, "network");
@@ -80,11 +80,11 @@ export async function confirmDelivery(input: { orderId: string }, deps: ActDeps)
 }
 
 const STEP: Record<string, string> = { accepted: "accept", preparing: "prepare", ready: "ready", out_for_delivery: "pickup", delivered: "deliver" };
-export type StatusInput = { orderId: string; to: string };
+export type StatusInput = { orderId: string; to: string; method?: string };   // method: only for delivered, how the customer paid at the door (story 1262)
 export async function changeStatus(input: StatusInput, deps: ActDeps): Promise<{ order: PlacedOrder }> {
   const action = STEP[input.to];
   if (!action) throw new PlaceError("Something went wrong. Please try again.", "unknown");
-  return { order: (await act(input.orderId, action, deps)).order };
+  return { order: (await act(input.orderId, action, deps, null, undefined, input.method)).order };
 }
 
 // Story #934: the kitchen declines a new order with a reason the customer reads. The database allows it only for the kitchen or admin, while placed or accepted.

@@ -220,3 +220,8 @@ export function StaffLanding({ kicker, app, right, label, error, children }: { k
     </section>
   );
 }
+
+// Story #1276 (board K5-NoteBand): the customer's note for the kitchen, a filled band that wraps and is never cut. Spans, so it can sit inside a button.
+export function NoteBand({ text }: { text: string }) {
+  return <span className="ui-noteband"><span className="ui-noteband-label">Customer says</span><span className="ui-noteband-text">{text}</span></span>;
+}

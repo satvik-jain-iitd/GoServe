@@ -1,5 +1,7 @@
 // The customer flow in one place: menu, cart, bill, placed (story #48). No router yet: four steps in state.
 import { useEffect, useMemo, useRef, useState } from "react";
+import { fetchDoorMethods, type DoorMethod } from "./lib/doorMethods";
+import { readRiderQr } from "./lib/payMethods";
 import { addDish, cartLines, cartTotal, changeQty, reorderCart, toOrderItems, type Cart } from "./lib/cart";
 import { mergeOrder, riderOrders, cancelKind, shortId, statusLabel, type Order, type RiderAction, confirmHandover, isCash } from "./lib/kitchen";
 import { clientPlatform } from "./lib/platform";
@@ -129,6 +131,11 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [toast, setToast] = useState<string | null>(null);
   // Story #552: how you pay. cod = today's cash order. UPI or Card: the order is placed, then Pay now makes the payment (the state machine lives here).
   const [payMethod, setPayMethod] = useState<PayMethod>("cod");
+  // Story #1261 (board P6): the ways to pay at the door that Admin has on, read when the bill opens. The pick is only what the screen shows; the rider records how it was paid.
+  const [doorMethods, setDoorMethods] = useState<DoorMethod[] | null>(null);   // null: the read has not answered yet
+  const [doorPick, setDoorPick] = useState<DoorMethod | null>(null);
+  const doorValue: DoorMethod | null = doorMethods && doorPick && doorMethods.includes(doorPick) ? doorPick : doorMethods?.[0] ?? null;
+  useEffect(() => { if (step === "bill" && lock === "customer") void fetchDoorMethods(getClient()).then(setDoorMethods); }, [step, lock]);
   const [payState, setPayState] = useState<"ready" | "starting" | "waiting" | "failed" | null>(null);
   const [payError, setPayError] = useState<string | null>(null);
   const [payStart, setPayStart] = useState<string | null>(null);
@@ -596,9 +603,9 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
 
   // One tap for the kitchen and the rider: a status step or an event, sent as that role. The answer's updated_at decides which copy is newer.
   // Returns null when it worked, or the error code. The offline demo changes the local copy only and sends nothing.
-  async function act(order: Order, action: { kind: "status"; to: string } | RiderAction, actor: "kitchen" | "rider"): Promise<{ code: string; message: string } | null> {
+  async function act(order: Order, action: { kind: "status"; to: string } | RiderAction, actor: "kitchen" | "rider", method?: DoorMethod): Promise<{ code: string; message: string } | null> {
     if (demo) {
-      setOrders((cur) => mergeOrder(cur, { ...order, status: action.kind === "status" ? action.to : action.kind === "refused" ? "cancelled" : order.status, updated_at: new Date().toISOString() }));
+      setOrders((cur) => mergeOrder(cur, { ...order, status: action.kind === "status" ? action.to : action.kind === "refused" ? "cancelled" : order.status, updated_at: new Date().toISOString(), ...(method ? { paid_by: method } : {}) }));
       if (action.kind === "event") setArrived((cur) => new Set(cur).add(order.id));
       return null;
     }
@@ -613,16 +620,22 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         return null;
       }
       const deps = { orderId: order.id };
-      const { order: saved } = action.kind === "status" ? await changeStatus({ ...deps, to: action.to }, actDeps()) : await addEvent({ ...deps, event: action.event }, actDeps());
-      setOrders((cur) => mergeOrder(cur, { ...order, status: saved.status, updated_at: saved.updated_at }));
+      const { order: saved } = action.kind === "status" ? await changeStatus({ ...deps, to: action.to, method }, actDeps()) : await addEvent({ ...deps, event: action.event }, actDeps());
+      setOrders((cur) => mergeOrder(cur, { ...order, status: saved.status, updated_at: saved.updated_at, paid_by: saved.paid_by ?? method ?? order.paid_by ?? null }));
       if (action.kind === "event") setArrived((cur) => new Set(cur).add(order.id));
       return null;
     } catch (e) {
       // "Already done" for Arriving means an earlier tap went through (the page may have been reloaded): that is success, not an error.
-      if (e instanceof PlaceError && e.code === "already_done") {
+      if (e instanceof PlaceError && e.code === "already_done") {   // story 1262: for Delivered a second tap changes nothing; the first way it was paid stands
         if (action.kind === "event") setArrived((cur) => new Set(cur).add(order.id));
+        if (action.kind === "status" && action.to === "delivered") {   // the first answer may have been lost: read the order again and show how it was really paid
+          const { data } = await getClient().from("orders").select("id,status,updated_at,paid_by").eq("id", order.id);
+          const row = (data as { id: string; status: string; updated_at: string; paid_by: string | null }[] | null)?.find((r) => r.id === order.id);
+          if (row) setOrders((cur) => mergeOrder(cur, { ...order, status: row.status, updated_at: row.updated_at, paid_by: row.paid_by }));
+        }
         return null;
       }
+      if (e instanceof PlaceError && e.code === "method_off") loadRiderMethods();   // the setting changed under the rider: the UPI button and the QR go with it
       const message = e instanceof Error ? e.message : "Something went wrong. Please try again.";
       pushTrail(`error: ${message}`);
       live.setError(message);
@@ -783,14 +796,15 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // Story #977: Order again puts a delivered order back in the cart at today's menu; what cannot go back is named, a closed kitchen adds nothing.
   const [againLine, setAgainLine] = useState<string | null>(null);
   useEffect(() => { if (step !== "bill" && step !== "orders") setAgainLine(null); }, [step]);
-  function orderAgain(o: Order) {
-    if (shown?.kind === "closed") return setAgainLine(`${kitchenName || "The kitchen"} is closed now. Try again when it opens.`);
+  function orderAgain(o: Order): boolean {   // true when the bill opened
+    if (shown?.kind === "closed") { setAgainLine(`${kitchenName || "The kitchen"} is closed now. Try again when it opens.`); return false; }
     const { cart: next, left } = reorderCart(o.items, menu?.dishes ?? []);
-    if (Object.keys(next).length === 0) return setAgainLine(left.length ? `${left.join(", ")} ${left.length === 1 ? "is" : "are"} not on the menu today.` : "Nothing from this order can be added today.");
+    if (Object.keys(next).length === 0) { setAgainLine(left.length ? `${left.join(", ")} ${left.length === 1 ? "is" : "are"} not on the menu today.` : "Nothing from this order can be added today."); return false; }
     setCart(next);
     setAgainLine(left.length ? `${left.join(", ")} ${left.length === 1 ? "is" : "are"} not on the menu today.` : null);
     setError(null);
     setStep("bill");
+    return true;
   }
   const openOrderNow = orders.find((o) => !["delivered", "cancelled"].includes(o.status));
   const openLive = openOrderNow ? { label: statusLabel(openOrderNow.status), no: shortId(openOrderNow.id), onOpen: () => openOrder(openOrderNow) } : null;
@@ -937,9 +951,17 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     fetchKitchen(getClient(), jobKitchenId).then((k) => { if (alive) setJobKitchen(k); }).catch(() => undefined);
     return () => { alive = false; };
   }, [jobKitchenId]);
+  // Story 1262 (board R7): the ways to collect at the door that are on. null until the read answers; [] when it failed. The rider screen names no method until it has the answer.
+  const [riderMethods, setRiderMethods] = useState<DoorMethod[] | null>(demo ? ["cash", "upi_door"] : null);
+  const [riderQr, setRiderQr] = useState<string | null | undefined>(undefined);   // undefined: the read has not answered yet
+  const loadRiderMethods = () => {
+    if (demo) return;
+    setRiderMethods(null); setRiderQr(undefined);
+    void Promise.all([readRiderQr(getClient()), fetchDoorMethods(getClient())]).then(([q, m]) => { setRiderQr(q.ok ? q.url : null); setRiderMethods(q.ok ? m : []); });   // both answers land together; a failed QR read is the failed state, never "no QR"
+  };
   const riderScreen = (gate: RiderGateState | null) => (
     <RiderScreen orders={orders} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
-      onAct={(o, a) => act(o, a, "rider")} gate={gate} kitchen={jobKitchen} />
+      onAct={(o, a, method) => act(o, a, "rider", method)} methods={riderMethods} qrUrl={riderQr} onLoadMethods={loadRiderMethods} gate={gate} kitchen={jobKitchen} />
   );
   const riderView = lock === "rider" ? <RiderGate>{riderScreen}</RiderGate> : riderScreen(null);
   // Story #229: the kitchen confirms a rider's cash. The rows are stamped here too, so the screen does not wait for the next read.
@@ -1008,7 +1030,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         {menu && step === "bill" && (
           <BillScreen notice={againLine} note={note} onNote={setNote} lines={billLines} total={total} soldOut={dead && step === "bill" ? { id: dead.dish.id, name: dead.dish.name, alt: offers.alt, canSwap, onSwap: () => setSwapped((s) => [...s, dead.dish.id]), onRemove: () => takeOut(dead.dish.id) } : undefined} offers={OFFERS_ON && offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove } : undefined} kitchenName={kitchenName} pin={pin} address={address} onAddress={setAddress}
             details={lock === "customer" ? { name, phone, onName: setName, onPhone: setPhone, gate } : undefined}
-            pay={lock === "customer" ? { value: payMethod, onChange: setPayMethod } : undefined} sending={sending} error={error}
+            door={lock === "customer" ? { methods: doorMethods ?? [], value: doorValue, onChange: setDoorPick } : undefined} sending={sending} error={error}
             onBack={() => setStep("menu")} onPlace={place} />
         )}
         {step === "placed" && placed && (
@@ -1020,7 +1042,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             declined={tracked && cancelKind(tracked) === "declined" ? { reason: (tracked as Order).cancel_reason ?? "", at: tracked.updated_at } : null}
             asking={asking} busy={confirming} error={confirmError} reminder={reminder}
             onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} pay={paidNow || payState || resumedOnline ? { state: paidNow ? "paid" : payState ?? "waiting", method: payMethod === "cod" ? "upi" : payMethod, startedAt: payState ? payStart : null, error: payError, onPay: payNow, onCash: payCash, onSimulate: () => void simulatePaid(import.meta.env.VITE_PAYMENTS_DEV_SECRET ?? "", payRef.current) } : undefined}
-            onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} atDoor={atDoor} track={riderTrack} eta={eta} onCall={() => void tapCall(getClient(), placed.id)} />
+            onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }}
+            onAgain={() => { const o = orders.find((x) => x.id === placed.id); setPlaced(null); if (!o || !orderAgain(o)) { setCart({}); setStep("menu"); } }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} atDoor={atDoor} track={riderTrack} eta={eta} onCall={() => void tapCall(getClient(), placed.id)} />
         )}
     </>
   );

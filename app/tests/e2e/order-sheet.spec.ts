@@ -17,7 +17,7 @@ test("S1 the New row has no Accept; a tap opens the order sheet with Accept and 
   await expect(sheet.getByText("Flat 4, Green Park")).toBeVisible();
   await expect(sheet.getByText("Rider collects")).toBeVisible();
   await expect(sheet.getByText("Swipe down to leave it waiting")).toHaveCount(0);   // story #1044
-  await expect(sheet.getByText(/says$/)).toHaveCount(0);   // instructions wait for story 935
+  await expect(sheet.getByText("Customer says")).toHaveCount(0);   // instructions wait for story 935
   await sheet.getByRole("button", { name: "Accept 0f0f0f0f" }).click();
   await expect.poll(() => net.calls.status.length).toBe(1);
   expect(net.calls.status[0].body).toEqual({ order_id: ID, action: "accept" });
@@ -69,7 +69,7 @@ test("S4 the Orders row says Declined with the kitchen's line, and the slip show
   await expect(page.getByRole("heading", { name: "Declined" })).toBeVisible();
   await expect(page.getByText(`“${REASON}”`)).toBeVisible();
   await expect(page.getByText("Nothing to pay")).toBeVisible();
-  await expect(page.getByText("Your money is not taken. If you paid online, it comes back in 5 to 7 days.")).toBeVisible();
+  await expect(page.getByText("Nothing was charged.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Order something else" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Try another kitchen" })).toHaveCount(0);
   await page.getByRole("button", { name: "Order something else" }).click();

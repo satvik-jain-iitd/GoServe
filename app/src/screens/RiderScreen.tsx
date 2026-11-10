@@ -3,18 +3,23 @@ import { useState } from "react";
 import { deliveredToday, hhmm, riderActions, riderOrders, shortId, type Order, type RiderAction } from "../lib/kitchen";
 import { formatRupees } from "../lib/money";
 import { cashInHand, firstName, handedOver, hoursOf, locationLabel, type KitchenCard, type RiderGateState } from "../lib/rider";
+import type { DoorMethod } from "../lib/doorMethods";
 import { Skeleton, Tabs } from "../ui";
 
 type Tab = "job" | "today" | "me";
 type Props = {
   orders: Order[]; loading: boolean; error: string | null; busyId: string | null; arrived: Set<string>;
-  onAct: (order: Order, action: RiderAction) => Promise<{ code: string; message: string } | null>;
+  onAct: (order: Order, action: RiderAction, method?: DoorMethod) => Promise<{ code: string; message: string } | null>;
+  methods: DoorMethod[] | null;   // story 1262: the ways to collect that are on; null while the read is on its way, [] when it failed
+  qrUrl: string | null | undefined;   // story 1263: the QR the admin uploaded; null when none is set or the read failed; undefined while the read is on its way
+  onLoadMethods: () => void;
   gate: RiderGateState | null;   // null in the demo console: no online switch, no sign out
   kitchen: KitchenCard | null;   // the kitchen of the delivery in hand
 };
 const TABS: { key: Tab; label: string; icon: Tab }[] = [{ key: "job", label: "Delivery", icon: "job" }, { key: "today", label: "Today", icon: "today" }, { key: "me", label: "Me", icon: "me" }];
 
-export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, gate, kitchen }: Props) {
+export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, methods: methodsRead, qrUrl, onLoadMethods, gate, kitchen }: Props) {
+  const methods = qrUrl === undefined ? null : methodsRead;   // the screen names nothing until both answers are in
   const [tab, setTab] = useState<Tab>("job");
   const [doneId, setDoneId] = useState<string | null>(null);   // the slip just delivered stays until "Next delivery" (R7)
   const jobs = riderOrders(orders);
@@ -23,10 +28,14 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, ga
   const today = deliveredToday(orders, new Date(), hoursOf(kitchen));   // story #229: the day ends at the kitchen's closing time
   const cash = cashInHand(today);
   const handed = handedOver(today);
-  const act = async (o: Order, a: RiderAction) => {
-    const failed = await onAct(o, a);
-    if (!failed && a.kind === "status" && a.to === "delivered") setDoneId(o.id);
+  const paidLabel = (p: string | null | undefined) => (p === "upi_door" ? "Paid by UPI" : p === "cash" ? "Cash collected" : "Collected");   // never guess cash: an empty paid_by is just Collected
+  const [brokenQr, setBrokenQr] = useState<string | null>(null);
+  const [collectId, setCollectId] = useState<string | null>(null);   // story 1262, board R7: "Delivered" opens Collect payment first
+  const act = async (o: Order, a: RiderAction, method?: DoorMethod) => {
+    const failed = await onAct(o, a, method);
+    if (!failed && a.kind === "status" && a.to === "delivered") { setCollectId(null); setDoneId(o.id); }
   };
+  const openCollect = (o: Order) => { setCollectId(o.id); onLoadMethods(); };
   const button = (o: Order, a: RiderAction, text: string, ghost = false) => (
     <button key={a.label} type="button" className={ghost ? "ui-btn ghost big" : "ui-btn big"} aria-label={`${a.label} ${shortId(o.id)}`}
       disabled={busyId === o.id || (a.kind === "event" && arrived.has(o.id))} onClick={() => void act(o, a)}>{text}</button>
@@ -48,6 +57,42 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, ga
 
   const jobView = () => {
     if (loading && orders.length === 0) return <div className="ui-pad"><Skeleton lines={3} /></div>;
+    const collecting = collectId ? jobs.find((o) => o.id === collectId) ?? null : null;
+    if (collecting && !done) {   // R7 Collect payment: the rider says how it was paid, and that marks the order delivered
+      const deliver = riderActions(collecting.status).find((a) => a.kind === "status" && a.to === "delivered");
+      const amount = formatRupees(collecting.total_paise);
+      const busy = busyId === collecting.id;
+      const qrShown = qrUrl && brokenQr !== qrUrl ? qrUrl : null;   // a picture that will not load counts as no QR
+      const upiOn = methods?.includes("upi_door") ?? false;
+      const upi = upiOn && qrShown !== null;   // no QR to show: no UPI button either
+      const upiNeedsQr = upiOn && qrShown === null;
+      const cash = methods?.includes("cash") ?? false;
+      return (
+        <>
+          <section className="ui-slip ui-slip-pad" aria-label={`Collect payment ${shortId(collecting.id)}`}>
+            <div className="ui-slip-body">
+              <div className="ui-slip-head"><span>Collect payment</span><span>{collecting.customer_name || "The customer"}</span></div>
+              <div className="ui-slip-total"><b>To collect</b><span data-testid="collect-total">{amount}</span></div>
+              {methods === null && <p className="ui-meta" role="status" aria-live="polite">Checking how this customer can pay…</p>}
+              {methods !== null && methods.length === 0 && <p className="ui-meta">We could not check how to collect. Try again.</p>}
+              {upi && (
+                <div className="ui-qr">
+                  <img src={qrShown!} width={200} height={200} alt="UPI QR to scan" onError={() => setBrokenQr(qrUrl ?? null)} />
+                </div>
+              )}
+              {upi && <p className="ui-meta">Wait for the customer's paid screen. Then tap below.</p>}
+              {upiNeedsQr && <p className="ui-meta">UPI at the door has no QR yet. Take cash, or ask the admin to upload the QR.</p>}
+            </div>
+          </section>
+          <div className="ui-bottom">
+            {methods !== null && methods.length === 0 && <button type="button" className="ui-btn big" onClick={onLoadMethods}>Try again</button>}
+            {deliver && cash && <button type="button" className={upi ? "ui-btn ghost big" : "ui-btn big"} disabled={busy} onClick={() => void act(collecting, deliver, "cash")}>Took cash {amount}</button>}
+            {deliver && upi && <button type="button" className="ui-btn big" disabled={busy} onClick={() => void act(collecting, deliver, "upi_door")}>Paid by UPI {amount}</button>}
+            <button type="button" className="ui-btn text" disabled={busy} onClick={() => setCollectId(null)}>Back</button>
+          </div>
+        </>
+      );
+    }
     if (done) return (   // R7
       <>
         <section className="ui-slip ui-slip-pad" aria-label={`Order ${shortId(done.id)}`}>
@@ -56,7 +101,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, ga
             <div className="ui-slip-stamp"><span className="ui-stamp delivered">Delivered</span></div>
             <p className="ui-clock">At the door <b>{hhmm(done.updated_at)}</b></p>
             <div className="ui-slip-rule" />
-            <div className="ui-slip-total"><b>Cash collected</b><span>{formatRupees(done.total_paise)}</span></div>
+            <div className="ui-slip-total"><b>{paidLabel(done.paid_by)}</b><span>{formatRupees(done.total_paise)}</span></div>
           </div>
         </section>
         {todayLine}
@@ -87,7 +132,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, ga
                 </>
               )}
               <div className="ui-slip-rule" />
-              <div className="ui-slip-total"><b>Collect cash</b><span>{formatRupees(job.total_paise)}</span></div>
+              <div className="ui-slip-total"><b>To collect at door</b><span>{formatRupees(job.total_paise)}</span></div>
               {callRow(job)}
             </div>
           </section>
@@ -96,7 +141,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, ga
             {out ? (
               <>
                 {button(job, first, `Arriving · tell ${firstName(job.customer_name)}`, true)}
-                {rest[0] && button(job, rest[0], "Delivered")}
+                {rest[0] && <button key="deliver" type="button" className="ui-btn big" aria-label={`${rest[0].label} ${shortId(job.id)}`} disabled={busyId === job.id} onClick={() => openCollect(job)}>Delivered</button>}
                 {rest[1] && <button type="button" className="ui-btn text" aria-label={`${rest[1].label} ${shortId(job.id)}`} disabled={busyId === job.id} onClick={() => void act(job, rest[1])}>Not delivered</button>}
               </>
             ) : button(job, first, "Picked up")}
@@ -138,6 +183,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, ga
             <div key={o.id} className="ui-row ui-row-static">
               <span className="ui-row-label"><span className="ui-row-sub mono">No. {shortId(o.id)} · {hhmm(o.updated_at)}</span><span>{o.customer_name || "Customer"} · {o.address}</span></span>
               <span className="mono">{formatRupees(o.total_paise)}</span>
+              <span className="ui-row-sub mono">{paidLabel(o.paid_by)}</span>
             </div>
           ))}
         </div>

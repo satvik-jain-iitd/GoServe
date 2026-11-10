@@ -11,13 +11,14 @@ test("S1 the Job tab holds the one delivery in hand: pick up, on the way, delive
   await page.goto("/rider/");
   await expect(page.getByText("Pick up at")).toBeVisible();
   await expect(page.getByText("Tau Ka Dhaba")).toBeVisible();
-  await expect(page.getByText("Collect cash")).toBeVisible();
+  await expect(page.getByText("To collect at door")).toBeVisible();
   await expect(page.getByRole("link", { name: "Call Rahul" })).toHaveAttribute("href", "tel:9876543210");
   await page.getByRole("button", { name: "Pick up 0f0f0f0f" }).click();
   await expect(page.getByText("On the way", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Arriving 0f0f0f0f" }).click();
   await expect(page.getByRole("button", { name: "Arriving 0f0f0f0f" })).toBeDisabled();
   await page.getByRole("button", { name: "Delivered 0f0f0f0f", exact: true }).click();
+  await page.getByRole("button", { name: /^Took cash/ }).click();   // story 1262
   await expect(page.getByText("Cash collected")).toBeVisible();
   await page.getByRole("button", { name: "Next delivery" }).click();
   await expect(page.getByRole("heading", { name: "Waiting for a delivery" })).toBeVisible();
@@ -73,12 +74,16 @@ for (const theme of ["day", "night"] as const) {
   test(`S6 the rider screens have no serious contrast or role violation in ${theme}`, async ({ page, context }) => {
     await context.addInitScript((v) => localStorage.setItem("gs-theme", v), theme);
     const net = await setup(context, page, [{ ...order("ready"), rider_id: SESSION, customer_name: "Rahul Verma", customer_phone: "9876543210" }], { guest: true });
+    net.state.qrObject = "qr-0a1b2c3d-0000-4000-8000-0123456789ab.png";   // story 1263: UPI at the door needs an uploaded QR
     await page.goto("/rider/");
-    await expect(page.getByText("Collect cash")).toBeVisible();
+    await expect(page.getByText("To collect at door")).toBeVisible();
     const scan = async () => expect(await axeScan(page, ["wcag2a", "wcag2aa"])).toEqual([]);
     await scan();   // R5 pick up
     await page.getByRole("button", { name: "Pick up 0f0f0f0f" }).click();
     await page.getByRole("button", { name: "Delivered 0f0f0f0f", exact: true }).click();
+    await expect(page.getByRole("button", { name: /^Paid by UPI/ })).toBeVisible();
+    await scan();   // R7 collect payment, with the QR
+    await page.getByRole("button", { name: /^Took cash/ }).click();   // story 1262
     await expect(page.getByText("Cash collected")).toBeVisible();
     await scan();   // R7 delivered
     await page.getByRole("button", { name: "Next delivery" }).click();

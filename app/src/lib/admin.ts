@@ -117,6 +117,27 @@ export async function removeKitchen(c: Client, kitchenId: string): Promise<strin
     ? `This kitchen has ${count} open ${count === 1 ? "order" : "orders"}. Finish or cancel them first.`
     : "This kitchen has open orders. Finish or cancel them first.";
 }
+/** Story #1280 (board A13): the admin turns an off kitchen back on. It comes back closed for orders. null when it worked, else a line that is true for the admin. */
+export async function turnKitchenOn(c: Client, kitchenId: string): Promise<string | null> {
+  const { data, error } = await c.rpc("kitchen_turn_on", { p_kitchen: kitchenId });
+  if (error) {
+    if (error.message?.includes("not_allowed")) return "Only an admin can turn a kitchen on.";
+    if (error.code === "PGRST202" || !error.code || /fetch|network/i.test(error.message ?? "")) return COULD_NOT_REACH;
+    return "Could not turn the kitchen on. Try again.";
+  }
+  return data?.ok === true ? null : "Could not turn the kitchen on. Try again.";
+}
+/** Who turned a kitchen off, and when: the newest off row of the log (story #1280). Any failure is "unknown" and the page still stands. */
+export type OffInfo = { by: string | null; at: string };
+export async function offInfoOf(c: Client, kitchenId: string): Promise<OffInfo | null> {
+  try {
+    const { data, error } = await c.from("kitchen_active_log").select("by_label, at").eq("kitchen_id", kitchenId).eq("active", false).order("at", { ascending: false }).limit(1);
+    if (error || !data?.length) return null;
+    return { by: (data[0] as { by_label: string | null }).by_label, at: (data[0] as { at: string }).at };
+  } catch {
+    return null;
+  }
+}
 export const removePerson = async (c: Client, p: Person) => adminMessage((await c.rpc("admin_remove_person", { p_kind: p.kind, p_user: p.user_id, p_kitchen: p.kitchen_id })).error);
 
 // Menu (story A3). Prices are typed in rupees and kept in paise.
