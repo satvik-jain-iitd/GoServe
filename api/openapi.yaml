@@ -362,6 +362,7 @@ paths:
                 order_id: { type: string, format: uuid }
                 action: { enum: [accept, prepare, ready, pickup, arriving, deliver, confirm, cancel] }
                 reason: { type: string, maxLength: 200 }
+                method: { enum: [cash, upi_door], description: "deliver only: how the customer paid at the door. Left out, it counts as cash while cash is on." }
       responses:
         "200":
           description: The step was taken. The order carries its new status.

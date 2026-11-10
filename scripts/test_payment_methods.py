@@ -106,6 +106,14 @@ class PaymentMethods(unittest.TestCase):
                 final=f"(select count(*) from orders where id = '{O}' and status = 'delivered' and (paid_by is null or paid_by = 'cash')) as cash_rows")
         self.assertEqual(r["cash_rows"], 0, r)
 
+    def test_s18_a_second_deliver_with_another_method_is_already_done_and_paid_by_stays(self):
+        r = run(to_out_for_delivery(), act(RIDER, "deliver", "cash"), act(RIDER, "deliver", "upi_door"), final=PAID)
+        self.assertEqual((r["rs"][-2]["ok"], r["rs"][-1]["ok"], r["rs"][-1]["error"], r["paid_by"], r["status"]), (True, False, "already_done", "cash", "delivered"), r)
+
+    def test_s19_a_second_deliver_with_the_same_method_is_already_done_too_and_nothing_moves(self):
+        r = run(to_out_for_delivery(), act(RIDER, "deliver", "upi_door"), act(RIDER, "deliver", "upi_door"), final=PAID)
+        self.assertEqual((r["rs"][-1]["error"], r["paid_by"], r["status"]), ("already_done", "upi_door", "delivered"), r)
+
 
 if __name__ == "__main__":
     unittest.main()

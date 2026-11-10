@@ -254,7 +254,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
     }
     calls.status.push({ headers: req.headers(), body });
     const to: Record<string, string> = { accept: "accepted", prepare: "preparing", ready: "ready", pickup: "out_for_delivery", arriving: "out_for_delivery", deliver: "delivered", cancel: "cancelled" };
-    const r = state.reply ?? { status: 200, body: { ok: true, order: order(to[body.action] ?? "placed", later) } };
+    const r = state.reply ?? { status: 200, body: { ok: true, order: { ...order(to[body.action] ?? "placed", later), ...(body.action === "deliver" ? { paid_by: body.method ?? null } : {}) } } };
     return json(route, r.status, r.body);
   });
   await context.route("https://orders.test/**", async (route) => {

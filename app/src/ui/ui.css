@@ -846,3 +846,8 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-reason { margin: 0 0 12px; text-align: center; font-size: var(--gs-text-sm); color: var(--gs-text-muted); }
 .ui-sticky.float:has(.ui-reason) { flex-direction: column; align-items: center; }
 .ui-sticky.float:has(.ui-reason) .ui-btn { width: 100%; }
+
+/* story 1262, board R7: the sample QR card on Collect payment. The picture is one file (public/qr-sample.svg), easy to replace. */
+.ui-qr { display: flex; flex-direction: column; align-items: center; gap: var(--gs-space-2); padding: var(--gs-space-4) 0; }
+.ui-qr img { display: block; max-width: 100%; height: auto; }
+.ui-qr .mono { font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
