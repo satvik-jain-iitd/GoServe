@@ -1,7 +1,7 @@
 // The City of the admin app on the Ink v3 boards A5 (city), A6 (one kitchen) and A7 (add a kitchen) (story H12, #195; stories A2, A3, A5).
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DangerSheet, useSheetFit } from "../ui";
-import { addKitchen, addPerson, cancelInvite, inviteLink, isOwner, parsePins, removeKitchen, removePerson, locOf, setKitchenLocation, setKitchenDetails, type Invite, type KitchenRow, type Loc, type Person, type PersonKind, type RiderListRow } from "../lib/admin";
+import { addKitchen, addPerson, cancelInvite, inviteLink, isOwner, parsePins, offInfoOf, removeKitchen, removePerson, turnKitchenOn, locOf, setKitchenLocation, setKitchenDetails, type Invite, type OffInfo, type KitchenRow, type Loc, type Person, type PersonKind, type RiderListRow } from "../lib/admin";
 import { kitchenProblem } from "../lib/validate";
 import { getClient } from "../lib/supabase";
 import { AdminMenu } from "./AdminMenu";
@@ -13,6 +13,7 @@ const EMPTY = { name: "", address: "", phone: "", pins: "", opensAt: "", closesA
 const hhmm = (t: string | null | undefined) => (t ? t.slice(0, 5) : null);
 /** Open (serving), Closed (the switch is off today), Off (taken out of the system, active false). */
 const stateOf = (k: KitchenRow): [string, string] => (!k.active ? ["Off", "error"] : k.open ? ["Open", "ready"] : ["Closed", "placed"]);
+const when = (iso: string) => `${day(iso)}, ${new Date(iso).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" })}`;   // story #1280
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" });
 const BACK = <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>;
 
@@ -27,6 +28,20 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
   const [invited, setInvited] = useState<{ email: string; kind: "kitchen" | "rider" | "admin" } | null>(null);   // story 875: the "Invite ready" box
   const [shareNote, setShareNote] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);   // story 900, board A8: the confirm sheet of Remove this kitchen
+  const [off, setOff] = useState<OffInfo | null>(null);   // story #1280 (board A13): who turned this kitchen off, and when
+  const [turningOn, setTurningOn] = useState(false);
+  const tapped = useRef(false);   // two fast taps are one call
+  const viewId = view.kind === "kitchen" ? view.id : null;
+  const viewActive = viewId ? kitchens.find((x) => x.id === viewId)?.active : undefined;
+  useEffect(() => { setOff(null); if (viewId && viewActive === false) void offInfoOf(getClient(), viewId).then(setOff); }, [viewId, viewActive]);
+  const turnOn = async (id: string) => {
+    if (tapped.current) return;
+    tapped.current = true; setTurningOn(true); onError(null);
+    const failed = await turnKitchenOn(getClient(), id);
+    tapped.current = false; setTurningOn(false);
+    onError(failed);
+    if (!failed) await reload();
+  };
   const [editing, setEditing] = useState(false);   // story #990, board K-EditKitchen
   const [addError, setAddError] = useState<string | null>(null);   // story 885: the add-person line sits under the form, next to its button
   const invitesOf = (id: string) => invites.filter((i) => i.kind === "kitchen" && i.kitchen_id === id);
@@ -115,6 +130,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
         <span className={`ui-tag ${stateOf(k)[1]}`}>{stateOf(k)[0]}</span>
       </header>
       <div className="ui-scroll ui-today">
+        {!k.active && <p role="status" className="ui-off-notice"><b>This kitchen is off.</b> Customers cannot see it or order from it.{off ? ` Turned off by ${(off.by ?? "an admin").split("@")[0]}, ${when(off.at)}.` : ""}</p>}
         <div className="ui-row ui-row-static"><span>Pin codes</span><span className="mono ui-row-sub">{k.pin_codes.length ? k.pin_codes.join(" · ") : "none"}</span></div>
         <div className="ui-row ui-row-static"><span>Hours</span><span className="mono ui-row-sub">{hhmm(k.opens_at) && hhmm(k.closes_at) ? `${hhmm(k.opens_at)} to ${hhmm(k.closes_at)}` : "Not set"}</span></div>
         <div className="ui-row ui-row-static"><span>Phone</span><span className="mono ui-row-sub">{k.phone ?? "Not set"}</span></div>
@@ -123,7 +139,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
         <KitchenLocation loc={locOf(k)} name={k.name} pins={k.pin_codes} onChange={async (loc) => { const failed = await setKitchenLocation(getClient(), k.id, loc); onError(failed); if (!failed) await reload(); }} />
         <section className="ui-group" aria-label="Staff">
           <h2>Staff <span className="mono">{staffOf(k.id).length}{invitesOf(k.id).length > 0 && ` · ${invitesOf(k.id).length} invited`}</span></h2>
-          {staffOf(k.id).length === 0 && invitesOf(k.id).length === 0 && <p className="ui-meta">No staff yet. Add a person from the City tab.</p>}
+          {staffOf(k.id).length === 0 && invitesOf(k.id).length === 0 && <p className="ui-meta">{k.active ? "No staff yet. Add a person from the City tab." : "Staff were taken off when this kitchen was turned off. Add them again after you turn it on."}</p>}
           {staffOf(k.id).map((p) => <div key={p.user_id} className="ui-row ui-row-static"><span className="ui-row-label"><span>{firstName(p)}</span><span className="ui-row-sub mono">{p.email ?? p.user_id}</span></span>{removeButton(p)}</div>)}
           {invitesOf(k.id).map(inviteRow)}
         </section>
@@ -140,7 +156,10 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
         )}
       </div>
       {removing && <RemoveSheet kitchen={k} onClose={() => setRemoving(false)} onRemoved={reload} />}
-      {k.phone && <div className="ui-bottom"><a className="ui-btn big" href={`tel:${k.phone}`}>Call {k.name}</a></div>}
+      {(k.phone || !k.active) && <div className="ui-bottom">
+        {k.phone && <a className={k.active ? "ui-btn big" : "ui-btn ghost big"} href={`tel:${k.phone}`}>Call {k.name}</a>}
+        {!k.active && <button type="button" className="ui-btn big" disabled={turningOn} onClick={() => void turnOn(k.id)}>Turn kitchen back on</button>}
+      </div>}
     </>
   );
   const open = kitchens.filter((x) => x.open && x.active).length;

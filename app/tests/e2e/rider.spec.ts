@@ -17,10 +17,11 @@ test("S1 rider steps: pick up, arriving, delivered each send their step as the r
   await page.getByRole("button", { name: "Arriving 0f0f0f0f" }).click();
   await expect(page.getByRole("button", { name: "Arriving 0f0f0f0f" })).toBeDisabled();   // done once; the server refuses a repeat
   await page.getByRole("button", { name: "Delivered 0f0f0f0f", exact: true }).click();
+  await page.getByRole("button", { name: /^Took cash/ }).click();   // story 1262: Delivered opens Collect payment first
   await page.getByRole("button", { name: "Next delivery" }).click();   // H11: the delivered slip stays until the rider lets it go
   await expect(page.getByText("No. 0f0f0f0f")).toHaveCount(0);   // delivered orders leave the Job tab
   expect(net.calls.status.map((c) => c.body)).toEqual([
-    { order_id: ID, action: "pickup" }, { order_id: ID, action: "arriving" }, { order_id: ID, action: "deliver" },
+    { order_id: ID, action: "pickup" }, { order_id: ID, action: "arriving" }, { order_id: ID, action: "deliver", method: "cash" },
   ]);
   expect(net.calls.status[0].headers["authorization"]).toMatch(/^Bearer .+/);
   expect(net.calls.status[0].headers["x-gs-token"]).toBeUndefined();
