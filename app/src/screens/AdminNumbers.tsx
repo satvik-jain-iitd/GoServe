@@ -135,7 +135,7 @@ function EarlyFriendSettings() {
         <span className="ui-inline">
           <span className="mono">₹</span>
           <input type="number" min={10} max={500} step={1} value={text} aria-label="Early friend amount, rupees" className="mono ui-pct" disabled={!now} onChange={(e) => { setText(e.target.value); setLine(null); }} />
-          <button type="button" className="ui-btn" disabled={!now || busy} onClick={() => void save(now?.on === true, text)}>Save</button>
+          <button type="button" className="ui-btn" disabled={!now || busy} onClick={() => void save(now?.on === true, text)}>Set amount</button>
         </span>
       </div>
       {now && <p className="mono ui-foot">Now {now.on ? `on, ₹${now.amount_paise / 100}` : "off"} · set by {now.updated_by ?? "the system"}, {when(now.updated_at)}</p>}
