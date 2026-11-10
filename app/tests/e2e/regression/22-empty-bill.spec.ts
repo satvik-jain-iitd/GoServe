@@ -30,13 +30,13 @@ async function openEmptyBill(context: BrowserContext, page: Page) {
   await expect(emptyBill(page)).toBeVisible();
 }
 
-test("TC 22.1 Look: Nothing on it yet, Add a dish from the menu, See the menu, Cash at door Rs 0", async ({ page, context }) => {
+test("TC 22.1 Look: Nothing on it yet, Add a dish from the menu, See the menu, To pay at door Rs 0", async ({ page, context }) => {
   await openEmptyBill(context, page);
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();   // proves the bill screen shows, not the menu
   await expect(page.getByRole("heading", { name: "Nothing on it yet" })).toBeVisible();
   await expect(emptyBill(page).getByText("Add a dish from the menu.", { exact: true })).toBeVisible();
   await expect(emptyBill(page).getByRole("button", { name: "See the menu" })).toBeVisible();
-  await expect(emptyBill(page).getByText("Cash at door", { exact: true })).toBeVisible();
+  await expect(emptyBill(page).getByText("To pay at door", { exact: true })).toBeVisible();
   await expect(emptyBill(page).getByText("₹0", { exact: true })).toBeVisible();   // the case says Rs 0; the app prints the rupee sign
 });
 

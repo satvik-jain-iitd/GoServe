@@ -69,7 +69,7 @@ test("S4 the Orders row says Declined with the kitchen's line, and the slip show
   await expect(page.getByRole("heading", { name: "Declined" })).toBeVisible();
   await expect(page.getByText(`“${REASON}”`)).toBeVisible();
   await expect(page.getByText("Nothing to pay")).toBeVisible();
-  await expect(page.getByText("Your money is not taken. If you paid online, it comes back in 5 to 7 days.")).toBeVisible();
+  await expect(page.getByText("Nothing was charged.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Order something else" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Try another kitchen" })).toHaveCount(0);
   await page.getByRole("button", { name: "Order something else" }).click();
