@@ -17,7 +17,7 @@ def run(*steps, final=""):
         return [y for e in x for y in flatten(e)] if isinstance(x, list) else [x]
     flat = flatten(list(steps))
     last = "reset role; select (select jsonb_agg(r order by i) from res) as rs" + (", " + final if final else "")
-    r = sql("begin; " + "; ".join(([MIG] if MIG else []) + SETUP + flat + [last]) + "; rollback;")
+    r = sql("begin; " + "; ".join(([MIG] if MIG else []) + SETUP + ["update settings set value = '{\"object\": \"qr-test\"}'::jsonb where name = 'upi_qr'"] + flat + [last]) + "; rollback;")
     return r[-1] if isinstance(r, list) else r   # a refused statement comes back as an error dict; the tests that expect one read it as text
 
 
