@@ -136,6 +136,10 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
         <h1>{head.h}</h1>
         {head.meta && <span className="meta">{tab !== "kitchen" && dot}{head.meta}</span>}
       </header>
+      {tab !== "new" && fresh.length > 0 && (() => {   // story #1275 (board K4-NewOrderBar): a new order shows on every tab; a tap opens New
+        const oldest = Math.max(0, Math.floor((Date.now() - Math.min(...fresh.map((o) => new Date(o.created_at).getTime()))) / 60_000));
+        return <button type="button" className="ui-newbar" onClick={() => setTab("new")}><b>{fresh.length === 1 ? "1 new order" : `${fresh.length} new orders`}</b><span>Oldest {oldest} min · See</span></button>;
+      })()}
       {error && !sheet && <p role="alert" className="ui-note error">{error}</p>}
       {loading && orders.length === 0 && <div className="ui-pad"><Skeleton lines={3} /></div>}
       {tab === "new" && (fresh.length === 0 ? (
