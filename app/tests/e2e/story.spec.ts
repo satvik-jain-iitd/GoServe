@@ -12,7 +12,8 @@ test("S1 the bare address tells the story word for word: hero, four parts, four 
   for (const n of ["01", "02", "03", "04"]) await expect(page.getByText(n, { exact: true })).toBeVisible();
   for (const h of ["Home kitchens in your pin code", "One app. Four hands.", "Cash first", "Our own riders"]) await expect(page.getByRole("heading", { name: h })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Which hand are you?" })).toBeVisible();
-  await expect(page.getByText("A test phase: the sign-in code is fixed.")).toBeVisible();
+  await expect(page.getByText("One kitchen, one pin code, our own riders. We grow one pin code at a time.")).toBeVisible();
+  await expect(page.getByText(/sign-in code/i)).toHaveCount(0);   // bug #1253: no line about a fixed code; it is not true on prod
 });
 
 test("S2 the four doors open the four apps, and See today's thali opens the customer app", async ({ page }) => {
