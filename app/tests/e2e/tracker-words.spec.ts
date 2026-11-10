@@ -28,6 +28,7 @@ test("S3 a refused cancel (cannot_cancel) tells the customer the kitchen has sta
   net.state.rpcError = { name: "cancel_order", message: "cannot_cancel" };
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Cancel order" }).click();
+  await page.getByRole("dialog", { name: "Cancel this order?" }).getByRole("button", { name: "Yes, cancel the order" }).click();
   await expect(page.getByText("The kitchen has started cooking, so this order cannot be cancelled now. Call the kitchen if you need to.")).toBeVisible();
 });
 

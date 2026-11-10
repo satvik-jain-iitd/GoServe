@@ -24,5 +24,11 @@ export function customerLine(action: CustomerAction, code: string, message: stri
 }
 
 // Story #904: the line matches the error. The cooking line only when the database says cannot_cancel; anything else (a dead network, an expired session) is the connection line.
-export const cancelLine = (message?: string): string =>
-  message?.startsWith("cannot_cancel") ? "The kitchen has started cooking, so this order cannot be cancelled now. Call the kitchen if you need to." : "Could not reach GoServe. Check your connection and try again.";
+// Story #1227: the line is true for the customer. cannot_cancel carries the status the order is in now (another phone may have cancelled it first).
+export const cancelLine = (message?: string): string => {
+  if (!message?.startsWith("cannot_cancel")) return "Could not reach GoServe. Check your connection and try again.";
+  const now = message.split(":")[1]?.trim();
+  if (now === "cancelled") return "This order is already cancelled.";
+  if (now === "delivered") return "This order was already delivered.";
+  return "The kitchen has started cooking, so this order cannot be cancelled now. Call the kitchen if you need to.";
+};

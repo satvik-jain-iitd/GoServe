@@ -9,6 +9,7 @@ test("S1 at accepted the Cancel button shows, and tapping it asks the database",
   const net = await setup(context, page, [order("accepted", "2020-01-01T10:01:00Z")]);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Cancel order" }).click();
+  await page.getByRole("dialog", { name: "Cancel this order?" }).getByRole("button", { name: "Yes, cancel the order" }).click();
   await expect.poll(() => net.calls.rpc.filter((c) => c.name === "cancel_order").length).toBe(1);
   expect(net.calls.rpc.find((c) => c.name === "cancel_order")!.body).toEqual({ p_order: ID, p_reason: null });
 });
@@ -25,6 +26,7 @@ test("S3 a forced cancel at cannot_cancel shows the cooking line", async ({ page
   net.state.rpcError = { name: "cancel_order", message: "cannot_cancel: preparing" };
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Cancel order" }).click();
+  await page.getByRole("dialog", { name: "Cancel this order?" }).getByRole("button", { name: "Yes, cancel the order" }).click();
   await expect(page.getByText(COOKING)).toBeVisible();
 });
 
@@ -33,6 +35,7 @@ test("S4 a dead network shows the connection line, never the cooking line", asyn
   await page.route("**/rest/v1/rpc/cancel_order", (r) => r.abort());
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Cancel order" }).click();
+  await page.getByRole("dialog", { name: "Cancel this order?" }).getByRole("button", { name: "Yes, cancel the order" }).click();
   await expect(page.getByText(CONNECTION)).toBeVisible();
   await expect(page.getByText(COOKING)).toHaveCount(0);
 });
@@ -42,6 +45,7 @@ test("S5 reason_required (any other error) shows the connection line, not the co
   net.state.rpcError = { name: "cancel_order", message: "reason_required" };
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Cancel order" }).click();
+  await page.getByRole("dialog", { name: "Cancel this order?" }).getByRole("button", { name: "Yes, cancel the order" }).click();
   await expect(page.getByText(CONNECTION)).toBeVisible();
   await expect(page.getByText(COOKING)).toHaveCount(0);
 });
