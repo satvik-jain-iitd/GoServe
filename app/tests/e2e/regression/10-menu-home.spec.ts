@@ -3,7 +3,8 @@
 // REST paths again after the step (a later route wins) and reloads the same page. The step is still the only way in.
 import { test, expect, type BrowserContext, type Page, type Route } from "@playwright/test";
 import { STEPS } from "../screensSteps";
-import { typePlace } from "../helpers";
+import { setup, typePlace } from "../helpers";
+import { firstOpenToMenu } from "../firstOpen";
 
 const PATH = "/customer/";
 const ADDRESS = "C-128, Green Avenue Colony, Satai Road, Chhatarpur 471001";
@@ -173,4 +174,19 @@ test("TC 10.10 A dish sold out: its row is marked and has no Add", async ({ page
   await expect(sold.getByLabel("Sold out for today")).toBeVisible();
   await expect(sold.getByRole("button", { name: /^Add/ })).toHaveCount(0);
   await expect(sold).toHaveClass(/\bsold\b/);
+});
+
+test("TC 10.11 the pin mark in the Menu header never flies in: no animation after a fresh pick, and none after coming back from History", async ({ page, context }) => {
+  await setup(context, page, [], { pin: null });
+  await context.route("https://nominatim.openstreetmap.org/reverse**", (r) => r.fulfill({ status: 200, headers: { "access-control-allow-origin": "*", "content-type": "application/json" }, body: JSON.stringify({ address: { road: "Lajpat Nagar II", suburb: "Lajpat Nagar", city: "New Delhi", state: "Delhi", postcode: "110016", country: "India" } }) }));
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 28.5677, longitude: 77.2432 });
+  await page.goto("/customer/");
+  await firstOpenToMenu(page);
+  const anim = () => page.locator(".ui-pin-svg").evaluate((el) => getComputedStyle(el).animationName);
+  expect(await anim()).toBe("none");
+  await page.getByRole("button", { name: "History" }).click();
+  await page.getByRole("button", { name: "Delivery", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
+  expect(await anim()).toBe("none");
 });
