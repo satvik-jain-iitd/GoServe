@@ -7,6 +7,7 @@ import { getClient } from "../lib/supabase";
 import { readOtpSwitchAdmin, saveOtpSwitch } from "../lib/otpSwitch";
 import { qrAddress, readPayMethodsAdmin, readQrAdmin, setPayMethod, uploadQr, type PayMethodsAdmin, type QrAdmin } from "../lib/payMethods";
 import type { DoorMethod } from "../lib/doorMethods";
+import { amountProblem, readEarlyFriend, saveEarlyFriend, type EarlyFriendSetting } from "../lib/earlyFriend";
 import { readSwapSetting, saveSwapSetting, swapPctProblem, type SwapSetting } from "../lib/swapSetting";
 
 // Board A9: the admin-only Settings row for the sold-out swap discount.
@@ -105,6 +106,43 @@ function PaymentSettings() {
   );
 }
 
+// Story #1329, board A11-EarlyFriend: the early-friend offer, on or off, and its amount. Off is the default; a promise already given is kept.
+function EarlyFriendSettings() {
+  const [now, setNow] = useState<EarlyFriendSetting | null>(null);
+  const [text, setText] = useState("");
+  const [line, setLine] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { readEarlyFriend(getClient()).then((s) => { setNow(s); setText(String(s.amount_paise / 100)); }, () => setLine("Could not load the setting. Try again.")); }, []);
+  async function save(on: boolean, amountText: string) {
+    const problem = amountProblem(amountText);
+    if (problem) return void setLine(problem);
+    setLine(null); setBusy(true);
+    const failed = await saveEarlyFriend(getClient(), on, Number(amountText));
+    setBusy(false);
+    if (failed) return void setLine(failed);   // nothing moved: the switch and the amount show what the server holds
+    setNow({ on, amount_paise: Number(amountText) * 100, updated_by: "you", updated_at: new Date().toISOString() });
+  }
+  return (
+    <section className="ui-group" aria-label="Early friend offer">
+      <h2>Early friend offer</h2>
+      <div className="ui-row ui-row-static">
+        <label htmlFor="early-on" className="ui-row-label"><b>Give the early friend offer</b><span className="ui-row-sub">Off: the normal menu price. Promises already given are dropped.</span></label>
+        <input id="early-on" className="ui-switch" type="checkbox" role="switch" checked={now?.on === true} disabled={!now || busy} onChange={(e) => void save(e.target.checked, text)} />
+      </div>
+      <div className="ui-row ui-row-static">
+        <span className="ui-row-label"><b>Amount off the first order</b><span className="ui-row-sub mono">Rupees · 10 to 500</span></span>
+        <span className="ui-inline">
+          <span className="mono">₹</span>
+          <input type="number" min={10} max={500} step={1} value={text} aria-label="Early friend amount, rupees" className="mono ui-pct" disabled={!now} onChange={(e) => { setText(e.target.value); setLine(null); }} />
+          <button type="button" className="ui-btn" disabled={!now || busy} onClick={() => void save(now?.on === true, text)}>Save</button>
+        </span>
+      </div>
+      {now && <p className="mono ui-foot">Now {now.on ? `on, ₹${now.amount_paise / 100}` : "off"} · set by {now.updated_by ?? "the system"}, {when(now.updated_at)}</p>}
+      {line && <p role="alert" className="ui-note error">{line}</p>}
+    </section>
+  );
+}
+
 // Story 829: the phone code login switch. Off until an SMS provider is live; flipping it reaches an open customer app in seconds.
 function PhoneCodeSetting() {
   const [on, setOn] = useState<boolean | null>(null);
@@ -155,6 +193,7 @@ export function AdminNumbers({ live, kitchens, settings }: { live?: number; kitc
         ))}
       </section>
       {settings && <PaymentSettings />}
+      {settings && <EarlyFriendSettings />}
       {settings && <SwapSettings />}
       {settings && <PhoneCodeSetting />}
       <button type="button" className="ui-row" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}><span>Send feedback</span><span className="go" aria-hidden="true">›</span></button>
