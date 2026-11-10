@@ -175,7 +175,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setResumed(true);
     const open = openOrderToResume(orders);
     if (open && step === "menu" && !placed) {
-      setPlaced({ id: open.id, status: open.status, total_paise: open.total_paise, updated_at: open.updated_at, paid_by: open.paid_by ?? null });
+      setPlaced({ id: open.id, status: open.status, total_paise: open.total_paise, updated_at: open.updated_at, paid_by: open.paid_by ?? null, bill: open.bill ?? null });
       setPlacedAt(open.created_at);
       setStep("placed");
     }
@@ -1034,7 +1034,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             onBack={() => setStep("menu")} onPlace={place} />
         )}
         {step === "placed" && placed && (
-          <PlacedScreen order={placed} status={tracked?.status ?? placed.status} paidBy={tracked?.paid_by ?? null}
+          <PlacedScreen order={placed} status={tracked?.status ?? placed.status} paidBy={tracked?.paid_by ?? null} bill={tracked && "bill" in tracked ? tracked.bill : placed.bill}
             placedAt={tracked?.created_at ?? placedAt} kitchenName={kitchenName} pin={pin} kitchenPhone={area?.kind === "ok" ? area.kitchen.phone ?? null : null}
             lines={tracked && "items" in tracked ? tracked.items.map((i) => ({ name: i.name, qty: i.qty, paise: i.price_paise * i.qty })) : placedLines}
             address={tracked && "address" in tracked ? tracked.address : address.trim()}
