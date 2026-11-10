@@ -7,6 +7,8 @@ from test_schema import TOKEN, sql, migration_inside
 from test_place_order_v2 import K, D, SETUP, LINES, BILL, RES
 
 MIG = migration_inside(["20261109130000_early_friend_followups.sql"], "to_regproc('public.early_friend_for') is not null")
+SWITCH = migration_inside(["20261110160000_early_friend_switch.sql"], "to_regproc('public.early_friend_set_v2') is not null")
+ON = "update settings set value = '{\"on\": true, \"amount_paise\": 10000}' where name = 'early_friend'"   # story 1329: the offer is off by default; these cases are about the offer being on
 U = "00000000-0000-0000-0000-0000000000a9"
 PIN = "110016"   # the kitchen K lists this pin
 FAR = "560001"   # no kitchen lists this pin
@@ -25,7 +27,7 @@ def order(key="k1", bill=BILL, pin=None):
 
 def run(*stmts, final=""):
     last = f"select {RES} as rs" + (", " + final if final else "")
-    r = sql("begin; " + "; ".join(([MIG] if MIG else []) + SETUP + ["create temp table res (i serial, r jsonb)"] + list(stmts) + [last]) + "; rollback;")
+    r = sql("begin; " + "; ".join(([MIG] if MIG else []) + ([SWITCH] if SWITCH else []) + [ON] + SETUP + ["create temp table res (i serial, r jsonb)"] + list(stmts) + [last]) + "; rollback;")
     assert isinstance(r, list), r
     return r[-1]
 
