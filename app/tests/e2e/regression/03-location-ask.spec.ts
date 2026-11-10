@@ -40,10 +40,14 @@ test("TC 3.2 Enter address manually is above, Set delivery location is last, the
   await expect(page.locator(".ui-slip-body > button").last()).toContainText("Set delivery location");
 });
 
-test("TC 3.3 Set delivery location, allow: the pin map opens at my spot", async ({ page, context }) => {
-  await STEPS["first-open-pin"](context, page, PATH);   // the shared step taps the button with location allowed
+test("TC 3.3 Set delivery location, allow: the pin map opens centred on my spot", async ({ page, context }) => {
+  const looked: string[] = [];
+  page.on("request", (r) => { if (r.url().includes("/functions/v1/geocode")) looked.push(r.url()); });   // the map asks for the words at its centre once it settles
+  await STEPS["first-open-pin"](context, page, PATH);   // the shared step gives the phone 24.8847, 79.597 and taps the button
   await expect(map(page)).toBeVisible();
   await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeVisible();
+  await expect.poll(() => looked.at(-1) ?? "").toContain("lat=24.88");   // centred where the phone is (a map in the wrong place asks for another spot)
+  expect(looked.at(-1)).toContain("lng=79.59");
 });
 
 test("TC 3.4 Set delivery location, block: the map opens with search ready, no dead end", async ({ page, context }) => {
