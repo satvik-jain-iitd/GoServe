@@ -135,3 +135,18 @@ test("TC 23.9 Edge: the network is off for a minute, the page says it is offline
   await wake(page);
   await expect(stampOf(page, "On the way")).toBeVisible();
 });
+
+// Story #1343: the Order placed screen never asks twice for alerts. The first open asked once (step 2); there is no "Ping me when it is ready" button, on any status.
+test("TC 23.10 Look: phone not asked yet, the placed screen has no Ping me button, placed or cooking", async ({ page, context }) => {
+  await context.addInitScript(() => {
+    Object.defineProperty(Notification, "permission", { get: () => "default", configurable: true });
+    (Notification as unknown as { requestPermission: () => Promise<string> }).requestPermission = async () => "default";
+  });
+  await STEPS["eta-working"](context, page, PATH);
+  await expect(page.getByText("Working out the time")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Ping me/ })).toHaveCount(0);
+  await expect(page.locator("body")).not.toContainText("Ping me");
+  await answer(page, "/rest/v1/orders", [order("preparing", new Date(Date.now() - 60_000).toISOString())]);
+  await wake(page);
+  await expect(page.getByRole("button", { name: /Ping me/ })).toHaveCount(0);
+});
