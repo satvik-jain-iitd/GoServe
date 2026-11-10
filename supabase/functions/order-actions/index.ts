@@ -14,6 +14,7 @@ export type Deps = {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ACTIONS = ["accept", "prepare", "ready", "pickup", "arriving", "deliver", "confirm", "cancel"];
+const METHODS = ["cash", "upi_door"];
 const ORDER_FIELDS = ["id", "kitchen_id", "status", "total_paise", "address", "items", "bill", "created_at", "updated_at", "paid_by"];
 const STATUS: Record<string, number> = { unauthorized: 401, not_allowed: 403, order_not_found: 404, already_done: 409, illegal_step: 409, cannot_cancel: 409, reason_required: 422, invalid_action: 400, order_action_failed: 500 };
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
@@ -24,9 +25,9 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
   if (!token) return json(401, { ok: false, error: "unauthorized", message: "Sign in first." });
   let b: any;
   try { b = await req.json(); } catch { return json(400, { ok: false, error: "invalid_request" }); }
-  if (!UUID.test(b?.order_id) || !ACTIONS.includes(b?.action) || (b.reason != null && (typeof b.reason !== "string" || b.reason.length > 200))) return json(400, { ok: false, error: "invalid_request" });
+  if (!UUID.test(b?.order_id) || !ACTIONS.includes(b?.action) || (b.reason != null && (typeof b.reason !== "string" || b.reason.length > 200)) || (b.method != null && (b.action !== "deliver" || !METHODS.includes(b.method)))) return json(400, { ok: false, error: "invalid_request" });
   try {
-    const res = await deps.act(token, b.order_id, b.action, b.reason?.trim() || null);
+    const res = await deps.act(token, b.order_id, b.action, b.action === "deliver" ? b.method ?? null : b.reason?.trim() || null);   // deliver carries the way it was paid (story 1262); every other step carries its reason
     if (!res.ok) return json(STATUS[res.error] ?? 422, { ok: false, error: res.error, message: res.message });
     if (b.action === "ready") await deps.dispatchAfterReady?.(b.order_id).catch(() => {});   // Ready stands; with no rider found the order waits and the ops screen shows it
     if (b.action === "cancel") await deps.refundAfterCancel?.(b.order_id).catch(() => {});   // the cancel stands; a refund that fails stays refund_due in the database for a retry

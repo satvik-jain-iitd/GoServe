@@ -26,6 +26,25 @@ Deno.test("cancel passes the reason on", async () => {
   assertEquals(calls[0], ["t", O, "cancel", "out of rice"]);
 });
 
+Deno.test("deliver passes the way it was paid on (story 1262); no method is null, an old rider app", async () => {
+  calls.length = 0;
+  await post(makeHandler(deps()), { order_id: O, action: "deliver", method: "upi_door" });
+  await post(makeHandler(deps()), { order_id: O, action: "deliver", method: "cash" });
+  await post(makeHandler(deps()), { order_id: O, action: "deliver" });
+  assertEquals(calls.map((c) => c[3]), ["upi_door", "cash", null]);
+});
+
+Deno.test("a method that is not cash or upi_door is 400, and a method on another step is 400", async () => {
+  for (const b of [{ action: "deliver", method: "card" }, { action: "deliver", method: 5 }, { action: "accept", method: "cash" }]) {
+    assertEquals((await post(makeHandler(deps()), { order_id: O, ...b })).status, 400);
+  }
+});
+
+Deno.test("a second deliver with another method answers already_done, 409, and passes nothing new", async () => {
+  const h = makeHandler(deps(async () => ({ ok: false, error: "already_done", message: "Already done." })));
+  assertEquals((await post(h, { order_id: O, action: "deliver", method: "upi_door" })).status, 409);
+});
+
 Deno.test("each refusal has its status: 401, 403, 404, 409 and 422", async () => {
   const refuse = (error: string) => makeHandler(deps(async () => ({ ok: false, error, message: "m" })));
   for (const [error, status] of [["unauthorized", 401], ["not_allowed", 403], ["order_not_found", 404], ["already_done", 409], ["illegal_step", 409], ["cannot_cancel", 409], ["reason_required", 422], ["order_action_failed", 500]] as const) {
