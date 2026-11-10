@@ -105,6 +105,11 @@ PRESENT_SQL = ("select 'table:' || table_name as m from information_schema.table
                "union all select 'constraint:' || conname from pg_constraint where connamespace = 'public'::regnamespace")
 
 
+def secret_gaps(dev_names, prod_names, will_set):
+    """Story #1191: the function secret names dev has that prod lacks and this script does not set. SUPABASE_* are given by the platform. Names only, never a value."""
+    return sorted(n for n in set(dev_names) - set(prod_names) - set(will_set) if not n.startswith("SUPABASE_"))
+
+
 def present(ref):
     return {r["m"] for r in release_db.sql(ref, PRESENT_SQL)}
 
@@ -203,12 +208,17 @@ def main(argv, env=os.environ):
     have_secrets = sorted(s["name"] for s in release_db._call("GET", ref, "/secrets"))
     want = ["OTP_FIXED_CODE", *FRESH]
     vault = read_vault()
+    gaps = secret_gaps([x["name"] for x in release_db._call("GET", release_db.DEV_REF, "/secrets")], have_secrets, want)
     print(f"Prod project {name!r} ({ref}).")
     print(f"v1 migrations: {len(v1)} files, gaps: {plan['v1_gaps'] or 'none'}")
     print(f"v2 migrations: {len(v2)} files, missing (in this order): {plan['v2_missing'] or 'none'}")
     print(f"functions: deployed {have_funcs or 'none'}; will deploy all {len(funcs)}: {funcs}")
     print(f"secrets set now: {have_secrets or 'none'}; will set: {want}; fresh ones not yet in the vault file: {[k for k in FRESH if not vault.get(k)] or 'none'}")
     print("push vault pair (push_notify_url, push_notify_secret): will be written. Anonymous sign-in is", "ON" if release_db.get_auth(ref).get("external_anonymous_users_enabled") else "OFF (will be switched on)")
+    if gaps:   # story #1191: a release does not go on while dev has a function secret that prod lacks (the VAPID keys were missing on prod for days)
+        print(f"STOP: dev has function secrets that prod lacks and this script does not set: {gaps}. Set them on prod first (owner's yes), then run again.")
+        if "--apply" in argv:
+            sys.exit(f"Refused: function secrets missing on prod: {gaps}")
     functions_only = "--functions-only" in argv   # story #1340: deploy the functions and nothing else (no migration, secret, vault row or auth change)
     if functions_only:
         print("functions only: migrations, secrets, push vault pair and auth are skipped.")
