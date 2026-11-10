@@ -34,7 +34,7 @@ type Props = {
   onNotYet: () => void;
   onAllowReminder: () => void;
   onMenu: () => void;           // See the menu, with an empty cart (a delivered or cancelled order)
-  onAgain: () => void;          // Order again on a cancelled order: the bill with the same dishes (bug #1229)
+  onAgain: () => void;          // the cancelled order's button: the bill with the same dishes (bug #1229)
   onBack: () => void;           // the chevron: back to the menu
   onCancel: () => void;         // story B3, #904: allowed while the order is placed or accepted
   cancelling: boolean;
