@@ -26,6 +26,8 @@ test("TC 8.1 the sheet: Address details, Step 2 of 2, the place with Change, two
   await expect(sheet(page).getByRole("heading", { name: "Address details" })).toBeVisible();
   await expect(sheet(page).getByText("Step 2 of 2")).toBeVisible();
   await expect(sheet(page).getByRole("button", { name: "Change" })).toBeVisible();
+  const placeRow = sheet(page).getByRole("button", { name: "Change" }).locator("..");   // the row holds the place name beside Change
+  await expect.poll(async () => ((await placeRow.textContent()) ?? "").replace("Change", "").trim().length).toBeGreaterThan(0);
   await expect(house(page)).toHaveAttribute("placeholder", /^e\.g\./);
   await expect(sheet(page).getByLabel("Landmark (optional)")).toHaveAttribute("placeholder", /^e\.g\./);
   await expect(sheet(page).getByRole("button", { name: "Home", exact: true })).toHaveAttribute("aria-pressed", "true");
@@ -87,7 +89,6 @@ test("TC 8.5 pick Other: a name field appears for the label", async ({ page, con
 // Expected: Change goes back to the map at the same pin, so the address saved after it is the pin the sheet was opened on.
 // Found in run: Change moves the map about 260 m south (28.5677 to 28.5653); the Save after it stores the moved pin.
 test("TC 8.6 tap Change: back to the map at the same pin", async ({ page, context }) => {
-  test.fail(true, "#1203: Change moves the map about 260 m south; the address saved after it gets the moved pin (28.5677 became 28.5653)");
   const posts: string[] = [];
   const looked: string[] = [];
   page.on("request", (r) => {
@@ -108,6 +109,7 @@ test("TC 8.6 tap Change: back to the map at the same pin", async ({ page, contex
   await saveBtn(page).click();
   await expect.poll(() => posts.length).toBe(1);
   const saved = JSON.parse(posts[0]);
+  test.fail(true, "#1203: Change moves the map about 260 m south; the address saved after it gets the moved pin (28.5677 became 28.5653)");
   expect(saved.lat).toBeCloseTo(Number(pin.get("lat")), 4);   // the same pin as before Change (about 10 m)
   expect(saved.lng).toBeCloseTo(Number(pin.get("lng")), 4);
 });
