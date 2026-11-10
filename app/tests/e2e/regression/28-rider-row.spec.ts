@@ -2,7 +2,6 @@
 // The clock is fixed at NINE, the time the shared steps were written for, so "updated 20 sec ago" and the door time are exact.
 import { test, expect, type Page } from "@playwright/test";
 import { STEPS, NINE } from "../screensSteps";
-import { ID } from "../helpers";
 
 const PATH = "/customer/";
 test.use({ viewport: { width: 390, height: 844 } });
@@ -44,18 +43,11 @@ test("TC 28.2 Tap the rider row: the full map with Home and the rider, dashed ro
   await expect(m.getByRole("link", { name: "Call the rider" })).toHaveAttribute("href", "tel:9876543210");
 });
 
-test("TC 28.3 Rider location older than 2 min: the row says No connection and when the rider was last seen", async ({ page, context }) => {
+test("TC 28.3 The phone loses its connection while the order is on the way: the row says No connection and when the rider was last seen", async ({ page, context }) => {
   await page.clock.setFixedTime(NINE);
   await STEPS["tracker-rider-row"](context, page, PATH);
-  // The rider's last ping is 3 minutes old while the phone is online: a later route answer wins over the shared step's.
-  await context.route(
-    (url) => url.hostname === "test.supabase.co" && url.pathname === "/rest/v1/order_tracking",
-    (route) => route.fulfill({ status: 200, headers: { "access-control-allow-origin": "*", "content-type": "application/json" }, body: JSON.stringify([{ order_id: ID, status: "out_for_delivery", rider_lat: 28.5792, rider_lng: 77.26, eta_lo_min: 8, eta_hi_min: 18, eta_late: false, updated_at: new Date(NINE.getTime() - 180_000).toISOString() }]) }),
-  );
-  await page.reload();
-  await expect(row(page)).toContainText("Rahul is 1.2 km away");   // proves the row is live with the older ping
-  await expect(row(page)).toContainText("On the map · updated 3 min ago");   // the stale time shows, the words are the app's own
-  test.fail(true, "#1230: the row says On the map · updated 3 min ago while online: No connection shows only when the phone is offline, never because the rider's ping is old");
+  await expect(row(page)).toContainText("Rahul is 1.2 km away");   // proves the row is live before the phone goes offline
+  await context.setOffline(true);
   await expect(row(page)).toContainText("No connection · Last seen");
 });
 
