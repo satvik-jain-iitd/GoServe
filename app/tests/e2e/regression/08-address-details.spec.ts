@@ -109,7 +109,6 @@ test("TC 8.6 tap Change: back to the map at the same pin", async ({ page, contex
   await saveBtn(page).click();
   await expect.poll(() => posts.length).toBe(1);
   const saved = JSON.parse(posts[0]);
-  test.fail(true, "#1203: Change moves the map about 260 m south; the address saved after it gets the moved pin (28.5677 became 28.5653)");
   expect(saved.lat).toBeCloseTo(Number(pin.get("lat")), 4);   // the same pin as before Change (about 10 m)
   expect(saved.lng).toBeCloseTo(Number(pin.get("lng")), 4);
 });
