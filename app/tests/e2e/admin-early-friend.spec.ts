@@ -1,4 +1,4 @@
-// Story #1329 (board A11-EarlyFriend, same shape as A10): the admin turns the early-friend offer on or off and sets its amount. Off by default. A promise already given is dropped.
+// Story #1329 (board A14-EarlyFriend, same shape as A10): the admin turns the early-friend offer on or off and sets its amount. Off by default. A promise already given is dropped.
 import { test, expect, type Page } from "@playwright/test";
 import { setup, scan } from "./helpers";
 
@@ -71,3 +71,11 @@ for (const theme of ["day", "night"]) {
     expect(await scan(page, ["wcag2a", "wcag2aa"])).toEqual([]);
   });
 }
+
+test("E8 turning the offer off works with an empty or wrong amount box, and sends the saved amount", async ({ page, context }) => {
+  const net = await toSettings(page, context, { early: { on: true, amount_paise: 5000 } });
+  await amount(page).fill("");
+  await sw(page).click();
+  await expect(sw(page)).not.toBeChecked();
+  await expect.poll(() => net.state.earlySets).toEqual([{ p_on: false, p_amount_paise: 5000 }]);
+});

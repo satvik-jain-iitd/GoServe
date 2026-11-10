@@ -35,7 +35,7 @@ export async function placeOrderV2(input: PlaceV2Input, deps: V2Deps): Promise<{
   if (res.ok && a?.ok && a.order?.id) {
     const o = a.order;   // the confirm times are optional in the answer: the defaults stand until the server sends them
     const num = (v: unknown, d: number) => (typeof v === "number" && v >= 0 ? v : d);
-    return { order: { id: o.id, status: o.status, total_paise: o.total_paise, updated_at: o.created_at, paid_by: null }, created: a.created === true,
+    return { order: { id: o.id, status: o.status, total_paise: o.total_paise, updated_at: o.created_at, paid_by: null, bill: o.bill && typeof o.bill === "object" ? o.bill : null }, created: a.created === true,
       confirm: { afterReadyMin: num(a.confirm_after_ready_min, DEFAULT_CFG.afterReadyMin), afterPlaceMin: num(a.confirm_after_place_min, DEFAULT_CFG.afterPlaceMin) } };
   }
   if (res.status === 409 && a?.error === "price_changed" && a.quote && Number.isInteger(a.quote.to_pay_paise)) {

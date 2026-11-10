@@ -88,6 +88,22 @@ class EarlyFriendSwitch(unittest.TestCase):
         r = run(ef.CUSTOMER(FAR), tap_res(), admin_set(True, 5000), tap_res(), final=CURRENT)
         self.assertEqual((r["rs"][0]["offer_paise"], r["rs"][2]["offer_paise"], r["req"]["offer_paise"]), (None, 5000, 5000), r)
 
+    def test_w10_a_tap_while_off_keeps_the_record_of_a_spent_promise(self):
+        r = run(admin_set(True, 10000), ef.CUSTOMER(), ef.tap(), ef.order("k1", ef.GIFT), admin_set(False, 10000), tap_res(PIN),
+                final="(select offer_paise = 10000 and offer_order_id is not null as kept from area_requests where user_id = '" + U + "') as kept")
+        self.assertEqual((r["rs"][0]["ok"], r["kept"]), (True, True), r)
+
+    def test_w11_the_one_time_clear_drops_an_old_unspent_promise_and_keeps_a_spent_one(self):
+        clear = [l for l in open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "supabase", "migrations", "20261110160000_early_friend_switch.sql")).read().split("\n") if l.startswith("update area_requests set offer_paise = null")][0]
+        r = run(ef.CUSTOMER(), f"insert into area_requests (user_id, pin, offer_paise, offered_at) values ('{U}', '{PIN}', 10000, now())", clear,
+                final="(select offer_paise is null and offered_at is null as cleared from area_requests where user_id = '" + U + "') as cleared")
+        self.assertTrue(r["cleared"], r)
+
+    def test_w12_an_order_at_amount_50_gets_a_gift_of_50_and_the_totals_add_up(self):
+        gift50 = ef.GIFT.replace("22000", "27000").replace('"early_friend_paise": 10000', '"early_friend_paise": 5000')
+        r = run(admin_set(True, 5000), ef.CUSTOMER(), ef.tap(), ef.order("k1", gift50), final=ef.TOTALS)
+        self.assertEqual(r["t"], [{"total": 27000, "off": "5000", "pay": "27000"}], r)
+
 
 if __name__ == "__main__":
     unittest.main()
