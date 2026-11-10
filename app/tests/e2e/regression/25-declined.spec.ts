@@ -26,7 +26,7 @@ test("TC 25.1 Look: the red Declined stamp, Nothing to pay Rs 0, the kitchen's r
   await expect(total).toContainText("₹0");
   await expect(box.getByText(`“${REASON}”`, { exact: true })).toBeVisible();   // the kitchen's own words, in curly quotes
   await expect(box.getByText("Declined 3:32 pm · 2 min after you ordered", { exact: true })).toBeVisible();   // placed 10:00 UTC, declined 10:02 UTC, shown in India time
-  await expect(page.getByText(/^Your money is not taken\./)).toBeVisible();
+  await expect(page.getByText("Nothing was charged.")).toBeVisible();   // story #1261: the money line of a pay-at-door order
   await expect(page.getByRole("button", { name: "Order something else" })).toBeVisible();
 });
 
@@ -43,8 +43,6 @@ test("TC 25.2 Order something else: the menu opens with an empty bill", async ({
 
 test("TC 25.3 Copy: a cash order says nothing was charged, without the online-payment line", async ({ page, context }) => {
   await STEPS["declined"](context, page, PATH);
-  await expect(page.getByText(/^Your money is not taken\./)).toBeVisible();   // proves the money line is on screen, so the absence check below is not blind
-  await expect(page.getByText(/^Your money is not taken\./)).toHaveCount(1);   // the counter is live: it finds the line
-  test.fail(true, "#1251: a declined cash order says If you paid online, it comes back in 5 to 7 days");
-  await expect(page.getByText(/paid online/)).toHaveCount(0);
+  await expect(page.getByText("Nothing was charged.")).toBeVisible();   // proves the money line is on screen, so the absence check below is not blind
+  await expect(page.getByText(/paid online/)).toHaveCount(0);   // story #1261 fixed #1251: no online-payment words for a pay-at-door order
 });

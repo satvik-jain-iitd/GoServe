@@ -145,7 +145,7 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
               <div><span>Delivery</span><span>Free</span></div>
             </div>
             <div className="ui-slip-rule" />
-            <div className="ui-slip-total"><b>{declined || cancelled ? "Nothing to pay" : pay?.state === "paid" ? "Paid online" : pay ? "To pay online" : delivered && paidBy === "cash" ? "Cash paid" : "Cash at door"}</b><span>{declined || cancelled ? formatRupees(0) : formatRupees(order.total_paise)}</span></div>
+            <div className="ui-slip-total"><b>{declined || cancelled ? "Nothing to pay" : pay?.state === "paid" ? "Paid online" : pay ? "To pay online" : delivered && paidBy === "cash" ? "Cash paid" : delivered && paidBy === "upi_door" ? "Paid by UPI at the door" : "To pay at door"}</b><span>{declined || cancelled ? formatRupees(0) : formatRupees(order.total_paise)}</span></div>
           </div>
         </section>
         <div className="ui-after">
@@ -166,7 +166,7 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
                 <p>“{declined.reason}”</p>
                 <p className="mono ui-declined-when">Declined {clock12(new Date(declined.at))} · {Math.max(0, Math.round((Date.parse(declined.at) - placed.getTime()) / 60_000))} min after you ordered</p>
               </div>
-              <p className="ui-meta">Your money is not taken. If you paid online, it comes back in 5 to 7 days.</p>
+              <p className="ui-meta">{pay ? "Your money is not taken. If you paid online, it comes back in 5 to 7 days." : "Nothing was charged."}</p>   {/* story #1261: a pay-at-door order never talks about paying online */}
             </>
           ) : cancelled && <p role="status"><strong>Your order was cancelled. Nothing to pay.</strong></p>}
           {asking && (

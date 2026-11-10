@@ -1,5 +1,6 @@
 // The customer flow in one place: menu, cart, bill, placed (story #48). No router yet: four steps in state.
 import { useEffect, useMemo, useRef, useState } from "react";
+import { fetchDoorMethods, type DoorMethod } from "./lib/doorMethods";
 import { addDish, cartLines, cartTotal, changeQty, reorderCart, toOrderItems, type Cart } from "./lib/cart";
 import { mergeOrder, riderOrders, cancelKind, shortId, statusLabel, type Order, type RiderAction, confirmHandover, isCash } from "./lib/kitchen";
 import { clientPlatform } from "./lib/platform";
@@ -129,6 +130,11 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [toast, setToast] = useState<string | null>(null);
   // Story #552: how you pay. cod = today's cash order. UPI or Card: the order is placed, then Pay now makes the payment (the state machine lives here).
   const [payMethod, setPayMethod] = useState<PayMethod>("cod");
+  // Story #1261 (board P6): the ways to pay at the door that Admin has on, read when the bill opens. The pick is only what the screen shows; the rider records how it was paid.
+  const [doorMethods, setDoorMethods] = useState<DoorMethod[]>(["cash"]);
+  const [doorPick, setDoorPick] = useState<DoorMethod>("cash");
+  const doorValue: DoorMethod = doorMethods.includes(doorPick) ? doorPick : doorMethods[0];
+  useEffect(() => { if (step === "bill" && lock === "customer") void fetchDoorMethods(getClient()).then(setDoorMethods); }, [step, lock]);
   const [payState, setPayState] = useState<"ready" | "starting" | "waiting" | "failed" | null>(null);
   const [payError, setPayError] = useState<string | null>(null);
   const [payStart, setPayStart] = useState<string | null>(null);
@@ -1009,7 +1015,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         {menu && step === "bill" && (
           <BillScreen notice={againLine} note={note} onNote={setNote} lines={billLines} total={total} soldOut={dead && step === "bill" ? { id: dead.dish.id, name: dead.dish.name, alt: offers.alt, canSwap, onSwap: () => setSwapped((s) => [...s, dead.dish.id]), onRemove: () => takeOut(dead.dish.id) } : undefined} offers={OFFERS_ON && offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove } : undefined} kitchenName={kitchenName} pin={pin} address={address} onAddress={setAddress}
             details={lock === "customer" ? { name, phone, onName: setName, onPhone: setPhone, gate } : undefined}
-            pay={lock === "customer" ? { value: payMethod, onChange: setPayMethod } : undefined} sending={sending} error={error}
+            door={lock === "customer" ? { methods: doorMethods, value: doorValue, onChange: setDoorPick } : undefined} sending={sending} error={error}
             onBack={() => setStep("menu")} onPlace={place} />
         )}
         {step === "placed" && placed && (

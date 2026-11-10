@@ -77,7 +77,6 @@ test("S8 an order that was placed online and paid still reads Paid online on its
   const paid = { ...(await import("./helpers")).order("placed"), payment_method: "online", paid_at: "2026-11-10T09:00:00Z" };
   await setup(context, page, [paid]);
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "History" }).click();
-  await page.getByRole("button", { name: /Butter Chicken/ }).click();
+  await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();   // an open order resumes on its slip
   await expect(page.getByText("Paid online", { exact: true })).toBeVisible();
 });
