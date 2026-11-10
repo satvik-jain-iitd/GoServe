@@ -13,7 +13,6 @@ type Props = {
   tellMe: "idle" | "busy" | "done"; tellMeError: string | null; onTellMe: () => void;   // #718: ask for one push when the closed kitchen opens
   qty: Record<string, number>; cartCount: number; cartTotal: number;
   onAdd: (id: string) => void; onChange: (id: string, delta: number) => void; onOpenCart: () => void;
-  land: boolean; onLanded: () => void;   // #525: true only for the first Menu after the pin screen
   onChangePin: () => void; onOrders: () => void;
   address: string; label: string; photo: string | null; onProfile: () => void;   // story #975: the top area and the circle
   far?: { km: number; label: string; onHere: () => void } | null;   // story #1056 (board SW2): the phone is far from the chosen address; one tap sends the food where the phone is
@@ -56,8 +55,6 @@ function useFirstView(loaded: boolean, urls: string[]): { ready: boolean; late: 
 }
 
 export function MenuScreen(p: Props) {
-  const [land] = useState(p.land);   // read once at mount, so a re-render never cuts the fly-in short
-  useEffect(() => { p.onLanded(); }, []);
   const [vegOnly, setVegOnly] = useState(false);
   const [cats, setCats] = useState<string[]>([]);   // story #972: the ticked categories; none ticked is all
   const [query, setQuery] = useState("");
@@ -88,7 +85,7 @@ export function MenuScreen(p: Props) {
     <>
       <header className="ui-top">
         <button type="button" className="ui-where" title="Change the delivery address" onClick={p.onChangePin}>
-          <span className="ui-where-label"><svg className={`ui-pin-svg${land ? " ui-mark-land" : ""}`} aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.5" /></svg>{p.label}<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg></span>
+          <span className="ui-where-label"><svg className="ui-pin-svg" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.5" /></svg>{p.label}<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg></span>
           <span className="ui-where-line">{where}</span>
         </button>
         <button type="button" className="ui-circle" aria-label="You: your details, alerts and account" onClick={p.onProfile}>

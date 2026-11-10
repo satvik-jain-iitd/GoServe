@@ -19,6 +19,7 @@ type Props = {
   order: PlacedOrder;
   status: string;
   paidBy: string | null;
+  bill?: { early_friend_paise?: number; discount_paise?: number } | null;   // story #1295: every amount the server took off has its own line, so the lines add up to the total
   confirmedAt: string | null;   // when the order closed, shown as the customer's local time
   placedAt: string;             // when the order was made (ISO)
   lines: { name: string; qty: number; paise: number }[];
@@ -29,10 +30,8 @@ type Props = {
   asking: boolean;              // show "Was your order delivered?"
   busy: boolean;
   error: string | null;
-  reminder: "ask" | "on" | "off" | "none";
   onYes: () => void;
   onNotYet: () => void;
-  onAllowReminder: () => void;
   onMenu: () => void;           // See the menu, with an empty cart (a delivered or cancelled order)
   onAgain: () => void;          // the cancelled order's button: the bill with the same dishes (bug #1229)
   onBack: () => void;           // the chevron: back to the menu
@@ -85,7 +84,7 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "At your door" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
-export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onMenu, onAgain, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, declined, eta }: Props) {
+export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, onYes, onNotYet, onMenu, onAgain, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, declined, eta }: Props) {
   const [mapOpen, setMapOpen] = useState(false);   // story 1053: the full-screen rider map
   const steps = trackerSteps(status);
   const { now, online } = useNowOnline();
@@ -143,6 +142,8 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
             <div className="ui-slip-lines">
               {lines.map((l) => <div key={l.name}><span>{l.qty} × {l.name}</span><span>{formatRupees(l.paise).replace("₹", "")}</span></div>)}
               <div><span>Delivery</span><span>Free</span></div>
+              {(bill?.discount_paise ?? 0) > 0 && <div><span>Discount</span><span>−{formatRupees(bill!.discount_paise!).replace("₹", "")}</span></div>}
+              {(bill?.early_friend_paise ?? 0) > 0 && <div><span>Early friend gift</span><span>−{formatRupees(bill!.early_friend_paise!).replace("₹", "")}</span></div>}
             </div>
             <div className="ui-slip-rule" />
             <div className="ui-slip-total"><b>{declined || cancelled ? "Nothing to pay" : pay?.state === "paid" ? "Paid online" : pay ? "To pay online" : delivered && paidBy === "cash" ? "Cash paid" : delivered && paidBy === "upi_door" ? "Paid by UPI at the door" : delivered ? "Paid at the door" : "To pay at door"}</b><span>{declined || cancelled ? formatRupees(0) : formatRupees(order.total_paise)}</span></div>
@@ -183,9 +184,6 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
             <>
               <p>Delivered. Thank you for eating with GoServe.</p>
             </>
-          )}
-          {reminder === "ask" && !delivered && !cancelled && (
-            <button type="button" className="ui-btn ghost" onClick={onAllowReminder}>Ping me when it is ready</button>
           )}
         </div>
       </div>

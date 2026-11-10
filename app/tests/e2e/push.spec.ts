@@ -2,7 +2,7 @@
 import { test, expect } from "@playwright/test";
 import { order, setup } from "./helpers";
 
-test("S1 Allow a reminder asks permission, subscribes and saves the subscription for this customer", async ({ page, context }) => {
+test("S1 Turning on Order alerts in You asks permission, subscribes and saves the subscription for this customer", async ({ page, context }) => {
   await context.addInitScript(() => {
     Object.defineProperty(Notification, "permission", { get: () => "default", configurable: true });
     (Notification as unknown as { requestPermission: () => Promise<string> }).requestPermission = async () => "granted";
@@ -13,7 +13,10 @@ test("S1 Allow a reminder asks permission, subscribes and saves the subscription
   const net = await setup(context, page, [order("placed")]);
   await page.goto("/customer/");
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
-  await page.getByRole("button", { name: "Ping me when it is ready" }).click();
+  await expect(page.getByRole("button", { name: /Ping me/ })).toHaveCount(0);   // story #1343: no second ask on the order screen; the switch in You is the way
+  await page.getByRole("button", { name: "Back to menu" }).click();
+  await page.getByRole("button", { name: "You: your details, alerts and account" }).click();
+  await page.getByRole("switch", { name: /Order alerts/ }).click();
   await expect.poll(() => net.calls.rpc.filter((c) => c.name === "save_push").length).toBe(1);
   expect(net.calls.rpc.find((c) => c.name === "save_push")!.body).toEqual({ p_endpoint: "https://push.example/abc", p_p256dh: "PKEY", p_auth: "AKEY" });
 });

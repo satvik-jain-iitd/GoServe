@@ -79,7 +79,6 @@ const LOC_WAIT_MS = 5000;   // story #1056: how long the app waits for a positio
 export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [menu, setMenu] = useState<{ dishes: Dish[]; fromCache: boolean; slow?: boolean } | null>(null);
   // The customer app asks for a pin code and shows the menu of the kitchen that serves it (story B2). The demo console and the other apps keep the plain menu.
-  const land = useRef(false);
   const [pin, setPin] = useState<string | null>(() => (lock === "customer" ? loadPin() : null));
   const [area, setArea] = useState<Area | null>(() => (lock === "customer" ? loadArea() : null));   // #242 D15: a saved kitchen opens the menu before the network answers
   const [areaError, setAreaError] = useState<string | null>(null);
@@ -175,7 +174,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setResumed(true);
     const open = openOrderToResume(orders);
     if (open && step === "menu" && !placed) {
-      setPlaced({ id: open.id, status: open.status, total_paise: open.total_paise, updated_at: open.updated_at, paid_by: open.paid_by ?? null });
+      setPlaced({ id: open.id, status: open.status, total_paise: open.total_paise, updated_at: open.updated_at, paid_by: open.paid_by ?? null, bill: open.bill ?? null });
       setPlacedAt(open.created_at);
       setStep("placed");
     }
@@ -481,7 +480,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }, [liveTick]);   // eslint-disable-line react-hooks/exhaustive-deps
   function choosePin(p: string, at?: { lat: number; lng: number }) {
     setFrom(at ?? null);
-    land.current = true;   // #525: the mark flies in once, on the first Menu after this pick
     savePin(p);
     capture("address_set", { from: at ? "location" : "typed" });
     setArea(null);
@@ -1012,7 +1010,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   ) : (
     <>
         {step === "menu" && (
-          <MenuScreen land={land.current} onLanded={() => { land.current = false; }} dishes={menu?.dishes ?? null} fromCache={menu?.fromCache ?? false} slow={menu?.slow ?? false} error={menuError} onRetry={() => setMenuTry((n) => n + 1)}
+          <MenuScreen dishes={menu?.dishes ?? null} fromCache={menu?.fromCache ?? false} slow={menu?.slow ?? false} error={menuError} onRetry={() => setMenuTry((n) => n + 1)}
             pin={pin} name={name} qty={cart} cartCount={count} cartTotal={total}
             kitchenName={kitchenName}
             openText={shown?.kind === "ok" ? openTill(shown.kitchen.closes_at) : ""}
@@ -1034,14 +1032,14 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             onBack={() => setStep("menu")} onPlace={place} />
         )}
         {step === "placed" && placed && (
-          <PlacedScreen order={placed} status={tracked?.status ?? placed.status} paidBy={tracked?.paid_by ?? null}
+          <PlacedScreen order={placed} status={tracked?.status ?? placed.status} paidBy={tracked?.paid_by ?? null} bill={tracked && "bill" in tracked ? tracked.bill : placed.bill}
             placedAt={tracked?.created_at ?? placedAt} kitchenName={kitchenName} pin={pin} kitchenPhone={area?.kind === "ok" ? area.kitchen.phone ?? null : null}
             lines={tracked && "items" in tracked ? tracked.items.map((i) => ({ name: i.name, qty: i.qty, paise: i.price_paise * i.qty })) : placedLines}
             address={tracked && "address" in tracked ? tracked.address : address.trim()}
             confirmedAt={tracked && tracked.status === "delivered" ? tracked.updated_at : null}
             declined={tracked && cancelKind(tracked) === "declined" ? { reason: (tracked as Order).cancel_reason ?? "", at: tracked.updated_at } : null}
-            asking={asking} busy={confirming} error={confirmError} reminder={reminder}
-            onYes={yes} onNotYet={notYetTap} onAllowReminder={allowReminder} pay={paidNow || payState || resumedOnline ? { state: paidNow ? "paid" : payState ?? "waiting", method: payMethod === "cod" ? "upi" : payMethod, startedAt: payState ? payStart : null, error: payError, onPay: payNow, onCash: payCash, onSimulate: () => void simulatePaid(import.meta.env.VITE_PAYMENTS_DEV_SECRET ?? "", payRef.current) } : undefined}
+            asking={asking} busy={confirming} error={confirmError}
+            onYes={yes} onNotYet={notYetTap} pay={paidNow || payState || resumedOnline ? { state: paidNow ? "paid" : payState ?? "waiting", method: payMethod === "cod" ? "upi" : payMethod, startedAt: payState ? payStart : null, error: payError, onPay: payNow, onCash: payCash, onSimulate: () => void simulatePaid(import.meta.env.VITE_PAYMENTS_DEV_SECRET ?? "", payRef.current) } : undefined}
             onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }}
             onAgain={() => { const o = orders.find((x) => x.id === placed.id); setPlaced(null); if (!o || !orderAgain(o)) { setCart({}); setStep("menu"); } }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} atDoor={atDoor} track={riderTrack} eta={eta} onCall={() => void tapCall(getClient(), placed.id)} />
         )}

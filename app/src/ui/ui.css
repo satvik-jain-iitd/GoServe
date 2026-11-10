@@ -163,9 +163,6 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-pin img { display: block; height: 22px; width: auto; }
 .ui-btn.icon { width: var(--gs-tap); min-width: var(--gs-tap); padding: 0; flex: none; }
 .ui-btn.icon svg { width: 22px; height: 22px; }
-@keyframes ui-mark-land { from { transform: translate(139px, 15px) scale(1.6); } to { transform: none; } }
-.ui-mark-land { animation: ui-mark-land 500ms cubic-bezier(0.2, 0.7, 0.2, 1) 300ms both; }
-@media (prefers-reduced-motion: reduce) { .ui-mark-land { animation: none; } }
 /* Home screen: greeting, the Tonight hero, the veg toggle */
 .ui-greet { display: grid; gap: 4px; padding: var(--gs-space-4) var(--gs-gutter) 0; }
 .ui-greet h1 { margin: 0; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
@@ -788,6 +785,9 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-landing .ui-slip, .ui-welcome .ui-slip { display: flex; flex-direction: column; min-height: 420px; }
 .ui-landing .ui-slip-body, .ui-welcome .ui-slip-body { flex: 1; display: flex; flex-direction: column; }
 .ui-bottom, .ui-welcome .ui-slip-body > .ui-google-stack { margin-top: auto; }
+.ui-push { margin-top: auto; }   /* story 1336: only pushes a button to the foot; .ui-bottom is the foot bar and adds padding */
+.ui-landing .ui-slip:has(.ui-hero-abs) { min-height: 480px; }   /* the icon ends at 316; 8 px, two big buttons (138) and the foot (18) need 164 more: on a tall phone the slip grows to this, never covering the buttons */
+@media (max-height: 700px) { .ui-landing .ui-slip:has(.ui-hero-abs) { min-height: 450px; } .ui-landing .ui-hero-abs { top: 190px; } }   /* one height rule for a short phone: the hero line moves up 30 px for both steps, so the slip still fits 360 by 649 with the buttons inside */
 .ui-hero-abs { position: absolute; left: 50%; top: 220px; transform: translateX(-50%); margin: 0; }
 .ui-hero-abs-pic { position: absolute; left: 50%; top: 157px; width: min(306px, calc(100% - 36px)); transform: translateX(-50%); margin: 0; }
 .ui-pinbadge { width: 96px; height: 96px; border-radius: var(--gs-radius-pill); background: var(--gs-lime-soft); display: flex; align-items: center; justify-content: center; color: var(--md-primary); }

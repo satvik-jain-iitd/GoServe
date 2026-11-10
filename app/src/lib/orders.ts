@@ -9,7 +9,8 @@ export class PlaceError extends Error {
     super(message);
   }
 }
-export type PlacedOrder = { id: string; status: string; total_paise: number; updated_at: string; paid_by?: string | null };
+export type OrderBill = { early_friend_paise?: number; discount_paise?: number };   // story #1295: what the server took off, so the slip lines add up to the total
+export type PlacedOrder = { id: string; status: string; total_paise: number; updated_at: string; paid_by?: string | null; bill?: OrderBill | null };
 export type OrderDeps = { url: string; token: string; fetchFn: typeof fetch };
 export const orderDeps = (): OrderDeps => ({ url: import.meta.env.VITE_ORDER_URL, token: import.meta.env.VITE_DEMO_TOKEN, fetchFn: fetch.bind(window) });
 
