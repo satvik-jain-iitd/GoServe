@@ -41,7 +41,7 @@ test("TC 32.1 Look: Feedback, What happened? box with an e.g. example, What were
   await expect(dialog(page).getByLabel("What happened?")).toBeVisible();
   const topics = dialog(page).getByLabel("What were you doing?");
   await expect(topics).toBeVisible();
-  await expect(topics.locator("option")).toHaveText(["Ordering", "Tracking my order", "Paying the rider", "Something else"]);
+  await expect(topics.getByRole("option")).toHaveText(["Ordering", "Tracking my order", "Paying the rider", "Something else"]);
   await expect(dialog(page).getByLabel("Add a screenshot (optional)")).toBeVisible();
   await expect(sendBtn(page)).toBeVisible();
   await expect(dialog(page).getByRole("button", { name: "Close", exact: true })).toBeVisible();
@@ -63,15 +63,16 @@ test("TC 32.2 Type two lines, Send: the thank-you state shows and the note reach
   expect(sent[0]).toMatchObject({ action: "feedback", role: "customer", text: words, doing: "other" });
 });
 
-test("TC 32.3 Send with an empty box: a reason line shows and Send is grey", async ({ page, context }) => {
+test("TC 32.3 Send with an empty box: Send is grey and a reason line shows", async ({ page, context }) => {
   const { sent } = await reach(context, page);
   await openSheet(page);
   await expect(dialog(page).getByLabel("What happened?")).toHaveValue("");
-  await sendBtn(page).click();
-  await expect(dialog(page).getByRole("alert")).toHaveText("Please tell us what happened.");   // the press ran and gave its reason
+  await expect(sendBtn(page)).toBeVisible();   // proves the button shows before its state is checked
+  test.fail(true, "#1233: the reason line shows only after Send is pressed, not with the box empty");
+  await expect(dialog(page).getByRole("alert")).toHaveText("Please tell us what happened.");
   expect(sent).toHaveLength(0);
   await expect(dialog(page)).toBeVisible();   // the sheet stays open to be fixed
-  test.fail(true, "#1233: Send is never greyed out: it stays filled with an empty box and only the reason line shows after the press");
+  test.fail(true, "#1233: Send is never greyed out: it stays filled with an empty box");
   await expect(sendBtn(page)).toBeDisabled();
 });
 

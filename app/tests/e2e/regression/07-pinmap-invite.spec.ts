@@ -11,17 +11,20 @@ const invite = (page: import("@playwright/test").Page) => page.getByRole("button
 test("TC 7.1 pin a place no kitchen serves: yellow distance, red Not in our area yet, filled Invite the founders here, no Confirm", async ({ page, context }) => {
   await STEPS["pin-map-far"](context, page, PATH);
   await expect(invite(page)).toBeVisible();   // the sheet is up, so the next lines can fail
-  const strips = page.locator(".ui-pinmap-strip");
-  await expect(strips).toHaveCount(2);
-  await expect(strips.nth(0)).toHaveClass(/\bwarn\b/);   // yellow distance line above the area line
-  await expect(strips.nth(0)).toContainText(/km from where you are now$/);
-  await expect(strips.nth(1)).toHaveClass(/\berror\b/);   // red area line
-  await expect(strips.nth(1)).toHaveText("Not in our area yet");
-  const warnBg = await strips.nth(0).evaluate((e) => getComputedStyle(e).backgroundColor);
-  const errBg = await strips.nth(1).evaluate((e) => getComputedStyle(e).backgroundColor);
+  const map = page.getByRole("region", { name: "Pin map" });
+  const distance = map.getByText(/km from where you are now$/);
+  const area = map.getByText("Not in our area yet", { exact: true });
+  await expect(distance).toBeVisible();
+  await expect(area).toBeVisible();
+  expect((await box(distance)).y).toBeLessThan((await box(area)).y);   // the yellow distance line sits above the area line
+  const warnBg = await distance.evaluate((e) => getComputedStyle(e).backgroundColor);
+  const errBg = await area.evaluate((e) => getComputedStyle(e).backgroundColor);
   expect(warnBg).not.toBe("rgba(0, 0, 0, 0)");
   expect(errBg).not.toBe("rgba(0, 0, 0, 0)");
-  expect(warnBg).not.toBe(errBg);   // two different colours, yellow and red
+  const [wr, wg, wb] = (warnBg.match(/\d+(\.\d+)?/g) ?? []).map(Number);
+  const [er, eg, eb] = (errBg.match(/\d+(\.\d+)?/g) ?? []).map(Number);
+  expect(wb, `yellow colour ${warnBg}`).toBeLessThan(Math.min(wr, wg) / 2);   // yellow: red and green both far above blue
+  expect(er, `red colour ${errBg}`).toBeGreaterThan(Math.max(eg, eb) * 2);   // red: red far above green and blue
   await expect(page.getByRole("button", { name: "Confirm & proceed" })).toHaveCount(0);   // live: the invite button is in the same card, so the Confirm is really gone
   const bg = await invite(page).evaluate((e) => ({ cls: e.className, bg: getComputedStyle(e).backgroundColor }));
   expect(bg.cls).not.toContain("ghost");   // filled, not the outline style
@@ -41,8 +44,11 @@ test("TC 7.2 Invite the founders here: the founder's letter for that place, and 
   await expect(page.getByRole("button", { name: "Share this note" })).toBeVisible();
 });
 
-// TC 7.3 (location off, the distance line hidden) is not automated here: the shared step STEPS["pin-map-far"] grants the
-// phone's location and then asserts the "km from where you are now" line, so no map with location off can be reached through it.
+test("TC 7.3 location off: the distance line is hidden, not 0 km", async ({ page, context }) => {
+  await STEPS["pin-map-far-off"](context, page, PATH);   // the step asserts the sheet is up and that no distance line or 0 km shows
+  await expect(invite(page)).toBeVisible();   // the far sheet still has its main button
+  await expect(page.getByRole("button", { name: "Confirm & proceed" })).toHaveCount(0);
+});
 
 test("TC 7.4 drag the pin back into a served area: the sheet turns back into C6e with Confirm", async ({ page, context }) => {
   await STEPS["pin-map-far"](context, page, PATH);
