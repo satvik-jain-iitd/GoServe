@@ -105,7 +105,7 @@ test("TC 2.9 close the app on this step and open it again: back on Step 2, not w
 
 // Story #1336: on a short phone the round icon must not cover the buttons, and the outline button is as tall as the green one.
 for (const [w, h] of [[360, 560], [360, 649], [360, 780], [390, 844]]) {
-  test(`TC 2.10 the icon clears the buttons and both buttons are the same height at ${w} by ${h}`, async ({ page, context }) => {
+  test(`TC 2.10 the icon clears the buttons and both buttons are the same height at ${w} by ${h}${h < 649 ? " (may scroll)" : ", no scroll"}`, async ({ page, context }) => {
     await page.setViewportSize({ width: w, height: h });
     await STEPS["alerts-ask"](context, page, PATH);
     const hero = (await page.locator(".ui-bellbadge").boundingBox())!;
@@ -113,5 +113,10 @@ for (const [w, h] of [[360, 560], [360, 649], [360, 780], [390, 844]]) {
     const main = (await page.locator(".ui-slip .ui-btn.big:not(.ghost)").boundingBox())!;
     expect(hero.y + hero.height, "the icon ends above the outline button").toBeLessThanOrEqual(ghost.y - 8);
     expect(Math.abs(ghost.height - main.height), "same button height").toBeLessThanOrEqual(1);
+    if (h >= 649) {   // design rule 11: a screen that fit without scroll must still fit; 360 by 560 may scroll, so it is not checked
+      const scrolls = await page.evaluate(() => document.documentElement.scrollHeight > window.innerHeight);
+      expect(scrolls, "the page does not scroll").toBe(false);
+      expect(main.y + main.height, "the green button is inside the viewport").toBeLessThanOrEqual(h);
+    }
   });
 }

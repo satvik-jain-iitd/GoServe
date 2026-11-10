@@ -786,7 +786,8 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-landing .ui-slip-body, .ui-welcome .ui-slip-body { flex: 1; display: flex; flex-direction: column; }
 .ui-bottom, .ui-welcome .ui-slip-body > .ui-google-stack { margin-top: auto; }
 .ui-push { margin-top: auto; }   /* story 1336: only pushes a button to the foot; .ui-bottom is the foot bar and adds padding */
-.ui-landing .ui-slip:has(.ui-hero-abs) { min-height: 480px; }   /* the icon ends at 316; two big buttons and the foot need about 160 more, so a short phone grows the slip instead of covering the buttons */
+.ui-landing .ui-slip:has(.ui-hero-abs) { min-height: 480px; }   /* the icon ends at 316; 8 px, two big buttons (138) and the foot (18) need 164 more: on a tall phone the slip grows to this, never covering the buttons */
+@media (max-height: 700px) { .ui-landing .ui-slip:has(.ui-hero-abs) { min-height: 450px; } .ui-landing .ui-hero-abs { top: 190px; } }   /* one height rule for a short phone: the hero line moves up 30 px for both steps, so the slip still fits 360 by 649 with the buttons inside */
 .ui-hero-abs { position: absolute; left: 50%; top: 220px; transform: translateX(-50%); margin: 0; }
 .ui-hero-abs-pic { position: absolute; left: 50%; top: 157px; width: min(306px, calc(100% - 36px)); transform: translateX(-50%); margin: 0; }
 .ui-pinbadge { width: 96px; height: 96px; border-radius: var(--gs-radius-pill); background: var(--gs-lime-soft); display: flex; align-items: center; justify-content: center; color: var(--md-primary); }

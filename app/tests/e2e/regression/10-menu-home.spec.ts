@@ -176,7 +176,7 @@ test("TC 10.10 A dish sold out: its row is marked and has no Add", async ({ page
   await expect(sold).toHaveClass(/\bsold\b/);
 });
 
-test("TC 10.10 the pin mark in the Menu header never flies in: no animation after a fresh pick, and none after coming back from History", async ({ page, context }) => {
+test("TC 10.11 the pin mark in the Menu header never flies in: no animation after a fresh pick, and none after coming back from History", async ({ page, context }) => {
   await setup(context, page, [], { pin: null });
   await context.route("https://nominatim.openstreetmap.org/reverse**", (r) => r.fulfill({ status: 200, headers: { "access-control-allow-origin": "*", "content-type": "application/json" }, body: JSON.stringify({ address: { road: "Lajpat Nagar II", suburb: "Lajpat Nagar", city: "New Delhi", state: "Delhi", postcode: "110016", country: "India" } }) }));
   await context.grantPermissions(["geolocation"]);
