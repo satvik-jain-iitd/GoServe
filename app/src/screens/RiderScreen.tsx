@@ -4,6 +4,7 @@ import { deliveredToday, hhmm, riderActions, riderOrders, shortId, type Order, t
 import { formatRupees } from "../lib/money";
 import { cashInHand, firstName, handedOver, hoursOf, locationLabel, type KitchenCard, type RiderGateState } from "../lib/rider";
 import type { DoorMethod } from "../lib/doorMethods";
+import { qrChoice } from "../lib/payMethods";
 import { Skeleton, Tabs } from "../ui";
 
 type Tab = "job" | "today" | "me";
@@ -11,13 +12,15 @@ type Props = {
   orders: Order[]; loading: boolean; error: string | null; busyId: string | null; arrived: Set<string>;
   onAct: (order: Order, action: RiderAction, method?: DoorMethod) => Promise<{ code: string; message: string } | null>;
   methods: DoorMethod[] | null;   // story 1262: the ways to collect that are on; null while the read is on its way, [] when it failed
+  qrUrl: string | null | undefined;   // story 1263: the QR the admin uploaded; null when none is set or the read failed; undefined while the read is on its way
   onLoadMethods: () => void;
   gate: RiderGateState | null;   // null in the demo console: no online switch, no sign out
   kitchen: KitchenCard | null;   // the kitchen of the delivery in hand
 };
 const TABS: { key: Tab; label: string; icon: Tab }[] = [{ key: "job", label: "Delivery", icon: "job" }, { key: "today", label: "Today", icon: "today" }, { key: "me", label: "Me", icon: "me" }];
 
-export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, methods, onLoadMethods, gate, kitchen }: Props) {
+export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, methods: methodsRead, qrUrl, onLoadMethods, gate, kitchen }: Props) {
+  const methods = qrUrl === undefined ? null : methodsRead;   // the screen names nothing until both answers are in
   const [tab, setTab] = useState<Tab>("job");
   const [doneId, setDoneId] = useState<string | null>(null);   // the slip just delivered stays until "Next delivery" (R7)
   const jobs = riderOrders(orders);
@@ -59,7 +62,10 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
       const deliver = riderActions(collecting.status).find((a) => a.kind === "status" && a.to === "delivered");
       const amount = formatRupees(collecting.total_paise);
       const busy = busyId === collecting.id;
-      const upi = methods?.includes("upi_door") ?? false;
+      const qr = qrChoice(qrUrl ?? null);
+      const upiOn = methods?.includes("upi_door") ?? false;
+      const upi = upiOn && qr.kind !== "none";   // no QR to show: no UPI button either
+      const upiNeedsQr = upiOn && qr.kind === "none";
       const cash = methods?.includes("cash") ?? false;
       return (
         <>
@@ -71,11 +77,13 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
               {methods !== null && methods.length === 0 && <p className="ui-meta">We could not check how to collect. Try again.</p>}
               {upi && (
                 <div className="ui-qr">
-                  <img src={`${import.meta.env.BASE_URL}qr-sample.svg`} width={200} height={200} alt="Sample QR, not for payment" />
-                  <span className="mono">Sample QR · the real one comes later</span>
+                  <img src={qr.src} width={200} height={200} alt={qr.kind === "sample" ? "Sample QR, not for payment" : "UPI QR to scan"} />
+                  {qr.kind === "sample" && <span className="mono">Sample QR · the real one comes later</span>}
                 </div>
               )}
-              {upi && <p className="ui-meta">This QR is a sample. Do not ask the customer to scan it. Tap below once the customer has paid.</p>}   {/* story 1262: while the picture is a sample (public/qr-sample.svg, gated by scripts/check_sample_qr.py), the line must not send a customer to pay it; with the real QR it returns to "Wait for the customer's paid screen. Then tap below." */}
+              {upi && qr.kind === "sample" && <p className="ui-meta">This QR is a sample. Do not ask the customer to scan it. Tap below once the customer has paid.</p>}
+              {upi && qr.kind === "real" && <p className="ui-meta">Wait for the customer's paid screen. Then tap below.</p>}
+              {upiNeedsQr && <p className="ui-meta">UPI at the door has no QR yet. Take cash, or ask the admin to upload the QR.</p>}
             </div>
           </section>
           <div className="ui-bottom">

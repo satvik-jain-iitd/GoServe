@@ -5,6 +5,8 @@ import { formatRupees } from "../lib/money";
 import { Skeleton } from "../ui";
 import { getClient } from "../lib/supabase";
 import { readOtpSwitchAdmin, saveOtpSwitch } from "../lib/otpSwitch";
+import { qrAddress, readPayMethodsAdmin, readQrAdmin, setPayMethod, uploadQr, type PayMethodsAdmin, type QrAdmin } from "../lib/payMethods";
+import type { DoorMethod } from "../lib/doorMethods";
 import { readSwapSetting, saveSwapSetting, swapPctProblem, type SwapSetting } from "../lib/swapSetting";
 
 // Board A9: the admin-only Settings row for the sold-out swap discount.
@@ -33,6 +35,68 @@ function SwapSettings() {
       </div>
       {now && <p className="mono ui-foot">Now {now.pct}% · set by {now.updated_by ?? "the system"}, {new Date(now.updated_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true })}</p>}
       {line && <p role="alert" className="ui-note error">{line}</p>}
+    </section>
+  );
+}
+
+const when = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true });
+
+// Story #1263, board A10-PayMethods: the ways to pay at the door, and the UPI QR the rider shows. The database keeps one method always on.
+function PaymentSettings() {
+  const [now, setNow] = useState<PayMethodsAdmin | null>(null);
+  const [qr, setQr] = useState<QrAdmin | null>(null);
+  const [line, setLine] = useState<string | null>(null);
+  const [qrLine, setQrLine] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  useEffect(() => {
+    readPayMethodsAdmin(getClient()).then(setNow, () => setLine("Could not load the setting. Try again."));
+    readQrAdmin(getClient()).then(setQr, () => setQrLine("Could not load the QR. Try again."));
+  }, []);
+  async function flip(method: DoorMethod, on: boolean) {
+    if (!now) return;
+    setLine(null); setBusy(method);
+    const answer = await setPayMethod(getClient(), method, on);
+    setBusy(null);
+    if ("line" in answer) return void setLine(answer.line);   // the switch was never moved: it shows what the server holds
+    setNow({ ...now, methods: answer.methods, updated_by: "you", updated_at: new Date().toISOString() });
+  }
+  async function pick(file: File | undefined) {
+    if (!file) return;
+    setQrLine(null); setBusy("qr");
+    const failed = await uploadQr(getClient(), file);
+    if (failed) { setBusy(null); return void setQrLine(failed); }
+    readQrAdmin(getClient()).then(setQr, () => setQrLine("The QR is set, but we could not read it back.")).finally(() => setBusy(null));
+  }
+  const sw = (id: DoorMethod, label: string) => (
+    <div className="ui-row ui-row-static">
+      <label htmlFor={`pay-${id}`} className="ui-row-label"><b>{label}</b></label>
+      <input id={`pay-${id}`} className="ui-switch" type="checkbox" role="switch" checked={now?.methods.includes(id) === true} disabled={!now || busy !== null} onChange={(e) => void flip(id, e.target.checked)} />
+    </div>
+  );
+  const off = (label: string) => (
+    <div className="ui-row ui-row-static">
+      <span className="ui-row-label"><b>{label}</b><span className="ui-row-sub">Not set up yet</span></span>
+      <input className="ui-switch" type="checkbox" role="switch" aria-label={label} checked={false} disabled readOnly />
+    </div>
+  );
+  return (
+    <section className="ui-group" aria-label="Payment methods">
+      <h2>Payment methods</h2>
+      {sw("cash", "Cash at the door")}
+      {sw("upi_door", "UPI at the door")}
+      {off("UPI online")}
+      {off("Card online")}
+      {now && <p className="mono ui-foot">Last changed by {now.updated_by ?? "the system"}, {when(now.updated_at)}</p>}
+      {line && <p role="alert" className="ui-note error">{line}</p>}
+      <div className="ui-row ui-row-static">
+        <span className="ui-row-label"><b>UPI QR</b><span className="ui-row-sub">{qr === null ? "Loading…" : qr.object ? `Your QR · set by ${qr.updated_by ?? "the system"}, ${when(qr.updated_at)}` : "Sample QR · Not a real account yet"}</span></span>
+        <label className="ui-btn ghost ui-file-btn" aria-disabled={busy !== null}>
+          {busy === "qr" ? "Uploading…" : "Change"}
+          <input type="file" accept="image/png,image/jpeg,image/webp" aria-label="Change the UPI QR" hidden disabled={busy !== null} onChange={(e) => { void pick(e.target.files?.[0]); e.target.value = ""; }} />
+        </label>
+      </div>
+      {qr?.object && <img className="ui-qr-thumb" src={qrAddress(qr.object) ?? ""} width={120} height={120} alt="The UPI QR now in use" />}
+      {qrLine && <p role="alert" className="ui-note error">{qrLine}</p>}
     </section>
   );
 }
@@ -86,6 +150,7 @@ export function AdminNumbers({ live, kitchens, settings }: { live?: number; kitc
           </div>
         ))}
       </section>
+      {settings && <PaymentSettings />}
       {settings && <SwapSettings />}
       {settings && <PhoneCodeSetting />}
       <button type="button" className="ui-row" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}><span>Send feedback</span><span className="go" aria-hidden="true">›</span></button>

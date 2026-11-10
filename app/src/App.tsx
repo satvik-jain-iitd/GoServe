@@ -1,6 +1,7 @@
 // The customer flow in one place: menu, cart, bill, placed (story #48). No router yet: four steps in state.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchDoorMethods, type DoorMethod } from "./lib/doorMethods";
+import { readRiderQr } from "./lib/payMethods";
 import { addDish, cartLines, cartTotal, changeQty, reorderCart, toOrderItems, type Cart } from "./lib/cart";
 import { mergeOrder, riderOrders, cancelKind, shortId, statusLabel, type Order, type RiderAction, confirmHandover, isCash } from "./lib/kitchen";
 import { clientPlatform } from "./lib/platform";
@@ -952,10 +953,11 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }, [jobKitchenId]);
   // Story 1262 (board R7): the ways to collect at the door that are on. null until the read answers; [] when it failed. The rider screen names no method until it has the answer.
   const [riderMethods, setRiderMethods] = useState<DoorMethod[] | null>(demo ? ["cash", "upi_door"] : null);
-  const loadRiderMethods = () => { if (demo) return; setRiderMethods(null); void fetchDoorMethods(getClient()).then(setRiderMethods); };
+  const [riderQr, setRiderQr] = useState<string | null | undefined>(undefined);   // undefined: the read has not answered yet
+  const loadRiderMethods = () => { if (demo) return; setRiderMethods(null); setRiderQr(undefined); void readRiderQr(getClient()).then(setRiderQr); void fetchDoorMethods(getClient()).then(setRiderMethods); };
   const riderScreen = (gate: RiderGateState | null) => (
     <RiderScreen orders={orders} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
-      onAct={(o, a, method) => act(o, a, "rider", method)} methods={riderMethods} onLoadMethods={loadRiderMethods} gate={gate} kitchen={jobKitchen} />
+      onAct={(o, a, method) => act(o, a, "rider", method)} methods={riderMethods} qrUrl={riderQr} onLoadMethods={loadRiderMethods} gate={gate} kitchen={jobKitchen} />
   );
   const riderView = lock === "rider" ? <RiderGate>{riderScreen}</RiderGate> : riderScreen(null);
   // Story #229: the kitchen confirms a rider's cash. The rows are stamped here too, so the screen does not wait for the next read.

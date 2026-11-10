@@ -130,3 +130,11 @@ test("C9 Back leaves Collect payment without saving", async ({ page, context }) 
   await expect(page.getByRole("button", { name: "Delivered 0f0f0f0f", exact: true })).toBeVisible();
   expect(deliverCalls(net)).toEqual([]);
 });
+
+test("C11 when the admin has uploaded the QR, the rider's Collect payment shows that picture, no sample words, and the plain wait line", async ({ page, context }) => {
+  await open(context, page, { qrObject: "qr-0a1b2c3d-0000-4000-8000-0123456789ab.png" });
+  await expect(page.getByRole("img", { name: "UPI QR to scan" })).toHaveAttribute("src", "https://test.supabase.co/storage/v1/object/public/upi-qr/qr-0a1b2c3d-0000-4000-8000-0123456789ab.png");
+  await expect(page.getByText("Sample QR · the real one comes later")).toHaveCount(0);
+  await expect(page.getByText("Wait for the customer's paid screen. Then tap below.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Paid by UPI ₹640" })).toBeVisible();
+});
