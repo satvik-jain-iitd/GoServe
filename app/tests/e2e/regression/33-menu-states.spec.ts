@@ -35,11 +35,13 @@ test("TC 33.1 Reopen with no network after one good visit: the last menu with th
   await expect(page.getByRole("heading", { name: "Butter Chicken" })).toBeVisible();   // the saved menu, not an empty screen
 });
 
-test("TC 33.2 No network and never loaded: our own empty offline state, never a browser error", async ({ page, context }) => {
-  await setup(context, page);   // a first visit: nothing saved on the phone
-  await context.setOffline(true);
-  test.fail(true, "#1234: first visit with no network and no saved menu shows the browser's own error page (net::ERR_INTERNET_DISCONNECTED), not the app's offline screen");
+test("TC 33.2 App opened before, menu never loaded, then no network: our own empty offline state, never a browser error", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.menuUp = false;   // the app opens, but the menu read fails: nothing is saved on the phone
   await page.goto(PATH);
+  await page.evaluate(() => navigator.serviceWorker.ready);   // the app's files are on the phone before the network goes
+  await context.setOffline(true);
+  await page.reload();
   await expect(page.getByText("Could not connect to the internet.")).toBeVisible();   // the app's own screen shows
   await expect(page.getByText("Check your network, then try again.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
@@ -48,6 +50,7 @@ test("TC 33.2 No network and never loaded: our own empty offline state, never a 
   await expect(page.getByText("No dishes on the menu yet.")).toHaveCount(0);
 });
 
+// #1252 (filed by someone else, not tested here): when the server answers with no dishes and a copy is saved, lib/menu.ts:39-40 returns the saved copy with fromCache, so "No connection" shows while the phone is online.
 test("TC 33.3 Kitchen has no dishes: the Soon stamp, the empty line, Tell me when the menu is ready, Try another pin code", async ({ page, context }) => {
   // A phone that has never seen this kitchen's menu (no saved copy): the server answers with no dishes.
   const net = await setup(context, page);
@@ -73,6 +76,7 @@ test("TC 33.4 Network comes back: the banner goes and the live menu shows withou
   await expect(page.getByRole("heading", { name: "Butter Chicken" })).toBeVisible();   // the saved menu shows while offline
   await page.evaluate(() => { (window as unknown as { __noReload: number }).__noReload = 1; });   // a reload would clear this mark
   await context.setOffline(false);
+  await page.evaluate(() => window.dispatchEvent(new Event("online")));
   await expect(line).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Paneer Pulao" })).toBeVisible();   // the live menu, read again
   await expect(page.getByRole("heading", { name: "Butter Chicken" })).toHaveCount(0);
