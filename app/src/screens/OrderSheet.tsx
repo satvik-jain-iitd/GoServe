@@ -34,7 +34,7 @@ export function OrderSheet({ order, busy, error, onAccept, onDecline, onClose }:
           <div className="ui-sheet-head"><h2>No. {no}</h2><span className="mono ui-sheet-when">Placed {hhmm(order.created_at)} · {cash ? "Cash" : "Online"}</span></div>
           <div className="ui-slip-lines ui-ticket-big">{order.items.map((i) => <div key={i.menu_item_id}><span>{i.qty} × {i.name}</span><span>{formatRupees(i.price_paise * i.qty)}</span></div>)}</div>
           <div className="ui-slip-rule" />
-          {order.instructions && <><NoteBand text={order.instructions} /><div className="ui-slip-rule" /></>}
+          {order.instructions?.trim() && <><NoteBand text={order.instructions.trim()} /><div className="ui-slip-rule" /></>}
           <div className="ui-sheet-block"><span className="mono ui-kicker">Deliver to</span><span>{order.address}</span></div>
           <div className="ui-slip-rule" />
           <div className="ui-slip-total"><b>{cash ? "Rider collects" : "Paid online"}</b><span>{formatRupees(order.total_paise)}</span></div>
