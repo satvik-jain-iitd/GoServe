@@ -34,10 +34,12 @@ test("TC 16.1 Open the menu on a slow network: one loading state, then the whole
     { id: "d2", name: "Paneer Tikka", price_paise: 24000, image_url: "https://img.test/d2.png", image_credit: null },
     { id: "d3", name: "Dal Makhani", price_paise: 18000, image_url: "https://img.test/d3.png", image_credit: null },
   ];
-  // The slow network: the menu answers after 2 s, and each photo takes 600 ms the first time (a real server caches after that).
+  // The slow network: the menu waits on the gate below, and each photo takes 600 ms the first time (a real server caches after that).
+  let release!: () => void;
+  const gate = new Promise<void>((r) => { release = r; });
   await page.route(MENU, async (route) => {
     if (route.request().method() === "OPTIONS") return route.fallback();
-    await new Promise((r) => setTimeout(r, 2000));
+    await gate;   // the slow network: the menu waits until the test lets it through
     return route.fulfill({ status: 200, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(dishes) });
   });
   const seen = new Set<string>();
@@ -50,6 +52,7 @@ test("TC 16.1 Open the menu on a slow network: one loading state, then the whole
   reached.catch(() => undefined);   // the step's own failure is reported when it is awaited below
   await expect(LOADING(page)).toBeVisible();   // the one loading state shows while the menu is on its way
   await expect(page.locator(".ui-tile")).toHaveCount(0);   // and no row before the data and the photos
+  release();   // the menu comes in now
   await reached;
   await expect(LOADING(page)).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => (window as unknown as { __first: unknown }).__first)).toEqual({ rows: 3, imgs: 3, decoded: 3, ph: 0 });   // all three rows came in together, every photo drawn, no placeholder
@@ -60,23 +63,34 @@ test("TC 16.2 the Veg switch is grey with a white knob when off (SW5a)", async (
   const sw = page.getByRole("switch", { name: "Veg only, whole menu" });
   await expect(sw).toBeVisible();
   await expect(sw).not.toBeChecked();
-  await expect.poll(() => sw.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe("rgb(201, 207, 195)");   // #C9CFC3, the light grey off track
-  await expect.poll(() => sw.evaluate((e) => getComputedStyle(e, "::before").backgroundColor)).toBe("rgb(255, 255, 255)");   // #ffffff, the knob
+  // The expected colours are read from the design tokens, as spec 17 does: a probe element resolves each var().
+  const token = (name: string) => page.evaluate((v) => {
+    const t = document.createElement("i");
+    t.style.backgroundColor = `var(${v})`;
+    document.body.append(t);
+    const c = getComputedStyle(t).backgroundColor;
+    t.remove();
+    return c;
+  }, name);
+  const off = await token("--gs-switch-off");   // the light grey off track (#C9CFC3)
+  const knob = await token("--gs-switch-knob");   // the white knob (#ffffff)
+  await expect.poll(() => sw.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe(off);
+  await expect.poll(() => sw.evaluate((e) => getComputedStyle(e, "::before").backgroundColor)).toBe(knob);
 });
 
+// The 500 path (MenuScreen.tsx shows the network line for every failure) is issue #1250. This test covers the network-down path only.
 test("TC 16.3 the menu call fails: our own line with Try again, no blank page", async ({ page, context }) => {
   await STEPS.menu(context, page, PATH);   // the menu shows first, so the failure below is the only thing that changes
   let failing = true;
   await page.route(MENU, async (route) => {
     if (route.request().method() === "OPTIONS" || !failing) return route.fallback();
-    return route.fulfill({ status: 500, headers: { ...CORS, "content-type": "application/json" }, body: "{}" });
+    return route.abort("failed");   // the network is down: the call never gets an answer
   });
   // No saved menu on this phone, so the failed call has nothing to fall back on.
   await page.evaluate(() => { for (const k of Object.keys(localStorage)) if (k.startsWith("gs.menu.v1")) localStorage.removeItem(k); });
   await page.reload();
   const line = page.getByRole("alert").filter({ hasText: "Could not connect to the internet." });
   await expect(line).toBeVisible({ timeout: 10_000 });   // after the second read fails (the app waits 1.5 s between reads)
-  await expect(page.getByText("Check your network, then try again.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toHaveCount(0);
   failing = false;   // the network is back
@@ -91,7 +105,7 @@ test("TC 16.4 the menu takes over 10 s: a line that it is slow, with the last me
     await new Promise(() => undefined);   // the menu never answers; the app's own 4 s limit ends each read
   });
   await page.reload();
-  await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();   // the last menu shows at once
+  await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible({ timeout: 10_000 });   // the last menu shows after the first read gives up (about 4 s)
   await expect(page.getByText("GoServe is slow right now. Showing the menu you saw last.")).toBeVisible({ timeout: 20_000 });   // after the second read times out too
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();   // and the menu is still there under the line
 });

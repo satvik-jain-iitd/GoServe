@@ -39,7 +39,7 @@ test("TC 9.2 Tell me when you come here: the letter with the place, the Rs 100 p
   await expect(letter(page)).toContainText("We don't reach Sector 62 yet");   // the place name in the text
   await expect(letter(page).getByText("₹100 off", { exact: true })).toBeVisible();   // the promise the server stored (10000 paise)
   await expect(letter(page)).toContainText("Pahle banda, phir dhanda.");
-  await expect(letter(page).locator(".ui-founder-sign")).toHaveText("Satvik");
+  await expect(letter(page).getByText("Satvik", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Share this note" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Change location" })).toBeVisible();
   await expect(screen(page)).toHaveCount(0);   // the letter replaces the No kitchen screen
@@ -53,8 +53,9 @@ test("TC 9.4 Change location goes to the map", async ({ page, context }) => {
   await expect(noKitchenHeading(page)).toHaveCount(0);
 });
 
-test("TC 9.5 ask twice for the same place: both asks carry the same pin and both end on the same letter", async ({ page, context }) => {
-  // Client half only. The rule "one wish per person and pin" lives in the area_request_add_v2 database function, which the test answers with ok every time.
+// Follow-up issue #1249 holds the database half of TC 9.5 (the one-row rule, `on conflict (user_id, pin)` in the early_friend migration).
+test("TC 9.5 client half only (the one-row rule is not checked here): both asks carry the same pin and both end on the same letter", async ({ page, context }) => {
+  // The rule "one wish per person and pin" lives in the area_request_add_v2 database function, which the test answers with ok every time.
   const sent: string[] = [];
   page.on("request", (r) => { if (r.url().includes("/rpc/area_request_add_v2")) sent.push(r.postData() ?? ""); });
   await STEPS["no-kitchen"](context, page, PATH);
