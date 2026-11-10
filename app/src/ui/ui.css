@@ -856,4 +856,4 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-qr-thumb { display: block; margin: var(--gs-space-2) var(--gs-gutter); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--gs-off-white); }
 
 /* story 1263: a switch that cannot be turned on (UPI online, Card online: not set up yet) looks switched off and out of reach */
-.ui-switch:disabled { opacity: 0.4; cursor: not-allowed; }
+.ui-switch.not-set-up { opacity: 0.4; cursor: not-allowed; }

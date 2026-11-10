@@ -79,7 +79,7 @@ function PaymentSettings() {
   const off = (label: string) => (
     <div className="ui-row ui-row-static">
       <span className="ui-row-label"><b>{label}</b><span className="ui-row-sub">Not set up yet</span></span>
-      <input className="ui-switch" type="checkbox" role="switch" aria-label={label} checked={false} disabled readOnly />
+      <input className="ui-switch not-set-up" type="checkbox" role="switch" aria-label={label} checked={false} disabled readOnly />
     </div>
   );
   return (
