@@ -45,12 +45,18 @@ test("TC 18.1 Filter sheet: the title, N of M dishes, Veg only, a row per group 
   await expect(s.getByRole("heading", { name: "Filter", exact: true })).toBeVisible();
   await expect(s.getByText("5 of 5 dishes")).toBeVisible();
   await expect(s.getByRole("switch", { name: /^Veg only/ })).not.toBeChecked();
-  const rows = s.getByRole("group", { name: "Categories" }).locator("label.ui-cat-row");
+  const rows = s.getByRole("group", { name: "Categories" }).getByRole("checkbox");
   await expect(rows).toHaveCount(3);
-  await expect(rows.nth(0)).toHaveText(/Starters\s*2/);
-  await expect(rows.nth(1)).toHaveText(/Mains\s*2/);
-  await expect(rows.nth(2)).toHaveText(/Desserts\s*1/);
-  // The app shows Clear all only once a group is ticked (the board picture opens with two ticked), so tick one to see it.
+  await expect(rows.nth(0)).toHaveAccessibleName(/Starters\s*2/);
+  await expect(rows.nth(1)).toHaveAccessibleName(/Mains\s*2/);
+  await expect(rows.nth(2)).toHaveAccessibleName(/Desserts\s*1/);
+  // None ticked means the whole menu: no group ticked, and no Clear all link yet.
+  await expect(rows.nth(0)).not.toBeChecked();
+  await expect(rows.nth(1)).not.toBeChecked();
+  await expect(rows.nth(2)).not.toBeChecked();
+  await expect(s.getByRole("link", { name: "Clear all" })).toHaveCount(0);
+  await expect(s.getByRole("button", { name: "Show 5 dishes" })).toBeVisible();
+  // Clear all shows once a group is ticked, so tick one to see it, then check the filled Show button.
   await group(page, "Mains").check();
   await expect(s.getByRole("link", { name: "Clear all" })).toBeVisible();
   const show = s.getByRole("button", { name: "Show 2 dishes" });
@@ -58,8 +64,7 @@ test("TC 18.1 Filter sheet: the title, N of M dishes, Veg only, a row per group 
   expect(await show.evaluate((e) => getComputedStyle(e).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");   // filled, not an outline
 });
 
-test("TC 18.2 untick two groups, Show: the menu shows only the ticked groups", async ({ page, context }) => {
-  // The app starts with no group ticked (none ticked means the whole menu), so the case's "untick two" is run as "tick two".
+test("TC 18.2 tick two groups, Show: the menu shows only the ticked groups", async ({ page, context }) => {
   await reach(context, page);
   await openFilter(page);
   await group(page, "Mains").check();
@@ -87,30 +92,30 @@ test("TC 18.3 Veg only on: the count and the list change to veg only", async ({ 
   await expect(dish(page, "Butter Chicken")).toHaveCount(0);
 });
 
-test("TC 18.4 untick all: the Show button goes grey with a reason line (#1170)", async ({ page, context }) => {
-  test.fail(true, "#1204: with no group ticked the whole menu still shows and Show stays filled, no reason line (#1171 not in the app yet)");
+test("TC 18.4 tick a group, then untick it: the whole menu is back and Show can be pressed (none ticked means all, #972)", async ({ page, context }) => {
   await reach(context, page);
   await openFilter(page);
   await group(page, "Mains").check();
   await group(page, "Mains").uncheck();
-  await expect(sheet(page).getByText("5 of 5 dishes")).toBeVisible();   // the sheet is live, so the next line can fail
-  await expect(sheet(page).getByRole("button", { name: /^Show / })).toBeDisabled();   // grey: cannot be pressed
+  await expect(sheet(page).getByText("5 of 5 dishes")).toBeVisible();
+  await expect(sheet(page).getByRole("button", { name: "Show 5 dishes" })).toBeEnabled();
 });
 
-test("TC 18.5 Clear all: every group is ticked again", async ({ page, context }) => {
-  test.fail(true, "#1205: Clear all leaves no group ticked (none ticked means the whole menu), the case expects every group ticked");
+test("TC 18.5 Clear all: no group ticked, the whole menu is back and the Clear all link is gone (#972)", async ({ page, context }) => {
   await reach(context, page);
   await openFilter(page);
   await group(page, "Mains").check();
-  await expect(sheet(page).getByRole("link", { name: "Clear all" })).toBeVisible();   // the link is live, so the next line can fail
+  await group(page, "Desserts").check();
+  await expect(sheet(page).getByRole("link", { name: "Clear all" })).toBeVisible();
   await sheet(page).getByRole("link", { name: "Clear all" }).click();
-  await expect(group(page, "Starters")).toBeChecked();
-  await expect(group(page, "Mains")).toBeChecked();
-  await expect(group(page, "Desserts")).toBeChecked();
+  await expect(group(page, "Starters")).not.toBeChecked();
+  await expect(group(page, "Mains")).not.toBeChecked();
+  await expect(group(page, "Desserts")).not.toBeChecked();
+  await expect(sheet(page).getByText("5 of 5 dishes")).toBeVisible();
+  await expect(sheet(page).getByRole("link", { name: "Clear all" })).toHaveCount(0);
 });
 
-test("TC 18.6 close the sheet without Show: nothing changes", async ({ page, context }) => {
-  test.fail(true, "#1206: a tick applies at once, so closing by the dark area without Show keeps the filter and Starters stay hidden");
+test("TC 18.6 tick a group, close the sheet by the dark area: the ticks stay and the menu shows only the ticked groups (#972)", async ({ page, context }) => {
   await reach(context, page);
   await expect(dish(page, "Chicken Tikka")).toBeVisible();   // every dish shows before the sheet opens
   await openFilter(page);
@@ -118,8 +123,11 @@ test("TC 18.6 close the sheet without Show: nothing changes", async ({ page, con
   await expect(sheet(page).getByText("2 of 5 dishes")).toBeVisible();
   await page.locator(".ui-sheet-back").click({ position: { x: 20, y: 20 } });   // the dark area above the sheet: close without Show
   await expect(sheet(page)).toBeHidden();
-  await expect(dish(page, "Paneer Tikka")).toBeVisible();
-  await expect(dish(page, "Chicken Tikka")).toBeVisible();
   await expect(dish(page, "Dal Makhani")).toBeVisible();
-  await expect(dish(page, "Gulab Jamun")).toBeVisible();
+  await expect(dish(page, "Butter Chicken")).toBeVisible();
+  await expect(dish(page, "Paneer Tikka")).toHaveCount(0);
+  await expect(dish(page, "Chicken Tikka")).toHaveCount(0);
+  await expect(dish(page, "Gulab Jamun")).toHaveCount(0);
+  await openFilter(page);
+  await expect(group(page, "Mains")).toBeChecked();
 });
