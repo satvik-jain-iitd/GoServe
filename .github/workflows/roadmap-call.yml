@@ -25,6 +25,6 @@ jobs:
       pull-requests: read
       checks: read
       statuses: read
-    uses: satvik-jain-iitd/shipquick_latest/.github/workflows/roadmap.yml@f87ddb185b57636185df6ef5ab8c63586d8634e7 # v0.11.0
+    uses: satvik-jain-iitd/shipquick_latest/.github/workflows/roadmap.yml@f66e41a087de94db14c0203dd6972a487ba06c28 # v0.11.1
     with:
-      shipquick_ref: f87ddb185b57636185df6ef5ab8c63586d8634e7
+      shipquick_ref: f66e41a087de94db14c0203dd6972a487ba06c28
