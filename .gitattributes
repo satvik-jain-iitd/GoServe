@@ -1,0 +1,3 @@
+# ShipQuick append-only logs (rule 23): two branches that add rows at the end merge with no conflict.
+docs/process-trace.md merge=union
+docs/LEARNINGS.md merge=union
