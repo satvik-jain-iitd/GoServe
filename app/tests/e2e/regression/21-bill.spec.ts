@@ -33,7 +33,7 @@ async function fillDetails(page: Page) {
 const slipAmount = (page: Page, label: string) => page.getByText(label, { exact: true }).locator("..").locator("span").last();
 const rupees = (text: string) => Number(text.replace(/[^\d]/g, ""));
 
-test("TC 21.1 Look: the kitchen and pin, the one line, Delivery, Cash at door, Add more, the four fields, How you pay, the sticky Place order", async ({ page, context }) => {
+test("TC 21.1 Look: the kitchen and pin, the one line, Delivery, To pay at door, Add more, the four fields, How you pay, the sticky Place order", async ({ page, context }) => {
   await STEPS["bill"](context, page, PATH);
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();   // proves the bill shows before the parts are checked
   await expect(page.getByText("Hauz Khas Kitchen · 110016", { exact: true })).toBeVisible();
@@ -41,7 +41,7 @@ test("TC 21.1 Look: the kitchen and pin, the one line, Delivery, Cash at door, A
   await expect(page.getByText("320", { exact: true })).toBeVisible();
   await expect(page.getByText("Delivery", { exact: true })).toBeVisible();
   await expect(page.getByText("Free", { exact: true })).toBeVisible();
-  await expect(page.getByText("Cash at door", { exact: true })).toBeVisible();
+  await expect(page.getByText("To pay at door", { exact: true })).toBeVisible();
   await expect(page.getByText("₹320", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "+ Add more" })).toBeVisible();
   await expect(nameBox(page)).toBeVisible();
@@ -51,9 +51,9 @@ test("TC 21.1 Look: the kitchen and pin, the one line, Delivery, Cash at door, A
   await expect(page.getByText("0 / 200", { exact: true })).toBeVisible();
   const pay = page.getByRole("radiogroup", { name: "How you pay" });
   await expect(pay).toBeVisible();
-  await expect(pay.getByText("Cash on delivery", { exact: true })).toBeVisible();
-  await expect(pay.getByText("UPI", { exact: true })).toBeVisible();
-  await expect(pay.getByText("Card", { exact: true })).toBeVisible();
+  await expect(pay.getByText("Cash at the door", { exact: true })).toBeVisible();   // story #1261 (board P6): the door methods that are on; no Card, no online UPI
+  await expect(pay.getByText("UPI at the door", { exact: true })).toBeVisible();
+  await expect(pay.getByText("Card", { exact: true })).toHaveCount(0);
   await expect(place(page)).toContainText("Cash · ₹320");
   await expect(place(page)).toContainText("Place order ›");
 });

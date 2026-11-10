@@ -47,7 +47,7 @@ test("TC 23.1 Look: right after Place order, the grey Placed stamp, Working out 
   expect(Math.max(r, g, b) - Math.min(r, g, b), `Placed stamp colour rgb(${r}, ${g}, ${b}) is grey`).toBeLessThan(30);   // grey: the three channels are close
   await expect(page.getByText("Working out the time")).toBeVisible();
   await expect(page.getByText("1 × Butter Chicken")).toBeVisible();
-  await expect(page.getByText("Cash at door", { exact: true })).toBeVisible();
+  await expect(page.getByText("To pay at door", { exact: true })).toBeVisible();
   await expect(page.getByText("₹320", { exact: true })).toBeVisible();
   await expect(page.getByText("The kitchen has your order. This page updates on its own.")).toBeVisible();
   await expect(page.getByRole("list", { name: "Order progress" }).getByRole("listitem")).toHaveCount(6);
