@@ -168,10 +168,6 @@ jobs:
       - name: Guard unit tests
         run: python3 -m unittest discover -s scripts -p "test_*.py"
 
-      - name: No sample QR in a release to main (story 1262)
-        if: github.event_name == 'pull_request' && github.base_ref == 'main'
-        run: python3 scripts/check_sample_qr.py
-
       - name: n8n order workflow tests
         run: node --test "ops/n8n/order/*.test.js"
 

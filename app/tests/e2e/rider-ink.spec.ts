@@ -74,6 +74,7 @@ for (const theme of ["day", "night"] as const) {
   test(`S6 the rider screens have no serious contrast or role violation in ${theme}`, async ({ page, context }) => {
     await context.addInitScript((v) => localStorage.setItem("gs-theme", v), theme);
     const net = await setup(context, page, [{ ...order("ready"), rider_id: SESSION, customer_name: "Rahul Verma", customer_phone: "9876543210" }], { guest: true });
+    net.state.qrObject = "qr-0a1b2c3d-0000-4000-8000-0123456789ab.png";   // story 1263: UPI at the door needs an uploaded QR
     await page.goto("/rider/");
     await expect(page.getByText("To collect at door")).toBeVisible();
     const scan = async () => expect(await axeScan(page, ["wcag2a", "wcag2aa"])).toEqual([]);
