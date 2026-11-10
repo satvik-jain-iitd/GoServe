@@ -3,7 +3,7 @@
 Dry run by default: it only reads and prints the plan (names only, never a secret value). --apply writes. Stops at the first error.
 It refuses goserve-dev and any project not named GoServe. The Management API is used for everything (no supabase CLI).
 The prod address comes from SUPABASE_GOSERVE_PROD_URL (vault 02_databases.env), the token from SUPABASE_ACCESS_TOKEN.
-Fresh secrets are written to the vault file 05_goserve_prod_functions.env first, then sent. Usage: prod_backend_v2.py [--apply]"""
+Fresh secrets are written to the vault file 05_goserve_prod_functions.env first, then sent. Usage: prod_backend_v2.py [--apply] [--functions-only]"""
 import glob, json, os, re, secrets, sys, time, tomllib, urllib.error, urllib.request, uuid
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -64,6 +64,24 @@ def marker(sql):
     return f"{kind}:{m.group(1)}"
 
 
+DROP_RX = r"drop\s+function\s+(?:if\s+exists\s+)?(?:public\.)?(\w+)\s*\(((?:[^()]|\([^()]*\))*)\)"
+
+
+def dropped_later(folder="supabase/migrations"):
+    """Story #1340: {file: {marker: the later file that drops it}}. A file whose marker is dropped by a later file that prod HAS (sim_groups made sim_clear_all(), sim_clear_in_slices
+    dropped it) is not missing. If the dropping file is missing too, both run, in order."""
+    files = sorted(glob.glob(os.path.join(ROOT, folder, "*.sql")))
+    texts = [re.sub(r"--[^\n]*", "", open(f).read()) for f in files]
+    out = {}
+    for i, f in enumerate(files):
+        later = {}
+        for g, t in zip(files[i + 1:], texts[i + 1:]):
+            for m in re.finditer(DROP_RX, t, re.I):
+                later.setdefault(f"function:{m.group(1)}/{_args(m.group(2))}", os.path.basename(g))   # the marker -> the file that drops it
+        out[os.path.basename(f)] = later
+    return out
+
+
 def load(folder):
     return [(os.path.basename(f), marker(open(f).read())) for f in sorted(glob.glob(os.path.join(ROOT, folder, "*.sql")))]
 
@@ -74,8 +92,9 @@ def build_plan(ref, name, v1, v2, present):
         raise Refused("this is goserve-dev. This script is for the production project only.")
     if "goserve" not in name.lower() or "dev" in name.lower():
         raise Refused(f"the project name is {name!r}; the prod project is called GoServe. Check SUPABASE_GOSERVE_PROD_URL.")
+    later, mark = dropped_later(), dict(v2)
     return {"v1_gaps": [f for f, m in v1 if m and m not in present and f not in SUPERSEDED],
-            "v2_missing": [f for f, m in v2 if m is None or m not in present]}
+            "v2_missing": [f for f, m in v2 if m is None or (m not in present and not (later.get(f, {}).get(m) and mark.get(later[f][m]) in present))]}
 
 
 PRESENT_SQL = ("select 'table:' || table_name as m from information_schema.tables where table_schema = 'public' "
@@ -190,13 +209,16 @@ def main(argv, env=os.environ):
     print(f"functions: deployed {have_funcs or 'none'}; will deploy all {len(funcs)}: {funcs}")
     print(f"secrets set now: {have_secrets or 'none'}; will set: {want}; fresh ones not yet in the vault file: {[k for k in FRESH if not vault.get(k)] or 'none'}")
     print("push vault pair (push_notify_url, push_notify_secret): will be written. Anonymous sign-in is", "ON" if release_db.get_auth(ref).get("external_anonymous_users_enabled") else "OFF (will be switched on)")
+    functions_only = "--functions-only" in argv   # story #1340: deploy the functions and nothing else (no migration, secret, vault row or auth change)
+    if functions_only:
+        print("functions only: migrations, secrets, push vault pair and auth are skipped.")
     if "--apply" not in argv:
         print("Dry run. Nothing written. Add --apply (after the owner's yes) to run the plan.")
         return
-    if plan["v1_gaps"]:
+    if plan["v1_gaps"] and not functions_only:
         sys.exit(f"Refused: prod is missing v1 migrations {plan['v1_gaps']}. Stop and ask the owner.")
     sql_dir = {f: os.path.join(ROOT, "supabase", "migrations", f) for f, _ in v2}
-    for f in plan["v2_missing"]:
+    for f in ([] if functions_only else plan["v2_missing"]):
         try:
             release_db.sql(ref, open(sql_dir[f]).read())
         except Exception as e:
@@ -208,6 +230,11 @@ def main(argv, env=os.environ):
         except Exception as e:
             sys.exit(f"STOPPED: {e}")
         print("deployed", n)
+    if functions_only:
+        if not checks(url, gsvault.setting(env, "SUPABASE_GOSERVE_PROD_ANON_KEY", "02_databases.env")):
+            sys.exit("Checks failed. Look at the prod project before going on.")
+        print("done (functions only)")
+        return
     ensure_fresh(vault)
     release_db._call("POST", ref, "/secrets", [{"name": "OTP_FIXED_CODE", "value": FIXED_CODE}, *({"name": k, "value": vault[k]} for k in FRESH)])
     print("secrets set:", want)
