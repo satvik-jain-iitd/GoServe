@@ -72,7 +72,7 @@ test("TC 5.5 a word with no match: No place found in our words, Use current loca
   await expect(page.getByRole("button", { name: "Use current location" })).toBeVisible();
 });
 
-test("TC 5.6 tap clear (x): the box empties, the results go, the keyboard stays", async ({ page, context }) => {
+test("TC 5.6 tap clear (x) (Chromium only, #1248): the box empties, the results go, the keyboard stays", async ({ page, context }) => {
   await STEPS["deliver-to-search"](context, page, PATH);
   await expect(page.getByRole("heading", { name: "Places · 2 found" })).toBeVisible();   // results shown before the clear
   const box = (await search(page).boundingBox())!;
@@ -99,12 +99,12 @@ test("TC 5.7 type fast, 10 letters: one search after the typing stops, not 10", 
 });
 
 test("TC 5.8 no network while typing: a line that search needs the internet, saved rows still match", async ({ page, context }) => {
-  test.fail(true, "#1201: app shows 'Could not search places. Try again.' when offline, not a line that search needs the internet");
   await STEPS["deliver-to-search"](context, page, PATH);
   await context.route(PLACES, (r) => (r.request().method() === "OPTIONS" ? r.fulfill({ status: 204, headers: CORS }) : r.abort("internetdisconnected")));   // the phone has no network
   await search(page).fill("green park");
   await expect(page.getByRole("heading", { name: "Saved · 1 match" })).toBeVisible();   // saved rows match without the network
   await expect(page.getByRole("button", { name: "Deliver to Home" })).toBeVisible();
   await search(page).press("Enter");
-  await expect(page.getByText(/needs the internet|internet/i)).toBeVisible();
+  test.fail(true, "#1201: app shows 'Could not search places. Try again.' when offline, not a line that search needs the internet");
+  await expect(page.getByText(/internet/i)).toBeVisible();
 });
