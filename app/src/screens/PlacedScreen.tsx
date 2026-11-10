@@ -88,7 +88,7 @@ const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", 
 export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onMenu, onAgain, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, declined, eta }: Props) {
   const [mapOpen, setMapOpen] = useState(false);   // story 1053: the full-screen rider map
   const steps = trackerSteps(status);
-  const { now } = useNowOnline();
+  const { now, online } = useNowOnline();
   const view = etaView(eta, now);
   const placed = new Date(placedAt);
   const door = view.kind === "time" ? clock12(view.by) : null;   // the clock the server's estimate lands on
@@ -101,9 +101,10 @@ export function PlacedScreen({ order, status, paidBy, confirmedAt, placedAt, lin
       <header className="ui-head">
         <BackChevron label="Back to menu" onClick={onBack} />
         <h1>{title}</h1>
-        {!delivered && !cancelled && status !== "placed" ? <span className="meta ui-livemark"><span aria-hidden="true" className="ui-live-dot" />Live</span> : <span className="meta">No. {shortId(order.id)}</span>}
+        {!delivered && !cancelled && status !== "placed" ? <span className="meta ui-livemark"><span aria-hidden="true" className="ui-live-dot" />{online ? "Live" : "Offline"}</span> : <span className="meta">No. {shortId(order.id)}</span>}
       </header>
       <div className="ui-scroll">
+        {!online && <p role="status" className="ui-offline">No connection. This page shows your last update and catches up when you are back online.</p>}   {/* bug #1228 */}
         {pay && status === "placed" && pay.state !== "paid" && (
           <div className="ui-paybox">
             {(pay.state === "ready" || pay.state === "starting") && (
