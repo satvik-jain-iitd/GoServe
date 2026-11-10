@@ -79,7 +79,6 @@ const LOC_WAIT_MS = 5000;   // story #1056: how long the app waits for a positio
 export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [menu, setMenu] = useState<{ dishes: Dish[]; fromCache: boolean; slow?: boolean } | null>(null);
   // The customer app asks for a pin code and shows the menu of the kitchen that serves it (story B2). The demo console and the other apps keep the plain menu.
-  const land = useRef(false);
   const [pin, setPin] = useState<string | null>(() => (lock === "customer" ? loadPin() : null));
   const [area, setArea] = useState<Area | null>(() => (lock === "customer" ? loadArea() : null));   // #242 D15: a saved kitchen opens the menu before the network answers
   const [areaError, setAreaError] = useState<string | null>(null);
@@ -481,7 +480,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }, [liveTick]);   // eslint-disable-line react-hooks/exhaustive-deps
   function choosePin(p: string, at?: { lat: number; lng: number }) {
     setFrom(at ?? null);
-    land.current = true;   // #525: the mark flies in once, on the first Menu after this pick
     savePin(p);
     capture("address_set", { from: at ? "location" : "typed" });
     setArea(null);
@@ -1012,7 +1010,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   ) : (
     <>
         {step === "menu" && (
-          <MenuScreen land={land.current} onLanded={() => { land.current = false; }} dishes={menu?.dishes ?? null} fromCache={menu?.fromCache ?? false} slow={menu?.slow ?? false} error={menuError} onRetry={() => setMenuTry((n) => n + 1)}
+          <MenuScreen dishes={menu?.dishes ?? null} fromCache={menu?.fromCache ?? false} slow={menu?.slow ?? false} error={menuError} onRetry={() => setMenuTry((n) => n + 1)}
             pin={pin} name={name} qty={cart} cartCount={count} cartTotal={total}
             kitchenName={kitchenName}
             openText={shown?.kind === "ok" ? openTill(shown.kitchen.closes_at) : ""}
