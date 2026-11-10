@@ -24,13 +24,15 @@ const LINES = [
   { menu_item_id: "d1", name: "Dal Makhani", qty: 1, price_paise: 19000 },
 ];
 const DELIVERED = { ...order("delivered", "2026-11-10T11:23:00Z", "2026-11-10T10:40:00Z"), items: LINES, total_paise: 83000, paid_by: "cash" };
+// The same order with a Rs 40 delivery fee in the total (the server's total carries the fee, so it is Rs 870).
+const DELIVERED_FEE = { ...DELIVERED, total_paise: 87000 };
 // The kitchen that holds the phone number the slip's Call the kitchen link uses (the same kitchen the bill spec uses).
 const KITCHEN = { id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: "9876543210", pin_codes: ["110016"], open: true, active: true, lat: null, lng: null, opens_at: "00:00:00", closes_at: "23:59:00" };
 
 // The shared step (History, no orders yet), then this history and kitchen, the same page again, and History opened.
-async function reach(context: BrowserContext, page: Page) {
+async function reach(context: BrowserContext, page: Page, delivered: typeof DELIVERED = DELIVERED) {
   await STEPS["orders"](context, page, PATH);
-  await context.route(isPath("/rest/v1/orders"), (r) => answer(r, [DELIVERED]));
+  await context.route(isPath("/rest/v1/orders"), (r) => answer(r, [delivered]));
   await context.route(isPath("/rest/v1/kitchens"), (r) => answer(r, [KITCHEN]));
   await page.reload();
   await page.getByRole("button", { name: "History" }).click();
@@ -54,7 +56,7 @@ test("TC 26.1 Look: the Delivered stamp, At your door 4:53 pm, the lines, Cash p
   await expect(page.getByRole("link", { name: "Call the kitchen" })).toHaveAttribute("href", "tel:9876543210");
 });
 
-test("TC 26.2 Total equals the lines: the lines plus Delivery Free add up to the Cash paid amount", async ({ page, context }) => {
+test("TC 26.2 Total equals the lines, free delivery: the lines plus Delivery Free add up to the Cash paid amount", async ({ page, context }) => {
   await reach(context, page);
   const slip = page.getByRole("region", { name: "Order, delivered" });
   await expect(slip.getByText("Cash paid", { exact: true })).toBeVisible();   // proves the slip shows before the sum is read
@@ -65,4 +67,17 @@ test("TC 26.2 Total equals the lines: the lines plus Delivery Free add up to the
   const sum = Number(amounts[0]) + Number(amounts[1]);
   expect(sum).toBe(830);   // the two lines as the customer reads them: 640 and 190
   await expect(slip.locator(".ui-slip-total span")).toHaveText(`₹${sum}`);
+});
+
+test("TC 26.2 Total equals the lines plus a delivery fee: the Delivery row adds up to the Cash paid amount", async ({ page, context }) => {
+  await reach(context, page, DELIVERED_FEE);
+  const slip = page.getByRole("region", { name: "Order, delivered" });
+  await expect(slip.getByText("Cash paid", { exact: true })).toBeVisible();   // proves the slip shows before the sum is read
+  await expect(slip.locator(".ui-slip-total span")).toHaveText("₹870");   // the server's total, with the fee in it
+  const rows = slip.locator(".ui-slip-lines > div");
+  await expect(rows).toHaveCount(3);   // two dishes and Delivery
+  const amounts = await rows.locator("span:last-child").allTextContents();
+  // The Delivery row is written as Free for every order (PlacedScreen.tsx:143), so the rows do not add up when a fee is charged.
+  test.fail(true, "#1268: the Delivery row always reads Free (PlacedScreen.tsx:143) while the total carries the delivery fee, so the rows do not add up to Cash paid");
+  expect(Number(amounts[0]) + Number(amounts[1]) + Number(amounts[2])).toBe(870);   // 640 + 190 + 40
 });
