@@ -92,13 +92,12 @@ test("S5 Not yet three times opens the Feedback sheet with Order not delivered",
 test("a reminder: when the tester allowed notifications the phone shows one when the prompt comes", async ({ page, context }) => {
   await context.addInitScript(() => {
     (window as any).__notes = [];
-    class Fake { static permission = "default"; static requestPermission = async () => ((Fake.permission = "granted"), "granted"); constructor(title: string) { (window as any).__notes.push(title); } }
+    class Fake { static permission = "granted"; static requestPermission = async () => "granted";   /* story #1343: alerts were allowed earlier (step 2 or You); the order screen does not ask */ constructor(title: string) { (window as any).__notes.push(title); } }
     (window as any).Notification = Fake;
   });
   const net = await setup(context, page);
   net.state.confirmCfg = { confirm_after_ready_min: 0.03, confirm_after_place_min: 8 };
   await placeOrder(page);
-  await page.getByRole("button", { name: "Ping me when it is ready" }).click();
   net.push("INSERT", order("ready", now(), now()));
   await expect(prompt(page)).toBeVisible({ timeout: 8000 });
   expect(await page.evaluate(() => (window as any).__notes)).toEqual(["Was your order delivered?"]);

@@ -30,10 +30,8 @@ type Props = {
   asking: boolean;              // show "Was your order delivered?"
   busy: boolean;
   error: string | null;
-  reminder: "ask" | "on" | "off" | "none";
   onYes: () => void;
   onNotYet: () => void;
-  onAllowReminder: () => void;
   onMenu: () => void;           // See the menu, with an empty cart (a delivered or cancelled order)
   onAgain: () => void;          // the cancelled order's button: the bill with the same dishes (bug #1229)
   onBack: () => void;           // the chevron: back to the menu
@@ -86,7 +84,7 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "At your door" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
-export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, reminder, onYes, onNotYet, onAllowReminder, onMenu, onAgain, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, declined, eta }: Props) {
+export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, onYes, onNotYet, onMenu, onAgain, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, declined, eta }: Props) {
   const [mapOpen, setMapOpen] = useState(false);   // story 1053: the full-screen rider map
   const steps = trackerSteps(status);
   const { now, online } = useNowOnline();
@@ -186,9 +184,6 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
             <>
               <p>Delivered. Thank you for eating with GoServe.</p>
             </>
-          )}
-          {reminder === "ask" && !delivered && !cancelled && (
-            <button type="button" className="ui-btn ghost" onClick={onAllowReminder}>Ping me when it is ready</button>
           )}
         </div>
       </div>
