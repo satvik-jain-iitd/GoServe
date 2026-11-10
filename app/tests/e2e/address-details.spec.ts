@@ -91,6 +91,23 @@ test("S6 Change goes back to the map, and the map is still there", async ({ page
   await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeVisible();
 });
 
+test("S6b Change keeps the pin: an address saved after Change has the same place as before it (bug #1203)", async ({ page, context }) => {
+  const looked: string[] = [];
+  page.on("request", (r) => { if (r.url().includes("/functions/v1/geocode")) looked.push(r.url()); });
+  const net = await toDetails(page, context);
+  await expect(sheet(page)).toBeVisible();
+  const pin = new URL(looked.at(-1)!).searchParams;   // the place the words were asked for, before the sheet opened
+  await sheet(page).getByRole("button", { name: "Change" }).click();
+  await expect(sheet(page)).toHaveCount(0);
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();
+  await sheet(page).getByLabel("House, flat, floor").fill("12B");
+  await sheet(page).getByRole("button", { name: "Save address" }).click();
+  await expect.poll(() => net.state.addresses.length).toBe(2);
+  const saved = net.state.addresses.at(-1)!;
+  expect(saved.lat).toBeCloseTo(Number(pin.get("lat")), 4);   // about 10 m
+  expect(saved.lng).toBeCloseTo(Number(pin.get("lng")), 4);
+});
+
 test("S7 the fields share one style: same height, border and corners, and 16 px between rows", async ({ page, context }) => {
   await toDetails(page, context);
   const m = async (name: string) => sheet(page).getByLabel(name).evaluate((el) => { const r = el.getBoundingClientRect(), c = getComputedStyle(el); return { h: Math.round(r.height), top: r.top, bottom: r.bottom, border: c.borderTopWidth, radius: c.borderTopLeftRadius, pad: c.paddingLeft }; });
