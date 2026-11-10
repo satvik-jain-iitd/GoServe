@@ -851,3 +851,6 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-qr { display: flex; flex-direction: column; align-items: center; gap: var(--gs-space-2); padding: var(--gs-space-4) 0; }
 .ui-qr img { display: block; max-width: 100%; height: auto; }
 .ui-qr .mono { font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
+
+/* story 1263, board A10: the QR now in use, shown small under the Change button */
+.ui-qr-thumb { display: block; margin: var(--gs-space-2) var(--gs-gutter); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--gs-off-white); }
