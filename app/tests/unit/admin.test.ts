@@ -1,6 +1,6 @@
 // Story A2 (#149): the admin screen's input rules.
 import { describe, expect, it } from "vitest";
-import { parsePins, removeKitchen } from "../../src/lib/admin";
+import { parsePins, removeKitchen, turnKitchenOn } from "../../src/lib/admin";
 
 describe("parsePins", () => {
   it("reads pin codes separated by commas or spaces and drops repeats", () => {
@@ -214,5 +214,23 @@ describe("the owner account (story 985)", () => {
   it("owner_admin says so in words", async () => {
     const { adminMessage } = await import("../../src/lib/admin");
     expect(adminMessage({ message: "owner_admin" })).toBe("The owner account cannot be removed.");
+  });
+});
+
+// Story #1280 (board A13): the admin turns an off kitchen back on; the data path is one admin-only database function.
+describe("turnKitchenOn", () => {
+  type Reply = { data: unknown; error: { message: string; code?: string } | null };
+  const client = (reply: Reply, calls: unknown[][] = []) => ({ rpc: async (...a: unknown[]) => { calls.push(a); return reply; } }) as never;
+  it("calls kitchen_turn_on with the kitchen and says nothing when it worked, also when it was already on", async () => {
+    const calls: unknown[][] = [];
+    expect(await turnKitchenOn(client({ data: { ok: true, changed: true }, error: null }, calls), "k-1")).toBeNull();
+    expect(calls).toEqual([["kitchen_turn_on", { p_kitchen: "k-1" }]]);
+    expect(await turnKitchenOn(client({ data: { ok: true, changed: false }, error: null }), "k-1")).toBeNull();   // the second admin
+  });
+  it("a non-admin is told so; a dead network is not 'try again'; any other failure says so", async () => {
+    expect(await turnKitchenOn(client({ data: null, error: { message: "not_allowed", code: "42501" } }), "k-1")).toBe("Only an admin can turn a kitchen on.");
+    expect(await turnKitchenOn(client({ data: null, error: { message: "TypeError: Failed to fetch", code: "" } }), "k-1")).toBe("Could not reach GoServe. Check your connection and try again.");
+    expect(await turnKitchenOn(client({ data: null, error: { message: "boom", code: "XX000" } }), "k-1")).toBe("Could not turn the kitchen on. Try again.");
+    expect(await turnKitchenOn(client({ data: { ok: false, error: "not_found" }, error: null }), "k-1")).toBe("Could not turn the kitchen on. Try again.");
   });
 });
