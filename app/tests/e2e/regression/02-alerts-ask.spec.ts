@@ -102,3 +102,16 @@ test("TC 2.9 close the app on this step and open it again: back on Step 2, not w
   await expect(page.getByRole("heading", { name: "Get order alerts" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "One tap and you are in" })).toHaveCount(0);
 });
+
+// Story #1336: on a short phone the round icon must not cover the buttons, and the outline button is as tall as the green one.
+for (const [w, h] of [[360, 560], [360, 649], [360, 780], [390, 844]]) {
+  test(`TC 2.10 the icon clears the buttons and both buttons are the same height at ${w} by ${h}`, async ({ page, context }) => {
+    await page.setViewportSize({ width: w, height: h });
+    await STEPS["alerts-ask"](context, page, PATH);
+    const hero = (await page.locator(".ui-bellbadge").boundingBox())!;
+    const ghost = (await page.locator(".ui-slip .ui-btn.ghost.big").boundingBox())!;
+    const main = (await page.locator(".ui-slip .ui-btn.big:not(.ghost)").boundingBox())!;
+    expect(hero.y + hero.height, "the icon ends above the outline button").toBeLessThanOrEqual(ghost.y - 8);
+    expect(Math.abs(ghost.height - main.height), "same button height").toBeLessThanOrEqual(1);
+  });
+}
