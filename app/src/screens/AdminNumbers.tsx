@@ -106,7 +106,7 @@ function PaymentSettings() {
   );
 }
 
-// Story #1329, board A11-EarlyFriend: the early-friend offer, on or off, and its amount. Off is the default; a promise already given is kept.
+// Story #1329, board A14-EarlyFriend: the early-friend offer, on or off, and its amount. Off is the default; promises already given are dropped.
 function EarlyFriendSettings() {
   const [now, setNow] = useState<EarlyFriendSetting | null>(null);
   const [text, setText] = useState("");
@@ -114,13 +114,14 @@ function EarlyFriendSettings() {
   const [busy, setBusy] = useState(false);
   useEffect(() => { readEarlyFriend(getClient()).then((s) => { setNow(s); setText(String(s.amount_paise / 100)); }, () => setLine("Could not load the setting. Try again.")); }, []);
   async function save(on: boolean, amountText: string) {
-    const problem = amountProblem(amountText);
+    const amount = !on && now?.on && now ? String(now.amount_paise / 100) : amountText;   // turning off never waits on the amount box: the switch always works
+    const problem = amountProblem(amount);
     if (problem) return void setLine(problem);
     setLine(null); setBusy(true);
-    const failed = await saveEarlyFriend(getClient(), on, Number(amountText));
+    const failed = await saveEarlyFriend(getClient(), on, Number(amount));
     setBusy(false);
     if (failed) return void setLine(failed);   // nothing moved: the switch and the amount show what the server holds
-    setNow({ on, amount_paise: Number(amountText) * 100, updated_by: "you", updated_at: new Date().toISOString() });
+    setNow({ on, amount_paise: Number(amount) * 100, updated_by: "you", updated_at: new Date().toISOString() });
   }
   return (
     <section className="ui-group" aria-label="Early friend offer">

@@ -33,3 +33,18 @@ test("P3 an order with no gift and no discount shows neither line", async ({ pag
   await expect(slip.getByText("Discount", { exact: true })).toHaveCount(0);
   expect(await sum(slip)).toBe(320);
 });
+
+test("P4 place a first order with the gift and read the slip at once: the gift line shows before any live copy comes", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.reply = { status: 201, body: { ok: true, created: true, order: { ...order("placed"), items: [{ menu_item_id: "d1", name: "Butter Chicken", qty: 1, price_paise: 32000 }], total_paise: 22000, bill: { early_friend_paise: 10000, to_pay_paise: 22000 } }, confirm_after_ready_min: 3, confirm_after_place_min: 8 } };
+  await page.goto("/customer/");
+  await page.getByRole("button", { name: "Add Butter Chicken" }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
+  await page.getByLabel("Your name").fill("Asha");
+  await page.getByLabel("Phone").fill("9876543210");
+  await page.getByLabel("Address").fill("Flat 4, Green Park");
+  await page.getByRole("button", { name: /Place order/ }).click();
+  const slip = page.locator(".ui-slip").first();
+  await expect(slip.getByText("Early friend gift")).toBeVisible();
+  expect(await sum(slip)).toBe(220);
+});

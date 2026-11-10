@@ -76,12 +76,12 @@ begin
   if p_lat is not null and (p_lat not between -90 and 90 or p_lng is null or p_lng not between -180 and 180) then
     return jsonb_build_object('ok', false, 'error', 'invalid_place', 'message', 'That place is not valid.');
   end if;
-  select coalesce((value ->> 'on')::boolean, false), coalesce((value ->> 'amount_paise')::integer, 10000) into v_on, v_amount from settings where name = 'early_friend';
+  select coalesce((value ->> 'on')::boolean, false), coalesce((value ->> 'amount_paise')::integer, 10000) into v_on, v_amount from settings where name = 'early_friend' for share;   -- the switch cannot flip between this read and the insert
   insert into area_requests (user_id, pin, lat, lng, phone, offer_paise, offered_at)
   values (auth.uid(), p_pin, p_lat, p_lng, (select c.phone from customers c where c.user_id = auth.uid()), case when v_on then v_amount end, case when v_on then now() end)
   on conflict (user_id, pin) do update set
-    offer_paise = case when v_on then coalesce(area_requests.offer_paise, v_amount) end,
-    offered_at = case when v_on then coalesce(area_requests.offered_at, now()) end
+    offer_paise = case when v_on then coalesce(area_requests.offer_paise, v_amount) else area_requests.offer_paise end,   -- off: the row stays as it is, a spent promise keeps its record
+    offered_at = case when v_on then coalesce(area_requests.offered_at, now()) else area_requests.offered_at end
   returning * into v_row;
   -- the promise shown is the one the row holds and has not spent, and only while the offer is on
   return jsonb_build_object('ok', true, 'offer_paise', case when v_on and v_row.offer_paise > 0 and v_row.offer_order_id is null then v_row.offer_paise end);
