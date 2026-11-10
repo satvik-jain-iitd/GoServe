@@ -50,18 +50,18 @@ test("S4 the kitchen reads the note on the New row, the order sheet and the Cook
   net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
   const row = page.locator(".ui-ticket", { hasText: "No. 0f0f0f0f" });
-  await expect(row.getByText("Says", { exact: true })).toBeVisible();
+  await expect(row.getByText("Customer says", { exact: true })).toBeVisible();   // story #1276: one label, the filled band
   await expect(row).toContainText(NOTE);
-  await expect(page.locator(".ui-ticket", { hasText: "No. 0c0c0c0c" })).not.toContainText("Says");
+  await expect(page.locator(".ui-ticket", { hasText: "No. 0c0c0c0c" })).not.toContainText("Customer says");
   await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
   const sheet = page.getByRole("dialog", { name: "Order 0f0f0f0f" });
-  await expect(sheet.getByText("Rahul says")).toBeVisible();
+  await expect(sheet.getByText("Customer says")).toBeVisible();
   await expect(sheet.getByText(NOTE)).toBeVisible();
   await sheet.getByRole("button", { name: "Accept 0f0f0f0f" }).click();
   await page.getByRole("button", { name: "Cooking", exact: true }).click();
   await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
   await expect(page.getByRole("heading", { name: "Ticket" })).toBeVisible();
-  await expect(page.getByText("Rahul says")).toBeVisible();
+  await expect(page.getByText("Customer says")).toBeVisible();
   await expect(page.getByText(NOTE)).toBeVisible();
 });
 
@@ -70,5 +70,5 @@ test("S5 an order with no note has no says block on the sheet", async ({ page, c
   net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
   await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
-  await expect(page.getByRole("dialog", { name: "Order 0f0f0f0f" }).getByText(/says$/)).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "Order 0f0f0f0f" }).getByText("Customer says")).toHaveCount(0);
 });
