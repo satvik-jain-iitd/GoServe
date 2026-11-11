@@ -4,6 +4,7 @@ name: ShipQuick checks
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, edited]
 
 permissions:
   contents: read
@@ -16,8 +17,8 @@ jobs:
       contents: read
       pull-requests: read
       issues: read
-    uses: satvik-jain-iitd/shipquick_latest/.github/workflows/checks.yml@f66e41a087de94db14c0203dd6972a487ba06c28 # v0.11.1
+    uses: satvik-jain-iitd/shipquick_latest/.github/workflows/checks.yml@fe278c56aeede3f80ba09f36f127412965e7fb61 # v0.12.0
     with:
-      shipquick_ref: f66e41a087de94db14c0203dd6972a487ba06c28
+      shipquick_ref: fe278c56aeede3f80ba09f36f127412965e7fb61
       kit_branch: documents
       milestone: D1
