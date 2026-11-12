@@ -27,6 +27,7 @@ jobs:
   apk:
     name: Build, sign and attach
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
       GH_TOKEN: ${{ github.token }}
