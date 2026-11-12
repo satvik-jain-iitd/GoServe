@@ -9,6 +9,7 @@ jobs:
   site:
     name: Site (lint, typecheck, unit, e2e, build)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: site
@@ -42,6 +43,7 @@ jobs:
   app:
     name: App (typecheck, unit, e2e, build)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: app
@@ -72,6 +74,7 @@ jobs:
   guard:
     name: Guard (secrets, size, markers, commit messages, PR size)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
