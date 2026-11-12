@@ -17,8 +17,8 @@ jobs:
       contents: read
       pull-requests: read
       issues: read
-    uses: satvik-jain-iitd/shipquick_latest/.github/workflows/checks.yml@1645ed47e64397e283151ab1c80de7c7f6efb2f7 # v0.14.0
+    uses: satvik-jain-iitd/shipquick_latest/.github/workflows/checks.yml@970ff053de9e383ece3fe8f812002ed16582f381 # v0.14.1
     with:
-      shipquick_ref: 1645ed47e64397e283151ab1c80de7c7f6efb2f7
+      shipquick_ref: 970ff053de9e383ece3fe8f812002ed16582f381
       kit_branch: documents
       milestone: D1
