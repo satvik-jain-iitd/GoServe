@@ -14,6 +14,14 @@ repos:
         entry: python3 scripts/check_msg_file.py
         language: system
         stages: [commit-msg]
+      - id: shipquick-kit
+        name: The ShipQuick kit folder is checked out
+        entry: bash -c 'test -f knowledge/shipquick_latest/scripts/check_local.sh || { echo "ShipQuick, the kit folder knowledge/shipquick_latest is not checked out here. Run this, then try again -- git submodule update --init"; exit 1; }'
+        language: system
+        pass_filenames: false
+        always_run: true
+        fail_fast: true
+        stages: [pre-commit, pre-push, prepare-commit-msg]
       - id: check-local
         name: ShipQuick hygiene checks on this Mac
         entry: bash knowledge/shipquick_latest/scripts/check_local.sh sizes markers md-blocks secrets-staged
