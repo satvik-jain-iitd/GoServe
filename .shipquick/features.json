@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "features": {
+    "roadmap": {
+      "on": true,
+      "default": true
+    },
+    "hosted-roadmap": {
+      "on": false,
+      "default": false
+    },
+    "close-on-merge": {
+      "on": true,
+      "default": true
+    },
+    "lanes": {
+      "on": true,
+      "default": true
+    },
+    "modes": {
+      "on": true,
+      "default": true
+    },
+    "merge-gate": {
+      "on": true,
+      "default": true
+    },
+    "uat-on-main": {
+      "on": true,
+      "default": true
+    },
+    "freeze": {
+      "on": true,
+      "default": true
+    },
+    "environments": {
+      "on": true,
+      "default": true
+    },
+    "team-block": {
+      "on": true,
+      "default": true
+    },
+    "roles": {
+      "on": true,
+      "default": true
+    },
+    "story": {
+      "on": true,
+      "default": true
+    },
+    "disable-comments": {
+      "on": true,
+      "default": true
+    },
+    "frontend-design": {
+      "on": true,
+      "default": true
+    },
+    "design-tokens": {
+      "on": true,
+      "default": true
+    },
+    "component-registry": {
+      "on": true,
+      "default": true
+    },
+    "rule-copies": {
+      "on": true,
+      "default": true
+    },
+    "commit-subjects": {
+      "on": true,
+      "default": true
+    },
+    "pre-commit": {
+      "on": true,
+      "default": true
+    },
+    "adoption": {
+      "on": true,
+      "default": true
+    },
+    "gate": {
+      "on": true,
+      "default": true
+    }
+  }
+}
