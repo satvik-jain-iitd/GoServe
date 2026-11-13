@@ -25,7 +25,7 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
     const pin = await box(page, ".ui-pinmap-pin svg path");   // the marker itself, not its halo
     expect(Math.abs(b.x + b.width / 2 - (pin.x + pin.width / 2))).toBeLessThanOrEqual(1);
     expect(b.y + b.height).toBeLessThanOrEqual(pin.y);
-    expect(pin.y - (b.y + b.height)).toBeLessThanOrEqual(16);
+    expect(pin.y - (b.y + b.height)).toBeLessThanOrEqual(40);   // the board: 32 px from the bubble to the marker
     for (const sel of [".ui-pinmap-pin svg path", ".ui-pinmap-card", ".ui-pinmap-top", ".ui-pinmap-here"]) expect(overlap(b, await box(page, sel)), sel).toBe(false);
     expect(await bubble(page).evaluate((e) => e === document.activeElement || e.contains(document.activeElement))).toBe(false);
   });

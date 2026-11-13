@@ -86,6 +86,9 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
   const fns = useRef({ lookup, serve });
   fns.current = { lookup, serve };
 
+  // Story 1389 (board PH1): the hint shows until this person moves the map once on this phone. Moves the app makes (centring, Current Location, a search pick) do not count.
+  const [moved, setMoved] = useState(() => { try { return localStorage.getItem("gs-pin-moved") === "1"; } catch { return false; } });
+  const byHand = () => { setMoved(true); try { localStorage.setItem("gs-pin-moved", "1"); } catch { /* blocked: it shows again next time */ } };
   const settled = useRef<Place | null>(null);
   const settle = (p: Place) => {   // the pin rests: one lookup and one serviceability answer for the last place only
     // Story 1393: a screen size change moves the map but not the place under the pin. Same place (under a metre): no new lookup, so no flash.
@@ -147,6 +150,8 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
       const map = L.map(box.current, { zoomControl: false, attributionControl: false, scrollWheelZoom: false, boxZoom: false, keyboard: false }).setView([center.lat, center.lng], zoom, { animate: false });
       if (TILES) L.tileLayer(TILES, { maxZoom: 19 }).addTo(map);
       map.on("moveend", () => { const c = pinAt(map); settleRef.current({ lat: c.lat, lng: c.lng }); });
+      map.on("dragstart dblclick", byHand);   // story 1389: a drag or a double tap by the person
+      box.current.addEventListener("touchstart", (e) => { if (e.touches.length > 1) byHand(); }, { passive: true });   // a pinch
       live.current = { map, L, dot: null };
       if (liftNow()) show(map, center, zoom);   // 1392: a short screen measured before the map came: put the start place under the pin
       if (!kitchen) void kitchensNear().then((list) => drawKitchens(L, map, list), () => undefined);   // story #1138: not on the kitchen admin's own pin screen
@@ -242,6 +247,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
       <span className="ui-pinmap-pin" data-testid="map-pin" aria-hidden="true">
         <svg viewBox="177 354 60 80"><circle cx="207" cy="400" r="30" fill="var(--md-primary)" opacity="0.14" /><ellipse cx="207" cy="404" rx="7" ry="3" fill="var(--md-on-surface)" opacity="0.3" />
           <path d="M207 360 c-9 0 -15 7 -15 15 c0 11 15 29 15 29 s15 -18 15 -29 c0 -8 -6 -15 -15 -15z" fill="var(--md-primary)" /><circle cx="207" cy="375" r="5" fill="#ffffff" /></svg></span>
+      {!moved && !kitchen && !pick && !(search && sOpen) && <p role="status" className="ui-pinmap-hint">Move the map to set the pin</p>}   {/* story 1389, board PH1 */}
       <div className="ui-pinmap-top">
         <button type="button" className="ui-pinmap-back" aria-label="Back" onClick={search && sOpen && !pick ? () => { setSOpen(false); setFound(null); setSq(""); } : onBack}>{I(<path d="M19 12H5M11 18l-6-6 6-6" />)}</button>
         {!pick && !kitchen && !(search && sOpen) && <button type="button" className="ui-pinmap-search" aria-label="Search an area or address" onClick={search ? () => setSOpen(true) : onSearch}><span>Search an area or address</span>{I(<><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></>, 20)}</button>}
