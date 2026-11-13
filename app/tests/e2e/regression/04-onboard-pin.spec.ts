@@ -79,14 +79,14 @@ test("TC 4.1 map opens: Back and search on top, pin in the middle, Current Locat
   await expect(page.getByRole("link", { name: "© OpenStreetMap contributors" })).toBeVisible();
 });
 
-test("TC 4.2 Confirm & proceed: Address details, Step 2 of 2, with the same place", async ({ page, context }) => {
+test("TC 4.2 Confirm & proceed: Address details, Step 3 of 4 in first set-up, with the same place", async ({ page, context }) => {
   await STEPS["first-open-pin"](context, page, PATH);
   await mapAnswers(context);
   await expect(confirm(page)).toBeEnabled();
   await confirm(page).click();
   const details = page.getByRole("dialog", { name: "Address details" });
   await expect(details).toBeVisible();
-  await expect(details.getByText("Step 2 of 2")).toBeVisible();
+  await expect(details.getByText("Step 3 of 4")).toBeVisible();   // #1390 (owner, 13 Nov): first set-up counts 3 of 4 on the sheet too
   await expect(details.getByText("Green Avenue Colony", { exact: true })).toBeVisible();   // the same place the map rested on
   await expect(page.getByRole("button", { name: "Confirm & proceed" })).toHaveCount(0);   // the map step is gone
 });
