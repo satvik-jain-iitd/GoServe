@@ -1,6 +1,7 @@
 // The menu of the Ink v3 boards 02, 02a, 02b, 02c and 03 (story H10b, #193): header, greeting, thali hero, sections, filter sheet, dish sheet.
 import { useEffect, useRef, useState } from "react";
 import { SHOW_KITCHEN_NAME } from "../lib/area";
+import { useBackCloses } from "../lib/back";
 import { categoryKey, filterDishes } from "../lib/browse";
 import { filterSectionsOf, sectionsOf, thalisOf } from "../lib/home";
 import { creditLicence, creditLine, type Dish } from "../lib/menu";
@@ -268,6 +269,7 @@ function Hero({ veg, nonveg, closed, qty, onAdd, onChange }: { veg?: Dish; nonve
 
 function Modal({ label, onClose, children }: { label: string; onClose: () => void; children: React.ReactNode }) {
   const fit = useSheetFit();   // story #954: the overlay follows the visual viewport
+  useBackCloses(true, onClose);   // story 1396: the phone's Back closes the sheet
   return (
     <div ref={fit} className="ui-sheet-back" onClick={onClose}>
       <section role="dialog" aria-modal="true" aria-label={label} className="ui-sheet ui-sheet-flush" onClick={(e) => e.stopPropagation()}>{children}</section>
