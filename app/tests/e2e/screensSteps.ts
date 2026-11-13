@@ -38,7 +38,7 @@ async function deliverFrom(context: BrowserContext, page: Page, path: string, ro
 }
 
 export const STEPS: Record<string, (context: BrowserContext, page: Page, path: string) => Promise<void>> = {
-  welcome: async (context, page, path) => { await setup(context, page, [], { guest: true }); await page.goto(path); await expect(page.getByRole("heading", { name: "One tap and you are in" })).toBeVisible(); },
+  welcome: async (context, page, path) => { await setup(context, page, [], { guest: true }); await page.goto(path); await expect(page.getByRole("heading", { name: "Sign in to start" })).toBeVisible(); },
   "welcome-phone": async (context, page, path) => { const net = await setup(context, page, [], { guest: true }); net.state.otpLogin = true; await page.goto(path); await expect(page.getByLabel("Mobile", { exact: true })).toBeVisible(); },
   menu: async (context, page, path) => { await setup(context, page); await page.goto(path); await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible(); },
   bill: async (context, page, path) => {

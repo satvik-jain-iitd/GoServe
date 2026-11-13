@@ -72,7 +72,7 @@ test("S4 a customer who is already signed in goes straight on", async ({ page, c
 test("S5 with the phone code off the first screen is one tap, Google only, and the menu stays behind it (story 829)", async ({ page, context }) => {
   await setup(context, page, [], { guest: true });
   await page.goto("/customer/");
-  await expect(page.getByRole("heading", { name: "One tap and you are in" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in to start" })).toBeVisible();
   await expect(page.getByText("Butter Chicken")).toHaveCount(0);
   await expect(title(page)).toHaveCount(0);
 });
