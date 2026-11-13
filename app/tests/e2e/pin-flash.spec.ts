@@ -46,3 +46,40 @@ test("S2 a place where the pin cannot be read: the place-only answer still shows
   await page.mouse.up();
   await expect(page.getByText("Not in our area yet")).toBeVisible();
 });
+
+// Review of PR #1425: a failed ask is asked again, and a lookup that never answers does not hide the place-only answer for good.
+test("S3 asks that failed are asked again: network down, Current Location, network back, Current Location shows the new place", async ({ page, context }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await STEPS["first-open-pin"](context, page, "/customer/");
+  let down = true, looks = 0;
+  await context.route("https://test.supabase.co/functions/v1/geocode**", (route) => {
+    if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: CORS });
+    looks++;
+    return down ? route.abort() : route.fulfill({ status: 200, headers: CORS, body: JSON.stringify({ ok: true, address: "Radio Colony, Chhatarpur, Madhya Pradesh 471001", pin: "471001", locality: "Radio Colony", town: "Chhatarpur" }) });
+  });
+  await context.route("https://test.supabase.co/functions/v1/serviceability**", (route) => route.request().method() === "OPTIONS" ? route.fulfill({ status: 204, headers: CORS }) : down ? route.abort() : route.fulfill({ status: 200, headers: CORS, body: JSON.stringify(SERVED) }));
+  await context.setGeolocation({ latitude: 24.8901, longitude: 79.6012 });
+  await page.getByRole("button", { name: "Current Location" }).click();
+  await expect.poll(() => looks).toBeGreaterThan(0);
+  await page.waitForTimeout(800);
+  down = false;
+  const before = looks;
+  await page.getByRole("button", { name: "Current Location" }).click();
+  await expect.poll(() => looks).toBeGreaterThan(before);
+  await expect(page.getByText("Radio Colony", { exact: false }).first()).toBeVisible();
+});
+
+test("S4 a lookup that never answers: after the wait the place-only answer stands (Not in our area yet)", async ({ page, context }) => {
+  test.setTimeout(45_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await STEPS["first-open-pin"](context, page, "/customer/");
+  await context.route("https://test.supabase.co/functions/v1/geocode**", (route) => route.request().method() === "OPTIONS" ? route.fulfill({ status: 204, headers: CORS }) : undefined);   // never answers
+  await context.route("https://test.supabase.co/functions/v1/serviceability**", (route) => route.request().method() === "OPTIONS" ? route.fulfill({ status: 204, headers: CORS }) : route.fulfill({ status: 200, headers: CORS, body: JSON.stringify(NOT) }));
+  const map = (await page.getByRole("application", { name: "Map" }).boundingBox())!;
+  await page.mouse.move(map.x + map.width / 2, map.y + 200);
+  await page.mouse.down();
+  await page.mouse.move(map.x + map.width / 2 + 120, map.y + 260, { steps: 8 });
+  await page.mouse.up();
+  await expect(page.getByText("Not in our area yet")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/^We deliver here/)).toHaveCount(0);
+});
