@@ -33,7 +33,12 @@ async function lastIsMain(page: Page) {
 }
 
 test("S3 a cancelled slip: Back to menu is the main button, last, under Call the kitchen; no Order again", async ({ page, context }) => {
-  await STEPS.cancelled(context, page, "/customer/");
+  const net = await setup(context, page, [order("placed")]);
+  Object.assign(net.state.kitchens[0], { phone: "9876543210" });
+  await page.goto("/customer/");
+  await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
+  net.push("UPDATE", order("cancelled", "2020-01-01T10:01:00Z"));
+  await expect(page.getByText("Your order was cancelled")).toBeVisible({ timeout: 5000 });
   await lastIsMain(page);
   await expect(page.getByRole("button", { name: "Order again", exact: true })).toHaveCount(0);
 });

@@ -14,13 +14,13 @@ test("S1 the clock line is 12-hour and the address is in normal case", async ({ 
   expect(await addr.evaluate((el) => getComputedStyle(el).textTransform)).toBe("none");
 });
 
-test("S2 a cancelled order says there is nothing to pay and offers Order again", async ({ page, context }) => {
+test("S2 a cancelled order says there is nothing to pay and offers Back to menu (story 1434)", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
   await page.goto("/customer/");
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   net.push("UPDATE", order("cancelled", "2020-01-01T10:01:00Z"));
   await expect(page.getByText("Your order was cancelled. Nothing to pay.")).toBeVisible({ timeout: 5000 });
-  await expect(page.getByRole("button", { name: "Order again" })).toBeVisible();
+  await expect(page.locator(".ui-bottom").getByRole("button", { name: "Back to menu" })).toBeVisible();
 });
 
 test("S3 a refused cancel (cannot_cancel) tells the customer the kitchen has started cooking", async ({ page, context }) => {
