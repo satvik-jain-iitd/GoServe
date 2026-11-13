@@ -1,5 +1,6 @@
 // Story #1056 (board SW3): the phone's location is off. A sheet over the menu, once per app open. The auto-picked address stays until the customer chooses another here.
 import { useEffect } from "react";
+import { useBackCloses } from "../lib/back";
 import type { SavedAddress } from "../lib/addresses";
 import { useSheetFit } from "../ui";
 
@@ -9,6 +10,7 @@ const OFF = <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="
 const HOME = <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /></svg>;
 
 export function LocationOffSheet({ list, denied, busy, onTurnOn, onPick, onViewAll, onSearch, onClose }: Props) {
+  useBackCloses(true, onClose);   // story 1415
   const fit = useSheetFit();
   useEffect(() => { const k = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); }; document.addEventListener("keydown", k); return () => document.removeEventListener("keydown", k); }, [onClose]);
   return (

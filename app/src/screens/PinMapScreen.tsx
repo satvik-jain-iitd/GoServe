@@ -2,6 +2,7 @@
 // (never a Leaflet marker). 400 ms after it stops the words (Ola through lib/locate, OpenStreetMap as the fallback) and the served strip follow the centre. No zoom control (pinch and double tap
 // only), no inline map anywhere. The phone's place is a brown dot only when location is already allowed; this screen never asks for it by itself.
 import { useEffect, useRef, useState } from "react";
+import { useBackCloses } from "../lib/back";
 import { renderToStaticMarkup } from "react-dom/server";
 import { DishPlate } from "../ui";
 import { fetchKitchens } from "../lib/area";
@@ -46,6 +47,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
   const [note, setNote] = useState<string | null>(null);
   const root = useRef<HTMLElement>(null);
   const card = useRef<HTMLDivElement>(null);
+  useBackCloses(true, onBack);   // story 1415: the phone's Back closes the map
   // Story 1392: how far the pin's point sits above the middle of the map (0 on a tall screen and on the details step). The map stays full height,
   // behind the whole card; the place is read at the pin and a place is shown at the pin, not at the middle.
   const lift = useRef(0);

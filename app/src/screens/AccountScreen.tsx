@@ -1,5 +1,6 @@
 // "You" of the Ink v3 board 09 (story H10d, #193; story D2): the details this phone remembers, order alerts, Day and Night, another phone, forget me, feedback.
 import { useState } from "react";
+import { useBackCloses } from "../lib/back";
 import { DEFAULT_THEME, readPin, pinTheme, type Theme } from "../lib/theme";
 import { buildLabel } from "../lib/updates";
 import { useSheetFit } from "../ui";
@@ -27,6 +28,7 @@ export function AccountScreen({ name, phone, address, pin, photo, email, onName,
   const [look, setLook] = useState<Theme>(() => readPin(store()) ?? DEFAULT_THEME);
   const [sure, setSure] = useState(false);
   const [deleting, setDeleting] = useState<null | { busy: boolean; error: string | null }>(null);   // story #771: the confirm sheet
+  useBackCloses(deleting !== null, () => setDeleting(null));   // story 1415: Back keeps the account
   const pick = (t: Theme) => { pinTheme(store(), document, t === DEFAULT_THEME ? null : t); setLook(t); };   // Day is the default, not a pin (#225)
   const row = (label: string, value: string, mono = false) => (<><dt className="mono">{label}</dt><dd className={mono ? "mono" : undefined}>{value || "Not saved yet"}</dd></>);
   const arrow = <span className="go" aria-hidden="true">›</span>;
