@@ -36,6 +36,12 @@ describe("a tapped text field (story 1397, board FF2)", () => {
     expect(ringed.map((r) => r.selector), "these text fields still draw a ring").toEqual([]);
   });
 
+  it("the search box draws no ring around the field either", () => {
+    const box = all.match(/\.ui-search-box:focus-within\s*\{([^}]*)\}/);
+    const v = box?.[1].match(/outline:\s*([^;]+);/)?.[1].trim();
+    expect(v === undefined || v === "none" || v === "0", "the search box still draws a ring").toBe(true);
+  });
+
   it("turns its own border --md-primary at 2 px", () => {
     const edge = rules.find(
       (r) => /border(-color)?:[^;]*var\(--md-primary\)/.test(r.body) && /(border-width:\s*2px|border:\s*2px)/.test(r.body),
