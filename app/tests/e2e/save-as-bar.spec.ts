@@ -7,7 +7,6 @@ const toSheet = async (page: Page, context: Parameters<(typeof STEPS)["first-ope
   await page.getByRole("button", { name: "Confirm & proceed" }).click();
   await expect(page.getByRole("dialog", { name: "Address details" })).toBeVisible();
 };
-const SHEET_MAX = 513;   // the sheet with the pills, measured at 360 x 640 on dev ac75847 (512.3 px)
 const bar = (page: Page) => page.getByRole("group", { name: "Save as" });
 
 test("B1 the sheet shows one group Save as with three buttons in one row, each the same width, no gap between them", async ({ page, context }) => {
@@ -51,11 +50,30 @@ test("B4 measured in the browser: 44 px high, and the chosen fill is the lime-so
   expect(got).toEqual({ fill: true, ink: true, size: "14px", weight: "600" });
 });
 
-test("B5 at 360 x 640 the sheet is not taller than the pills made it (the Save address button stays in view)", async ({ page, context }) => {
+test("B5 at 360 x 640 Save address is in view with no scroll, and the pin and Back are not covered", async ({ page, context }) => {
   await page.setViewportSize({ width: 360, height: 640 });
   await toSheet(page, context);
+  const sheet = page.getByRole("dialog", { name: "Address details" });
   const save = (await page.getByRole("button", { name: "Save address" }).boundingBox())!;
   expect(save.y + save.height).toBeLessThanOrEqual(640);
-  const sheet = (await page.getByRole("dialog", { name: "Address details" }).boundingBox())!;
-  expect(sheet.height).toBeLessThanOrEqual(SHEET_MAX);
+  expect(await sheet.evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(true);
+  const top = (await sheet.boundingBox())!.y;
+  const back = (await page.getByRole("button", { name: "Back" }).first().boundingBox())!;
+  expect(back.y + back.height).toBeLessThanOrEqual(top);
+  const pin = (await page.locator(".ui-pinmap-pin").first().boundingBox())!;
+  expect(pin.y + pin.height).toBeLessThanOrEqual(top);
+});
+
+test("B6 (review of PR 1427, board NC2) the bar's lines are the fields' border colour; 6 px under the label and 16 px above it, like the fields", async ({ page, context }) => {
+  await toSheet(page, context);
+  const field = page.getByLabel("Landmark (optional)");
+  const line = (el: Element) => getComputedStyle(el).borderTopColor;
+  const want = await field.evaluate(line);
+  expect(await bar(page).evaluate(line)).toBe(want);
+  expect(await bar(page).getByRole("button", { name: "Office" }).evaluate((el) => getComputedStyle(el).borderLeftColor)).toBe(want);
+  const label = (await page.locator(".ui-pinmap-saveas > .ui-pinmap-kicker").boundingBox())!;
+  const b = (await bar(page).boundingBox())!;
+  const f = (await field.boundingBox())!;
+  expect(Math.round(b.y - (label.y + label.height))).toBe(6);
+  expect(Math.round(label.y - (f.y + f.height))).toBe(16);
 });
