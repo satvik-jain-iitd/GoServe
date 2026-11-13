@@ -399,3 +399,39 @@ Run 8 Nov 2026, need "rider dispatch rules engine postgres sql function order as
 ## 2026-11-13 · need: the phone's Back button closes the open sheet, then the screen on top (story #1396)
 
 Runs (coder): `scout.py --need "react back button close modal history"`: no repos found. GitHub search "react modal back button history": none. "use-back-button react" and "android back button pwa modal": none. `topic:react-hooks back button` gave only big UI and form kits (Semantic-UI, react-hook-form, refine, formik), none about Back. No README was worth reading: nothing in the results does this job, so the README step of rule 0 had nothing to read. Decision: built from scratch with the browser's own History API (`pushState` and `popstate`), about 60 lines in `app/src/lib/back.ts`. PR #1414. The search was run on 13 Nov before the build; this row records it late.
+
+## 2026-11-09: localhost health dashboard (dev and prod in one place)
+Need: one localhost page showing DB health, DAU, MAU, orders and edge functions for dev and prod.
+- scout.py (radar): "no repos found".
+- gh search "supabase dashboard health metrics": no fit (personal dashboards, Nostr relay tools).
+- gh search "uptime status page self-hosted": gatus (TwiN/gatus, 12.7k stars, pushed 2026-11-09) covers endpoint health, not business metrics. kuvasz covers uptime and SSL.
+- Verdict: use gatus or kuvasz for the uptime and endpoint part if the owner agrees; DAU, MAU and order metrics need a custom query layer (nothing found that reads Supabase business tables). Build only that layer. Pending: owner decision and frames.
+
+## 2026-11-13: rider location with the screen off (#252), keeping the present web UI
+Need: the rider's GPS keeps flowing when the phone is locked or the rider opens Google Maps, from the present React web app.
+- scout.py, the long need: "no repos found". scout.py "capacitor background geolocation": three repos (table below). gh topic search `topic:background-geolocation` and `topic:capacitor topic:geolocation` also run.
+- READMEs read (Tier A for what each says of itself; each seller's table about the others is Tier C):
+
+| Repo | Radar score | Licence | What its README says | Catch |
+|---|---|---|---|---|
+| Cap-go/capacitor-background-geolocation | 74, smoke-test | MPL-2.0 | Capacitor plugin; Android uses a foreground service; "built for delivery ... apps that keep tracking when the screen is off"; no paid licence | 29 stars; made by a company that sells Capgo; its claim that the community plugin is "not accurate" is its own |
+| capacitor-community/background-geolocation | 64, watch | MIT | Capacitor plugin; updates while the app is in the background; Android needs a lasting notification | README names two traps: updates can halt after 5 minutes unless `android.useLegacyBridge` is true; Android throttles web requests after 5 minutes in the background, so the send must be native |
+| transistorsoft/capacitor-background-geolocation | 57, watch | MIT code | Motion-aware tracking, built-in uploader | A paid licence is needed for release builds |
+
+- Also seen: transistorsoft/react-native-background-geolocation (2,949 stars, same paid licence for release). It needs a React Native app, so the UI would be written again.
+- Not checked: any of these on a real phone; Play Store rules for background location; how Capacitor sits beside the present Play app (a TWA).
+- Verdict (hypothesis, confidence 0.6, no test yet): a Capacitor shell around the present web app plus one of the two free plugins fits "the UI does not change". Pending: the owner's choice between a hybrid shell and React Native, then a smoke test on dev with the phone locked for 10 minutes, then an ADR.
+- Owner's constraint, 13 Nov 2026: "I don't want to pay for any location service ... keep it free." transistorsoft (Capacitor and React Native) is out. Left: Cap-go/capacitor-background-geolocation (MPL-2.0) and capacitor-community/background-geolocation (MIT).
+- Owner's decision, 13 Nov 2026: the UI is not written again now. No React Native until the app has launched to some people and feedback is in. The web React code keeps changing as needed. So the path is a hybrid shell around the present web app (Capacitor is the candidate; smoke test and ADR pending).
+
+### Radar run 2026-11-13 | need: routing engine openstreetmap (rider directions) | by: reviewer
+
+Run: `scout.py --need "routing engine openstreetmap"` plus `gh search repos --topic routing-engine`. A longer need line found no repos.
+
+| Repo | Score | Verdict | Licence | Pushed | Read | What we take |
+|---|---|---|---|---|---|---|
+| graphhopper/graphhopper | 69 | watch | Apache-2.0 | 1 day | README, releases | motorcycle and foot profiles; needs Java 25; not the pick |
+| valhalla/valhalla | 67 | watch | MIT | today | README, route API reference, releases | the candidate: `motor_scooter`, `pedestrian`, turn text, `hi-IN`, Docker |
+| Project-OSRM/osrm-backend | topic search | - | BSD-2-Clause | 1 day | README, API docs, profiles folder | car, bicycle, foot only; turn codes, not sentences |
+
+READMEs read: yes, the top three (by a fetch agent, quotes in `maps-providers-2026-11-08.md`, section of 13 Nov). Nothing is built yet; the owner picks the option first.

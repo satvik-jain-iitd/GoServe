@@ -59,3 +59,54 @@ Swiggy POIs and gates from traces (B, 0.7). Delhivery Addfix (C, 0.5). Grab (A, 
 Ola Maps pricing, read from https://maps.olakrutrim.com/pricing (Tier A, Ola's own page, their motive: sell credits; date on page: "From 1 September 2026", "© 2026"). Claims: (1) "100,000 free calls per API, every month"; Reverse Geocoding tier 2 (100K to 5M) ₹0.099 per request, tier 3 ₹0.025. Confidence 0.9 for "this is what the page says today". (2) Map tiles are not a product on the page; "Dynamic Maps" is billed per map load (₹0.141 per load beyond 100K loads a month); whether Leaflet fetching Ola tiles counts as one "load" per screen or per tile is NOT on the page: confidence 0.5, must read /pricing/details and the Fair Usage PDF (/legal-docs/fair-usage-policy-2026.pdf). (3) Prepaid credit model from 1 Sept 2026 (auto-debit ended 31 Aug 2026): when the free allowance and credit are gone, calls stop; exact failure response not on the page (0.5). (4) No per-second or per-day rate limit on the page. Older news (Tier C, July 2024 launch): "5M free calls a month" and "500K": outdated by the live page. Sizing for 100 orders a day: reverse lookups happen only when a pin is set or moved, not per order; worst case 5 lookups on every order = 500 a day = 15,000 a month = 15 percent of the free 100K (0.85). Map loads: address screen + tracker map, about 1.5 per order = 4,500 a month, well under 100K if a load means a screen open (0.6). What changes: tiles decision needs the details page and the PDF first; add a daily call counter in the Edge Function and an alert at 70 percent of the free allowance; the fallback when Ola fails is our own pincode table (nearest_pin), never Nominatim.
 
 OpenStreetMap rules, read from the OSMF Tile Usage Policy (https://operations.osmfoundation.org/policies/tiles/) and the OSM copyright page (https://www.openstreetmap.org/copyright), both Tier A (the data owner's own words). Two different things: (1) the DATA (roads, names) is under the ODbL: "free to copy, distribute, transmit and adapt our data, as long as you credit OpenStreetMap and its contributors"; no commercial restriction; credit "© OpenStreetMap contributors" required; share-alike only if we alter the database itself. Confidence 0.9. (2) the public TILE SERVER (tile.openstreetmap.org) is donation-funded, "capacity is limited", "no SLA or guarantee", "Commercial services … should be especially aware that access may be withdrawn at any point: you may no longer be able to serve your paying customers", "we cannot provide a free-of-charge map API or map tiles for third-parties", blocks "without notice", generic User-Agents blocked, offline or bulk tile download not permitted. Confidence 0.9. What it means for us: a live consumer app must not depend on tile.openstreetmap.org; Ola's tiles are built on OSM data (hence the credit) and come with a contract and a free allowance; Ola stays the tile source (owner, 8 Nov). Tests: tiles are replayed from a recording, zero live tile calls in any run.
+
+## Rider directions: the options and the cost (13 Nov 2026, reviewer)
+
+Owner, 13 Nov 2026: "We don't just need the dot. We need the exact direction on what road he needs to follow" and "I must show directions to reach the location, what are my options, preferred free, else tell me cost."
+Decision already taken on 9 Nov 2026 (idea ID343): a bike route, then a walking route, joined at a common junction (the park point), picked by the least total time, never by a fixed distance.
+
+Sizing used below: about 4 routing calls for an order (9 Nov estimate). 100 orders a day is about 12,000 calls a month.
+
+| Option | What the rider gets | Free each month | Price after | Two-wheeler | Walking | Tier | Conf | Source, read 13 Nov 2026 |
+|---|---|---|---|---|---|---|---|---|
+| Google Maps link (the Navigate button, built, story #1182) | Google's own app: voice, turns, traffic. Leaves our app. No park point of ours | no key needed; cost not on the page | not on the page | yes, `travelmode=two-wheeler` | yes | A | 0.85 that it stays free | developers.google.com/maps/documentation/urls/get-started: "You don't need a Google API key to use Maps URLs." |
+| Valhalla on our own server | A road line, the turns as text, Hindi (`hi-IN`), inside our app. Our data, so park points can be kept | all (software is MIT) | ₹0; the server and the upkeep are ours | yes, `motor_scooter` | yes, `pedestrian` | A | 0.9 for what it offers; 0.4 that the Oracle box holds it (not tested, F39) | valhalla.github.io/valhalla/api/route/api-reference; release 3.9.1 of 2026-10-06; Docker image |
+| Ola Maps Directions API | A road line inside our app | 100,000 calls per API | ₹0.199 a request (Directions), ₹0.099 (Directions Basic); prepaid credit, calls stop when it runs out | not on the page | not on the page for the API (the Android SDK has a walking profile) | A | 0.9 for the price; 0.4 that it fits the park point | maps.olakrutrim.com/pricing and /pricing/details (rate card of 1 Sept 2026) |
+| Google Routes API, India price | A road line inside our app, Google's traffic | two-wheeler is the Enterprise SKU: 7,000 | $4.50 per 1,000 | yes (beta) | yes (beta) | A | 0.9 | developers.google.com/maps/billing-and-pricing/pricing-india and sku-details/routes |
+| Mapbox Directions API | A road line inside our app | 100,000 | $2.00 per 1,000 | not on the page | yes | A | 0.9 | mapbox.com/pricing |
+| Google Navigation SDK, India price (native app only) | Google's full voice navigation inside our own Android app | 7,000 destinations | $8.00 per 1,000 | not read | not read | A | 0.8 | pricing-india, "Navigation Request" |
+
+Not usable for a live app: the OSRM demo server ("restricted to reasonable, non-commercial use-cases", 1 request a second), the GraphHopper free plan ("for non-commercial use only"). openrouteservice: the plan limits could not be read (the plans page gave no text).
+
+Other facts: OSRM ships car, bicycle and foot profiles, no motorcycle or scooter, and its answer has turn codes, not sentences. GraphHopper's open engine has motorcycle and foot, Apache-2.0, needs Java 25. Geofabrik: India 1.6 GB, Central Zone 335 MB, Northern Zone 214 MB.
+
+What the numbers mean at 100 orders a day (about 12,000 calls a month): Valhalla ₹0. Ola ₹0 (free up to about 830 orders a day). Google Routes two-wheeler: 5,000 paid calls, about $22.50 a month. Mapbox ₹0. Google Navigation SDK: 3,000 destinations, ₹0.
+
+Hypotheses, not facts, until tested: (1) Valhalla with the scooter and walking graphs runs on the Oracle box with RAM to spare and answers under 1 s (F39). (2) The park point it gives is the right place for 16 of 20 real addresses (the 9 Nov rule). (3) Ola's Directions API can give a walking route.
+
+Motive check: every price page sells credits; the free tiers can shrink (Ola's did in 2026). A self-hosted engine has no such page, but its cost is our own time.
+
+## Valhalla: software requirements (13 Nov 2026, reviewer)
+
+Source: Valhalla's own pages, read 13 Nov 2026. Tier A (the project says it about itself). The project sells nothing.
+
+| Claim | What the page says | Tier | Confidence | What it changes for us |
+|---|---|---|---|---|
+| Runs on Linux and macOS | "fully functional on many Linux and Mac OS distributions" (github.com/valhalla/valhalla) | A | 0.9 | The Oracle box (Linux) is fine |
+| A Linux ARM64 Docker image exists | The package page lists `linux/arm64` and the tag `latest-arm64` for `ghcr.io/valhalla/valhalla` | A | 0.9 | No build from source on the box |
+| The scripted image is ARM64 too | Not on the page read (`valhalla-scripted` architectures not listed) | - | 0.5 | Check with `docker manifest inspect` before the test |
+| Build from source needs CMake and C++17 | "the compiler needs C++17 support"; Debian or Ubuntu: `./scripts/install-linux-deps.sh` | A | 0.9 | Not needed when we use Docker |
+| The server listens on port 8002 | `-p 8002:8002` in the Docker README; `valhalla_service valhalla.json 1` runs it | A | 0.9 | One port, kept inside the box |
+| RAM to build tiles | Only figure: the whole planet on a quad core with 16 GB RAM and an SSD, about 15 hours | A | 0.9 for the planet | No figure for a 335 MB zone. Must be measured |
+| RAM to serve routes | Not on the pages read | - | - | Must be measured |
+| Tile size on disk against the pbf size | Not on the pages read | - | - | Must be measured |
+| `server_threads` | "If valhalla gets killed when building tiles, lower this number." | A | 0.9 | Start with 1 on the shared box |
+| `build_elevation` is off by default | "True downloads elevation tiles" | A | 0.9 | Keep off |
+| `build_admins` is on by default | Needed for driving side. A small extract "usually contains no country or state polygons"; set `mjolnir.data_processing.use_admin_db` to false only for right-hand driving | A | 0.8 | India drives on the left: keep admins on, and test the driving side in the route text |
+| `build_time_zones` | Needed only for routes with a set departure time | A | 0.9 | Can be off |
+| `build_tar` is on by default | One tar of the tiles with an index, "faster graph loading after reboots" | A | 0.9 | Keep on |
+| New map data | A changed pbf makes the container build new tiles on the next restart | A | 0.9 | A map update is a rebuild |
+| One graph for bike and walk | "This route graph will include motor vehicle, pedestrian, and bicycle route information". `motor_scooter` is not named on that page | A | 0.7 | Lean yes. The test settles it |
+| Licence | MIT for the code. The OSM data is ODbL (credit line needed) | A | 0.9 | Free for commercial use, with the OSM credit |
+
+Open, so a test: RAM, disk and time to build one zone on the Oracle box, RAM to serve, and whether `motor_scooter` and `pedestrian` both answer from one graph.

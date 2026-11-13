@@ -43,3 +43,19 @@ Date of this research: 2026-10-29. One table, then the proof. Older long notes s
 1. Razorpay: one written quote, then compare with 2% plus GST. Decision: if above 2.5%, ask Cashfree for a rate.
 2. UptimeRobot: read the terms on the day of the click. Decision: commercial use not allowed means use the second pick.
 3. Maps: count tile requests of the rider map in a one-week pilot on MapTiler's free plan on dev. Decision: over 100,000 requests means Flex.
+
+## 2026-11-13: can Razorpay tell us at once that a door payment came? (owner's question)
+Question: at the door, can the app know by itself that the UPI money came, so the rider does not have to trust the customer's phone screen? What it changes: whether "Paid by UPI" stays the rider's word or becomes the gateway's word.
+Source: Razorpay's own docs and pricing page, read 13 Nov 2026 (Tier A for "they say it"; they sell the product). No real payment was tested.
+
+| Claim | What the page says | Tier | Confidence | What it changes for us |
+|---|---|---|---|---|
+| A QR for one order with a fixed amount can be made by API | `usage: single_use`, `fixed_amount: true`, `payment_amount`; it closes after one payment; expiry 2 minutes to 2 hours | A | 0.9 | Fits #1321 (a QR per order with the amount) |
+| We are told when it is paid | Webhook `qr_code.credited`: "Triggered when a payment is made using a QR code". Also an API to list the payments on one QR | A | 0.9 | The app can mark "paid" itself |
+| How fast | Only the words "real-time", "immediate", "instant". No seconds, no promise | A | 0.5 | Needs our own test at a door before the rider depends on it |
+| Who paid | The sample payload has the payer's UPI ID (`vpa`), `contact`, `email`, and a bank reference (`rrn`). No payer name field | A | 0.8 | Helps #1413 for matching and disputes; does not give the name |
+| Fee | Pricing page (last updated May 2026): "UPI QR (standard) 0.99% per transaction"; the UPI row says "Zero MDR, 2% platform fee applies"; 18% GST on the fee; setup fee and yearly fee are 0. The page does not say which of the two rates applies | A | 0.5 | On a 340 rupee order: about 4 rupees at 0.99%, about 8 rupees at 2%, both with GST. Ask Razorpay in writing (same open point as October) |
+| What we need first | QR codes are switched on by request to Razorpay support; an account is needed. KYC is not named on the QR pages | A | 0.7 | The owner's Razorpay KYC click is still pending (`razorpay.ts` is an empty placeholder) |
+
+Not checked: other gateways, a bank's own merchant QR, what the law lets us store about a payer. Opposite view not searched yet. A Tier C claim was not used.
+Test to design before building (goes to `experiments.md` when the owner picks this up): 10 real payments on a test QR, measure seconds from "paid" on the customer's phone to our webhook; pass if 9 of 10 arrive in under 10 seconds.
