@@ -244,3 +244,15 @@ export function StaffLanding({ kicker, app, right, label, error, children }: { k
 export function NoteBand({ text }: { text: string }) {
   return <span className="ui-noteband"><span className="ui-noteband-label">Customer says</span><span className="ui-noteband-text">{text}</span></span>;
 }
+
+// Story 1324 (boards PL3, PL4; owner rule 11): white paper torn at the top only. 25 whole teeth in the paper's colour with the slip's hairline, stretched to the
+// slip's width so no tooth is cut. It sits right above a `ui-slip` (which then drops its straight top); the bottom stays straight.
+const TEETH = Array.from({ length: 25 }, (_, i) => `${i * 14},10 ${i * 14 + 7},0`).join(" ") + " 350,10";
+export function TornTop() {
+  return (
+    <svg className="ui-torn-top" aria-hidden="true" viewBox="0 0 350 10" preserveAspectRatio="none">
+      <polygon points={`${TEETH} 0,10`} />
+      <polyline points={TEETH} />
+    </svg>
+  );
+}

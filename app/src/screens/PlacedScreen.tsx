@@ -8,7 +8,7 @@ import type { RiderCard } from "../lib/supabase";
 import { useEffect, useState } from "react";
 import { PAY_WINDOW_S, PAY_METHODS, type PayMethod } from "../lib/payments";
 import { devHelperOn } from "../lib/payGateway";
-import { Timeline } from "../ui";
+import { Timeline, TornTop } from "../ui";
 import { AdjustLines } from "../ui/AdjustLines";
 import { BackChevron } from "./BillScreen";
 import { RiderMapScreen } from "./RiderMapScreen";
@@ -132,6 +132,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
           </div>
         )}
         <section className="ui-slip ui-slip-pad" aria-label={delivered ? "Order, delivered" : "Order"}>
+          <TornTop />
           <div className="ui-slip-body">
             <div className="ui-slip-head"><span>{head}</span><span>{delivered ? `${placed.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${clock12(placed)}` : `No. ${shortId(order.id)}`}</span></div>
             <div className="ui-slip-stamp"><span className={`ui-stamp ${STAMP[status] ?? "placed"}`}>{declined ? "Declined" : statusLabel(status)}</span></div>
