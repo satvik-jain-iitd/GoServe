@@ -218,3 +218,18 @@ test("S-1044 the six code boxes fill the Verify width in one line; Change number
   expect(Math.abs(boxes[5]!.x + boxes[5]!.width - (verify!.x + verify!.width))).toBeLessThan(1.5);
   expect(await d.getByRole("button", { name: "Change number" }).evaluate((e) => getComputedStyle(e).textDecorationLine)).toBe("none");
 });
+
+test("S-1415 the code sheet and the name sheet into Order placed: Back shows the menu, the next Back leaves the app", async ({ page, context }) => {
+  await withOtp(context, page);
+  await toBill(page);
+  await toCodeStep(page);
+  await typeCode(page, "482913");
+  await dialog(page).getByRole("button", { name: "Verify" }).click();
+  await page.getByRole("dialog", { name: "Your name" }).getByLabel("Your name").fill("Asha");
+  await page.getByRole("dialog", { name: "Your name" }).getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole("searchbox", { name: "Search dishes" })).toBeVisible();
+  await page.goBack();
+  await expect(page).not.toHaveURL(/\/customer\//);
+});
