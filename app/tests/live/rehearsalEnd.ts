@@ -5,5 +5,5 @@ import { expect, type Page } from "@playwright/test";
 export async function confirmAndDelivered(page: Page, ms = { ask: 15 * 60_000, done: 20 * 60_000 }) {
   await page.getByRole("button", { name: "Yes, I have it" }).click({ timeout: ms.ask });
   await expect(page.getByRole("heading", { name: "Delivered", exact: true })).toBeVisible({ timeout: ms.done });
-  await expect(page.getByText(/Thank you for eating with GoServe/)).toBeVisible({ timeout: ms.done });
+  await expect(page.locator('[aria-current="step"]')).toBeVisible({ timeout: ms.done });   // the status rows end on the delivered step (the thank-you line left in story 1324)
 }

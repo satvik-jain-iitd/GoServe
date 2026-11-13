@@ -151,7 +151,6 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
           </div>
         </section>
         <div className="ui-after">
-          {status === "placed" && <p>The kitchen has your order. This page updates on its own.</p>}
           {track && status === "out_for_delivery" && <RiderRow t={track} onOpen={() => setMapOpen(true)} />}   {/* board T4: the row sits under the slip, above the timeline */}
           {!cancelled && <Timeline rows={3} steps={steps.map((x) => (atDoor && x.status === "out_for_delivery" ? "Rider at your door" : STEP_WORDS[x.status] ?? x.label))} current={steps.findIndex((x) => x.state === "current")} label="Order progress" />}   {/* story 1324 (PL6, PL4, PL7): three rows, the delivered slip too */}
           {!delivered && !cancelled && address && <p className="mono ui-addr ph-no-capture">{address}</p>}
@@ -181,11 +180,6 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
             </div>
           )}
           {error && <p role="alert" className="ui-field-error">{error}</p>}
-          {delivered && (
-            <>
-              <p>Delivered. Thank you for eating with GoServe.</p>
-            </>
-          )}
         </div>
       </div>
       {mapOpen && track && status === "out_for_delivery" && <RiderMapScreen t={track} orderNo={shortId(order.id)} door={door} onBack={() => setMapOpen(false)} onCall={onCall} />}

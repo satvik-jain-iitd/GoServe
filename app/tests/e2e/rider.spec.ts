@@ -71,5 +71,5 @@ test("S2 the customer sees every step live, without a refresh, and it ends at De
     if (label === "Delivered") await expect(page.getByRole("heading", { name: "Delivered", exact: true }).first()).toBeVisible({ timeout: 6000 });
     else await expect(current).toHaveText(label, { timeout: 6000 });
   }
-  await expect(page.getByText(/Thank you for eating with GoServe/)).toBeVisible();
+  await expect(current).toHaveText("At your door");   // the rows end on the delivered step (the thank-you line left in story 1324)
 });

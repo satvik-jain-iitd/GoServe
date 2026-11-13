@@ -49,7 +49,7 @@ test("TC 23.1 Look: right after Place order, the grey Placed stamp, Working out 
   await expect(page.getByText("1 × Butter Chicken")).toBeVisible();
   await expect(page.getByText("To pay at door", { exact: true })).toBeVisible();
   await expect(page.getByText("₹320", { exact: true })).toBeVisible();
-  await expect(page.getByText("The kitchen has your order. This page updates on its own.")).toBeVisible();
+  await expect(page.getByText("The kitchen has your order. This page updates on its own.")).toHaveCount(0);   // review of PR 1466: board PL6 has no such line
   await expect(page.getByRole("list", { name: "Order progress" }).getByRole("listitem")).toHaveCount(3);   // story 1324 (board PL6): three rows show
   await expect(page.getByRole("button", { name: "Cancel order" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Call the kitchen" })).toHaveAttribute("href", `tel:${PHONE}`);
