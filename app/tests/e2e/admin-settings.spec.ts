@@ -27,6 +27,18 @@ test("S2 Save sends the new percent and the line says it is now that", async ({ 
   expect(net.calls.rpc.filter((c) => c.name === "swap_discount_set_v2").map((c) => c.body)).toEqual([{ p_pct: 15 }]);
 });
 
+// The S2 flake: the first read landed after Save and put the old percent back on the line.
+test("S2b a Save made before the slow first read lands keeps the new percent on the line", async ({ page, context }) => {
+  const net = await toSettings(page, context, 1500);
+  await page.getByLabel("Sold-out swap discount, percent").fill("15");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText(/^Now 15% · /)).toBeVisible();
+  await expect.poll(() => net.calls.rpc.filter((c) => c.name === "swap_discount_get_v2").length).toBeGreaterThan(0);
+  await page.waitForTimeout(2000);   // the slow read has landed by now
+  await expect(page.getByText(/^Now 15% · /)).toBeVisible();
+  await expect(page.getByLabel("Sold-out swap discount, percent")).toHaveValue("15");
+});
+
 test("S3 a percent over 50 is refused before sending, with a plain line", async ({ page, context }) => {
   const net = await toSettings(page, context);
   await page.getByLabel("Sold-out swap discount, percent").fill("60");

@@ -45,8 +45,11 @@ export async function setup(context: BrowserContext, page: Page, initial: object
         if (r.status === 200) state.decisions = [{ id: 1, order_id: b.p_order, session_id: SESSION, created_at: new Date().toISOString(), decision: decisionOf() }];
         return json(route, 200, r.body);
       }
-      if (name === "swap_discount_get_v2" && state.swapDelayMs) await new Promise((r) => setTimeout(r, state.swapDelayMs));   // a slow load
-      if (name === "swap_discount_get_v2") return json(route, 200, { pct: state.swapPct, updated_by: "owner@goserve.test", updated_at: "2026-10-29T14:10:00Z" });   // #619 layer d, board A9
+      if (name === "swap_discount_get_v2") {
+        const pct = state.swapPct;   // the server reads the row when the call arrives, so a slow answer can carry the value from before a Save
+        if (state.swapDelayMs) await new Promise((r) => setTimeout(r, state.swapDelayMs));   // a slow load
+        return json(route, 200, { pct, updated_by: "owner@goserve.test", updated_at: "2026-10-29T14:10:00Z" });   // #619 layer d, board A9
+      }
       if (name === "otp_login_get_v2") return json(route, 200, { on: state.otpLogin === true, updated_by: "owner@goserve.test", updated_at: "2026-11-03T10:00:00Z" });   // story 829: the phone code switch
       if (name === "otp_login_set_v2") { state.otpLogin = JSON.parse(req.postData() ?? "{}").p_on === true; return json(route, 200, { ok: true }); }
       if (name === "swap_discount_set_v2") {
