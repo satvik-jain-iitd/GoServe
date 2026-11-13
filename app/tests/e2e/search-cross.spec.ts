@@ -15,7 +15,7 @@ async function map(page: Page, context: Parameters<typeof setup>[0]) {
   await setup(context, page, [], { pin: null });
   await context.addInitScript(() => { try { localStorage.setItem("gs_alerts_asked", "1"); } catch { /* blocked */ } });
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "Enter address manually" }).click();
+  await page.getByRole("button", { name: "Search for my address" }).click();
   return page.getByRole("searchbox", { name: "Search an area or address" });
 }
 // getComputedStyle cannot read the browser's own cross, so the check reads the page's rules: one hides it.

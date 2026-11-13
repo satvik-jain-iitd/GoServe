@@ -30,18 +30,18 @@ test("TC 3.1 slip without a top line or step count, the title, the pin in a lime
   expect(bg).not.toBe("rgba(0, 0, 0, 0)");
 });
 
-test("TC 3.2 Enter address manually is above, Set delivery location is last, the slip ends 24 px above the bottom", async ({ page, context }) => {
+test("TC 3.2 Search for my address is above, Use my current location is last, the slip ends 24 px above the bottom", async ({ page, context }) => {
   await STEPS["first-open-ask"](context, page, PATH);
-  const outline = await box(page.getByRole("button", { name: "Enter address manually" }));
-  const filled = await box(page.getByRole("button", { name: "Set delivery location" }));
+  const outline = await box(page.getByRole("button", { name: "Search for my address" }));
+  const filled = await box(page.getByRole("button", { name: "Use my current location" }));
   expect(outline.y + outline.height).toBeLessThanOrEqual(filled.y);
   expect(Math.abs(outline.width - filled.width)).toBeLessThanOrEqual(2);
   const slip = await box(page.locator(".ui-slip"));
   expect(Math.abs(844 - (slip.y + slip.height) - 24)).toBeLessThanOrEqual(4);
-  await expect(page.locator(".ui-slip-body > button").last()).toContainText("Set delivery location");
+  await expect(page.locator(".ui-slip-body > button").last()).toContainText("Use my current location");
 });
 
-test("TC 3.3 Set delivery location, allow: the pin map opens centred on my spot", async ({ page, context }) => {
+test("TC 3.3 Use my current location, allow: the pin map opens centred on my spot", async ({ page, context }) => {
   const looked: string[] = [];
   page.on("request", (r) => { if (r.url().includes("/functions/v1/geocode")) looked.push(r.url()); });   // the map asks for the words at its centre once it settles
   await STEPS["first-open-pin"](context, page, PATH);   // the shared step gives the phone 24.8847, 79.597 and taps the button
@@ -51,17 +51,17 @@ test("TC 3.3 Set delivery location, allow: the pin map opens centred on my spot"
   expect(looked.at(-1)).toContain("lng=79.59");
 });
 
-test("TC 3.4 Set delivery location, block: the map opens with search ready, no dead end", async ({ page, context }) => {
+test("TC 3.4 Use my current location, block: the map opens with search ready, no dead end", async ({ page, context }) => {
   await phone(context, "blocked");
   await STEPS["first-open-ask"](context, page, PATH);
-  await page.getByRole("button", { name: "Set delivery location" }).click();
+  await page.getByRole("button", { name: "Use my current location" }).click();
   await expect(map(page)).toBeVisible();
   await expect(page.getByRole("searchbox", { name: "Search an area or address" })).toBeFocused();
 });
 
-test("TC 3.5 Enter address manually: the pin map opens with the search box, no separate typing screen (#1126)", async ({ page, context }) => {
+test("TC 3.5 Search for my address: the pin map opens with the search box, no separate typing screen (story 1126)", async ({ page, context }) => {
   await STEPS["first-open-ask"](context, page, PATH);
-  await page.getByRole("button", { name: "Enter address manually" }).click();
+  await page.getByRole("button", { name: "Search for my address" }).click();
   await expect(map(page)).toBeVisible();
   await expect(page.getByRole("searchbox", { name: "Search an area or address" })).toBeFocused();
   await expect(page.getByLabel("Pin code")).toHaveCount(0);
@@ -70,9 +70,9 @@ test("TC 3.5 Enter address manually: the pin map opens with the search box, no s
 test("TC 3.6 the location is slow: the button says it is finding me, and manual search stays usable", async ({ page, context }) => {
   await phone(context, "never");
   await STEPS["first-open-ask"](context, page, PATH);
-  await page.getByRole("button", { name: "Set delivery location" }).click();
+  await page.getByRole("button", { name: "Use my current location" }).click();
   await expect(page.getByRole("button", { name: "Finding you…" })).toBeDisabled();
-  await page.getByRole("button", { name: "Enter address manually" }).click();
+  await page.getByRole("button", { name: "Search for my address" }).click();
   await expect(page.getByRole("searchbox", { name: "Search an area or address" })).toBeVisible();
 });
 

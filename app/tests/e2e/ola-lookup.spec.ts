@@ -14,7 +14,7 @@ async function start(context: any, page: Page, geocode: { status: number; body: 
   await context.grantPermissions(["geolocation"]);
   await context.setGeolocation({ latitude: 24.9, longitude: 79.58 });
   await page.goto("/customer/");
-  await page.getByRole("button", { name: "Set delivery location" }).click();
+  await page.getByRole("button", { name: "Use my current location" }).click();
   return { net, osm };
 }
 
