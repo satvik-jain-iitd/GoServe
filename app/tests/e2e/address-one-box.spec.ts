@@ -75,3 +75,22 @@ test("O6 Edit: Change opens the map, and back keeps what was typed", async ({ pa
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(sheet(page).getByLabel(BOX)).toHaveValue("C-130");
 });
+
+test("O7 (board AD3L1) a long address: the box stays one line of the same height, the end stays in view, the sheet keeps its height, the limit is 120", async ({ page, context }) => {
+  await page.setViewportSize({ width: 360, height: 640 });
+  await STEPS["first-open-pin"](context, page, "/customer/");
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();
+  const box = sheet(page).getByLabel(BOX);
+  await box.pressSequentially("C-1");
+  const h0 = (await sheet(page).boundingBox())!.height;
+  const b0 = (await box.boundingBox())!.height;   // 45 px today, like every field on this sheet
+  await box.fill("");
+  await box.pressSequentially("C-128, Gali 3, Radio Colony, behind the old water tank, near Sharma General Store, ward 14, Satai Road extension ok");
+  await box.pressSequentially("x".repeat(20));
+  const v = await box.inputValue();
+  expect(v.length).toBe(120);
+  expect(await box.evaluate((el) => el.tagName)).toBe("INPUT");
+  expect((await box.boundingBox())!.height).toBe(b0);
+  expect(await box.evaluate((el: HTMLInputElement) => el.scrollLeft)).toBeGreaterThan(0);   // the start slid left: the end and the caret are in view
+  expect((await sheet(page).boundingBox())!.height).toBe(h0);
+});
