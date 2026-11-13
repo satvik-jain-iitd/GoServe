@@ -25,11 +25,19 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
     const pin = await box(page, ".ui-pinmap-pin svg path");   // the marker itself, not its halo
     expect(Math.abs(b.x + b.width / 2 - (pin.x + pin.width / 2))).toBeLessThanOrEqual(1);
     expect(b.y + b.height).toBeLessThanOrEqual(pin.y);
-    expect(pin.y - (b.y + b.height)).toBeLessThanOrEqual(40);   // the board: 32 px from the bubble to the marker
+    expect(pin.y - (b.y + b.height)).toBeLessThanOrEqual(40);   // the board: 26 px from the tail tip (28 from the box) to the marker path
     for (const sel of [".ui-pinmap-pin svg path", ".ui-pinmap-card", ".ui-pinmap-top", ".ui-pinmap-here"]) expect(overlap(b, await box(page, sel)), sel).toBe(false);
     expect(await bubble(page).evaluate((e) => e === document.activeElement || e.contains(document.activeElement))).toBe(false);
   });
 }
+
+test("H1b at 320 x 568 there is no room under the top row: the bubble is not shown, and nothing hides under the search bar", async ({ page, context }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await STEPS["first-open-pin"](context, page, "/customer/");
+  await expect(page.locator(".ui-pinmap-card")).toBeVisible();
+  if (await bubble(page).isVisible()) expect(overlap((await bubble(page).boundingBox())!, await box(page, ".ui-pinmap-top"))).toBe(false);
+  else await expect(page.getByText(TEXT)).toBeHidden();
+});
 
 test("H2 a drag hides it at once; the map opened again on this phone never shows it", async ({ page, context }) => {
   await STEPS["first-open-pin"](context, page, "/customer/");
