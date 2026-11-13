@@ -370,6 +370,9 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-btn.text { background: none; border: 0; color: var(--gs-text-muted); min-height: var(--gs-tap); }
 .ui-today { padding: 0 var(--gs-gutter) var(--gs-space-4); }
 .ui-row-tall { min-height: 64px; }
+.ui-stepper { display: inline-flex; align-items: center; gap: 10px; flex: none; }   /* board AR1: minus, the number, plus */
+.ui-stepper .ui-btn { min-height: var(--gs-tap); width: 44px; padding: 0; justify-content: center; }
+.ui-stepper b { font-size: 18px; min-width: 36px; text-align: center; }
 .ui-row-end { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }   /* story 1448, board TI1: the amount over the way it was paid */
 .ui-cash { font-size: 22px; font-weight: 500; }
 .ui-state-dot { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 999px; background: var(--gs-text-muted); vertical-align: middle; }

@@ -18,6 +18,7 @@ import { NoKitchen } from "./screens/NoKitchen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { AdminGate } from "./screens/AdminGate";
 import { RiderGate } from "./screens/RiderGate";
+import { readRates, type Rates } from "./lib/incentive";
 import { fetchKitchen, fetchOnlyKitchen, riderChangePaid, type KitchenCard, type RiderGateState } from "./lib/rider";
 import { KitchenGate, type KitchenGateState } from "./screens/KitchenGate";
 import { enablePush, watchSession } from "./lib/push";
@@ -974,6 +975,17 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     fetchKitchen(getClient(), jobKitchenId).then((k) => { if (alive) setJobKitchen(k); }).catch(() => undefined);
     return () => { alive = false; };
   }, [jobKitchenId]);
+  const [incentive, setIncentive] = useState<Rates | null>(null);   // stories 1443 and 1438: read at open; a failed read shows no row, never a guess
+  const riderLive = role === "rider" && !demo;
+  useEffect(() => {
+    if (!riderLive) return;
+    let alive = true;
+    const read = () => void readRates(getClient()).then((r) => { if (alive && r) setIncentive(r); });   // a failed re-read keeps the last values
+    read();
+    const back = () => { if (document.visibilityState === "visible") read(); };   // the rider keeps the page open all day: read again on coming back
+    document.addEventListener("visibilitychange", back);
+    return () => { alive = false; document.removeEventListener("visibilitychange", back); };
+  }, [riderLive, orders.length]);   // and when an order comes or goes
   const riderNoKitchen = role === "rider" && !demo && !jobKitchenId && !live.loading;   // stories 1445 and 1440: no order yet, so the one active kitchen, if there is only one
   useEffect(() => {
     if (!riderNoKitchen) return;
@@ -1000,6 +1012,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const riderScreen = (gate: RiderGateState | null) => (
     <RiderScreen orders={orders} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
       onAct={(o, a, method) => act(o, a, "rider", method)} methods={riderMethods} qrUrl={riderQr} onLoadMethods={loadRiderMethods} gate={gate} kitchen={jobKitchen} onAtDoor={(o, m) => { if (!demo) void riderAtDoor(getClient(), o.id, m); }}
+      incentive={incentive}
       onChangePaid={async (o, m) => { const code = demo ? null : await riderChangePaid(getClient(), o.id, m); if (code === null) setOrders((cur) => cur.map((x) => (x.id === o.id ? { ...x, paid_by: m } : x))); return code; }} />
   );
   const riderView = lock === "rider" ? <RiderGate>{riderScreen}</RiderGate> : riderScreen(null);
