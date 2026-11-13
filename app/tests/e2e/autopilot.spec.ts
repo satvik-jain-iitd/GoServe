@@ -14,7 +14,7 @@ test("S1 in airplane mode Autopilot plays the whole order story from local data,
   await expect(page.getByText("Offline demo")).toBeVisible();
   await expect(page.getByRole("heading", { name: /^(Order placed|Your order)$/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Delivered" })).toBeVisible({ timeout: 8000 });
-  await expect(page.getByText(/Thank you for eating with GoServe/)).toBeVisible();
+  await expect(page.locator(".ui-bottom").getByRole("button", { name: "Back to menu" })).toBeVisible();   // the end slip (the thank-you line left in story 1324)
   expect(net.calls.status).toHaveLength(0);   // nothing was sent
   expect(net.calls.decide).toHaveLength(0);
   expect(net.calls.orderReads).toHaveLength(readsBefore);   // the live list was not read either

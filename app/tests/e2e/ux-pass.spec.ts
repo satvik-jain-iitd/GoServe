@@ -85,7 +85,7 @@ test("D7 D13 the placed screen says the kitchen has the order and offers Back to
   await setup(context, page, [{ ...order("placed", new Date().toISOString(), new Date().toISOString()), reminder: "ask" }]);
   await page.goto("/customer/");
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
-  await expect(page.getByText("The kitchen has your order. This page updates on its own.")).toBeVisible();
+  await expect(page.getByText("The kitchen has your order. This page updates on its own.")).toHaveCount(0);   // review of PR 1466: board PL6 has no such line
   await expect(page.getByRole("button", { name: "Back to menu" })).toBeVisible();
   await expect(page.getByText("Tap Yes when you have it")).toHaveCount(0);
 });

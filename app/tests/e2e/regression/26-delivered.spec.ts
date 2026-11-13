@@ -51,7 +51,7 @@ test("TC 26.1 Look: the Delivered stamp, At your door 4:53 pm, the lines, Cash p
   await expect(slip.getByText("1 × Dal Makhani", { exact: true })).toBeVisible();
   await expect(slip.getByText("Cash paid", { exact: true })).toBeVisible();
   await expect(slip.getByText("₹830", { exact: true })).toBeVisible();
-  await expect(page.getByText("Delivered. Thank you for eating with GoServe.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Delivered", exact: true })).toBeVisible();
   await expect(page.locator(".ui-bottom").getByRole("button", { name: "Back to menu" })).toBeVisible();   // story 1434: was See the menu
   await expect(page.getByRole("link", { name: "Call the kitchen" })).toHaveAttribute("href", "tel:9876543210");
 });
