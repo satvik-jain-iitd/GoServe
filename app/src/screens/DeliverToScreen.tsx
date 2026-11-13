@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useBackCloses } from "../lib/back";
 import { distanceM, distanceWord, lastUsed, NEAR_M, type Place, type SavedAddress } from "../lib/addresses";
 import { splitMatch, type PlaceHit } from "../lib/placeSearch";
-import { useSheetFit } from "../ui";
+import { ClearCross, useSheetFit } from "../ui";
 
 type Props = {
   focusSearch?: boolean;   // story #1133: the cursor starts in the search
@@ -24,6 +24,7 @@ const iconFor = (label: string, near: boolean) => (near ? SEND : /home|ghar|nani
 
 export function DeliverToScreen({ focusSearch, list, selectedId, here, search, onPlace, onBack, onSelect, onUseLocation, onAddNew, onEditOnMap, onRemove }: Props) {
   const [query, setQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
   const [menuFor, setMenuFor] = useState<SavedAddress | null>(null);
   const [all, setAll] = useState(false);   // board C12 and C13: three rows, then View all
   // Story #1051 (board C10): a removed row leaves the list at once; the delete itself waits UNDO_S seconds so Undo can bring it back. Leaving the page does not lose it.
@@ -66,7 +67,8 @@ export function DeliverToScreen({ focusSearch, list, selectedId, here, search, o
       <div className="ui-scroll ui-deliver-to">
         <label className="ui-search-box">
           <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
-          <input type="search" autoFocus={focusSearch} aria-label="Search an area or address" placeholder="Search an area or address" value={query} onChange={(e) => change(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submit(); } }} />
+          <input ref={searchRef} type="search" autoFocus={focusSearch} aria-label="Search an area or address" placeholder="Search an area or address" value={query} onChange={(e) => change(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submit(); } }} />
+          <ClearCross show={query !== ""} onClear={() => change("")} input={searchRef} />
           <button type="button" className="ui-search-go" aria-label="Search places" onClick={() => void submit()}>{I(<><path d="M5 12h14" /><path d="M13 6l6 6-6 6" /></>)}</button>
         </label>
         <div className="ui-two-cards">

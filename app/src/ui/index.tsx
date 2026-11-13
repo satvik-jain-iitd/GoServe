@@ -1,5 +1,5 @@
 // GoServe design system (story D1, #160). Every screen is built from these. Look and spacing come from ui.css and the tokens.
-import { useCallback, useRef, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { useCallback, useRef, type ButtonHTMLAttributes, type ReactNode, type RefObject } from "react";
 import "./ui.css";
 import { bindSheetFit } from "./sheetFit";
 
@@ -51,6 +51,16 @@ export function Chip({ selected, children, ...p }: ButtonHTMLAttributes<HTMLButt
 /** Story 1422 (design system N7, the joined bar; owner 13 Nov 2026): a choice of two or three as one row of joined parts, never pills. */
 export function JoinedBar<T extends string>({ label, options, value, onPick }: { label: string; options: readonly T[]; value: T; onPick: (v: T) => void }) {
   return <div className="ui-bar" role="group" aria-label={label}>{options.map((o) => <button key={o} type="button" aria-pressed={value === o} onClick={() => onPick(o)}>{o}</button>)}</div>;
+}
+/** Story 1248 (design system F8, the clear cross; owner 13 Nov 2026): one small grey cross inside a search box, shown only with words.
+ * A tap empties the box and keeps the focus (the keyboard stays open). It never closes anything. */
+export function ClearCross({ show, onClear, input }: { show: boolean; onClear: () => void; input: RefObject<HTMLInputElement | null> }) {
+  if (!show) return null;
+  return (
+    <button type="button" className="ui-clear" aria-label="Clear search" onPointerDown={(e) => e.preventDefault()} onClick={() => { onClear(); input.current?.focus(); }}>
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+    </button>
+  );
 }
 export function Stepper({ label, value, onChange, min = 0, max = 20 }: { label: string; value: number; onChange: (n: number) => void; min?: number; max?: number }) {
   return (

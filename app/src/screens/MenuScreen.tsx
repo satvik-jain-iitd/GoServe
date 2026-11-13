@@ -6,7 +6,7 @@ import { categoryKey, filterDishes } from "../lib/browse";
 import { filterSectionsOf, sectionsOf, thalisOf } from "../lib/home";
 import { creditLicence, creditLine, type Dish } from "../lib/menu";
 import { formatRupees } from "../lib/money";
-import { DishPlate, Empty, Stepper, TabBar, VegMark, useSheetFit } from "../ui";
+import { ClearCross, DishPlate, Empty, Stepper, TabBar, VegMark, useSheetFit } from "../ui";
 
 type Props = {
   dishes: Dish[] | null; fromCache: boolean; slow?: boolean; error: string | null; onRetry: () => void;
@@ -59,6 +59,7 @@ export function MenuScreen(p: Props) {
   const [vegOnly, setVegOnly] = useState(false);
   const [cats, setCats] = useState<string[]>([]);   // story #972: the ticked categories; none ticked is all
   const [query, setQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
   const [photoBad, setPhotoBad] = useState(false);   // story #975: a photo that cannot load leaves the first letter, never a broken picture
   const [filterOpen, setFilterOpen] = useState(false);
   const [dish, setDish] = useState<Dish | null>(null);
@@ -95,7 +96,8 @@ export function MenuScreen(p: Props) {
         <div className="ui-top-search">
           <div className="ui-search-box">
             <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
-            <input type="search" aria-label="Search dishes" placeholder="Search dishes" value={query} onChange={(e) => setQuery(e.target.value)} />
+            <input ref={searchRef} type="search" aria-label="Search dishes" placeholder="Search dishes" value={query} onChange={(e) => setQuery(e.target.value)} />
+            <ClearCross show={query !== ""} onClear={() => setQuery("")} input={searchRef} />
             <button type="button" className="ui-search-filter" aria-label="Filter the menu" onClick={() => setFilterOpen(true)}><FunnelIcon /></button>
           </div>
           <label htmlFor="veg-top" className="ui-veg-top"><span className="mono">Veg</span><input id="veg-top" className="ui-switch small" type="checkbox" role="switch" aria-label="Veg only, whole menu" checked={vegOnly} onChange={(e) => setVegOnly(e.target.checked)} /></label>
