@@ -22,10 +22,10 @@ async function toDetails(page: Page, context: Parameters<typeof setup>[0], geoco
 }
 const sheet = (page: Page) => page.getByRole("dialog", { name: "Address details" });
 
-test("S1 the sheet opens over the same map: Step 2 of 2, the place and a Change link, two fields, Save as chips, Save address, no hint", async ({ page, context }) => {
+test("S1 the sheet opens over the same map: no step count, the place and a Change link, two fields, Save as chips, Save address, no hint", async ({ page, context }) => {
   await toDetails(page, context);
   await expect(sheet(page)).toBeVisible();
-  await expect(sheet(page).getByText("Step 2 of 2")).toBeVisible();
+  await expect(sheet(page).getByText(/Step \d of \d/)).toHaveCount(0);   // 1404 (owner, 13 Nov): no step count anywhere
   await expect(sheet(page).getByText("Green Park", { exact: true })).toBeVisible();
   await expect(sheet(page).getByRole("button", { name: "Change" })).toBeVisible();
   await expect(sheet(page).getByLabel("House, flat, floor")).toBeVisible();

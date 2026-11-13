@@ -14,11 +14,12 @@ const noKitchenHeading = (page: Page) => page.getByRole("heading", { name: "We d
 const tellButton = (page: Page) => page.getByRole("button", { name: "Tell me when you come here" });
 const letterHeading = (page: Page) => page.getByRole("heading", { name: "You found us early. Thank you." });
 
-test("TC 9.1 an address no kitchen serves: We don't reach here yet, the place row, filled Change location, outline Tell me when you come here, Step 4 of 4", async ({ page, context }) => {
+test("TC 9.1 an address no kitchen serves: We don't reach here yet, the place row, filled Change location, outline Tell me when you come here, no step count", async ({ page, context }) => {
   await STEPS["no-kitchen"](context, page, PATH);
   await expect(screen(page)).toBeVisible();   // the screen shows first, so the lines below can fail
   await expect(noKitchenHeading(page)).toBeVisible();
-  await expect(screen(page)).toContainText("Step 4 of 4");
+  await expect(screen(page)).not.toContainText(/Step \d of \d/);   // 1404: no step count
+  await expect(page.locator(".ui-slip-head")).toHaveCount(0);   // 1404: the slip has no top line either
   await expect(screen(page).getByText("Sector 62", { exact: true })).toBeVisible();   // the place row
   await expect(screen(page)).toContainText("Noida, Uttar Pradesh 201301");
   const change = page.getByRole("button", { name: "Change location" });

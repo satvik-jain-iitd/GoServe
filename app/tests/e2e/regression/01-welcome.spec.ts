@@ -8,11 +8,12 @@ const box = async (loc: import("@playwright/test").Locator) => (await loc.boundi
 
 test.use({ viewport: { width: 390, height: 844 } });
 
-test("TC 1.1 lockup, tagline on one line, slip with Welcome and Step 1 of 4, the title", async ({ page, context }) => {
+test("TC 1.1 lockup, tagline on one line, slip without a top line or step count, the title", async ({ page, context }) => {
   await reach(context, page);
   await expect(page.getByRole("heading", { name: "One tap and you are in" })).toBeVisible();
   await expect(page.getByText("Welcome", { exact: true })).toBeVisible();
-  await expect(page.getByText("Step 1 of 4")).toBeVisible();
+  await expect(page.getByText(/Step \d of \d/)).toHaveCount(0);   // 1404 (owner, 13 Nov): no step count anywhere
+  await expect(page.locator(".ui-slip-head")).toHaveCount(0);   // 1404: the slip has no top line either
   await expect(page.getByRole("img", { name: "GoServe" })).toBeVisible();
   const tag = page.getByText("Hot meals from our kitchen for you in 20 mins");
   const lineHeight = await tag.evaluate((e) => parseFloat(getComputedStyle(e).lineHeight));
