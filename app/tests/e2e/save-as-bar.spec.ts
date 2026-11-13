@@ -122,3 +122,22 @@ for (const t of ["day", "night"] as const) {
     expect(await edge("Name this place")).toBe(landmarkFocus);
   });
 }
+
+// Story 1430: at Night the keyboard ring on the chosen part (lime-soft) was the lime primary, almost not seen. It must be 3:1 or more on the fill; Day and the other parts stay as they are.
+for (const theme of ["day", "night"] as const) {
+  test(`B-1430 ${theme}: the keyboard ring on the chosen part is 3:1 or more on its fill`, async ({ page, context }) => {
+    await toSheet(page, context);
+    await page.evaluate((t) => document.documentElement.setAttribute("data-theme", t), theme);
+    const home = bar(page).getByRole("button", { name: "Home" });
+    await bar(page).getByRole("button", { name: "Office" }).focus();
+    await page.keyboard.press("Shift+Tab");
+    await expect(home).toBeFocused();
+    const ratio = await home.evaluate((el, src) => {
+      const toRgb = new Function(`return (${src})`)() as (c: string) => number[];
+      const lum = (c: number[]) => { const [r, g, b] = c.map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+      const s = getComputedStyle(el); const a = lum(toRgb(s.outlineColor)), b = lum(toRgb(s.backgroundColor));
+      return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+    }, rgb.toString());
+    expect(ratio).toBeGreaterThanOrEqual(3);
+  });
+}
