@@ -52,3 +52,12 @@ test("KO1c given the New tab, the line accept within 2 min does not show", async
   await expect(page.getByText(/accept within 2 min/)).toHaveCount(0);
   await expect(page.locator(".ui-ticket").first().getByText("₹")).toHaveCount(0);
 });
+
+test("KO1c given the decline sheet, it shows no amount and no customer name: the head says Placed and the lead says Tell the customer why", async ({ page, context }) => {
+  await open(page, context, "placed");
+  await page.getByRole("button", { name: "Decline, with a reason" }).click();
+  const sheet = page.getByRole("dialog", { name: "Decline order 0f0f0f0f" });
+  for (const t of ["Rahul", "₹"]) await expect(sheet.getByText(t)).toHaveCount(0);
+  await expect(sheet.getByText(/^Placed \d\d:\d\d$/)).toBeVisible();
+  await expect(sheet.getByText(/^Tell the customer why\./)).toBeVisible();
+});

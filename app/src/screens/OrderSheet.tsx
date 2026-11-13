@@ -1,7 +1,6 @@
 // Story #934: a new order opens as a sheet (board K3-OrderSheet) with Accept and Decline; Decline opens a reason sheet (K3-OrderDecline).
 import { useEffect, useRef, useState } from "react";
 import { hhmm, shortId, type Order } from "../lib/kitchen";
-import { formatRupees } from "../lib/money";
 import { MIN_REASON } from "../lib/orders";
 import { NoteBand, useSheetFit } from "../ui";
 
@@ -21,7 +20,6 @@ export function OrderSheet({ order, busy, error, onAccept, onDecline, onClose }:
   const startY = useRef<number | null>(null);
   useEffect(() => { const k = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); }; document.addEventListener("keydown", k); return () => document.removeEventListener("keydown", k); }, [onClose]);
   const no = shortId(order.id);
-  const first = order.customer_name?.trim().split(/\s+/)[0] || "the customer";
   const long = reason.trim().length >= MIN_REASON;
   const decline = async () => { if (long) setDeclineError(await onDecline(reason.trim())); };
   const swipe = (e: React.TouchEvent<HTMLElement>) => { if (startY.current !== null && e.changedTouches[0].clientY - startY.current > 80 && e.currentTarget.scrollTop === 0) onClose(); startY.current = null; };
@@ -41,8 +39,8 @@ export function OrderSheet({ order, busy, error, onAccept, onDecline, onClose }:
         </section>
       ) : (
         <section className="ui-sheet ui-order-sheet" role="dialog" aria-modal="true" aria-label={`Decline order ${no}`} onClick={(e) => e.stopPropagation()}>
-          <div className="ui-sheet-head"><h2>Can&apos;t take No. {no}?</h2><span className="mono ui-sheet-when">{formatRupees(order.total_paise)} · {hhmm(order.created_at)}</span></div>
-          <p className="ui-sheet-lead">Tell {first} why. They read these exact words on their phone, so write a full sentence.</p>
+          <div className="ui-sheet-head"><h2>Can&apos;t take No. {no}?</h2><span className="mono ui-sheet-when">Placed {hhmm(order.created_at)}</span></div>   {/* story 1455: the cook sees no amount and no name */}
+          <p className="ui-sheet-lead">Tell the customer why. They read these exact words on their phone, so write a full sentence.</p>
           <label htmlFor="decline-why" className="mono ui-kicker">Reason</label>
           <textarea id="decline-why" className="ui-sheet-text" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />
           <p className="mono ui-sheet-count"><span>{reason.trim().length} characters</span><span>at least {MIN_REASON}</span></p>
