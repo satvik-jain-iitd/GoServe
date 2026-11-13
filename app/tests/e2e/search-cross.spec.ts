@@ -39,6 +39,7 @@ for (const [where, go] of [["menu", menu], ["map", map], ["deliver to", deliver]
     expect(c.x + c.width).toBeLessThanOrEqual(b.x + b.width + 1);
     expect(c.y).toBeGreaterThanOrEqual(b.y - 1);
     expect(c.y + c.height).toBeLessThanOrEqual(b.y + b.height + 1);   // inside the box
+    expect(Math.abs((c.y + c.height / 2) - (i.y + i.height / 2))).toBeLessThanOrEqual(2);   // centred on the line of words (review of PR 1433: it sat low in Deliver to)
     expect(await browserCross(input)).toBe("none");
   });
 
