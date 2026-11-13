@@ -32,3 +32,21 @@ for (const [w, h] of [[360, 640], [390, 844]] as const) {
     expect(metres(reads[reads.length - 1], PHONE), "the place read is the place under the pin").toBeLessThanOrEqual(2);
   });
 }
+
+test("S2 at 360 x 640, Confirm & proceed then Change comes back with the pin on the same place", async ({ page, context }) => {
+  const reads: { lat: number; lng: number }[] = [];
+  page.on("request", (r) => {
+    if (!r.url().includes("/functions/v1/geocode")) return;
+    const u = new URL(r.url());
+    reads.push({ lat: Number(u.searchParams.get("lat")), lng: Number(u.searchParams.get("lng")) });
+  });
+  await page.setViewportSize({ width: 360, height: 640 });
+  await STEPS["first-open-pin"](context, page, "/customer/");
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();
+  await page.getByRole("button", { name: "Change", exact: true }).click();
+  await expect(page.locator(".ui-pinmap-here")).toBeVisible();
+  await page.waitForTimeout(800);   // let any move settle
+  expect(metres(reads[reads.length - 1], PHONE), "the place read after Change").toBeLessThanOrEqual(2);
+  const pin = await box(page, ".ui-pinmap-pin");
+  expect(overlap(pin, await box(page, ".ui-pinmap-here"))).toBe(false);
+});
