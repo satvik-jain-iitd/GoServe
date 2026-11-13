@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { SHOW_KITCHEN_NAME } from "../lib/area";
 import { categoryKey, filterDishes } from "../lib/browse";
-import { sectionsOf, thalisOf } from "../lib/home";
+import { filterSectionsOf, sectionsOf, thalisOf } from "../lib/home";
 import { creditLicence, creditLine, type Dish } from "../lib/menu";
 import { formatRupees } from "../lib/money";
 import { DishPlate, Empty, Stepper, TabBar, VegMark, useSheetFit } from "../ui";
@@ -170,7 +170,7 @@ export function MenuScreen(p: Props) {
       <TabBar current="menu" onMenu={() => undefined} onOrders={p.onOrders} />
       {filterOpen && (
         <FilterSheet count={shown.length} total={all.length} vegOnly={vegOnly} onVeg={setVegOnly}
-          sections={sectionsOf(all)} ticked={cats} onTick={(k, on) => setCats((cur) => (on ? [...cur, k] : cur.filter((x) => x !== k)))} onClear={() => setCats([])} onClose={() => setFilterOpen(false)} />
+          sections={filterSectionsOf(all)} ticked={cats} onTick={(k, on) => setCats((cur) => (on ? [...cur, k] : cur.filter((x) => x !== k)))} onClear={() => setCats([])} onClose={() => setFilterOpen(false)} />
       )}
       {dish && <DishSheet dish={dish} closed={closed} qty={p.qty[dish.id] ?? 0} onAdd={(n) => { for (let i = 0; i < n; i++) p.onAdd(dish.id); setDish(null); }} onClose={() => setDish(null)} />}
     </>
