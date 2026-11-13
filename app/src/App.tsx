@@ -125,7 +125,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [note, setNote] = useState("");   // story #935: the note for the kitchen is for this order only, never kept
   const [name, setName] = useState(draft0?.name ?? "");
   const [phone, setPhone] = useState(draft0?.phone ?? "");
-  const [savedPhone, setSavedPhone] = useState<string | null>(null);   // story 1417 (board BF2): the phone kept on the account; the bill shows it on one line
+  const [savedPhone, setSavedPhone] = useState<string | null>(null);
+  const [signInName, setSignInName] = useState("");   // story 1417: the Bill never asks the name; the order takes this one when none is saved   // story 1417 (board BF2): the phone kept on the account; the bill shows it on one line
   // Story #551: the phone code at checkout. verified = this user already has a phone linked.
   // Story 829: the phone code is a switch the admin flips (settings row otp_login_on), off until an SMS provider is live. The login wall (Google, or the code) shows to
   // a signed-out customer either way. otpSetting: undefined = not read yet, null = could not be read (then VITE_OTP_GATE, then off).
@@ -893,8 +894,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       const url = String(m?.avatar_url ?? m?.picture ?? "");
       if (alive) setPhoto(/^https:\/\//.test(url) ? url : null);
       if (alive) setEmail(data.user && !data.user.is_anonymous ? data.user.email ?? null : null);
-      if (alive && p) { setVerified(true); setPhone(p.replace(/^91/, "")); setSavedPhone(p.replace(/^91/, "")); }
-      if (alive && n && data.user && !data.user.is_anonymous) setName((cur) => cur || n);   // story 1417: the sign-in name goes on the kitchen ticket and the rider card
+      if (alive && p) { setVerified(true); setPhone(p.replace(/^91/, "")); setSavedPhone(p.replace(/^91/, "")); if (n) setName((cur) => cur || n); }
+      if (alive && n && data.user && !data.user.is_anonymous) setSignInName(n);   // story 1417: the sign-in name goes on the kitchen ticket and the rider card
     }).catch(() => { if (alive) setSignedIn(false); });
     return () => { alive = false; };
   }, [gate, wall]);
@@ -923,7 +924,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       const fingerprint = JSON.stringify([items, address.trim()]);
       if (keyRef.current?.fingerprint !== fingerprint) keyRef.current = { fingerprint, key: crypto.randomUUID() };
       await currentSession();   // the sign-in must exist before the order is sent
-      if (lock === "customer" && !(await saveProfile(getClient(), await ensureSession(), { name, phone, address, pin }))) {   // the kitchen and the rider need the name and phone; place_order copies them
+      if (lock === "customer" && !(await saveProfile(getClient(), await ensureSession(), { name: name.trim() || signInName, phone, address, pin }))) {   // the kitchen and the rider need the name and phone; place_order copies them
         setError("Could not save your details. Try again.");
         return;
       }
