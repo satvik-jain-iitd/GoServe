@@ -202,7 +202,7 @@ for (const theme of ["day", "night"] as const) {
     await shot("K-Ticket");
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Cooking", exact: true }).click();
-    await page.getByRole("heading", { name: "Ready · rider on the way" }).waitFor();
+    await page.getByRole("heading", { name: "Ready · give to the rider" }).waitFor();
     await shot("K-Cooking");
     await page.getByRole("button", { name: "Today", exact: true }).click();
     await page.getByRole("switch", { name: "Open for orders" }).waitFor();
