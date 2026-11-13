@@ -34,7 +34,7 @@ type Props = {
   error: string | null;
   onYes: () => void;
   onNotYet: () => void;
-  onMenu: () => void;           // See the menu, with an empty cart (a delivered or cancelled order)
+  onMenu: () => void;           // Back to menu, with an empty cart (a delivered or cancelled order; story 1434)
   onBack: () => void;           // the chevron: back to the menu
   onCancel: () => void;         // story B3, #904: allowed while the order is placed or accepted
   cancelling: boolean;
@@ -195,7 +195,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
         {(status === "placed" || status === "accepted") && <button type="button" className="ui-btn ghost big" disabled={cancelling} onClick={() => setAskCancel(true)}>Cancel order</button>}
         {track?.phone && status === "out_for_delivery" && <a href={`tel:${track.phone}`} className="ui-btn ghost big" onClick={onCall}>Call the rider</a>}
         {kitchenPhone && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
-        {(delivered || cancelled) && !declined && <button type="button" className="ui-btn big" onClick={onMenu}>Back to menu</button>}   {/* story 1434 (boards T1b, Delivered b): one name on both end slips, the main button last; Order again lives on History only */}
+        {(delivered || cancelled) && !declined && <button type="button" className="ui-btn big" onClick={onMenu}>Back to menu</button>}   {/* story 1434 (boards T1b, Delivered b): one name on both end slips, the main button last; the same dishes again only from History */}
       </div>
     </>
   );
