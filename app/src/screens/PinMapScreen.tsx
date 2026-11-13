@@ -65,6 +65,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
   };
   const [sOpen, setSOpen] = useState(!!searchOpen && !!search);   // story #1127: the search bar is open (a text box and, after Enter, the places)
   const [sq, setSq] = useState("");
+  useBackCloses(!!search && sOpen, () => { setSOpen(false); setFound(null); setSq(""); });   // story 1248: the phone's Back closes the open search first, like the arrow
   const sRef = useRef<HTMLInputElement>(null);
   const [found, setFound] = useState<{ words: string; state: "busy" | "short" | "error" | "ok"; hits: PlaceHit[] } | null>(null);
   const runSearch = async () => {
