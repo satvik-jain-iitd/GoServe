@@ -85,3 +85,34 @@ for (const [name, at, state] of [["step 1", FAR, {}], ["step 2", NEAR, {}], ["st
     }
   });
 }
+
+// Review of PR 1420 (13 Nov 2026).
+test("RY6 near, then the place jumps far with no tap: Arriving stays, and no I am at the door call is made", async ({ page, context }) => {
+  const net = await open(page, context, NEAR);
+  await expect(arriving(page)).toBeVisible();
+  await context.setGeolocation(FAR);
+  await page.waitForTimeout(1500);
+  await expect(arriving(page)).toBeVisible();
+  await expect(page.getByRole("button", { name: "I am at the door" })).toHaveCount(0);
+  expect(net.calls.rpc.filter((c) => c.name === "rider_at_door")).toEqual([]);
+});
+
+test("RY7 the boards' look: a quiet underlined link, a surface card with a green left edge and a mono head, muted mono lines", async ({ page, context }) => {
+  const style = (sel: ReturnType<Page["locator"]>) => sel.evaluate((el) => { const c = getComputedStyle(el); return { size: c.fontSize, weight: c.fontWeight, line: c.textDecorationLine, color: c.color, family: c.fontFamily, left: c.borderLeftWidth, top: c.borderTopWidth, bg: c.backgroundColor }; });
+  await open(page, context, FAR);
+  const link = await style(page.getByRole("button", { name: "I am at the door" }));
+  expect({ size: link.size, weight: link.weight, line: link.line }).toEqual({ size: "14px", weight: "400", line: "underline" });
+  expect((await page.getByRole("button", { name: "I am at the door" }).boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  const dist = await style(page.getByText("1.2 km to the door"));
+  expect(dist.size).toBe("13px");
+  expect(/mono/i.test(dist.family)).toBe(true);
+  expect(dist.color).toBe(link.color);   // both muted
+  expect((await style(page.getByRole("button", { name: "Could not deliver?" }))).color).toBe(link.color);
+  await page.getByRole("button", { name: "I am at the door" }).click();
+  await arriving(page).click();
+  const card = await style(page.getByRole("region", { name: "Say at the door" }));
+  expect({ left: card.left, top: card.top }).toEqual({ left: "4px", top: "1px" });
+  expect(card.bg).not.toBe("rgba(0, 0, 0, 0)");
+  const head = await style(page.getByRole("region", { name: "Say at the door" }).getByText("Say at the door", { exact: true }));
+  expect({ size: head.size, weight: head.weight, mono: /mono/i.test(head.family), color: head.color }).toEqual({ size: "12px", weight: "400", mono: true, color: link.color });
+});
