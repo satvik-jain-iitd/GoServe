@@ -8,6 +8,7 @@ import { readOtpSwitchAdmin, saveOtpSwitch } from "../lib/otpSwitch";
 import { qrAddress, readPayMethodsAdmin, readQrAdmin, setPayMethod, uploadQr, type PayMethodsAdmin, type QrAdmin } from "../lib/payMethods";
 import type { DoorMethod } from "../lib/doorMethods";
 import { amountProblem, readEarlyFriend, saveEarlyFriend, type EarlyFriendSetting } from "../lib/earlyFriend";
+import { MAX_RUPEES as INC_MAX, MIN_RUPEES as INC_MIN, STEP_RUPEES, readIncentive, saveIncentive, type IncentiveSetting } from "../lib/incentive";
 import { readSwapSetting, saveSwapSetting, swapPctProblem, type SwapSetting } from "../lib/swapSetting";
 
 // Board A9: the admin-only Settings row for the sold-out swap discount.
@@ -145,6 +146,44 @@ function EarlyFriendSettings() {
   );
 }
 
+// Stories 1438 and 1443, board AR1: the block "Rider app". Built rows only: the incentive switch and, while it is on, the amount for each delivery.
+// Each change is saved at once as a new version (who and when), so a past delivery keeps the amount of its own moment. Prod starts off.
+function RiderAppSettings() {
+  const [now, setNow] = useState<IncentiveSetting | null>(null);
+  const [line, setLine] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { readIncentive(getClient()).then(setNow, () => setLine("Could not load the setting. Try again.")); }, []);
+  async function save(on: boolean, rupees: number) {
+    setLine(null); setBusy(true);
+    const failed = await saveIncentive(getClient(), on, rupees);
+    setBusy(false);
+    if (failed) return void setLine(failed);   // nothing moved: the switch and the amount show what the server holds
+    setNow({ on, amount_paise: rupees * 100, updated_by: "you", updated_at: new Date().toISOString() });
+  }
+  const rupees = now ? now.amount_paise / 100 : 0;
+  return (
+    <section className="ui-group" aria-label="Rider app">
+      <h2>Rider app</h2>
+      <div className="ui-row ui-row-static ui-row-tall">
+        <label htmlFor="incentive-on" className="ui-row-label"><b>Incentive</b><span className="ui-row-sub mono">The rider sees it on Today</span></label>
+        <input id="incentive-on" className="ui-switch" type="checkbox" role="switch" checked={now?.on === true} disabled={!now || busy} onChange={(e) => void save(e.target.checked, rupees)} />
+      </div>
+      {now?.on && (
+        <div className="ui-row ui-row-static ui-row-tall">
+          <span className="ui-row-label"><b>For each delivery</b><span className="ui-row-sub mono">Paid with the salary</span></span>
+          <span className="ui-stepper">
+            <button type="button" className="ui-btn ghost" aria-label="Less incentive" disabled={busy || rupees <= INC_MIN} onClick={() => void save(true, rupees - STEP_RUPEES)}>−</button>
+            <b className="mono" data-testid="incentive-amount">{formatRupees(now.amount_paise)}</b>
+            <button type="button" className="ui-btn ghost" aria-label="More incentive" disabled={busy || rupees >= INC_MAX} onClick={() => void save(true, rupees + STEP_RUPEES)}>+</button>
+          </span>
+        </div>
+      )}
+      {now && <p className="mono ui-foot">Last changed by {now.updated_by ?? "the system"}, {when(now.updated_at)}</p>}
+      {line && <p role="alert" className="ui-note error">{line}</p>}
+    </section>
+  );
+}
+
 // Story 829: the phone code login switch. Off until an SMS provider is live; flipping it reaches an open customer app in seconds.
 function PhoneCodeSetting() {
   const [on, setOn] = useState<boolean | null>(null);
@@ -196,6 +235,7 @@ export function AdminNumbers({ live, kitchens, settings }: { live?: number; kitc
       </section>
       {settings && <PaymentSettings />}
       {settings && <EarlyFriendSettings />}
+      {settings && <RiderAppSettings />}
       {settings && <SwapSettings />}
       {settings && <PhoneCodeSetting />}
       <button type="button" className="ui-row" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}><span>Send feedback</span><span className="go" aria-hidden="true">›</span></button>

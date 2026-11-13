@@ -6,6 +6,7 @@ import { cashInHand, DOOR_NEAR_M, firstName, handedOver, hoursOf, type KitchenCa
 import { distanceText, metres } from "../lib/riderMap";
 import type { DoorMethod } from "../lib/doorMethods";
 import { Skeleton, Tabs } from "../ui";
+import { incentiveFor, type Rates } from "../lib/incentive";
 
 type Tab = "job" | "today" | "me";
 type Props = {
@@ -17,11 +18,12 @@ type Props = {
   gate: RiderGateState | null;   // null in the demo console: no online switch, no sign out
   kitchen: KitchenCard | null;   // the kitchen of the delivery in hand
   onAtDoor: (order: Order, metres: number | null) => void;   // story 1182: the rider tapped "I am at the door" while the phone said far
-  onChangePaid: (order: Order, method: DoorMethod) => Promise<string | null>;   // story 1448: put a wrong cash or UPI tap right; the refusal code, or null when saved
+  onChangePaid: (order: Order, method: DoorMethod) => Promise<string | null>;
+  incentive?: Rates | null;   // stories 1443 and 1438: the admin's switch and its recent changes; null when the read failed or is on its way   // story 1448: put a wrong cash or UPI tap right; the refusal code, or null when saved
 };
 const TABS: { key: Tab; label: string; icon: Tab }[] = [{ key: "job", label: "Delivery", icon: "job" }, { key: "today", label: "Today", icon: "today" }, { key: "me", label: "Me", icon: "me" }];
 
-export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, methods: methodsRead, qrUrl, onLoadMethods, gate, kitchen, onAtDoor, onChangePaid }: Props) {
+export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, methods: methodsRead, qrUrl, onLoadMethods, gate, kitchen, onAtDoor, onChangePaid, incentive = null }: Props) {
   const methods = qrUrl === undefined ? null : methodsRead;   // the screen names nothing until both answers are in
   const [tab, setTab] = useState<Tab>("job");
   const [doneId, setDoneId] = useState<string | null>(null);   // the slip just delivered stays until "Next delivery" (R7)
@@ -302,6 +304,10 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
       {tab === "today" && (
         <div className="ui-scroll ui-today">
           <div className="ui-row ui-row-static ui-row-tall" data-testid="cash"><span className="ui-row-label"><span>Cash aapke paas</span><span className="ui-row-sub mono">Aaj raat kitchen me jama karein{hoursOf(kitchen)?.closes ? ` · ${hoursOf(kitchen)!.closes} tak` : ""}</span></span><span className="mono ui-cash">{formatRupees(cash)}</span></div>
+          {incentive?.on && (() => {   // board TI1: never part of the cash he holds; each delivery at the amount set when it was delivered
+            const inc = incentiveFor(today, incentive.log);
+            return <div className="ui-row ui-row-static ui-row-tall" data-testid="incentive"><span className="ui-row-label"><span>Aaj ka incentive</span><span className="ui-row-sub mono">{inc.count} delivery{inc.amounts.length === 1 ? ` × ${formatRupees(inc.amounts[0])}` : ""} · salary ke saath milega</span></span><span className="mono ui-cash">{formatRupees(inc.total_paise)}</span></div>;
+          })()}
           {handed > 0 && <div className="ui-row ui-row-static"><span className="ui-row-label"><span>Handed over</span><span className="ui-row-sub mono">The kitchen confirmed it</span></span><span className="mono">{formatRupees(handed)} handed over</span></div>}
           {today.length === 0 && <div className="ui-empty"><h2>No deliveries yet today</h2><p className="ui-meta">Each delivery lands here with its cash.</p></div>}
           {today.map((o) => (
