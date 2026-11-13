@@ -55,8 +55,7 @@ test("P3 (BC1) Change turns the row into the field, filled and focused; a new nu
   expect(net.calls.customerWrites.at(-1)!.body).toMatchObject({ phone: "9123456780" });
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   net.state.customer = { ...SAVED, phone: "9123456780" };
-  await page.reload();
-  await page.goto("/customer/");
+  await page.goto("/customer/");   // a fresh load; a reload before it raced the goto on CI (ERR_ABORTED)
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
   await expect(page.getByText("9123456780", { exact: true })).toBeVisible();
