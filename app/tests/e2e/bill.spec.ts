@@ -42,7 +42,7 @@ test("S4 a delivered order shows the Delivered stamp, Cash paid and a way to cal
   await expect(page.getByRole("heading", { name: "Delivered", exact: true })).toBeVisible({ timeout: 6000 });
   await expect(page.getByText("Cash paid")).toBeVisible();
   await expect(page.getByRole("link", { name: "Call the kitchen" })).toHaveAttribute("href", "tel:9876543210");
-  await expect(page.getByRole("button", { name: "See the menu" })).toBeVisible();
+  await expect(page.locator(".ui-bottom").getByRole("button", { name: "Back to menu" })).toBeVisible();   // story 1434
 });
 
 test("S5 a cooking order shows the Live mark and the Cooking stamp", async ({ page, context }) => {

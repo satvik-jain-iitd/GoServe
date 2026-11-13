@@ -1072,7 +1072,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             asking={asking} busy={confirming} error={confirmError}
             onYes={yes} onNotYet={notYetTap} pay={paidNow || payState || resumedOnline ? { state: paidNow ? "paid" : payState ?? "waiting", method: payMethod === "cod" ? "upi" : payMethod, startedAt: payState ? payStart : null, error: payError, onPay: payNow, onCash: payCash, onSimulate: () => void simulatePaid(import.meta.env.VITE_PAYMENTS_DEV_SECRET ?? "", payRef.current) } : undefined}
             onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }}
-            onAgain={() => { const o = orders.find((x) => x.id === placed.id); setPlaced(null); if (!o || !orderAgain(o)) { setCart({}); setStep("menu"); } }} onCancel={cancelOrder} cancelling={cancelling} rider={rider} atDoor={atDoor} track={riderTrack} eta={eta} onCall={() => void tapCall(getClient(), placed.id)} />
+            onCancel={cancelOrder} cancelling={cancelling} rider={rider} atDoor={atDoor} track={riderTrack} eta={eta} onCall={() => void tapCall(getClient(), placed.id)} />
         )}
     </>
   );
