@@ -94,3 +94,15 @@ test("O7 (board AD3L1) a long address: the box stays one line of the same height
   expect(await box.evaluate((el: HTMLInputElement) => el.scrollLeft)).toBeGreaterThan(0);   // the start slid left: the end and the caret are in view
   expect((await sheet(page).boundingBox())!.height).toBe(h0);
 });
+
+test("O8 (board ED1) the sheet title is Edit address on Edit, and Address details in first set-up", async ({ page, context }) => {
+  await toEdit(page, context, row({ address: "C-128, Green Park, New Delhi, Delhi", house: "C-128", landmark: "" }));
+  await expect(page.getByRole("heading", { name: "Edit address" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Address details" })).toHaveCount(0);
+});
+
+test("O9 first set-up keeps the title Address details", async ({ page, context }) => {
+  await STEPS["first-open-pin"](context, page, "/customer/");
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();
+  await expect(page.getByRole("heading", { name: "Address details" })).toBeVisible();
+});

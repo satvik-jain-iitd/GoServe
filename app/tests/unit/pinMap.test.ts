@@ -64,6 +64,12 @@ describe("addressText (story #1038: what the rider reads)", () => {
     expect(addressText("12B, 2nd floor", "", "Green Park, New Delhi, Delhi")).toBe("12B, 2nd floor, Green Park, New Delhi, Delhi");
     expect(addressText("12B", "Metro gate 2", "Green Park, New Delhi")).toBe("12B, near Metro gate 2, Green Park, New Delhi");
   });
+  it("story 1421 (board ED1): a landmark typed with near (any case) is not doubled", () => {
+    expect(addressText("12B", "near the park gate", "Green Park")).toBe("12B, near the park gate, Green Park");
+    expect(addressText("12B", "  Near  Metro gate 2", "")).toBe("12B, near Metro gate 2");
+    expect(addressText("12B", "NEAR", "")).toBe("12B, near NEAR");   // only a leading near before other words is dropped
+    expect(addressText("12B", "Nearby school", "")).toBe("12B, near Nearby school");
+  });
   it("trims the words and leaves out what is empty", () => {
     expect(addressText("  12B  ", "  ", "")).toBe("12B");
     expect(addressText("12B", "", "  Green Park  ")).toBe("12B, Green Park");
