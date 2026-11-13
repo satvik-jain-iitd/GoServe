@@ -82,3 +82,16 @@ test("P5 no sign-in name and none saved: the save sends no name (null), never an
   await expect.poll(() => net.calls.customerWrites.length).toBeGreaterThan(0);
   expect(net.calls.customerWrites.at(-1)!.body.name).toBeNull();
 });
+
+test("P6 with the phone code switch on, checkout from the Bill opens no number sheet, no code sheet and no name sheet; the phone is the Bill's field", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.phoneUser = true;   // signed in, no name, no phone linked
+  await context.addInitScript(() => { try { localStorage.setItem("gs-otp-gate", "1"); } catch { /* blocked */ } });
+  await toBill(page);
+  await page.getByLabel("Address").fill("C-128, Green Park");
+  await page.getByLabel(LABEL).fill("9876543210");
+  await page.getByRole("button", { name: /Place order/ }).click();
+  await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  expect(net.calls.customerWrites.at(-1)!.body).toMatchObject({ phone: "9876543210", name: null });
+});
