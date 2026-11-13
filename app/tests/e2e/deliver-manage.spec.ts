@@ -25,7 +25,7 @@ test("S1 (C9, story 1421 ED1 and ED2) Edit opens the filled details; Change show
   const net = await open(page, context, [HOME, OFFICE]);
   await page.getByRole("button", { name: "Edit or remove Home" }).click();
   await page.getByRole("button", { name: "Edit", exact: true }).click();
-  const sheet = page.getByRole("dialog", { name: "Address details" });
+  const sheet = page.getByRole("dialog", { name: "Edit address" });
   await expect(sheet.getByLabel("House, street, colony, ward")).toHaveValue("C-128, near the park gate, Green Park, New Delhi");   // an older row: all of its text, nothing lost
   await expect(sheet.getByRole("button", { name: "Home", exact: true })).toHaveAttribute("aria-pressed", "true");
   await sheet.getByLabel("House, street, colony, ward").fill("C-129, near the park gate");

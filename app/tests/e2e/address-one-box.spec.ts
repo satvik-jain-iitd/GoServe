@@ -8,7 +8,7 @@ const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
 const GREEN_PARK = { ok: true, address: "Green Park, New Delhi, Delhi", pin: "110016", locality: "Green Park", town: "New Delhi" };
 const BOX = "House, street, colony, ward";
 const row = (extra: Record<string, unknown>) => ({ id: "h1", label: "Home", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: new Date().toISOString(), ...extra });
-const sheet = (page: Page) => page.getByRole("dialog", { name: "Address details" });
+const sheet = (page: Page) => page.getByRole("dialog", { name: /^(Address details|Edit address)$/ });
 
 async function toEdit(page: Page, context: Parameters<typeof setup>[0], saved: object) {
   const net = await setup(context, page, [], { pin: "110016" });

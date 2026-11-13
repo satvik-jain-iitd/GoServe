@@ -40,8 +40,10 @@ export async function serveAt(p: Place, deps?: V2Deps, pin?: string | null): Pro
 }
 
 // What the rider reads (story #1038): the house, a landmark as "near ...", then the words the pin gave. Empty parts are left out.
-export const addressText = (house: string, landmark: string, words: string): string =>
-  [house.trim(), landmark.trim() ? `near ${landmark.trim()}` : "", words.trim()].filter(Boolean).join(", ");
+export const addressText = (house: string, landmark: string, words: string): string => {
+  const near = landmark.trim().replace(/^near\s+(?=\S)/i, "").trim();   // story 1421: "near the park gate" typed in the box is not doubled
+  return [house.trim(), near ? `near ${near}` : "", words.trim()].filter(Boolean).join(", ");
+};
 
 // Story 1421 (board ED1): what Edit puts in the box and the landmark. A row saved with its box gives it back whole (no cutting at commas).
 // An older row has only the joined text: all of it before the words of the pin goes in the box, so nothing is lost.

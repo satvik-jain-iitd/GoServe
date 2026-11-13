@@ -81,7 +81,7 @@ test("S6 Edit opens the filled details (story 1421, ED1); the label changes and 
   await page.getByRole("button", { name: /^Office\b/ }).click();
   await page.getByRole("button", { name: "Edit or remove Office" }).click();
   await page.getByRole("button", { name: "Edit", exact: true }).click();
-  const sheet = page.getByRole("dialog", { name: "Address details" });
+  const sheet = page.getByRole("dialog", { name: "Edit address" });
   await sheet.getByRole("button", { name: "Other", exact: true }).click();
   await sheet.getByLabel("Name this place").fill("Work");
   await sheet.getByRole("button", { name: "Save changes" }).click();

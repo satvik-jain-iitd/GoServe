@@ -184,7 +184,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
   "edit-on-map": async (context, page, path) => {   // board ED1 (story 1421): Edit opens the filled details sheet over the map at the saved pin
     await deliverFrom(context, page, path, 3);
     await page.getByRole("button", { name: "Edit or remove Home" }).click(); await page.getByRole("button", { name: "Edit", exact: true }).click();
-    await expect(page.getByRole("dialog", { name: "Address details" }).getByRole("button", { name: "Save changes" })).toBeVisible(); },
+    await expect(page.getByRole("dialog", { name: "Edit address" }).getByRole("button", { name: "Save changes" })).toBeVisible(); },
   "pin-map-far": async (context, page, path) => {   // board C6b: the pin far from the phone and outside our area, both strips
     await deliverFrom(context, page, path, 3, { serve: false });
     await page.getByRole("button", { name: "Add new address" }).click();

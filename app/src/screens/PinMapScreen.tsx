@@ -297,8 +297,8 @@ function DetailsSheet({ pick, edit, draft, onDraft, onChange, onSave, onHeight }
   const ready = house.trim().length >= 1 && label.length >= 1 && label.length <= 30 && (!needArea || area.trim().length >= 2) && isPin(pin);   // Save stays asleep until it can work
   const save = () => { if (ready) onSave({ pin, address: addressText(house, landmark, needArea ? area : found), label, from: pick.at, house: house.trim(), landmark: landmark.trim() }); };
   return (
-    <section ref={el} className="ui-pinmap-details" role="dialog" aria-label="Address details">
-      <div className="ui-sheet-head ui-pinmap-details-head"><h2>Address details</h2></div>   {/* 1404 (owner, 13 Nov): no step count on the sheet, on either way in */}
+    <section ref={el} className="ui-pinmap-details" role="dialog" aria-label={edit ? "Edit address" : "Address details"}>
+      <div className="ui-sheet-head ui-pinmap-details-head"><h2>{edit ? "Edit address" : "Address details"}</h2></div>   {/* 1404 (owner, 13 Nov): no step count on the sheet, on either way in */}
       <div className="ui-pinmap-where">{I(PIN_PATH, 22)}<span className="ui-pinmap-where-words"><b>{name.name}</b>{name.rest && <span>{name.rest}</span>}</span><button type="button" className="ui-pinmap-change" onClick={onChange}>Change</button></div>
       {needArea && <div className="ui-field"><label htmlFor="pd-area">Area or street</label><input id="pd-area" type="text" maxLength={200} value={area} onChange={(e) => setArea(e.target.value)} /></div>}
       {needPin && <div className="ui-field"><label htmlFor="pd-pin">Pin code</label><input id="pd-pin" className="mono-input ui-eg" type="tel" inputMode="numeric" maxLength={6} placeholder="e.g. 123456" value={pinText} onChange={(e) => setPinText(e.target.value.trim())} /></div>}
