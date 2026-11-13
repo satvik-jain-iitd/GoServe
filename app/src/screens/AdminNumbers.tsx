@@ -1,5 +1,5 @@
 // The day's numbers on the Ink v3 board A8 (story H12, #195; story A4): tiles, then one row per kitchen. Shown on the admin Numbers tab and at the top of the Ops app.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { dayNumbers, sumNumbers, type DayNumbers, type KitchenRow } from "../lib/admin";
 import { formatRupees } from "../lib/money";
 import { Skeleton } from "../ui";
@@ -15,13 +15,14 @@ function SwapSettings() {
   const [now, setNow] = useState<SwapSetting | null>(null);
   const [text, setText] = useState("");
   const [line, setLine] = useState<string | null>(null);
-  useEffect(() => { readSwapSetting(getClient()).then((s) => { setNow(s); setText((typed) => (typed === "" ? String(s.pct) : typed)); }, () => setLine("Could not load the setting. Try again.")); }, []);
+  const saved = useRef(false);   // a Save beats a slower first read: the read never puts the old percent back
+  useEffect(() => { readSwapSetting(getClient()).then((s) => { if (saved.current) return; setNow(s); setText((typed) => (typed === "" ? String(s.pct) : typed)); }, () => { if (!saved.current) setLine("Could not load the setting. Try again."); }); }, []);
   async function save() {
     const problem = swapPctProblem(text);
     if (problem) return void setLine(problem);
     const failed = await saveSwapSetting(getClient(), Number(text));
     setLine(failed);
-    if (!failed) setNow({ pct: Number(text), updated_by: "you", updated_at: new Date().toISOString() });
+    if (!failed) { saved.current = true; setNow({ pct: Number(text), updated_by: "you", updated_at: new Date().toISOString() }); }
   }
   return (
     <section className="ui-group" aria-label="Settings">
