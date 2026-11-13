@@ -63,6 +63,7 @@ test("S4 while the serve check is still loading Confirm waits, and never flashes
   await toMap(page, context, null);
   await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeEnabled();
   await context.route("https://test.supabase.co/functions/v1/serviceability**", () => new Promise(() => undefined));   // no answer for the next ask
+  await context.setGeolocation({ latitude: 28.575, longitude: 77.25 });   // story 1393: the phone is somewhere else, so the pin moves and a new ask goes out
   await page.getByRole("button", { name: "Current Location" }).click();
   await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeDisabled();
 });
