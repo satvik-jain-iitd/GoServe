@@ -79,18 +79,17 @@ test("TC A14.7 Rider Pick up (board RP3, story 1441): a first order with the gif
   await expect(slip.locator(".ui-slip-total span")).toHaveText("₹540");   // 640 − 100
 });
 
-test("TC A14.8 Kitchen new-order sheet: the same order lists the gift and Rider collects the same amount", async ({ page, context }) => {
+test("TC A14.8 Kitchen new-order sheet (board KO1, story 1455): the dishes show, no gift, price or amount", async ({ page, context }) => {
   const net = await setup(context, page, [{ ...order("placed"), total_paise: 54000, bill: { early_friend_paise: 10000, to_pay_paise: 54000 } }]);
   net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
   await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
   const sheet = page.getByRole("dialog", { name: "Order 0f0f0f0f" });
-  await expect(sheet.getByText("Early friend gift")).toBeVisible();
-  expect(await sum(sheet.locator(".ui-slip-lines"))).toBe(540);
-  await expect(sheet.locator(".ui-slip-total span")).toHaveText("₹540");
+  await expect(sheet).toContainText("2 × Butter Chicken");
+  for (const t of ["Early friend gift", "Rider collects", "₹"]) await expect(sheet.getByText(t)).toHaveCount(0);
 });
 
-test("TC A14.9 Kitchen Ticket screen (a cooking order): the gift is listed and the lines add up to Rider collects", async ({ page, context }) => {
+test("TC A14.9 Kitchen Ticket screen (board KK1, story 1455): a cooking order shows the dishes, no gift, price or amount", async ({ page, context }) => {
   const net = await setup(context, page, [{ ...order("preparing"), total_paise: 54000, bill: { early_friend_paise: 10000, to_pay_paise: 54000 } }]);
   net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
@@ -98,7 +97,6 @@ test("TC A14.9 Kitchen Ticket screen (a cooking order): the gift is listed and t
   await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
   await expect(page.getByRole("heading", { name: "Ticket" })).toBeVisible();
   const slip = page.locator("section[aria-label='Order 0f0f0f0f']");
-  await expect(slip.getByText("Early friend gift")).toBeVisible();
-  expect(await sum(slip.locator(".ui-slip-lines"))).toBe(540);
-  await expect(slip.locator(".ui-slip-total span")).toHaveText("₹540");
+  await expect(slip).toContainText("2 × Butter Chicken");
+  for (const t of ["Early friend gift", "Rider collects", "₹"]) await expect(slip.getByText(t)).toHaveCount(0);
 });
