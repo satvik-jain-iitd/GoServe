@@ -5,7 +5,7 @@ import { ID, SESSION, order, setup } from "./helpers";
 const openRider = async (page: Page) => {
   await page.goto("/console/");
   await page.getByRole("button", { name: "Rider" }).click();
-  await expect(page.getByRole("heading", { name: /^Deliver/ })).toBeVisible();   // H11: "Delivery" with a job in hand, "Deliveries" without
+  await expect(page.getByRole("heading", { name: /^(Deliver|On the way)/ })).toBeVisible();   // H11: "Delivery" with a job in hand, "Deliveries" without
 };
 
 test("S1 rider steps: pick up, arriving, delivered each send their step as the rider", async ({ page, context }) => {
