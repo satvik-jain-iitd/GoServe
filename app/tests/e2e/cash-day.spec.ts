@@ -14,7 +14,7 @@ test("S1 a delivery at 23:30 is still in Cash in hand at 00:10 when the kitchen 
   await tab(page, "Today").click();
   await expect(page.getByText("1 delivered")).toBeVisible();
   await expect(page.getByTestId("cash")).toContainText("₹640");
-  await expect(page.getByTestId("cash")).toContainText("day ends at 02:00");
+  await expect(page.getByTestId("cash")).toContainText("02:00 tak");
   await expect(page.getByText(/No\. 0f0f0f0f/)).toBeVisible();
 });
 

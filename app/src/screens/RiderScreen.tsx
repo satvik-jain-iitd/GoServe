@@ -18,10 +18,11 @@ type Props = {
   gate: RiderGateState | null;   // null in the demo console: no online switch, no sign out
   kitchen: KitchenCard | null;   // the kitchen of the delivery in hand
   onAtDoor: (order: Order, metres: number | null) => void;   // story 1182: the rider tapped "I am at the door" while the phone said far
+  onChangePaid: (order: Order, method: DoorMethod) => Promise<string | null>;   // story 1448: put a wrong cash or UPI tap right; the refusal code, or null when saved
 };
 const TABS: { key: Tab; label: string; icon: Tab }[] = [{ key: "job", label: "Delivery", icon: "job" }, { key: "today", label: "Today", icon: "today" }, { key: "me", label: "Me", icon: "me" }];
 
-export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, methods: methodsRead, qrUrl, onLoadMethods, gate, kitchen, onAtDoor }: Props) {
+export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, methods: methodsRead, qrUrl, onLoadMethods, gate, kitchen, onAtDoor, onChangePaid }: Props) {
   const methods = qrUrl === undefined ? null : methodsRead;   // the screen names nothing until both answers are in
   const [tab, setTab] = useState<Tab>("job");
   const [doneId, setDoneId] = useState<string | null>(null);   // the slip just delivered stays until "Next delivery" (R7)
@@ -32,6 +33,18 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
   const cash = cashInHand(today);
   const handed = handedOver(today);
   const paidLabel = (p: string | null | undefined) => (p === "upi_door" ? "Paid by UPI" : p === "cash" ? "Cash collected" : "Collected");   // never guess cash: an empty paid_by is just Collected
+  const paidShort = (p: string | null | undefined) => (p === "upi_door" ? "UPI" : p === "cash" ? "Cash" : "Collected");   // board TI1
+  // Story 1448: Change stays until the night's hand-over. A UPI order is never stamped itself, so any of his cash stamped at or after this delivery closes it too (the server's rule).
+  const canChange = (o: Order) => (o.paid_by === "cash" || o.paid_by === "upi_door") && !o.cash_handed_at && !orders.some((x) => !!x.cash_handed_at && x.cash_handed_at >= o.updated_at);
+  const [changeId, setChangeId] = useState<string | null>(null);
+  const [changeBusy, setChangeBusy] = useState(false);
+  const [changeErr, setChangeErr] = useState<string | null>(null);
+  const change = async (o: Order, m: DoorMethod) => {
+    setChangeBusy(true);
+    const code = await onChangePaid(o, m);
+    setChangeBusy(false); setChangeId(null);
+    setChangeErr(code === null ? null : code === "handed_over" ? "Cash kitchen me jama ho chuka hai. Ab badalna ho to kitchen se kahein." : "Badal nahin paye. Network dekh kar phir try karein.");
+  };
   const [brokenQr, setBrokenQr] = useState<string | null>(null);
   const [collectId, setCollectId] = useState<string | null>(null);   // story 1262, board R7: "Delivered" opens Collect payment first
   const act = async (o: Order, a: RiderAction, method?: DoorMethod) => {
@@ -106,11 +119,13 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
 
   const jobView = () => {
     if (loading && orders.length === 0) return <div className="ui-pad"><Skeleton lines={3} /></div>;
-    const collecting = collectId ? jobs.find((o) => o.id === collectId) ?? null : null;
-    if (collecting && !done) {   // R7 Collect payment: the rider says how it was paid, and that marks the order delivered
-      const deliver = riderActions(collecting.status).find((a) => a.kind === "status" && a.to === "delivered");
+    const changing = changeId && done?.id === changeId ? done : null;   // story 1448: Change opens the same two choices again
+    const collecting = changing ?? (collectId ? jobs.find((o) => o.id === collectId) ?? null : null);
+    if (collecting && (changing || !done)) {   // R7 Collect payment: the rider says how it was paid, and that marks the order delivered
+      const deliver = changing ? undefined : riderActions(collecting.status).find((a) => a.kind === "status" && a.to === "delivered");
       const amount = formatRupees(collecting.total_paise);
-      const busy = busyId === collecting.id;
+      const busy = changing ? changeBusy : busyId === collecting.id;
+      const pick = (m: DoorMethod) => (changing ? void change(changing, m) : deliver ? void act(collecting, deliver, m) : undefined);
       const qrShown = qrUrl && brokenQr !== qrUrl ? qrUrl : null;   // a picture that will not load counts as no QR
       const upiOn = methods?.includes("upi_door") ?? false;
       const upi = upiOn && qrShown !== null;   // no QR to show: no UPI button either
@@ -129,32 +144,37 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
                   <img src={qrShown!} width={200} height={200} alt="UPI QR to scan" onError={() => setBrokenQr(qrUrl ?? null)} />
                 </div>
               )}
-              {upi && <p className="ui-meta">Wait for the customer's paid screen. Then tap below.</p>}
+              {upi && <p className="ui-meta">Pehle paisa, phir button.</p>}
               {upiNeedsQr && <p className="ui-meta">UPI at the door has no QR yet. Take cash, or ask the admin to upload the QR.</p>}
             </div>
           </section>
           <div className="ui-bottom">
             {methods !== null && methods.length === 0 && <button type="button" className="ui-btn big" onClick={onLoadMethods}>Try again</button>}
-            {deliver && cash && <button type="button" className={upi ? "ui-btn ghost big" : "ui-btn big"} disabled={busy} onClick={() => void act(collecting, deliver, "cash")}>Took cash {amount}</button>}
-            {deliver && upi && <button type="button" className="ui-btn big" disabled={busy} onClick={() => void act(collecting, deliver, "upi_door")}>Paid by UPI {amount}</button>}
-            <button type="button" className="ui-btn text" disabled={busy} onClick={() => setCollectId(null)}>Back</button>
+            {(deliver || changing) && cash && <button type="button" className={upi ? "ui-btn ghost big" : "ui-btn big"} disabled={busy} onClick={() => pick("cash")}>Took cash {amount}</button>}
+            {(deliver || changing) && upi && <button type="button" className="ui-btn big" disabled={busy} onClick={() => pick("upi_door")}>Paid by UPI {amount}</button>}
+            <button type="button" className="ui-btn text" disabled={busy} onClick={() => (changing ? setChangeId(null) : setCollectId(null))}>Back</button>
           </div>
         </>
       );
     }
-    if (done) return (   // R7
+    if (done) return (   // R7; story 1448, boards DV1 and DV2: the customer's name only, Change, the cash he holds, and a true next step
       <>
         <section className="ui-slip ui-slip-pad" aria-label={`Order ${shortId(done.id)}`}>
           <div className="ui-slip-body">
-            <div className="ui-slip-head"><span>{kitchen?.name ?? "Delivered"}</span><span>{done.customer_name || "Customer"}</span></div>
+            <div className="ui-slip-head"><span>{done.customer_name || "Customer"}</span></div>
             <div className="ui-slip-stamp"><span className="ui-stamp delivered">Delivered</span></div>
             <p className="ui-clock">At the door <b>{hhmm(done.updated_at)}</b></p>
             <div className="ui-slip-rule" />
             <div className="ui-slip-total"><b>{paidLabel(done.paid_by)}</b><span>{formatRupees(done.total_paise)}</span></div>
+            {canChange(done) && <button type="button" className="ui-rx-change" onClick={() => { setChangeErr(null); setChangeId(done.id); onLoadMethods(); }}>Change</button>}
+            {changeErr && <p role="alert" className="ui-note error">{changeErr}</p>}
           </div>
         </section>
-        {todayLine}
-        <div className="ui-bottom"><button type="button" className="ui-btn big" onClick={() => setDoneId(null)}>Next delivery</button></div>
+        <p className="mono ui-foot">Cash aapke paas {formatRupees(cash)}</p>
+        <div className="ui-bottom">
+          {!job && <p role="status" className="ui-rx-next">Koi order nahin · kitchen par lautein</p>}
+          <button type="button" className="ui-btn big" onClick={() => { setDoneId(null); setChangeErr(null); }}>{job ? "Next delivery" : "Done"}</button>
+        </div>
       </>
     );
     if (job) {   // R5 and R6
@@ -239,15 +259,15 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
       {tab === "job" && jobView()}
       {tab === "today" && (
         <div className="ui-scroll ui-today">
-          <div className="ui-row ui-row-static ui-row-tall" data-testid="cash"><span className="ui-row-label"><span>Cash in hand</span><span className="ui-row-sub mono">Hand over at the kitchen tonight{hoursOf(kitchen)?.closes ? ` · day ends at ${hoursOf(kitchen)!.closes}` : ""}</span></span><span className="mono ui-cash">{formatRupees(cash)}</span></div>
+          <div className="ui-row ui-row-static ui-row-tall" data-testid="cash"><span className="ui-row-label"><span>Cash aapke paas</span><span className="ui-row-sub mono">Aaj raat kitchen me jama karein{hoursOf(kitchen)?.closes ? ` · ${hoursOf(kitchen)!.closes} tak` : ""}</span></span><span className="mono ui-cash">{formatRupees(cash)}</span></div>
           {handed > 0 && <div className="ui-row ui-row-static"><span className="ui-row-label"><span>Handed over</span><span className="ui-row-sub mono">The kitchen confirmed it</span></span><span className="mono">{formatRupees(handed)} handed over</span></div>}
           {today.length === 0 && <div className="ui-empty"><h2>No deliveries yet today</h2><p className="ui-meta">Each delivery lands here with its cash.</p></div>}
           {today.map((o) => (
-            <div key={o.id} className="ui-row ui-row-static">
+            <button key={o.id} type="button" className="ui-row" onClick={() => { setChangeErr(null); setChangeId(null); setDoneId(o.id); setTab("job"); }}>   {/* story 1448, board TC2: a row opens its Delivered slip */}
               <span className="ui-row-label"><span className="ui-row-sub mono">No. {shortId(o.id)} · {hhmm(o.updated_at)}</span><span>{o.customer_name || "Customer"} · {o.address}</span></span>
-              <span className="mono">{formatRupees(o.total_paise)}</span>
-              <span className="ui-row-sub mono">{paidLabel(o.paid_by)}</span>
-            </div>
+              <span className="ui-row-end"><span className="mono">{formatRupees(o.total_paise)}</span><span className="ui-row-sub mono">{paidShort(o.paid_by)}</span></span>
+              <span className="go" aria-hidden="true">›</span>
+            </button>
           ))}
         </div>
       )}

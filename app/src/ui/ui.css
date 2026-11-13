@@ -343,6 +343,8 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-rx-cant { justify-self: start; margin-top: -12px; }
 .ui-rx-scroll { padding-bottom: var(--gs-space-3); }
 /* Story 1182, boards RY1 to RY3: the door steps. The step line sits in the bottom zone above its one button; the "Say at the door" card sits under the slip. */
+.ui-rx-change { justify-self: end; margin-top: -10px; min-height: var(--gs-tap); padding: 0; background: none; border: 0; font: inherit; font-size: 15px; font-weight: 600; color: var(--md-primary); cursor: pointer; }   /* story 1448, boards DV1 and DV2 */
+.ui-rx-next { margin: 0; text-align: center; font-size: 14px; color: var(--md-on-background); }
 .ui-rx-door { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
 .ui-rx-door p { margin: 0; }
 .ui-rx-door.mono, .ui-rx-door .mono { font-size: 13px; color: var(--gs-text-muted); }
@@ -356,6 +358,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-btn.text { background: none; border: 0; color: var(--gs-text-muted); min-height: var(--gs-tap); }
 .ui-today { padding: 0 var(--gs-gutter) var(--gs-space-4); }
 .ui-row-tall { min-height: 64px; }
+.ui-row-end { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }   /* story 1448, board TI1: the amount over the way it was paid */
 .ui-cash { font-size: 22px; font-weight: 500; }
 .ui-state-dot { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 999px; background: var(--gs-text-muted); vertical-align: middle; }
 .ui-state-dot.on { background: var(--md-primary); }

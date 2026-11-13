@@ -20,7 +20,7 @@ test("S1 the Job tab holds the one delivery in hand: pick up, on the way, delive
   await page.getByRole("button", { name: /^Collect ₹/ }).click();   // story 1182, board RY3: Collect opens Collect payment
   await page.getByRole("button", { name: /^Took cash/ }).click();   // story 1262
   await expect(page.getByText("Cash collected")).toBeVisible();
-  await page.getByRole("button", { name: "Next delivery" }).click();
+  await page.getByRole("button", { name: "Done", exact: true }).click();   // story 1448: no order waits
   await expect(page.getByRole("heading", { name: "Waiting for a delivery" })).toBeVisible();
   expect(net.calls.status.map((c) => c.body.action)).toEqual(["pickup", "arriving", "deliver"]);
 });
@@ -87,7 +87,7 @@ for (const theme of ["day", "night"] as const) {
     await page.getByRole("button", { name: /^Took cash/ }).click();   // story 1262
     await expect(page.getByText("Cash collected")).toBeVisible();
     await scan();   // R7 delivered
-    await page.getByRole("button", { name: "Next delivery" }).click();
+    await page.getByRole("button", { name: "Done", exact: true }).click();   // story 1448: no order waits
     for (const name of ["Today", "Me"]) { await tab(page, name).click(); await scan(); }   // R8, R9
     await page.getByRole("switch", { name: "Online" }).click();
     await tab(page, "Delivery").click();

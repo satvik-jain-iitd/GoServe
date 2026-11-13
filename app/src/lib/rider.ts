@@ -38,3 +38,11 @@ export { cashInHand, handedOver } from "./kitchen";   // story #229: one cash ru
 /** The kitchen's hours as the cash day needs them ("HH:MM" or null). */
 export const hoursOf = (k: KitchenCard | null): Hours | null => (k ? { opens: hhmmOf(k.opens_at), closes: hhmmOf(k.closes_at) } : null);
 export const firstName = (name: string | null | undefined): string => (name ?? "").trim().split(/\s+/)[0] || "customer";
+
+/** Story 1448: the rider puts a wrong cash or UPI tap right on a delivered order. Null when saved; else the refusal (handed_over, order_not_found, bad_method) or "failed". */
+export async function riderChangePaid(c: Pick<SupabaseClient, "rpc">, orderId: string, method: "cash" | "upi_door"): Promise<string | null> {
+  const { data, error } = await c.rpc("rider_change_paid", { p_order: orderId, p_method: method });
+  if (error) return "failed";
+  const r = data as { ok?: boolean; error?: string } | null;
+  return r?.ok ? null : r?.error ?? "failed";
+}

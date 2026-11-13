@@ -150,11 +150,11 @@ for (const theme of ["day", "night"] as const) {
     await page.getByRole("button", { name: /^Collect ₹/ }).click();   // story 1182, board RY3: Collect opens Collect payment
     await page.getByText("Cash collected").waitFor();
     await shot("R-Delivered");
-    await page.getByRole("button", { name: "Next delivery" }).click();
+    await page.getByRole("button", { name: /^(Next delivery|Done)$/ }).click();
     await page.getByRole("heading", { name: "Waiting for a delivery" }).waitFor();
     await shot("R-Online");
     await page.getByRole("button", { name: "Today", exact: true }).click();
-    await page.getByText("Cash in hand").waitFor();
+    await page.getByText("Cash aapke paas").waitFor();
     await shot("R-Today");
     await page.getByRole("button", { name: "Me", exact: true }).click();
     await page.getByRole("switch", { name: "Online" }).waitFor();
