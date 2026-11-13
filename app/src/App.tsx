@@ -1,6 +1,7 @@
 // The customer flow in one place: menu, cart, bill, placed (story #48). No router yet: four steps in state.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchDoorMethods, type DoorMethod } from "./lib/doorMethods";
+import { onBackScreen, screenStep } from "./lib/back";
 import { readRiderQr } from "./lib/payMethods";
 import { addDish, cartLines, cartTotal, changeQty, reorderCart, toOrderItems, type Cart } from "./lib/cart";
 import { mergeOrder, riderOrders, cancelKind, shortId, statusLabel, type Order, type RiderAction, confirmHandover, isCash } from "./lib/kitchen";
@@ -102,6 +103,22 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // The customer app keeps an unfinished order across a refresh (story B1); the demo console and the other apps start fresh.
   const [draft0] = useState(() => (lock === "customer" ? loadDraft() : null));
   const [step, setStep] = useState<Step>(lock === "customer" && takeReturn() ? "account" : draft0 && draft0.step !== "placed" && draft0.step !== "orders" ? draft0.step === "cart" ? "bill" : (draft0.step as Step) : "menu");   // an older draft may hold the cart step: the bill replaced it (H10c)
+  // Story 1396: You and Deliver to each add a Back step, so the phone's Back shows the screen under them; on the menu Back leaves the app (lib/back.ts).
+  const stepNow = useRef(step);
+  stepNow.current = step;
+  const fromBack = useRef<Step | null>(null);
+  const firstStep = useRef(true);
+  useEffect(() => {
+    if (lock !== "customer") return;
+    onBackScreen((sc) => { if (sc === stepNow.current) return; fromBack.current = sc as Step; setStep(sc as Step); });
+  }, []);
+  useEffect(() => {
+    if (lock !== "customer") return;
+    const stepped = step === "account" || step === "deliver";
+    if (fromBack.current === step) { fromBack.current = null; return; }
+    if (firstStep.current) { firstStep.current = false; if (!stepped) return; }
+    screenStep(step, stepped);
+  }, [step]);
   const [cart, setCart] = useState<Cart>(draft0?.cart ?? {});
   const [address, setAddress] = useState(draft0?.address ?? "");
   const [note, setNote] = useState("");   // story #935: the note for the kitchen is for this order only, never kept
