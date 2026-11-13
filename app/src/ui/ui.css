@@ -12,7 +12,7 @@ body { margin: 0; background: var(--md-background); color: var(--md-on-backgroun
 .ui-btn.ghost { background: transparent; color: var(--md-primary); border: 1px solid var(--md-outline); }
 .ui-btn.big { min-height: var(--gs-tap-big); width: 100%; font-size: var(--gs-display-m); }
 .ui-btn:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; -webkit-tap-highlight-color: transparent; }
-.ui-btn:focus-visible, .ui-chip:focus-visible, .ui-step button:focus-visible, .ui-back:focus-visible, .ui-search:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
+.ui-btn:focus-visible, .ui-chip:focus-visible, .ui-step button:focus-visible, .ui-back:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
 
 /* App bar */
 .ui-appbar { display: flex; align-items: flex-end; gap: var(--gs-space-3); padding: max(env(safe-area-inset-top), var(--gs-space-2)) 0 var(--gs-space-3); margin-bottom: var(--gs-space-4); border-bottom: 1px solid var(--md-outline-variant); }
@@ -43,6 +43,7 @@ body { margin: 0; background: var(--md-background); color: var(--md-on-backgroun
 .ui-step span { min-width: 28px; display: flex; align-items: center; justify-content: center; font-family: var(--gs-font-mono); font-weight: 500; }
 .ui-search { width: 100%; box-sizing: border-box; min-height: var(--gs-tap); margin-bottom: var(--gs-space-3); padding: 0 var(--gs-space-4); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font-family: var(--gs-font-mono); font-size: var(--gs-text-sm); }
 .ui-search::placeholder { color: var(--gs-text-muted); }
+.ui-search:focus-visible { outline: none; border: 2px solid var(--md-primary); padding: 0 calc(var(--gs-space-4) - 1px); }   /* story 1397: a tapped field shows its border, no ring */
 
 /* Sticky bar */
 .ui-sticky { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; padding: var(--gs-space-3) var(--gs-gutter) max(var(--gs-space-5), env(safe-area-inset-bottom)); background: var(--md-surface); box-shadow: var(--gs-shadow-m); }
@@ -110,7 +111,10 @@ body { margin: 0; background: var(--md-background); color: var(--md-on-backgroun
 @media (prefers-reduced-motion: reduce) { .ui-btn, .ui-chip, .ui-timeline li, .ui-sheet, .ui-stamp, .ui-skel span { transition: none; animation: none; } }
 
 /* Inputs: a visible focus ring everywhere, placeholders that pass contrast in both themes */
-input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
+input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible, .ui-switch:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
+/* Story 1397 (owner, 13 Nov 2026, DECIDED, board FF2): a tapped text field has no ring. Its own border turns --md-primary and grows from 1 px to 2 px; the padding gives back that 1 px so the text does not move. */
+:where(input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"]), textarea):focus-visible { outline: none; border: 2px solid var(--md-primary); padding: 9px 11px; }
+:where(select):focus-visible { outline: none; border: 2px solid var(--md-primary); padding: 0 11px; }
 input::placeholder, textarea::placeholder { color: var(--gs-text-muted); opacity: 1; }
 a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
 
@@ -222,7 +226,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-field label { font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
 .ui-pin-input { box-sizing: border-box; width: 100%; height: var(--gs-tap-big); padding: 0 14px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font-family: var(--gs-font-mono); font-size: var(--gs-mono-xl); font-weight: 500; letter-spacing: 0.12em; }
 .ui-pin-input[aria-invalid="true"] { border: 1.5px solid var(--md-error); }
-.ui-pin-input:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
+.ui-pin-input:focus-visible { outline: none; border: 2px solid var(--md-primary); padding: 0 13px; }   /* story 1397: a tapped field shows its border, no ring */
 .ui-field-error { margin: 0; font-size: var(--gs-text-sm); font-weight: 600; color: var(--md-error); }
 .ui-note { margin: 0; font-size: var(--gs-text-xs); color: var(--gs-text-muted); }
 .ui-scroll { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
@@ -279,7 +283,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-form { display: flex; flex-direction: column; gap: var(--gs-space-4); padding: var(--gs-space-4) var(--gs-gutter) var(--gs-space-5); }
 .ui-form input:where(:not(.ui-switch)), .ui-form textarea, .otp-phone input { box-sizing: border-box; width: 100%; min-height: var(--gs-tap); padding: 10px 12px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font: inherit; resize: none; }
 .ui-form .mono-input { font-family: var(--gs-font-mono); }
-.ui-form input:focus-visible, .ui-form textarea:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
+.ui-form input[type="checkbox"]:focus-visible, .ui-form input[type="radio"]:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }   /* story 1397: text fields use the border (see :where rule above) */
 .ui-form .ui-field { gap: 4px; }
 .ui-after { display: flex; flex-direction: column; gap: var(--gs-space-2); padding: var(--gs-space-4) var(--gs-gutter) 0; }
 .ui-after p { margin: 0; }

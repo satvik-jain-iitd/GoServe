@@ -29,7 +29,7 @@ ul { list-style: none; margin: 0; padding: 0; }
 .btn.small { padding: 0 var(--gs-space-4); }
 .btn.ghost { background: transparent; color: var(--md-primary); border: 1px solid var(--md-outline); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn:focus-visible, textarea:focus-visible { outline: 3px solid var(--gs-ring); outline-offset: 2px; }
+.btn:focus-visible { outline: 3px solid var(--gs-ring); outline-offset: 2px; }
 .btn.bar { position: fixed; left: var(--gs-space-4); right: var(--gs-space-4); bottom: var(--gs-space-4); max-width: 26rem; margin: 0 auto; box-shadow: var(--gs-shadow-m); }
 .lines { display: grid; gap: var(--gs-space-3); margin-bottom: var(--gs-space-5); }
 .line { display: flex; justify-content: space-between; align-items: center; gap: var(--gs-space-3); }
