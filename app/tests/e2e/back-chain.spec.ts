@@ -58,3 +58,32 @@ test("S14 a reload on the bill: one Back shows the menu", async ({ page, context
   await page.goBack();
   await onMenu(page);
 });
+
+// Story 1424: a reload keeps old history steps; the first Back after it must show the screen really under it.
+test("S15 You, reload (the app shows the menu), View bill, Back shows the menu, never You", async ({ page, context }) => {
+  await setup(context, page);
+  await page.goto("/customer/");
+  await onMenu(page);
+  await page.getByRole("button", { name: "Add Butter Chicken" }).click();
+  await page.getByRole("button", { name: /^You: / }).click();
+  await expect(page.getByRole("searchbox", { name: "Search dishes" })).toHaveCount(0);
+  await page.reload();
+  await onMenu(page);
+  await page.getByRole("button", { name: /View bill/ }).click();
+  await expect(page.getByRole("button", { name: /Place order/ })).toBeVisible();
+  await page.goBack();
+  await onMenu(page);   // the menu, never You from before the reload
+});
+
+test("S16 a dish sheet open at a reload: one Back after it leaves the app", async ({ page, context }) => {
+  await setup(context, page);
+  await page.goto("/customer/");
+  await onMenu(page);
+  await page.getByRole("button", { name: "Butter Chicken details" }).click();
+  await expect(page.getByRole("dialog", { name: "Butter Chicken" })).toBeVisible();
+  await page.reload();
+  await onMenu(page);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.waitForTimeout(300);
+  await leftApp(page);
+});
