@@ -834,7 +834,6 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 /* Story 1127 (boards C6, C8): the search runs on the map. The bar is a text box; the places list sits over the map under it. */
 .ui-pinmap-search.open { padding: 0 6px 0 18px; cursor: text; }
 .ui-pinmap-search.open input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--md-on-surface); font: inherit; outline: none; }
-.ui-pinmap-close { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: var(--gs-radius-pill); background: transparent; color: var(--md-on-surface); cursor: pointer; }
 .ui-pinmap-results { position: absolute; left: 16px; right: 16px; top: calc(env(safe-area-inset-top, 0px) + 72px); z-index: 700; max-height: 50%; overflow: auto; padding: 8px 12px; border: 1px solid var(--md-outline-variant); border-radius: 10px; background: var(--md-surface); box-shadow: 0 8px 24px rgba(38, 53, 40, 0.12); }
 .ui-landing .ui-slip-body > .ui-field-error, .ui-welcome .ui-slip-body > .ui-field-error { text-align: center; margin-bottom: -4px; }   /* story 1133 (T3): the error under the number is centred, 12 px above the main button */
 /* Story 1117 (board C7a): an example reads as an example, not as typed text (about 3.3:1), and the field edge is seen (3:1, WCAG 1.4.11). Typed text stays full ink. */
@@ -903,3 +902,10 @@ body .ui-form textarea:focus-visible,
 body .otp-phone:not(.otp-box) input:focus-visible,
 body .ui-sheet-text:focus-visible { outline: none; border: 2px solid var(--md-primary); padding: 9px 11px; }
 body .ui-field select:focus-visible { outline: none; border: 2px solid var(--md-primary); padding: 0 11px; }
+
+/* Story 1248, design system F8: our own clear cross (boards SX1, SX1L). The browser's cross is hidden; ours is a 44 px touch area with a small grey cross,
+   a flex part after the input, so the words slide left under the box's edge and never run under it. */
+input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
+.ui-clear-x { flex: none; width: 44px; height: 44px; margin: -8px -10px -8px 0;   /* the 44 px touch area reaches past the box edge; the box keeps its height */
+  display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; background: none; color: var(--gs-text-muted); cursor: pointer; }
+.ui-pinmap-search .ui-clear-x { margin-right: 0; }

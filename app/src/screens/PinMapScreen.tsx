@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useBackCloses } from "../lib/back";
 import { renderToStaticMarkup } from "react-dom/server";
-import { DishPlate, JoinedBar } from "../ui";
+import { ClearCross, DishPlate, JoinedBar } from "../ui";
 import { fetchKitchens } from "../lib/area";
 import { getClient } from "../lib/supabase";
 import type { Map as LMap, Marker } from "leaflet";
@@ -65,6 +65,8 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
   };
   const [sOpen, setSOpen] = useState(!!searchOpen && !!search);   // story #1127: the search bar is open (a text box and, after Enter, the places)
   const [sq, setSq] = useState("");
+  useBackCloses(!!search && sOpen, () => { setSOpen(false); setFound(null); setSq(""); });   // story 1248: the phone's Back closes the open search first, like the arrow
+  const sRef = useRef<HTMLInputElement>(null);
   const [found, setFound] = useState<{ words: string; state: "busy" | "short" | "error" | "ok"; hits: PlaceHit[] } | null>(null);
   const runSearch = async () => {
     const w = sq.trim();
@@ -235,11 +237,11 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
         <svg viewBox="177 354 60 80"><circle cx="207" cy="400" r="30" fill="var(--md-primary)" opacity="0.14" /><ellipse cx="207" cy="404" rx="7" ry="3" fill="var(--md-on-surface)" opacity="0.3" />
           <path d="M207 360 c-9 0 -15 7 -15 15 c0 11 15 29 15 29 s15 -18 15 -29 c0 -8 -6 -15 -15 -15z" fill="var(--md-primary)" /><circle cx="207" cy="375" r="5" fill="#ffffff" /></svg></span>
       <div className="ui-pinmap-top">
-        <button type="button" className="ui-pinmap-back" aria-label="Back" onClick={onBack}>{I(<path d="M19 12H5M11 18l-6-6 6-6" />)}</button>
+        <button type="button" className="ui-pinmap-back" aria-label="Back" onClick={search && sOpen && !pick ? () => { setSOpen(false); setFound(null); setSq(""); } : onBack}>{I(<path d="M19 12H5M11 18l-6-6 6-6" />)}</button>
         {!pick && !kitchen && !(search && sOpen) && <button type="button" className="ui-pinmap-search" aria-label="Search an area or address" onClick={search ? () => setSOpen(true) : onSearch}><span>Search an area or address</span>{I(<><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></>, 20)}</button>}
         {!pick && !kitchen && search && sOpen && <form className="ui-pinmap-search open" onSubmit={(e) => { e.preventDefault(); void runSearch(); }}>
-          <input type="search" role="searchbox" aria-label="Search an area or address" placeholder="Search an area or address" autoFocus value={sq} onChange={(e) => { setSq(e.target.value); setFound(null); }} />
-          <button type="button" className="ui-pinmap-close" aria-label="Close search" onClick={() => { setSOpen(false); setFound(null); setSq(""); }}>{I(<path d="M6 6l12 12M18 6L6 18" />, 20)}</button>
+          <input ref={sRef} type="search" role="searchbox" aria-label="Search an area or address" placeholder="Search an area or address" autoFocus value={sq} onChange={(e) => { setSq(e.target.value); setFound(null); }} />
+          <ClearCross show={sq !== ""} onClear={() => { setSq(""); setFound(null); }} input={sRef} />
         </form>}
       </div>
       {!pick && search && sOpen && found && <section className="ui-pinmap-results" aria-label="Places">
