@@ -106,3 +106,19 @@ test("B8 a keyboard focus ring on a bar part sits inside the part (the bar clips
   expect(ring.width).toBeGreaterThan(0);
   expect(ring.offset + ring.width).toBeLessThanOrEqual(0);
 });
+
+// Story 1428: every field on the sheet has the same edge, Day and Night. Name this place had the paler outline-variant edge.
+for (const t of ["day", "night"] as const) {
+  test(`B-1428 in ${t}, Name this place has the same border as Landmark, keeps 45 px and its focus border`, async ({ page, context }) => {
+    await context.addInitScript((v) => localStorage.setItem("gs-theme", v), t);
+    await toSheet(page, context);
+    await bar(page).getByRole("button", { name: "Other" }).click();
+    const edge = (label: string) => page.getByLabel(label).evaluate((e) => getComputedStyle(e).borderTopColor);
+    expect(await edge("Name this place")).toBe(await edge("Landmark (optional)"));
+    expect(Math.round((await page.getByLabel("Name this place").boundingBox())!.height)).toBe(45);
+    await page.getByLabel("Landmark (optional)").focus();
+    const landmarkFocus = await edge("Landmark (optional)");
+    await page.getByLabel("Name this place").focus();
+    expect(await edge("Name this place")).toBe(landmarkFocus);
+  });
+}
