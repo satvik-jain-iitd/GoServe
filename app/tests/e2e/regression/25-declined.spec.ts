@@ -1,6 +1,7 @@
 // Regression, screen 25: T2 Declined, the kitchen said no. Cases: .claude/handoff/qa/screens/25-T2-Declined.md (epic #1196, story #1197). Reached with the shared step STEPS["declined"] only.
-import { test, expect } from "@playwright/test";
+import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { STEPS } from "../screensSteps";
+import { order, setup } from "../helpers";
 
 const PATH = "/customer/";
 const REASON = "We are out of butter chicken tonight, so this order cannot be made.";
@@ -45,4 +46,23 @@ test("TC 25.3 Copy: a cash order says nothing was charged, without the online-pa
   await STEPS["declined"](context, page, PATH);
   await expect(page.getByText("Nothing was charged.")).toBeVisible();   // proves the money line is on screen, so the absence check below is not blind
   await expect(page.getByText(/paid online/)).toHaveCount(0);   // story #1261 fixed #1251: no online-payment words for a pay-at-door order
+});
+
+// Story 1458 (board T2b): the main button is last on the declined slip too.
+const declinedWith = async (context: BrowserContext, page: Page, phone: string | null) => {
+  const net = await setup(context, page, [{ ...order("cancelled", "2020-01-01T10:02:00Z"), cancel_reason: REASON }]);
+  (net.state.kitchens[0] as { phone: string | null }).phone = phone;
+  await page.goto(PATH); await page.getByRole("button", { name: "History" }).click(); await page.getByRole("button", { name: /Butter Chicken/ }).click();
+  await expect(page.getByRole("heading", { name: "Declined", exact: true })).toBeVisible();
+};
+const bottomButtons = async (page: Page) => (await page.locator(".ui-bottom .ui-btn").allTextContents()).map((s) => s.trim());
+
+test("TC 25.9 Given a declined order with a kitchen phone, then Order something else is the last button and Call the kitchen is right above it", async ({ page, context }) => {
+  await declinedWith(context, page, "9876500011");
+  expect(await bottomButtons(page)).toEqual(["Call the kitchen", "Order something else"]);
+});
+
+test("TC 25.10 Given a declined order with no kitchen phone, then Order something else is the only button", async ({ page, context }) => {
+  await declinedWith(context, page, null);
+  expect(await bottomButtons(page)).toEqual(["Order something else"]);
 });
