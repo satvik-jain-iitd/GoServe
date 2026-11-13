@@ -869,8 +869,9 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 /* Story 1397 (owner, 13 Nov 2026, DECIDED, board FF2-FieldBorder): a tapped text field has no ring. Its own border turns --md-primary
    and grows from 1 px to 2 px. The padding gives back the 1 px, so the box keeps its height and the text does not move.
    "body" puts these above every base rule for the same field (the cascade, not the order, decides). */
+/* a textarea in a field but not in a form takes its padding (12 px) from app.css */
+body .ui-field textarea:focus-visible { outline: none; border: 2px solid var(--md-primary); padding: 11px; }
 body .ui-field input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"]):focus-visible,
-body .ui-field textarea:focus-visible,
 body .ui-form input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"]):focus-visible,
 body .ui-form textarea:focus-visible,
 body .otp-phone:not(.otp-box) input:focus-visible,
