@@ -17,8 +17,9 @@ test("S1 a new order appears on the kitchen screen without a refresh", async ({ 
   await expect(page.getByText("No. 0f0f0f0f")).toBeVisible({ timeout: 5000 });
   await expect(page.getByText("2 × Butter Chicken")).toBeVisible();
   await expect(page.locator(".ui-tag", { hasText: "New" })).toBeVisible();   // H11: the tag says New
-  await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();   // the address is on the ticket (K4)
-  await expect(page.getByText("Flat 4, Green Park")).toBeVisible();
+  await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();   // story 1455 (board KO1): the sheet opens; the cook sees no address
+  await expect(page.getByRole("dialog", { name: "Order 0f0f0f0f" })).toBeVisible();
+  await expect(page.getByText("Flat 4, Green Park")).toHaveCount(0);
 });
 
 test("S1 orders already placed show when the kitchen opens", async ({ page, context }) => {

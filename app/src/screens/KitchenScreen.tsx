@@ -3,9 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { cancelLine, cashByRider, cookingTickets, deliveredToday, hhmm, justCancelled, minutesAway, newTickets, nextStep, outsideHours, readyTickets, shortId, staffLabel, type Order } from "../lib/kitchen";
 import { listRiders, type RiderListRow } from "../lib/admin";
 import { getClient } from "../lib/supabase";
-import { formatRupees, linePaise } from "../lib/money";
+import { formatRupees } from "../lib/money";
 import { NoteBand, Skeleton, Tabs } from "../ui";
-import { AdjustLines } from "../ui/AdjustLines";
 import { DishList } from "./KitchenTools";
 import { OrderSheet } from "./OrderSheet";
 import type { KitchenGateState } from "./KitchenGate";
@@ -59,8 +58,8 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
     const failed = await onStep(o, next.to);
     if (!failed && opened) { setOpenId(null); setTab(next.to === "accepted" ? "cooking" : tab); }
   };
-  const lines = (o: Order, prices = false) => (
-    <div className="ui-slip-lines ui-ticket-big">{o.items.map((i) => <div key={i.menu_item_id}><span>{i.qty} × {i.name}</span>{prices && <span>{formatRupees(linePaise(i))}</span>}</div>)}{prices && <AdjustLines bill={o.bill} />}</div>
+  const lines = (o: Order) => (   // story 1455 (boards KO1, KK1): the dishes and counts only; the cook needs no prices
+    <div className="ui-slip-lines ui-ticket-big">{o.items.map((i) => <div key={i.menu_item_id}><span>{i.qty} × {i.name}</span></div>)}</div>
   );
   const row = (o: Order) => {
     const [word, cls] = stamp(o.status);
@@ -110,21 +109,15 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
         <div className="ui-scroll">
           <section className="ui-slip ui-slip-pad" aria-label={`Order ${shortId(opened.id)}`}>
             <div className="ui-slip-body">
-              <div className="ui-slip-head"><span>Placed {hhmm(opened.created_at)}</span><span>Cash at door</span></div>
+              <div className="ui-slip-head"><span>Placed {hhmm(opened.created_at)}</span></div>
               <div className="ui-slip-stamp"><span className={`ui-stamp ${cls}`}>{word}</span></div>
-              {lines(opened, true)}
+              {lines(opened)}
               {opened.instructions?.trim() && <><div className="ui-slip-rule" /><NoteBand text={opened.instructions.trim()} /></>}
-              <div className="ui-slip-rule" />
-              <div className="ui-deliver"><span className="mono ui-kicker">Deliver to</span><b>{opened.customer_name || "The customer"}</b><span>{opened.address}</span></div>
-              <div className="ui-slip-rule" />
-              <div className="ui-slip-total"><b>Rider collects</b><span>{formatRupees(opened.total_paise)}</span></div>
             </div>
           </section>
-          <p className="mono ui-foot">Accept. Start when cooking. Ready calls the rider.</p>
         </div>
         <div className="ui-bottom">
           {next && <button type="button" className={stepClass(next.to)} aria-label={`${next.label} ${shortId(opened.id)}`} disabled={busyId === opened.id} onClick={() => void step(opened)}>{next.label}</button>}
-          <button type="button" className="ui-btn ghost big" onClick={() => setOpenId(null)}>Back to {tab === "cooking" ? "cooking" : "new"}</button>
         </div>
       </>
     );
@@ -147,7 +140,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
       {tab === "new" && (fresh.length === 0 ? (
         <div className="ui-scroll ui-center"><div className="ui-empty"><h2>No new tickets</h2><p className="ui-meta">No new orders. Keep this page open.</p>{todayLine}</div></div>
       ) : (
-        <div className="ui-scroll ui-tickets">{fresh.map(row)}<p className="mono ui-foot">New tickets land here · accept within 2 min</p></div>
+        <div className="ui-scroll ui-tickets">{fresh.map(row)}</div>
       ))}
       {tab === "cooking" && (
         <div className="ui-scroll ui-tickets">

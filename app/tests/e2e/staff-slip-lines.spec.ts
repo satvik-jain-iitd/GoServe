@@ -15,15 +15,14 @@ test("L1 rider: Pick up (board RP3, story 1441) lists the dishes without prices 
   await expect(slip.locator(".ui-slip-total span")).toHaveText("₹540");
 });
 
-test("L2 kitchen: the ticket sheet lists the gift and the lines add up to Rider collects", async ({ page, context }) => {
+test("L2 kitchen (board KO1, story 1455): the order sheet lists the dishes without prices, gift or amount; the cook needs none of it", async ({ page, context }) => {
   const net = await setup(context, page, [{ ...order("placed"), ...BILLED }]);
   net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
   await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
   const sheet = page.getByRole("dialog", { name: "Order 0f0f0f0f" });
-  await expect(sheet.getByText("Early friend gift")).toBeVisible();
-  expect(await sum(sheet.locator(".ui-slip-lines"))).toBe(540);
-  await expect(sheet.locator(".ui-slip-total span")).toHaveText("₹540");
+  await expect(sheet).toContainText("2 × Butter Chicken");
+  for (const t of ["Early friend gift", "Rider collects", "₹"]) await expect(sheet.getByText(t)).toHaveCount(0);
 });
 
 test("L3 admin: the order slip lists the gift and the lines add up to Cash at door", async ({ page, context }) => {
@@ -35,17 +34,6 @@ test("L3 admin: the order slip lists the gift and the lines add up to Cash at do
   await expect(slip.getByText("Early friend gift")).toBeVisible();
   expect(await sum(slip.locator(".ui-slip-lines"))).toBe(540);
   await expect(slip.locator(".ui-slip-total span")).toHaveText("₹540");
-});
-
-test("L4 no gift and no discount: no extra line on the kitchen sheet", async ({ page, context }) => {
-  const net = await setup(context, page, [{ ...order("placed"), total_paise: 64000, bill: { early_friend_paise: 0, discount_paise: 0, to_pay_paise: 64000 } }]);
-  net.state.kitchen = "k-1";
-  await page.goto("/kitchen/");
-  await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
-  const sheet = page.getByRole("dialog", { name: "Order 0f0f0f0f" });
-  await expect(sheet.getByText("Early friend gift")).toHaveCount(0);
-  await expect(sheet.getByText("Discount", { exact: true })).toHaveCount(0);
-  expect(await sum(sheet.locator(".ui-slip-lines"))).toBe(640);
 });
 
 // Review of #1350: a paid option is part of the line, fees and tax have their own lines, and the Kitchen screen's own ticket (not the new-order sheet) is covered.
@@ -81,15 +69,13 @@ test("L7 inclusive tax and zero fees add no line", async ({ page, context }) => 
   expect(await sum(slip.locator(".ui-slip-lines"))).toBe(640);
 });
 
-test("L8 kitchen: the Ticket screen of a cooking order (not the new-order sheet) lists the gift and adds up", async ({ page, context }) => {
+test("L8 kitchen (board KK1, story 1455): the Ticket screen of a cooking order lists the dishes without prices, gift or amount", async ({ page, context }) => {
   const net = await setup(context, page, [{ ...order("preparing"), ...BILLED }]);
   net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
   await page.getByRole("button", { name: "Cooking", exact: true }).click();
   await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
-  await expect(page.getByRole("heading", { name: "Ticket" })).toBeVisible();
-  const slip = page.getByRole("region", { name: "Order 0f0f0f0f" }).or(page.locator("section[aria-label='Order 0f0f0f0f']"));
-  await expect(slip.getByText("Early friend gift")).toBeVisible();
-  expect(await sum(slip.locator(".ui-slip-lines"))).toBe(540);
-  await expect(slip.locator(".ui-slip-total span")).toHaveText("₹540");
+  const slip = page.locator("section[aria-label='Order 0f0f0f0f']");
+  await expect(slip).toContainText("2 × Butter Chicken");
+  for (const t of ["Early friend gift", "Rider collects", "₹"]) await expect(slip.getByText(t)).toHaveCount(0);
 });

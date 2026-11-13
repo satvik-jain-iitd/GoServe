@@ -13,9 +13,7 @@ test("S1 the New row has no Accept; a tap opens the order sheet with Accept and 
   await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
   const sheet = page.getByRole("dialog", { name: "Order 0f0f0f0f" });
   await expect(sheet.getByText("No. 0f0f0f0f")).toBeVisible();
-  await expect(sheet.getByText("Deliver to")).toBeVisible();
-  await expect(sheet.getByText("Flat 4, Green Park")).toBeVisible();
-  await expect(sheet.getByText("Rider collects")).toBeVisible();
+  for (const t of ["Deliver to", "Flat 4, Green Park", "Rider collects"]) await expect(sheet.getByText(t)).toHaveCount(0);   // story 1455 (board KO1)
   await expect(sheet.getByText("Swipe down to leave it waiting")).toHaveCount(0);   // story #1044
   await expect(sheet.getByText("Customer says")).toHaveCount(0);   // instructions wait for story 935
   await sheet.getByRole("button", { name: "Accept 0f0f0f0f" }).click();
