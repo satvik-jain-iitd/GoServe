@@ -89,3 +89,15 @@ test("S6 on a small phone (360 x 640) nothing scrolls, the thali sits clear abov
   const [th, line] = [await thali(page).boundingBox(), await page.getByText("By continuing you agree to our", { exact: false }).boundingBox()];
   expect(th!.y + th!.height).toBeLessThanOrEqual(line!.y);
 });
+
+// Review of PR 1463: at 320 x 568 the words wrapped to two lines ("Continue with" / "Google").
+test("S7 at 320 x 568 the button words stay on one line, next to the G chip", async ({ page, context }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await open(context, page);
+  const words = button(page).getByText("Continue with Google", { exact: true });
+  const lh = await words.evaluate((e) => parseFloat(getComputedStyle(e).lineHeight) || parseFloat(getComputedStyle(e).fontSize) * 1.45);
+  expect((await words.boundingBox())!.height).toBeLessThan(lh * 1.5);
+  const [b, w] = [await button(page).boundingBox(), await words.boundingBox()];
+  expect(w!.x + w!.width).toBeLessThanOrEqual(b!.x + b!.width);   // inside the button
+  expect(await button(page).evaluate((e) => e.scrollWidth - e.clientWidth)).toBeLessThanOrEqual(0);
+});
