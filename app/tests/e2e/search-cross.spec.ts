@@ -80,3 +80,13 @@ test("X4 map: the Back arrow closes the search and keeps the map", async ({ page
   await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Close search" })).toHaveCount(0);   // one cross only: the old close cross is gone
 });
+
+test("X5 map: the phone's Back closes the open search first and keeps the map; the next Back closes the map", async ({ page, context }) => {
+  const input = await map(page, context);
+  await input.fill("dal");
+  await page.goBack();
+  await expect(input).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole("region", { name: "Pin map" })).toHaveCount(0);
+});
