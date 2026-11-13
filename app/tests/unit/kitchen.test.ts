@@ -187,3 +187,27 @@ describe("minutesAway", () => {
     expect(minutesAway({ lat: 28.5535, lng: 77.1935, updated_at: "2026-10-25T11:59:00Z" }, kitchen, now)).toBe(1);
   });
 });
+
+// Story 1454 (board KC1): a cancelled row says the word once, with who or why.
+import { cancelLine } from "../../src/lib/kitchen";
+describe("cancelLine", () => {
+  const o = (extra: object) => ({ status: "cancelled", ...extra });
+  it("the customer's cancel says Cancelled by the customer · stop cooking", () => {
+    expect(cancelLine(o({ cancelled_by: "customer", cancel_reason: "cancelled by customer" }))).toBe("Cancelled by the customer · stop cooking");
+    expect(cancelLine(o({ cancel_reason: "cancelled by customer" }))).toBe("Cancelled by the customer · stop cooking");   // an old row, read from its text
+    expect(cancelLine(o({}))).toBe("Cancelled by the customer · stop cooking");
+  });
+  it("the kitchen's or admin's own reason takes the place of by the customer", () => {
+    expect(cancelLine(o({ cancelled_by: "kitchen", cancel_reason: "Paneer is over" }))).toBe("Cancelled · Paneer is over · stop cooking");
+  });
+  it("review of PR 1477: only the customer's cancel says by the customer; no reason says no reason; the rider's code is said in words", () => {
+    expect(cancelLine(o({ cancelled_by: "kitchen", cancel_reason: "" }))).toBe("Cancelled · stop cooking");
+    expect(cancelLine(o({ cancelled_by: "admin" }))).toBe("Cancelled · stop cooking");
+    expect(cancelLine(o({ cancelled_by: "rider", cancel_reason: "refused_at_door" }))).toBe("Cancelled · refused at the door · stop cooking");
+    expect(cancelLine(o({ cancel_reason: "refused_at_door" }))).toBe("Cancelled · refused at the door · stop cooking");   // an old row, read from its code
+  });
+  it("the word cancelled shows once", () => {
+    for (const x of [o({ cancel_reason: "cancelled by customer" }), o({ cancelled_by: "admin", cancel_reason: "Cancelled: duplicate order" })])
+      expect(cancelLine(x).match(/cancel/gi)).toHaveLength(1);
+  });
+});

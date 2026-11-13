@@ -33,6 +33,13 @@ export const cancelKind = (o: { status: string; cancelled_by?: string | null; ca
   const why = o.cancel_reason?.trim();
   return !why || why === "cancelled by customer" ? "customer" : why === "refused_at_door" ? "rider" : "declined";
 };
+/** Story 1454 (board KC1): the kitchen's cancelled row says the word once: by the customer, or the kitchen's or admin's own reason. */
+export const cancelLine = (o: { status: string; cancelled_by?: string | null; cancel_reason?: string | null }): string => {
+  const kind = cancelKind(o);
+  if (kind === "customer") return "Cancelled by the customer · stop cooking";
+  const why = kind === "rider" ? "refused at the door" : o.cancel_reason?.trim().replace(/^cancell?ed\b[\s:·-]*/i, "");   // review of PR 1477: the rider's code in words
+  return why ? `Cancelled · ${why} · stop cooking` : "Cancelled · stop cooking";
+};
 export const statusLabel = (status: string): string => LABELS[status] ?? status;
 /** The staff apps (kitchen, admin) say "New" for a placed order; the customer sees "Placed". One place for the difference (H12). */
 export const staffLabel = (status: string): string => (status === "placed" ? "New" : statusLabel(status));

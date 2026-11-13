@@ -1,6 +1,6 @@
 // The kitchen app on the Ink v3 boards K3 to K6 (story H11, #194): New tickets, Cooking, the Kitchen tab, and one ticket (K4) over the tabs.
 import { useEffect, useRef, useState } from "react";
-import { cashByRider, cookingTickets, deliveredToday, hhmm, justCancelled, minutesAway, newTickets, nextStep, outsideHours, readyTickets, shortId, staffLabel, type Order } from "../lib/kitchen";
+import { cancelLine, cashByRider, cookingTickets, deliveredToday, hhmm, justCancelled, minutesAway, newTickets, nextStep, outsideHours, readyTickets, shortId, staffLabel, type Order } from "../lib/kitchen";
 import { listRiders, type RiderListRow } from "../lib/admin";
 import { getClient } from "../lib/supabase";
 import { formatRupees, linePaise } from "../lib/money";
@@ -20,6 +20,7 @@ type Props = {
 };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready" };
 const stamp = (status: string): [string, string] => [staffLabel(status), STAMP[status] ?? ""];
+const stepClass = (to: string) => (to === "preparing" ? "ui-btn ghost big" : "ui-btn big");   // story 1454 (board KC1): Start is an outline, Ready stays filled; same size, same place
 
 export function KitchenScreen({ orders, loading, error, busyId, onStep, onDecline, onHandover, gate }: Props) {
   const [tab, setTab] = useState<Tab>("new");
@@ -71,7 +72,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
           {lines(o)}
           {o.instructions?.trim() && <NoteBand text={o.instructions.trim()} />}
         </button>
-        {next && o.status !== "placed" ? <button type="button" className="ui-btn big" aria-label={`${next.label} ${shortId(o.id)}`} disabled={busyId === o.id} onClick={() => void step(o)}>{next.label}</button>
+        {next && o.status !== "placed" ? <button type="button" className={stepClass(next.to)} aria-label={`${next.label} ${shortId(o.id)}`} disabled={busyId === o.id} onClick={() => void step(o)}>{next.label}</button>
           : o.status === "placed" ? null   // story #934: a new order is a tap target; Accept and Decline are on its sheet
           : <span className="mono ui-ticket-wait">{riderLine(o).split(" · ").map((part) => <span key={part}>{part}</span>)}</span>}
       </div>
@@ -83,8 +84,8 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
   const gone = justCancelled(orders, seen.current, new Date());   // recomputed on every render; the minute tick re-renders, so the stamp leaves on its own
   const cancelledRow = (o: Order) => (
     <div key={o.id} className="ui-ticket ui-ticket-cancelled">
-      <div className="ui-ticket-open"><span className="ui-ticket-head"><span className="mono">No. {shortId(o.id)} · {hhmm(o.created_at)}</span><span className="ui-tag error">Cancelled</span></span>{lines(o)}</div>
-      <span className="mono ui-ticket-wait">Cancelled · {o.cancel_reason || "by the customer"} · stop cooking</span>
+      <div className="ui-ticket-open"><span className="ui-ticket-head"><span className="mono">No. {shortId(o.id)} · {hhmm(o.created_at)}</span></span>{lines(o)}</div>
+      <span className="mono ui-ticket-wait">{cancelLine(o)}</span>
     </div>
   );
   const todayLine = <p className="mono ui-foot">Today · {done.length} done{tab === "kitchen" ? ` · ${formatRupees(onSlips)} cash today` : ""}</p>;
@@ -122,7 +123,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
           <p className="mono ui-foot">Accept. Start when cooking. Ready calls the rider.</p>
         </div>
         <div className="ui-bottom">
-          {next && <button type="button" className="ui-btn big" aria-label={`${next.label} ${shortId(opened.id)}`} disabled={busyId === opened.id} onClick={() => void step(opened)}>{next.label}</button>}
+          {next && <button type="button" className={stepClass(next.to)} aria-label={`${next.label} ${shortId(opened.id)}`} disabled={busyId === opened.id} onClick={() => void step(opened)}>{next.label}</button>}
           <button type="button" className="ui-btn ghost big" onClick={() => setOpenId(null)}>Back to {tab === "cooking" ? "cooking" : "new"}</button>
         </div>
       </>
@@ -153,7 +154,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
           {gone.map(cancelledRow)}
           {cooking.length === 0 && ready.length === 0 && gone.length === 0 && <div className="ui-empty"><h2>Nothing on the stove</h2><p className="ui-meta">Accepted tickets come here. Start when the pan is on, Ready when it is packed.</p></div>}
           {cooking.map(row)}
-          {ready.length > 0 && <section className="ui-group"><h2>Ready · rider on the way</h2>{ready.map(row)}</section>}
+          {ready.length > 0 && <section className="ui-group"><h2>Ready · give to the rider</h2>{ready.map(row)}</section>}
         </div>
       )}
       {tab === "kitchen" && (
