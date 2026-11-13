@@ -74,3 +74,6 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - ID326 (2026-11-08, open, later): build our own maps later from surveyed data on OSM.
 - ID326, same entry (2026-11-08, open, after #987): a GoServe places table seeded from the owner's survey sheet.
 - IDEA (no vault id yet) (2026-11-08, open): Onboarding pin step: after Use my location, set the pin on the full map before the next step. Source: frame A1p.
+- IDEA (no vault id yet) (2026-11-13, taken, #1443): Rider incentive: an amount for each delivery on the Today tab; the admin turns it on or off and sets the amount.
+- IDEA (no vault id yet) (2026-11-13, open, later): In-app rider routing on our own Valhalla box (OSM data for Delhi NCR), with a custom rule for galis. Parked for after the pilot.
+- IDEA (no vault id yet) (2026-11-13, taken, #1445): Rider Me row "Kitchen ka raasta" for a new rider.
