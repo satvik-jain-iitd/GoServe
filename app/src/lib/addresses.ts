@@ -1,9 +1,9 @@
 // Story #976: saved addresses of a customer (Home, Office, a parent's house). The rows are the customer's own (row level security); the order keeps its own copy of the text and pin.
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type SavedAddress = { id: string; label: string; address: string; pin: string; lat: number | null; lng: number | null; last_used_at: string };
+export type SavedAddress = { id: string; label: string; address: string; pin: string; lat: number | null; lng: number | null; last_used_at: string; house?: string | null; landmark?: string | null };   // story 1421: house = the one box, kept whole
 export type Place = { lat: number; lng: number };
-export type NewAddress = { label: string; address: string; pin: string; lat?: number | null; lng?: number | null };
+export type NewAddress = { label: string; address: string; pin: string; lat?: number | null; lng?: number | null; house?: string; landmark?: string };
 
 const R = 6_371_000;
 export const distanceM = (a: Place, b: Place): number => {   // haversine: right to a metre or so over the distances that matter here
@@ -27,21 +27,23 @@ export function firstFromProfile(p: { address: string; pin: string | null }): Ne
 }
 
 type Client = Pick<SupabaseClient, "from" | "rpc">;
-const COLS = "id, label, address, pin_code, lat, lng, last_used_at";
-type Row = { id: string; label: string; address: string; pin_code: string; lat: number | null; lng: number | null; last_used_at: string };
-const fromRow = (r: Row): SavedAddress => ({ id: r.id, label: r.label, address: r.address, pin: r.pin_code, lat: r.lat, lng: r.lng, last_used_at: r.last_used_at });
+// Story 1421: the box and the landmark, whole, when the sheet gave them (a row from an older path sends neither and keeps what it had).
+const parts = (a: { house?: string; landmark?: string }) => (a.house === undefined ? {} : { house: a.house.trim() || null, landmark: a.landmark?.trim() || null });
+const COLS = "id, label, address, pin_code, lat, lng, last_used_at, house, landmark";
+type Row = { id: string; label: string; address: string; pin_code: string; lat: number | null; lng: number | null; last_used_at: string; house?: string | null; landmark?: string | null };
+const fromRow = (r: Row): SavedAddress => ({ id: r.id, label: r.label, address: r.address, pin: r.pin_code, lat: r.lat, lng: r.lng, last_used_at: r.last_used_at, house: r.house ?? null, landmark: r.landmark ?? null });
 
 export async function listAddresses(c: Client): Promise<SavedAddress[] | null> {
   const { data, error } = await c.from("addresses").select(COLS).order("last_used_at", { ascending: false });
   return error ? null : ((data ?? []) as Row[]).map(fromRow);
 }
 export async function addAddress(c: Client, a: NewAddress): Promise<SavedAddress | null> {
-  const { data, error } = await c.from("addresses").insert({ label: a.label.trim(), address: a.address.trim(), pin_code: a.pin, lat: a.lat ?? null, lng: a.lng ?? null }).select(COLS).single();
+  const { data, error } = await c.from("addresses").insert({ label: a.label.trim(), address: a.address.trim(), pin_code: a.pin, lat: a.lat ?? null, lng: a.lng ?? null, ...parts(a) }).select(COLS).single();
   return error || !data ? null : fromRow(data as Row);
 }
-export async function editAddress(c: Client, id: string, a: { label: string; address: string; pin: string; lat?: number | null; lng?: number | null }): Promise<boolean> {   // lat and lng only when the pin was moved (story #1051)
+export async function editAddress(c: Client, id: string, a: { label: string; address: string; pin: string; lat?: number | null; lng?: number | null; house?: string; landmark?: string }): Promise<boolean> {   // lat and lng only when the pin was moved (story #1051)
   const moved = a.lat != null && a.lng != null ? { lat: a.lat, lng: a.lng } : {};
-  return !(await c.from("addresses").update({ label: a.label.trim(), address: a.address.trim(), pin_code: a.pin, ...moved }).eq("id", id)).error;
+  return !(await c.from("addresses").update({ label: a.label.trim(), address: a.address.trim(), pin_code: a.pin, ...moved, ...parts(a) }).eq("id", id)).error;
 }
 export async function removeAddress(c: Client, id: string): Promise<boolean> {
   return !(await c.from("addresses").delete().eq("id", id)).error;

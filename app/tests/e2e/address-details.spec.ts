@@ -28,12 +28,12 @@ test("S1 the sheet opens over the same map: no step count, the place and a Chang
   await expect(sheet(page).getByText(/Step \d of \d/)).toHaveCount(0);   // 1404 (owner, 13 Nov): no step count anywhere
   await expect(sheet(page).getByText("Green Park", { exact: true })).toBeVisible();
   await expect(sheet(page).getByRole("button", { name: "Change" })).toBeVisible();
-  await expect(sheet(page).getByLabel("House, flat, floor")).toBeVisible();
+  await expect(sheet(page).getByLabel("House, street, colony, ward")).toBeVisible();
   await expect(sheet(page).getByLabel("Landmark (optional)")).toBeVisible();
   for (const c of ["Home", "Office", "Other"]) await expect(sheet(page).getByRole("button", { name: c, exact: true })).toBeVisible();
   await expect(sheet(page).getByRole("button", { name: "Save address" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Search an area or address" })).toHaveCount(0);   // the top shows only Back while the sheet is open
-  await expect(sheet(page).getByLabel("House, flat, floor")).toHaveAttribute("placeholder", "e.g. C-128, second floor");
+  await expect(sheet(page).getByLabel("House, street, colony, ward")).toHaveAttribute("placeholder", "e.g. C-128, Gali 3, Radio Colony");   // story 1421, board AD3
   await expect(sheet(page).getByLabel("Landmark (optional)")).toHaveAttribute("placeholder", "e.g. near the park gate");
   const bar = (await sheet(page).getByRole("group", { name: "Save as" }).boundingBox())!;   // story 1422: the joined bar, not 36 px pills
   expect(Math.round(bar.height)).toBe(44);
@@ -47,14 +47,14 @@ test("S2 Save stays asleep until the house is typed, with no alert and no helper
   const save = sheet(page).getByRole("button", { name: "Save address" });
   await expect(save).toBeDisabled();
   await expect(page.getByRole("alert")).toHaveCount(0);
-  await sheet(page).getByLabel("House, flat, floor").fill("12B");
+  await sheet(page).getByLabel("House, street, colony, ward").fill("12B");
   await expect(save).toBeEnabled();
   expect(net.state.addresses).toHaveLength(1);
 });
 
 test("S3 house and a chip save one row with the pin's exact place, the label and the words, and it is picked", async ({ page, context }) => {
   const net = await toDetails(page, context);
-  await sheet(page).getByLabel("House, flat, floor").fill("12B, 2nd floor");
+  await sheet(page).getByLabel("House, street, colony, ward").fill("12B, 2nd floor");
   await sheet(page).getByRole("button", { name: "Office", exact: true }).click();
   await sheet(page).getByRole("button", { name: "Save address" }).click();
   await expect.poll(() => net.state.addresses.length).toBe(2);
@@ -66,7 +66,7 @@ test("S3 house and a chip save one row with the pin's exact place, the label and
 
 test("S4 a landmark is added as near", async ({ page, context }) => {
   const net = await toDetails(page, context);
-  await sheet(page).getByLabel("House, flat, floor").fill("12B");
+  await sheet(page).getByLabel("House, street, colony, ward").fill("12B");
   await sheet(page).getByLabel("Landmark (optional)").fill("Metro gate 2");
   await sheet(page).getByRole("button", { name: "Save address" }).click();
   await expect.poll(() => net.state.addresses.length).toBe(2);
@@ -75,7 +75,7 @@ test("S4 a landmark is added as near", async ({ page, context }) => {
 
 test("S5 Other opens a name box that must be filled", async ({ page, context }) => {
   const net = await toDetails(page, context);
-  await sheet(page).getByLabel("House, flat, floor").fill("12B");
+  await sheet(page).getByLabel("House, street, colony, ward").fill("12B");
   await sheet(page).getByRole("button", { name: "Other", exact: true }).click();
   await expect(sheet(page).getByRole("button", { name: "Save address" })).toBeDisabled();   // Other needs a name
   await sheet(page).getByLabel("Name this place").fill("Nani's house");
@@ -100,7 +100,7 @@ test("S6b Change keeps the pin: an address saved after Change has the same place
   await sheet(page).getByRole("button", { name: "Change" }).click();
   await expect(sheet(page)).toHaveCount(0);
   await page.getByRole("button", { name: "Confirm & proceed" }).click();
-  await sheet(page).getByLabel("House, flat, floor").fill("12B");
+  await sheet(page).getByLabel("House, street, colony, ward").fill("12B");
   await sheet(page).getByRole("button", { name: "Save address" }).click();
   await expect.poll(() => net.state.addresses.length).toBe(2);
   const saved = net.state.addresses.at(-1)!;
@@ -111,7 +111,7 @@ test("S6b Change keeps the pin: an address saved after Change has the same place
 test("S7 the fields share one style: same height, border and corners, and 16 px between rows", async ({ page, context }) => {
   await toDetails(page, context);
   const m = async (name: string) => sheet(page).getByLabel(name).evaluate((el) => { const r = el.getBoundingClientRect(), c = getComputedStyle(el); return { h: Math.round(r.height), top: r.top, bottom: r.bottom, border: c.borderTopWidth, radius: c.borderTopLeftRadius, pad: c.paddingLeft }; });
-  const a = await m("House, flat, floor"), b = await m("Landmark (optional)");
+  const a = await m("House, street, colony, ward"), b = await m("Landmark (optional)");
   expect([a.h, a.border, a.radius, a.pad]).toEqual([b.h, b.border, b.radius, b.pad]);
   expect(a.h).toBeGreaterThanOrEqual(44);
   const labelTop = await sheet(page).getByText("Landmark (optional)", { exact: true }).evaluate((el) => el.getBoundingClientRect().top);
@@ -120,7 +120,7 @@ test("S7 the fields share one style: same height, border and corners, and 16 px 
 
 test("S8 when the lookup found no words or no pin code, the sheet asks for them", async ({ page, context }) => {
   const net = await toDetails(page, context, { status: 503, body: { ok: false } });
-  await sheet(page).getByLabel("House, flat, floor").fill("12B");
+  await sheet(page).getByLabel("House, street, colony, ward").fill("12B");
   const save = sheet(page).getByRole("button", { name: "Save address" });
   await expect(save).toBeDisabled();   // no area yet
   await sheet(page).getByLabel("Area or street").fill("Green Park");
@@ -137,7 +137,7 @@ const lum = (rgb: number[]) => { const [r, g, b] = rgb.map((v) => { const c = v 
 const ratio = (a: number[], b: number[]) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
 test("S-1117 the example is lighter than typed text (3:1 to 3.6:1 on the field) and the field edge is 3:1", async ({ page, context }) => {
   await toDetails(page, context);
-  const f = sheet(page).getByLabel("House, flat, floor");
+  const f = sheet(page).getByLabel("House, street, colony, ward");
   const c = await f.evaluate((el) => {
     const px = (v: string) => { const cv = document.createElement("canvas").getContext("2d")!; cv.fillStyle = v; cv.fillRect(0, 0, 1, 1); return Array.from(cv.getImageData(0, 0, 1, 1).data).slice(0, 3); };
     const ph = getComputedStyle(el, "::placeholder"), st = getComputedStyle(el);

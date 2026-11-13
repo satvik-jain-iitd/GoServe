@@ -6,7 +6,7 @@ const PATH = "/customer/";
 test.use({ viewport: { width: 390, height: 844 } });
 
 const sheet = (page: Page) => page.getByRole("dialog", { name: "Address details" });
-const house = (page: Page) => sheet(page).getByLabel("House, flat, floor");
+const house = (page: Page) => sheet(page).getByLabel("House, street, colony, ward");
 const saveBtn = (page: Page) => sheet(page).getByRole("button", { name: "Save address" });
 const confirm = (page: Page) => page.getByRole("button", { name: "Confirm & proceed" });
 const geocodes = (page: Page) => {
