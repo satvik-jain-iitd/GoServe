@@ -968,3 +968,24 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
 @media (max-height: 700px) { .ui-alert-sample { display: none; } }   /* a short phone has no room between the bell and the buttons; the sample is decoration, so it goes */
 @media (prefers-reduced-motion: reduce) { .ui-alert-sample { animation: none; } }
 @media (max-height: 700px) { .ui-landing .ui-bellbadge { width: 70px; height: 70px; } .ui-landing .ui-bellbadge.ui-hero-abs { top: 203px; } .ui-landing .ui-bellbadge svg { width: 36px; height: 36px; } }   /* review of PR 1464: a short phone keeps 8 px or more between the bell and the later line, and the bell centre stays on the 238 hero line */
+
+/* stories 1381 and 1384 (boards A1d, A1e): the rider lane under the pin, in the sample alert's slot on step 2. Ride in once 1.2 s; ride out 0.8 s when the kitchen is found. */
+.ui-lane { position: absolute; left: 18px; right: 18px; top: 338px; height: 52px; overflow: hidden; color: var(--md-primary); }
+.ui-lane-road { position: absolute; left: 0; right: 0; bottom: 2px; height: 2px; background: repeating-linear-gradient(90deg, var(--md-outline-variant) 0 10px, transparent 10px 18px); animation: ui-road 450ms linear infinite; }
+.ui-ride { position: absolute; left: calc(50% - 26.5px); bottom: 3px; width: 53px; height: 44px; }
+.ui-ride > svg:last-child { position: absolute; left: 0; top: 0; }
+.ui-ride-wind { position: absolute; left: -28px; top: 0; color: var(--md-outline-variant); }
+.ui-ride-wind path { animation: ui-gust 900ms linear infinite; }
+.ui-ride-wind path:nth-child(2) { animation-delay: 300ms; }
+.ui-ride-wind path:nth-child(3) { animation-delay: 600ms; }
+.ui-wheel { transform-box: fill-box; transform-origin: center; animation: ui-spin 500ms linear infinite; }
+.ui-ride.in { animation: ui-ride-in 1.2s cubic-bezier(.2, .7, .3, 1) both; }
+.ui-ride.out { animation: ui-ride-out 800ms cubic-bezier(.6, 0, .9, .5) forwards; }
+@keyframes ui-ride-in { from { transform: translateX(-220px); } to { transform: none; } }
+@keyframes ui-ride-out { from { transform: none; } to { transform: translateX(240px); } }
+@keyframes ui-road { to { background-position: -18px 0; } }
+@keyframes ui-spin { to { transform: rotate(360deg); } }
+@keyframes ui-gust { 0% { transform: translateX(8px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateX(-10px); opacity: 0; } }
+@media (max-height: 820px) { .ui-lane { top: 328px; } }
+@media (max-height: 700px) { .ui-lane { top: 298px; } .ui-lane:has(.ui-ride.in) { display: none; } }   /* a short phone: no room between the pin and the two buttons on the ask, so the rider is left out there; the wait slip has no buttons and keeps him */
+@media (prefers-reduced-motion: reduce) { .ui-lane *, .ui-lane .ui-ride-wind path, .ui-lane .ui-ride.in, .ui-lane .ui-ride.out { animation: none; } .ui-ride-wind { display: none; } }

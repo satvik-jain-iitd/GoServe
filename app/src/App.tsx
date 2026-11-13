@@ -361,7 +361,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // Story #1049 part 3 (board NK-A): no kitchen serves this pin. One stored ask per person and pin (area_request_add_v2); nothing is sent from here.
   const [areaAsk, setAreaAsk] = useState<"idle" | "busy" | "done">("idle");
   const [areaAskError, setAreaAskError] = useState<string | null>(null);
-  const [focusSearch, setFocusSearch] = useState(false);   // story #1133: Enter address manually opens the search with the cursor in it
+  const [focusSearch, setFocusSearch] = useState(false);   // story 1133: Search for my address (was Enter address manually) opens the search with the cursor in it
   const [farPick, setFarPick] = useState<null | { at: Place; pin: string; address: string }>(null);   // story #1128 (board C6b): Confirm on a pin no kitchen reaches; NK-A shows for it, C7 never opens
   const [areaOffer, setAreaOffer] = useState<number | null>(null);   // story #1129: the promise the stored row holds; the letter shows it only when the server said so
   // One ask: the stored row for this account and pin (area_request_add_v2). Answers an error in words, or null. The Rs 100 promise comes back in the answer and the letter shows it only then.
@@ -520,6 +520,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [closedNote, setClosedNote] = useState<string | null>(null);
   const wasOpen = useRef(false);
   const [pinMap, setPinMap] = useState<null | { center: Place; edit?: SavedAddress }>(null);   // story #1037: the one full-screen map, the door for Add new address, Use current location and a tapped search result
+  const [settingUp, setSettingUp] = useState(false);   // story 1384 (board A1e): the first Save address; the location slip waits with the rider until the kitchen is found
+  useEffect(() => { if (areaError || area?.kind === "none") setSettingUp(false); }, [areaError, area]);   // a failed read or no kitchen here ends it, so a later change of place never shows it again
   useEffect(() => {
     if (lock !== "customer" || !shown) return;
     const open = shown.kind === "ok";
@@ -1019,10 +1021,13 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   ) : pinMap ? (
     <PinMapScreen center={pinMap.center} edit={pinMap.edit} kicker={pinMap.edit ? `Editing ${pinMap.edit.label}` : undefined} confirmLabel={pinMap.edit ? "Save changes" : "Confirm & proceed"} onBack={() => { setFocusSearch(false); setPinMap(null); }} search={(q) => placeSearch(q)} searchOpen={focusSearch} onSearch={() => { setPinMap(null); if (needArea) setStep("deliver"); }}
       onInvite={async (f) => { const err = await askArea(f.pin, f.at); if (err) return err; setAreaAsk("done"); setPinMap(null); setFarPick(f); return null; }}
-      onSave={(a) => { const e = pinMap.edit; setPinMap(null); if (e) void saveEdit(e.id, a); else void saveNew(a); }} />
+      onSave={(a) => { const e = pinMap.edit; setPinMap(null); if (!e && needArea) setSettingUp(true); if (e) void saveEdit(e.id, a); else void saveNew(a); }} />
   ) : farPick ? (
     <NoKitchen address={farPick.address} ask={areaAsk} error={areaAskError} offerPaise={areaOffer} onTell={() => undefined}
       onChange={() => { const at = farPick.at; setFarPick(null); setAreaAsk("idle"); setPinMap({ center: at }); }} />
+  ) : settingUp && !areaError && !(pin && area?.kind === "none") ? (   // a failed read or no kitchen here: the screens for those show at once
+    <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={() => undefined} onMap={() => undefined} onSearch={() => undefined}
+      finding={{ leaving: !needArea, onLeft: () => setSettingUp(false) }} />
   ) : step === "deliver" ? (
     <DeliverToScreen focusSearch={focusSearch} list={saved ?? []} selectedId={selectedId} here={here} search={(q) => placeSearch(q)} onPlace={(h) => { setFocusSearch(false); setPinMap({ center: { lat: h.lat, lng: h.lng } }); }} onBack={() => { setFocusSearch(false); setStep("menu"); }}
       onSelect={(id) => { const r = (saved ?? []).find((x) => x.id === id); if (r) { useSaved(r, true); setStep("menu"); } }}

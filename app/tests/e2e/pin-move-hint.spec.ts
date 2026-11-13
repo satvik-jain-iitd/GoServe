@@ -46,7 +46,7 @@ test("H2 a drag hides it at once; the map opened again on this phone never shows
   await expect(bubble(page)).toHaveCount(0);
   const again = await context.newPage();
   await again.goto("/customer/");
-  await again.getByRole("button", { name: "Set delivery location" }).click();
+  await again.getByRole("button", { name: "Use my current location" }).click();
   await expect(again.getByRole("button", { name: "Current Location" })).toBeVisible();
   await expect(again.locator(".ui-pinmap-card")).toBeVisible();
   await expect(bubble(again)).toHaveCount(0);
@@ -60,7 +60,7 @@ test("H3 Current Location alone does not hide it, and Confirm without a move sho
   await expect(bubble(page)).toHaveCount(0);   // not on the details step
   const again = await context.newPage();
   await again.goto("/customer/");
-  await again.getByRole("button", { name: "Set delivery location" }).click();
+  await again.getByRole("button", { name: "Use my current location" }).click();
   await expect(bubble(again)).toBeVisible();
 });
 
