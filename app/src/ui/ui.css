@@ -954,3 +954,17 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
 .ui-btn .ui-g-chip { width: 32px; height: 32px; border-radius: 999px; background: var(--gs-paper); display: flex; align-items: center; justify-content: center; flex: none; }
 .ui-btn:has(.ui-g-chip) { gap: 12px; white-space: nowrap; }
 @media (max-width: 340px) { .ui-btn:has(.ui-g-chip) { padding-inline: var(--gs-space-3); } }   /* review of PR 1463: the words stay on one line at 320 px */
+.ui-btn:has(.ui-g-chip) { gap: 12px; }
+/* stories 1375 and 1376 (board N0c): the reason under the title, the later line above the buttons, and a sample alert under the bell that drops in once (0.6 s wait, 0.45 s slide and fade) */
+.ui-slip-why { margin: -6px 0 0; text-align: center; font-size: 14px; line-height: 1.35; color: var(--gs-text-muted); text-wrap: balance; }   /* review of PR 1464: no word left alone on a line */
+.ui-slip-later { margin-bottom: -4px; text-align: center; font-size: 13px; line-height: 1.4; color: var(--gs-text-muted); }
+.ui-alert-sample { position: absolute; left: 50%; top: 338px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 10px 14px; white-space: nowrap; background: var(--gs-raised); border: 1px solid var(--md-outline-variant); border-radius: 14px; box-shadow: var(--gs-shadow-s); animation: ui-alert-drop 450ms cubic-bezier(.2, .7, .2, 1) 600ms both; }
+.ui-alert-sample > span:first-child { width: 28px; height: 28px; border-radius: 8px; background: var(--md-primary); color: var(--md-on-primary); display: flex; align-items: center; justify-content: center; flex: none; }
+.ui-alert-sample > span:last-child { display: flex; flex-direction: column; line-height: 1.25; }
+.ui-alert-sample .mono { font-size: 10px; letter-spacing: .04em; color: var(--gs-text-muted); }
+.ui-alert-sample > span:last-child > span:last-child { font-size: 14px; font-weight: 600; color: var(--gs-ink-green); }
+@keyframes ui-alert-drop { from { opacity: 0; transform: translate(-50%, -14px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@media (max-height: 820px) { .ui-alert-sample { top: 328px; } }   /* a 780 tall phone: 10 px closer to the bell keeps a clear gap above the later line */
+@media (max-height: 700px) { .ui-alert-sample { display: none; } }   /* a short phone has no room between the bell and the buttons; the sample is decoration, so it goes */
+@media (prefers-reduced-motion: reduce) { .ui-alert-sample { animation: none; } }
+@media (max-height: 700px) { .ui-landing .ui-bellbadge { width: 70px; height: 70px; } .ui-landing .ui-bellbadge.ui-hero-abs { top: 203px; } .ui-landing .ui-bellbadge svg { width: 36px; height: 36px; } }   /* review of PR 1464: a short phone keeps 8 px or more between the bell and the later line, and the bell centre stays on the 238 hero line */
