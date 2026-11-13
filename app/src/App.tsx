@@ -588,13 +588,13 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     addAddress(getClient(), { ...first, lat: from?.lat ?? null, lng: from?.lng ?? null }).then((row) => { if (alive && row) { setSaved([row]); setSelectedId(row.id); } });
     return () => { alive = false; };
   }, [saved, address, pin]);   // eslint-disable-line react-hooks/exhaustive-deps
-  async function saveNew(pl: { pin: string; address: string; label?: string; from?: Place }) {
-    const row = await addAddress(getClient(), { label: pl.label || "Home", address: pl.address, pin: pl.pin, lat: pl.from?.lat ?? null, lng: pl.from?.lng ?? null });
+  async function saveNew(pl: { pin: string; address: string; label?: string; from?: Place; house?: string; landmark?: string }) {
+    const row = await addAddress(getClient(), { label: pl.label || "Home", address: pl.address, pin: pl.pin, lat: pl.from?.lat ?? null, lng: pl.from?.lng ?? null, house: pl.house, landmark: pl.landmark });
     if (row) { setSaved((cur) => [row, ...(cur ?? [])]); useSaved(row, false); } else { setAddress(pl.address); choosePin(pl.pin, pl.from); }
     setStep("menu");
   }
-  async function saveEdit(id: string, a: { pin: string; address: string; label: string; from: Place }) {   // story #1051: the same row, the new words and the new pin
-    const v = { label: a.label, address: a.address, pin: a.pin, lat: a.from.lat, lng: a.from.lng };
+  async function saveEdit(id: string, a: { pin: string; address: string; label: string; from: Place; house: string; landmark: string }) {   // story #1051: the same row, the new words and the new pin
+    const v = { label: a.label, address: a.address, pin: a.pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark };
     if (!(await editAddress(getClient(), id, v))) return;
     setSaved((cur) => (cur ?? []).map((r) => (r.id === id ? { ...r, ...v } : r)));
     if (id === selectedId) { setAddress(v.address); if (v.pin !== pin) choosePin(v.pin, a.from); }

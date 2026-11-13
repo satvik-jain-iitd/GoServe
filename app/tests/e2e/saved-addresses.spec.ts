@@ -53,7 +53,7 @@ test("S4 Add new address with a label saves a row, shows it with its distance, a
   await page.getByRole("button", { name: "Add new address" }).click();
   await page.getByRole("button", { name: "Confirm & proceed" }).click();   // story #1037: the map is the door
   const sheet = page.getByRole("dialog", { name: "Address details" });   // story #1038: then the details
-  await sheet.getByLabel("House, flat, floor").fill("House 9");
+  await sheet.getByLabel("House, street, colony, ward").fill("House 9");
   await sheet.getByRole("button", { name: "Other", exact: true }).click();
   await sheet.getByLabel("Name this place").fill("Nani's house");
   await sheet.getByRole("button", { name: "Save address" }).click();
@@ -76,12 +76,11 @@ test("S5 Remove the selected address: after the Undo bar runs out the next most 
   await expect(page.getByRole("button", { name: "Set delivery location" })).toBeVisible();
 });
 
-test("S6 Edit opens the map; the label changes in the details and the row is updated", async ({ page, context }) => {
+test("S6 Edit opens the filled details (story 1421, ED1); the label changes and the row is updated", async ({ page, context }) => {
   const net = await open(page, context, AT_HOME, [HOME, OFFICE], (st) => { st.geocode = { status: 200, body: { ok: true, address: "Connaught Place, New Delhi", pin: "110016", locality: "Connaught Place", town: "New Delhi" } }; });
   await page.getByRole("button", { name: /^Office\b/ }).click();
   await page.getByRole("button", { name: "Edit or remove Office" }).click();
   await page.getByRole("button", { name: "Edit", exact: true }).click();
-  await page.getByRole("button", { name: "Save changes" }).click();
   const sheet = page.getByRole("dialog", { name: "Address details" });
   await sheet.getByRole("button", { name: "Other", exact: true }).click();
   await sheet.getByLabel("Name this place").fill("Work");

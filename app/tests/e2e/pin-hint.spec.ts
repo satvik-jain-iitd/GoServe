@@ -14,8 +14,7 @@ test("S2 the address details on the map show the grey 123456 hint when the map g
   await page.goto("/customer/");
   await page.getByRole("button", { name: /^(Home|Deliver to)\b/ }).click();
   await page.getByRole("button", { name: "Edit or remove Home" }).click();
-  await page.getByRole("button", { name: "Edit", exact: true }).click();
-  await page.getByRole("button", { name: "Save changes" }).click();
+  await page.getByRole("button", { name: "Edit", exact: true }).click();   // story 1421 (ED1): Edit opens the filled details at once
   await expect(page.getByLabel("Pin code")).toHaveAttribute("placeholder", "e.g. 123456");
 });
 

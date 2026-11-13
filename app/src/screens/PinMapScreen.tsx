@@ -11,7 +11,7 @@ import type { Map as LMap, Marker } from "leaflet";
 import { currentPlace, findAddress, type Looked, type Place } from "../lib/locate";
 import { isPin } from "../lib/area";
 import type { PlaceHit } from "../lib/placeSearch";
-import { addressText, cardWords, serveAt, splitAddress, stripsFor, type Serve, type Strip } from "../lib/pinMap";
+import { addressText, boxOf, cardWords, serveAt, stripsFor, type Serve, type Strip } from "../lib/pinMap";
 import { metres, tileUrl } from "../lib/riderMap";
 
 const TILES = tileUrl(import.meta.env.VITE_MAP_TILES);
@@ -22,7 +22,7 @@ const I = (d: React.ReactNode, w = 22) => <svg aria-hidden="true" width={w} heig
 const PIN_PATH = <><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.5" /></>;
 
 export type PinPick = { at: Place; words: Looked | null; served: boolean | null };
-export type Saved = { pin: string; address: string; label: string; from: Place };   // story #1038: what the details step hands to the save
+export type Saved = { pin: string; address: string; label: string; from: Place; house: string; landmark: string };   // story 1421: the box and the landmark, whole   // story #1038: what the details step hands to the save
 type Props = {
   center: Place; zoom?: number; kicker?: string; confirmLabel: string;
   onInvite?: (far: { at: Place; pin: string; address: string }) => Promise<string | null>;   // story #1128 (board C6d): a pin no kitchen reaches. The button reads Invite the founders here; it saves the ask and opens the founder note. Answers an error in words, or null; not used when editing
@@ -74,7 +74,8 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
     setFound((c) => (c && c.words === w ? { words: w, state: hits === null ? "error" : "ok", hits: hits ?? [] } : c));
   };
   const take = (h: PlaceHit) => { setSOpen(false); setFound(null); setSq(""); const m = live.current?.map; if (m) show(m, { lat: h.lat, lng: h.lng }, 17); };   // the move settles the pin through the map's own move end
-  const [pick, setPick] = useState<PinPick | null>(null);   // story #1038: set when Confirm is tapped; the details sheet shows over the same map
+  const [pick, setPick] = useState<PinPick | null>(null);
+  const draft = useRef<Draft | null>(null);   // story 1421 (board ED2): what was typed on the sheet, kept across Change and back   // story #1038: set when Confirm is tapped; the details sheet shows over the same map
   const ask = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fns = useRef({ lookup, serve });
@@ -186,11 +187,17 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
   };
 
   const name = cardWords(words?.address ?? null);
-  const was = edit ? splitAddress(edit.address) : null;   // board C9: Editing shows the saved house and landmark in front of the words of the pin
+  const was = edit ? boxOf(edit, words?.address ?? "") : null;   // board C9: Editing shows the saved box and landmark in front of the words of the pin
   const editLine = was ? [was.house, was.landmark ? `near ${was.landmark}` : ""].filter(Boolean).join(", ") : "";
   // story #1128 (board C6d): a pin no kitchen reaches, read as a valid pin. The main button invites the founders instead of confirming.
   const far = !edit && !kitchen && onInvite && served?.serviceable === false && words?.pin && isPin(words.pin) ? { at: point, pin: words.pin, address: words.address } : null;
   const [sending, setSending] = useState(false);
+  const opened = useRef(false);
+  useEffect(() => {   // story 1421 (board ED1): Edit opens the filled sheet; the map's own step shows only on Change
+    if (!edit || opened.current || busy || (!words && !failed)) return;
+    opened.current = true;
+    setPick({ at: point, words, served: served ? served.serviceable : null });
+  }, [busy, words, failed]);   // once, when the first lookup at the saved pin has answered
   const invite = async (f: NonNullable<typeof far>) => {
     setNote(null); setSending(true);
     const err = await onInvite!(f).catch(() => "Could not set that up. Try again.");
@@ -253,14 +260,15 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
         <button type="button" className="ui-btn big" disabled={busy || sending} onClick={() => (onPoint ? onPoint({ at: point, words }) : far ? void invite(far) : setPick({ at: point, words, served: served ? served.serviceable : null }))}>{far ? "Invite the founders here" : confirmLabel}</button>
         <span className="mono ui-pinmap-credit">{words?.from === "ola" && <><a href={OSM} target="_blank" rel="noopener noreferrer">Ola Maps</a> · </>}<a href={OSM} target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a></span>
       </div>}
-      {pick && <DetailsSheet pick={pick} edit={edit} onChange={() => setPick(null)} onSave={onSave} onHeight={(h) => { root.current?.style.setProperty("--sheet-h", `${h}px`); live.current?.map.invalidateSize({ pan: false }); const c = pick.at; live.current?.map.setView([c.lat, c.lng], live.current.map.getZoom(), { animate: false }); }} />}
+      {pick && <DetailsSheet pick={pick} edit={edit} draft={draft.current} onDraft={(d) => { draft.current = d; }} onChange={() => setPick(null)} onSave={onSave} onHeight={(h) => { root.current?.style.setProperty("--sheet-h", `${h}px`); live.current?.map.invalidateSize({ pan: false }); const c = pick.at; live.current?.map.setView([c.lat, c.lng], live.current.map.getZoom(), { animate: false }); }} />}
     </section>
   );
 }
 
 const CHIPS = ["Home", "Office", "Other"] as const;
 // Story #1038 (board C7-PinDetails): the words the rider needs, and the save. The pin's exact place is the one the map rested on.
-function DetailsSheet({ pick, edit, onChange, onSave, onHeight }: { pick: PinPick; edit?: { label: string; address: string }; onChange: () => void; onSave: (a: Saved) => void; onHeight: (h: number) => void }) {
+type Draft = { house: string; landmark: string; chip: (typeof CHIPS)[number]; custom: string };
+function DetailsSheet({ pick, edit, draft, onDraft, onChange, onSave, onHeight }: { pick: PinPick; edit?: { label: string; address: string; house?: string | null; landmark?: string | null }; draft: Draft | null; onDraft: (d: Draft) => void; onChange: () => void; onSave: (a: Saved) => void; onHeight: (h: number) => void }) {
   const el = useRef<HTMLElement>(null);
   const tell = useRef(onHeight);
   tell.current = onHeight;
@@ -271,12 +279,13 @@ function DetailsSheet({ pick, edit, onChange, onSave, onHeight }: { pick: PinPic
     ro.observe(e);
     return () => ro.disconnect();
   }, []);
-  const was = edit ? splitAddress(edit.address) : { house: "", landmark: "" };
-  const [house, setHouse] = useState(was.house);
-  const [landmark, setLandmark] = useState(was.landmark);
+  const was = edit ? boxOf(edit, pick.words?.address ?? "") : { house: "", landmark: "" };
   const known = edit ? (CHIPS as readonly string[]).includes(edit.label) && edit.label !== "Other" : true;
-  const [chip, setChip] = useState<(typeof CHIPS)[number]>(edit && known ? (edit.label as (typeof CHIPS)[number]) : edit ? "Other" : "Home");
-  const [custom, setCustom] = useState(edit && !known ? edit.label : "");
+  const [house, setHouse] = useState(draft?.house ?? was.house);
+  const [landmark, setLandmark] = useState(draft?.landmark ?? was.landmark);
+  const [chip, setChip] = useState<(typeof CHIPS)[number]>(draft?.chip ?? (edit && known ? (edit.label as (typeof CHIPS)[number]) : edit ? "Other" : "Home"));
+  const [custom, setCustom] = useState(draft?.custom ?? (edit && !known ? edit.label : ""));
+  useEffect(() => onDraft({ house, landmark, chip, custom }), [house, landmark, chip, custom]);   // onDraft only writes a ref: no render
   const [area, setArea] = useState("");
   const [pinText, setPinText] = useState("");
   const found = (pick.words?.address ?? "").trim();
@@ -286,14 +295,14 @@ function DetailsSheet({ pick, edit, onChange, onSave, onHeight }: { pick: PinPic
   const label = chip === "Other" ? custom.trim() : chip;
   const pin = needPin ? pinText.trim() : pick.words?.pin ?? "";
   const ready = house.trim().length >= 1 && label.length >= 1 && label.length <= 30 && (!needArea || area.trim().length >= 2) && isPin(pin);   // Save stays asleep until it can work
-  const save = () => { if (ready) onSave({ pin, address: addressText(house, landmark, needArea ? area : found), label, from: pick.at }); };
+  const save = () => { if (ready) onSave({ pin, address: addressText(house, landmark, needArea ? area : found), label, from: pick.at, house: house.trim(), landmark: landmark.trim() }); };
   return (
     <section ref={el} className="ui-pinmap-details" role="dialog" aria-label="Address details">
       <div className="ui-sheet-head ui-pinmap-details-head"><h2>Address details</h2></div>   {/* 1404 (owner, 13 Nov): no step count on the sheet, on either way in */}
       <div className="ui-pinmap-where">{I(PIN_PATH, 22)}<span className="ui-pinmap-where-words"><b>{name.name}</b>{name.rest && <span>{name.rest}</span>}</span><button type="button" className="ui-pinmap-change" onClick={onChange}>Change</button></div>
       {needArea && <div className="ui-field"><label htmlFor="pd-area">Area or street</label><input id="pd-area" type="text" maxLength={200} value={area} onChange={(e) => setArea(e.target.value)} /></div>}
       {needPin && <div className="ui-field"><label htmlFor="pd-pin">Pin code</label><input id="pd-pin" className="mono-input ui-eg" type="tel" inputMode="numeric" maxLength={6} placeholder="e.g. 123456" value={pinText} onChange={(e) => setPinText(e.target.value.trim())} /></div>}
-      <div className="ui-field"><label htmlFor="pd-house">House, flat, floor</label><input id="pd-house" className="ui-eg" type="text" placeholder="e.g. C-128, second floor" maxLength={120} value={house} onChange={(e) => setHouse(e.target.value)} /></div>
+      <div className="ui-field"><label htmlFor="pd-house">House, street, colony, ward</label><input id="pd-house" className="ui-eg" type="text" placeholder="e.g. C-128, Gali 3, Radio Colony" maxLength={120} value={house} onChange={(e) => setHouse(e.target.value)} /></div>
       <div className="ui-field"><label htmlFor="pd-landmark">Landmark (optional)</label><input id="pd-landmark" className="ui-eg" type="text" placeholder="e.g. near the park gate" maxLength={120} value={landmark} onChange={(e) => setLandmark(e.target.value)} /></div>
       <div className="ui-pinmap-saveas"><span className="mono ui-pinmap-kicker">Save as</span>
         <JoinedBar label="Save as" options={CHIPS} value={chip} onPick={setChip} /></div>
