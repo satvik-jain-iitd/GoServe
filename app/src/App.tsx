@@ -23,7 +23,7 @@ import { KitchenGate, type KitchenGateState } from "./screens/KitchenGate";
 import { enablePush, watchSession } from "./lib/push";
 import { takeReturn } from "./lib/auth";
 import { alertsState, readOff, turnAlertsOff, writeOff, type Alerts } from "./lib/alerts";
-import { loadProfile, saveProfile } from "./lib/profile";
+import { isPhone, loadProfile, saveProfile } from "./lib/profile";
 import { capture } from "./lib/analytics";
 import { actDeps, addEvent, changeStatus, confirmDelivery, declineOrder, orderDeps, PlaceError, sendFeedback, type PlacedOrder } from "./lib/orders";
 import { confirmAt, DEFAULT_CFG, mayAsk, notYet, reaskMs, type ConfirmCfg } from "./lib/confirm";
@@ -125,6 +125,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [note, setNote] = useState("");   // story #935: the note for the kitchen is for this order only, never kept
   const [name, setName] = useState(draft0?.name ?? "");
   const [phone, setPhone] = useState(draft0?.phone ?? "");
+  const [savedPhone, setSavedPhone] = useState<string | null>(null);   // story 1417 (board BF2): the phone kept on the account; the bill shows it on one line
   // Story #551: the phone code at checkout. verified = this user already has a phone linked.
   // Story 829: the phone code is a switch the admin flips (settings row otp_login_on), off until an SMS provider is live. The login wall (Google, or the code) shows to
   // a signed-out customer either way. otpSetting: undefined = not read yet, null = could not be read (then VITE_OTP_GATE, then off).
@@ -165,8 +166,9 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     if (lock !== "customer") return;
     ensureSession().then(() => loadProfile(getClient())).then((p) => {
       if (!p) return;
-      setName((v) => v || p.name);
+      setName((v) => p.name || v);   // story 1417: a name saved on You wins over the sign-in name
       setPhone((v) => v || p.phone);
+      if (isPhone(p.phone)) setSavedPhone(p.phone);
       setAddress((v) => v || p.address);
     }).catch(() => {});
   }, [lock]);
@@ -891,7 +893,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       const url = String(m?.avatar_url ?? m?.picture ?? "");
       if (alive) setPhoto(/^https:\/\//.test(url) ? url : null);
       if (alive) setEmail(data.user && !data.user.is_anonymous ? data.user.email ?? null : null);
-      if (alive && p) { setVerified(true); setPhone(p.replace(/^91/, "")); if (n) setName((cur) => cur || n); }
+      if (alive && p) { setVerified(true); setPhone(p.replace(/^91/, "")); setSavedPhone(p.replace(/^91/, "")); }
+      if (alive && n && data.user && !data.user.is_anonymous) setName((cur) => cur || n);   // story 1417: the sign-in name goes on the kitchen ticket and the rider card
     }).catch(() => { if (alive) setSignedIn(false); });
     return () => { alive = false; };
   }, [gate, wall]);
@@ -924,6 +927,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         setError("Could not save your details. Try again.");
         return;
       }
+      if (lock === "customer") setSavedPhone(phone);   // story 1417: the next bill shows this phone on one line
       const kitchenId = areaKitchenId ?? (lock ? null : await demoKitchenId());   // the demo console has no area step: it orders from the first open kitchen
       if (!kitchenId) throw new Error("Choose where the food goes first.");   // story #940: the order is placed for a kitchen by POST /orders, as the signed-in user
       const { order, confirm } = await placeOrderV2({ kitchenId, pin: pin ?? (lock ? "" : readPinOrEmpty()), items, address: address.trim(), key: keyRef.current.key, expectedPaise: total, code: offers.code, none: offers.none, drop: dropFor(from, fixAddress, address), instructions: note }, v2Deps());
@@ -1053,7 +1057,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         )}
         {menu && step === "bill" && (
           <BillScreen notice={againLine} note={note} onNote={setNote} lines={billLines} total={total} soldOut={dead && step === "bill" ? { id: dead.dish.id, name: dead.dish.name, alt: offers.alt, canSwap, onSwap: () => setSwapped((s) => [...s, dead.dish.id]), onRemove: () => takeOut(dead.dish.id) } : undefined} offers={OFFERS_ON && offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove } : undefined} kitchenName={kitchenName} pin={pin} address={address} onAddress={setAddress}
-            details={lock === "customer" ? { name, phone, onName: setName, onPhone: setPhone, gate } : undefined}
+            details={lock === "customer" ? { phone, onPhone: setPhone, saved: savedPhone } : undefined}
             door={lock === "customer" ? { methods: doorMethods ?? [], value: doorValue, onChange: setDoorPick } : undefined} sending={sending} error={error}
             onBack={() => setStep("menu")} onPlace={place} />
         )}

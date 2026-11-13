@@ -11,7 +11,6 @@ const toBill = async (page: Page, context: Parameters<typeof setup>[0], methods?
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
-  await page.getByLabel("Your name").fill("Asha");
   await page.getByLabel("Phone").fill("9876543210");
   await page.getByLabel("Address").fill("Flat 4, Green Park");
   return net;

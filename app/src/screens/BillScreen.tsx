@@ -4,13 +4,13 @@ import { formatRupees } from "../lib/money";
 import { isPhone } from "../lib/profile";
 import { DOOR_METHODS, type DoorMethod } from "../lib/doorMethods";
 import type { Alternative, Quote } from "../lib/quote";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Props = {
   lines: Line[]; total: number; kitchenName: string; pin: string | null;
   address: string; onAddress: (v: string) => void;
   note: string; onNote: (v: string) => void;   // story #935: one optional line for the kitchen, up to 200 characters
-  details?: { name: string; phone: string; onName: (v: string) => void; onPhone: (v: string) => void; gate?: boolean };   // the customer app also asks who and which phone (story B3)
+  details?: { phone: string; onPhone: (v: string) => void; saved: string | null };   // story 1417 (boards BF1, BF2, BC1): the phone once, never the name; saved = the phone kept on the account
   offers?: { quote: Quote; codeError: string | null; onApply: (code: string) => void; onRemove: () => void };   // story #588: the quote's bill and the Offers block (boards C1, C2)
   soldOut?: { id: string; name: string; alt: Alternative | null | undefined; canSwap: boolean; onSwap: () => void; onRemove: () => void };   // story #619, board L3: the first dish in the bill that is sold out
   door?: { methods: DoorMethod[]; value: DoorMethod | null; onChange: (v: DoorMethod) => void };   // story #1261, board P6: how you pay at the door, only the methods that are on (the customer app only)
@@ -30,7 +30,11 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
   const [typed, setTyped] = useState("");
   const q = offers?.quote;
   const empty = lines.length === 0;
-  const ready = !empty && !soldOut && address.trim().length > 0 && (!details || details.gate || (details.name.trim().length > 0 && isPhone(details.phone)));   // story #551: with the phone code on, the sheets ask the number and the name
+  const ready = !empty && !soldOut && address.trim().length > 0 && (!details || isPhone(details.phone));
+  const [changing, setChanging] = useState(false);   // board BC1: Change turns the saved row into the field, in place
+  const phoneRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { if (changing) phoneRef.current?.focus(); }, [changing]);
+  const savedRow = !!details?.saved && isPhone(details.saved) && details.phone === details.saved && !changing;
   const head = [kitchenName, pin].filter(Boolean).join(" · ");
   return (
     <>
@@ -116,12 +120,9 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
         )}
         {!empty && (
           <form className="ui-form ph-no-capture" onSubmit={(e) => e.preventDefault()}>
-            {details && !details.gate && (
-              <>
-                <div className="ui-field"><label htmlFor="name">Your name</label><input id="name" type="text" value={details.name} maxLength={80} autoComplete="name" onChange={(e) => details.onName(e.target.value)} /></div>
-                <div className="ui-field"><label htmlFor="phone">Phone</label><input id="phone" className="mono-input" type="tel" value={details.phone} inputMode="numeric" maxLength={10} autoComplete="tel-national" onChange={(e) => details.onPhone(e.target.value.replace(/\D/g, ""))} /></div>
-              </>
-            )}
+            {details && (savedRow
+              ? <div className="ui-phone-row"><span><small className="mono">The rider calls you on</small><b className="mono">{details.phone}</b></span><button type="button" className="ui-pinmap-change" onClick={() => setChanging(true)}>Change</button></div>   /* board BF2: ten digits together */
+              : <div className="ui-field"><label htmlFor="phone">Phone number · the rider calls you on it</label><input ref={phoneRef} id="phone" className="mono-input" type="tel" value={details.phone} inputMode="numeric" maxLength={10} autoComplete="tel-national" onChange={(e) => details.onPhone(e.target.value.replace(/\D/g, ""))} /></div>)}
             <div className="ui-field"><label htmlFor="address">Address</label><textarea id="address" className="ui-eg" rows={2} value={address} maxLength={300} placeholder="e.g. C-128, Green Avenue Colony" onChange={(e) => onAddress(e.target.value)} /></div>
             <div className="ui-field"><label htmlFor="note">Note for the kitchen (optional)</label><textarea id="note" className="ui-eg" rows={2} value={note} maxLength={NOTE_MAX} placeholder="e.g. less spicy, no onion" onChange={(e) => onNote(e.target.value)} /><p className="mono ui-note-count"><span>{note.length} / {NOTE_MAX}</span></p></div>
             {door && (
@@ -139,7 +140,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
       </div>
       {!empty && (
         <div className="ui-sticky float">
-          {!ready && !sending && !soldOut && <p role="status" className="ui-reason">{address.trim().length === 0 ? "Add your address to place the order." : "Add your name and phone."}</p>}   {/* story #1170: why the button is off */}
+          {!ready && !sending && !soldOut && <p role="status" className="ui-reason">{address.trim().length === 0 ? "Add your address to place the order." : "Add your 10 digit phone number."}</p>}   {/* story #1170: why the button is off */}
           <button type="button" className="ui-btn bar" disabled={!ready || sending} onClick={onPlace}>
             <span className="mono">{door?.value === "upi_door" ? "UPI" : door?.value === "cash" ? "Cash" : "At door"} · {formatRupees(total)}</span><span className="verb">{sending ? "Placing…" : soldOut ? "Fix the bill first" : "Place order ›"}</span>
           </button>

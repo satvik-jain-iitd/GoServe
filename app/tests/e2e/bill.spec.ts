@@ -23,7 +23,6 @@ test("S2 Place order stays off until the name, a ten digit phone and the address
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
   await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
-  await page.getByLabel("Your name").fill("Asha");
   await page.getByLabel("Phone").fill("9876543210");
   await page.getByLabel("Address").fill("Flat 4");
   await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
@@ -35,7 +34,6 @@ test("S4 a delivered order shows the Delivered stamp, Cash paid and a way to cal
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
-  await page.getByLabel("Your name").fill("Asha");
   await page.getByLabel("Phone").fill("9876543210");
   await page.getByLabel("Address").fill("Flat 4, Green Park");
   await page.getByRole("button", { name: /Place order/ }).click();
@@ -62,7 +60,6 @@ for (const t of ["day", "night"] as const) {
     await page.goto("/customer/");
     await page.getByRole("button", { name: "Add Butter Chicken" }).click();
     await page.getByRole("button", { name: /View bill/ }).click();
-    await page.getByLabel("Your name").fill("Asha");
     const check = () => axeScan(page);
     expect(await check()).toEqual([]);
   });

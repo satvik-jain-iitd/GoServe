@@ -909,3 +909,9 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
 .ui-clear-x { flex: none; width: 44px; height: 44px; margin: -8px -10px -8px 0;   /* the 44 px touch area reaches past the box edge; the box keeps its height */
   display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; background: none; color: var(--gs-text-muted); cursor: pointer; }
 .ui-pinmap-search .ui-clear-x { margin-right: 0; }
+
+/* Story 1417, board BF2: the saved phone on one line with Change; the ten digits together. */
+.ui-phone-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ui-phone-row > span { display: flex; flex-direction: column; gap: 2px; }
+.ui-phone-row small { font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
+.ui-phone-row b { font-size: 16px; }
