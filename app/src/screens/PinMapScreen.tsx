@@ -87,6 +87,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
   fns.current = { lookup, serve };
 
   // Story 1389 (board PH1): the hint shows until this person moves the map once on this phone. Moves the app makes (centring, Current Location, a search pick) do not count.
+  const [cramped, setCramped] = useState(false);
   const [moved, setMoved] = useState(() => { try { return localStorage.getItem("gs-pin-moved") === "1"; } catch { return false; } });
   const byHand = () => { setMoved(true); try { localStorage.setItem("gs-pin-moved", "1"); } catch { /* blocked: it shows again next time */ } };
   const settled = useRef<Place | null>(null);
@@ -228,11 +229,15 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
       const h = r.clientHeight;
       const room = here.top - r.getBoundingClientRect().top - 38;   // the pin box ends 30 px below its point, then an 8 px gap
       const k = Math.max(0, Math.round(h / 2 - room));
-      if (k === lift.current) return;
-      const map = live.current?.map, at = map ? pinAt(map) : null;   // read with the old lift, before it changes
-      lift.current = k;
-      r.style.setProperty("--pin-y", `calc(50% - ${k}px)`);
-      if (map && at) show(map, at, map.getZoom());
+      if (k !== lift.current) {
+        const map = live.current?.map, at = map ? pinAt(map) : null;   // read with the old lift, before it changes
+        lift.current = k;
+        r.style.setProperty("--pin-y", `calc(50% - ${k}px)`);
+        if (map && at) show(map, at, map.getZoom());
+      }
+      // Story 1389: on a very short screen (320 x 568) the bubble would sit under the top row; with no room it is not shown.
+      const tip = r.querySelector(".ui-pinmap-hint")?.getBoundingClientRect(), top = r.querySelector(".ui-pinmap-top")?.getBoundingClientRect();
+      setCramped(!!tip && !!top && tip.top < top.bottom + 8);
     };
     const ro = new ResizeObserver(fit);
     ro.observe(r);
@@ -247,7 +252,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
       <span className="ui-pinmap-pin" data-testid="map-pin" aria-hidden="true">
         <svg viewBox="177 354 60 80"><circle cx="207" cy="400" r="30" fill="var(--md-primary)" opacity="0.14" /><ellipse cx="207" cy="404" rx="7" ry="3" fill="var(--md-on-surface)" opacity="0.3" />
           <path d="M207 360 c-9 0 -15 7 -15 15 c0 11 15 29 15 29 s15 -18 15 -29 c0 -8 -6 -15 -15 -15z" fill="var(--md-primary)" /><circle cx="207" cy="375" r="5" fill="#ffffff" /></svg></span>
-      {!moved && !kitchen && !pick && !(search && sOpen) && <p role="status" className="ui-pinmap-hint">Move the map to set the pin</p>}   {/* story 1389, board PH1 */}
+      {!moved && !kitchen && !pick && !(search && sOpen) && <p role={cramped ? undefined : "status"} aria-hidden={cramped || undefined} className={cramped ? "ui-pinmap-hint cramped" : "ui-pinmap-hint"}>Move the map to set the pin</p>}   {/* story 1389, board PH1 */}
       <div className="ui-pinmap-top">
         <button type="button" className="ui-pinmap-back" aria-label="Back" onClick={search && sOpen && !pick ? () => { setSOpen(false); setFound(null); setSq(""); } : onBack}>{I(<path d="M19 12H5M11 18l-6-6 6-6" />)}</button>
         {!pick && !kitchen && !(search && sOpen) && <button type="button" className="ui-pinmap-search" aria-label="Search an area or address" onClick={search ? () => setSOpen(true) : onSearch}><span>Search an area or address</span>{I(<><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></>, 20)}</button>}
