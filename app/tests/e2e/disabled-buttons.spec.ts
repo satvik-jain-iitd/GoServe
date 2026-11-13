@@ -35,7 +35,6 @@ test("S2 with the bill address empty the reason shows, centred, 12 px above the 
   const [r, b, vp] = [(await reason.boundingBox())!, (await page.getByRole("button", { name: /Place order/ }).boundingBox())!, page.viewportSize()!];
   expect(Math.abs(b.y - (r.y + r.height) - 12)).toBeLessThanOrEqual(2);
   expect(Math.abs(r.x + r.width / 2 - vp.width / 2)).toBeLessThanOrEqual(2);
-  await page.getByLabel("Your name").fill("Asha");
   await page.getByLabel("Phone").fill("9876543210");
   await page.getByLabel("Address").fill("Flat 4, Green Park");
   await expect(reason).toHaveCount(0);
@@ -47,8 +46,8 @@ test("S3 the bill address box has the e.g. example", async ({ page, context }) =
   await expect(page.getByLabel("Address")).toHaveAttribute("placeholder", "e.g. C-128, Green Avenue Colony");
 });
 
-test("S4 with a name and phone missing the reason asks for them", async ({ page, context }) => {
+test("S4 with the phone missing the reason asks for it (story 1417: never the name)", async ({ page, context }) => {
   await toBill(page, context);
   await page.getByLabel("Address").fill("Flat 4, Green Park");
-  await expect(page.getByRole("status").filter({ hasText: "Add your name and phone." })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Add your 10 digit phone number." })).toBeVisible();
 });

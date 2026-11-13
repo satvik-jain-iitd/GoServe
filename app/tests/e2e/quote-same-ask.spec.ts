@@ -28,7 +28,6 @@ test("S1 the order asks what the last quote asked: the server's best, then none 
   await expect(page.getByTestId("bill-total")).toHaveText("₹270");
   await page.getByRole("button", { name: "Remove FLAT50" }).click();
   await expect(page.getByTestId("bill-total")).toHaveText("₹320");
-  await page.getByLabel("Your name").fill("Asha");
   await page.getByLabel("Phone").fill("9876543210");
   await page.getByLabel("Address").fill("Flat 4, Green Park");
   await page.getByRole("button", { name: /Place order/ }).click();

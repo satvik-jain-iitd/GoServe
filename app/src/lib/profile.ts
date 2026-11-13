@@ -20,6 +20,6 @@ export async function loadProfile(c: Client): Promise<Profile | null> {
 }
 
 export async function saveProfile(c: Client, userId: string, p: Profile & { pin: string | null }): Promise<boolean> {
-  const { error } = await c.from("customers").upsert({ user_id: userId, name: p.name.trim(), phone: p.phone, address: p.address.trim(), pin_code: p.pin, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+  const { error } = await c.from("customers").upsert({ user_id: userId, name: p.name.trim() || null,   /* story 1417: no name is null; the column takes 1 to 80 letters or null */ phone: p.phone, address: p.address.trim(), pin_code: p.pin, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
   return !error;
 }

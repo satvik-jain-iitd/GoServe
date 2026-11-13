@@ -7,13 +7,12 @@ async function toCart(page: Page) {
   await page.getByRole("button", { name: /View bill/ }).click();
 }
 
-test("S1 the cart asks for a name and a ten digit phone before the bill, and saves them with the address", async ({ page, context }) => {
+test("S1 the bill asks a ten digit phone (story 1417: never the name) and saves it with the sign-in name and the address", async ({ page, context }) => {
   const net = await setup(context, page);
   await page.goto("/customer/");
   await toCart(page);
   await page.getByLabel("Address").fill("Flat 4, Green Park");
   await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
-  await page.getByLabel("Your name").fill("Asha");
   await page.getByLabel("Phone").fill("98765");
   await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
   await page.getByLabel("Phone").fill("9876543210");
@@ -21,16 +20,16 @@ test("S1 the cart asks for a name and a ten digit phone before the bill, and sav
   await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   await expect.poll(() => net.calls.customerWrites.length).toBeGreaterThan(0);
-  expect(net.calls.customerWrites.at(-1)!.body).toMatchObject({ user_id: SESSION, name: "Asha", phone: "9876543210", address: "Flat 4, Green Park", pin_code: "110016" });
+  expect(net.calls.customerWrites.at(-1)!.body).toMatchObject({ user_id: SESSION, name: "Amit Kumar", phone: "9876543210", address: "Flat 4, Green Park", pin_code: "110016" });
 });
 
-test("S2 next time the details are filled in already", async ({ page, context }) => {
+test("S2 next time the details are filled in already: the phone on one line (board BF2), no name field", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.customer = { user_id: SESSION, name: "Asha", phone: "9876543210", address: "Flat 4, Green Park", pin_code: "110016" };
   await page.goto("/customer/");
   await toCart(page);
-  await expect(page.getByLabel("Your name")).toHaveValue("Asha");
-  await expect(page.getByLabel("Phone")).toHaveValue("9876543210");
+  await expect(page.getByLabel("Your name")).toHaveCount(0);
+  await expect(page.getByText("9876543210", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Address")).toHaveValue("Flat 4, Green Park");
   await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
 });

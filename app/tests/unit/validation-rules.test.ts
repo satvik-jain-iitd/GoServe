@@ -27,8 +27,9 @@ describe("the other fields", () => {
     for (const bad of ["1100", "11001a", "1100160", ""]) expect(isPin(bad)).toBe(false);
   });
   it("quantity of a dish: 1 to 20", () => expect(MAX_QTY).toBe(20));
-  it("name: 80 characters at most, address 300, coupon code 40 (the Bill's inputs)", () => {
-    expect(bill).toMatch(/id="name".*maxLength=\{80\}/);
+  it("phone: 10 digits, address 300, coupon code 40 (the Bill's inputs; story 1417: the Bill has no name field)", () => {
+    expect(bill).not.toMatch(/id="name"/);
+    expect(bill).toMatch(/id="phone".*maxLength=\{10\}/);
     expect(bill).toMatch(/id="address".*maxLength=\{300\}/);
     expect(bill).toMatch(/id="code".*maxLength=\{40\}/);
   });
