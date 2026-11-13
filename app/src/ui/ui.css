@@ -967,4 +967,4 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
 @media (max-height: 820px) { .ui-alert-sample { top: 328px; } }   /* a 780 tall phone: 10 px closer to the bell keeps a clear gap above the later line */
 @media (max-height: 700px) { .ui-alert-sample { display: none; } }   /* a short phone has no room between the bell and the buttons; the sample is decoration, so it goes */
 @media (prefers-reduced-motion: reduce) { .ui-alert-sample { animation: none; } }
-@media (max-height: 700px) { .ui-landing .ui-bellbadge { width: 72px; height: 72px; } .ui-landing .ui-bellbadge svg { width: 36px; height: 36px; } }   /* review of PR 1464: a short phone keeps 8 px or more between the bell and the later line */
+@media (max-height: 700px) { .ui-landing .ui-bellbadge { width: 70px; height: 70px; } .ui-landing .ui-bellbadge.ui-hero-abs { top: 203px; } .ui-landing .ui-bellbadge svg { width: 36px; height: 36px; } }   /* review of PR 1464: a short phone keeps 8 px or more between the bell and the later line, and the bell centre stays on the 238 hero line */

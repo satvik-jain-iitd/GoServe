@@ -74,6 +74,8 @@ for (const [w, h] of [[360, 649], [320, 568]] as const) {
     const bell = (await page.locator(".ui-bellbadge").boundingBox())!;
     const later = (await page.getByText("You can turn this on later in You.").boundingBox())!;
     expect(later.y - (bell.y + bell.height)).toBeGreaterThanOrEqual(8);
+    const slip = (await page.locator(".ui-slip").first().boundingBox())!;
+    expect(Math.abs(bell.y + bell.height / 2 - slip.y - 238)).toBeLessThanOrEqual(2);   // the shared hero line on a short phone: top 190 + half of 96, as the pin
   });
 }
 
