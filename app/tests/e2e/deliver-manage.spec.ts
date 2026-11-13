@@ -21,22 +21,23 @@ async function open(page: Page, context: Parameters<typeof setup>[0], list: obje
   return net;
 }
 
-test("S1 (C9) Edit opens the map at the saved pin; Save changes shows the details filled; Save updates the same row with the new place", async ({ page, context }) => {
+test("S1 (C9, story 1421 ED1 and ED2) Edit opens the filled details; Change shows the map at the saved pin; Save updates the same row", async ({ page, context }) => {
   const net = await open(page, context, [HOME, OFFICE]);
   await page.getByRole("button", { name: "Edit or remove Home" }).click();
   await page.getByRole("button", { name: "Edit", exact: true }).click();
+  const sheet = page.getByRole("dialog", { name: "Edit address" });
+  await expect(sheet.getByLabel("House, street, colony, ward")).toHaveValue("C-128, near the park gate, Green Park, New Delhi");   // an older row: all of its text, nothing lost
+  await expect(sheet.getByRole("button", { name: "Home", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await sheet.getByLabel("House, street, colony, ward").fill("C-129, near the park gate");
+  await sheet.getByRole("button", { name: "Change", exact: true }).click();
   await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
   await expect(page.getByText("Editing Home")).toBeVisible();
-  await expect(page.getByText("C-128, near the park gate · ", { exact: false })).toBeVisible();   // board C9: the saved house and landmark, then the words of the pin
   expect(await page.locator(".ui-pinmap-credit a").first().evaluate((e) => getComputedStyle(e).textDecorationLine)).toBe("none");
   await page.getByRole("button", { name: "Save changes" }).click();
-  const sheet = page.getByRole("dialog", { name: "Address details" });
-  await expect(sheet.getByLabel("House, flat, floor")).toHaveValue("C-128");
-  await expect(sheet.getByLabel("Landmark (optional)")).toHaveValue("the park gate");
-  await expect(sheet.getByRole("button", { name: "Home", exact: true })).toHaveAttribute("aria-pressed", "true");
-  await sheet.getByLabel("House, flat, floor").fill("C-129");
+  await expect(sheet.getByLabel("House, street, colony, ward")).toHaveValue("C-129, near the park gate");   // kept across Change and back
   await sheet.getByRole("button", { name: "Save changes" }).click();
   await expect.poll(() => net.state.addresses.find((r: any) => r.id === "h1")?.address).toBe("C-129, near the park gate, Green Park, New Delhi, Delhi");
+  expect(net.state.addresses.find((r: any) => r.id === "h1").house).toBe("C-129, near the park gate");
   expect(net.state.addresses).toHaveLength(2);
   expect(net.state.addresses.find((r: any) => r.id === "h1").lat).not.toBeNull();
 });

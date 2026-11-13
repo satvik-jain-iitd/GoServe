@@ -1,9 +1,11 @@
 // Story #1227, board CX1-CancelSheet (owner, 11 Nov 2026): Cancel order asks first. Only the red button cancels. Keep my order, Close, Escape and a tap outside keep the order.
 import { useEffect, useRef } from "react";
+import { useBackCloses } from "../lib/back";
 
 type Props = { lines: { name: string; qty: number }[]; kitchenName: string; paidOnline: boolean; onKeep: () => void; onYes: () => void };
 
 export function CancelSheet({ lines, kitchenName, paidOnline, onKeep, onYes }: Props) {
+  useBackCloses(true, onKeep);   // story 1415: Back keeps the order
   const keep = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     keep.current?.focus();   // the safe answer has the focus

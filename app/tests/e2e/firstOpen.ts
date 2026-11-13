@@ -8,7 +8,7 @@ export async function firstOpenToMenu(page: Page, house = "B-12, ground floor") 
   const confirm = page.getByRole("button", { name: "Confirm & proceed" });
   await expect(confirm).toBeEnabled();
   await confirm.click();
-  await page.getByLabel("House, flat, floor").fill(house);
+  await page.getByLabel("House, street, colony, ward").fill(house);
   await page.getByRole("button", { name: "Save address" }).click();
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
 }

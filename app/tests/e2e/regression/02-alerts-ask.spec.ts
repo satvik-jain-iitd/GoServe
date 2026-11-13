@@ -19,10 +19,11 @@ const asks = (page: Page) => page.evaluate(() => (window as unknown as { __asks:
 const box = async (loc: import("@playwright/test").Locator) => (await loc.boundingBox())!;
 const step3 = (page: Page) => expect(page.getByRole("heading", { name: "Where does the food go?" })).toBeVisible();
 
-test("TC 2.1 slip Order alerts, Step 2 of 4, the title, the bell in a lime circle on the shared hero line", async ({ page, context }) => {
+test("TC 2.1 slip without a top line or step count, the title, the bell in a lime circle on the shared hero line", async ({ page, context }) => {
   await STEPS["alerts-ask"](context, page, PATH);
   await expect(page.getByRole("group", { name: "Order alerts" })).toBeVisible();
-  await expect(page.getByText("Step 2 of 4")).toBeVisible();
+  await expect(page.getByText(/Step \d of \d/)).toHaveCount(0);   // 1404 (owner, 13 Nov): no step count anywhere
+  await expect(page.locator(".ui-slip-head")).toHaveCount(0);   // 1404: the slip has no top line either
   await expect(page.getByRole("heading", { name: "Get order alerts" })).toBeVisible();
   const bell = await box(page.locator(".ui-bellbadge"));
   expect(Math.abs(bell.x + bell.width / 2 - 195)).toBeLessThanOrEqual(2);   // centred
@@ -44,12 +45,12 @@ test("TC 2.2 I'll check the app myself is above, Turn on alerts is last, both fu
   await expect(page.locator(".ui-slip-body > button, .ui-slip-body > *").last()).toContainText("Turn on alerts");
 });
 
-test("TC 2.3 Turn on alerts, allow: the phone is asked once, then Where does the food go, Step 3 of 4", async ({ page, context }) => {
+test("TC 2.3 Turn on alerts, allow: the phone is asked once, then Where does the food go, no step count", async ({ page, context }) => {
   await phone(context, "granted");
   await STEPS["alerts-ask"](context, page, PATH);
   await page.getByRole("button", { name: "Turn on alerts" }).click();
   await step3(page);
-  await expect(page.getByText("Step 3 of 4")).toBeVisible();
+  await expect(page.getByText(/Step \d of \d/)).toHaveCount(0);   // 1404 (owner, 13 Nov): no step count anywhere
   expect(await asks(page)).toBe(1);
 });
 
@@ -58,7 +59,7 @@ test("TC 2.4 Turn on alerts, block: moves on to Step 3, no hang, the buttons do 
   await STEPS["alerts-ask"](context, page, PATH);
   await page.getByRole("button", { name: "Turn on alerts" }).click();
   await step3(page);
-  await expect(page.getByText("Step 3 of 4")).toBeVisible();
+  await expect(page.getByText(/Step \d of \d/)).toHaveCount(0);   // 1404 (owner, 13 Nov): no step count anywhere
 });
 
 test("TC 2.4 (hang) a permission call that never answers still moves on after 8 seconds (#1116)", async ({ page, context }) => {

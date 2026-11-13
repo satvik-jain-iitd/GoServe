@@ -1,11 +1,12 @@
 // The menu of the Ink v3 boards 02, 02a, 02b, 02c and 03 (story H10b, #193): header, greeting, thali hero, sections, filter sheet, dish sheet.
 import { useEffect, useRef, useState } from "react";
 import { SHOW_KITCHEN_NAME } from "../lib/area";
+import { useBackCloses } from "../lib/back";
 import { categoryKey, filterDishes } from "../lib/browse";
-import { sectionsOf, thalisOf } from "../lib/home";
+import { filterSectionsOf, sectionsOf, thalisOf } from "../lib/home";
 import { creditLicence, creditLine, type Dish } from "../lib/menu";
 import { formatRupees } from "../lib/money";
-import { DishPlate, Empty, Stepper, TabBar, VegMark, useSheetFit } from "../ui";
+import { ClearCross, DishPlate, Empty, Stepper, TabBar, VegMark, useSheetFit } from "../ui";
 
 type Props = {
   dishes: Dish[] | null; fromCache: boolean; slow?: boolean; error: string | null; onRetry: () => void;
@@ -58,6 +59,7 @@ export function MenuScreen(p: Props) {
   const [vegOnly, setVegOnly] = useState(false);
   const [cats, setCats] = useState<string[]>([]);   // story #972: the ticked categories; none ticked is all
   const [query, setQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
   const [photoBad, setPhotoBad] = useState(false);   // story #975: a photo that cannot load leaves the first letter, never a broken picture
   const [filterOpen, setFilterOpen] = useState(false);
   const [dish, setDish] = useState<Dish | null>(null);
@@ -94,7 +96,8 @@ export function MenuScreen(p: Props) {
         <div className="ui-top-search">
           <div className="ui-search-box">
             <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
-            <input type="search" aria-label="Search dishes" placeholder="Search dishes" value={query} onChange={(e) => setQuery(e.target.value)} />
+            <input ref={searchRef} type="search" aria-label="Search dishes" placeholder="Search dishes" value={query} onChange={(e) => setQuery(e.target.value)} />
+            <ClearCross show={query !== ""} onClear={() => setQuery("")} input={searchRef} />
             <button type="button" className="ui-search-filter" aria-label="Filter the menu" onClick={() => setFilterOpen(true)}><FunnelIcon /></button>
           </div>
           <label htmlFor="veg-top" className="ui-veg-top"><span className="mono">Veg</span><input id="veg-top" className="ui-switch small" type="checkbox" role="switch" aria-label="Veg only, whole menu" checked={vegOnly} onChange={(e) => setVegOnly(e.target.checked)} /></label>
@@ -170,7 +173,7 @@ export function MenuScreen(p: Props) {
       <TabBar current="menu" onMenu={() => undefined} onOrders={p.onOrders} />
       {filterOpen && (
         <FilterSheet count={shown.length} total={all.length} vegOnly={vegOnly} onVeg={setVegOnly}
-          sections={sectionsOf(all)} ticked={cats} onTick={(k, on) => setCats((cur) => (on ? [...cur, k] : cur.filter((x) => x !== k)))} onClear={() => setCats([])} onClose={() => setFilterOpen(false)} />
+          sections={filterSectionsOf(all)} ticked={cats} onTick={(k, on) => setCats((cur) => (on ? [...cur, k] : cur.filter((x) => x !== k)))} onClear={() => setCats([])} onClose={() => setFilterOpen(false)} />
       )}
       {dish && <DishSheet dish={dish} closed={closed} qty={p.qty[dish.id] ?? 0} onAdd={(n) => { for (let i = 0; i < n; i++) p.onAdd(dish.id); setDish(null); }} onClose={() => setDish(null)} />}
     </>
@@ -268,6 +271,7 @@ function Hero({ veg, nonveg, closed, qty, onAdd, onChange }: { veg?: Dish; nonve
 
 function Modal({ label, onClose, children }: { label: string; onClose: () => void; children: React.ReactNode }) {
   const fit = useSheetFit();   // story #954: the overlay follows the visual viewport
+  useBackCloses(true, onClose);   // story 1396: the phone's Back closes the sheet
   return (
     <div ref={fit} className="ui-sheet-back" onClick={onClose}>
       <section role="dialog" aria-modal="true" aria-label={label} className="ui-sheet ui-sheet-flush" onClick={(e) => e.stopPropagation()}>{children}</section>
