@@ -45,6 +45,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
   const [here, setHere] = useState<Place | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const root = useRef<HTMLElement>(null);
+  const card = useRef<HTMLDivElement>(null);
   const [sOpen, setSOpen] = useState(!!searchOpen && !!search);   // story #1127: the search bar is open (a text box and, after Enter, the places)
   const [sq, setSq] = useState("");
   const [found, setFound] = useState<{ words: string; state: "busy" | "short" | "error" | "ok"; hits: PlaceHit[] } | null>(null);
@@ -170,6 +171,28 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
     setSending(false);
     if (err) setNote(err);
   };
+  // Story 1392 (board A1p): on a short screen the pin rises so the Current Location button never covers it. The map box ends at twice the pin height,
+  // so the pin stays at the map centre and the place read is still the place pointed at. A tall screen keeps the pin in the middle.
+  useEffect(() => {
+    const r = root.current, c = card.current;
+    if (pick || !r || !c || typeof ResizeObserver === "undefined") return;
+    const fit = () => {
+      const here = c.querySelector(".ui-pinmap-here")?.getBoundingClientRect();
+      if (!here) return;
+      const h = r.clientHeight;
+      const y = Math.round(Math.min(h / 2, here.top - r.getBoundingClientRect().top - 38));   // the pin box ends 30 px below its point, then an 8 px gap
+      if (r.style.getPropertyValue("--pin-y") === `${y}px`) return;
+      const map = live.current?.map, at = map?.getCenter();
+      r.style.setProperty("--pin-y", `${y}px`);
+      r.style.setProperty("--pin-map-bottom", `${h - 2 * y}px`);
+      if (map && at) { map.invalidateSize({ pan: false }); map.setView(at, map.getZoom(), { animate: false }); }
+    };
+    const ro = new ResizeObserver(fit);
+    ro.observe(r);
+    ro.observe(c);
+    fit();
+    return () => ro.disconnect();
+  }, [pick]);
   const strips: Strip[] = kitchen ? (words?.pin && kitchen.pins.includes(words.pin) ? [{ kind: "ready", text: `Inside ${words.pin}` }] : []) : stripsFor({ serve: served, here, pin: point });
   return (
     <section ref={root} className="ui-pinmap" role="region" aria-label="Pin map" data-step={pick ? "details" : "pin"}>
@@ -192,7 +215,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
         {found.state === "ok" && found.hits.length === 0 && <p className="ui-row-sub">No place found. Try the start of a colony name or a pin code.</p>}
         <ul className="ui-saved-list">{found.hits.map((h) => <li key={`${h.pin}-${h.name}`} className="ui-saved-row ui-place-row"><button type="button" className="ui-saved-main" onClick={() => take(h)}><span className="ui-saved-label"><span>{h.name}</span><span className={`ui-tag ${h.served ? "ready" : "placed"}`}>{h.served ? "We deliver here" : "Not yet"}</span></span><span className="ui-saved-addr">{h.address}</span></button></li>)}</ul>
       </section>}
-      {!pick && <div className="ui-pinmap-card">
+      {!pick && <div ref={card} className="ui-pinmap-card">
         <button type="button" className="ui-pinmap-here" onClick={() => void toPhone()}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg><span>Current Location</span></button>
         {kicker && <span className="mono ui-pinmap-kicker">{kicker}</span>}
         <div className="ui-pinmap-place"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.6" fill="#ffffff" /></svg><span className="ui-pinmap-name">{name.name}</span></div>

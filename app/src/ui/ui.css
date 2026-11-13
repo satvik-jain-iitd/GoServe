@@ -696,6 +696,9 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .gs-here-dot i { display: block; width: 18px; height: 18px; margin: 4px; box-sizing: border-box; border: 3px solid var(--gs-raised); border-radius: 50%; background: var(--gs-earth-mid); box-shadow: 0 0 0 4px color-mix(in srgb, var(--gs-earth-mid) 18%, transparent); }
 
 /* Story 1038 (board C7-PinDetails): the sheet over the same map. The map keeps the top part so the pin stays in view; the sheet is a column with one gap. */
+/* Story 1392: on a short screen the pin rises above the Current Location button; the map box follows so the pin stays at its centre (both set from the measured button). */
+.ui-pinmap[data-step="pin"] .ui-pinmap-pin { top: var(--pin-y, 50%); }
+.ui-pinmap[data-step="pin"] .ui-pinmap-map { bottom: var(--pin-map-bottom, 0px); }
 .ui-pinmap[data-step="details"] .ui-pinmap-map { bottom: var(--sheet-h, 62%); }
 .ui-pinmap[data-step="details"] .ui-pinmap-pin { top: calc((100% - var(--sheet-h, 62%)) / 2); }   /* the centre of the map box above the sheet (its height is measured) */
 .ui-pinmap-details { position: absolute; left: 0; right: 0; bottom: 0; z-index: 700; max-height: calc(100% - 24px); overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 20px 16px calc(env(safe-area-inset-bottom, 0px) + 16px); border-radius: 20px 20px 0 0; background: var(--gs-raised); box-shadow: var(--gs-shadow-m); box-sizing: border-box; }
