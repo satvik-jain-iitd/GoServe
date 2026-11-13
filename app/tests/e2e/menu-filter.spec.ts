@@ -92,3 +92,17 @@ test("S10 a kitchen with no thali has no Thali row", async ({ page, context }) =
   const sheet = await open(page, context);
   await expect(sheet.getByRole("checkbox", { name: "Thali" })).toHaveCount(0);
 });
+
+// Story 1400, review of 13 Nov: category is free text. Thalis under "Thali" and "Special Thali" are all one Thali row, and the tick keeps all of them.
+test("S11 thalis under two category words give one Thali row, and ticking it keeps every thali", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.menu = [dish("m1", "Dal Makhani", "Mains", true), dish("t1", "Veg Thali", "Thali", true), dish("t2", "Chicken Special Thali", "Special Thali", false)];
+  await page.goto("/customer/");
+  await page.getByRole("button", { name: "Filter" }).click();
+  const sheet = page.getByRole("dialog", { name: "Filter" });
+  const group = sheet.getByRole("group", { name: "Categories" });
+  await expect(group.getByRole("checkbox", { name: /^Thali\b/ })).toHaveCount(1);
+  await expect(group.locator("label").first()).toContainText("2");   // both thalis in one row
+  await group.getByRole("checkbox", { name: /^Thali\b/ }).check();
+  await expect(sheet.getByText("2 of 3 dishes")).toBeVisible();   // the tick keeps both
+});
