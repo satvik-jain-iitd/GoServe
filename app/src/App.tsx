@@ -107,7 +107,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const stepNow = useRef(step);
   stepNow.current = step;
   const fromBack = useRef<Step | null>(null);
-  const firstStep = useRef(true);
   const lastStep = useRef(step);
   useEffect(() => {
     if (lock !== "customer") return;
@@ -119,7 +118,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     const was = lastStep.current;
     lastStep.current = step;
     if (fromBack.current === step) { fromBack.current = null; return; }
-    if (firstStep.current) { firstStep.current = false; if (!stepped) return; }
     screenStep(step, stepped, was === "bill" && step === "placed");   // a placed order: Back from the tracker shows the menu, never the bill again
   }, [step]);
   const [cart, setCart] = useState<Cart>(draft0?.cart ?? {});

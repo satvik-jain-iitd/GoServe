@@ -56,14 +56,23 @@ export function useBackCloses(open: boolean, close: () => void) {
  * `replace`: the screen takes the place of the one it came from (story 1415: the bill becomes the tracker once the order is placed, so Back shows the menu). */
 export function screenStep(screen: string, stepped: boolean, replace = false) {
   start();
-  const kept = first ? (window.history.state as Screen) : null;
-  first = false;
-  if (kept?.gsScreen === screen && !kept.gsSheet && kept.gsDepth) { depth = kept.gsDepth; return; }   // a reload on this screen: its step is still there
+  if (first) { first = false; fromReload(screen, stepped); return; }
   if (!stepped) { drop(depth); depth = 0; return; }
   if (replace && depth > 0) { const d = depth; write(() => window.history.replaceState({ gsScreen: screen, gsDepth: d }, "", here())); return; }
   depth++;
   const d = depth;
   write(() => window.history.pushState({ gsScreen: screen, gsDepth: d }, "", here()));
+}
+
+// Story 1424: a reload keeps the history steps from before it. The first screen the app shows takes the kept step when it names this screen;
+// a kept sheet step (the sheet is not open after a reload) or a step of another screen is taken away first, so the first Back shows what is really under.
+function fromReload(screen: string, stepped: boolean) {
+  const kept = window.history.state as Screen;
+  if (kept?.gsSheet) { drop(1); write(() => fromReload(screen, stepped)); return; }
+  if (kept?.gsDepth && kept.gsScreen === screen) { depth = kept.gsDepth; return; }
+  if (kept?.gsDepth) { drop(kept.gsDepth); depth = 0; write(() => fromReload(screen, stepped)); return; }
+  depth = 0;
+  if (stepped) screenStep(screen, true);
 }
 
 /** Back landed on the step of `screen`. */
