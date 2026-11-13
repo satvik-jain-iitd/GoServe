@@ -14,6 +14,7 @@ const css = ["src/styles/tokens.css", "src/styles/app.css", "src/ui/ui.css"]
 const CASES: [string, string, string, string][] = [
   ["House (ui-eg in a field)", `<div class="ui-field"><label>House</label><input id="t" class="ui-eg" type="text"></div>`, "t", "t"],
   ["field input", `<div class="ui-field"><input id="t" type="text"></div>`, "t", "t"],
+  ["typed Address box (field textarea, no form)", `<div class="ui-slip-body"><div class="ui-field"><textarea id="t" rows="3"></textarea></div></div>`, "t", "t"],
   ["form input", `<div class="ui-form"><input id="t" type="text"></div>`, "t", "t"],
   ["form textarea", `<div class="ui-form"><textarea id="t"></textarea></div>`, "t", "t"],
   ["OTP phone input", `<div class="ui-form"><div class="otp-phone"><input id="t" type="tel"></div></div>`, "t", "t"],
