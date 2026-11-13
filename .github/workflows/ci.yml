@@ -68,8 +68,15 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
+      # Story #1369: the screen spec is left out here by file name, and runs once in the next step (screens.sh --check), with the same baselines.
       - name: End-to-end tests (build included)
-        run: npm run test:e2e
+        run: npm run test:e2e -- --grep-invert 'screens\.spec\.ts'
+        env:
+          SCREENS_OUT: ${{ github.workspace }}/app/screens-out
+
+      - name: Screens (the render gate, once)
+        working-directory: ${{ github.workspace }}   # the App job defaults to app/; the script is at the repo root (run 43341870197)
+        run: bash scripts/screens.sh --check
         env:
           SCREENS_OUT: ${{ github.workspace }}/app/screens-out
 
