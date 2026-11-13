@@ -94,3 +94,24 @@ test("P6 with the phone code switch on, checkout from the Bill opens no number s
   await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(net.calls.customerWrites.at(-1)!.body).toMatchObject({ phone: "9876543210", name: null });
 });
+
+test("P7 (BF1) ten digits that are not a mobile say why; under ten keeps the add line; the field shows the example", async ({ page, context }) => {
+  await setup(context, page);
+  await toBill(page);
+  const field = page.getByLabel(LABEL);
+  await expect(field).toHaveAttribute("placeholder", "10 digit number");
+  await page.getByLabel("Address").fill("C-128, Green Park");
+  await field.fill("1234567890");
+  await expect(page.getByRole("status").filter({ hasText: "The phone must be ten digits and start with 6, 7, 8 or 9." })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
+  await field.fill("98765");
+  await expect(page.getByRole("status").filter({ hasText: "Add your 10 digit phone number." })).toBeVisible();
+});
+
+test("P8 (BF2) the saved ten digits are in the regular mono weight at 16 px, not bold", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.customer = SAVED;
+  await toBill(page);
+  const s = await page.getByText("9876543210", { exact: true }).evaluate((e) => { const c = getComputedStyle(e); return { w: c.fontWeight, size: c.fontSize }; });
+  expect(s).toEqual({ w: "400", size: "16px" });
+});
