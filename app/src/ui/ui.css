@@ -733,7 +733,8 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
   display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; height: 44px; box-sizing: border-box; border: 1px solid var(--gs-field-line); border-radius: var(--gs-radius-s); overflow: hidden; }
 .ui-bar > button { padding: 0; border: 0; border-left: 1px solid var(--gs-field-line); background: transparent; color: var(--md-on-surface); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 .ui-bar > button:first-child { border-left: 0; }
-.ui-bar > button[aria-pressed="true"] { background: var(--gs-lime-soft); }
+.ui-bar > button[aria-pressed="true"] { background: var(--gs-lime-soft); color: var(--md-on-tertiary); }   /* like the other lime-soft surfaces: 4.5:1 in Day and Night */
+.ui-bar > button:focus-visible { outline: 3px solid var(--md-primary); outline-offset: -3px; }   /* the bar clips outside its edge: the ring sits inside the part */
 
 /* Story 1052, board A11: the Location row of the kitchen form. */
 .ui-locrow-label { font-family: var(--gs-font-mono, "DM Mono", monospace); font-size: 12px; color: var(--gs-text-muted); }
