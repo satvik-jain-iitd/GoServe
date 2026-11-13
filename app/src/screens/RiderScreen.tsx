@@ -26,7 +26,9 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
   const [tab, setTab] = useState<Tab>("job");
   const [doneId, setDoneId] = useState<string | null>(null);   // the slip just delivered stays until "Next delivery" (R7)
   const jobs = riderOrders(orders);
-  const job = jobs[0] ?? null;
+  // Story 1441, review of PR 1469: while a trip's pickups run, or after one failed, the packets still at the kitchen stay on Pick up; never On the way with a packet left.
+  const [tripIds, setTripIds] = useState<string[] | null>(null);
+  const job = (tripIds ? jobs.find((o) => o.status === "ready" && tripIds.includes(o.id)) : undefined) ?? jobs[0] ?? null;
   const done = doneId ? orders.find((o) => o.id === doneId) ?? null : null;
   const today = deliveredToday(orders, new Date(), hoursOf(kitchen));   // story #229: the day ends at the kitchen's closing time
   const cash = cashInHand(today);
@@ -105,9 +107,11 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
   const [tripBusy, setTripBusy] = useState(false);
   const toggle = (id: string) => setTicked((cur) => { const next = new Set(cur); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   const pickAll = async (trip: Order[]) => {   // each packet is its own save, in turn; the first one that fails stops the rest and its error shows
-    setTripBusy(true);
-    for (const o of trip) { const up = riderActions(o.status)[0]; if (up && (await onAct(o, up))) break; }
+    setTripBusy(true); setTripIds(trip.map((o) => o.id));
+    let failed = false;
+    for (const o of trip) { const up = riderActions(o.status)[0]; if (up && (await onAct(o, up))) { failed = true; break; } }
     setTripBusy(false);
+    if (!failed) setTripIds(null);   // all in the bag: On the way. A failure keeps the rest on Pick up, with its error
   };
   const todayLine = <p className="mono ui-foot">Today · {today.length} delivered</p>;
 

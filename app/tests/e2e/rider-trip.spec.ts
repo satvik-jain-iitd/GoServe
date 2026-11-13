@@ -66,3 +66,30 @@ test("RT3 a trip of three on the way: Delivered at the first door delivers only 
   await expect(page.getByText("Customer 2")).toBeVisible();
   await expect(page.getByText("1 more waiting")).toBeVisible();
 });
+
+// Review of PR 1469 (13 Nov 2026).
+test("RT4 a trip of 3, the second pickup fails: the third is not sent, the error shows, and the screen stays on Pick up with that packet", async ({ page, context }) => {
+  const net = await open(context, page, [0, 1, 2].map((i) => packet(i)));
+  let n = 0;
+  await page.route("**/functions/v1/order-actions", async (route) => {
+    if (route.request().method() === "POST" && ++n === 2) return route.fulfill({ status: 409, headers: { "access-control-allow-origin": "*" }, contentType: "application/json", body: JSON.stringify({ ok: false, error: "illegal_step", message: "That step is not allowed now." }) });
+    return route.fallback();
+  });
+  for (const i of [0, 1, 2]) await tick(page, i).click();
+  await all(page, 3).click();
+  await expect(page.getByRole("alert")).toHaveText("That step is not allowed now.");
+  expect(net.calls.status.map((c) => c.body.order_id)).toEqual([IDS[0]]);   // the failed one never reached the mock; the third was not sent
+  await expect(page.getByRole("heading", { name: "Pick up" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "On the way" })).toHaveCount(0);
+  await expect(page.getByText(IDS[1].slice(0, 8), { exact: true })).toBeVisible();
+});
+
+test("RT5 a trip on the way: Could not deliver? at the second door marks only that order, and the third door shows", async ({ page, context }) => {
+  const net = await open(context, page, [{ ...packet(0, "delivered"), delivered_at: NOW }, packet(1, "out_for_delivery"), packet(2, "out_for_delivery")]);
+  page.on("dialog", (d) => void d.accept());
+  await expect(page.getByText("Customer 2")).toBeVisible();
+  await page.getByRole("button", { name: "Could not deliver?" }).click();
+  await expect(page.getByText("Customer 3")).toBeVisible();
+  expect(net.calls.rpc.filter((c) => c.name === "rider_refused").map((c) => c.body)).toEqual([{ p_order: IDS[1] }]);
+  expect(net.calls.status).toEqual([]);
+});
