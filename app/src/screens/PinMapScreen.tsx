@@ -45,6 +45,21 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
   const [here, setHere] = useState<Place | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const root = useRef<HTMLElement>(null);
+  const card = useRef<HTMLDivElement>(null);
+  // Story 1392: how far the pin's point sits above the middle of the map (0 on a tall screen and on the details step). The map stays full height,
+  // behind the whole card; the place is read at the pin and a place is shown at the pin, not at the middle.
+  const lift = useRef(0);
+  const liftNow = () => (root.current?.dataset.step === "pin" ? lift.current : 0);
+  const pinAt = (map: LMap) => {
+    const k = liftNow();
+    if (!k) return map.getCenter();
+    const size = map.getSize();
+    return map.containerPointToLatLng([size.x / 2, size.y / 2 - k]);
+  };
+  const show = (map: LMap, at: { lat: number; lng: number }, z: number) => {
+    const k = liftNow();
+    map.setView(k ? map.unproject(map.project([at.lat, at.lng], z).add([0, k]), z) : [at.lat, at.lng], z, { animate: false });
+  };
   const [sOpen, setSOpen] = useState(!!searchOpen && !!search);   // story #1127: the search bar is open (a text box and, after Enter, the places)
   const [sq, setSq] = useState("");
   const [found, setFound] = useState<{ words: string; state: "busy" | "short" | "error" | "ok"; hits: PlaceHit[] } | null>(null);
@@ -55,7 +70,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
     const hits = await search!(w);
     setFound((c) => (c && c.words === w ? { words: w, state: hits === null ? "error" : "ok", hits: hits ?? [] } : c));
   };
-  const take = (h: PlaceHit) => { setSOpen(false); setFound(null); setSq(""); live.current?.map.setView([h.lat, h.lng], 17, { animate: false }); };   // the move settles the pin through the map's own move end
+  const take = (h: PlaceHit) => { setSOpen(false); setFound(null); setSq(""); const m = live.current?.map; if (m) show(m, { lat: h.lat, lng: h.lng }, 17); };   // the move settles the pin through the map's own move end
   const [pick, setPick] = useState<PinPick | null>(null);   // story #1038: set when Confirm is tapped; the details sheet shows over the same map
   const ask = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -112,8 +127,9 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
       if (gone || !box.current) return;
       const map = L.map(box.current, { zoomControl: false, attributionControl: false, scrollWheelZoom: false, boxZoom: false, keyboard: false }).setView([center.lat, center.lng], zoom, { animate: false });
       if (TILES) L.tileLayer(TILES, { maxZoom: 19 }).addTo(map);
-      map.on("moveend", () => { const c = map.getCenter(); settleRef.current({ lat: c.lat, lng: c.lng }); });
+      map.on("moveend", () => { const c = pinAt(map); settleRef.current({ lat: c.lat, lng: c.lng }); });
       live.current = { map, L, dot: null };
+      if (liftNow()) show(map, center, zoom);   // 1392: a short screen measured before the map came: put the start place under the pin
       if (!kitchen) void kitchensNear().then((list) => drawKitchens(L, map, list), () => undefined);   // story #1138: not on the kitchen admin's own pin screen
       settleRef.current(center);
       void navigator.permissions?.query({ name: "geolocation" as PermissionName }).then((perm) => {   // only when already allowed: this screen never asks
@@ -145,14 +161,15 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
     const c = pick ? pick.at : held.current;   // bug #1203: on Change the map box grows back; without this the centre, and so the pin, slid about 260 m
     held.current = pick ? pick.at : null;
     h.invalidateSize({ pan: false });
-    if (c) h.setView([c.lat, c.lng], h.getZoom(), { animate: false });
+    if (c) show(h, c, h.getZoom());
   }, [pick]);
 
   const toPhone = async () => {
     setNote(null);
     try {
       const p = await currentPlace();
-      live.current?.map.setView([p.lat, p.lng], 17, { animate: false });
+      const m = live.current?.map;
+      if (m) show(m, p, 17);
     } catch {
       setNote("Could not get your location. Allow location and try again.");
     }
@@ -170,6 +187,29 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
     setSending(false);
     if (err) setNote(err);
   };
+  // Story 1392 (board A1p): on a short screen the pin rises so the Current Location button never covers it. The map stays behind the whole card;
+  // the place is read at the pin (pinAt) and shown at the pin (show). A tall screen keeps the pin in the middle.
+  useEffect(() => {
+    const r = root.current, c = card.current;
+    if (pick || !r || !c || typeof ResizeObserver === "undefined") return;
+    const fit = () => {
+      const here = c.querySelector(".ui-pinmap-here")?.getBoundingClientRect();
+      if (!here) return;
+      const h = r.clientHeight;
+      const room = here.top - r.getBoundingClientRect().top - 38;   // the pin box ends 30 px below its point, then an 8 px gap
+      const k = Math.max(0, Math.round(h / 2 - room));
+      if (k === lift.current) return;
+      const map = live.current?.map, at = map ? pinAt(map) : null;   // read with the old lift, before it changes
+      lift.current = k;
+      r.style.setProperty("--pin-y", `calc(50% - ${k}px)`);
+      if (map && at) show(map, at, map.getZoom());
+    };
+    const ro = new ResizeObserver(fit);
+    ro.observe(r);
+    ro.observe(c);
+    fit();
+    return () => ro.disconnect();
+  }, [pick]);
   const strips: Strip[] = kitchen ? (words?.pin && kitchen.pins.includes(words.pin) ? [{ kind: "ready", text: `Inside ${words.pin}` }] : []) : stripsFor({ serve: served, here, pin: point });
   return (
     <section ref={root} className="ui-pinmap" role="region" aria-label="Pin map" data-step={pick ? "details" : "pin"}>
@@ -192,7 +232,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
         {found.state === "ok" && found.hits.length === 0 && <p className="ui-row-sub">No place found. Try the start of a colony name or a pin code.</p>}
         <ul className="ui-saved-list">{found.hits.map((h) => <li key={`${h.pin}-${h.name}`} className="ui-saved-row ui-place-row"><button type="button" className="ui-saved-main" onClick={() => take(h)}><span className="ui-saved-label"><span>{h.name}</span><span className={`ui-tag ${h.served ? "ready" : "placed"}`}>{h.served ? "We deliver here" : "Not yet"}</span></span><span className="ui-saved-addr">{h.address}</span></button></li>)}</ul>
       </section>}
-      {!pick && <div className="ui-pinmap-card">
+      {!pick && <div ref={card} className="ui-pinmap-card">
         <button type="button" className="ui-pinmap-here" onClick={() => void toPhone()}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg><span>Current Location</span></button>
         {kicker && <span className="mono ui-pinmap-kicker">{kicker}</span>}
         <div className="ui-pinmap-place"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.6" fill="#ffffff" /></svg><span className="ui-pinmap-name">{name.name}</span></div>
