@@ -22,7 +22,7 @@ async function toDetails(page: Page, context: Parameters<typeof setup>[0], geoco
 }
 const sheet = (page: Page) => page.getByRole("dialog", { name: "Address details" });
 
-test("S1 the sheet opens over the same map: no step count, the place and a Change link, two fields, Save as chips, Save address, no hint", async ({ page, context }) => {
+test("S1 the sheet opens over the same map: no step count, the place and a Change link, two fields, the Save as bar, Save address, no hint", async ({ page, context }) => {
   await toDetails(page, context);
   await expect(sheet(page)).toBeVisible();
   await expect(sheet(page).getByText(/Step \d of \d/)).toHaveCount(0);   // 1404 (owner, 13 Nov): no step count anywhere
@@ -35,8 +35,8 @@ test("S1 the sheet opens over the same map: no step count, the place and a Chang
   await expect(page.getByRole("button", { name: "Search an area or address" })).toHaveCount(0);   // the top shows only Back while the sheet is open
   await expect(sheet(page).getByLabel("House, flat, floor")).toHaveAttribute("placeholder", "e.g. C-128, second floor");
   await expect(sheet(page).getByLabel("Landmark (optional)")).toHaveAttribute("placeholder", "e.g. near the park gate");
-  const chip = (await sheet(page).getByRole("button", { name: "Office", exact: true }).boundingBox())!;
-  expect(Math.round(chip.height)).toBe(36);
+  const bar = (await sheet(page).getByRole("group", { name: "Save as" }).boundingBox())!;   // story 1422: the joined bar, not 36 px pills
+  expect(Math.round(bar.height)).toBe(44);
   await expect(page.getByText(/The pin takes the rider/)).toHaveCount(0);   // owner rule 8 Nov: no hint under the chips
   const pin = (await page.getByTestId("map-pin").boundingBox())!, top = (await sheet(page).boundingBox())!;
   expect(pin.y + pin.height).toBeLessThan(top.y);   // the pin stays visible above the sheet

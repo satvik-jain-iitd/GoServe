@@ -727,9 +727,12 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-pinmap-where-words { flex: 1; min-width: 0; display: flex; flex-direction: column; color: var(--md-on-surface); }
 .ui-pinmap-where-words span { font-size: 14px; color: var(--gs-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ui-pinmap-change { flex: none; border: 0; background: transparent; color: var(--md-primary); font: inherit; font-weight: 600; padding: 8px; cursor: pointer; }
-.ui-pinmap-saveas { display: flex; flex-direction: column; gap: 8px; }
-.ui-pinmap-saveas .ui-chips { margin-bottom: 0; }
-.ui-pinmap-saveas .ui-chip { min-height: 36px; padding: 0 18px; border-radius: var(--gs-radius-pill); font-size: 14px; }   /* pills, as the board draws them */
+.ui-pinmap-saveas { display: flex; flex-direction: column; gap: 4px; margin-top: -4px; }   /* story 1422: the 44 px bar replaced 36 px pills; the two gaps give the 8 px back */
+/* Story 1422, design system N7: the joined bar. One row of equal parts, 44 px, 1 px outline and lines, 6 px corners; the chosen part is lime-soft. */
+.ui-bar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; height: 44px; box-sizing: border-box; border: 1px solid var(--md-outline); border-radius: var(--gs-radius-s); overflow: hidden; }
+.ui-bar > button { padding: 0; border: 0; border-left: 1px solid var(--md-outline); background: transparent; color: var(--md-on-surface); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.ui-bar > button:first-child { border-left: 0; }
+.ui-bar > button[aria-pressed="true"] { background: var(--gs-lime-soft); }
 
 /* Story 1052, board A11: the Location row of the kitchen form. */
 .ui-locrow-label { font-family: var(--gs-font-mono, "DM Mono", monospace); font-size: 12px; color: var(--gs-text-muted); }

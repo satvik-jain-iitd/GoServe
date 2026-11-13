@@ -48,6 +48,10 @@ export function Chip({ selected, children, ...p }: ButtonHTMLAttributes<HTMLButt
   return <button type="button" {...p} className={cx("ui-chip", selected && "on")} aria-pressed={!!selected}>{children}</button>;
 }
 
+/** Story 1422 (design system N7, the joined bar; owner 13 Nov 2026): a choice of two or three as one row of joined parts, never pills. */
+export function JoinedBar<T extends string>({ label, options, value, onPick }: { label: string; options: readonly T[]; value: T; onPick: (v: T) => void }) {
+  return <div className="ui-bar" role="group" aria-label={label}>{options.map((o) => <button key={o} type="button" aria-pressed={value === o} onClick={() => onPick(o)}>{o}</button>)}</div>;
+}
 export function Stepper({ label, value, onChange, min = 0, max = 20 }: { label: string; value: number; onChange: (n: number) => void; min?: number; max?: number }) {
   return (
     <div className="ui-step">
