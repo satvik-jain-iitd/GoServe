@@ -12,7 +12,7 @@ body { margin: 0; background: var(--md-background); color: var(--md-on-backgroun
 .ui-btn.ghost { background: transparent; color: var(--md-primary); border: 1px solid var(--md-outline); }
 .ui-btn.big { min-height: var(--gs-tap-big); width: 100%; font-size: var(--gs-display-m); }
 .ui-btn:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; -webkit-tap-highlight-color: transparent; }
-.ui-btn:focus-visible, .ui-chip:focus-visible, .ui-step button:focus-visible, .ui-back:focus-visible, .ui-search:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
+.ui-btn:focus-visible, .ui-chip:focus-visible, .ui-step button:focus-visible, .ui-back:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
 
 /* App bar */
 .ui-appbar { display: flex; align-items: flex-end; gap: var(--gs-space-3); padding: max(env(safe-area-inset-top), var(--gs-space-2)) 0 var(--gs-space-3); margin-bottom: var(--gs-space-4); border-bottom: 1px solid var(--md-outline-variant); }
@@ -43,6 +43,7 @@ body { margin: 0; background: var(--md-background); color: var(--md-on-backgroun
 .ui-step span { min-width: 28px; display: flex; align-items: center; justify-content: center; font-family: var(--gs-font-mono); font-weight: 500; }
 .ui-search { width: 100%; box-sizing: border-box; min-height: var(--gs-tap); margin-bottom: var(--gs-space-3); padding: 0 var(--gs-space-4); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font-family: var(--gs-font-mono); font-size: var(--gs-text-sm); }
 .ui-search::placeholder { color: var(--gs-text-muted); }
+.ui-search:focus-visible { outline: none; border: 2px solid var(--md-primary); padding: 0 calc(var(--gs-space-4) - 1px); }   /* story 1397: a tapped field shows its border, no ring */
 
 /* Sticky bar */
 .ui-sticky { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; padding: var(--gs-space-3) var(--gs-gutter) max(var(--gs-space-5), env(safe-area-inset-bottom)); background: var(--md-surface); box-shadow: var(--gs-shadow-m); }
@@ -110,7 +111,7 @@ body { margin: 0; background: var(--md-background); color: var(--md-on-backgroun
 @media (prefers-reduced-motion: reduce) { .ui-btn, .ui-chip, .ui-timeline li, .ui-sheet, .ui-stamp, .ui-skel span { transition: none; animation: none; } }
 
 /* Inputs: a visible focus ring everywhere, placeholders that pass contrast in both themes */
-input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
+input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible, .ui-switch:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
 input::placeholder, textarea::placeholder { color: var(--gs-text-muted); opacity: 1; }
 a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
 
@@ -222,7 +223,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-field label { font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
 .ui-pin-input { box-sizing: border-box; width: 100%; height: var(--gs-tap-big); padding: 0 14px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font-family: var(--gs-font-mono); font-size: var(--gs-mono-xl); font-weight: 500; letter-spacing: 0.12em; }
 .ui-pin-input[aria-invalid="true"] { border: 1.5px solid var(--md-error); }
-.ui-pin-input:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
+.ui-pin-input:focus-visible { outline: none; border: 2px solid var(--md-primary); padding: 0 13px; }   /* story 1397: a tapped field shows its border, no ring */
 .ui-field-error { margin: 0; font-size: var(--gs-text-sm); font-weight: 600; color: var(--md-error); }
 .ui-note { margin: 0; font-size: var(--gs-text-xs); color: var(--gs-text-muted); }
 .ui-scroll { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
@@ -279,7 +280,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-form { display: flex; flex-direction: column; gap: var(--gs-space-4); padding: var(--gs-space-4) var(--gs-gutter) var(--gs-space-5); }
 .ui-form input:where(:not(.ui-switch)), .ui-form textarea, .otp-phone input { box-sizing: border-box; width: 100%; min-height: var(--gs-tap); padding: 10px 12px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font: inherit; resize: none; }
 .ui-form .mono-input { font-family: var(--gs-font-mono); }
-.ui-form input:focus-visible, .ui-form textarea:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
+.ui-form input[type="checkbox"]:focus-visible, .ui-form input[type="radio"]:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }   /* story 1397: text fields use the border (see :where rule above) */
 .ui-form .ui-field { gap: 4px; }
 .ui-after { display: flex; flex-direction: column; gap: var(--gs-space-2); padding: var(--gs-space-4) var(--gs-gutter) 0; }
 .ui-after p { margin: 0; }
@@ -604,7 +605,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-search-go { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: var(--gs-radius-pill); background: var(--md-primary); color: var(--md-on-primary); cursor: pointer; }   /* story 1036: the round arrow inside the box */
 .ui-search-go:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
 .ui-search-box input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--md-on-surface); font: inherit; font-size: 16px; }
-.ui-search-box:focus-within { outline: 3px solid var(--md-primary); outline-offset: 2px; }
+.ui-search-box:focus-within { outline: none; border: 2px solid var(--md-primary); padding: 0 13px; }   /* story 1397: the box border is the field border; no ring */   /* story 1397: the field's own border shows the tap, no ring around the box */
 .ui-search-filter { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; margin-right: -6px; padding: 0; border: 0; border-radius: var(--gs-radius-s); background: transparent; color: var(--md-primary); cursor: pointer; }
 .ui-search-filter svg { width: 20px; height: 20px; }
 .ui-veg-top { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 48px; }
@@ -864,3 +865,15 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-cancel-rows > div { display: grid; grid-template-columns: 88px 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--md-outline-variant); }
 .ui-cancel-rows dt { font-size: 12px; color: var(--gs-text-muted); padding-top: 2px; }
 .ui-cancel-rows dd { margin: 0; font-size: 14px; }
+
+/* Story 1397 (owner, 13 Nov 2026, DECIDED, board FF2-FieldBorder): a tapped text field has no ring. Its own border turns --md-primary
+   and grows from 1 px to 2 px. The padding gives back the 1 px, so the box keeps its height and the text does not move.
+   "body" puts these above every base rule for the same field (the cascade, not the order, decides). */
+/* a textarea in a field but not in a form takes its padding (12 px) from app.css */
+body .ui-field textarea:focus-visible { outline: none; border: 2px solid var(--md-primary); padding: 11px; }
+body .ui-field input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"]):focus-visible,
+body .ui-form input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"]):focus-visible,
+body .ui-form textarea:focus-visible,
+body .otp-phone:not(.otp-box) input:focus-visible,
+body .ui-sheet-text:focus-visible { outline: none; border: 2px solid var(--md-primary); padding: 9px 11px; }
+body .ui-field select:focus-visible { outline: none; border: 2px solid var(--md-primary); padding: 0 11px; }
