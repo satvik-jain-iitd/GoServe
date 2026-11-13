@@ -75,6 +75,7 @@ jobs:
           SCREENS_OUT: ${{ github.workspace }}/app/screens-out
 
       - name: Screens (the render gate, once)
+        working-directory: ${{ github.workspace }}   # the App job defaults to app/; the script is at the repo root (run 43341870197)
         run: bash scripts/screens.sh --check
         env:
           SCREENS_OUT: ${{ github.workspace }}/app/screens-out
