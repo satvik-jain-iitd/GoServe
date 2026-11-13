@@ -112,7 +112,7 @@ test("RY7 the boards' look: a quiet underlined link, a surface card with a green
   await arriving(page).click();
   const card = await style(page.getByRole("region", { name: "Say at the door" }));
   expect({ left: card.left, top: card.top }).toEqual({ left: "4px", top: "1px" });
-  expect(card.bg).not.toBe("rgba(0, 0, 0, 0)");
+  expect(card.bg).not.toMatch(/, 0\)$/);   // a filled card, not see-through
   const head = await style(page.getByRole("region", { name: "Say at the door" }).getByText("Say at the door", { exact: true }));
   expect({ size: head.size, weight: head.weight, mono: /mono/i.test(head.family), color: head.color }).toEqual({ size: "12px", weight: "400", mono: true, color: link.color });
 });
