@@ -5,7 +5,7 @@ import { order, setup } from "./helpers";
 const open = async (page: Page, role: "Kitchen" | "Rider") => {
   await page.goto("/console/");
   await page.getByRole("button", { name: role }).click();
-  await expect(page.getByRole("heading", { name: role === "Rider" ? /^(Deliver|On the way)/ : "New", exact: true })).toBeVisible();   // H11: the rider's Job tab, the kitchen's New tab
+  await expect(page.getByRole("heading", { name: role === "Rider" ? /^(Deliver|On the way|Pick up)/ : "New", exact: true })).toBeVisible();   // H11: the rider's Job tab, the kitchen's New tab
 };
 
 test("S1 a kitchen ticket has big type and a big main button", async ({ page, context }) => {
