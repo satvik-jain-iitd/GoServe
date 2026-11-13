@@ -608,7 +608,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-search-go { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: var(--gs-radius-pill); background: var(--md-primary); color: var(--md-on-primary); cursor: pointer; }   /* story 1036: the round arrow inside the box */
 .ui-search-go:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
 .ui-search-box input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--md-on-surface); font: inherit; font-size: 16px; }
-.ui-search-box:focus-within { outline: 3px solid var(--md-primary); outline-offset: 2px; }
+.ui-search-box:focus-within { outline: none; }   /* story 1397: the field's own border shows the tap, no ring around the box */
 .ui-search-filter { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; margin-right: -6px; padding: 0; border: 0; border-radius: var(--gs-radius-s); background: transparent; color: var(--md-primary); cursor: pointer; }
 .ui-search-filter svg { width: 20px; height: 20px; }
 .ui-veg-top { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 48px; }
