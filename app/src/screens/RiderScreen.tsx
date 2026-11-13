@@ -201,7 +201,6 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
             {out && door.step === 1 && (
               <div className="ui-rx-door">
                 {door.awayText && <p className="mono">{door.awayText} to the door</p>}
-                <p className="ui-meta">The Arriving button shows here when you are near.</p>
                 <button type="button" className="ui-rx-link" onClick={() => { setDoorTap(job.id); onAtDoor(job, door.away === null ? null : Math.round(door.away)); }}>I am at the door</button>
               </div>
             )}
