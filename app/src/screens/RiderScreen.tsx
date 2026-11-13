@@ -55,12 +55,21 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
       <span className="mono ui-call-no">{o.customer_phone}</span>
     </a>
   ) : null;
-  // Story #1182: Google Maps directions to the customer's exact pin (a link, no API cost). No pin on the order: no link, never a wrong place.
-  const navRow = (o: Order) => typeof o.drop_lat === "number" && typeof o.drop_lng === "number" ? (
-    <a className="ui-row ui-call" href={`https://www.google.com/maps/dir/?api=1&destination=${o.drop_lat},${o.drop_lng}&travelmode=two-wheeler`} target="_blank" rel="noopener noreferrer">
-      <span className="ui-call-name">Navigate</span>
-    </a>
-  ) : null;
+  // Story #1182 (board RX3): Google Maps directions to the customer's exact pin (a link, no API cost). No pin on the order: no Navigate, never a wrong place.
+  const directions = (o: Order) => typeof o.drop_lat === "number" && typeof o.drop_lng === "number" ? `https://www.google.com/maps/dir/?api=1&destination=${o.drop_lat},${o.drop_lng}&travelmode=two-wheeler` : null;
+  // Board RX3 (owner, 13 Nov 2026): the name and the address, and beside them two round 48 px buttons with no words: Call (outline) and Navigate (filled).
+  const whoRow = (o: Order) => {
+    const to = directions(o);
+    return (
+      <div className="ui-rx-who">
+        <div className="ui-deliver"><b>{o.customer_name || "The customer"}</b><span>{o.address}</span></div>
+        <div className="ui-rx-acts">
+          {o.customer_phone && <a className="ui-round ghost" href={`tel:${o.customer_phone}`} aria-label={`Call ${firstName(o.customer_name)}`}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" /></svg></a>}
+          {to && <a className="ui-round" href={to} target="_blank" rel="noopener noreferrer" aria-label="Navigate"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 11 21 3l-8 18-2-8-8-2z" /></svg></a>}
+        </div>
+      </div>
+    );
+  };
   const todayLine = <p className="mono ui-foot">Today · {today.length} delivered</p>;
 
   const jobView = () => {
@@ -125,10 +134,8 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
             <div className="ui-slip-body">
               {out ? (
                 <>
-                  <div className="ui-slip-head"><span>{kitchen?.name ?? "Picked up"}</span><span>Picked up {hhmm(job.updated_at)}</span></div>
-                  <div className="ui-slip-stamp"><span className="ui-stamp out">On the way</span></div>
-                  {deliverTo(job)}
-                  {navRow(job)}
+                  {whoRow(job)}
+                  {job.instructions && <p className="ui-rx-note">Note · {job.instructions}</p>}
                 </>
               ) : (
                 <>
@@ -142,7 +149,8 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
               )}
               <div className="ui-slip-rule" />
               <div className="ui-slip-total"><b>To collect at door</b><span>{formatRupees(job.total_paise)}</span></div>
-              {callRow(job)}
+              {!out && callRow(job)}
+              {out && rest[1] && <button type="button" className="ui-btn text ui-rx-cant" disabled={busyId === job.id} onClick={() => void act(job, rest[1])}>Could not deliver?</button>}
             </div>
           </section>
           {jobs.length > 1 && <p className="mono ui-foot">{jobs.length - 1} more waiting</p>}
@@ -151,7 +159,6 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
               <>
                 {button(job, first, `Arriving · tell ${firstName(job.customer_name)}`, true)}
                 {rest[0] && <button key="deliver" type="button" className="ui-btn big" aria-label={`${rest[0].label} ${shortId(job.id)}`} disabled={busyId === job.id} onClick={() => openCollect(job)}>Delivered</button>}
-                {rest[1] && <button type="button" className="ui-btn text" aria-label={`${rest[1].label} ${shortId(job.id)}`} disabled={busyId === job.id} onClick={() => void act(job, rest[1])}>Not delivered</button>}
               </>
             ) : button(job, first, "Picked up")}
           </div>
@@ -173,7 +180,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
   };
 
   const head = tab === "job"
-    ? (job || done ? { h: "Delivery", meta: `No. ${shortId((done ?? job)!.id)}` } : { h: "Deliveries", meta: gate ? (gate.online ? "Online" : "Offline") : "" })
+    ? (job || done ? { h: job && !done && job.status === "out_for_delivery" ? "On the way" : "Delivery", meta: `No. ${shortId((done ?? job)!.id)}` } : { h: "Deliveries", meta: gate ? (gate.online ? "Online" : "Offline") : "" })
     : tab === "today" ? { h: "Today", meta: `${today.length} delivered` } : { h: "Me", meta: gate?.name ?? "" };
   return (
     <>
