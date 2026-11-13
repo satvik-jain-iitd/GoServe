@@ -200,6 +200,12 @@ describe("cancelLine", () => {
   it("the kitchen's or admin's own reason takes the place of by the customer", () => {
     expect(cancelLine(o({ cancelled_by: "kitchen", cancel_reason: "Paneer is over" }))).toBe("Cancelled · Paneer is over · stop cooking");
   });
+  it("review of PR 1477: only the customer's cancel says by the customer; no reason says no reason; the rider's code is said in words", () => {
+    expect(cancelLine(o({ cancelled_by: "kitchen", cancel_reason: "" }))).toBe("Cancelled · stop cooking");
+    expect(cancelLine(o({ cancelled_by: "admin" }))).toBe("Cancelled · stop cooking");
+    expect(cancelLine(o({ cancelled_by: "rider", cancel_reason: "refused_at_door" }))).toBe("Cancelled · refused at the door · stop cooking");
+    expect(cancelLine(o({ cancel_reason: "refused_at_door" }))).toBe("Cancelled · refused at the door · stop cooking");   // an old row, read from its code
+  });
   it("the word cancelled shows once", () => {
     for (const x of [o({ cancel_reason: "cancelled by customer" }), o({ cancelled_by: "admin", cancel_reason: "Cancelled: duplicate order" })])
       expect(cancelLine(x).match(/cancel/gi)).toHaveLength(1);
