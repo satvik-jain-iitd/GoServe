@@ -153,7 +153,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
         <div className="ui-after">
           {status === "placed" && <p>The kitchen has your order. This page updates on its own.</p>}
           {track && status === "out_for_delivery" && <RiderRow t={track} onOpen={() => setMapOpen(true)} />}   {/* board T4: the row sits under the slip, above the timeline */}
-          {!delivered && !cancelled && <Timeline steps={steps.map((x) => (atDoor && x.status === "out_for_delivery" ? "Rider at your door" : STEP_WORDS[x.status] ?? x.label))} current={steps.findIndex((x) => x.state === "current")} label="Order progress" />}
+          {!cancelled && <Timeline rows={3} steps={steps.map((x) => (atDoor && x.status === "out_for_delivery" ? "Rider at your door" : STEP_WORDS[x.status] ?? x.label))} current={steps.findIndex((x) => x.state === "current")} label="Order progress" />}   {/* story 1324 (PL6, PL4, PL7): three rows, the delivered slip too */}
           {!delivered && !cancelled && address && <p className="mono ui-addr ph-no-capture">{address}</p>}
           {rider && !(track && status === "out_for_delivery") && (
             <div className="notice" data-testid="rider-card">
@@ -190,7 +190,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
       </div>
       {mapOpen && track && status === "out_for_delivery" && <RiderMapScreen t={track} orderNo={shortId(order.id)} door={door} onBack={() => setMapOpen(false)} onCall={onCall} />}
       {(status === "placed" || status === "accepted") && askCancel && <CancelSheet lines={lines} kitchenName={kitchenName || "the kitchen"} paidOnline={pay?.state === "paid"} onKeep={() => setAskCancel(false)} onYes={() => { setAskCancel(false); onCancel(); }} />}
-      <div className="ui-bottom">
+      <div className={declined ? "ui-bottom" : "ui-bottom ui-pair"}>   {/* story 1324 (board PL4): two outline buttons share one line */}
         {declined && <button type="button" className="ui-btn big" onClick={onMenu}>Order something else</button>}
         {(status === "placed" || status === "accepted") && <button type="button" className="ui-btn ghost big" disabled={cancelling} onClick={() => setAskCancel(true)}>Cancel order</button>}
         {track?.phone && status === "out_for_delivery" && <a href={`tel:${track.phone}`} className="ui-btn ghost big" onClick={onCall}>Call the rider</a>}

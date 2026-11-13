@@ -76,14 +76,19 @@ export function StickyBar({ children }: { children: ReactNode }) {
   return <div className="ui-sticky">{children}</div>;
 }
 
-export function Timeline({ steps, current, label }: { steps: string[]; current: number; label?: string }) {
-  return (
-    <ol className="ui-timeline" aria-label={label}>
+export function Timeline({ steps, current, label, rows }: { steps: string[]; current: number; label?: string; rows?: number }) {
+  // Story 1324 (boards PL6, PL4, PL7): with rows, only that many show, the step now in the middle (on top at the start, at the bottom at the end).
+  // All the steps stay in the list and it slides up behind a fixed window, so a new status rolls in from below and the box never changes height.
+  const start = rows ? Math.max(0, Math.min(current - Math.floor(rows / 2), steps.length - rows)) : 0;
+  const list = (
+    <ol className="ui-timeline" aria-label={label} style={rows ? { transform: `translateY(calc(${-start} * var(--gs-roll-row)))` } : undefined}>
       {steps.map((s, i) => (
-        <li key={s} className={i < current ? "done" : i === current ? "now" : "next"} aria-current={i === current ? "step" : undefined}>{s}</li>
+        <li key={s} className={i < current ? "done" : i === current ? "now" : "next"} aria-current={i === current ? "step" : undefined}
+          aria-hidden={rows && (i < start || i >= start + rows) ? true : undefined}>{s}</li>
       ))}
     </ol>
   );
+  return rows ? <div className="ui-roll" style={{ ["--gs-roll-rows" as string]: rows }}>{list}</div> : list;
 }
 
 // Stories #954 and #980: the overlay follows the visual viewport only while the keyboard is up (see sheetFit.ts).
