@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { deliveredAt, deliveredToday, hhmm, riderActions, riderOrders, shortId, type Order, type RiderAction } from "../lib/kitchen";
 import { formatRupees, linePaise } from "../lib/money";
-import { cashInHand, DOOR_NEAR_M, firstName, handedOver, hoursOf, locationLabel, type KitchenCard, type RiderGateState } from "../lib/rider";
+import { cashInHand, DOOR_NEAR_M, firstName, handedOver, hoursOf, type KitchenCard, type RiderGateState } from "../lib/rider";
 import { distanceText, metres } from "../lib/riderMap";
 import type { DoorMethod } from "../lib/doorMethods";
 import { Skeleton, Tabs } from "../ui";
@@ -273,9 +273,10 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
       )}
       {tab === "me" && (
         <div className="ui-scroll ui-today">
-          {gate && <div className="ui-row ui-row-static ui-row-tall"><label htmlFor="online" className="ui-row-label"><span>Online</span><span className="ui-row-sub mono">Location shared {locationLabel()} while online</span></label><input id="online" className="ui-switch" type="checkbox" role="switch" checked={gate.online} onChange={() => void gate.flip()} /></div>}
-          <div className="ui-row ui-row-static"><span>Today</span><span className="mono ui-row-sub">{today.length} delivered · {formatRupees(cash)} in hand</span></div>
-          <div className="ui-row ui-row-static"><span>Your phone</span><span className="mono ui-row-sub">{gate?.phone || "Not saved yet"}</span></div>
+          {/* Board MC1 (stories 1445 and 1440): rows only. Going online or offline lives on the Delivery tab. */}
+          <div className="ui-row ui-row-static"><span>Phone</span><span className="mono ui-row-sub">{gate?.phone || "Not saved yet"}</span></div>
+          {typeof kitchen?.lat === "number" && typeof kitchen?.lng === "number" && <a className="ui-row" href={`https://www.google.com/maps/dir/?api=1&destination=${kitchen.lat},${kitchen.lng}&travelmode=two-wheeler`} target="_blank" rel="noopener noreferrer"><span>Kitchen ka raasta</span><span className="go" aria-hidden="true">›</span></a>}
+          {kitchen?.phone && <a className="ui-row" href={`tel:${kitchen.phone}`}><span>Kitchen ko call</span><span className="go" aria-hidden="true">›</span></a>}
           <button type="button" className="ui-row" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}><span>Send feedback</span><span className="go" aria-hidden="true">›</span></button>
           {gate && <button type="button" className="ui-row" onClick={gate.signOut}><span>Sign out</span><span className="go" aria-hidden="true">›</span></button>}
         </div>

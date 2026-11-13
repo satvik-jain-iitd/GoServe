@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { hhmmOf, type Hours } from "./kitchen";
 
 export type RiderRow = { name: string | null; phone?: string | null; online: boolean };
-export type KitchenCard = { name: string; address: string | null; opens_at?: string | null; closes_at?: string | null };
+export type KitchenCard = { name: string; address: string | null; opens_at?: string | null; closes_at?: string | null; lat?: number | null; lng?: number | null; phone?: string | null };
 /** What the rider screens get from the gate (story H11): who, online or not, and the two taps. Null in the demo console. */
 export type RiderGateState = { name: string | null; phone: string | null; online: boolean; flip: () => Promise<void>; signOut: () => void };
 export const LOCATION_EVERY_MS = 30_000;
@@ -29,9 +29,15 @@ export async function sendLocation(c: Client, lat: number, lng: number): Promise
 
 // Story H11 (#194): the kitchen to pick up at, by the order's kitchen_id. Null when the row cannot be read.
 export async function fetchKitchen(c: Pick<SupabaseClient, "from">, kitchenId: string): Promise<KitchenCard | null> {
-  const { data, error } = await c.from("kitchens").select("name, address, opens_at, closes_at").eq("id", kitchenId).limit(1);
+  const { data, error } = await c.from("kitchens").select(KITCHEN_COLS).eq("id", kitchenId).limit(1);
   if (error) throw error;
   return (data?.[0] as KitchenCard | undefined) ?? null;
+}
+const KITCHEN_COLS = "name, address, opens_at, closes_at, lat, lng, phone";   // stories 1445 and 1440: the point and the phone for the Me rows
+/** Stories 1445 and 1440: a rider on his first day has no order yet, so no kitchen. When exactly one real kitchen is active, it is his; else null (never a wrong place). */
+export async function fetchOnlyKitchen(c: Pick<SupabaseClient, "from">): Promise<KitchenCard | null> {
+  const { data, error } = await c.from("kitchens").select(KITCHEN_COLS).eq("active", true).eq("synthetic", false).limit(2);
+  return !error && data?.length === 1 ? (data[0] as KitchenCard) : null;
 }
 /** The cash the rider holds from today's deliveries: every order is cash at the door (paid_by unset or "cash"). */
 export { cashInHand, handedOver } from "./kitchen";   // story #229: one cash rule for both screens

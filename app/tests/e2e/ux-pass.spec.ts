@@ -39,7 +39,7 @@ test("D3 D11 D12 the staff apps have a Send feedback row that opens the sheet, a
   await page.goto("/rider/");
   for (const name of ["Delivery", "Today", "Me"]) await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Me", exact: true }).click();
-  await expect(page.getByText("Your phone")).toBeVisible();
+  await expect(page.getByText("Phone", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Send feedback" }).click();
   await expect(page.getByRole("dialog", { name: "Feedback" })).toBeVisible();
   await page.goto("/kitchen/");

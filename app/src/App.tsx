@@ -18,7 +18,7 @@ import { NoKitchen } from "./screens/NoKitchen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { AdminGate } from "./screens/AdminGate";
 import { RiderGate } from "./screens/RiderGate";
-import { fetchKitchen, riderChangePaid, type KitchenCard, type RiderGateState } from "./lib/rider";
+import { fetchKitchen, fetchOnlyKitchen, riderChangePaid, type KitchenCard, type RiderGateState } from "./lib/rider";
 import { KitchenGate, type KitchenGateState } from "./screens/KitchenGate";
 import { enablePush, watchSession } from "./lib/push";
 import { takeReturn } from "./lib/auth";
@@ -974,6 +974,13 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     fetchKitchen(getClient(), jobKitchenId).then((k) => { if (alive) setJobKitchen(k); }).catch(() => undefined);
     return () => { alive = false; };
   }, [jobKitchenId]);
+  const riderNoKitchen = role === "rider" && !demo && !jobKitchenId && !live.loading;   // stories 1445 and 1440: no order yet, so the one active kitchen, if there is only one
+  useEffect(() => {
+    if (!riderNoKitchen) return;
+    let alive = true;
+    void fetchOnlyKitchen(getClient()).then((k) => { if (alive && k) setJobKitchen(k); });
+    return () => { alive = false; };
+  }, [riderNoKitchen]);
   // Story 1182 (board RY3): Arriving is saved on the server. A reload or a second phone reads it back, so the rider opens on step 3, not step 2.
   const outJobId = role === "rider" && !demo ? riderOrders(orders).find((o) => o.status === "out_for_delivery")?.id ?? null : null;
   useEffect(() => {
