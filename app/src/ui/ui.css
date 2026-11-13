@@ -112,9 +112,6 @@ body { margin: 0; background: var(--md-background); color: var(--md-on-backgroun
 
 /* Inputs: a visible focus ring everywhere, placeholders that pass contrast in both themes */
 input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible, .ui-switch:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
-/* Story 1397 (owner, 13 Nov 2026, DECIDED, board FF2): a tapped text field has no ring. Its own border turns --md-primary and grows from 1 px to 2 px; the padding gives back that 1 px so the text does not move. */
-:where(input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"]), textarea):focus-visible { outline: none; border: 2px solid var(--md-primary); padding: 9px 11px; }
-:where(select):focus-visible { outline: none; border: 2px solid var(--md-primary); padding: 0 11px; }
 input::placeholder, textarea::placeholder { color: var(--gs-text-muted); opacity: 1; }
 a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
 
@@ -608,7 +605,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-search-go { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: var(--gs-radius-pill); background: var(--md-primary); color: var(--md-on-primary); cursor: pointer; }   /* story 1036: the round arrow inside the box */
 .ui-search-go:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
 .ui-search-box input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--md-on-surface); font: inherit; font-size: 16px; }
-.ui-search-box:focus-within { outline: none; }   /* story 1397: the field's own border shows the tap, no ring around the box */
+.ui-search-box:focus-within { outline: none; border: 2px solid var(--md-primary); padding: 0 13px; }   /* story 1397: the box border is the field border; no ring */   /* story 1397: the field's own border shows the tap, no ring around the box */
 .ui-search-filter { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; margin-right: -6px; padding: 0; border: 0; border-radius: var(--gs-radius-s); background: transparent; color: var(--md-primary); cursor: pointer; }
 .ui-search-filter svg { width: 20px; height: 20px; }
 .ui-veg-top { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 48px; }
@@ -868,3 +865,14 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-cancel-rows > div { display: grid; grid-template-columns: 88px 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--md-outline-variant); }
 .ui-cancel-rows dt { font-size: 12px; color: var(--gs-text-muted); padding-top: 2px; }
 .ui-cancel-rows dd { margin: 0; font-size: 14px; }
+
+/* Story 1397 (owner, 13 Nov 2026, DECIDED, board FF2-FieldBorder): a tapped text field has no ring. Its own border turns --md-primary
+   and grows from 1 px to 2 px. The padding gives back the 1 px, so the box keeps its height and the text does not move.
+   "body" puts these above every base rule for the same field (the cascade, not the order, decides). */
+body .ui-field input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"]):focus-visible,
+body .ui-field textarea:focus-visible,
+body .ui-form input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"]):focus-visible,
+body .ui-form textarea:focus-visible,
+body .otp-phone:not(.otp-box) input:focus-visible,
+body .ui-sheet-text:focus-visible { outline: none; border: 2px solid var(--md-primary); padding: 9px 11px; }
+body .ui-field select:focus-visible { outline: none; border: 2px solid var(--md-primary); padding: 0 11px; }
