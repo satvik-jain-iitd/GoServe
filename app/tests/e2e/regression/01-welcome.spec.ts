@@ -10,7 +10,7 @@ test.use({ viewport: { width: 390, height: 844 } });
 
 test("TC 1.1 lockup, tagline on one line, slip without a top line or step count, the title", async ({ page, context }) => {
   await reach(context, page);
-  await expect(page.getByRole("heading", { name: "One tap and you are in" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in to start" })).toBeVisible();
   await expect(page.getByText("Welcome", { exact: true })).toHaveCount(0);   // 1404: the slip label is gone
   await expect(page.getByText(/Step \d of \d/)).toHaveCount(0);   // 1404 (owner, 13 Nov): no step count anywhere
   await expect(page.locator(".ui-slip-head")).toHaveCount(0);   // 1404: the slip has no top line either
@@ -22,15 +22,15 @@ test("TC 1.1 lockup, tagline on one line, slip without a top line or step count,
 
 test("TC 1.2 the thali is centred, on the same hero line as the bell on step 2", async ({ page, context, browser }) => {
   await reach(context, page);
-  const thali = await box(page.getByRole("img", { name: /steel thali/ }));
+  const thali = await box(page.locator(".ui-thali"));   // board O0g-F (stories 1371 to 1374): the thali that sets itself
   expect(Math.abs(thali.x + thali.width / 2 - 195)).toBeLessThanOrEqual(2);
   const slipTop = (await box(page.locator(".ui-slip"))).y;
   const other = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const next = await other.newPage();
   await STEPS["alerts-ask"](other, next, PATH);
   const bell = await box(next.locator(".ui-bellbadge"));
-  // The shared hero line is two fixed offsets in ui.css (thali top 157, bell top 220, from the slip top); the picture is a bitmap, so the boxes are measured.
-  expect(Math.abs(thali.y - slipTop - 157)).toBeLessThanOrEqual(4);
+  // The shared hero line: board O0g-F puts the thali top 123 px under the slip top (the plate centre 268), the bell top is 220; the boxes are measured.
+  expect(Math.abs(thali.y - slipTop - 123)).toBeLessThanOrEqual(4);
   expect(Math.abs(bell.y - slipTop - 220)).toBeLessThanOrEqual(4);
 });
 
@@ -71,7 +71,7 @@ test("TC 1.9 two fast taps start one Google sign-in, not two", async ({ page, co
 
 test("TC 1.12 largest phone text size: the title wraps to 2 lines at most and the button shows", async ({ page, context }) => {
   await reach(context, page);
-  const title = page.getByRole("heading", { name: "One tap and you are in" });
+  const title = page.getByRole("heading", { name: "Sign in to start" });
   const before = await title.evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
   // Largest Android text size is a 1.5x scale of every text, px or rem: set each element's computed size x1.5 (the boxes keep their own widths).
   await page.evaluate(() => { for (const e of document.querySelectorAll<HTMLElement>("main, main *")) e.style.setProperty("font-size", `${parseFloat(getComputedStyle(e).fontSize) * 1.5}px`, "important"); });

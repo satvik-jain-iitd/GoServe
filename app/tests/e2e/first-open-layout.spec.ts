@@ -5,7 +5,7 @@ import { test, expect, type Page, type BrowserContext } from "@playwright/test";
 import { setup } from "./helpers";
 
 type Step = { name: string; main: string; ghost?: string; hero: string };
-const WELCOME: Step = { name: "welcome", main: "Continue with Google", hero: ".ui-welcome-pic" };
+const WELCOME: Step = { name: "welcome", main: "Continue with Google", hero: ".ui-thali" };
 const ALERTS: Step = { name: "alerts", main: "Turn on alerts", ghost: "I'll check the app myself", hero: ".ui-bellbadge" };
 const AREA: Step = { name: "area", main: "Set delivery location", ghost: "Enter address manually", hero: ".ui-pinbadge" };
 
@@ -49,7 +49,7 @@ test("S2 the outline button sits above the main one, and the main one is last, a
 
 test("S3 the hero centre sits 268 px below the slip top on every step", async () => {
   for (const n of ["alerts", "area"]) expect(Math.abs(seen[n].hero.y + seen[n].hero.h / 2 - (seen[n].slipTop + 268))).toBeLessThanOrEqual(2);
-  expect(Math.abs(seen.welcome.hero.y - (seen.welcome.slipTop + 157))).toBeLessThanOrEqual(2);   // the thali picture sits 157 px below the slip top: its plate is at the same 268
+  expect(Math.abs(seen.welcome.hero.y + seen.welcome.hero.h * 0.583 - (seen.welcome.slipTop + 268))).toBeLessThanOrEqual(2);   // board O0g-F: the thali's plate centre (58.3 % down the picture) is on the same 268
 });
 
 test("S4 at 320 px with large text nothing scrolls sideways and no button clips its words", async ({ page, context }) => {

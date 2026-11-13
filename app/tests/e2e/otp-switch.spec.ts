@@ -19,7 +19,7 @@ const noPhoneParts = async (page: Page) => {
 
 test("S1 with the switch off the welcome screen is Continue with Google only, and the menu is behind it", async ({ page, context }) => {
   await open(context, page, false);
-  await expect(page.getByRole("heading", { name: "One tap and you are in" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in to start" })).toBeVisible();
   await expect(page.getByText("No password, no code to wait for.")).toHaveCount(0);   // story #1044
   const google = page.getByTestId("google-signin");
   await expect(google).toBeVisible();
@@ -41,28 +41,28 @@ test("S2 with the switch on the welcome screen is today's screen", async ({ page
 
 test("S3 when the setting cannot be read the screen is Google only, never blank", async ({ page, context }) => {
   await open(context, page, "down");
-  await expect(page.getByRole("heading", { name: "One tap and you are in" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in to start" })).toBeVisible();
   await noPhoneParts(page);
 });
 
 test("S3b a missing row is the same as off", async ({ page, context }) => {
   await open(context, page, null);
-  await expect(page.getByRole("heading", { name: "One tap and you are in" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in to start" })).toBeVisible();
 });
 
 test("S4 a flip while the app is open changes the screen without a reload, inside 10 seconds", async ({ page, context }) => {
   const net = await open(context, page, false);
-  await expect(page.getByRole("heading", { name: "One tap and you are in" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in to start" })).toBeVisible();
   net.state.otpLogin = true;
   await expect(page.getByRole("heading", { name: "Where do we reach you?" })).toBeVisible({ timeout: 10_000 });
   net.state.otpLogin = false;
-  await expect(page.getByRole("heading", { name: "One tap and you are in" })).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole("heading", { name: "Sign in to start" })).toBeVisible({ timeout: 10_000 });
 });
 
 test("S5 a customer who is already signed in is untouched by the switch", async ({ page, context }) => {
   await open(context, page, false, true);
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "One tap and you are in" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Sign in to start" })).toHaveCount(0);
 });
 
 test("S6 with the switch off a Google customer orders without any code: the phone is typed on the bill", async ({ page, context }) => {
