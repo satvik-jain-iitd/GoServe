@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useBackCloses } from "../lib/back";
 import { renderToStaticMarkup } from "react-dom/server";
-import { DishPlate } from "../ui";
+import { DishPlate, JoinedBar } from "../ui";
 import { fetchKitchens } from "../lib/area";
 import { getClient } from "../lib/supabase";
 import type { Map as LMap, Marker } from "leaflet";
@@ -296,7 +296,7 @@ function DetailsSheet({ pick, edit, onChange, onSave, onHeight }: { pick: PinPic
       <div className="ui-field"><label htmlFor="pd-house">House, flat, floor</label><input id="pd-house" className="ui-eg" type="text" placeholder="e.g. C-128, second floor" maxLength={120} value={house} onChange={(e) => setHouse(e.target.value)} /></div>
       <div className="ui-field"><label htmlFor="pd-landmark">Landmark (optional)</label><input id="pd-landmark" className="ui-eg" type="text" placeholder="e.g. near the park gate" maxLength={120} value={landmark} onChange={(e) => setLandmark(e.target.value)} /></div>
       <div className="ui-pinmap-saveas"><span className="mono ui-pinmap-kicker">Save as</span>
-        <div className="ui-chips">{CHIPS.map((c) => <button key={c} type="button" className={`ui-chip${chip === c ? " on" : ""}`} aria-pressed={chip === c} onClick={() => setChip(c)}>{c}</button>)}</div></div>
+        <JoinedBar label="Save as" options={CHIPS} value={chip} onPick={setChip} /></div>
       {chip === "Other" && <div className="ui-field"><label htmlFor="pd-name">Name this place</label><input id="pd-name" type="text" maxLength={30} value={custom} onChange={(e) => setCustom(e.target.value)} /></div>}
       {!ready && <p role="status" className="ui-reason">{house.trim().length < 1 ? "Add your house or flat number." : needArea && area.trim().length < 2 ? "Add the area or street." : !isPin(pin) ? "Add a 6 digit pin code." : "Choose a name for this place."}</p>}   {/* story #1170 */}
       <button type="button" className="ui-btn big" disabled={!ready} onClick={save}>{edit ? "Save changes" : "Save address"}</button>
