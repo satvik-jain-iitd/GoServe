@@ -1,6 +1,6 @@
 // The rider app on the Ink v3 boards R3 to R9 (story H11, #194): one delivery in hand (Job), today's cash (Today), and Me.
 import { useEffect, useRef, useState } from "react";
-import { deliveredToday, hhmm, riderActions, riderOrders, shortId, type Order, type RiderAction } from "../lib/kitchen";
+import { deliveredAt, deliveredToday, hhmm, riderActions, riderOrders, shortId, type Order, type RiderAction } from "../lib/kitchen";
 import { formatRupees, linePaise } from "../lib/money";
 import { cashInHand, DOOR_NEAR_M, firstName, handedOver, hoursOf, locationLabel, type KitchenCard, type RiderGateState } from "../lib/rider";
 import { distanceText, metres } from "../lib/riderMap";
@@ -35,7 +35,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
   const paidLabel = (p: string | null | undefined) => (p === "upi_door" ? "Paid by UPI" : p === "cash" ? "Cash collected" : "Collected");   // never guess cash: an empty paid_by is just Collected
   const paidShort = (p: string | null | undefined) => (p === "upi_door" ? "UPI" : p === "cash" ? "Cash" : "Collected");   // board TI1
   // Story 1448: Change stays until the night's hand-over. A UPI order is never stamped itself, so any of his cash stamped at or after this delivery closes it too (the server's rule).
-  const canChange = (o: Order) => (o.paid_by === "cash" || o.paid_by === "upi_door") && !o.cash_handed_at && !orders.some((x) => !!x.cash_handed_at && x.cash_handed_at >= o.updated_at);
+  const canChange = (o: Order) => (o.paid_by === "cash" || o.paid_by === "upi_door") && !o.cash_handed_at && !orders.some((x) => !!x.cash_handed_at && x.cash_handed_at >= deliveredAt(o));
   const [changeId, setChangeId] = useState<string | null>(null);
   const [changeBusy, setChangeBusy] = useState(false);
   const [changeErr, setChangeErr] = useState<string | null>(null);
@@ -43,7 +43,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
     setChangeBusy(true);
     const code = await onChangePaid(o, m);
     setChangeBusy(false); setChangeId(null);
-    setChangeErr(code === null ? null : code === "handed_over" ? "Cash kitchen me jama ho chuka hai. Ab badalna ho to kitchen se kahein." : "Badal nahin paye. Network dekh kar phir try karein.");
+    setChangeErr(code === null ? null : code === "handed_over" ? "Cash kitchen me jama ho chuka hai. Ab badalna ho to kitchen se kahein." : code === "method_off" ? "Ye tareeka abhi band hai. Admin se poochhein." : "Badal nahin paye. Network dekh kar phir try karein.");
   };
   const [brokenQr, setBrokenQr] = useState<string | null>(null);
   const [collectId, setCollectId] = useState<string | null>(null);   // story 1262, board R7: "Delivered" opens Collect payment first
@@ -163,7 +163,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
           <div className="ui-slip-body">
             <div className="ui-slip-head"><span>{done.customer_name || "Customer"}</span></div>
             <div className="ui-slip-stamp"><span className="ui-stamp delivered">Delivered</span></div>
-            <p className="ui-clock">At the door <b>{hhmm(done.updated_at)}</b></p>
+            <p className="ui-clock">At the door <b>{hhmm(deliveredAt(done))}</b></p>
             <div className="ui-slip-rule" />
             <div className="ui-slip-total"><b>{paidLabel(done.paid_by)}</b><span>{formatRupees(done.total_paise)}</span></div>
             {canChange(done) && <button type="button" className="ui-rx-change" onClick={() => { setChangeErr(null); setChangeId(done.id); onLoadMethods(); }}>Change</button>}
@@ -264,7 +264,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
           {today.length === 0 && <div className="ui-empty"><h2>No deliveries yet today</h2><p className="ui-meta">Each delivery lands here with its cash.</p></div>}
           {today.map((o) => (
             <button key={o.id} type="button" className="ui-row" onClick={() => { setChangeErr(null); setChangeId(null); setDoneId(o.id); setTab("job"); }}>   {/* story 1448, board TC2: a row opens its Delivered slip */}
-              <span className="ui-row-label"><span className="ui-row-sub mono">No. {shortId(o.id)} · {hhmm(o.updated_at)}</span><span>{o.customer_name || "Customer"} · {o.address}</span></span>
+              <span className="ui-row-label"><span className="ui-row-sub mono">No. {shortId(o.id)} · {hhmm(deliveredAt(o))}</span><span>{o.customer_name || "Customer"} · {o.address}</span></span>
               <span className="ui-row-end"><span className="mono">{formatRupees(o.total_paise)}</span><span className="ui-row-sub mono">{paidShort(o.paid_by)}</span></span>
               <span className="go" aria-hidden="true">›</span>
             </button>

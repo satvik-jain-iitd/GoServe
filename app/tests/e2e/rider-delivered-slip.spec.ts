@@ -104,3 +104,47 @@ test("CP1 the Collect payment screen: the line under the QR reads Pehle paisa, p
   await page.getByRole("button", { name: /^Collect ₹/ }).click();
   await expect(page.getByText("Pehle paisa, phir button.", { exact: true })).toBeVisible();
 });
+
+// Review of PR 1467 (13 Nov 2026): the delivery time is its own moment. The database moves updated_at on every later change (a Change, the night's hand-over).
+const at = (h: number, m: number) => { const d = new Date(); d.setHours(h, m, 0, 0); return d.toISOString(); };
+test("DV7 a delivery at one time, then changed or handed over later: the slip and the Today row keep the delivery time", async ({ page, context }) => {
+  const net = await setup(context, page, [today({ delivered_at: at(0, 1), updated_at: at(0, 2) })]);
+  net.state.kitchens = [KITCHEN];
+  await page.clock.setFixedTime(new Date(at(0, 3)));
+  await page.goto("/rider/");
+  await tab(page, "Today").click();
+  const row = page.getByRole("button", { name: /No\. 0f0f0f0f/ });
+  await expect(row).toContainText("00:01");
+  await row.click();
+  await expect(page.getByText("At the door 00:01")).toBeVisible();
+});
+
+test("DV8 a UPI order delivered before tonight's hand-over of another cash order: its slip has no Change", async ({ page, context }) => {
+  const upi = today({ paid_by: "upi_door", delivered_at: at(0, 1), updated_at: at(0, 4) });   // a later update of the row moved updated_at past the hand-over
+  const cash = today({ id: "0d0d0d0d-1111-4222-8333-444444444444", delivered_at: at(0, 1), updated_at: at(0, 2), cash_handed_at: at(0, 2) });
+  const net = await setup(context, page, [upi, cash]);
+  net.state.kitchens = [KITCHEN];
+  await page.clock.setFixedTime(new Date(at(0, 5)));
+  await page.goto("/rider/");
+  await tab(page, "Today").click();
+  await page.getByRole("button", { name: /No\. 0f0f0f0f/ }).click();
+  await expect(page.getByRole("region", { name: `Order ${ID.slice(0, 8)}` })).toContainText("Paid by UPI");
+  await expect(page.getByRole("button", { name: "Change", exact: true })).toHaveCount(0);
+});
+
+test("DV9 a Change on a bad network: the slip keeps the old way and says it could not change", async ({ page, context }) => {
+  await deliver(context, page, [onTheWay()]);
+  await page.route("**/rest/v1/rpc/rider_change_paid", (r) => r.abort("internetdisconnected"));
+  await page.getByRole("button", { name: "Change", exact: true }).click();
+  await page.getByRole("button", { name: "Paid by UPI ₹640" }).click();
+  await expect(page.getByRole("alert")).toContainText("Badal nahin paye");
+  await expect(page.getByText("Cash collected", { exact: true })).toBeVisible();
+});
+
+test("DV10 the server says that way of paying is off: the slip keeps the old way and says so", async ({ page, context }) => {
+  await deliver(context, page, [onTheWay()], "Took cash", { changeReply: { ok: false, error: "method_off" } });
+  await page.getByRole("button", { name: "Change", exact: true }).click();
+  await page.getByRole("button", { name: "Paid by UPI ₹640" }).click();
+  await expect(page.getByRole("alert")).toContainText("Ye tareeka abhi band hai");
+  await expect(page.getByText("Cash collected", { exact: true })).toBeVisible();
+});

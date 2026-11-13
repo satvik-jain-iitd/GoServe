@@ -1,7 +1,7 @@
 // Story 1448: the server rule for Change on the rider's Delivered slip, against goserve-dev (skipped when the dev keys are not set; CI has none).
 // Only the order's own rider, only cash or UPI at the door, only before the night's hand-over. Run as in supabase.test.ts.
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 const url = process.env.SUPABASE_GOSERVE_DEV_URL;
 const anon = process.env.SUPABASE_GOSERVE_DEV_ANON_KEY;
@@ -10,7 +10,8 @@ const KITCHEN = "11111111-1111-1111-1111-111111111111";
 const isDev = !!url && url.includes("tmxyizmkpwwfyazvrfhw");   // never production
 
 describe.skipIf(!isDev || !anon || !service)("rider_change_paid on goserve-dev", () => {
-  const admin = createClient(url!, service!, { auth: { persistSession: false } });
+  let admin: SupabaseClient;   // made in beforeAll: without the dev keys the file is skipped, never crashes at load
+  beforeAll(() => { admin = createClient(url!, service!, { auth: { persistSession: false } }); });
   const keys: string[] = [];
   const users: string[] = [];
   const rider = async (): Promise<{ client: SupabaseClient; id: string }> => {
@@ -44,6 +45,31 @@ describe.skipIf(!isDev || !anon || !service)("rider_change_paid on goserve-dev",
     const id = await delivered(r.id);
     expect((await other.client.rpc("rider_change_paid", { p_order: id, p_method: "upi_door" })).data).toEqual({ ok: false, error: "order_not_found" });
     expect((await r.client.rpc("rider_change_paid", { p_order: id, p_method: "card" })).data).toEqual({ ok: false, error: "bad_method" });
+  });
+
+  it("a way of paying that is off is refused", async () => {
+    const r = await rider();
+    const id = await delivered(r.id);
+    const before = (await admin.from("settings").select("value").eq("name", "payment_methods").single()).data!.value;
+    await admin.from("settings").update({ value: ["cash"] }).eq("name", "payment_methods");
+    try {
+      expect((await r.client.rpc("rider_change_paid", { p_order: id, p_method: "upi_door" })).data).toEqual({ ok: false, error: "method_off" });
+    } finally {
+      await admin.from("settings").update({ value: before }).eq("name", "payment_methods");
+    }
+  });
+
+  it("delivered_at is set once: a Change and a real hand-over move updated_at, never delivered_at", async () => {
+    const r = await rider();
+    const id = await delivered(r.id);
+    const first = (await admin.from("orders").select("delivered_at").eq("id", id).single()).data!.delivered_at;
+    expect(first).not.toBeNull();
+    await r.client.rpc("rider_change_paid", { p_order: id, p_method: "upi_door" });
+    await r.client.rpc("rider_change_paid", { p_order: id, p_method: "cash" });
+    await admin.from("orders").update({ cash_handed_at: new Date().toISOString() }).eq("id", id);   // what kitchen_handover writes
+    const after = (await admin.from("orders").select("delivered_at, updated_at").eq("id", id).single()).data!;
+    expect(after.delivered_at).toBe(first);
+    expect(after.updated_at > first).toBe(true);
   });
 
   it("after the night's hand-over the server refuses a change, even on a UPI order", async () => {
