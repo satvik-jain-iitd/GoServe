@@ -321,13 +321,13 @@ function DetailsSheet({ pick, edit, draft, onDraft, onChange, onSave, onHeight }
     <section ref={el} className="ui-pinmap-details" role="dialog" aria-label={edit ? "Edit address" : "Address details"}>
       <div className="ui-sheet-head ui-pinmap-details-head"><h2>{edit ? "Edit address" : "Address details"}</h2></div>   {/* 1404 (owner, 13 Nov): no step count on the sheet, on either way in */}
       <div className="ui-pinmap-where">{I(PIN_PATH, 22)}<span className="ui-pinmap-where-words"><b>{name.name}</b>{name.rest && <span>{name.rest}</span>}</span><button type="button" className="ui-pinmap-change" onClick={onChange}>Change</button></div>
-      {needArea && <div className="ui-field"><label htmlFor="pd-area">Area or street</label><input id="pd-area" type="text" maxLength={200} value={area} onChange={(e) => setArea(e.target.value)} /></div>}
+      {needArea && <div className="ui-field"><label htmlFor="pd-area">Area or street</label><input id="pd-area" className="ui-eg" type="text" maxLength={200} value={area} onChange={(e) => setArea(e.target.value)} /></div>}
       {needPin && <div className="ui-field"><label htmlFor="pd-pin">Pin code</label><input id="pd-pin" className="mono-input ui-eg" type="tel" inputMode="numeric" maxLength={6} placeholder="e.g. 123456" value={pinText} onChange={(e) => setPinText(e.target.value.trim())} /></div>}
       <div className="ui-field"><label htmlFor="pd-house">House, street, colony, ward</label><input id="pd-house" className="ui-eg" type="text" placeholder="e.g. C-128, Gali 3, Radio Colony" maxLength={120} value={house} onChange={(e) => setHouse(e.target.value)} /></div>
       <div className="ui-field"><label htmlFor="pd-landmark">Landmark (optional)</label><input id="pd-landmark" className="ui-eg" type="text" placeholder="e.g. near the park gate" maxLength={120} value={landmark} onChange={(e) => setLandmark(e.target.value)} /></div>
       <div className="ui-pinmap-saveas"><span className="mono ui-pinmap-kicker">Save as</span>
         <JoinedBar label="Save as" options={CHIPS} value={chip} onPick={setChip} /></div>
-      {chip === "Other" && <div className="ui-field"><label htmlFor="pd-name">Name this place</label><input id="pd-name" type="text" maxLength={30} value={custom} onChange={(e) => setCustom(e.target.value)} /></div>}
+      {chip === "Other" && <div className="ui-field"><label htmlFor="pd-name">Name this place</label><input id="pd-name" className="ui-eg" type="text" maxLength={30} value={custom} onChange={(e) => setCustom(e.target.value)} /></div>}
       {!ready && <p role="status" className="ui-reason">{house.trim().length < 1 ? "Add your house or flat number." : needArea && area.trim().length < 2 ? "Add the area or street." : !isPin(pin) ? "Add a 6 digit pin code." : "Choose a name for this place."}</p>}   {/* story #1170 */}
       <button type="button" className="ui-btn big" disabled={!ready} onClick={save}>{edit ? "Save changes" : "Save address"}</button>
     </section>
