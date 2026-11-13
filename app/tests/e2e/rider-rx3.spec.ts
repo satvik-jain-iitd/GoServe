@@ -1,5 +1,5 @@
 // Story 1182 (owner, 13 Nov 2026, DECIDED, board RX3): the rider's "On the way" screen shows only what a rider needs. Round Call and Navigate
-// beside the name, the note, the amount, a quiet "Could not deliver?" link, and "Delivered" last. No kitchen name, no stamp, no phone digits.
+// beside the name, the note, the amount, a quiet "Could not deliver?" link, and one button at a time (story 1182, RY1 to RY3). No kitchen name, no stamp, no phone digits.
 import { test, expect, type Page } from "@playwright/test";
 import { SESSION, order, setup } from "./helpers";
 
@@ -42,19 +42,20 @@ test("RX3.3 the phone digits are not on the screen; Call still dials the custome
   await expect(call).toHaveText("");
 });
 
-test("RX3.4 Delivered is the last button; Could not deliver? starts the not-delivered path", async ({ page, context }) => {
+test("RX3.4 the bottom zone holds one button (story 1182, RY2); Could not deliver? starts the not-delivered path", async ({ page, context }) => {
   await open(page, context);
   const buttons = page.locator(".ui-bottom button");
-  await expect(buttons.last()).toHaveText("Delivered");
+  await expect(buttons).toHaveCount(1);
+  await expect(buttons).toHaveText("Arriving · tell Rahul");
   await expect(page.getByRole("button", { name: /^Not delivered/ })).toHaveCount(0);
   page.once("dialog", (d) => void d.dismiss());
   await page.getByRole("button", { name: "Could not deliver?" }).click();
 });
 
-test("RX3.5 at 360 x 640 the two bottom buttons are in view without a scroll", async ({ page, context }) => {
+test("RX3.5 at 360 x 640 the bottom button is in view without a scroll", async ({ page, context }) => {
   await page.setViewportSize({ width: 360, height: 640 });
   await open(page, context, job({ instructions: "Ring the bell twice, gate is blue" }));
-  for (const name of [/^Arriving/, /^Delivered/]) {
+  for (const name of [/^Arriving/]) {
     const b = (await page.getByRole("button", { name }).first().boundingBox())!;
     expect(b.y + b.height).toBeLessThanOrEqual(640);
   }
@@ -70,16 +71,17 @@ test("RX3.6 the round buttons are 48 px with at least 8 px between them", async 
 
 // Review of PR 1186 (13 Nov 2026): the longest legal inputs must never push the buttons or the tabs off a short screen.
 const words = (n: number, w: string) => Array.from({ length: Math.ceil(n / (w.length + 1)) }, () => w).join(" ").slice(0, n);
-test("RX3.7 at 360 x 640 with the longest legal address and a 200-letter note, the slip scrolls and Delivered can be tapped", async ({ page, context }) => {
+test("RX3.7 at 360 x 640 with the longest legal address and a 200-letter note, the slip scrolls and Arriving, then Collect, can be tapped", async ({ page, context }) => {
   await page.setViewportSize({ width: 360, height: 640 });
   const address = `${words(120, "House")}, ${words(120, "Landmark")}, Lajpat Nagar II, South East Delhi, Delhi 110024`;
   const net = await open(page, context, job({ address, instructions: words(200, "Ring") }));
-  const deliver = page.getByRole("button", { name: /^Delivered/ });
-  const b = (await deliver.boundingBox())!;
-  expect(b.y + b.height).toBeLessThanOrEqual(640);
+  const inView = async (name: RegExp) => { const b = (await page.getByRole("button", { name }).boundingBox())!; expect(b.y + b.height).toBeLessThanOrEqual(640); };
   const tabs = (await page.getByRole("navigation", { name: "Main" }).boundingBox())!;
   expect(tabs.y + tabs.height).toBeLessThanOrEqual(640);
-  await deliver.click();
+  await inView(/^Arriving/);   // story 1182 layer 2: one button at a time, Arriving then Collect
+  await page.getByRole("button", { name: /^Arriving/ }).click();
+  await inView(/^Collect ₹/);
+  await page.getByRole("button", { name: /^Collect ₹/ }).click();
   await expect(page.getByRole("region", { name: /^Collect payment/ })).toBeVisible();
   expect(net.calls.status.filter((c) => c.body.action === "deliver")).toEqual([]);
 });

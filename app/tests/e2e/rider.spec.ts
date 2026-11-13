@@ -15,8 +15,8 @@ test("S1 rider steps: pick up, arriving, delivered each send their step as the r
   await page.getByRole("button", { name: "Pick up 0f0f0f0f" }).click();
   await expect(page.getByText("On the way", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Arriving 0f0f0f0f" }).click();
-  await expect(page.getByRole("button", { name: "Arriving 0f0f0f0f" })).toBeDisabled();   // done once; the server refuses a repeat
-  await page.getByRole("button", { name: "Delivered 0f0f0f0f", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Arriving 0f0f0f0f" })).toHaveCount(0);   // done once; story 1182: step 3 has no Arriving button
+  await page.getByRole("button", { name: /^Collect ₹/ }).click();   // story 1182, board RY3: Collect opens Collect payment
   await page.getByRole("button", { name: /^Took cash/ }).click();   // story 1262: Delivered opens Collect payment first
   await page.getByRole("button", { name: "Next delivery" }).click();   // H11: the delivered slip stays until the rider lets it go
   await expect(page.getByText("No. 0f0f0f0f")).toHaveCount(0);   // delivered orders leave the Job tab
@@ -48,7 +48,7 @@ test("S1 Arriving was already sent (the page was reloaded): it is treated as don
   net.state.reply = { status: 409, body: { ok: false, error: "already_done", message: "Already done." } };
   await openRider(page);
   await page.getByRole("button", { name: "Arriving 0f0f0f0f" }).click();
-  await expect(page.getByRole("button", { name: "Arriving 0f0f0f0f" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Arriving 0f0f0f0f" })).toHaveCount(0);
   await expect(page.getByRole("alert")).toHaveCount(0);
 });
 

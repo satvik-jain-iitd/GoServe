@@ -16,3 +16,15 @@ export function watchArriving(client: SupabaseClient, orderId: string, onChange:
     void client.removeChannel(channel);
   };
 }
+
+// Story 1182 (boards RY1 to RY3): the rider cannot read order_events, so two narrow database functions serve the door steps.
+type Rpc = Pick<SupabaseClient, "rpc">;
+/** When Arriving was sent for the rider's own order, or null (not yet, not theirs, or the read failed). A reload or a second phone opens step 3 from this. */
+export async function riderArrivingAt(c: Rpc, orderId: string): Promise<string | null> {
+  const { data, error } = await c.rpc("rider_arriving_at", { p_order: orderId });
+  return !error && typeof data === "string" ? data : null;
+}
+/** The rider tapped "I am at the door" while the phone said they were far (metres) or had no place (null). A failure is ignored: the step still moves. */
+export async function riderAtDoor(c: Rpc, orderId: string, metres: number | null): Promise<void> {
+  try { await c.rpc("rider_at_door", { p_order: orderId, p_metres: metres }); } catch { /* the rider goes on either way */ }
+}
