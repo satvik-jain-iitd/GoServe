@@ -157,10 +157,10 @@ for (const theme of ["day", "night"] as const) {
     await page.getByText("Cash aapke paas").waitFor();
     await shot("R-Today");
     await page.getByRole("button", { name: "Me", exact: true }).click();
-    await page.getByRole("switch", { name: "Online" }).waitFor();
+    await page.getByText("Sign out").waitFor();
     await shot("R-Me");
-    await page.getByRole("switch", { name: "Online" }).click();
     await page.getByRole("button", { name: "Delivery", exact: true }).click();
+    await page.getByRole("button", { name: "Go offline" }).click();
     await page.getByRole("heading", { name: "You are offline" }).waitFor();
     await shot("R-Offline");
   });

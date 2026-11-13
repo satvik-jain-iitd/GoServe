@@ -37,17 +37,17 @@ test("S2 Today lists the deliveries so far and the cash in hand", async ({ page,
   void ID;
 });
 
-test("S3 Me has the online switch, the phone the kitchen calls, and Sign out", async ({ page, context }) => {
+test("S3 Me has the phone the kitchen calls and Sign out; going offline lives on the Delivery tab (board MC1)", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.rider = { user_id: SESSION, name: "Amit Kumar", phone: "9810011223", online: true, lat: null, lng: null };
   await page.goto("/rider/");
   await tab(page, "Me").click();
-  await expect(page.getByRole("switch", { name: "Online" })).toBeChecked();
   await expect(page.getByText("9810011223")).toBeVisible();
-  await page.getByRole("switch", { name: "Online" }).click();
-  await expect(page.getByRole("switch", { name: "Online" })).not.toBeChecked();
-  expect(net.calls.riderWrites.at(-1)!.body.online).toBe(false);
   await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
+  await tab(page, "Delivery").click();
+  await page.getByRole("button", { name: "Go offline" }).click();
+  await expect(page.getByRole("heading", { name: "You are offline" })).toBeVisible();
+  expect(net.calls.riderWrites.at(-1)!.body.online).toBe(false);
 });
 
 test("S4 an offline rider sees why there is no delivery, and goes online from there", async ({ page, context }) => {
@@ -89,8 +89,8 @@ for (const theme of ["day", "night"] as const) {
     await scan();   // R7 delivered
     await page.getByRole("button", { name: "Done", exact: true }).click();   // story 1448: no order waits
     for (const name of ["Today", "Me"]) { await tab(page, name).click(); await scan(); }   // R8, R9
-    await page.getByRole("switch", { name: "Online" }).click();
     await tab(page, "Delivery").click();
+    await page.getByRole("button", { name: "Go offline" }).click();
     await expect(page.getByRole("heading", { name: "You are offline" })).toBeVisible();
     await scan();   // R3 offline
     net.state.rider = null;
