@@ -8,6 +8,7 @@ export type Order = {
   payment_method?: string | null; paid_at?: string | null;   // story #552: online orders wait for the payment
   customer_name?: string | null; customer_phone?: string | null;
   kitchen_id?: string; rider_id?: string | null; cash_handed_at?: string | null; cancel_reason?: string | null; cancelled_by?: string | null; instructions?: string | null;
+  drop_lat?: number | null; drop_lng?: number | null;   // story #1182: the customer's exact pin, when the order has one
 };
 
 export const shortId = (id: string): string => id.slice(0, 8);   // the order number the customer and the kitchen both say

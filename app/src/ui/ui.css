@@ -330,6 +330,17 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-deliver { display: flex; flex-direction: column; gap: 2px; }
 .ui-deliver b { font-size: 17px; }
 .ui-deliver .ui-kicker { font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
+/* Story 1182, board RX3: the rider's On the way slip. The name and address on the left, two round 48 px buttons 8 px apart on the right; the note as a lime strip. */
+.ui-rx-who { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.ui-rx-who .ui-deliver { min-width: 0; }
+.ui-rx-who .ui-deliver span { font-size: 17px; }
+.ui-rx-acts { display: flex; gap: 8px; flex: none; }
+.ui-round { box-sizing: border-box; width: 48px; height: 48px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--md-primary); color: var(--md-on-primary); text-decoration: none; }
+.ui-round.ghost { background: transparent; color: var(--md-primary); box-shadow: inset 0 0 0 1.5px var(--md-outline); }   /* a ring, not a border: Chromium rounds a 1.5 px border down to 1 px */
+.ui-rx-note { margin: 0; padding: 8px 12px; border-radius: var(--gs-radius-s); background: var(--gs-lime-soft); color: var(--md-on-tertiary); font-size: var(--gs-text-sm); }
+.ui-rx-note-k { font-size: 12px; color: var(--gs-text-muted); }
+.ui-rx-cant { justify-self: start; min-height: var(--gs-tap); margin-top: -12px; padding: 0; background: none; border: 0; font: inherit; font-size: 14px; font-weight: 400; color: var(--md-on-surface); text-decoration: underline; cursor: pointer; }
+.ui-rx-scroll { padding-bottom: var(--gs-space-3); }
 .ui-call { text-decoration: none; color: inherit; border-top: 1px solid var(--md-outline-variant); }
 .ui-call-name { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; color: var(--md-primary); }
 .ui-call-no { font-size: var(--gs-mono-sm); }
