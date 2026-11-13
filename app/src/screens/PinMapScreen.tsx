@@ -16,6 +16,7 @@ import { metres, tileUrl } from "../lib/riderMap";
 
 const TILES = tileUrl(import.meta.env.VITE_MAP_TILES);
 const SETTLE_MS = 400;
+const LOOKUP_MS = 6000;   // story 1393: a lookup that never answers ends here; the place-only answer then stands
 const OSM = "https://www.openstreetmap.org/copyright";
 const I = (d: React.ReactNode, w = 22) => <svg aria-hidden="true" width={w} height={w} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{d}</svg>;
 const PIN_PATH = <><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.5" /></>;
@@ -94,12 +95,13 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
       // Story 1393: the server decides by pin code, so a place-only "not served" can be false. It is shown at once only when it says yes; a no waits for the pin answer.
       const placeOnly = fns.current.serve(p, null).catch(() => null);
       void placeOnly.then((s0) => { if (mine === ask.current && s0?.serviceable && !pinAnswered) setServed(s0); });
-      const w = await fns.current.lookup(p).catch(() => null);
+      const w = await Promise.race([fns.current.lookup(p).catch(() => null), new Promise<null>((ok) => setTimeout(() => ok(null), LOOKUP_MS))]);
       if (mine !== ask.current) return;   // a newer rest has taken over
       if (w) { setWords(w); setFailed(false); } else setFailed(true);   // the last words stay when this one fails; the point still counts
       const s = w?.pin ? await fns.current.serve(p, w.pin).catch(() => null) : await placeOnly;   // story #1102: the pin the lookup read goes with the place; no pin read: the place-only answer stands
       if (mine !== ask.current) return;
       if (s) { pinAnswered = true; setServed(s); }
+      if (!w || !s) settled.current = null;   // story 1393: a failed ask is not a settled place; the next rest there asks again
       setBusy(false);
     }, SETTLE_MS);
   };
