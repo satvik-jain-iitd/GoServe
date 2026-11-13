@@ -735,6 +735,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-bar > button:first-child { border-left: 0; }
 .ui-bar > button[aria-pressed="true"] { background: var(--gs-lime-soft); color: var(--md-on-tertiary); }   /* like the other lime-soft surfaces: 4.5:1 in Day and Night */
 .ui-bar > button:focus-visible { outline: 3px solid var(--md-primary); outline-offset: -3px; }   /* the bar clips outside its edge: the ring sits inside the part */
+[data-theme="night"] .ui-bar > button[aria-pressed="true"]:focus-visible { outline-color: var(--md-on-tertiary); }   /* story 1430: the lime ring on the lime-soft fill was 1:1 at Night; ink is above 3:1. Day is as before */
 
 /* Story 1052, board A11: the Location row of the kitchen form. */
 .ui-locrow-label { font-family: var(--gs-font-mono, "DM Mono", monospace); font-size: 12px; color: var(--gs-text-muted); }
