@@ -17,6 +17,8 @@ import { metres, tileUrl } from "../lib/riderMap";
 const TILES = tileUrl(import.meta.env.VITE_MAP_TILES);
 const SETTLE_MS = 400;
 const LOOKUP_MS = 6000;   // story 1393: a lookup that never answers ends here; the place-only answer then stands
+// Story 1426: a lookup or serve call that never answers counts as no answer after LOOKUP_MS.
+const limit = <T,>(p: Promise<T>): Promise<T | null> => Promise.race([p, new Promise<null>((ok) => setTimeout(() => ok(null), LOOKUP_MS))]);
 const OSM = "https://www.openstreetmap.org/copyright";
 const I = (d: React.ReactNode, w = 22) => <svg aria-hidden="true" width={w} height={w} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{d}</svg>;
 const PIN_PATH = <><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.5" /></>;
@@ -43,6 +45,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
   const [words, setWords] = useState<Looked | null>(null);
   const [failed, setFailed] = useState(false);
   const [served, setServed] = useState<Serve | null>(null);
+  const [noAnswer, setNoAnswer] = useState(false);   // story 1426 (board PE1): the serve check for the place under the pin gave no answer
   const [busy, setBusy] = useState(true);
   const [here, setHere] = useState<Place | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -96,14 +99,17 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
       // The strip does not wait for the lookup (a slow Ola or OpenStreetMap read once hid it for good): it is asked at once with the place, and again with the pin the lookup reads.
       let pinAnswered = false;   // the pin answer is the better one: a slow place-only answer must not overwrite it
       // Story 1393: the server decides by pin code, so a place-only "not served" can be false. It is shown at once only when it says yes; a no waits for the pin answer.
-      const placeOnly = fns.current.serve(p, null).catch(() => null);
+      const placeOnly = limit(fns.current.serve(p, null)).catch(() => null);
       void placeOnly.then((s0) => { if (mine === ask.current && s0?.serviceable && !pinAnswered) setServed(s0); });
-      const w = await Promise.race([fns.current.lookup(p).catch(() => null), new Promise<null>((ok) => setTimeout(() => ok(null), LOOKUP_MS))]);
+      const w = await limit(fns.current.lookup(p).catch(() => null));
       if (mine !== ask.current) return;   // a newer rest has taken over
       if (w) { setWords(w); setFailed(false); } else setFailed(true);   // the last words stay when this one fails; the point still counts
-      const s = w?.pin ? await fns.current.serve(p, w.pin).catch(() => null) : await placeOnly;   // story #1102: the pin the lookup read goes with the place; no pin read: the place-only answer stands
+      // story #1102: the pin the lookup read goes with the place; no pin read: the place-only answer stands. Story 1426: a failed pin answer falls back only to a place-only yes.
+      const s0 = await placeOnly;
+      const s = w?.pin ? ((await limit(fns.current.serve(p, w.pin)).catch(() => null)) ?? (s0?.serviceable ? s0 : null)) : s0;
       if (mine !== ask.current) return;
-      if (s) { pinAnswered = true; setServed(s); }
+      if (s) { pinAnswered = true; setServed(s); setNoAnswer(false); }
+      else if (!kitchen) { setServed(null); setNoAnswer(true); }   // story 1426: never another place's answer; Try again instead of Confirm
       if (!w || !s) settled.current = null;   // story 1393: a failed ask is not a settled place; the next rest there asks again
       setBusy(false);
     }, SETTLE_MS);
@@ -259,7 +265,9 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
         {failed && <span className="ui-pinmap-addr ui-pinmap-quiet">Could not read the address, the pin still counts</span>}
         {note && <span role="alert" className="ui-pinmap-addr ui-pinmap-quiet">{note}</span>}
         {strips.map((s) => <span key={s.kind} role="status" className={`ui-pinmap-strip ${s.kind}`}>{s.text}</span>)}
-        <button type="button" className="ui-btn big" disabled={busy || sending} onClick={() => (onPoint ? onPoint({ at: point, words }) : far ? void invite(far) : setPick({ at: point, words, served: served ? served.serviceable : null }))}>{far ? "Invite the founders here" : confirmLabel}</button>
+        {noAnswer && !kitchen && <span role="status" className="ui-pinmap-strip warn">We could not check this place. Check your internet.</span>}   {/* story 1426, board PE1: yellow, not the red no */}
+        {noAnswer && !kitchen ? <button type="button" className="ui-btn big" disabled={busy} aria-busy={busy} onClick={() => { settled.current = null; settle(point); }}>Try again</button> :
+        <button type="button" className="ui-btn big" disabled={busy || sending} onClick={() => (onPoint ? onPoint({ at: point, words }) : far ? void invite(far) : setPick({ at: point, words, served: served ? served.serviceable : null }))}>{far ? "Invite the founders here" : confirmLabel}</button>}
         <span className="mono ui-pinmap-credit">{words?.from === "ola" && <><a href={OSM} target="_blank" rel="noopener noreferrer">Ola Maps</a> · </>}<a href={OSM} target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a></span>
       </div>}
       {pick && <DetailsSheet pick={pick} edit={edit} draft={draft.current} onDraft={(d) => { draft.current = d; }} onChange={() => setPick(null)} onSave={onSave} onHeight={(h) => { root.current?.style.setProperty("--sheet-h", `${h}px`); live.current?.map.invalidateSize({ pan: false }); const c = pick.at; live.current?.map.setView([c.lat, c.lng], live.current.map.getZoom(), { animate: false }); }} />}
