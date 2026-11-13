@@ -519,10 +519,10 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 /* Story 936: dish rows with no buttons (board M1-DishRows-B), the Edit sheet (board M2-DishEdit) and the invite trash icon. */
 .ui-dish-line { width: 100%; min-height: 60px; gap: 10px; background: transparent; border: 0; border-bottom: 1px solid var(--md-outline-variant); color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .ui-dish-main { display: inline-flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
-.ui-dish-main.off, .ui-dish-price.off { opacity: 0.55; }
+.ui-dish-main.off, .ui-krow-price.off { opacity: 0.55; }
 .ui-dish-text { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
 .ui-dish-text .ui-tag { font-size: 11px; line-height: 1.2; padding: 2px 6px; }
-.ui-dish-price { font-size: 13px; flex: none; }
+.ui-krow-price { font-family: var(--gs-font-mono); font-size: 13px; font-weight: 500; flex: none; }   /* 1401: the kitchen menu rows own this class; .ui-dish-price is the customer sheet only */
 .ui-go { color: var(--md-primary); font-size: 22px; line-height: 1; }
 .ui-dish-photo-row { display: flex; align-items: center; gap: 12px; margin: 16px 0 0; }
 .ui-dish-photo-row img, .ui-dish-photo-ph { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; border: 1px solid var(--md-outline-variant); }
