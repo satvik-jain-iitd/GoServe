@@ -395,3 +395,7 @@ Run 8 Nov 2026 for "web push deno": chosen `web-push` (the reference library, 3.
 ## 2026-11-09 · need: rider dispatch rules engine in Postgres (story #1068)
 
 Run 8 Nov 2026, need "rider dispatch rules engine postgres sql function order assignment": no repository found. Reused what is in this repo (`dispatch_candidates`, `dispatch_order_v2`, the n8n rule in `decide_guard.js`). The rule is ported, not invented; the golden test (153 rider sets against the n8n rule) is the proof. Nothing to borrow; built from scratch only for the trigger glue, and said so in the PR.
+
+## 2026-11-13 · need: the phone's Back button closes the open sheet, then the screen on top (story #1396)
+
+Runs (coder): `scout.py --need "react back button close modal history"`: no repos found. GitHub search "react modal back button history": none. "use-back-button react" and "android back button pwa modal": none. `topic:react-hooks back button` gave only big UI and form kits (Semantic-UI, react-hook-form, refine, formik), none about Back. No README was worth reading: nothing in the results does this job, so the README step of rule 0 had nothing to read. Decision: built from scratch with the browser's own History API (`pushState` and `popstate`), about 60 lines in `app/src/lib/back.ts`. PR #1414. The search was run on 13 Nov before the build; this row records it late.
