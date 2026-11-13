@@ -121,8 +121,8 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
         {!empty && (
           <form className="ui-form ph-no-capture" onSubmit={(e) => e.preventDefault()}>
             {details && (savedRow
-              ? <div className="ui-phone-row"><span><small className="mono">The rider calls you on</small><b className="mono">{details.phone}</b></span><button type="button" className="ui-pinmap-change" onClick={() => setChanging(true)}>Change</button></div>   /* board BF2: ten digits together */
-              : <div className="ui-field"><label htmlFor="phone">Phone number · the rider calls you on it</label><input ref={phoneRef} id="phone" className="mono-input" type="tel" value={details.phone} inputMode="numeric" maxLength={10} autoComplete="tel-national" onChange={(e) => details.onPhone(e.target.value.replace(/\D/g, ""))} /></div>)}
+              ? <div className="ui-phone-row"><span><small className="mono">The rider calls you on</small><span className="mono">{details.phone}</span></span><button type="button" className="ui-pinmap-change" onClick={() => setChanging(true)}>Change</button></div>   /* board BF2: ten digits together */
+              : <div className="ui-field"><label htmlFor="phone">Phone number · the rider calls you on it</label><input ref={phoneRef} id="phone" className="mono-input" type="tel" placeholder="10 digit number" value={details.phone} inputMode="numeric" maxLength={10} autoComplete="tel-national" onChange={(e) => details.onPhone(e.target.value.replace(/\D/g, ""))} /></div>)}
             <div className="ui-field"><label htmlFor="address">Address</label><textarea id="address" className="ui-eg" rows={2} value={address} maxLength={300} placeholder="e.g. C-128, Green Avenue Colony" onChange={(e) => onAddress(e.target.value)} /></div>
             <div className="ui-field"><label htmlFor="note">Note for the kitchen (optional)</label><textarea id="note" className="ui-eg" rows={2} value={note} maxLength={NOTE_MAX} placeholder="e.g. less spicy, no onion" onChange={(e) => onNote(e.target.value)} /><p className="mono ui-note-count"><span>{note.length} / {NOTE_MAX}</span></p></div>
             {door && (
@@ -140,7 +140,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
       </div>
       {!empty && (
         <div className="ui-sticky float">
-          {!ready && !sending && !soldOut && <p role="status" className="ui-reason">{address.trim().length === 0 ? "Add your address to place the order." : "Add your 10 digit phone number."}</p>}   {/* story #1170: why the button is off */}
+          {!ready && !sending && !soldOut && <p role="status" className="ui-reason">{address.trim().length === 0 ? "Add your address to place the order." : details && details.phone.length === 10 ? "The phone must be ten digits and start with 6, 7, 8 or 9." : "Add your 10 digit phone number."}</p>}   {/* story #1170: why the button is off */}
           <button type="button" className="ui-btn bar" disabled={!ready || sending} onClick={onPlace}>
             <span className="mono">{door?.value === "upi_door" ? "UPI" : door?.value === "cash" ? "Cash" : "At door"} · {formatRupees(total)}</span><span className="verb">{sending ? "Placing…" : soldOut ? "Fix the bill first" : "Place order ›"}</span>
           </button>

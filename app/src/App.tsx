@@ -125,8 +125,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [note, setNote] = useState("");   // story #935: the note for the kitchen is for this order only, never kept
   const [name, setName] = useState(draft0?.name ?? "");
   const [phone, setPhone] = useState(draft0?.phone ?? "");
-  const [savedPhone, setSavedPhone] = useState<string | null>(null);
-  const [signInName, setSignInName] = useState("");   // story 1417: the Bill never asks the name; the order takes this one when none is saved   // story 1417 (board BF2): the phone kept on the account; the bill shows it on one line
+  const [savedPhone, setSavedPhone] = useState<string | null>(null);   // story 1417 (board BF2): the phone kept on the account; the bill shows it on one line
+  const [signInName, setSignInName] = useState("");   // story 1417: the Bill never asks the name; the order takes this one when none is saved
   // Story #551: the phone code at checkout. verified = this user already has a phone linked.
   // Story 829: the phone code is a switch the admin flips (settings row otp_login_on), off until an SMS provider is live. The login wall (Google, or the code) shows to
   // a signed-out customer either way. otpSetting: undefined = not read yet, null = could not be read (then VITE_OTP_GATE, then off).

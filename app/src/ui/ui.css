@@ -914,4 +914,4 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
 .ui-phone-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .ui-phone-row > span { display: flex; flex-direction: column; gap: 2px; }
 .ui-phone-row small { font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
-.ui-phone-row b { font-size: 16px; }
+.ui-phone-row > span > span { font-size: 16px; font-weight: 400; }
