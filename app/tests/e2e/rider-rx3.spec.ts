@@ -67,3 +67,41 @@ test("RX3.6 the round buttons are 48 px with at least 8 px between them", async 
   for (const b of [call, nav]) { expect(Math.round(b.width)).toBe(48); expect(Math.round(b.height)).toBe(48); }
   expect(nav.x - (call.x + call.width)).toBeGreaterThanOrEqual(8);
 });
+
+// Review of PR 1186 (13 Nov 2026): the longest legal inputs must never push the buttons or the tabs off a short screen.
+const words = (n: number, w: string) => Array.from({ length: Math.ceil(n / (w.length + 1)) }, () => w).join(" ").slice(0, n);
+test("RX3.7 at 360 x 640 with the longest legal address and a 200-letter note, the slip scrolls and Delivered can be tapped", async ({ page, context }) => {
+  await page.setViewportSize({ width: 360, height: 640 });
+  const address = `${words(120, "House")}, ${words(120, "Landmark")}, Lajpat Nagar II, South East Delhi, Delhi 110024`;
+  const net = await open(page, context, job({ address, instructions: words(200, "Ring") }));
+  const deliver = page.getByRole("button", { name: /^Delivered/ });
+  const b = (await deliver.boundingBox())!;
+  expect(b.y + b.height).toBeLessThanOrEqual(640);
+  const tabs = (await page.getByRole("navigation", { name: "Main" }).boundingBox())!;
+  expect(tabs.y + tabs.height).toBeLessThanOrEqual(640);
+  await deliver.click();
+  await expect(page.getByRole("region", { name: /^Collect payment/ })).toBeVisible();
+  expect(net.calls.status.filter((c) => c.body.action === "deliver")).toEqual([]);
+});
+
+test("RX3.8 Could not deliver? is a left, 14 px, regular, underlined link with a 44 px tap height", async ({ page, context }) => {
+  await open(page, context);
+  const link = page.getByRole("button", { name: "Could not deliver?" });
+  const st = await link.evaluate((el) => { const c = getComputedStyle(el); return { size: c.fontSize, weight: c.fontWeight, line: c.textDecorationLine }; });
+  expect(st).toEqual({ size: "14px", weight: "400", line: "underline" });
+  const b = (await link.boundingBox())!;
+  expect(b.height).toBeGreaterThanOrEqual(44);
+  const slip = (await page.locator(".ui-slip").first().boundingBox())!;
+  expect(b.x - slip.x).toBeLessThanOrEqual(20);   // left, at the slip's padding
+});
+
+test("RX3.9 Call has a 1.5 px ring, Navigate an outline 22 px arrow, and Note is small mono text", async ({ page, context }) => {
+  await open(page, context, job({ instructions: "Ring the bell twice" }));
+  expect(await page.getByRole("link", { name: "Call Rahul" }).evaluate((el) => getComputedStyle(el).boxShadow)).toMatch(/ 0px 0px 0px 1\.5px inset$/);
+  const arrow = page.getByRole("link", { name: "Navigate" }).locator("svg");
+  expect(await arrow.getAttribute("width")).toBe("22");
+  expect(await arrow.getAttribute("fill")).toBe("none");
+  const key = page.locator(".ui-rx-note").getByText("Note ·");
+  const st = await key.evaluate((el) => { const c = getComputedStyle(el); return { size: c.fontSize, mono: /mono/i.test(c.fontFamily) }; });
+  expect(st).toEqual({ size: "12px", mono: true });
+});
