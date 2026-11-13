@@ -1,5 +1,5 @@
 // The rider app on the Ink v3 boards R3 to R9 (story H11, #194): one delivery in hand (Job), today's cash (Today), and Me.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { deliveredToday, hhmm, riderActions, riderOrders, shortId, type Order, type RiderAction } from "../lib/kitchen";
 import { formatRupees, linePaise } from "../lib/money";
 import { cashInHand, DOOR_NEAR_M, firstName, handedOver, hoursOf, locationLabel, type KitchenCard, type RiderGateState } from "../lib/rider";
@@ -77,6 +77,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
   const pinOf = (o: Order) => (typeof o.drop_lat === "number" && typeof o.drop_lng === "number" ? { lat: o.drop_lat, lng: o.drop_lng } : null);
   const [here, setHere] = useState<{ lat: number; lng: number } | "none" | null>(null);   // null: still finding the phone's place
   const [doorTap, setDoorTap] = useState<string | null>(null);
+  const nearSeen = useRef<string | null>(null);   // once near, Arriving stays for that order: a jumpy place never takes it away
   const watchId = job && job.status === "out_for_delivery" && pinOf(job) && !arrived.has(job.id) ? job.id : null;
   useEffect(() => {
     if (!watchId) return;
@@ -96,7 +97,8 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
     const at = here && here !== "none" ? here : null;
     const away = pin && at ? metres(at.lat, at.lng, pin.lat, pin.lng) : null;
     const awayText = pin && at ? distanceText(at.lat, at.lng, pin.lat, pin.lng) : null;
-    const step = arrived.has(o.id) ? 3 : !pin || here === "none" || doorTap === o.id || (away !== null && away <= DOOR_NEAR_M) ? 2 : 1;
+    if (away !== null && away <= DOOR_NEAR_M) nearSeen.current = o.id;
+    const step = arrived.has(o.id) ? 3 : !pin || here === "none" || doorTap === o.id || nearSeen.current === o.id ? 2 : 1;
     return { step, away, awayText };
   };
   const riderFirst = (gate?.name ?? "").trim().split(/\s+/)[0];
@@ -188,7 +190,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
           </section>
           {out && door.step === 3 && (
             <section className="ui-rx-say" aria-label="Say at the door">
-              <b>Say at the door</b>
+              <p className="mono ui-rx-say-k">Say at the door</p>
               <p>Namaste sir, main {riderFirst ? `${riderFirst}, ` : ""}GoServe kitchen team se. Thank you for ordering.</p>
             </section>
           )}
@@ -200,7 +202,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
               <div className="ui-rx-door">
                 {door.awayText && <p className="mono">{door.awayText} to the door</p>}
                 <p className="ui-meta">The Arriving button shows here when you are near.</p>
-                <button type="button" className="ui-btn text" onClick={() => { setDoorTap(job.id); onAtDoor(job, door.away === null ? null : Math.round(door.away)); }}>I am at the door</button>
+                <button type="button" className="ui-rx-link" onClick={() => { setDoorTap(job.id); onAtDoor(job, door.away === null ? null : Math.round(door.away)); }}>I am at the door</button>
               </div>
             )}
             {out && door.step === 2 && door.awayText && <p className="mono ui-rx-door">{door.awayText} to the door</p>}
