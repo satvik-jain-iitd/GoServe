@@ -913,8 +913,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
 
   async function place() {
     if (lock && lock !== "customer") return;   // story H2: only the customer app and the demo console place orders
-    if (gate && !verified) { setOtpOpen(true); return; }
-    if (gate && !name.trim() && !nameAsked) { setPendingPlace(true); return; }
+    // Story 1417 (issue text; the reviewer asks the owner for the switch-on case): checkout never opens the number, code or name sheet. The phone is the Bill's field.
+    // The switch and OtpSheet stay: the welcome wall still uses them. The sheet form (otpOpen) and NameSheet below have no opener now; they stay until the owner rules on the switch-on case.
     pushTrail("place order");
     setSending(true);
     setError(null);
@@ -1014,7 +1014,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // Story #667: with the phone code on, the first screen is the number and the code (or Google); nothing else shows before it.
   const customerView = wall && (signedIn === null || otpSetting === undefined) ? <div className="ui-pad"><Skeleton lines={3} /></div> : wall && signedIn === false ? (
     <OtpSheet welcome googleOnly={!gate} phone={phone} onClose={() => undefined}
-      onVerified={(p) => { setPhone(p); setVerified(true); setSignedIn(true); }} />
+      onVerified={(p) => { setPhone(p); setSavedPhone(p); setVerified(true); setSignedIn(true); }} />
   ) : pinMap ? (
     <PinMapScreen center={pinMap.center} edit={pinMap.edit} kicker={pinMap.edit ? `Editing ${pinMap.edit.label}` : undefined} confirmLabel={pinMap.edit ? "Save changes" : "Confirm & proceed"} onBack={() => { setFocusSearch(false); setPinMap(null); }} search={(q) => placeSearch(q)} searchOpen={focusSearch} onSearch={() => { setPinMap(null); if (needArea) setStep("deliver"); }}
       onInvite={async (f) => { const err = await askArea(f.pin, f.at); if (err) return err; setAreaAsk("done"); setPinMap(null); setFarPick(f); return null; }}
