@@ -47,10 +47,12 @@ export function useBackCloses(open: boolean, close: () => void) {
   }, [open]);
 }
 
-/** The app moved to `screen`. A screen with a Back step (You, Deliver to) adds one; any other screen goes back to the menu's step. */
-export function screenStep(screen: string, stepped: boolean) {
+/** The app moved to `screen`. A screen with a Back step adds one; the menu goes back to the menu's step.
+ * `replace`: the screen takes the place of the one it came from (story 1415: the bill becomes the tracker once the order is placed, so Back shows the menu). */
+export function screenStep(screen: string, stepped: boolean, replace = false) {
   start();
   if (!stepped) { drop(depth); depth = 0; return; }
+  if (replace && depth > 0) { window.history.replaceState({ gsScreen: screen, gsDepth: depth }, "", here()); return; }
   depth++;
   window.history.pushState({ gsScreen: screen, gsDepth: depth }, "", here());
 }

@@ -103,21 +103,24 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // The customer app keeps an unfinished order across a refresh (story B1); the demo console and the other apps start fresh.
   const [draft0] = useState(() => (lock === "customer" ? loadDraft() : null));
   const [step, setStep] = useState<Step>(lock === "customer" && takeReturn() ? "account" : draft0 && draft0.step !== "placed" && draft0.step !== "orders" ? draft0.step === "cart" ? "bill" : (draft0.step as Step) : "menu");   // an older draft may hold the cart step: the bill replaced it (H10c)
-  // Story 1396: You and Deliver to each add a Back step, so the phone's Back shows the screen under them; on the menu Back leaves the app (lib/back.ts).
+  // Story 1396, 1415: every screen but the menu (the bill, the tracker, orders, You, Deliver to) adds a Back step, so the phone's Back shows the screen under them; on the menu Back leaves the app (lib/back.ts).
   const stepNow = useRef(step);
   stepNow.current = step;
   const fromBack = useRef<Step | null>(null);
   const firstStep = useRef(true);
+  const lastStep = useRef(step);
   useEffect(() => {
     if (lock !== "customer") return;
     onBackScreen((sc) => { if (sc === stepNow.current) return; fromBack.current = sc as Step; setStep(sc as Step); });
   }, []);
   useEffect(() => {
     if (lock !== "customer") return;
-    const stepped = step === "account" || step === "deliver";
+    const stepped = step !== "menu";
+    const was = lastStep.current;
+    lastStep.current = step;
     if (fromBack.current === step) { fromBack.current = null; return; }
     if (firstStep.current) { firstStep.current = false; if (!stepped) return; }
-    screenStep(step, stepped);
+    screenStep(step, stepped, was === "bill" && step === "placed");   // a placed order: Back from the tracker shows the menu, never the bill again
   }, [step]);
   const [cart, setCart] = useState<Cart>(draft0?.cart ?? {});
   const [address, setAddress] = useState(draft0?.address ?? "");

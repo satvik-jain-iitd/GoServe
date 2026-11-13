@@ -1,5 +1,6 @@
 // Story #976, board C2-AddressSheet, search by story #1036 (board C8-SearchResults): the Deliver to page. The saved addresses with their distance from the phone, a search, two ways to add one, and a small sheet to edit or remove.
 import { useEffect, useRef, useState } from "react";
+import { useBackCloses } from "../lib/back";
 import { distanceM, distanceWord, lastUsed, NEAR_M, type Place, type SavedAddress } from "../lib/addresses";
 import { splitMatch, type PlaceHit } from "../lib/placeSearch";
 import { useSheetFit } from "../ui";
@@ -126,6 +127,7 @@ export function DeliverToScreen({ focusSearch, list, selectedId, here, search, o
 }
 
 function MenuSheet({ a, onClose, onEdit, onRemove }: { a: SavedAddress; onClose: () => void; onEdit: () => void; onRemove: () => void }) {
+  useBackCloses(true, onClose);   // story 1415
   const fit = useSheetFit();
   return (
     <div ref={fit} className="ui-sheet-back" onClick={onClose}>

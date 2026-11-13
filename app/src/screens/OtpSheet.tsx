@@ -1,5 +1,6 @@
 // The phone code sheets of the Ink journeys boards O1 to O9 (story #551): number, code with a resend timer, the contract's errors, a number that is already used, the name.
 import { useEffect, useRef, useState } from "react";
+import { useBackCloses } from "../lib/back";
 import { useSheetFit } from "../ui";
 import { capture } from "../lib/analytics";
 import { finishSignIn, isMobile, sendCode, sendSignInCode, showPhone, verifyCode, type OtpResult } from "../lib/otp";
@@ -12,6 +13,7 @@ type Step = "number" | "code";
 // `welcome` (story #667, boards O0 and O0b): the same steps as the first full screen of the app, with Google under the number and no way to close it.
 // `googleOnly` (story 829, board O0g-B-GoogleFirst): the phone code switch is off, so the welcome screen is one tap: Continue with Google, nothing else.
 export function OtpSheet({ phone: start, onVerified, onClose, welcome = false, googleOnly = false }: { phone: string; onVerified: (phone: string) => void; onClose: () => void; welcome?: boolean; googleOnly?: boolean }) {
+  useBackCloses(!welcome, onClose);   // story 1415: Back closes the code sheet; the welcome wall has nowhere to go back to
   const fit = useSheetFit();   // story #954: the overlay follows the visual viewport
   const [phone, setPhone] = useState(isMobile(start) ? start : "");
   const [step, setStep] = useState<Step>("number");
@@ -153,6 +155,7 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false, g
 
 // O9: asked once, after the first sign in. Skippable.
 export function NameSheet({ onDone }: { onDone: (name: string | null) => void }) {
+  useBackCloses(true, () => onDone(null));   // story 1415: Back is Skip
   const fit = useSheetFit();   // story #954
   const [name, setName] = useState("");
   return (
