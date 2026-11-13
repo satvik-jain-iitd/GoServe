@@ -8,12 +8,13 @@ const files = walk(resolve(__dirname, "../../src")).filter((f) => /\.(ts|tsx)$/.
 
 describe("one way to order", () => {
   it("no Order again text, no orderAgain code, no reorder button anywhere in the app source", () => {
-    const ALLOWED = ["PlacedScreen.tsx", "OrdersScreen.tsx", "App.tsx", "cart.ts", "area.ts"];   // story #977: the History button and the one function behind it; story #1162: area.ts holds the sentence "Order again from 6:00 pm." on a closed menu (owner's words, a line, not a button)
+    const ALLOWED = ["OrdersScreen.tsx", "App.tsx", "cart.ts", "area.ts"];   // story #977: the History button and the one function behind it; story #1162: area.ts holds the sentence "Order again from 6:00 pm." on a closed menu (owner's words, a line, not a button)
     for (const f of files.filter((f) => !ALLOWED.some((a) => f.endsWith(a)))) expect(readFileSync(f, "utf8"), f).not.toMatch(/order again|orderAgain|reorder/i);
-    expect(readFileSync(resolve(__dirname, "../../src/screens/PlacedScreen.tsx"), "utf8").match(/order again/gi)).toHaveLength(1);   // the one cancelled-order button
     expect(readFileSync(resolve(__dirname, "../../src/screens/OrdersScreen.tsx"), "utf8").match(/>Order again</g)).toHaveLength(1);   // story #977: the one History button
   });
-  it("the placed screen's bottom button for a delivered or cancelled order reads See the menu", () => {
-    expect(readFileSync(resolve(__dirname, "../../src/screens/PlacedScreen.tsx"), "utf8")).toMatch(/cancelled \? "Order again" : "See the menu"/);
+  it("story 1434: the placed screen's main button for a delivered or cancelled order reads Back to menu; the slip has no Order again", () => {
+    const placed = readFileSync(resolve(__dirname, "../../src/screens/PlacedScreen.tsx"), "utf8");
+    expect(placed).toMatch(/>Back to menu<\/button>/);
+    expect(placed).not.toMatch(/order again|See the menu/i);
   });
 });

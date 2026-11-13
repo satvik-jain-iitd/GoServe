@@ -9,11 +9,12 @@ async function noKitchen(page: import("@playwright/test").Page) {
 }
 const screen = (page: import("@playwright/test").Page) => page.getByRole("group", { name: "No kitchen here" });
 
-test("S1 a pin no kitchen serves shows NK-A: the words, the place, Change location, Tell me when you come here, step 4 of 4", async ({ page, context }) => {
+test("S1 a pin no kitchen serves shows NK-A: the words, the place, Change location, Tell me when you come here, no step count", async ({ page, context }) => {
   await setup(context, page, [], { pin: null });
   await noKitchen(page);
   await expect(page.getByRole("heading", { name: "We don't reach here yet" })).toBeVisible();
-  await expect(screen(page)).toContainText("Step 4 of 4");
+  await expect(screen(page)).not.toContainText(/Step \d of \d/);   // 1404: no step count
+  await expect(page.locator(".ui-slip-head")).toHaveCount(0);   // 1404: the slip has no top line either
   await expect(screen(page)).toContainText("Sector 62");
   await expect(screen(page)).toContainText("Noida, Uttar Pradesh 201301");
   await expect(page.getByRole("button", { name: "Change location" })).toBeVisible();

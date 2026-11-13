@@ -17,7 +17,7 @@ async function answer(route: Route, body: unknown) {
   return route.fulfill({ status: 200, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(body) });
 }
 
-test("TC 24.1 Look: the red Cancelled stamp, the lines, Nothing to pay Rs 0, the cancelled line, Order again", async ({ page, context }) => {
+test("TC 24.1 Look: the red Cancelled stamp, the lines, Nothing to pay Rs 0, the cancelled line, Back to menu (story 1434)", async ({ page, context }) => {
   await STEPS["cancelled"](context, page, PATH);
   await expect(page.getByRole("heading", { name: "Cancelled", exact: true })).toBeVisible();   // proves the cancelled screen shows before the slip is checked
   const stamp = page.locator(".ui-stamp", { hasText: "Cancelled" });
@@ -32,16 +32,17 @@ test("TC 24.1 Look: the red Cancelled stamp, the lines, Nothing to pay Rs 0, the
   await expect(total).toContainText("₹0");
   await expect(total).not.toContainText("Cash at door");   // the total is live (shown above), so the absence means something
   await expect(page.getByRole("status").filter({ hasText: "Your order was cancelled. Nothing to pay." })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Order again", exact: true })).toBeVisible();
+  await expect(page.locator(".ui-bottom").getByRole("button", { name: "Back to menu" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Order again", exact: true })).toHaveCount(0);
 });
 
-test("TC 24.2 Order again: the Bill opens with the same dishes at today's prices", async ({ page, context }) => {
+test("TC 24.2 Back to menu: the menu opens with an empty cart, no Bill (story 1434, reverses bug 1229)", async ({ page, context }) => {
   await STEPS["cancelled"](context, page, PATH);
-  await expect(page.getByRole("button", { name: "Order again", exact: true })).toBeVisible();   // proves the button shows before the tap
-  await page.getByRole("button", { name: "Order again", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
-  await expect(page.getByText("Butter Chicken")).toBeVisible();
-  await expect(page.getByText("₹640").first()).toBeVisible();   // 2 x 320 at today's price
+  await expect(page.locator(".ui-bottom").getByRole("button", { name: "Back to menu" })).toBeVisible();   // proves the button shows before the tap
+  await page.locator(".ui-bottom").getByRole("button", { name: "Back to menu" }).click();
+  await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your bill" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /View bill/ })).toHaveCount(0);
 });
 
 test("TC 24.3 Cancelled by me says Cancelled; cancelled by the kitchen says Declined with the reason", async ({ page, context }) => {

@@ -79,7 +79,6 @@ for (const theme of ["day", "night"] as const) {
     await page.getByRole("button", { name: "Add Tandoori Roti" }).click();
     for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "More Tandoori Roti" }).click();
     await page.getByRole("button", { name: /View bill/ }).click();
-    await page.getByLabel("Your name").fill("Rahul Verma");
     await page.getByLabel("Phone").fill("9876543210");
     await page.getByLabel("Address").fill("B-12, Lajpat Nagar II, near the park gate");
     await shot("Bill");
@@ -147,7 +146,8 @@ for (const theme of ["day", "night"] as const) {
     await page.getByRole("button", { name: "Pick up 0f0f0f0f" }).click();
     await page.getByText("On the way", { exact: true }).waitFor();
     await shot("R-OnTheWay");
-    await page.getByRole("button", { name: "Delivered 0f0f0f0f", exact: true }).click();
+    await page.getByRole("button", { name: "Arriving 0f0f0f0f" }).click();
+    await page.getByRole("button", { name: /^Collect ₹/ }).click();   // story 1182, board RY3: Collect opens Collect payment
     await page.getByText("Cash collected").waitFor();
     await shot("R-Delivered");
     await page.getByRole("button", { name: "Next delivery" }).click();

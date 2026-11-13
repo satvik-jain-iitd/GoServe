@@ -139,7 +139,7 @@ test("S10 Confirm & proceed opens the details step over the same map (story #103
   await page.getByRole("button", { name: "Confirm & proceed" }).click();
   const sheet = page.getByRole("dialog", { name: "Address details" });
   await expect(sheet).toBeVisible();
-  await sheet.getByLabel("House, flat, floor").fill("12B");
+  await sheet.getByLabel("House, street, colony, ward").fill("12B");
   await sheet.getByRole("button", { name: "Save address" }).click();
   await expect.poll(() => net.state.addresses.length).toBe(2);
   const saved = net.state.addresses.at(-1)!;

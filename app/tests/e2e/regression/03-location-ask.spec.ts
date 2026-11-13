@@ -16,10 +16,11 @@ async function phone(context: BrowserContext, answer: "blocked" | "never") {
 const box = async (loc: import("@playwright/test").Locator) => (await loc.boundingBox())!;
 const map = (page: Page) => page.getByRole("region", { name: "Pin map" });
 
-test("TC 3.1 slip Your address, Step 3 of 4, the title, the pin in a lime circle on the shared hero line", async ({ page, context }) => {
+test("TC 3.1 slip without a top line or step count, the title, the pin in a lime circle on the shared hero line", async ({ page, context }) => {
   await STEPS["first-open-ask"](context, page, PATH);
   await expect(page.getByRole("group", { name: "Your address" })).toBeVisible();
-  await expect(page.getByText("Step 3 of 4")).toBeVisible();
+  await expect(page.getByText(/Step \d of \d/)).toHaveCount(0);   // 1404 (owner, 13 Nov): no step count anywhere
+  await expect(page.locator(".ui-slip-head")).toHaveCount(0);   // 1404: the slip has no top line either
   await expect(page.getByRole("heading", { name: "Where does the food go?" })).toBeVisible();
   const pin = await box(page.locator(".ui-pinbadge"));
   expect(Math.abs(pin.x + pin.width / 2 - 195)).toBeLessThanOrEqual(2);   // centred
@@ -79,7 +80,7 @@ test("TC 3.7 close the app on this step and open it again: back on Step 3", asyn
   await STEPS["first-open-ask"](context, page, PATH);
   await page.reload();
   await expect(page.getByRole("heading", { name: "Where does the food go?" })).toBeVisible();
-  await expect(page.getByText("Step 3 of 4")).toBeVisible();
+  await expect(page.getByText(/Step \d of \d/)).toHaveCount(0);   // 1404 (owner, 13 Nov): no step count anywhere
 });
 
 // Story #1336: on a short phone the round icon must not cover the buttons, and the outline button is as tall as the green one.

@@ -1,6 +1,7 @@
 // The Feedback button and its sheet (story S-B, #94). A tester tells us what went wrong in ten seconds, without leaving the app.
 // The picture is the phone's own screenshot, picked from the gallery. The words, the screen, the order and the last 20 taps go with it.
 import { useEffect, useState } from "react";
+import { useBackCloses } from "../lib/back";
 import { useSheetFit } from "../ui";
 import { buildPayload, defaultTopic, flushQueue, pictureToBase64, queueReport, SAVED_CARD, SENT_CARD, TEXT_MAX, topicsFor, type Doing, type Report } from "../lib/feedback";
 import { PlaceError } from "../lib/orders";
@@ -22,6 +23,7 @@ const phoneName = () => (navigator.userAgent.match(/\(([^)]+)\)/)?.[1] ?? "unkno
 export function FeedbackSheet({ role, screen, order, getSession, send, preset, button = true }: Props) {
   const fit = useSheetFit();   // story #954: the overlay follows the visual viewport
   const [open, setOpen] = useState(false);
+  useBackCloses(open, () => setOpen(false));   // story 1415
   const [text, setText] = useState("");
   const [topic, setTopic] = useState(() => defaultTopic(role));   // story #661: the list is per app
   const topics = topicsFor(role);

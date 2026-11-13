@@ -6,7 +6,7 @@ const PATH = "/customer/";
 test.use({ viewport: { width: 390, height: 844 } });
 
 const sheet = (page: Page) => page.getByRole("dialog", { name: "Address details" });
-const house = (page: Page) => sheet(page).getByLabel("House, flat, floor");
+const house = (page: Page) => sheet(page).getByLabel("House, street, colony, ward");
 const saveBtn = (page: Page) => sheet(page).getByRole("button", { name: "Save address" });
 const confirm = (page: Page) => page.getByRole("button", { name: "Confirm & proceed" });
 const geocodes = (page: Page) => {
@@ -20,11 +20,11 @@ const lum = (rgb: number[]) => { const [r, g, b] = rgb.map((v) => { const c = v 
 const ratio = (a: number[], b: number[]) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
 const toRgb = (page: Page, css: string) => page.evaluate((v) => { const cv = document.createElement("canvas").getContext("2d")!; cv.fillStyle = v; cv.fillRect(0, 0, 1, 1); return Array.from(cv.getImageData(0, 0, 1, 1).data).slice(0, 3); }, css);
 
-test("TC 8.1 the sheet: Address details, Step 2 of 2, the place with Change, two fields with e.g. examples, Home on, Save address grey", async ({ page, context }) => {
+test("TC 8.1 the sheet: Address details, no step count, the place with Change, two fields with e.g. examples, Home on, Save address grey", async ({ page, context }) => {
   await STEPS["pin-details"](context, page, PATH);
   await expect(sheet(page)).toBeVisible();   // proves the screen shows, so the lines below can fail
   await expect(sheet(page).getByRole("heading", { name: "Address details" })).toBeVisible();
-  await expect(sheet(page).getByText("Step 2 of 2")).toBeVisible();
+  await expect(sheet(page).getByText(/Step \d of \d/)).toHaveCount(0);   // 1404 (owner, 13 Nov): no step count anywhere
   await expect(sheet(page).getByRole("button", { name: "Change" })).toBeVisible();
   const placeRow = sheet(page).getByRole("button", { name: "Change" }).locator("..");   // the row holds the place name beside Change
   await expect.poll(async () => ((await placeRow.textContent()) ?? "").replace("Change", "").trim().length).toBeGreaterThan(0);

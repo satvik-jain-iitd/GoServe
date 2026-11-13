@@ -7,6 +7,8 @@ export type KitchenCard = { name: string; address: string | null; opens_at?: str
 /** What the rider screens get from the gate (story H11): who, online or not, and the two taps. Null in the demo console. */
 export type RiderGateState = { name: string | null; phone: string | null; online: boolean; flip: () => Promise<void>; signOut: () => void };
 export const LOCATION_EVERY_MS = 30_000;
+/** Story 1182: the rider is "near" the door within this many metres of the order's pin, and the Arriving button shows. A guess (docs/assumptions.md). */
+export const DOOR_NEAR_M = 150;
 /** The words on the Offline and Me screens, built from LOCATION_EVERY_MS so they never drift: "every 30 seconds". */
 export const locationLabel = (): string => `every ${LOCATION_EVERY_MS / 1000} seconds`;
 export const shouldSendLocation = (lastSentMs: number | null, nowMs: number): boolean => lastSentMs === null || nowMs - lastSentMs >= LOCATION_EVERY_MS;

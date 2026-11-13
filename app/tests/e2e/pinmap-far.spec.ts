@@ -63,12 +63,73 @@ test("S4 while the serve check is still loading Confirm waits, and never flashes
   await toMap(page, context, null);
   await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeEnabled();
   await context.route("https://test.supabase.co/functions/v1/serviceability**", () => new Promise(() => undefined));   // no answer for the next ask
+  await context.setGeolocation({ latitude: 28.575, longitude: 77.25 });   // story 1393: the phone is somewhere else, so the pin moves and a new ask goes out
   await page.getByRole("button", { name: "Current Location" }).click();
   await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeDisabled();
 });
 
-test("S5 no serve answer at all (offline) goes on to C7 the old way, not NK-A", async ({ page, context }) => {
+// Story 1426 (board PE1, owner "Haan A"): a place with no serve answer is never confirmed. This replaces the old S5 (offline went on to C7).
+const CHECK = "We could not check this place. Check your internet.";
+const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "content-type": "application/json" };
+const SERVED = { ok: true, serviceable: true, request_here: false, kitchens: [{ kitchen_id: "k-1", name: "Green Park Kitchen", distance_m: 1230, eta_min: 30, open: true }] };
+async function drag(page: Page) {
+  const map = (await page.getByRole("application", { name: "Map" }).boundingBox())!;
+  await page.mouse.move(map.x + map.width / 2, map.y + 200);
+  await page.mouse.down();
+  await page.mouse.move(map.x + map.width / 2 + 120, map.y + 260, { steps: 8 });
+  await page.mouse.up();
+}
+async function failedState(page: Page) {
+  await expect(page.getByText(CHECK)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/^We deliver here/)).toHaveCount(0);
+  await expect(page.getByText("Not in our area yet")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Confirm & proceed" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Try again" })).toBeEnabled();
+}
+
+test("S5 no serve answer at all (offline): the yellow could-not-check line and Try again, never Confirm", async ({ page, context }) => {
   await toMap(page, context, { status: 503, body: { ok: false } });
-  await page.getByRole("button", { name: "Confirm & proceed" }).click();
-  await expect(page.getByRole("dialog", { name: "Address details" })).toBeVisible();
+  await failedState(page);
+  await expect(page.getByText(CHECK)).toHaveAttribute("role", "status");
+});
+
+test("S6 a served place, then the serve check fails at a new place: the old green line goes, the yellow line and Try again come", async ({ page, context }) => {
+  await toMap(page, context, null);
+  await expect(page.getByText(/^We deliver here/)).toBeVisible();
+  const card0 = (await page.locator(".ui-pinmap-card").boundingBox())!.height;
+  await context.route("https://test.supabase.co/functions/v1/serviceability**", (r) => r.request().method() === "OPTIONS" ? r.fulfill({ status: 204, headers: CORS }) : r.fulfill({ status: 500, headers: CORS, body: "{}" }));
+  await drag(page);
+  await failedState(page);
+  expect((await page.locator(".ui-pinmap-card").boundingBox())!.height).toBe(card0);   // the card keeps its height
+});
+
+test("S7 the network comes back: Try again asks again and brings the true line and Confirm", async ({ page, context }) => {
+  await toMap(page, context, null);
+  await expect(page.getByText(/^We deliver here/)).toBeVisible();
+  let down = true, asks = 0;
+  await context.route("https://test.supabase.co/functions/v1/serviceability**", async (r) => {
+    if (r.request().method() === "OPTIONS") return r.fulfill({ status: 204, headers: CORS });
+    asks++;
+    if (!down) await new Promise((ok) => setTimeout(ok, 300));
+    return down ? r.fulfill({ status: 500, headers: CORS, body: "{}" }) : r.fulfill({ status: 200, headers: CORS, body: JSON.stringify(SERVED) });
+  });
+  await drag(page);
+  await failedState(page);
+  down = false;
+  const before = asks;
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect(page.getByRole("button", { name: "Try again" })).toBeDisabled();   // busy: no second tap
+  await expect(page.getByText(/^We deliver here/)).toBeVisible();
+  expect(asks).toBeGreaterThan(before);
+  await expect(page.getByText(CHECK)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeEnabled();
+});
+
+test("S8 the serve check never answers: after the wait limit, the same could-not-check state", async ({ page, context }) => {
+  test.setTimeout(45_000);
+  await toMap(page, context, null);
+  await expect(page.getByText(/^We deliver here/)).toBeVisible();
+  await context.route("https://test.supabase.co/functions/v1/serviceability**", (r) => r.request().method() === "OPTIONS" ? r.fulfill({ status: 204, headers: CORS }) : undefined);   // never answers
+  await drag(page);
+  await failedState(page);
 });

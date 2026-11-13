@@ -39,7 +39,7 @@ export function AdminMenu({ kitchenId, kitchenName, onError }: { kitchenId: stri
             <VegMark veg={d.veg !== false} />
             <span className="ui-dish-text"><span>{d.name}</span>{d.available === false && <span className="ui-tag error">Sold out</span>}</span>
           </span>
-          <span className={`mono ui-dish-price${d.available === false ? " off" : ""}`}>{formatRupees(d.price_paise)}</span>
+          <span className={`mono ui-krow-price${d.available === false ? " off" : ""}`}>{formatRupees(d.price_paise)}</span>
           <span className="ui-go" aria-hidden="true">›</span>
         </button>
       ))}

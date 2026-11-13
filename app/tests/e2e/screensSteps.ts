@@ -181,10 +181,10 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
   "deliver-empty": async (context, page, path) => {   // board C11: no saved address yet
     await deliverFrom(context, page, path, 0);
     await expect(page.getByText("No saved address yet")).toBeVisible(); },
-  "edit-on-map": async (context, page, path) => {   // board C9: Edit opens the same map, pin on Home, Save changes
+  "edit-on-map": async (context, page, path) => {   // board ED1 (story 1421): Edit opens the filled details sheet over the map at the saved pin
     await deliverFrom(context, page, path, 3);
     await page.getByRole("button", { name: "Edit or remove Home" }).click(); await page.getByRole("button", { name: "Edit", exact: true }).click();
-    await expect(page.getByText("We deliver here · the kitchen is 1.2 km from the pin")).toBeVisible(); },
+    await expect(page.getByRole("dialog", { name: "Edit address" }).getByRole("button", { name: "Save changes" })).toBeVisible(); },
   "pin-map-far": async (context, page, path) => {   // board C6b: the pin far from the phone and outside our area, both strips
     await deliverFrom(context, page, path, 3, { serve: false });
     await page.getByRole("button", { name: "Add new address" }).click();

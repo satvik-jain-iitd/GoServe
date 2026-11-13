@@ -69,7 +69,6 @@ export function NoKitchen({ address, ask, error, offerPaise, onChange, onTell }:
       </header>
       <div className="ui-slip" role="group" aria-label="No kitchen here">
         <div className="ui-slip-body">
-          <div className="ui-slip-head"><span>Your address</span><span>Step 4 of 4</span></div>
           <h2 className="ui-slip-title">We don't reach here yet</h2>
           <div className="ui-nkplace">
             <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.5" /></svg>
