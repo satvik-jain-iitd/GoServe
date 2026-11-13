@@ -14,4 +14,8 @@ describe("incentiveFor", () => {
     const log = [{ at: "2026-11-14T04:00:00Z", on: true, amount_paise: 1000 }, { at: "2026-11-14T06:30:00Z", on: true, amount_paise: 2000 }, { at: "2026-11-14T08:30:00Z", on: false, amount_paise: 2000 }];
     expect(incentiveFor([d("05:00"), d("06:00"), d("07:00"), d("09:00")], log)).toEqual({ count: 3, total_paise: 4000, amounts: [1000, 2000] });
   });
+  it("review of PR 1470: a delivery is priced at its delivery time, not at a later hand-over or Change that moved updated_at", () => {
+    const log = [{ at: "2026-11-14T04:00:00Z", on: true, amount_paise: 1000 }, { at: "2026-11-14T10:00:00Z", on: true, amount_paise: 2000 }];
+    expect(incentiveFor([{ delivered_at: "2026-11-14T05:00:00Z", updated_at: "2026-11-14T16:00:00Z" }], log)).toEqual({ count: 1, total_paise: 1000, amounts: [1000] });
+  });
 });

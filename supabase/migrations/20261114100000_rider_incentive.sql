@@ -1,17 +1,20 @@
 -- Stories 1443 and 1438 (boards TI1 and AR1; owner, 13 Nov 2026: "incentive wala daalo pr admin settings me bhi jaana chahiye enable disable and adjust krne ka").
 -- An amount for each delivery, paid with the salary. Never part of the cash the rider holds.
--- 1) settings row rider_incentive {"on": false, "amount_paise": 1000}. Prod starts OFF. The amount is Rs 5 to Rs 100 in steps of Rs 5.
+-- 1) settings row rider_incentive {"on": ..., "amount_paise": 1000}. Prod starts OFF. Dev starts ON (story 797: dev carries every switch prod
+--    carries): dev is the database whose settings row clear_allowed is true (set by hand on dev, never on prod; 20261104120000_sim_groups.sql).
+--    The amount is Rs 5 to Rs 100 in steps of Rs 5. The story said a params version; this uses settings plus a log table, the same shape as the
+--    early-friend switch, so each change still keeps who, when and the amount.
 -- 2) rider_incentive_get_v2 / rider_incentive_set_v2: admin only. Every real change is a row in rider_incentive_log (who, when, on, amount),
 --    so a past delivery keeps the amount of its own moment.
 -- 3) rider_incentive_rates: a rider (or an admin) reads the switch now and the changes of the last 35 days, plus the last change before them.
 --    The app counts each delivery at the rate in force when it was delivered. Before the first change the incentive is off.
+-- Safe to run twice: every object is guarded.
+alter table settings drop constraint if exists settings_rider_incentive_rule;
 alter table settings add constraint settings_rider_incentive_rule check (name <> 'rider_incentive' or
   case when jsonb_typeof(value) = 'object' and jsonb_typeof(value -> 'on') = 'boolean' and jsonb_typeof(value -> 'amount_paise') = 'number'
        then (value ->> 'amount_paise')::numeric between 500 and 10000 and (value ->> 'amount_paise')::numeric % 500 = 0
        else false end);
-insert into settings (name, value) values ('rider_incentive', '{"on": false, "amount_paise": 1000}'::jsonb) on conflict (name) do nothing;
-
-create table rider_incentive_log (
+create table if not exists rider_incentive_log (
   id uuid primary key default gen_random_uuid(),
   on_ boolean not null,
   amount_paise integer not null,
@@ -22,7 +25,16 @@ create table rider_incentive_log (
 alter table rider_incentive_log enable row level security;
 revoke all on rider_incentive_log from public, anon, authenticated;
 
-create function rider_incentive_get_v2() returns jsonb
+do $$
+declare v_dev boolean := coalesce((select (value #>> '{}')::boolean from settings where name = 'clear_allowed'), false);
+begin
+  if not exists (select 1 from settings where name = 'rider_incentive') then
+    insert into settings (name, value) values ('rider_incentive', jsonb_build_object('on', v_dev, 'amount_paise', 1000));
+    if v_dev then insert into rider_incentive_log (on_, amount_paise, by_label) values (true, 1000, 'dev seed'); end if;
+  end if;
+end $$;
+
+create or replace function rider_incentive_get_v2() returns jsonb
 language plpgsql stable security definer set search_path = public as $$
 begin
   if not is_admin() then raise exception 'not_admin' using errcode = '42501'; end if;
@@ -30,7 +42,7 @@ begin
           from settings s left join auth.users u on u.id = s.updated_by where s.name = 'rider_incentive');
 end $$;
 
-create function rider_incentive_set_v2(p_on boolean, p_amount_paise integer) returns jsonb
+create or replace function rider_incentive_set_v2(p_on boolean, p_amount_paise integer) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare v_cur jsonb; v_new jsonb;
 begin
@@ -51,7 +63,7 @@ begin
   return jsonb_build_object('ok', true, 'changed', true);
 end $$;
 
-create function rider_incentive_rates() returns jsonb
+create or replace function rider_incentive_rates() returns jsonb
 language plpgsql stable security definer set search_path = public as $$
 declare v_since timestamptz := now() - interval '35 days';
 begin

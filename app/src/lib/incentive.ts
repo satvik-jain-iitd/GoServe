@@ -1,6 +1,7 @@
 // Stories 1443 and 1438 (boards TI1 and AR1): an amount for each delivery, set by the admin, paid with the salary, never part of the cash he holds.
 // The database is the truth (migration 20261114100000); each delivery counts at the rate in force when it was delivered.
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { deliveredAt } from "./kitchen";
 
 export const STEP_RUPEES = 5;
 export const MIN_RUPEES = 5;
@@ -27,13 +28,13 @@ export async function readRates(c: Rpc): Promise<Rates | null> {
   return !error && data && typeof (data as Rates).on === "boolean" ? (data as Rates) : null;
 }
 
-/** Each delivery at the rate in force when it was delivered (updated_at). Before the first change it is off. */
-export function incentiveFor(delivered: { updated_at: string }[], log: Rate[]): { count: number; total_paise: number; amounts: number[] } {
+/** Each delivery at the rate in force when it was delivered (delivered_at; updated_at moves on a Change or the night's hand-over). Before the first change it is off. */
+export function incentiveFor(delivered: { updated_at: string; delivered_at?: string | null }[], log: Rate[]): { count: number; total_paise: number; amounts: number[] } {
   const sorted = [...log].sort((a, b) => a.at.localeCompare(b.at));
   let count = 0, total = 0;
   const amounts = new Set<number>();
   for (const o of delivered) {
-    const t = Date.parse(o.updated_at);
+    const t = Date.parse(deliveredAt(o));
     const rate = sorted.filter((r) => Date.parse(r.at) <= t).at(-1);
     if (rate?.on) { count++; total += rate.amount_paise; amounts.add(rate.amount_paise); }
   }

@@ -4,7 +4,8 @@
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { SESSION, order, setup } from "./helpers";
 
-const ago = (s: number) => new Date(Date.now() - s * 1000).toISOString();
+const BASE = Date.now();   // one clock for the deliveries and the rate changes, so a slow worker never reorders them
+const ago = (s: number) => new Date(BASE - s * 1000).toISOString();
 const done = (i: number, s: number) => ({ ...order("delivered", ago(s), ago(s)), id: `0${i}0${i}0${i}0${i}-1111-4222-8333-444444444444`, rider_id: SESSION, paid_by: "cash", total_paise: 10000 });
 const FOUR = [done(1, 50), done(2, 40), done(3, 30), done(4, 20)];
 const rider = async (context: BrowserContext, page: Page, incentive: object) => {
@@ -35,6 +36,21 @@ test("TI1c the admin changes the amount between deliveries: earlier ones at the 
   await rider(context, page, { on: true, amount_paise: 2000, log: [{ at: ago(120), on: true, amount_paise: 1000 }, { at: ago(35), on: true, amount_paise: 2000 }] });
   await expect(row(page)).toContainText("₹60");   // 2 × ₹10 + 2 × ₹20
   await expect(row(page)).toContainText("4 delivery · salary ke saath milega");
+});
+
+// Review of PR 1470 (13 Nov 2026).
+test("TI1d the switch turned on in the middle of the day: the row says how many count, so the count and the list of 4 agree", async ({ page, context }) => {
+  await rider(context, page, { on: true, amount_paise: 1000, log: [{ at: ago(35), on: true, amount_paise: 1000 }] });
+  await expect(row(page)).toContainText("2 delivery × ₹10 incentive ke baad · salary ke saath milega");
+  await expect(row(page)).toContainText("₹20");
+});
+
+test("TI1e the admin turns it on while the rider's page is open: coming back to the page reads it again", async ({ page, context }) => {
+  const net = await rider(context, page, { on: false, amount_paise: 1000, log: [] });
+  await expect(row(page)).toHaveCount(0);
+  net.state.incentive = { on: true, amount_paise: 1000, log: [{ at: ago(120), on: true, amount_paise: 1000 }] };
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await expect(row(page)).toContainText("₹40");
 });
 
 const admin = async (context: BrowserContext, page: Page, on = false) => {

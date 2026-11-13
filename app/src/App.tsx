@@ -980,9 +980,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   useEffect(() => {
     if (!riderLive) return;
     let alive = true;
-    void readRates(getClient()).then((r) => { if (alive) setIncentive(r); });
-    return () => { alive = false; };
-  }, [riderLive]);
+    const read = () => void readRates(getClient()).then((r) => { if (alive && r) setIncentive(r); });   // a failed re-read keeps the last values
+    read();
+    const back = () => { if (document.visibilityState === "visible") read(); };   // the rider keeps the page open all day: read again on coming back
+    document.addEventListener("visibilitychange", back);
+    return () => { alive = false; document.removeEventListener("visibilitychange", back); };
+  }, [riderLive, orders.length]);   // and when an order comes or goes
   const riderNoKitchen = role === "rider" && !demo && !jobKitchenId && !live.loading;   // stories 1445 and 1440: no order yet, so the one active kitchen, if there is only one
   useEffect(() => {
     if (!riderNoKitchen) return;
