@@ -65,3 +65,29 @@ for (const [w, h] of [[360, 780], [390, 844]]) {
     await page.screenshot({ path: `test-results/alerts-chip-${w}x${h}.png` });
   });
 }
+
+// Review of PR 1464: on short phones the later line sat 4 px on the bell; the forced break left "kitchen" alone at 320 wide.
+for (const [w, h] of [[360, 649], [320, 568]] as const) {
+  test(`N7 at ${w} x ${h} the later line keeps 8 px or more under the bell`, async ({ page, context }) => {
+    await page.setViewportSize({ width: w, height: h });
+    await STEPS["alerts-ask"](context, page, PATH);
+    const bell = (await page.locator(".ui-bellbadge").boundingBox())!;
+    const later = (await page.getByText("You can turn this on later in You.").boundingBox())!;
+    expect(later.y - (bell.y + bell.height)).toBeGreaterThanOrEqual(8);
+  });
+}
+
+test("N8 at 320 wide the reason line has no word alone on a line, and no forced break", async ({ page, context }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await STEPS["alerts-ask"](context, page, PATH);
+  const why = page.getByText("We tell you when your food leaves the kitchen and when it is at your door.");
+  expect(await why.locator("br").count()).toBe(0);
+  const words = await why.evaluate((e) => {   // the words on each line, measured with a range per word
+    const lines = new Map<number, number>();
+    const text = e.firstChild as Text;
+    const re = /\S+/g; let m;
+    while ((m = re.exec(text.data))) { const r = document.createRange(); r.setStart(text, m.index); r.setEnd(text, m.index + m[0].length); const y = Math.round(r.getBoundingClientRect().top); lines.set(y, (lines.get(y) ?? 0) + 1); }
+    return [...lines.values()];
+  });
+  expect(Math.min(...words)).toBeGreaterThan(1);
+});
