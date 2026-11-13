@@ -65,7 +65,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
         <div className="ui-deliver"><b>{o.customer_name || "The customer"}</b><span>{o.address}</span></div>
         <div className="ui-rx-acts">
           {o.customer_phone && <a className="ui-round ghost" href={`tel:${o.customer_phone}`} aria-label={`Call ${firstName(o.customer_name)}`}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" /></svg></a>}
-          {to && <a className="ui-round" href={to} target="_blank" rel="noopener noreferrer" aria-label="Navigate"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 11 21 3l-8 18-2-8-8-2z" /></svg></a>}
+          {to && <a className="ui-round" href={to} target="_blank" rel="noopener noreferrer" aria-label="Navigate"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M3 11 21 3l-8 18-2-8-8-2z" /></svg></a>}
         </div>
       </div>
     );
@@ -130,12 +130,13 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
       const [first, ...rest] = riderActions(job.status);
       return (
         <>
+          <div className="ui-scroll ui-rx-scroll">   {/* story 1182: a long address or note scrolls; the buttons and the tabs stay on the screen */}
           <section className="ui-slip ui-slip-pad" aria-label={`Order ${shortId(job.id)}`}>
             <div className="ui-slip-body">
               {out ? (
                 <>
                   {whoRow(job)}
-                  {job.instructions && <p className="ui-rx-note">Note · {job.instructions}</p>}
+                  {job.instructions && <p className="ui-rx-note"><span className="mono ui-rx-note-k">Note ·</span> {job.instructions}</p>}
                 </>
               ) : (
                 <>
@@ -150,10 +151,11 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
               <div className="ui-slip-rule" />
               <div className="ui-slip-total"><b>To collect at door</b><span>{formatRupees(job.total_paise)}</span></div>
               {!out && callRow(job)}
-              {out && rest[1] && <button type="button" className="ui-btn text ui-rx-cant" disabled={busyId === job.id} onClick={() => void act(job, rest[1])}>Could not deliver?</button>}
+              {out && rest[1] && <button type="button" className="ui-rx-cant" disabled={busyId === job.id} onClick={() => void act(job, rest[1])}>Could not deliver?</button>}
             </div>
           </section>
           {jobs.length > 1 && <p className="mono ui-foot">{jobs.length - 1} more waiting</p>}
+          </div>
           <div className="ui-bottom">
             {out ? (
               <>
