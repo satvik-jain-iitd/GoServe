@@ -61,7 +61,7 @@ import { loadDraft, saveDraft } from "./lib/draft";
 import { PlacedScreen, type Track } from "./screens/PlacedScreen";
 import { readPinPoint, readRider, watchRider, type LatLng } from "./lib/riderTrack";
 import { readEta, type Eta } from "./lib/eta";
-import { readArriving, watchArriving } from "./lib/arriving";
+import { readArriving, riderArrivingAt, riderAtDoor, watchArriving } from "./lib/arriving";
 import type { Point } from "./lib/riderMap";
 import { KitchenScreen } from "./screens/KitchenScreen";
 import { RiderScreen } from "./screens/RiderScreen";
@@ -174,7 +174,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [placed, setPlaced] = useState<PlacedOrder | null>(null);
   const [role, setRole] = useState<Role>(lock ?? "customer");
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [arrived, setArrived] = useState<Set<string>>(new Set());
+  const [arrived, setArrived] = useState<Map<string, string>>(new Map());   // story 1182: order id to when Arriving was sent
   // The live list runs for the kitchen, the rider, and the customer while the tracker is on screen.
   // Autopilot (story #53): 'demo' is the offline story played from local data; 'auto' is the autopilot moving a real order.
   const [auto, setAuto] = useState(false);
@@ -621,7 +621,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   async function act(order: Order, action: { kind: "status"; to: string } | RiderAction, actor: "kitchen" | "rider", method?: DoorMethod): Promise<{ code: string; message: string } | null> {
     if (demo) {
       setOrders((cur) => mergeOrder(cur, { ...order, status: action.kind === "status" ? action.to : action.kind === "refused" ? "cancelled" : order.status, updated_at: new Date().toISOString(), ...(method ? { paid_by: method } : {}) }));
-      if (action.kind === "event") setArrived((cur) => new Set(cur).add(order.id));
+      if (action.kind === "event") setArrived((cur) => new Map(cur).set(order.id, cur.get(order.id) ?? new Date().toISOString()));
       return null;
     }
     setBusyId(order.id);
@@ -637,12 +637,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       const deps = { orderId: order.id };
       const { order: saved } = action.kind === "status" ? await changeStatus({ ...deps, to: action.to, method }, actDeps()) : await addEvent({ ...deps, event: action.event }, actDeps());
       setOrders((cur) => mergeOrder(cur, { ...order, status: saved.status, updated_at: saved.updated_at, paid_by: saved.paid_by ?? method ?? order.paid_by ?? null }));
-      if (action.kind === "event") setArrived((cur) => new Set(cur).add(order.id));
+      if (action.kind === "event") setArrived((cur) => new Map(cur).set(order.id, cur.get(order.id) ?? new Date().toISOString()));
       return null;
     } catch (e) {
       // "Already done" for Arriving means an earlier tap went through (the page may have been reloaded): that is success, not an error.
       if (e instanceof PlaceError && e.code === "already_done") {   // story 1262: for Delivered a second tap changes nothing; the first way it was paid stands
-        if (action.kind === "event") setArrived((cur) => new Set(cur).add(order.id));
+        if (action.kind === "event") setArrived((cur) => new Map(cur).set(order.id, cur.get(order.id) ?? new Date().toISOString()));
         if (action.kind === "status" && action.to === "delivered") {   // the first answer may have been lost: read the order again and show how it was really paid
           const { data } = await getClient().from("orders").select("id,status,updated_at,paid_by").eq("id", order.id);
           const row = (data as { id: string; status: string; updated_at: string; paid_by: string | null }[] | null)?.find((r) => r.id === order.id);
@@ -720,7 +720,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     live.setError(null);
     setDemo(true);
     setOrders([o]);
-    setArrived(new Set());
+    setArrived(new Map());
     setPlaced({ id: o.id, status: o.status, total_paise: o.total_paise, updated_at: o.updated_at });
     setStep("placed");
     setRole("customer");
@@ -737,7 +737,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         setOrders([]);
         setPlaced(null);
         setStep("menu");
-        setArrived(new Set());
+        setArrived(new Map());
       }
     } else if (!navigator.onLine) startOffline();
     else setAuto(true);
@@ -966,6 +966,14 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     fetchKitchen(getClient(), jobKitchenId).then((k) => { if (alive) setJobKitchen(k); }).catch(() => undefined);
     return () => { alive = false; };
   }, [jobKitchenId]);
+  // Story 1182 (board RY3): Arriving is saved on the server. A reload or a second phone reads it back, so the rider opens on step 3, not step 2.
+  const outJobId = role === "rider" && !demo ? riderOrders(orders).find((o) => o.status === "out_for_delivery")?.id ?? null : null;
+  useEffect(() => {
+    if (!outJobId || arrived.has(outJobId)) return;
+    let alive = true;
+    void riderArrivingAt(getClient(), outJobId).then((at) => { if (alive && at) setArrived((cur) => new Map(cur).set(outJobId, cur.get(outJobId) ?? at)); });
+    return () => { alive = false; };
+  }, [outJobId]);   // read once per job in hand
   // Story 1262 (board R7): the ways to collect at the door that are on. null until the read answers; [] when it failed. The rider screen names no method until it has the answer.
   const [riderMethods, setRiderMethods] = useState<DoorMethod[] | null>(demo ? ["cash", "upi_door"] : null);
   const [riderQr, setRiderQr] = useState<string | null | undefined>(undefined);   // undefined: the read has not answered yet
@@ -976,7 +984,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   };
   const riderScreen = (gate: RiderGateState | null) => (
     <RiderScreen orders={orders} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
-      onAct={(o, a, method) => act(o, a, "rider", method)} methods={riderMethods} qrUrl={riderQr} onLoadMethods={loadRiderMethods} gate={gate} kitchen={jobKitchen} />
+      onAct={(o, a, method) => act(o, a, "rider", method)} methods={riderMethods} qrUrl={riderQr} onLoadMethods={loadRiderMethods} gate={gate} kitchen={jobKitchen} onAtDoor={(o, m) => { if (!demo) void riderAtDoor(getClient(), o.id, m); }} />
   );
   const riderView = lock === "rider" ? <RiderGate>{riderScreen}</RiderGate> : riderScreen(null);
   // Story #229: the kitchen confirms a rider's cash. The rows are stamped here too, so the screen does not wait for the next read.

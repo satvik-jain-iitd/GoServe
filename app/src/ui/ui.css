@@ -341,6 +341,12 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-rx-note-k { font-size: 12px; color: var(--gs-text-muted); }
 .ui-rx-cant { justify-self: start; min-height: var(--gs-tap); margin-top: -12px; padding: 0; background: none; border: 0; font: inherit; font-size: 14px; font-weight: 400; color: var(--md-on-surface); text-decoration: underline; cursor: pointer; }
 .ui-rx-scroll { padding-bottom: var(--gs-space-3); }
+/* Story 1182, boards RY1 to RY3: the door steps. The step line sits in the bottom zone above its one button; the "Say at the door" card sits under the slip. */
+.ui-rx-door { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.ui-rx-door p { margin: 0; }
+.ui-rx-say { margin: var(--gs-space-3) var(--gs-gutter) 0; padding: 12px 14px; border-radius: var(--gs-radius-s); background: var(--gs-lime-soft); color: var(--md-on-tertiary); }
+.ui-rx-say b { display: block; font-size: var(--gs-text-sm); margin-bottom: 4px; }
+.ui-rx-say p { margin: 0; }
 .ui-call { text-decoration: none; color: inherit; border-top: 1px solid var(--md-outline-variant); }
 .ui-call-name { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; color: var(--md-primary); }
 .ui-call-no { font-size: var(--gs-mono-sm); }

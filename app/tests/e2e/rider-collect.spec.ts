@@ -1,4 +1,4 @@
-// Story #1262 (epic #1259, board R7-CollectQR): "Delivered" opens Collect payment. The rider says how it was paid at the door, and that marks the order delivered.
+// Story #1262 (epic #1259, board R7-CollectQR): "Delivered" opens Collect payment (story 1182: the button is now "Collect ₹<amount>", after Arriving). The rider says how it was paid at the door, and that marks the order delivered.
 import { test, expect, type Page } from "@playwright/test";
 import { ID, SESSION, order, setup } from "./helpers";
 
@@ -11,7 +11,8 @@ const open = async (context: Parameters<typeof setup>[0], page: Page, state: Rec
   net.state.qrObject = OBJ;   // the admin has uploaded the QR; the cases without one say so
   Object.assign(net.state, state);
   await page.goto("/rider/");
-  await page.getByRole("button", { name: "Delivered 0f0f0f0f", exact: true }).click();
+  await page.getByRole("button", { name: "Arriving 0f0f0f0f" }).click();
+  await page.getByRole("button", { name: /^Collect ₹/ }).click();   // story 1182, board RY3: Collect opens Collect payment
   return net;
 };
 const deliverCalls = (net: Awaited<ReturnType<typeof setup>>) => net.calls.status.filter((c) => c.body.action === "deliver").map((c) => c.body);
@@ -91,7 +92,7 @@ test("C7 a failed save shows the error, keeps the screen, and the retry saves on
 test("C8 already_done is not an error: the order is read again and the slip shows how it was really paid", async ({ page, context }) => {
   const net = await open(context, page);
   net.state.reply = { status: 409, body: { ok: false, error: "already_done", message: "This step was already done." } };
-  net.state.orders = [{ ...onTheWay(), status: "delivered", paid_by: "cash" }];   // an earlier tap saved cash; the rider now taps UPI
+  net.state.orders = [{ ...onTheWay(), status: "delivered", paid_by: "cash", updated_at: new Date(Date.now() + 60_000).toISOString() }];   // an earlier tap saved cash (after the Arriving answer); the rider now taps UPI
   await page.getByRole("button", { name: "Paid by UPI ₹640" }).click();
   await expect(page.getByRole("alert")).toHaveCount(0);
   await expect(page.getByText("Cash collected", { exact: true })).toBeVisible();   // the server's answer, not the rider's tap
@@ -129,7 +130,7 @@ test("C10 UPI is turned off while the rider is on the screen: method_off reads t
 test("C9 Back leaves Collect payment without saving", async ({ page, context }) => {
   const net = await open(context, page);
   await page.getByRole("button", { name: "Back" }).click();
-  await expect(page.getByRole("button", { name: "Delivered 0f0f0f0f", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Collect ₹/ })).toBeVisible();
   expect(deliverCalls(net)).toEqual([]);
 });
 
