@@ -57,7 +57,7 @@ export function JoinedBar<T extends string>({ label, options, value, onPick }: {
 export function ClearCross({ show, onClear, input }: { show: boolean; onClear: () => void; input: RefObject<HTMLInputElement | null> }) {
   if (!show) return null;
   return (
-    <button type="button" className="ui-clear" aria-label="Clear search" onPointerDown={(e) => e.preventDefault()} onClick={() => { onClear(); input.current?.focus(); }}>
+    <button type="button" className="ui-clear-x" aria-label="Clear search" onPointerDown={(e) => e.preventDefault()} onClick={() => { onClear(); input.current?.focus(); }}>
       <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
     </button>
   );
