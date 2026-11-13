@@ -18,7 +18,7 @@ test("S2 the rider app, the ops app and the customer app each open on their own 
   const net = await setup(context, page, [order("ready")]);
   net.state.admin = true;   // the Ops app is for admins only (story A4)
   await page.goto("/rider/");
-  await expect(page.getByRole("heading", { name: "Delivery", exact: true })).toBeVisible();   // H11: the Job tab with a delivery in hand
+  await expect(page.getByRole("heading", { name: "Pick up", exact: true })).toBeVisible();   // H11: the Job tab with a delivery in hand (story 1441, board RP3)
   await expect(page.getByRole("button", { name: "Pick up 0f0f0f0f" })).toBeVisible();
   await expect(page).toHaveTitle("GoServe Rider");
   await page.goto("/ops/");

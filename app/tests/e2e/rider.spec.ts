@@ -5,13 +5,13 @@ import { ID, SESSION, order, setup } from "./helpers";
 const openRider = async (page: Page) => {
   await page.goto("/console/");
   await page.getByRole("button", { name: "Rider" }).click();
-  await expect(page.getByRole("heading", { name: /^(Deliver|On the way)/ })).toBeVisible();   // H11: "Delivery" with a job in hand, "Deliveries" without
+  await expect(page.getByRole("heading", { name: /^(Deliver|On the way|Pick up)/ })).toBeVisible();   // H11: "Delivery" with a job in hand, "Deliveries" without
 };
 
 test("S1 rider steps: pick up, arriving, delivered each send their step as the rider", async ({ page, context }) => {
   const net = await setup(context, page, [order("ready")]);
   await openRider(page);
-  await expect(page.getByText("No. 0f0f0f0f")).toBeVisible();
+  await expect(page.getByText("0f0f0f0f", { exact: true })).toBeVisible();   // story 1441, board RP3: the order number big
   await page.getByRole("button", { name: "Pick up 0f0f0f0f" }).click();
   await expect(page.getByText("On the way", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Arriving 0f0f0f0f" }).click();

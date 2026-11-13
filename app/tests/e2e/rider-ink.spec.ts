@@ -9,12 +9,12 @@ test("S1 the Job tab holds the one delivery in hand: pick up, on the way, delive
   const net = await setup(context, page, [{ ...order("ready"), rider_id: SESSION, customer_name: "Rahul Verma", customer_phone: "9876543210" }]);
   net.state.kitchens = [{ id: "k", name: "Tau Ka Dhaba", address: "C-4, Lajpat Nagar II", phone: "9876500000", pin_codes: ["110016"], open: true, active: true, opens_at: "10:00:00", closes_at: "22:00:00" }];
   await page.goto("/rider/");
-  await expect(page.getByText("Pick up at")).toBeVisible();
-  await expect(page.getByText("Tau Ka Dhaba")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Pick up" })).toBeVisible();   // story 1441, board RP3: the order number, its dishes, where it goes
+  await expect(page.getByText("Order number")).toBeVisible();
   await expect(page.getByText("To collect at door")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Call Rahul" })).toHaveAttribute("href", "tel:9876543210");
   await page.getByRole("button", { name: "Pick up 0f0f0f0f" }).click();
   await expect(page.getByText("On the way", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Call Rahul" })).toHaveAttribute("href", "tel:9876543210");
   await page.getByRole("button", { name: "Arriving 0f0f0f0f" }).click();
   await expect(page.getByRole("button", { name: "Arriving 0f0f0f0f" })).toHaveCount(0);   // story 1182: step 3 has no Arriving button
   await page.getByRole("button", { name: /^Collect ₹/ }).click();   // story 1182, board RY3: Collect opens Collect payment
@@ -112,17 +112,17 @@ test("S7 a phone with no Google sign-in sees Sign in to ride", async ({ page, co
   await expect(page.getByTestId("google-signin")).toBeVisible();
 });
 
-test("S8 when the kitchen row cannot be read, the pick-up card still shows and says The kitchen", async ({ page, context }) => {
+test("S8 when the kitchen row cannot be read, the pick-up card still shows (board RP3 names no kitchen)", async ({ page, context }) => {
   const net = await setup(context, page, [{ ...order("ready"), rider_id: SESSION }]);
   net.state.kitchens = [];   // no row comes back for the order's kitchen_id
   await page.goto("/rider/");
-  await expect(page.getByText("The kitchen", { exact: true })).toBeVisible();
+  await expect(page.getByText("Order number")).toBeVisible();
   await expect(page.getByRole("button", { name: "Pick up 0f0f0f0f" })).toBeEnabled();
 });
 
-test("S9 two ready orders: the one waiting longest is the job in hand, the other waits", async ({ page, context }) => {
+test("S9 two ready orders of one kitchen are one trip, the one waiting longest first (story 1441, board RT1)", async ({ page, context }) => {
   await setup(context, page, [{ ...order("ready", "2020-01-01T10:10:00Z", "2020-01-01T10:10:00Z"), rider_id: SESSION }, { ...order("ready", "2020-01-01T10:00:00Z", "2020-01-01T10:00:00Z"), id: "0a0a0a0a-0000-0000-0000-000000000000", rider_id: SESSION }]);
   await page.goto("/rider/");
-  await expect(page.getByText("No. 0a0a0a0a")).toBeVisible();
-  await expect(page.getByText("1 more waiting")).toBeVisible();
+  await expect(page.getByText("This trip · 2 packets")).toBeVisible();
+  await expect(page.getByRole("checkbox")).toHaveText([/^0a0a0a0a/, /^0f0f0f0f/]);
 });

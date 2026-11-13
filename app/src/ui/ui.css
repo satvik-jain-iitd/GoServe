@@ -344,6 +344,18 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-rx-scroll { padding-bottom: var(--gs-space-3); }
 /* Story 1182, boards RY1 to RY3: the door steps. The step line sits in the bottom zone above its one button; the "Say at the door" card sits under the slip. */
 .ui-rx-change { justify-self: end; margin-top: -10px; min-height: var(--gs-tap); padding: 0; background: none; border: 0; font: inherit; font-size: 15px; font-weight: 600; color: var(--md-primary); cursor: pointer; }   /* story 1448, boards DV1 and DV2 */
+.ui-pick { display: flex; flex-direction: column; gap: 2px; }   /* story 1441, board RP3 */
+.ui-pick-no { font-size: 44px; line-height: 1.05; color: var(--md-on-background); }
+.ui-pick-items { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.ui-pick-addr, .ui-tick-addr { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ui-trip { gap: 12px; }   /* boards RT1 and RT2: the whole row is the tap */
+.ui-tick-row { display: flex; align-items: center; gap: 12px; min-height: var(--gs-tap); width: 100%; padding: 0; background: none; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.ui-tick { flex: none; width: 28px; height: 28px; box-sizing: border-box; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; background: var(--md-surface); border: 2px solid var(--md-primary); }
+.ui-tick-row[aria-checked="true"] .ui-tick { background: var(--md-primary); color: var(--md-on-primary); }
+.ui-tick-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ui-tick-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.ui-tick-no { font-size: 26px; line-height: 1.1; }
+.ui-tick-addr { font-size: 14px; color: var(--gs-text-muted); }
 .ui-rx-next { margin: 0; text-align: center; font-size: 14px; color: var(--md-on-background); }
 .ui-rx-door { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
 .ui-rx-door p { margin: 0; }

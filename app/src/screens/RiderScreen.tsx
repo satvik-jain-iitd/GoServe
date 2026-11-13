@@ -1,12 +1,11 @@
 // The rider app on the Ink v3 boards R3 to R9 (story H11, #194): one delivery in hand (Job), today's cash (Today), and Me.
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { deliveredAt, deliveredToday, hhmm, riderActions, riderOrders, shortId, type Order, type RiderAction } from "../lib/kitchen";
-import { formatRupees, linePaise } from "../lib/money";
+import { formatRupees } from "../lib/money";
 import { cashInHand, DOOR_NEAR_M, firstName, handedOver, hoursOf, type KitchenCard, type RiderGateState } from "../lib/rider";
 import { distanceText, metres } from "../lib/riderMap";
 import type { DoorMethod } from "../lib/doorMethods";
 import { Skeleton, Tabs } from "../ui";
-import { AdjustLines } from "../ui/AdjustLines";
 
 type Tab = "job" | "today" | "me";
 type Props = {
@@ -27,7 +26,9 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
   const [tab, setTab] = useState<Tab>("job");
   const [doneId, setDoneId] = useState<string | null>(null);   // the slip just delivered stays until "Next delivery" (R7)
   const jobs = riderOrders(orders);
-  const job = jobs[0] ?? null;
+  // Story 1441, review of PR 1469: while a trip's pickups run, or after one failed, the packets still at the kitchen stay on Pick up; never On the way with a packet left.
+  const [tripIds, setTripIds] = useState<string[] | null>(null);
+  const job = (tripIds ? jobs.find((o) => o.status === "ready" && tripIds.includes(o.id)) : undefined) ?? jobs[0] ?? null;
   const done = doneId ? orders.find((o) => o.id === doneId) ?? null : null;
   const today = deliveredToday(orders, new Date(), hoursOf(kitchen));   // story #229: the day ends at the kitchen's closing time
   const cash = cashInHand(today);
@@ -56,20 +57,6 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
     <button key={a.label} type="button" className={ghost ? "ui-btn ghost big" : "ui-btn big"} aria-label={`${a.label} ${shortId(o.id)}`}
       disabled={busyId === o.id || (a.kind === "event" && arrived.has(o.id))} onClick={() => void act(o, a)}>{text}</button>
   );
-  const deliverTo = (o: Order) => (
-    <div className="ui-deliver">
-      <span className="mono ui-kicker">Deliver to</span>
-      <b>{o.customer_name || "The customer"}</b>
-      <span>{o.address}</span>
-      {o.instructions && <span className="ui-meta">{o.instructions}</span>}
-    </div>
-  );
-  const callRow = (o: Order) => o.customer_phone ? (
-    <a className="ui-row ui-call" href={`tel:${o.customer_phone}`}>
-      <span className="ui-call-name"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" /></svg>Call {firstName(o.customer_name)}</span>
-      <span className="mono ui-call-no">{o.customer_phone}</span>
-    </a>
-  ) : null;
   // Story #1182 (board RX3): Google Maps directions to the customer's exact pin (a link, no API cost). No pin on the order: no Navigate, never a wrong place.
   const directions = (o: Order) => typeof o.drop_lat === "number" && typeof o.drop_lng === "number" ? `https://www.google.com/maps/dir/?api=1&destination=${o.drop_lat},${o.drop_lng}&travelmode=two-wheeler` : null;
   // Board RX3 (owner, 13 Nov 2026): the name and the address, and beside them two round 48 px buttons with no words: Call (outline) and Navigate (filled).
@@ -115,6 +102,17 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
     return { step, away, awayText };
   };
   const riderFirst = (gate?.name ?? "").trim().split(/\s+/)[0];
+  // Story 1441 (boards RT1, RT2; owner: "tick wala tareeka"): every ready packet of the kitchen goes in one trip. Each is ticked into the bag; a packet left on the counter never goes as picked up.
+  const [ticked, setTicked] = useState<Set<string>>(new Set());
+  const [tripBusy, setTripBusy] = useState(false);
+  const toggle = (id: string) => setTicked((cur) => { const next = new Set(cur); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  const pickAll = async (trip: Order[]) => {   // each packet is its own save, in turn; the first one that fails stops the rest and its error shows
+    setTripBusy(true); setTripIds(trip.map((o) => o.id));
+    let failed = false;
+    for (const o of trip) { const up = riderActions(o.status)[0]; if (up && (await onAct(o, up))) { failed = true; break; } }
+    setTripBusy(false);
+    if (!failed) setTripIds(null);   // all in the bag: On the way. A failure keeps the rest on Pick up, with its error
+  };
   const todayLine = <p className="mono ui-foot">Today · {today.length} delivered</p>;
 
   const jobView = () => {
@@ -177,8 +175,66 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
         </div>
       </>
     );
-    if (job) {   // R5 and R6
-      const out = job.status === "out_for_delivery";
+    if (job && job.status === "ready") {
+      const trip = jobs.filter((o) => o.status === "ready" && o.kitchen_id === job.kitchen_id);
+      const more = jobs.length - trip.length;
+      if (trip.length > 1) {   // boards RT1 and RT2
+        const left = trip.filter((o) => !ticked.has(o.id)).length;
+        return (
+          <>
+            <div className="ui-scroll ui-rx-scroll">
+              <section className="ui-slip ui-slip-pad" aria-label="Pick up, this trip">
+                <div className="ui-slip-body ui-trip">
+                  <span className="mono ui-kicker">This trip · {trip.length} packets</span>
+                  {trip.map((o, i) => (
+                    <Fragment key={o.id}>
+                      {i > 0 && <div className="ui-slip-rule" />}
+                      <button type="button" role="checkbox" aria-checked={ticked.has(o.id)} className="ui-tick-row" onClick={() => toggle(o.id)}>
+                        <span className="ui-tick" aria-hidden="true">{ticked.has(o.id) && <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}</span>
+                        <span className="ui-tick-body">
+                          <span className="ui-tick-top"><span className="display ui-tick-no">{shortId(o.id)}</span><span className="mono">{formatRupees(o.total_paise)}</span></span>
+                          <span>{o.items.map((x) => `${x.qty} × ${x.name}`).join(", ")}</span>
+                          <span className="ui-tick-addr">{o.address}</span>
+                        </span>
+                      </button>
+                    </Fragment>
+                  ))}
+                  <div className="ui-slip-rule" />
+                  <div className="ui-slip-total"><b>To collect, {trip.length} doors</b><span>{formatRupees(trip.reduce((n, o) => n + o.total_paise, 0))}</span></div>
+                </div>
+              </section>
+              {more > 0 && <p className="mono ui-foot">{more} more waiting</p>}
+            </div>
+            <div className="ui-bottom">
+              {left > 0 && <p role="status" className="ui-rx-next">{left} packet baaki · thaile me rakh kar tick karein</p>}
+              <button type="button" className="ui-btn big" disabled={left > 0 || tripBusy} onClick={() => void pickAll(trip)}>Picked up all {trip.length}</button>
+            </div>
+          </>
+        );
+      }
+      return (   // board RP3: one order alone
+        <>
+          <div className="ui-scroll ui-rx-scroll">
+            <section className="ui-slip ui-slip-pad" aria-label={`Pick up order ${shortId(job.id)}`}>
+              <div className="ui-slip-body">
+                <div className="ui-pick">
+                  <span className="mono ui-kicker">Order number</span>
+                  <span className="display ui-pick-no">{shortId(job.id)}</span>
+                  <span className="ui-pick-items">{job.items.map((x) => <span key={x.menu_item_id}>{x.qty} × {x.name}</span>)}</span>
+                </div>
+                <div className="ui-slip-rule" />
+                <div className="ui-pick"><span className="mono ui-kicker">Deliver to</span><span className="ui-pick-addr">{job.address}</span></div>
+                <div className="ui-slip-rule" />
+                <div className="ui-slip-total"><b>To collect at door</b><span>{formatRupees(job.total_paise)}</span></div>
+              </div>
+            </section>
+            {jobs.length > 1 && <p className="mono ui-foot">{jobs.length - 1} more waiting</p>}
+          </div>
+          <div className="ui-bottom">{button(job, riderActions(job.status)[0], "Picked up")}</div>
+        </>
+      );
+    }
+    if (job) {   // R6, on the way (ready is above)
       const [first, ...rest] = riderActions(job.status);
       const door = doorOf(job);
       const told = arrived.get(job.id);
@@ -187,28 +243,14 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
           <div className="ui-scroll ui-rx-scroll">   {/* story 1182: a long address or note scrolls; the buttons and the tabs stay on the screen */}
           <section className="ui-slip ui-slip-pad" aria-label={`Order ${shortId(job.id)}`}>
             <div className="ui-slip-body">
-              {out ? (
-                <>
-                  {whoRow(job)}
-                  {job.instructions && <p className="ui-rx-note"><span className="mono ui-rx-note-k">Note ·</span> {job.instructions}</p>}
-                </>
-              ) : (
-                <>
-                  <div className="ui-slip-head"><span>Pick up at</span><span>Ready</span></div>
-                  <div className="ui-deliver"><b>{kitchen?.name ?? "The kitchen"}</b>{kitchen?.address && <span>{kitchen.address}</span>}</div>
-                  <div className="ui-slip-rule" />
-                  {deliverTo(job)}
-                  <div className="ui-slip-rule" />
-                  <div className="ui-slip-lines">{job.items.map((i) => <div key={i.menu_item_id}><span>{i.qty} × {i.name}</span><span>{formatRupees(linePaise(i))}</span></div>)}<AdjustLines bill={job.bill} /></div>
-                </>
-              )}
+              {whoRow(job)}
+              {job.instructions && <p className="ui-rx-note"><span className="mono ui-rx-note-k">Note ·</span> {job.instructions}</p>}
               <div className="ui-slip-rule" />
               <div className="ui-slip-total"><b>To collect at door</b><span>{formatRupees(job.total_paise)}</span></div>
-              {!out && callRow(job)}
-              {out && rest[1] && <button type="button" className="ui-rx-cant" disabled={busyId === job.id} onClick={() => void act(job, rest[1])}>Could not deliver?</button>}
+              {rest[1] && <button type="button" className="ui-rx-cant" disabled={busyId === job.id} onClick={() => void act(job, rest[1])}>Could not deliver?</button>}
             </div>
           </section>
-          {out && door.step === 3 && (
+          {door.step === 3 && (
             <section className="ui-rx-say" aria-label="Say at the door">
               <p className="mono ui-rx-say-k">Say at the door</p>
               <p>Namaste sir, main {riderFirst ? `${riderFirst}, ` : ""}GoServe kitchen team se. Thank you for ordering.</p>
@@ -217,17 +259,16 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
           {jobs.length > 1 && <p className="mono ui-foot">{jobs.length - 1} more waiting</p>}
           </div>
           <div className="ui-bottom">
-            {!out && button(job, first, "Picked up")}
-            {out && door.step === 1 && (
+            {door.step === 1 && (
               <div className="ui-rx-door">
                 {door.awayText && <p className="mono">{door.awayText} to the door</p>}
                 <button type="button" className="ui-rx-link" onClick={() => { setDoorTap(job.id); onAtDoor(job, door.away === null ? null : Math.round(door.away)); }}>I am at the door</button>
               </div>
             )}
-            {out && door.step === 2 && door.awayText && <p className="mono ui-rx-door">{door.awayText} to the door</p>}
-            {out && door.step === 2 && button(job, first, `Arriving · tell ${firstName(job.customer_name)}`)}
-            {out && door.step === 3 && told && <p className="mono ui-rx-door">{firstName(job.customer_name)} was told at {hhmm(told)}</p>}
-            {out && door.step === 3 && rest[0] && <button type="button" className="ui-btn big" disabled={busyId === job.id} onClick={() => openCollect(job)}>Collect {formatRupees(job.total_paise)}</button>}
+            {door.step === 2 && door.awayText && <p className="mono ui-rx-door">{door.awayText} to the door</p>}
+            {door.step === 2 && button(job, first, `Arriving · tell ${firstName(job.customer_name)}`)}
+            {door.step === 3 && told && <p className="mono ui-rx-door">{firstName(job.customer_name)} was told at {hhmm(told)}</p>}
+            {door.step === 3 && rest[0] && <button type="button" className="ui-btn big" disabled={busyId === job.id} onClick={() => openCollect(job)}>Collect {formatRupees(job.total_paise)}</button>}
           </div>
         </>
       );
@@ -247,7 +288,8 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
   };
 
   const head = tab === "job"
-    ? (job || done ? { h: job && !done && job.status === "out_for_delivery" ? "On the way" : "Delivery", meta: `No. ${shortId((done ?? job)!.id)}` } : { h: "Deliveries", meta: gate ? (gate.online ? "Online" : "Offline") : "" })
+    ? (job && !done && job.status === "ready" ? { h: "Pick up", meta: "Ready" }   // boards RP3 and RT1
+      : job || done ? { h: job && !done && job.status === "out_for_delivery" ? "On the way" : "Delivery", meta: `No. ${shortId((done ?? job)!.id)}` } : { h: "Deliveries", meta: gate ? (gate.online ? "Online" : "Offline") : "" })
     : tab === "today" ? { h: "Today", meta: `${today.length} delivered` } : { h: "Me", meta: gate?.name ?? "" };
   return (
     <>
