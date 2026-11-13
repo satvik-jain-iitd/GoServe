@@ -26,7 +26,8 @@ test("S1 with the switch off the welcome screen is Continue with Google only, an
   await expect(google).toHaveClass(/\bbig\b/);
   await expect(google).not.toHaveClass(/\bghost\b/);
   await expect(page.getByText("We ask for your mobile number on the bill, so the rider can call you.")).toHaveCount(0);   // story #1044
-  await expect(page.getByText("Step 1 of 4")).toBeVisible();
+  await expect(page.getByText(/Step \d of \d/)).toHaveCount(0);   // 1404 (owner, 13 Nov): no step count anywhere
+  await expect(page.locator(".ui-slip-head")).toHaveCount(0);   // 1404: the slip has no top line either
   await noPhoneParts(page);
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toHaveCount(0);
 });
