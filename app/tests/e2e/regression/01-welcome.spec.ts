@@ -11,7 +11,7 @@ test.use({ viewport: { width: 390, height: 844 } });
 test("TC 1.1 lockup, tagline on one line, slip without a top line or step count, the title", async ({ page, context }) => {
   await reach(context, page);
   await expect(page.getByRole("heading", { name: "One tap and you are in" })).toBeVisible();
-  await expect(page.getByText("Welcome", { exact: true })).toBeVisible();
+  await expect(page.getByText("Welcome", { exact: true })).toHaveCount(0);   // 1404: the slip label is gone
   await expect(page.getByText(/Step \d of \d/)).toHaveCount(0);   // 1404 (owner, 13 Nov): no step count anywhere
   await expect(page.locator(".ui-slip-head")).toHaveCount(0);   // 1404: the slip has no top line either
   await expect(page.getByRole("img", { name: "GoServe" })).toBeVisible();

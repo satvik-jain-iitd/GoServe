@@ -25,7 +25,6 @@ type Props = {
   center: Place; zoom?: number; kicker?: string; confirmLabel: string;
   onInvite?: (far: { at: Place; pin: string; address: string }) => Promise<string | null>;   // story #1128 (board C6d): a pin no kitchen reaches. The button reads Invite the founders here; it saves the ask and opens the founder note. Answers an error in words, or null; not used when editing
   kitchensNear?: () => Promise<{ lat: number | null; lng: number | null; synthetic?: boolean }[]>;   // story #1138 (board C6e): the GoServe kitchens drawn on the map; tests give their own
-  firstSetup?: boolean;   // #1390 (owner, 13 Nov): the first set-up sheet counts "Step 3 of 4", the saved-list path "Step 2 of 2"
   edit?: { label: string; address: string };   // story #1051 (board C9): the saved row being changed; the details open filled with it
   kitchen?: { pins: string[] };   // story #1052 (board A12): a kitchen's place. No serviceability, no details step: Confirm hands the point back. "Inside <pin>" when the words are in one of its pin codes
   onPoint?: (p: { at: Place; words: Looked | null }) => void;
@@ -35,7 +34,7 @@ type Props = {
   lookup?: (p: Place) => Promise<Looked | null>; serve?: (p: Place, pin: string | null) => Promise<Serve | null>;
 };
 
-export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, firstSetup = false, kitchen, onInvite, kitchensNear = async () => await fetchKitchens(getClient()), onPoint, search, searchOpen, onBack, onSearch, onSave, lookup = (p) => findAddress(p.lat, p.lng), serve = (p, pin) => (kitchen ? Promise.resolve(null) : serveAt(p, undefined, pin)) }: Props) {
+export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, kitchen, onInvite, kitchensNear = async () => await fetchKitchens(getClient()), onPoint, search, searchOpen, onBack, onSearch, onSave, lookup = (p) => findAddress(p.lat, p.lng), serve = (p, pin) => (kitchen ? Promise.resolve(null) : serveAt(p, undefined, pin)) }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const live = useRef<{ map: LMap; L: typeof import("leaflet"); dot: Marker | null } | null>(null);
   const [point, setPoint] = useState<Place>(center);
@@ -204,14 +203,14 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, fi
         <button type="button" className="ui-btn big" disabled={busy || sending} onClick={() => (onPoint ? onPoint({ at: point, words }) : far ? void invite(far) : setPick({ at: point, words, served: served ? served.serviceable : null }))}>{far ? "Invite the founders here" : confirmLabel}</button>
         <span className="mono ui-pinmap-credit">{words?.from === "ola" && <><a href={OSM} target="_blank" rel="noopener noreferrer">Ola Maps</a> · </>}<a href={OSM} target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a></span>
       </div>}
-      {pick && <DetailsSheet pick={pick} edit={edit} firstSetup={firstSetup} onChange={() => setPick(null)} onSave={onSave} onHeight={(h) => { root.current?.style.setProperty("--sheet-h", `${h}px`); live.current?.map.invalidateSize({ pan: false }); const c = pick.at; live.current?.map.setView([c.lat, c.lng], live.current.map.getZoom(), { animate: false }); }} />}
+      {pick && <DetailsSheet pick={pick} edit={edit} onChange={() => setPick(null)} onSave={onSave} onHeight={(h) => { root.current?.style.setProperty("--sheet-h", `${h}px`); live.current?.map.invalidateSize({ pan: false }); const c = pick.at; live.current?.map.setView([c.lat, c.lng], live.current.map.getZoom(), { animate: false }); }} />}
     </section>
   );
 }
 
 const CHIPS = ["Home", "Office", "Other"] as const;
 // Story #1038 (board C7-PinDetails): the words the rider needs, and the save. The pin's exact place is the one the map rested on.
-function DetailsSheet({ pick, edit, firstSetup, onChange, onSave, onHeight }: { pick: PinPick; edit?: { label: string; address: string }; firstSetup: boolean; onChange: () => void; onSave: (a: Saved) => void; onHeight: (h: number) => void }) {
+function DetailsSheet({ pick, edit, onChange, onSave, onHeight }: { pick: PinPick; edit?: { label: string; address: string }; onChange: () => void; onSave: (a: Saved) => void; onHeight: (h: number) => void }) {
   const el = useRef<HTMLElement>(null);
   const tell = useRef(onHeight);
   tell.current = onHeight;
@@ -240,7 +239,7 @@ function DetailsSheet({ pick, edit, firstSetup, onChange, onSave, onHeight }: { 
   const save = () => { if (ready) onSave({ pin, address: addressText(house, landmark, needArea ? area : found), label, from: pick.at }); };
   return (
     <section ref={el} className="ui-pinmap-details" role="dialog" aria-label="Address details">
-      <div className="ui-sheet-head ui-pinmap-details-head"><h2>Address details</h2><span className="mono">{firstSetup ? "Step 3 of 4" : "Step 2 of 2"}</span></div>   {/* #1390 (owner, 13 Nov): first set-up counts 3 of 4 on this sheet; the saved-list path keeps 2 of 2 */}
+      <div className="ui-sheet-head ui-pinmap-details-head"><h2>Address details</h2></div>   {/* 1404 (owner, 13 Nov): no step count on the sheet, on either way in */}
       <div className="ui-pinmap-where">{I(PIN_PATH, 22)}<span className="ui-pinmap-where-words"><b>{name.name}</b>{name.rest && <span>{name.rest}</span>}</span><button type="button" className="ui-pinmap-change" onClick={onChange}>Change</button></div>
       {needArea && <div className="ui-field"><label htmlFor="pd-area">Area or street</label><input id="pd-area" type="text" maxLength={200} value={area} onChange={(e) => setArea(e.target.value)} /></div>}
       {needPin && <div className="ui-field"><label htmlFor="pd-pin">Pin code</label><input id="pd-pin" className="mono-input ui-eg" type="tel" inputMode="numeric" maxLength={6} placeholder="e.g. 123456" value={pinText} onChange={(e) => setPinText(e.target.value.trim())} /></div>}
