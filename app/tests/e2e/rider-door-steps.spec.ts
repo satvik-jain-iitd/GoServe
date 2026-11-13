@@ -18,10 +18,10 @@ const open = async (page: Page, context: BrowserContext, at: { latitude: number;
 const bottom = (page: Page) => page.locator(".ui-bottom button");
 const arriving = (page: Page) => page.locator(".ui-bottom button", { hasText: "Arriving · tell Rahul" });   // its name for a screen reader keeps the order number
 
-test("RY1 far from the pin: no Arriving button and no Collect button; the link I am at the door is there", async ({ page, context }) => {
+test("RY1 (board OW1, story 1452) far from the pin: the distance and the link I am at the door, no hint line, no Arriving or Collect button", async ({ page, context }) => {
   const net = await open(page, context, FAR);
   await expect(page.getByText("1.2 km to the door")).toBeVisible();
-  await expect(page.getByText("The Arriving button shows here when you are near.")).toBeVisible();
+  await expect(page.getByText("The Arriving button shows here when you are near.")).toHaveCount(0);   // story 1452: better by removing
   await expect(page.getByRole("button", { name: /^Arriving/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^Collect/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^Delivered/ })).toHaveCount(0);
