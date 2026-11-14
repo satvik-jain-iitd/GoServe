@@ -463,3 +463,26 @@ Run: `scout.py --need "visual regression testing"` (a longer need line found no 
 | Visual-Regression-Tracker | 48 | skip | Apache-2.0 | 2026-11 | description | A server to host. Too much for this need |
 
 READMEs read: yes, the top three (reg-suit, loki, lost-pixel). Use what exists: Playwright is already installed and takes the pictures, and our own `app/tests/e2e/board-match.spec.ts` (story #1168) already matches a screen to its board by text, role and boxes. The audit takes the end picture of every existing test on `dev` and on `main` and pairs it with the board the test names. No new library. New code is glue only, in the QA home (`canvas-audit-2026-11-14/scripts`).
+
+## 14 Nov 2026: a daily cap for an edge function (story 1512)
+
+**Need:** rate limit per user per day for a Supabase edge function (Postgres counter).
+
+**Run:**
+- `python3 ~/Documents/AGI/plugins/radar/scripts/scout.py --need "rate limit per user per day for a Supabase edge function (Postgres counter)"` printed `no repos found`.
+- `gh search repos "topic:rate-limiting topic:postgresql" --sort stars`, `gh search repos "topic:rate-limiter topic:postgres" --sort stars`, `gh search repos "supabase rate limit postgres"` (the last one found nothing).
+
+**Top 3 READMEs read:**
+
+| Repo | What it is | Fit |
+|---|---|---|
+| `upstash/ratelimit-js` (2,052 stars, pushed 12 Nov 2026) | Rate limits for serverless runtimes. Works on Deno. | No. It needs an Upstash Redis database. That is a new vendor and a new secret for one counter. |
+| `supabase/supabase`, `examples/edge-functions/.../upstash-redis-ratelimit` | Supabase's own example of a rate limit by user id in an edge function. | No. It is the same Upstash Redis. It shows the shape we keep: read the user id from the login, then count for that id. |
+| `animir/node-rate-limiter-flexible` (3,603 stars, pushed 10 Nov 2026) | Atomic counters on many stores, Postgres too. | No as a library: its Postgres store needs a `pg` pool, Knex, Sequelize or TypeORM. Our functions talk to the database over REST with the service key. Its windows also start at the first call, not at midnight in India. |
+
+**Reused:**
+- The idea from `node-rate-limiter-flexible`: one atomic "add one only if under the limit" statement in the database, never read-then-write in the function.
+- The shape from the Supabase example: the count is for the signed-in user id.
+- Our own code: the `settings` table for the two numbers, the house pattern of `20261114120000_rider_past_days.sql` for the check and the grants, and the `geocode` function's injected sources for tests.
+
+**Built from scratch:** one small SQL function and two count tables (about 50 lines of SQL). Nothing found fits without a new vendor or a database driver in the function.
