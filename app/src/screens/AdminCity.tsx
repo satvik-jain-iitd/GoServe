@@ -24,6 +24,8 @@ const INVITE_WORDS = { kitchen: "Open this link and tap Continue with Google to 
 export function AdminCity({ me, kitchens, people, invites, riders, onError, reload, view, onView }: Props) {
   const [form, setForm] = useState(EMPTY);
   const [addingPerson, setAddingPerson] = useState(false);
+  const personActs = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (addingPerson) personActs.current?.scrollIntoView({ block: "nearest" }); }, [addingPerson]);   // story 1457: the form opens with both buttons in view, once, not on every key
   const [who, setWho] = useState<{ email: string; kind: PersonKind; kitchen: string }>({ email: "", kind: "kitchen", kitchen: "" });
   const [invited, setInvited] = useState<{ email: string; kind: "kitchen" | "rider" | "admin" } | null>(null);   // story 875: the "Invite ready" box
   const [shareNote, setShareNote] = useState<string | null>(null);
@@ -197,7 +199,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
             <div className="ui-field"><label htmlFor="p-email">Email</label><input id="p-email" type="email" value={who.email} onChange={(e) => setWho({ ...who, email: e.target.value })} /></div>
             <div className="ui-field"><label htmlFor="p-role">Role</label><select id="p-role" value={who.kind} onChange={(e) => setWho({ ...who, kind: e.target.value as PersonKind })}><option value="kitchen">Kitchen staff</option><option value="rider">Rider</option><option value="admin">Admin</option></select></div>
             {who.kind === "kitchen" && <div className="ui-field"><label htmlFor="p-kitchen">Kitchen</label><select id="p-kitchen" value={who.kitchen} onChange={(e) => setWho({ ...who, kitchen: e.target.value })}><option value="">Pick a kitchen</option>{kitchens.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></div>}
-            <div className="ui-form-acts"><button type="button" className="ui-btn big" onClick={() => void submitPerson()}>Add person</button><button type="button" className="ui-btn ghost big" onClick={() => { setAddingPerson(false); setInvited(null); setAddError(null); }}>Not now</button></div>
+            <div className="ui-form-acts" ref={personActs}><button type="button" className="ui-btn ghost big" onClick={() => { setAddingPerson(false); setInvited(null); setAddError(null); }}>Not now</button><button type="button" className="ui-btn big" onClick={() => void submitPerson()}>Add person</button></div>   {/* story 1457 (board AP1): the main button last, both in view when the form opens */}
             {addError && <p role="alert" className="ui-note error">{addError}</p>}
             {invited && (   // board A-AddPerson-Invite
               <div role="status" className="ui-invite">
