@@ -67,3 +67,18 @@ test("R1 given the rider is online and his phone refuses the location, the rider
   await expect(page.getByRole("button", { name: "Today", exact: true })).toBeVisible();
   await expect(page.getByRole("status").filter({ hasText: "Location band hai" })).toHaveCount(0);
 });
+
+test("R2 given the rider allows the location in the phone's settings and comes back to the app, the line goes and a place is sent, with no reload", async ({ page, context }) => {
+  const net = await setup(context, page, []);
+  net.state.rider = { user_id: SESSION, name: "Amit Kumar", phone: null, online: true, lat: null, lng: null };
+  const pings: object[] = [];
+  await context.route("**/rest/v1/rpc/rider_ping", (route) => { pings.push(route.request().postDataJSON()); return route.fulfill({ status: 200, contentType: "application/json", body: "null" }); });
+  await context.clearPermissions();
+  await page.goto("/rider/");
+  const line = page.getByRole("status").filter({ hasText: "Location band hai" });
+  await expect(line).toBeVisible();
+  await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.56, longitude: 77.2 });
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));   // the rider comes back from the phone's settings
+  await expect(line).toHaveCount(0);
+  await expect.poll(() => pings.length).toBeGreaterThan(0);
+});

@@ -28,6 +28,14 @@ export function RiderGate({ children }: { children: (gate: RiderGateState) => Re
 
   // While online, the browser reports the position; it is saved at once the first time and then every 30 seconds.
   const online = rider?.online === true;
+  // Story 1497: a watch that was refused stays dead in the browser. Each time the page comes back to the front (the rider returns from the phone's
+  // settings, or from Google Maps) the watch starts again, so an allowed location is picked up with no reload and a place is sent at once.
+  const [front, setFront] = useState(0);
+  useEffect(() => {
+    const back = () => { if (document.visibilityState === "visible") setFront((n) => n + 1); };
+    document.addEventListener("visibilitychange", back);
+    return () => document.removeEventListener("visibilitychange", back);
+  }, []);
   useEffect(() => {
     if (!online || !uid || !("geolocation" in navigator)) return void setNoLocation(false);
     lastSent.current = null;
@@ -38,7 +46,7 @@ export function RiderGate({ children }: { children: (gate: RiderGateState) => Re
       void sendLocation(getClient(), p.coords.latitude, p.coords.longitude);
     }, (e) => { if (e.code === e.PERMISSION_DENIED) setNoLocation(true); }, { enableHighAccuracy: true, maximumAge: 10_000 });   // a weak signal or a timeout is not a refusal: no word for those
     return () => navigator.geolocation.clearWatch(watch);
-  }, [online, uid]);
+  }, [online, uid, front]);
 
   const signOut = async () => { try { await getClient().auth.signOut(); } catch { /* offline */ } window.location.reload(); };
   if (rider === undefined) return <><header className="ui-head"><h1>Deliveries</h1></header><div className="ui-pad"><Skeleton lines={3} /></div></>;

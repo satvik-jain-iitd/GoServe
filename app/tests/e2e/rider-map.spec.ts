@@ -34,7 +34,7 @@ test("S1 On the way with a place: a rider row and no map in the page; the row op
   await expect(map(page).getByRole("img", { name: "Rider" })).toContainText("Ravi");   // the dot is labelled with the name
   await expect(map(page).getByText("Ravi is 1.5 km away")).toBeVisible();
   await expect(map(page).getByText(/^At your door by .* · updated 20 sec ago$/)).toBeVisible();
-  await expect(map(page).getByText("Live", { exact: true })).toBeVisible();
+  await expect(map(page).getByText("Live", { exact: true })).toHaveCount(0);   // story 1497: no Live pill; the place can be old and the card says how old
   await expect(map(page).getByText("© OpenStreetMap contributors")).toBeVisible();
   await expect(map(page).getByRole("link", { name: "Call the rider" })).toHaveAttribute("href", "tel:9876500000");
   const full = await map(page).boundingBox();
