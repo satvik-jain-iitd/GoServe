@@ -5,6 +5,7 @@ export const handler = makeHandler({
   session: async () => "7e57ab1e-0000-4000-8000-000000000002",
   provider: async () => "ola",
   allow: () => true,
+  cap: async () => "ok",
   budget: async () => true,
   lookup: async () => ({ results: [{ formatted_address: "Radio Colony, Chhatarpur, Madhya Pradesh 471001, India", address_components: [
     { types: ["postal_code"], long_name: "471001", short_name: "471001" }, { types: ["sublocality"], long_name: "Radio Colony", short_name: "Radio Colony" },

@@ -23,6 +23,8 @@ async function toMap(page: Page, context: Parameters<typeof setup>[0], serve: { 
 
 test("S1 a pin outside every area: the button reads Invite the founders here; one tap saves the ask and opens the founder note, never C7 or NK-A", async ({ page, context }) => {
   const net = await toMap(page, context, FAR);
+  await expect(page.getByText("Not in our area yet")).toHaveCount(0);   // story 1500: the no is said only after Confirm's lookup
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();
   await expect(page.getByText("Not in our area yet")).toBeVisible();
   await expect(page.getByRole("button", { name: "Confirm & proceed" })).toHaveCount(0);
   await page.getByRole("button", { name: "Invite the founders here" }).click();
@@ -37,6 +39,7 @@ test("S1 a pin outside every area: the button reads Invite the founders here; on
 
 test("S2 Change location on the letter returns to the map", async ({ page, context }) => {
   await toMap(page, context, FAR);
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();   // story 1500: the lookup, then the no
   await page.getByRole("button", { name: "Invite the founders here" }).click();
   await page.getByRole("button", { name: "Change location" }).click();
   await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
@@ -45,6 +48,7 @@ test("S2 Change location on the letter returns to the map", async ({ page, conte
 test("S2b when the ask cannot be saved the words say so on the map and the button stays", async ({ page, context }) => {
   const net = await toMap(page, context, FAR);
   net.state.areaRequest = { ok: false, message: "That pin code is not valid." };
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();   // story 1500: the lookup, then the no
   await page.getByRole("button", { name: "Invite the founders here" }).click();
   await expect(page.getByRole("alert")).toContainText("That pin code is not valid.");
   await expect(page.getByRole("button", { name: "Invite the founders here" })).toBeEnabled();
@@ -135,22 +139,24 @@ test("S8 the serve check never answers: after the wait limit, the same could-not
 });
 
 // Story 1462 (reviewer's call, rule 20): the pin moved and the new place's name did not come: the card never keeps the old place's name.
-test("S9 both lookups fail at a new place: the old name goes and the card says Pin on the map; Try again brings the new name", async ({ page, context }) => {
+// Story 1500: a name shows only after Confirm's lookup, so the old name is the confirmed one (Confirm, then Change).
+test("S9 the serve check fails at a new place: the confirmed name goes and the card says Pin on the map; Try again brings Confirm back, and Confirm the new name", async ({ page, context }) => {
   const net = await toMap(page, context, null);
   const card = page.locator(".ui-pinmap-card");
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();
+  await page.getByRole("button", { name: "Change" }).click();
   await expect(card.locator(".ui-pinmap-name")).toHaveText("Green Park");
   let down = true;
   await context.route("https://test.supabase.co/functions/v1/serviceability**", (r) => r.request().method() === "OPTIONS" ? r.fulfill({ status: 204, headers: CORS }) : down ? r.fulfill({ status: 500, headers: CORS, body: "{}" }) : r.fulfill({ status: 200, headers: CORS, body: JSON.stringify(SERVED) }));
-  net.state.geocode = { status: 500, body: {} };
   await drag(page);
   await failedState(page);
   await expect(card.locator(".ui-pinmap-name")).toHaveText("Pin on the map");
   await expect(card.getByText("Green Park")).toHaveCount(0);
-  await expect(card.getByText("New Delhi, Delhi")).toHaveCount(0);   // the old address line is gone; only the quiet "Could not read the address" note stays
-  await expect(card.locator(".ui-pinmap-addr")).toHaveText("Could not read the address, the pin still counts");
+  await expect(card.getByText("New Delhi, Delhi")).toHaveCount(0);   // the old address line is gone
   down = false;
   net.state.geocode = { status: 200, body: { ok: true, address: "Hauz Khas, New Delhi, Delhi", pin: "110016", locality: "Hauz Khas", town: "New Delhi" } };
   await page.getByRole("button", { name: "Try again" }).click();
-  await expect(card.locator(".ui-pinmap-name")).toHaveText("Hauz Khas");
-  await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeEnabled();
+  await expect(card.locator(".ui-pinmap-name")).toHaveText("Pin on the map");
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();
+  await expect(page.getByRole("dialog", { name: "Address details" })).toContainText("Hauz Khas");
 });
