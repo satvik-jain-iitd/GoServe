@@ -85,13 +85,12 @@ test("TC 23.4 Happy: the kitchen hands it over, the status moves to On the way, 
   await STEPS["eta-working"](context, page, PATH);
   await expect(page.getByText("Working out the time")).toBeVisible();   // proves the cooking screen shows first
   await answer(page, "/rest/v1/orders", [order("out_for_delivery", new Date(Date.now() - 60_000).toISOString())]);
-  await answer(page, "/rest/v1/order_tracking", [{ order_id: ID, status: "out_for_delivery", rider_lat: 28.5792, rider_lng: 77.26, eta_lo_min: 8, eta_hi_min: 18, eta_late: false, updated_at: new Date().toISOString() }]);
+  await answer(page, "/rest/v1/order_tracking", [{ order_id: ID, status: "out_for_delivery", rider_lat: 28.5792, rider_lng: 77.26, eta_lo_min: 8, eta_hi_min: 18, eta_late: false, updated_at: new Date().toISOString(), rider_at: new Date().toISOString(), drop_lat: 28.59, drop_lng: 77.26 }]);   // story 1497: the row needs the ping's time
   await wake(page);
   await expect(stampOf(page, "On the way")).toBeVisible();
-  const row = page.getByRole("button", { name: "See the rider on the map" });
+  const row = page.getByRole("link", { name: "See the rider on Google Maps" });   // story 1498: the row opens Google Maps
   await expect(row).toBeVisible();
-  await row.click();
-  await expect(page.getByRole("region", { name: "Rider on the map" })).toBeVisible();
+  await expect(row).toHaveAttribute("href", /^https:\/\/www\.google\.com\/maps\//);
 });
 
 test("TC 23.5 Sad: Cancel order while placed asks first, then Cancelled with Nothing to pay Rs 0", async ({ page, context }) => {
