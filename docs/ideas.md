@@ -79,3 +79,5 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - IDEA (no vault id yet) (2026-11-13, taken, #1445): Rider Me row "Kitchen ka raasta" for a new rider.
 - IDEA ID416 (2026-11-14, open, plan first): Maps: move fully to Ola Maps, with a map provider switch in the admin app (Ola, OpenStreetMap, later Google) that changes every map place in the app at once, like a plugin.
 - IDEA ID417 (2026-11-14, open, plan first): Maps: a pool of several Ola Maps API keys from several accounts; the admin sees the budget left on each key, and the app moves to the next key when one runs out.
+- IDEA ID418 (2026-11-14, taken, #1498): Instead of a live rider map, share the rider's latest location with the customer as a Google Maps link, for a quick idea of where the rider is. Free. Configurable in the admin dashboard.
+- IDEA ID419 (2026-11-14, taken, epic #1493): Count every map API call, and the moment any one API key returns 401, switch to the next key by itself. Configurable in the admin dashboard.
