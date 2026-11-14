@@ -186,6 +186,7 @@ export function PinMapScreen({ center, zoom = 17, follow, kicker, confirmLabel, 
 
   const held = useRef<Place | null>(null);   // the confirmed pin while the details sheet is open
   useEffect(() => {   // the map stays behind the sheet, still, and shrinks to the part above it so the pin stays in view
+    if (pick) touched.current = true;   // story 1502: a confirmed place is the person's choice; after Change the map is not pulled to the phone
     const m = live.current;
     if (!m) return;
     const h = m.map;
@@ -197,6 +198,7 @@ export function PinMapScreen({ center, zoom = 17, follow, kicker, confirmLabel, 
   }, [pick]);
 
   const toPhone = async () => {
+    touched.current = true;   // story 1502: Current Location is the person's own move; the follow ends
     setNote(null);
     try {
       const p = await currentPlace();

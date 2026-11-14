@@ -11,14 +11,14 @@ const KITCHEN = { lat: 28.5494, lng: 77.2001 };
 const DELHI = { lat: 28.6139, lng: 77.209 };
 type Ctx = Parameters<typeof setup>[0];
 
-// The phone's place comes late: the one-time read never answers, the watch answers after `lateMs`. Every ask is counted.
+// The phone's place comes late: the one-time read never answers, the watch answers after `lateMs` and then every 400 ms. Every ask is counted.
 const latePhone = (context: Ctx, lateMs: number) => context.addInitScript(([at, ms]) => {
   const w = window as unknown as { __asks: number };
   w.__asks = 0;
   const pos = { coords: { latitude: (at as { lat: number }).lat, longitude: (at as { lng: number }).lng, accuracy: 20 }, timestamp: Date.now() };
   Object.defineProperty(navigator, "geolocation", { configurable: true, value: {
     getCurrentPosition: () => { w.__asks++; },
-    watchPosition: (ok: (p: unknown) => void) => { w.__asks++; setTimeout(() => ok(pos), ms as number); return 1; },
+    watchPosition: (ok: (p: unknown) => void) => { w.__asks++; setTimeout(() => { ok(pos); setInterval(() => ok(pos), 400); }, ms as number); return 1; },   // like a real phone: the place keeps coming
     clearWatch: () => undefined,
   } });
 }, [PHONE, lateMs] as const);
@@ -66,6 +66,20 @@ test("M2 The map is not pulled back after the customer moved it", async ({ page,
   await page.waitForTimeout(1200);
   expect(metres(pinAt(net), PHONE)).toBeGreaterThan(1000);   // the pin stays near Home, where the customer left it
   expect(metres(pinAt(net), HOME)).toBeLessThan(400);
+});
+
+test("M2b Confirm before the phone's place comes, then Change: the pin stays where it was confirmed", async ({ page, context }) => {
+  await context.grantPermissions(["geolocation"]);
+  await latePhone(context, 3000);
+  const net = await start(page, context);
+  await addNew(page);
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();   // confirmed near Home, before the phone answered
+  await expect(page.getByRole("dialog", { name: "Address details" })).toBeVisible();
+  await expect(page.locator(".gs-here-dot")).toHaveCount(1, { timeout: 8000 });   // the phone's place arrived while the sheet was open
+  await page.getByRole("button", { name: "Change" }).click();
+  await page.waitForTimeout(1200);
+  expect(metres(pinAt(net), HOME)).toBeLessThan(400);
+  expect(metres(pinAt(net), PHONE)).toBeGreaterThan(1000);
 });
 
 test("M3 With no location and no saved address the map opens at the kitchen", async ({ page, context }) => {
