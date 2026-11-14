@@ -89,7 +89,7 @@ for (const theme of ["day", "night"] as const) {
     await page.getByText("Live", { exact: true }).waitFor();
     await shot("Tracker");
     net.push("UPDATE", { ...order("delivered", new Date().toISOString()), paid_by: "cash" });
-    await page.getByRole("heading", { name: "Delivered", exact: true }).waitFor();
+    await page.getByRole("region", { name: "Order, delivered" }).waitFor();
     await shot("Delivered");
   });
   test(`shots empty bill ${theme}`, async ({ page, context }) => {
