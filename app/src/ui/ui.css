@@ -1023,3 +1023,13 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
 .ui-slip > .ui-torn-top { position: absolute; left: -1px; right: -1px; top: -10px; display: block; width: calc(100% + 2px); height: 10px; }
 .ui-torn-top polygon { fill: var(--md-surface); }
 .ui-torn-top polyline { fill: none; stroke: var(--md-outline-variant); stroke-width: 1; vector-effect: non-scaling-stroke; }
+/* Story 1471: the smallest phones fit the first-open steps with no scroll. Both steps (and the welcome) move the same way, so the main button keeps one place.
+   360 x 649: the logo starts 45 px from the top (19 px less). 320 x 568: the logo at 24, a 24 px gap under the title block, and the hero line moves up to 184 below the slip top. */
+@media (max-height: 700px) { .ui-landing, .ui-welcome { --gs-first-top: 45px; } }
+@media (max-height: 600px) {
+  .ui-landing, .ui-welcome { --gs-first-top: 24px; }
+  .ui-landing .ui-slip, .ui-welcome .ui-slip { margin-top: 24px; }
+  .ui-landing .ui-slip:has(.ui-hero-abs) { min-height: 396px; }
+  .ui-landing .ui-hero-abs { top: 136px; }
+  .ui-landing .ui-bellbadge.ui-hero-abs { top: 149px; }
+}
