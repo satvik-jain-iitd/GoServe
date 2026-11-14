@@ -1,0 +1,1326 @@
+{
+ "prod": "3bee04fb",
+ "dev": "52e3b269",
+ "app_tree_prod": "62a12f0dc133",
+ "app_tree_dev": "62a12f0dc133",
+ "note": "prod and dev pictures are the app's code built with test keys and a mocked backend, 390 x 844 at scale 2; the live app was not opened",
+ "date": "2026-11-15",
+ "same_px_limit_pct": 0.2,
+ "states": [
+  {
+   "id": "welcome",
+   "name": "Welcome",
+   "board": "O0g-C-GoogleBottom",
+   "source": "screensSteps: welcome",
+   "board_rule_fails": {
+    "no-step-count": "Step 1 of 4"
+   },
+   "design_vs_prod": {
+    "same": false,
+    "pixels_pct": 11.37,
+    "box": [
+     20,
+     65,
+     370,
+     789
+    ],
+    "only_first": [
+     "Welcome",
+     "Step 1 of 4",
+     "One tap and you are in"
+    ],
+    "only_second": [
+     "Sign in to start",
+     "Then: order alerts and your address.",
+     "By continuing you agree to our Terms and Privacy"
+    ],
+    "n_only_first": 3,
+    "n_only_second": 3
+   },
+   "design_vs_dev": {
+    "same": false,
+    "pixels_pct": 11.37,
+    "box": [
+     20,
+     65,
+     370,
+     789
+    ],
+    "only_first": [
+     "Welcome",
+     "Step 1 of 4",
+     "One tap and you are in"
+    ],
+    "only_second": [
+     "Sign in to start",
+     "Then: order alerts and your address.",
+     "By continuing you agree to our Terms and Privacy"
+    ],
+    "n_only_first": 3,
+    "n_only_second": 3
+   },
+   "dev_vs_prod": {
+    "same": true,
+    "pixels_pct": 0.0,
+    "box": null,
+    "only_first": [],
+    "only_second": [],
+    "n_only_first": 0,
+    "n_only_second": 0
+   },
+   "design_note": "11.37 percent of the picture differs. 3 lines only on the board (Welcome; Step 1 of 4; One tap and you are in). 3 lines only in the app (Sign in to start; Then: order alerts and your address.; By continuing you agree to our Terms and Privacy). The BOARD breaks rule 14: it says \"Step 1 of 4\".",
+   "rules": {
+    "contrast": {
+     "result": "pass",
+     "why": "7 texts"
+    },
+    "inside": {
+     "result": "pass",
+     "why": ""
+    },
+    "filled-last": {
+     "result": "pass",
+     "why": ""
+    },
+    "ends-24": {
+     "result": "pass",
+     "why": "the slip ends 24 px above the edge"
+    },
+    "no-step-count": {
+     "result": "pass",
+     "why": ""
+    },
+    "same-place": {
+     "result": "pass",
+     "why": "top edge 745 px on all three"
+    },
+    "hero-line": {
+     "result": "not checked",
+     "why": "the hero has no known box here"
+    },
+    "view-all": {
+     "result": "not checked",
+     "why": "no View all on this screen"
+    }
+   }
+  },
+  {
+   "id": "alerts",
+   "name": "Order alerts",
+   "board": "N0b-AlertsBottom",
+   "source": "screensSteps: alerts-ask",
+   "board_rule_fails": {
+    "no-step-count": "Step 2 of 4"
+   },
+   "design_vs_prod": {
+    "same": false,
+    "pixels_pct": 7.41,
+    "box": [
+     20,
+     65,
+     370,
+     733
+    ],
+    "only_first": [
+     "Order alerts",
+     "Step 2 of 4"
+    ],
+    "only_second": [
+     "We tell you when your food leaves the kitchen and when it is at your door.",
+     "GOSERVE · now",
+     "Your thali is at the door",
+     "You can turn this on later in You."
+    ],
+    "n_only_first": 2,
+    "n_only_second": 4
+   },
+   "design_vs_dev": {
+    "same": false,
+    "pixels_pct": 7.41,
+    "box": [
+     20,
+     65,
+     370,
+     733
+    ],
+    "only_first": [
+     "Order alerts",
+     "Step 2 of 4"
+    ],
+    "only_second": [
+     "We tell you when your food leaves the kitchen and when it is at your door.",
+     "GOSERVE · now",
+     "Your thali is at the door",
+     "You can turn this on later in You."
+    ],
+    "n_only_first": 2,
+    "n_only_second": 4
+   },
+   "dev_vs_prod": {
+    "same": true,
+    "pixels_pct": 0.0,
+    "box": null,
+    "only_first": [],
+    "only_second": [],
+    "n_only_first": 0,
+    "n_only_second": 0
+   },
+   "design_note": "7.41 percent of the picture differs. 2 lines only on the board (Order alerts; Step 2 of 4). 4 lines only in the app (We tell you when your food leaves the kitchen and when it is at your door.; GOSERVE · now; Your thali is at the door). The BOARD breaks rule 14: it says \"Step 2 of 4\".",
+   "rules": {
+    "contrast": {
+     "result": "pass",
+     "why": "8 texts"
+    },
+    "inside": {
+     "result": "pass",
+     "why": ""
+    },
+    "filled-last": {
+     "result": "pass",
+     "why": ""
+    },
+    "ends-24": {
+     "result": "pass",
+     "why": "the slip ends 24 px above the edge"
+    },
+    "no-step-count": {
+     "result": "pass",
+     "why": ""
+    },
+    "same-place": {
+     "result": "pass",
+     "why": "top edge 745 px on all three"
+    },
+    "hero-line": {
+     "result": "pass",
+     "why": "centre 466.4 px"
+    },
+    "view-all": {
+     "result": "not checked",
+     "why": "no View all on this screen"
+    }
+   }
+  },
+  {
+   "id": "location-ask",
+   "name": "Where does the food go",
+   "board": "A1d-LocationRiderWaits",
+   "source": "screensSteps: first-open-ask",
+   "board_rule_fails": {
+    "no-step-count": "Step 3 of 4"
+   },
+   "design_vs_prod": {
+    "same": false,
+    "pixels_pct": 5.26,
+    "box": [
+     20,
+     65,
+     370,
+     733
+    ],
+    "only_first": [
+     "Set up",
+     "Step 3 of 4"
+    ],
+    "only_second": [],
+    "n_only_first": 2,
+    "n_only_second": 0
+   },
+   "design_vs_dev": {
+    "same": false,
+    "pixels_pct": 5.26,
+    "box": [
+     20,
+     65,
+     370,
+     733
+    ],
+    "only_first": [
+     "Set up",
+     "Step 3 of 4"
+    ],
+    "only_second": [],
+    "n_only_first": 2,
+    "n_only_second": 0
+   },
+   "dev_vs_prod": {
+    "same": true,
+    "pixels_pct": 0.0,
+    "box": null,
+    "only_first": [],
+    "only_second": [],
+    "n_only_first": 0,
+    "n_only_second": 0
+   },
+   "design_note": "5.26 percent of the picture differs. 2 lines only on the board (Set up; Step 3 of 4). The words are the same. The BOARD breaks rule 14: it says \"Step 3 of 4\".",
+   "rules": {
+    "contrast": {
+     "result": "pass",
+     "why": "5 texts"
+    },
+    "inside": {
+     "result": "pass",
+     "why": ""
+    },
+    "filled-last": {
+     "result": "pass",
+     "why": ""
+    },
+    "ends-24": {
+     "result": "pass",
+     "why": "the slip ends 24 px above the edge"
+    },
+    "no-step-count": {
+     "result": "pass",
+     "why": ""
+    },
+    "same-place": {
+     "result": "pass",
+     "why": "top edge 745 px on all three"
+    },
+    "hero-line": {
+     "result": "pass",
+     "why": "centre 466.4 px"
+    },
+    "view-all": {
+     "result": "not checked",
+     "why": "no View all on this screen"
+    }
+   }
+  },
+  {
+   "id": "pin-map",
+   "name": "Pin on the map",
+   "board": "A1p-OnboardPin",
+   "source": "screensSteps: first-open-pin",
+   "board_rule_fails": {},
+   "design_vs_prod": {
+    "same": false,
+    "pixels_pct": 43.75,
+    "box": [
+     0,
+     0,
+     390,
+     844
+    ],
+    "only_first": [
+     "Satai Road",
+     "Park",
+     "Green Avenue Colony",
+     "Satai Road, Chhatarpur, Madhya Pradesh 471001",
+     "Ola Maps · © OpenStreetMap contributors"
+    ],
+    "only_second": [
+     "Move the map to set the pin",
+     "Pin on the map",
+     "© OpenStreetMap contributors"
+    ],
+    "n_only_first": 5,
+    "n_only_second": 3
+   },
+   "design_vs_dev": {
+    "same": false,
+    "pixels_pct": 43.68,
+    "box": [
+     0,
+     0,
+     390,
+     844
+    ],
+    "only_first": [
+     "Satai Road",
+     "Park",
+     "Green Avenue Colony",
+     "Satai Road, Chhatarpur, Madhya Pradesh 471001",
+     "Ola Maps · © OpenStreetMap contributors"
+    ],
+    "only_second": [
+     "Move the map to set the pin",
+     "Pin on the map",
+     "© OpenStreetMap contributors"
+    ],
+    "n_only_first": 5,
+    "n_only_second": 3
+   },
+   "dev_vs_prod": {
+    "same": true,
+    "pixels_pct": 0.0,
+    "box": null,
+    "only_first": [],
+    "only_second": [],
+    "n_only_first": 0,
+    "n_only_second": 0
+   },
+   "design_note": "43.75 percent of the picture differs. 5 lines only on the board (Satai Road; Park; Green Avenue Colony). 3 lines only in the app (Move the map to set the pin; Pin on the map; © OpenStreetMap contributors).",
+   "rules": {
+    "contrast": {
+     "result": "pass",
+     "why": "7 texts"
+    },
+    "inside": {
+     "result": "pass",
+     "why": ""
+    },
+    "filled-last": {
+     "result": "pass",
+     "why": ""
+    },
+    "ends-24": {
+     "result": "not checked",
+     "why": "no first-open slip and no sheet here"
+    },
+    "no-step-count": {
+     "result": "pass",
+     "why": ""
+    },
+    "view-all": {
+     "result": "not checked",
+     "why": "no View all on this screen"
+    }
+   }
+  },
+  {
+   "id": "pin-details",
+   "name": "Address details",
+   "board": "C7-PinDetails",
+   "source": "screensSteps: pin-details",
+   "board_rule_fails": {
+    "no-step-count": "Step 2 of 2"
+   },
+   "design_vs_prod": {
+    "same": false,
+    "pixels_pct": 78.29,
+    "box": [
+     0,
+     0,
+     390,
+     844
+    ],
+    "only_first": [
+     "Step 2 of 2",
+     "Green Avenue Colony",
+     "Satai Road, Chhatarpur 471001",
+     "House, flat, floor"
+    ],
+    "only_second": [
+     "Green Park",
+     "New Delhi, Delhi",
+     "House, street, colony, ward",
+     "Add your house or flat number."
+    ],
+    "n_only_first": 4,
+    "n_only_second": 4
+   },
+   "design_vs_dev": {
+    "same": false,
+    "pixels_pct": 78.29,
+    "box": [
+     0,
+     0,
+     390,
+     844
+    ],
+    "only_first": [
+     "Step 2 of 2",
+     "Green Avenue Colony",
+     "Satai Road, Chhatarpur 471001",
+     "House, flat, floor"
+    ],
+    "only_second": [
+     "Green Park",
+     "New Delhi, Delhi",
+     "House, street, colony, ward",
+     "Add your house or flat number."
+    ],
+    "n_only_first": 4,
+    "n_only_second": 4
+   },
+   "dev_vs_prod": {
+    "same": true,
+    "pixels_pct": 0.0,
+    "box": null,
+    "only_first": [],
+    "only_second": [],
+    "n_only_first": 0,
+    "n_only_second": 0
+   },
+   "design_note": "78.29 percent of the picture differs. 4 lines only on the board (Step 2 of 2; Green Avenue Colony; Satai Road, Chhatarpur 471001). 4 lines only in the app (Green Park; New Delhi, Delhi; House, street, colony, ward). The BOARD breaks rule 14: it says \"Step 2 of 2\".",
+   "rules": {
+    "contrast": {
+     "result": "fail",
+     "why": "placeholder: e.g. C-128, Gali 3, R is 3.53 to 1; placeholder: e.g. near the park ga is 3.53 to 1"
+    },
+    "inside": {
+     "result": "pass",
+     "why": ""
+    },
+    "filled-last": {
+     "result": "pass",
+     "why": ""
+    },
+    "ends-24": {
+     "result": "fail",
+     "why": "the sheet's last button ends 16 px above the edge, not 24 (the dish sheet has 24)"
+    },
+    "no-step-count": {
+     "result": "pass",
+     "why": ""
+    },
+    "tapped-field": {
+     "result": "pass",
+     "why": "brand border, no ring, same size, sheet's colour"
+    },
+    "view-all": {
+     "result": "not checked",
+     "why": "no View all on this screen"
+    }
+   }
+  },
+  {
+   "id": "rider-leaves",
+   "name": "Finding your kitchen",
+   "board": "A1e-LocationRiderLeaves",
+   "source": "motion-capture.spec.ts: rider rides out",
+   "board_rule_fails": {
+    "no-step-count": "Step 4 of 4"
+   },
+   "design_vs_prod": {
+    "same": false,
+    "pixels_pct": 4.06,
+    "box": [
+     20,
+     65,
+     370,
+     588
+    ],
+    "only_first": [
+     "Set up",
+     "Step 4 of 4"
+    ],
+    "only_second": [],
+    "n_only_first": 2,
+    "n_only_second": 0
+   },
+   "design_vs_dev": {
+    "same": false,
+    "pixels_pct": 4.06,
+    "box": [
+     20,
+     65,
+     370,
+     588
+    ],
+    "only_first": [
+     "Set up",
+     "Step 4 of 4"
+    ],
+    "only_second": [],
+    "n_only_first": 2,
+    "n_only_second": 0
+   },
+   "dev_vs_prod": {
+    "same": true,
+    "pixels_pct": 0.0,
+    "box": null,
+    "only_first": [],
+    "only_second": [],
+    "n_only_first": 0,
+    "n_only_second": 0
+   },
+   "design_note": "4.06 percent of the picture differs. 2 lines only on the board (Set up; Step 4 of 4). The words are the same. The BOARD breaks rule 14: it says \"Step 4 of 4\".",
+   "rules": {
+    "contrast": {
+     "result": "pass",
+     "why": "3 texts"
+    },
+    "inside": {
+     "result": "pass",
+     "why": ""
+    },
+    "filled-last": {
+     "result": "not checked",
+     "why": "no big filled button here"
+    },
+    "ends-24": {
+     "result": "pass",
+     "why": "the slip ends 24 px above the edge"
+    },
+    "no-step-count": {
+     "result": "pass",
+     "why": ""
+    },
+    "no-shift": {
+     "result": "pass",
+     "why": "same place as location-ask"
+    },
+    "view-all": {
+     "result": "not checked",
+     "why": "no View all on this screen"
+    }
+   }
+  },
+  {
+   "id": "menu",
+   "name": "Menu",
+   "board": "C1-HomeTop",
+   "source": "screensSteps: menu",
+   "board_rule_fails": {},
+   "design_vs_prod": {
+    "same": false,
+    "pixels_pct": 36.16,
+    "box": [
+     20,
+     14,
+     370,
+     807
+    ],
+    "only_first": [
+     "Home",
+     "C-128, Green Avenue Colony, Satai Road, Chhatarpur 471001",
+     "Search dishes",
+     "Open till 10:00 pm",
+     "Today",
+     "Veg thali",
+     "₹180",
+     "Today"
+    ],
+    "only_second": [
+     "Deliver to",
+     "Pin code 110016",
+     "Open till 11:59 pm",
+     "Menu",
+     "Butter Chicken",
+     "₹320"
+    ],
+    "n_only_first": 31,
+    "n_only_second": 6
+   },
+   "design_vs_dev": {
+    "same": false,
+    "pixels_pct": 36.16,
+    "box": [
+     20,
+     14,
+     370,
+     807
+    ],
+    "only_first": [
+     "Home",
+     "C-128, Green Avenue Colony, Satai Road, Chhatarpur 471001",
+     "Search dishes",
+     "Open till 10:00 pm",
+     "Today",
+     "Veg thali",
+     "₹180",
+     "Today"
+    ],
+    "only_second": [
+     "Deliver to",
+     "Pin code 110016",
+     "Open till 11:59 pm",
+     "Menu",
+     "Butter Chicken",
+     "₹320"
+    ],
+    "n_only_first": 31,
+    "n_only_second": 6
+   },
+   "dev_vs_prod": {
+    "same": true,
+    "pixels_pct": 0.0,
+    "box": null,
+    "only_first": [],
+    "only_second": [],
+    "n_only_first": 0,
+    "n_only_second": 0
+   },
+   "design_note": "36.16 percent of the picture differs. 31 lines only on the board (Home; C-128, Green Avenue Colony, Satai Road, Chhatarpur 471001; Search dishes). 6 lines only in the app (Deliver to; Pin code 110016; Open till 11:59 pm).",
+   "rules": {
+    "contrast": {
+     "result": "pass",
+     "why": "11 texts"
+    },
+    "inside": {
+     "result": "pass",
+     "why": ""
+    },
+    "filled-last": {
+     "result": "not checked",
+     "why": "no big filled button here"
+    },
+    "ends-24": {
+     "result": "not checked",
+     "why": "no first-open slip and no sheet here"
+    },
+    "no-step-count": {
+     "result": "pass",
+     "why": ""
+    },
+    "view-all": {
+     "result": "not checked",
+     "why": "no View all on this screen"
+    }
+   }
+  },
+  {
+   "id": "dish",
+   "name": "Dish sheet",
+   "board": "Dish",
+   "source": "dish-sheet-order.spec.ts S1",
+   "board_rule_fails": {},
+   "design_vs_prod": {
+    "same": false,
+    "pixels_pct": 64.22,
+    "box": [
+     0,
+     0,
+     390,
+     798
+    ],
+    "only_first": [
+     "Chicken Curry",
+     "₹280",
+     "Non-veg · Mains",
+     "Ghar wali chicken curry, bone in, cooked slow in its own gravy. Serves 1.",
+     "Add to bill · ₹280"
+    ],
+    "only_second": [
+     "Butter Chicken",
+     "₹320",
+     "Add to bill · ₹320"
+    ],
+    "n_only_first": 5,
+    "n_only_second": 3
+   },
+   "design_vs_dev": {
+    "same": false,
+    "pixels_pct": 64.22,
+    "box": [
+     0,
+     0,
+     390,
+     798
+    ],
+    "only_first": [
+     "Chicken Curry",
+     "₹280",
+     "Non-veg · Mains",
+     "Ghar wali chicken curry, bone in, cooked slow in its own gravy. Serves 1.",
+     "Add to bill · ₹280"
+    ],
+    "only_second": [
+     "Butter Chicken",
+     "₹320",
+     "Add to bill · ₹320"
+    ],
+    "n_only_first": 5,
+    "n_only_second": 3
+   },
+   "dev_vs_prod": {
+    "same": true,
+    "pixels_pct": 0.0,
+    "box": null,
+    "only_first": [],
+    "only_second": [],
+    "n_only_first": 0,
+    "n_only_second": 0
+   },
+   "design_note": "64.22 percent of the picture differs. 5 lines only on the board (Chicken Curry; ₹280; Non-veg · Mains). 3 lines only in the app (Butter Chicken; ₹320; Add to bill · ₹320).",
+   "rules": {
+    "contrast": {
+     "result": "pass",
+     "why": "8 texts"
+    },
+    "inside": {
+     "result": "pass",
+     "why": ""
+    },
+    "filled-last": {
+     "result": "pass",
+     "why": ""
+    },
+    "ends-24": {
+     "result": "pass",
+     "why": "the sheet's last button ends 24 px above the edge"
+    },
+    "no-step-count": {
+     "result": "pass",
+     "why": ""
+    },
+    "view-all": {
+     "result": "not checked",
+     "why": "no View all on this screen"
+    }
+   }
+  },
+  {
+   "id": "bill",
+   "name": "Your bill",
+   "board": "D2-BillNote",
+   "source": "screensSteps: bill",
+   "board_rule_fails": {},
+   "design_vs_prod": {
+    "same": false,
+    "pixels_pct": 50.88,
+    "box": [
+     0,
+     23,
+     390,
+     844
+    ],
+    "only_first": [
+     "Tau Ka Dhaba · 110024",
+     "1 × Dal Makhani",
+     "220",
+     "4 × Tandoori Roti",
+     "80",
+     "40",
+     "Cash at door",
+     "₹340"
+    ],
+    "only_second": [
+     "Hauz Khas Kitchen · 110016",
+     "1 × Butter Chicken",
+     "320",
+     "Free",
+     "To pay at door",
+     "₹320",
+     "Phone number · the rider calls you on it",
+     "0 / 200"
+    ],
+    "n_only_first": 12,
+    "n_only_second": 14
+   },
+   "design_vs_dev": {
+    "same": false,
+    "pixels_pct": 50.88,
+    "box": [
+     0,
+     23,
+     390,
+     844
+    ],
+    "only_first": [
+     "Tau Ka Dhaba · 110024",
+     "1 × Dal Makhani",
+     "220",
+     "4 × Tandoori Roti",
+     "80",
+     "40",
+     "Cash at door",
+     "₹340"
+    ],
+    "only_second": [
+     "Hauz Khas Kitchen · 110016",
+     "1 × Butter Chicken",
+     "320",
+     "Free",
+     "To pay at door",
+     "₹320",
+     "Phone number · the rider calls you on it",
+     "0 / 200"
+    ],
+    "n_only_first": 12,
+    "n_only_second": 14
+   },
+   "dev_vs_prod": {
+    "same": true,
+    "pixels_pct": 0.0,
+    "box": null,
+    "only_first": [],
+    "only_second": [],
+    "n_only_first": 0,
+    "n_only_second": 0
+   },
+   "design_note": "50.88 percent of the picture differs. 12 lines only on the board (Tau Ka Dhaba · 110024; 1 × Dal Makhani; 220). 14 lines only in the app (Hauz Khas Kitchen · 110016; 1 × Butter Chicken; 320).",
+   "rules": {
+    "contrast": {
+     "result": "fail",
+     "why": "placeholder: 10 digit number is 3.2 to 1; placeholder: e.g. C-128, Green Ave is 3.2 to 1; placeholder: e.g. less spicy, no o is 3.2 to 1"
+    },
+    "inside": {
+     "result": "pass",
+     "why": ""
+    },
+    "filled-last": {
+     "result": "not checked",
+     "why": "no big filled button here"
+    },
+    "ends-24": {
+     "result": "not checked",
+     "why": "no first-open slip and no sheet here"
+    },
+    "no-step-count": {
+     "result": "pass",
+     "why": ""
+    },
+    "list-total": {
+     "result": "pass",
+     "why": "320 = 320"
+    },
+    "view-all": {
+     "result": "not checked",
+     "why": "no View all on this screen"
+    }
+   }
+  },
+  {
+   "id": "eta",
+   "name": "Your order: cooking",
+   "board": "E2a-EtaBig",
+   "source": "screensSteps: eta-big",
+   "board_rule_fails": {},
+   "design_vs_prod": {
+    "same": false,
+    "pixels_pct": 41.36,
+    "box": [
+     0,
+     24,
+     390,
+     844
+    ],
+    "only_first": [
+     "Tau Ka Dhaba · 110024",
+     "No. 1042",
+     "By 8:12 pm",
+     "1 × Dal Makhani",
+     "220",
+     "4 × Tandoori Roti",
+     "80",
+     "40"
+    ],
+    "only_second": [
+     "Hauz Khas Kitchen · 110016",
+     "No. 0f0f0f0f",
+     "By 9:25 am",
+     "2 × Butter Chicken",
+     "640",
+     "Free",
+     "To pay at door",
+     "₹640"
+    ],
+    "n_only_first": 15,
+    "n_only_second": 10
+   },
+   "design_vs_dev": {
+    "same": false,
+    "pixels_pct": 41.36,
+    "box": [
+     0,
+     24,
+     390,
+     844
+    ],
+    "only_first": [
+     "Tau Ka Dhaba · 110024",
+     "No. 1042",
+     "By 8:12 pm",
+     "1 × Dal Makhani",
+     "220",
+     "4 × Tandoori Roti",
+     "80",
+     "40"
+    ],
+    "only_second": [
+     "Hauz Khas Kitchen · 110016",
+     "No. 0f0f0f0f",
+     "By 9:25 am",
+     "2 × Butter Chicken",
+     "640",
+     "Free",
+     "To pay at door",
+     "₹640"
+    ],
+    "n_only_first": 15,
+    "n_only_second": 10
+   },
+   "dev_vs_prod": {
+    "same": true,
+    "pixels_pct": 0.0,
+    "box": null,
+    "only_first": [],
+    "only_second": [],
+    "n_only_first": 0,
+    "n_only_second": 0
+   },
+   "design_note": "41.36 percent of the picture differs. 15 lines only on the board (Tau Ka Dhaba · 110024; No. 1042; By 8:12 pm). 10 lines only in the app (Hauz Khas Kitchen · 110016; No. 0f0f0f0f; By 9:25 am).",
+   "rules": {
+    "contrast": {
+     "result": "pass",
+     "why": "21 texts"
+    },
+    "inside": {
+     "result": "pass",
+     "why": ""
+    },
+    "filled-last": {
+     "result": "not checked",
+     "why": "no big filled button here"
+    },
+    "ends-24": {
+     "result": "not checked",
+     "why": "no first-open slip and no sheet here"
+    },
+    "no-step-count": {
+     "result": "pass",
+     "why": ""
+    },
+    "no-second-ask": {
+     "result": "pass",
+     "why": ""
+    },
+    "list-total": {
+     "result": "pass",
+     "why": "640 = 640"
+    },
+    "view-all": {
+     "result": "not checked",
+     "why": "no View all on this screen"
+    }
+   }
+  },
+  {
+   "id": "rider-row",
+   "name": "Your order: on the way",
+   "board": "T4-TrackerMapRow",
+   "source": "screensSteps: tracker-rider-row",
+   "board_rule_fails": {},
+   "design_vs_prod": {
+    "same": false,
+    "pixels_pct": 32.29,
+    "box": [
+     0,
+     24,
+     390,
+     836
+    ],
+    "only_first": [
+     "Tau Ka Dhaba · 110024",
+     "No. 1042",
+     "By 8:12 pm",
+     "1 × Dal Makhani",
+     "220",
+     "4 × Tandoori Roti",
+     "80",
+     "₹300"
+    ],
+    "only_second": [
+     "Hauz Khas Kitchen · 110016",
+     "No. 0f0f0f0f",
+     "By 9:07 am",
+     "2 × Butter Chicken",
+     "640",
+     "₹640",
+     "Placed",
+     "Accepted"
+    ],
+    "n_only_first": 9,
+    "n_only_second": 11
+   },
+   "design_vs_dev": {
+    "same": false,
+    "pixels_pct": 32.29,
+    "box": [
+     0,
+     24,
+     390,
+     836
+    ],
+    "only_first": [
+     "Tau Ka Dhaba · 110024",
+     "No. 1042",
+     "By 8:12 pm",
+     "1 × Dal Makhani",
+     "220",
+     "4 × Tandoori Roti",
+     "80",
+     "₹300"
+    ],
+    "only_second": [
+     "Hauz Khas Kitchen · 110016",
+     "No. 0f0f0f0f",
+     "By 9:07 am",
+     "2 × Butter Chicken",
+     "640",
+     "₹640",
+     "Placed",
+     "Accepted"
+    ],
+    "n_only_first": 9,
+    "n_only_second": 11
+   },
+   "dev_vs_prod": {
+    "same": true,
+    "pixels_pct": 0.01,
+    "box": [
+     245,
+     511,
+     252,
+     520
+    ],
+    "only_first": [],
+    "only_second": [],
+    "n_only_first": 0,
+    "n_only_second": 0
+   },
+   "design_note": "32.29 percent of the picture differs. 9 lines only on the board (Tau Ka Dhaba · 110024; No. 1042; By 8:12 pm). 11 lines only in the app (Hauz Khas Kitchen · 110016; No. 0f0f0f0f; By 9:07 am).",
+   "rules": {
+    "contrast": {
+     "result": "pass",
+     "why": "25 texts"
+    },
+    "inside": {
+     "result": "pass",
+     "why": ""
+    },
+    "filled-last": {
+     "result": "not checked",
+     "why": "no big filled button here"
+    },
+    "ends-24": {
+     "result": "not checked",
+     "why": "no first-open slip and no sheet here"
+    },
+    "no-step-count": {
+     "result": "pass",
+     "why": ""
+    },
+    "no-second-ask": {
+     "result": "pass",
+     "why": ""
+    },
+    "list-total": {
+     "result": "pass",
+     "why": "640 = 640"
+    },
+    "no-shift": {
+     "result": "pass",
+     "why": "same place as eta"
+    },
+    "view-all": {
+     "result": "not checked",
+     "why": "no View all on this screen"
+    }
+   }
+  },
+  {
+   "id": "delivered",
+   "name": "Your order: delivered",
+   "board": "DL1-DeliveredBigTime",
+   "source": "delivered-screen.spec.ts D2",
+   "board_rule_fails": {},
+   "design_vs_prod": {
+    "same": false,
+    "pixels_pct": 27.42,
+    "box": [
+     0,
+     24,
+     390,
+     756
+    ],
+    "only_first": [
+     "No. 1042",
+     "Tau Ka Dhaba · 110024",
+     "14 Nov 7:40 pm",
+     "1 × Dal Makhani",
+     "220",
+     "4 × Tandoori Roti",
+     "80",
+     "40"
+    ],
+    "only_second": [
+     "No. 0f0f0f0f",
+     "Hauz Khas Kitchen · 110016",
+     "1 Jan 3:30 pm",
+     "2 × Butter Chicken",
+     "640",
+     "Free",
+     "Paid at the door",
+     "₹640"
+    ],
+    "n_only_first": 13,
+    "n_only_second": 11
+   },
+   "design_vs_dev": {
+    "same": false,
+    "pixels_pct": 27.42,
+    "box": [
+     0,
+     24,
+     390,
+     756
+    ],
+    "only_first": [
+     "No. 1042",
+     "Tau Ka Dhaba · 110024",
+     "14 Nov 7:40 pm",
+     "1 × Dal Makhani",
+     "220",
+     "4 × Tandoori Roti",
+     "80",
+     "40"
+    ],
+    "only_second": [
+     "No. 0f0f0f0f",
+     "Hauz Khas Kitchen · 110016",
+     "1 Jan 3:30 pm",
+     "2 × Butter Chicken",
+     "640",
+     "Free",
+     "Paid at the door",
+     "₹640"
+    ],
+    "n_only_first": 13,
+    "n_only_second": 11
+   },
+   "dev_vs_prod": {
+    "same": true,
+    "pixels_pct": 0.0,
+    "box": null,
+    "only_first": [],
+    "only_second": [],
+    "n_only_first": 0,
+    "n_only_second": 0
+   },
+   "design_note": "27.42 percent of the picture differs. 13 lines only on the board (No. 1042; Tau Ka Dhaba · 110024; 14 Nov 7:40 pm). 11 lines only in the app (No. 0f0f0f0f; Hauz Khas Kitchen · 110016; 1 Jan 3:30 pm).",
+   "rules": {
+    "contrast": {
+     "result": "pass",
+     "why": "22 texts"
+    },
+    "inside": {
+     "result": "pass",
+     "why": ""
+    },
+    "filled-last": {
+     "result": "pass",
+     "why": ""
+    },
+    "ends-24": {
+     "result": "not checked",
+     "why": "no first-open slip and no sheet here"
+    },
+    "no-step-count": {
+     "result": "pass",
+     "why": ""
+    },
+    "no-second-ask": {
+     "result": "pass",
+     "why": ""
+    },
+    "list-total": {
+     "result": "pass",
+     "why": "640 = 640"
+    },
+    "no-shift": {
+     "result": "pass",
+     "why": "same place as eta"
+    },
+    "view-all": {
+     "result": "not checked",
+     "why": "no View all on this screen"
+    }
+   }
+  },
+  {
+   "id": "history",
+   "name": "History",
+   "board": "H1-History",
+   "source": "screensSteps: orders",
+   "board_rule_fails": {},
+   "design_vs_prod": {
+    "same": false,
+    "pixels_pct": 9.82,
+    "box": [
+     0,
+     13,
+     390,
+     835
+    ],
+    "only_first": [
+     "Order again",
+     "No. 1042 · today 7:40 pm",
+     "Dal Makhani, Tandoori Roti × 4",
+     "Tau Ka Dhaba · ₹340",
+     "Cooking",
+     "No. 1031 · 21 Oct 8:05 pm",
+     "Paneer Butter Masala, Roti × 3",
+     "Tau Ka Dhaba · ₹320"
+    ],
+    "only_second": [
+     "Order again · today's prices",
+     "No orders yet",
+     "Your orders will show here.",
+     "See the menu"
+    ],
+    "n_only_first": 19,
+    "n_only_second": 4
+   },
+   "design_vs_dev": {
+    "same": false,
+    "pixels_pct": 9.82,
+    "box": [
+     0,
+     13,
+     390,
+     835
+    ],
+    "only_first": [
+     "Order again",
+     "No. 1042 · today 7:40 pm",
+     "Dal Makhani, Tandoori Roti × 4",
+     "Tau Ka Dhaba · ₹340",
+     "Cooking",
+     "No. 1031 · 21 Oct 8:05 pm",
+     "Paneer Butter Masala, Roti × 3",
+     "Tau Ka Dhaba · ₹320"
+    ],
+    "only_second": [
+     "Order again · today's prices",
+     "No orders yet",
+     "Your orders will show here.",
+     "See the menu"
+    ],
+    "n_only_first": 19,
+    "n_only_second": 4
+   },
+   "dev_vs_prod": {
+    "same": true,
+    "pixels_pct": 0.0,
+    "box": null,
+    "only_first": [],
+    "only_second": [],
+    "n_only_first": 0,
+    "n_only_second": 0
+   },
+   "design_note": "9.82 percent of the picture differs. 19 lines only on the board (Order again; No. 1042 · today 7:40 pm; Dal Makhani, Tandoori Roti × 4). 4 lines only in the app (Order again · today's prices; No orders yet; Your orders will show here.).",
+   "rules": {
+    "contrast": {
+     "result": "pass",
+     "why": "7 texts"
+    },
+    "inside": {
+     "result": "pass",
+     "why": ""
+    },
+    "filled-last": {
+     "result": "not checked",
+     "why": "no big filled button here"
+    },
+    "ends-24": {
+     "result": "not checked",
+     "why": "no first-open slip and no sheet here"
+    },
+    "no-step-count": {
+     "result": "pass",
+     "why": ""
+    },
+    "view-all": {
+     "result": "not checked",
+     "why": "no View all on this screen"
+    }
+   }
+  }
+ ],
+ "in_sync_all_three": []
+}
