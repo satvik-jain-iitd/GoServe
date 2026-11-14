@@ -507,3 +507,20 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | `test_place_search.py` (#1027) | #1027 | S1 | The one-a-second slot and the cache table, service role only. | sql | `scripts/test_place_search.py` | Pass |
 | `test_search_places.py` (#1029) | #1029 | S1 | `search_places`: name prefix, word inside a name, pin prefix, ranking, empty on no match, customers cannot call it, every pin named. | sql | `scripts/test_search_places.py` | Pass |
 | `test_pincode_aliases.py` (#1031) | #1031 | S1 | Local names find their pin, one row per name, 50 candidates, seed counts, admin writes and a customer neither reads nor writes. | sql | `scripts/test_pincode_aliases.py` | Pass |
+| `alerts-chip.spec.ts` N1 to N8 | #1375 to #1377 | N1 to N8 | Automatic | `app/tests/e2e/alerts-chip.spec.ts` | Pass |
+| `location-rider.spec.ts` L1 to L8 | #1379 to #1384 | L1 to L8 | Automatic | `app/tests/e2e/location-rider.spec.ts` | Pass |
+| `placed-roll.spec.ts` R1 to R10 | #1473 | R1 to R10 | Automatic | `app/tests/e2e/placed-roll.spec.ts` | Pass |
+| `torn-top.spec.ts` T1 to T3 | #1324 | T1 to T3 | Automatic | `app/tests/e2e/torn-top.spec.ts` | Pass |
+| `rider-delivered-slip.spec.ts` DV1 to DV10, TC2, CP1; regression R1; integration rider-change-paid | #1448 | DV1 to DV10 | Automatic | `app/tests/e2e/rider-delivered-slip.spec.ts` | Pass |
+| `rider-me.spec.ts` MC1a to MC1e; regression R2 | #1445, #1440 | MC1 | Automatic | `app/tests/e2e/rider-me.spec.ts` | Pass |
+| `rider-trip.spec.ts` RP3, RT1 to RT5; regression R3 | #1441, #1474 | RP3, RT1 to RT5 | Automatic | `app/tests/e2e/rider-trip.spec.ts` | Pass |
+| `rider-incentive.spec.ts` TI1a to TI1e, AR1a to AR1c; regression R4; unit incentive; integration rider-incentive | #1443, #1438 | TI1, AR1 | Automatic | `app/tests/e2e/rider-incentive.spec.ts` | Pass |
+| `kitchen-cook.spec.ts` KC1a to KC1c; regression K1; unit cancelLine | #1454 | KC1 | Automatic | `app/tests/e2e/kitchen-cook.spec.ts` | Pass |
+| `kitchen-sheet.spec.ts` KO1a, KK1a, KO1b, KO1c (two tests share this id; the decline sheet one becomes KO1d); regression K2 | #1455 | KO1, KK1 | Automatic | `app/tests/e2e/kitchen-sheet.spec.ts` | Pass |
+| `kitchen-today.spec.ts` KD1a to KD1c; regression K3 | #1456 | KD1 | Automatic | `app/tests/e2e/kitchen-today.spec.ts` | Pass |
+| `admin-addperson-last.spec.ts` S1, S2 | #1457 | S1, S2 | Automatic | `app/tests/e2e/admin-addperson-last.spec.ts` | Pass |
+| `admin-settings.spec.ts` S2 (a Save beats the slow first read) | #1475 | S2 | Automatic | `app/tests/e2e/admin-settings.spec.ts` | Pass |
+| `25-declined.spec.ts` (Order something else last) | #1458 | TC | Automatic | `app/tests/e2e/regression/25-declined.spec.ts` | Pass |
+| `pinmap-far.spec.ts` S9 (Pin on the map after a failed lookup) | #1462 | S9 | Automatic | `app/tests/e2e/pinmap-far.spec.ts` | Pass |
+| `first-open-layout.spec.ts` S9 (no scroll at 320 x 568 and 360 x 649) | #1471 | S9 | Automatic | `app/tests/e2e/first-open-layout.spec.ts` | Pass |
+| `admin-adddish-last.spec.ts` S1, S2 | #1476 | S1, S2 | Automatic | `app/tests/e2e/admin-adddish-last.spec.ts` | Pass |
