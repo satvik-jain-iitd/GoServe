@@ -783,14 +783,27 @@ a.ui-locrow { text-decoration: none; }   /* story 1498: the rider row is a link 
 .ui-bellbadge { width: 96px; height: 96px; border-radius: var(--gs-radius-pill); background: var(--gs-lime-soft); display: flex; align-items: center; justify-content: center; color: var(--md-primary); margin: 8px auto; }
 
 /* Story 1056, board SW3: the location-off sheet. */
-.ui-locoff { display: flex; flex-direction: column; align-items: stretch; gap: 12px; text-align: center; }
+.ui-locoff { display: flex; flex-direction: column; align-items: stretch; gap: 12px; }   /* board LO-V1: the words start at the left, no icon */
 .ui-locoff h2 { margin: 0; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
-.ui-locoff-icon { align-self: center; display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; box-sizing: border-box; border: 1px solid var(--md-outline-variant); border-radius: 14px; background: var(--md-surface); color: var(--md-on-surface); }
 .ui-locoff-how { margin: 0; font-size: 14px; color: var(--gs-text-muted); }
-.ui-locoff-head { display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid var(--md-outline-variant); text-align: left; }
-.ui-locoff-all { border: 0; background: transparent; padding: 8px 0; min-height: 44px; color: var(--md-primary); font: inherit; font-weight: 700; font-size: 14px; }
+.ui-locoff-rows { border-top: 1px solid var(--md-outline-variant); }
+.ui-locoff-all { align-self: flex-end; border: 0; background: transparent; padding: 8px 0; min-height: 44px; color: var(--md-primary); font: inherit; font-weight: 700; font-size: 14px; }
 .ui-locoff-row { display: grid; grid-template-columns: 28px 1fr 16px; gap: 12px; align-items: center; width: 100%; min-height: 56px; padding: 8px 0; border: 0; border-bottom: 1px solid var(--md-outline-variant); background: transparent; color: var(--md-on-surface); font: inherit; text-align: left; }
 .ui-locoff-home { color: var(--md-primary); display: inline-flex; }
+.ui-locoff-row[aria-current] .ui-locrow-go { color: var(--md-primary); }
+/* Story 1529 (boards LF5, LF6, LF2, LF3): the "Delivering to" box on Deliver to. One size in every state: the second line is always two lines high, so nothing under it moves. */
+.ui-going > div { display: grid; grid-template-columns: 24px 1fr; gap: 12px; align-items: start; padding: 14px; border: 1px solid var(--md-outline-variant); border-radius: 12px; background: var(--md-surface); }
+.ui-going.here > div { border-color: var(--md-primary); }
+.ui-going svg { margin-top: 2px; color: var(--md-primary); }
+.ui-going-words { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ui-going-title { display: flex; align-items: center; gap: 8px; min-height: 24px; font-weight: 600; line-height: 1.25; }
+.ui-going-title .ui-tag { font-size: 11px; }
+.ui-going-sub { height: 38px; font-size: 14px; line-height: 1.35; color: var(--gs-text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ui-card-btn:disabled { color: var(--gs-text-muted); cursor: default; }   /* board LF6d: Finding you… */
+.ui-card-btn:disabled svg { color: var(--gs-text-muted); }
+.ui-saved-row.unpinned .ui-saved-main, .ui-saved-row.unpinned .ui-chip-box { color: var(--gs-text-muted); }   /* board LF11: an old row with no pin */
+.ui-loc-note { display: grid; grid-template-columns: 20px 1fr; gap: 10px; margin: auto 0 0; padding: 12px; border: 1px solid var(--md-outline-variant); border-radius: 8px; background: var(--md-surface); color: var(--md-on-surface); font-size: 14px; line-height: 1.4; text-align: left; }   /* board LF1: the true line on the first-open screen */
+.ui-loc-note svg { color: var(--md-primary); }
 /* Story 1049 part 3, board NK-A: the place of a pin no kitchen serves. */
 .ui-nkplace { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-top: 1px solid var(--md-outline-variant); border-bottom: 1px solid var(--md-outline-variant); color: var(--md-primary); }
 .ui-nkplace > span { display: flex; flex-direction: column; color: var(--md-on-surface); min-width: 0; }

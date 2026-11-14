@@ -1,6 +1,6 @@
 // Story #668 (boards A1 to A3): the customer's own address from the phone's location, through OpenStreetMap's reverse lookup (no key). Any failure means "type it by hand".
 import { describe, expect, it, vi } from "vitest";
-import { addressFrom, reverseAddress } from "../../src/lib/locate";
+import { addressFrom, locLine, locWhy, locWords, reverseAddress } from "../../src/lib/locate";
 
 const NOMINATIM = { display_name: "B-12, Lajpat Nagar II, Lajpat Nagar, South Delhi, New Delhi, Delhi, 110024, India", address: { house_number: "B-12", road: "Lajpat Nagar II", suburb: "Lajpat Nagar", city: "New Delhi", state: "Delhi", postcode: "110024", country: "India" } };
 
@@ -102,5 +102,30 @@ describe("the nearest pin when the reverse lookup has none (story 987)", () => {
       await vi.advanceTimersByTimeAsync(4100);
       expect(await p).toEqual({ address: "Link Road, Rajnagar, Madhya Pradesh", pin: "" });
     } finally { vi.useRealTimers(); }
+  });
+});
+
+// Bug 1526: every failure was called "blocked". The browser's error code says which of the three it is; the line is true for that cause.
+describe("locWhy and its words (bug 1526)", () => {
+  it("reads the error code: 1 blocked, 2 the phone's location is off, 3 too slow; no code is the phone's location", () => {
+    expect(locWhy({ code: 1 })).toBe("denied");
+    expect(locWhy({ code: 2 })).toBe("off");
+    expect(locWhy({ code: 3 })).toBe("slow");
+    expect(locWhy(new Error("no_geolocation"))).toBe("off");
+    expect(locWhy(null)).toBe("off");
+  });
+  it("blocked again after a tap says so, so the second tap shows something new", () => {
+    expect(locWhy({ code: 1 }, "denied")).toBe("still");
+    expect(locWhy({ code: 1 }, "still")).toBe("still");
+    expect(locWhy({ code: 1 }, "off")).toBe("denied");
+    expect(locWhy({ code: 2 }, "denied")).toBe("off");
+  });
+  it("only the blocked lines say blocked", () => {
+    for (const why of ["ask", "off", "slow"] as const) expect(locLine(why, "search above")).not.toMatch(/blocked/i);
+    expect(locLine("denied", "search above")).toBe("Location is blocked for GoServe. Turn on location in your phone settings, or search above.");
+    expect(locLine("off", "search for your address")).toBe("Your phone's location is off. Turn it on, or search for your address.");
+    expect(locLine("slow", "search above")).toBe("Finding you is taking too long. Try again, or search above.");
+    expect(locWords("still", "search above")).toEqual({ title: "Still blocked", sub: "In your phone: Settings, Apps, GoServe, Permissions, Location." });
+    expect(locWords("ask", "search above")).toEqual({ title: "We can't see where you are right now", sub: "Tap Use current location, or search above." });
   });
 });

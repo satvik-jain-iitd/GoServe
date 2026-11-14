@@ -1,7 +1,7 @@
 // Story 1421 (owner 13 Nov 2026, boards AD3, ED1, ED2): one box "House, street, colony, ward", saved whole and shown whole on Edit (no cutting at commas).
 // Edit opens the filled sheet; the map opens only on Change; the typed box and landmark are kept across Change and back.
 import { test, expect, type Page } from "@playwright/test";
-import { setup } from "./helpers";
+import { setup, phoneAt, toDeliverTo } from "./helpers";
 import { STEPS } from "./screensSteps";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
@@ -15,8 +15,9 @@ async function toEdit(page: Page, context: Parameters<typeof setup>[0], saved: o
   net.state.addresses = [saved];
   net.state.geocode = { status: 200, body: GREEN_PARK };
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
+  await phoneAt(context, { lat: 28.5677, lng: 77.2432 });   // story 1529: the phone is at Home, so no sheet asks
   await page.goto("/customer/");
-  await page.getByRole("button", { name: /^(Home|Deliver to)\b/ }).first().click();
+  await toDeliverTo(page);
   await page.getByRole("button", { name: "Edit or remove Home" }).click();
   await page.getByRole("button", { name: "Edit", exact: true }).click();
   return net;

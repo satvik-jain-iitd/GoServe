@@ -12,12 +12,21 @@ export const distanceM = (a: Place, b: Place): number => {   // haversine: right
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
 };
 export const FAR_M = 2000;   // story #1056 (board SW2): past this the phone is far from the chosen address and the menu offers "Deliver here"
-export const NEAR_M = 200;   // story #1035: only the "here" word on a row; nothing is picked by distance any more (the param address_near_m is dormant)
+export const NEAR_M = 200;   // the "here" word on a row, and the start value of the setting address_near_m (story 1529: on open the saved address the phone is at is picked)
 export const distanceWord = (m: number, nearM: number): string => (m <= nearM ? "here" : `${Math.max(1, Math.round(m / 1000))} km`);
 
 const byUsed = (a: SavedAddress, b: SavedAddress) => b.last_used_at.localeCompare(a.last_used_at);
 
-// Story #1035: on open the address used last is picked, always. No nearest-200 m rule, no ask on open (owner, 8 Nov 2026). The row with the newest last_used_at; null for an empty list.
+// Story 1529 (owner, 15 Nov 2026, this reverses story #1035): on open the saved address the phone is at is picked: the nearest one with a pin inside nearM. None: null.
+export const hasPoint = (a: SavedAddress): a is SavedAddress & Place => a.lat !== null && a.lng !== null;
+export const nearSaved = (list: SavedAddress[], at: Place, nearM: number): SavedAddress | null =>
+  list.filter(hasPoint).map((a) => ({ a, m: distanceM(at, a) })).filter((x) => x.m <= nearM).sort((x, y) => x.m - y.m)[0]?.a ?? null;
+/** The setting address_near_m (metres); the start value when it cannot be read. */
+export async function nearM(c: Pick<SupabaseClient, "rpc">): Promise<number> {
+  try { const { data } = await c.rpc("address_near_m"); return typeof data === "number" && data > 0 ? data : NEAR_M; } catch { return NEAR_M; }
+}
+
+// The row with the newest last_used_at; null for an empty list. The pick when the phone is not found (story #1035).
 export const lastUsed = (list: SavedAddress[]): SavedAddress | null => [...list].sort(byUsed)[0] ?? null;
 
 type Client = Pick<SupabaseClient, "from" | "rpc">;

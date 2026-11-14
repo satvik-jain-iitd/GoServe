@@ -1,7 +1,7 @@
 // Story #1036, board C8-SearchResults: typing filters the saved list; a Places section appears on submit (the arrow or Enter), five at most.
 // Story #1519: it also appears by itself after 3 letters and a pause (tests/e2e/ola-search.spec.ts), and the rows keep the server's order.
 import { test, expect, type Page } from "@playwright/test";
-import { setup } from "./helpers";
+import { setup, phoneAt, toDeliverTo } from "./helpers";
 
 const NOW = Date.now();
 const row = (id: string, label: string, address: string, agoDays: number) => ({ id, label, address, pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: new Date(NOW - agoDays * 86_400_000).toISOString() });
@@ -16,8 +16,9 @@ async function open(page: Page, context: Parameters<typeof setup>[0], places = P
   const net = await setup(context, page, [], { pin: "110016" });
   net.state.addresses = [HOME, OFFICE];
   net.state.places = places;
+  await phoneAt(context, HOME);   // story 1529: the phone is at the saved addresses, so no sheet asks
   await page.goto("/customer/");
-  await page.getByRole("button", { name: /^Office\b/ }).click();
+  await toDeliverTo(page);
   return net;
 }
 const box = (page: Page) => page.getByRole("searchbox", { name: "Search an area or address" });
