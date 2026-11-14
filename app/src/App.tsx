@@ -521,7 +521,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // A placed order is never moved (the step is "placed" or "orders"), and an order being sent is let finish first.
   const [closedNote, setClosedNote] = useState<string | null>(null);
   const wasOpen = useRef(false);
-  const [pinMap, setPinMap] = useState<null | { center: Place; edit?: SavedAddress }>(null);   // story #1037: the one full-screen map, the door for Add new address, Use current location and a tapped search result
+  const [pinMap, setPinMap] = useState<null | { center: Place; edit?: SavedAddress; follow?: boolean }>(null);   // story #1037: the one full-screen map, the door for Add new address, Use current location and a tapped search result
   const [settingUp, setSettingUp] = useState(false);   // story 1384 (board A1e): the first Save address; the location slip waits with the rider until the kitchen is found
   useEffect(() => { if (areaError || area?.kind === "none") setSettingUp(false); }, [areaError, area]);   // a failed read or no kitchen here ends it, so a later change of place never shows it again
   useEffect(() => {
@@ -541,10 +541,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     window.addEventListener("pointerdown", off, { once: true, capture: true });
     return () => window.removeEventListener("pointerdown", off, { capture: true });
   }, [closedNote]);
-  const mapStart = (): Place => {   // where the map opens when nothing says otherwise: the phone, else the picked address, else the city centre
+  const mapStart = (): Place => {   // where the map opens when nothing says otherwise: the phone, else the picked address, else the kitchen whose menu shows (story 1502), else the city centre
     const row = (saved ?? []).find((r) => r.id === selectedId);
-    return here ?? (row && row.lat !== null && row.lng !== null ? { lat: row.lat, lng: row.lng } : { lat: 28.6139, lng: 77.209 });
+    const k = area?.kind === "ok" ? area.kitchen : null;
+    return here ?? (row && row.lat !== null && row.lng !== null ? { lat: row.lat, lng: row.lng } : k && typeof k.lat === "number" && typeof k.lng === "number" ? { lat: k.lat, lng: k.lng } : { lat: 28.6139, lng: 77.209 });
   };
+  const openAtStart = (edit?: SavedAddress) => setPinMap({ center: mapStart(), edit, follow: true });   // story 1502: an open the person did not aim follows the phone's place once
   const opened = useRef(false);
   const moved = useRef(false);   // true once the customer has left the first menu (the Bill, the placed screen, any page)
   if (step !== "menu") moved.current = true;
@@ -1036,7 +1038,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <OtpSheet welcome googleOnly={!gate} phone={phone} onClose={() => undefined}
       onVerified={(p) => { setPhone(p); setSavedPhone(p); setVerified(true); setSignedIn(true); }} />
   ) : pinMap ? (
-    <PinMapScreen center={pinMap.center} edit={pinMap.edit} kicker={pinMap.edit ? `Editing ${pinMap.edit.label}` : undefined} confirmLabel={pinMap.edit ? "Save changes" : "Confirm & proceed"} onBack={() => { setFocusSearch(false); setPinMap(null); }} search={(q) => placeSearch(q)} searchOpen={focusSearch} onSearch={() => { setPinMap(null); if (needArea) setStep("deliver"); }}
+    <PinMapScreen center={pinMap.center} follow={pinMap.follow} edit={pinMap.edit} kicker={pinMap.edit ? `Editing ${pinMap.edit.label}` : undefined} confirmLabel={pinMap.edit ? "Save changes" : "Confirm & proceed"} onBack={() => { setFocusSearch(false); setPinMap(null); }} search={(q) => placeSearch(q)} searchOpen={focusSearch} onSearch={() => { setPinMap(null); if (needArea) setStep("deliver"); }}
       onInvite={async (f) => { const err = await askArea(f.pin, f.at); if (err) return err; setAreaAsk("done"); setPinMap(null); setFarPick(f); return null; }}
       onSave={(a) => { const e = pinMap.edit; setPinMap(null); if (!e && needArea) setSettingUp(true); if (e) void saveEdit(e.id, a); else void saveNew(a); }} />
   ) : farPick ? (
@@ -1048,18 +1050,18 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   ) : step === "deliver" ? (
     <DeliverToScreen focusSearch={focusSearch} list={saved ?? []} selectedId={selectedId} here={here} search={(q) => placeSearch(q)} onPlace={(h) => { setFocusSearch(false); setPinMap({ center: { lat: h.lat, lng: h.lng } }); }} onBack={() => { setFocusSearch(false); setStep("menu"); }}
       onSelect={(id) => { const r = (saved ?? []).find((x) => x.id === id); if (r) { useSaved(r, true); setStep("menu"); } }}
-      onUseLocation={() => { void currentPlace().then((p) => setPinMap({ center: p }), () => setPinMap({ center: mapStart() })); }} onAddNew={() => setPinMap({ center: mapStart() })}
-      onEditOnMap={(a) => setPinMap({ center: a.lat !== null && a.lng !== null ? { lat: a.lat, lng: a.lng } : mapStart(), edit: a })} onRemove={dropSaved} />
+      onUseLocation={() => { void currentPlace().then((p) => setPinMap({ center: p }), () => openAtStart()); }} onAddNew={() => openAtStart()}
+      onEditOnMap={(a) => (a.lat !== null && a.lng !== null ? setPinMap({ center: { lat: a.lat, lng: a.lng }, edit: a }) : openAtStart(a))} onRemove={dropSaved} />
   ) : waitingForAddresses ? (
     <div className="ui-pad"><Skeleton lines={3} /></div>
   ) : needArea && !alertsAsked && reminder === "ask" ? (
     <AlertsAsk busy={askingAlerts} onTurnOn={() => void turnOnFirst()} onNotNow={markAsked} />
   ) : needArea && pin && area?.kind === "none" ? (
     <NoKitchen address={address} ask={areaAsk} error={areaAskError} offerPaise={areaOffer} onTell={() => void tellMeWhenWeCome()}
-      onChange={() => { const at = from; changeArea(); setPinMap({ center: at ?? mapStart() }); }} />
+      onChange={() => { const at = from; changeArea(); if (at) setPinMap({ center: at }); else openAtStart(); }} />
   ) : needArea ? (
     <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={(pl) => { setAddress(pl.address); setFixAddress(null); choosePin(pl.pin); }}
-      onMap={(at) => setPinMap({ center: at })} onSearch={() => { setFocusSearch(true); setPinMap({ center: mapStart() }); }} />
+      onMap={(at) => setPinMap({ center: at })} onSearch={() => { setFocusSearch(true); openAtStart(); }} />
   ) : (
     <>
         {step === "menu" && (
