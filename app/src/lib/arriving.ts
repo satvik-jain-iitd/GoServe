@@ -7,6 +7,18 @@ export async function readArriving(client: SupabaseClient, orderId: string): Pro
   return !error && Array.isArray(data) && data.length > 0;
 }
 
+// Story 1507 (board ST1): when each step of the customer's own order happened. The time is the event's own (created_at), the first of its kind.
+// A status with no event row has no time. The rider's pickup (order.picked_up) is the customer's "On the way".
+const STEP_OF: Record<string, string> = { "order.placed": "placed", "order.accepted": "accepted", "order.preparing": "preparing", "order.ready": "ready", "order.picked_up": "out_for_delivery", "order.delivered": "delivered" };
+export type StepTimes = Record<string, string>;
+export async function readStepTimes(client: SupabaseClient, orderId: string): Promise<StepTimes | null> {
+  const { data, error } = await client.from("order_events").select("event, created_at").eq("order_id", orderId).order("created_at", { ascending: true });
+  if (error || !Array.isArray(data)) return null;   // a failed read: the caller keeps what it has
+  const out: StepTimes = {};
+  for (const r of data as { event: string; created_at: string }[]) { const s = STEP_OF[r.event]; if (s && r.created_at && !out[s]) out[s] = r.created_at; }
+  return out;
+}
+
 export function watchArriving(client: SupabaseClient, orderId: string, onChange: () => void): () => void {
   const channel = client
     .channel(`arriving-${orderId}`)
