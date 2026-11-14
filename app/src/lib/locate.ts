@@ -74,6 +74,39 @@ export const currentPlace = (): Promise<Place> =>
     navigator.geolocation.getCurrentPosition((p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }), reject, { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 });
   });
 
+// Bug 1526: every failure was called "blocked". The browser's error code says which it is: 1 blocked for this app, 2 the phone's location is off or gives no fix, 3 too slow.
+// "ask": the phone was never asked (no permission yet), so nothing failed. "still": blocked, tapped again and blocked again, so the second tap says something new.
+export type LocWhy = "ask" | "denied" | "still" | "off" | "slow";
+const WORDS: Record<LocWhy, [string, string]> = {
+  ask: ["We can't see where you are right now", "Tap Use current location"],
+  denied: ["Location is blocked for GoServe", "Turn on location in your phone settings"],
+  still: ["Still blocked", "In your phone: Settings, Apps, GoServe, Permissions, Location"],
+  off: ["Your phone's location is off", "Turn it on"],
+  slow: ["Finding you is taking too long", "Try again"],
+};
+export const locWhy = (e: unknown, before?: LocWhy | null): LocWhy => {
+  const code = (e as { code?: unknown } | null)?.code;
+  return code === 1 ? (before === "denied" || before === "still" ? "still" : "denied") : code === 3 ? "slow" : "off";
+};
+/** The true words for a cause: the fact, and the way out. `out` is the other way this screen offers ("search above"). */
+export const locWords = (why: LocWhy, out: string): { title: string; sub: string } => ({ title: WORDS[why][0], sub: why === "still" ? `${WORDS[why][1]}.` : `${WORDS[why][1]}, or ${out}.` });
+export const locLine = (why: LocWhy, out: string): string => { const w = locWords(why, out); return `${w.title}. ${w.sub}`; };
+
+// Stories 1529 and 1526: the phone's place, or why not. By itself (no tap) the app never makes the browser ask: it uses only a permission given before, and waits waitMs.
+// A browser with no permissions.query (an older iPhone) is treated as never asked. A tap always asks.
+export async function findPhone(tap: boolean, before: LocWhy | null = null, waitMs = 5000): Promise<Place | LocWhy> {
+  if (!tap) {
+    let state: string | undefined;
+    try { state = (await navigator.permissions?.query({ name: "geolocation" as PermissionName }))?.state; } catch { /* never asked */ }
+    if (state !== "granted") return state === "denied" ? "denied" : "ask";
+  }
+  try {
+    return await (tap ? currentPlace() : Promise.race([currentPlace(), new Promise<never>((_, no) => setTimeout(() => no({ code: 3 }), waitMs))]));
+  } catch (e) {
+    return locWhy(e, before);
+  }
+}
+
 // Story #905: the admin stands at the kitchen, so this asks for the best fix and keeps its accuracy in metres.
 export type Fix = Place & { accuracy: number | null };
 export const currentFix = (): Promise<Fix> =>

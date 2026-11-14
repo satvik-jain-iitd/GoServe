@@ -8,7 +8,7 @@ import { ClearCross, DishPlate, JoinedBar } from "../ui";
 import { fetchKitchens } from "../lib/area";
 import { getClient } from "../lib/supabase";
 import type { Map as LMap, Marker } from "leaflet";
-import { currentPlace, findAddress, type Looked, type Place } from "../lib/locate";
+import { currentPlace, locLine, locWhy, findAddress, type Looked, type Place } from "../lib/locate";
 import { isPin } from "../lib/area";
 import { fromOla, usePlaces, type PlaceHit, type Search } from "../lib/placeSearch";
 import { addressText, boxOf, cardWords, serveAt, stripsFor, type Serve, type Strip } from "../lib/pinMap";
@@ -226,8 +226,8 @@ export function PinMapScreen({ center, zoom = 17, follow, kicker, confirmLabel, 
       const p = await currentPlace();
       const m = live.current?.map;
       if (m) show(m, p, 17);
-    } catch {
-      setNote("Could not get your location. Allow location and try again.");
+    } catch (e) {
+      setNote(locLine(locWhy(e), "move the map to your place"));   // bug 1526: the true line for the cause, not "allow location" for all three
     }
   };
 

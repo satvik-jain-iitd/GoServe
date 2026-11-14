@@ -1,7 +1,7 @@
 // Story 1532: one stored delivery place (the point, the words, the postal code, the house and a confirmed mark). The point no longer lives only in memory:
 // a reload, an open order, an edit and a failed save all keep it. A place that was not confirmed on the pin map cannot be ordered to. The address is never a free text box.
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
-import { order, setup } from "./helpers";
+import { order, setup, phoneAt } from "./helpers";
 import { firstOpenToMenu } from "./firstOpen";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
@@ -31,6 +31,7 @@ async function placeOrder(page: Page) {
 test("The place survives a reload: I reload on the Bill and the order still carries the point", async ({ page, context }) => {
   const net = await setup(context, page, [], { pin: null });
   net.state.addresses = [HOME];
+  await phoneAt(context, HOME);   // story 1529: the phone is at Home, so Home is the place and no sheet asks
   await page.goto("/customer/");
   await toBill(page);
   await page.reload();
@@ -68,6 +69,7 @@ test("A raw fix is not enough: Place order waits and I see Confirm on the map; a
 test("No free text for the address: the Bill and the You screen show the words, and Change opens Deliver to", async ({ page, context }) => {
   const net = await setup(context, page, [], { pin: null });
   net.state.addresses = [HOME];
+  await phoneAt(context, HOME);   // story 1529: the phone is at Home, so Home is the place and no sheet asks
   await page.goto("/customer/");
   await toBill(page);
   await expect(page.locator("#address")).toHaveCount(0);
@@ -103,6 +105,7 @@ test("An app open on an open order keeps the point: the next order from the menu
 test("An edit of the picked saved address keeps the point", async ({ page, context }) => {
   const net = await setup(context, page, [], { pin: null });
   net.state.addresses = [HOME];
+  await phoneAt(context, HOME);   // story 1529: the phone is at Home, so Home is the place and no sheet asks
   await map(context, net);
   await page.goto("/customer/");
   await page.getByRole("button", { name: /^Home\b/ }).first().click();

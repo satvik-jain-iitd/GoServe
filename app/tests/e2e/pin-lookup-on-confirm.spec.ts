@@ -15,7 +15,7 @@ async function toMap(page: Page, context: Parameters<typeof setup>[0], over: { g
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
   await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.56, longitude: 77.2 });
   await page.goto("/customer/");
-  await page.getByRole("button", { name: /^Home\b/ }).click();
+  await page.getByTitle("Change the delivery address").click();   // story 1529: the place follows the phone, so the header is not always Home
   await page.getByRole("button", { name: "Add new address" }).click();
   await expect(confirm(page)).toBeEnabled();
   return net;

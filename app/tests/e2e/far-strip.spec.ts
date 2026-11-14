@@ -1,5 +1,5 @@
-// Story #1056 (board SW2): the header keeps the chosen address; when the phone (location already allowed) is more than 2 km from it, a strip says how far and offers "Deliver here".
-// Within 2 km, or with location not allowed, nothing shows and nothing is asked. The check uses the phone's place and the saved lat and lng only.
+// Story #1056 (board SW2), changed by story 1529: on open the place follows the phone, so the strip is for the one case where it does not: a cart in progress whose kitchen does not
+// serve the place the phone is at. The header keeps the chosen address, and a strip says how far and offers "Deliver here". Within 2 km, or with location not allowed, nothing shows.
 import { test, expect, type Page } from "@playwright/test";
 import { setup } from "./helpers";
 
@@ -11,17 +11,23 @@ const GREEN_PARK = { ok: true, address: "Green Park, New Delhi, Delhi", pin: "11
 const strip = (page: Page) => page.getByRole("status").filter({ hasText: /You are \d+ km from/ });
 
 async function open(page: Page, context: Parameters<typeof setup>[0], phone: { latitude: number; longitude: number } | null) {
-  const net = await setup(context, page, [], { pin: "110016" });
+  const net = await setup(context, page, [], { pin: null });
   net.state.addresses = [HOME];
+  net.state.nearPin = "110099";   // no kitchen serves the place the phone is at
+  await context.addInitScript((h) => {   // Home is the place on this phone, with a cart in progress
+    if (window.localStorage.getItem("gs-place")) return;
+    window.localStorage.setItem("gs-place", JSON.stringify({ address: h.address, pin: h.pin_code, lat: h.lat, lng: h.lng, house: "", landmark: "", confirmed: true, id: h.id })); window.localStorage.setItem("gs-pin", h.pin_code);
+    window.localStorage.setItem("gs-draft", JSON.stringify({ step: "menu", cart: { d1: 1 }, address: h.address, name: "", phone: "" }));
+  }, HOME);
   net.state.geocode = { status: 200, body: GREEN_PARK };
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64") }));
   if (phone) { await context.grantPermissions(["geolocation"]); await context.setGeolocation(phone); }
   await page.goto("/customer/");
-  await expect(page.getByRole("button", { name: /^Home\b/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Home\b/ }).first()).toBeVisible();
   return net;
 }
 
-test("S1 more than 2 km from Home: the strip says how far; Deliver here opens the pin map at the phone, then the details sheet", async ({ page, context }) => {
+test("S1 more than 2 km from Home, with a cart in progress: the strip says how far; Deliver here opens the pin map at the phone, then the details sheet", async ({ page, context }) => {
   const net = await open(page, context, FAR_PHONE);
   await expect(strip(page)).toContainText("You are 6 km from Home");
   await expect(page.getByRole("button", { name: /^Home\b/ })).toBeVisible();   // the header keeps Home

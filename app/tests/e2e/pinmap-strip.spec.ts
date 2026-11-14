@@ -16,7 +16,7 @@ async function open(page: import("@playwright/test").Page, context: Parameters<t
   if (hang) await context.route("https://test.supabase.co/functions/v1/geocode**", () => new Promise(() => undefined));   // the lookup never answers
   await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.56, longitude: 77.2 });
   await page.goto("/customer/");
-  await page.getByRole("button", { name: /^Home\b/ }).click();
+  await page.getByTitle("Change the delivery address").click();   // story 1529: the place follows the phone, so the header is not always Home
   await page.getByRole("button", { name: "Add new address" }).click();
   return net;
 }

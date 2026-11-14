@@ -36,3 +36,9 @@ export function clearPlace(store: Storage = window.localStorage): void {
 /** The point an order may carry: only a confirmed one. */
 export const pointOf = (p: StoredPlace | null): { lat: number; lng: number } | null =>
   p && p.confirmed && p.lat !== null && p.lng !== null ? { lat: p.lat, lng: p.lng } : null;
+
+// Story 1529: the phone's own fix as a place ("Where you are now"): the point and the postal code of that point. Not confirmed and not a saved row, so no order goes to it
+// before "Confirm on the map". It is kept only as this phone's place, never as an address row.
+export const HERE = "Where you are now";
+export const herePlace = (at: { lat: number; lng: number }, pin: string): StoredPlace => ({ address: HERE, pin, lat: at.lat, lng: at.lng, house: "", landmark: "", confirmed: false, id: null });
+export const isHere = (p: StoredPlace | null): boolean => !!p && p.address === HERE && !p.confirmed && p.id === null;

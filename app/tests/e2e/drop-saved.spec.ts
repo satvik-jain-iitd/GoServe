@@ -1,6 +1,6 @@
 // Story #1182 part 1: the rider's Navigate needs the order's drop_lat and drop_lng. A returning customer with a saved address (words and exact pin) in the pin code the phone already holds places an order that carries that pin.
 import { test, expect } from "@playwright/test";
-import { setup } from "./helpers";
+import { setup, phoneAt } from "./helpers";
 
 const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
 const HOME = { id: "h1", label: "Home", address: "C-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: new Date().toISOString() };
@@ -17,7 +17,12 @@ async function toBill(page: import("@playwright/test").Page, context: import("@p
     orders.push(JSON.parse(r.request().postData() ?? "{}"));
     return r.fulfill({ status: 201, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(placed) });
   });
+  // Story 1529: this address is the place on this phone. With its pin the phone is at it; an old row with no pin is never picked by the app, so the phone holds it and the sheet is closed.
+  const row = saved as { id: string; address: string; pin_code: string; lat: number | null; lng: number | null };
+  if (row.lat !== null && row.lng !== null) await phoneAt(context, { lat: row.lat, lng: row.lng });
+  else await context.addInitScript((r) => { window.localStorage.setItem("gs-place", JSON.stringify({ address: r.address, pin: r.pin_code, lat: null, lng: null, house: "", landmark: "", confirmed: false, id: r.id })); window.localStorage.setItem("gs-pin", r.pin_code); }, row);
   await page.goto("/customer/");
+  if (row.lat === null) { await expect(page.getByRole("dialog", { name: "Where to bring your food?" })).toBeVisible(); await page.keyboard.press("Escape"); }
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Phone").fill("9876543210");

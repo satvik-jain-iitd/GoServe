@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useBackCloses } from "../lib/back";
 import { distanceM, distanceWord, lastUsed, NEAR_M, type Place, type SavedAddress } from "../lib/addresses";
+import { locWords, type LocWhy } from "../lib/locate";
 import { fromOla, splitMatch, usePlaces, type PlaceHit, type Search } from "../lib/placeSearch";
 import { ClearCross, useSheetFit } from "../ui";
 
@@ -9,7 +10,10 @@ type Props = {
   focusSearch?: boolean;   // story #1133: the cursor starts in the search
   list: SavedAddress[]; selectedId: string | null; here: Place | null;
   search: Search; onPlace: (hit: PlaceHit) => void;
-  onBack: () => void; onSelect: (id: string) => void; onUseLocation: () => void; onAddNew: (words?: string) => void;
+  onBack?: () => void;   // story 1529: none when there is no place at all (no menu to go back to); the arrow's space is kept
+  current: string | null;   // story 1529, boards LF5 and LF2: the place is "Where you are now"; these are its words. null: a saved address, or no place
+  why: LocWhy | null; finding: boolean;   // bug 1526: why the phone was not found (the box says the true line), and a tap's find is running
+  onSelect: (id: string) => void; onUseLocation: () => void; onAddNew: (words?: string) => void;
   onEditOnMap: (a: SavedAddress) => void; onRemove: (id: string) => Promise<void>;
 };
 
@@ -17,12 +21,13 @@ const I = (d: React.ReactNode) => <svg aria-hidden="true" width="20" height="20"
 const HOME = I(<><path d="M4 11l8-7 8 7" /><path d="M6 10v10h12V10" /></>);
 const BRIEFCASE = I(<><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M9 7V5h6v2" /></>);
 const SEND = I(<path d="M21 3L3 11l7 3 3 7z" />);
+const OFF = I(<><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /><path d="M3 3l18 18" /></>);
 const PIN = I(<><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.5" /></>);
 const UNDO_S = 6;
 const SHORT = 3;
 const iconFor = (label: string, near: boolean) => (near ? SEND : /home|ghar|nani|house/i.test(label) ? HOME : /office|work|shop/i.test(label) ? BRIEFCASE : PIN);
 
-export function DeliverToScreen({ focusSearch, list, selectedId, here, search, onPlace, onBack, onSelect, onUseLocation, onAddNew, onEditOnMap, onRemove }: Props) {
+export function DeliverToScreen({ focusSearch, list, selectedId, here, current, why, finding, search, onPlace, onBack, onSelect, onUseLocation, onAddNew, onEditOnMap, onRemove }: Props) {
   const [query, setQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const [menuFor, setMenuFor] = useState<SavedAddress | null>(null);
@@ -48,11 +53,14 @@ export function DeliverToScreen({ focusSearch, list, selectedId, here, search, o
   const shown = !q && !all && matches.length > SHORT ? matches.slice(0, SHORT) : matches;
   // Story #1036, changed by #1519: typing filters the saved rows and, after 3 letters and a pause, asks for places near the phone. Enter and the arrow ask at once.
   const { found, ask: submit } = usePlaces(query, search, here);
+  // Story 1529 (owner's pick, Way 2): no box when the place is a saved address (its row says Selected). The box shows the place that is not a saved one, or why the phone was not found.
+  const fault = why ? locWords(why, "search above") : null;
+  const going = fault ? { ...fault, here: false } : current ? { title: "Where you are now", sub: current, here: true } : null;
   const bold = (text: string) => { const [a, m, b] = splitMatch(text, query.trim()); return m ? <>{a}<b>{m}</b>{b}</> : text; };
   return (
     <>
       <header className="ui-head">
-        <button type="button" className="ui-back" aria-label="Back" onClick={onBack}><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M11 18l-6-6 6-6" /></svg></button>
+        {onBack ? <button type="button" className="ui-back" aria-label="Back" onClick={onBack}><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M11 18l-6-6 6-6" /></svg></button> : <span className="ui-back" aria-hidden="true" />}
         <h1>Deliver to</h1>
         <span className="meta">{rows.length} saved</span>
       </header>
@@ -64,9 +72,15 @@ export function DeliverToScreen({ focusSearch, list, selectedId, here, search, o
           <button type="button" className="ui-search-go" aria-label="Search places" onClick={submit}>{I(<><path d="M5 12h14" /><path d="M13 6l6 6-6 6" /></>)}</button>
         </label>
         <div className="ui-two-cards">
-          <button type="button" className="ui-card-btn" onClick={onUseLocation}>{I(<><circle cx="12" cy="12" r="7" /><circle cx="12" cy="12" r="2.5" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></>)}<span>Use current location</span></button>
+          <button type="button" className="ui-card-btn" disabled={finding} onClick={onUseLocation}>{I(<><circle cx="12" cy="12" r="7" /><circle cx="12" cy="12" r="2.5" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></>)}<span>{finding ? "Finding you…" : "Use current location"}</span></button>
           <button type="button" className="ui-card-btn" onClick={() => onAddNew()}>{I(<><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M12 8v8M8 12h8" /></>)}<span>Add new address</span></button>
         </div>
+        {going && (
+          <section aria-label="Delivering to" className={going.here ? "ui-going here" : "ui-going"}>
+            <h2 className="mono ui-saved-head">Delivering to</h2>
+            <div>{going.here ? PIN : OFF}<span className="ui-going-words"><span className="ui-going-title">{going.title}{going.here && <span className="ui-tag ready">Selected</span>}</span><span className="ui-going-sub">{going.sub}</span></span></div>
+          </section>
+        )}
         {rows.length === 0 && !q ? (
           <section aria-label="Saved addresses" className="ui-saved-empty"><span className="ui-saved-empty-icon" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.5" /></svg></span><h2>No saved address yet</h2></section>
         ) : (
@@ -78,12 +92,13 @@ export function DeliverToScreen({ focusSearch, list, selectedId, here, search, o
             {shown.map((a) => {
               const m = here && a.lat !== null && a.lng !== null ? distanceM(here, { lat: a.lat, lng: a.lng }) : null;
               const near = m !== null && m <= NEAR_M;
+              const pinned = a.lat !== null && a.lng !== null;   // board LF11: an old row with no pin cannot be picked; the tap sets its pin
               return (
-                <li key={a.id} className="ui-saved-row">
+                <li key={a.id} className={pinned ? "ui-saved-row" : "ui-saved-row unpinned"}>
                   <span className="ui-chip-box" aria-hidden="true">{iconFor(a.label, near)}<span className="mono">{m === null ? "" : distanceWord(m, NEAR_M)}</span></span>
-                  <button type="button" className="ui-saved-main" aria-label={`Deliver to ${a.label}`} onClick={() => onSelect(a.id)}>
-                    <span className="ui-saved-label"><span>{bold(a.label)}</span>{a.id === picked && <span className="ui-tag ready">Selected</span>}</span>
-                    <span className="ui-saved-addr">{bold(a.address)}</span>
+                  <button type="button" className="ui-saved-main" aria-label={pinned ? `Deliver to ${a.label}` : `${a.label} has no pin. Set the pin`} onClick={() => onSelect(a.id)}>
+                    <span className="ui-saved-label"><span>{bold(a.label)}</span>{a.id === picked && !going?.here && <span className="ui-tag ready">Selected</span>}</span>
+                    <span className="ui-saved-addr">{pinned ? bold(a.address) : "Set the pin"}</span>
                   </button>
                   <button type="button" className="ui-btn ghost icon" aria-label={`Edit or remove ${a.label}`} onClick={() => setMenuFor(a)}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" /></svg></button>
                 </li>

@@ -1,6 +1,6 @@
 // Story #1014: after Place order succeeds the customer sees the placed screen and nothing but their own tap moves them off it, even while the live list reloads without the new order for a moment.
 import { test, expect, type Page } from "@playwright/test";
-import { order, setup } from "./helpers";
+import { order, setup, phoneAt, PLACE_WORDS } from "./helpers";
 
 const NEW = { ...order("placed", new Date(Date.now() + 1000).toISOString()), id: "0f0f0f0f-aaaa-4bbb-8ccc-dddddddddddd", total_paise: 32000 };
 const HOME = { id: "h1", label: "Home", address: "C-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: new Date().toISOString() };
@@ -18,6 +18,7 @@ test("S1 the placed screen stays while the live list answers with the order, the
   const net = await setup(context, page);
   net.state.addresses = [HOME];
   net.state.reply = { status: 201, body: { ok: true, created: true, order: NEW } };
+  await phoneAt(context, HOME);   // story 1529: the phone is at Home, so no sheet asks
   await page.goto("/customer/");
   await placeOne(page);
   net.state.orders = [NEW]; await wake(page); await page.waitForTimeout(600);
@@ -61,5 +62,5 @@ test("S3 a slow phone location that answers while the customer is on the Bill le
   await page.getByRole("button", { name: /View bill/ }).click();
   await page.waitForTimeout(5000);
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
-  await expect(page.getByRole("group", { name: "Deliver to" })).toContainText(HOME.address);
+  await expect(page.getByRole("group", { name: "Deliver to" })).toContainText(PLACE_WORDS);   // story 1529: the place that was on this phone stays; the Bill is never pulled to Home
 });

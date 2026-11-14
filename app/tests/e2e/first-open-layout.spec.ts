@@ -100,12 +100,14 @@ test("S7 a search on the map shows results over the map and a pick moves the pin
   await expect(page.getByRole("searchbox")).toHaveCount(0);   // the results close after a pick
 });
 
-test("S6 Use my current location with the location denied lands on the same search, focused", async ({ page, context }) => {
+test("S6 Use my current location with the location denied says so (bug 1526); Search for my address then lands on the same search, focused", async ({ page, context }) => {
   await open(page, context, AREA);
   await context.setGeolocation(null as never).catch(() => undefined);
   await page.addInitScript(() => { navigator.geolocation.getCurrentPosition = (_ok, err) => err?.({ code: 1, message: "denied" } as GeolocationPositionError); });
   await page.reload();
   await page.getByRole("button", { name: "Use my current location" }).click();
+  await expect(page.getByRole("group", { name: "Your address" }).getByRole("status")).toContainText("Location is blocked for GoServe");
+  await page.getByRole("button", { name: "Search for my address" }).click();
   await expect(page.getByRole("searchbox", { name: "Search an area or address" })).toBeFocused();
 });
 
