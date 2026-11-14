@@ -220,7 +220,7 @@ paths:
   /place-search:
     get:
       operationId: getPlaceSearch
-      summary: Find places by words (a colony, a post office) or by a pin code, from our own pincodes table (GeoNames). No third party. Served places come first, five at most. Search on submit.
+      summary: Find places by words. Ola Maps answers first, near the map first (story 1519); our own pincodes table is the backup and fills a short list. Five at most. No error when Ola fails, is slow or a daily cap is reached.
       x-handler: ../supabase/functions/place-search/index.ts
       x-contract-handler: ../supabase/functions/place-search/fixture.ts
       parameters:
@@ -229,9 +229,18 @@ paths:
           required: true
           schema: { type: string, minLength: 3, maxLength: 100 }
           example: Green Park
+        - name: lat
+          in: query
+          required: false
+          description: The place the map is on. Sent with lng. Without it only one wide ask is made.
+          schema: { type: number, minimum: -90, maximum: 90 }
+        - name: lng
+          in: query
+          required: false
+          schema: { type: number, minimum: -180, maximum: 180 }
       responses:
         "200":
-          description: Up to five places, each with the one-line address, the place, the pin, and whether one of our kitchens reaches it. An empty list when nothing matches.
+          description: Up to five places, each with its name, the area line, its own point, the pin when known, whether one of our kitchens reaches it, and where the row came from (ola or own). `from` is ola when any row is from Ola (the app then shows the Ola Maps credit). An empty list when nothing matches.
           content:
             application/json:
               schema:
@@ -1362,18 +1371,20 @@ components:
     PlaceSearch:
       type: object
       additionalProperties: false
-      required: [ok, results]
+      required: [ok, from, results]
       properties:
         ok:
           const: true
+        from: { enum: [ola, own] }
         results:
           type: array
           maxItems: 5
           items:
             type: object
             additionalProperties: false
-            required: [name, address, lat, lng, pin, served]
+            required: [name, address, lat, lng, pin, served, from]
             properties:
+              from: { enum: [ola, own] }
               name: { type: string, minLength: 1 }
               address: { type: string, minLength: 1 }
               lat: { type: number, minimum: -90, maximum: 90 }
