@@ -370,3 +370,49 @@ The new rule (story #1500): an Ola call only on a tap, never when the pin rests.
 The last row is the reviewer's addition: our own table can give a false no at a postal border, and a false no is a lost customer. The estimate for reverse geocode at 100 orders a day falls from about 7,200 to about 1,400 calls a month, and each call now hangs on a tap, so moving the map cannot use up the free calls.
 
 Open: search by landmark needs Ola autocomplete (its own free 100,000). Test E-SEARCH-1 first.
+
+### The coder's read of the pin screen: three additions (14 Nov 2026, `dev` at ffc901c, Tier S)
+
+1. One more lookup, on open. `PinMapScreen.tsx` line 159 calls `settle(center)` when the map is ready. So each open of the pin screen is 1 Ola call before the customer touches anything. The table above gets one more row: "Opens the pin screen: 0".
+2. A failed ask is asked again. Line 117: when the lookup or the deliver answer fails, the place is not kept as settled. The next rest on the same spot calls Ola again. On a slow network this can double the calls today.
+3. A place-only "no" is not sure. It is shown at once only when it says "we deliver"; a "no" waits for the answer by postal code (story 1393). So story #1500 must say how a "no" becomes sure without Ola, or take the one call on Confirm.
+
+## The pin screen journey: where the map opens, and when the address is read (14 Nov 2026, evening, reviewer)
+
+Owner, 14 Nov 2026: "if the user has given us the location permission, we should by default open the map at his current location". Then, on the pin: give it "3 seconds of time … to settle where we show a small animation", read the address after that, "or … when they click confirm and proceed, only then we get the address. What do you suggest?" He also said the search bar on the map has no search button to tap.
+
+### Where the map opens today (code on `dev` at ffc901c; read by the reviewer, not run, not yet read by the coder)
+
+| Fact | Where |
+|---|---|
+| The start is: the phone's place, else the picked saved address's own pin, else a fixed point in the middle of Delhi (28.6139, 77.209). The point is not an office of ours | `App.tsx` line 544, `mapStart()` |
+| The phone's place is read once, at sign-in, only when location is already allowed, with a wait of 5 seconds at most. A late answer leaves it empty for the session | `App.tsx` lines 577 to 584 |
+| The map screen never asks for location by itself. With location allowed it draws a dot at the phone's place, but the map does not move to it | `PinMapScreen.tsx` lines 160 to 170 |
+| "Use current location" on the address screen asks the phone and opens the map there | `App.tsx` line 1059 |
+| The kitchen admin's pin screen opens at the same Delhi point when the kitchen has no place | `KitchenLocation.tsx` line 8 |
+
+So the map opens in Delhi when location is not allowed yet, or when it is allowed but the phone answered late, and there is no saved address with a pin. The good case (the phone's place is known) has a test in the suite (`regression/06-pinmap-plate.spec.ts`). The late case has no test; it is a read of the code. Story #1502 fixes it, with a red test first.
+
+### The search bar on the map
+
+The open search is a form with an input and a clear cross (`PinMapScreen.tsx` line 259). It has no button. The search runs only on the keyboard's Enter. The results come from our own table (0 Ola calls). Nothing found shows "No place found. Try the start of a colony name or a pin code."
+
+### When the address is read: two ways
+
+| Way | The address is read from Ola | Calls for one address |
+|---|---|---|
+| A (owner's first thought) | After the pin rests 3 seconds, with a small animation | One for each long rest |
+| B (owner's second thought) | Only on Confirm & proceed | Exactly one |
+
+The reviewer suggested B to the owner, for four reasons:
+
+1. The Confirm tap is the sure sign of a choice. A clock only guesses.
+2. A person can tap Confirm in one second. So the call on Confirm is needed in both ways; way A only adds calls and a wait.
+3. In way A the honest customer waits 3 seconds after each small move before he sees anything.
+4. In way B the cost is one call for each address, and moving the map can never use up the free calls.
+
+In way B there is no Ola call when the screen opens, none when the pin rests, and none on Current Location (the customer moves the pin after that tap, so the words would be old). While the pin rests the card shows the area and the postal code from our own table and the deliver line from our own server (board PC1, in discussion). On Confirm the button says it is finding the address, then the details sheet opens with the words filled in. When Ola does not answer, the sheet opens with "Area or street" to type, as today; an order is never blocked by Ola.
+
+This changes one row of the table above ("Taps Current Location: 1" becomes 0) and the row "Taps Confirm: 0" becomes 1. It is not final: the owner has not picked. Story #1500 is on hold until he does.
+
+Measured on goserve-dev under today's rule (test use, not customers): 344 Ola calls for 6 saved addresses.
