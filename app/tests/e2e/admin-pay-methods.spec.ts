@@ -11,6 +11,7 @@ const toSettings = async (page: Page, context: Parameters<typeof setup>[0], over
   await page.goto("/admin/");
   await page.getByRole("button", { name: "Numbers", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Payment methods" })).toBeVisible();
+  if (!over.payFail) await expect(page.getByRole("switch", { name: /^Cash at the door/ })).toBeEnabled();   // the first read has landed: a test that then sets payFail fails only its own save, never this read (the A4 flake)
   return net;
 };
 const sw = (page: Page, name: string) => page.getByRole("switch", { name: new RegExp(`^${name}`) });   // the UPI switch also reads its one-line hint
