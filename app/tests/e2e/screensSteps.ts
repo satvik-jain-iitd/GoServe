@@ -70,6 +70,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
   "add-kitchen-location": async (context, page, path) => {   // board A11: the Add a kitchen form with the Location row filled
     await STEPS["kitchen-pin"](context, page, path);
     await page.getByRole("button", { name: "Save location" }).click();
+    await expect(page.getByRole("region", { name: "Pin map" })).toHaveCount(0);   // story 1500: Save location looks the address up first; the form is typed in after the map closed
     await page.getByLabel("Address").fill("Green avenue, near bus stand"); await page.getByLabel("Phone").fill("9876500011");
     await page.getByLabel("Opens at").fill("11:00"); await page.getByLabel("Closes at").fill("22:00");
     await expect(page.locator(".ui-locrow")).toContainText("Green Avenue Colony, Satai Road"); await page.getByRole("heading", { name: "Add a kitchen" }).click(); },   // a click on the title takes the focus off Closes at: no ring in the picture
