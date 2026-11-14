@@ -13,7 +13,7 @@ for (const [w, h] of [[360, 640], [390, 844]] as const) {
   test(`S1 at ${w} x ${h} the pin is clear of the button, the map is behind the card, and the place read is under the pin`, async ({ page, context }) => {
     const reads: { lat: number; lng: number }[] = [];
     page.on("request", (r) => {
-      if (!r.url().includes("/functions/v1/geocode")) return;
+      if (!r.url().includes("/functions/v1/serviceability")) return;   // story 1500: a rest asks only our own answer
       const u = new URL(r.url());
       reads.push({ lat: Number(u.searchParams.get("lat")), lng: Number(u.searchParams.get("lng")) });
     });

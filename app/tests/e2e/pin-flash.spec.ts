@@ -34,7 +34,8 @@ test("S1 changing the screen size on a served pin never shows Not in our area ye
   expect(serves).toEqual([]);   // the place under the pin did not change: no new lookup
 });
 
-test("S2 a place where the pin cannot be read: the place-only answer still shows Not in our area yet", async ({ page, context }) => {
+// Story 1500: the address is read on Confirm. Ola failing never blocks the details; back on the map the place-only answer stands.
+test("S2 a place where the pin cannot be read: Confirm opens the details to type the area, and the place-only answer still shows Not in our area yet", async ({ page, context }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await STEPS["first-open-pin"](context, page, "/customer/");
   await context.route("https://test.supabase.co/functions/v1/geocode**", (route) => route.request().method() === "OPTIONS" ? route.fulfill({ status: 204, headers: CORS }) : route.fulfill({ status: 500, headers: CORS, body: "{}" }));
@@ -44,32 +45,40 @@ test("S2 a place where the pin cannot be read: the place-only answer still shows
   await page.mouse.down();
   await page.mouse.move(map.x + map.width / 2 + 120, map.y + 260, { steps: 8 });
   await page.mouse.up();
+  await expect(page.getByText(/^We deliver here/)).toHaveCount(0);   // the pin rested at the new place: the old yes is gone
+  await page.waitForTimeout(1000);
+  await expect(page.getByText("Not in our area yet")).toHaveCount(0);   // not while the pin rests
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();
+  await expect(page.getByRole("dialog", { name: "Address details" }).getByLabel("Area or street")).toBeVisible();
+  await page.getByRole("button", { name: "Change" }).click();
   await expect(page.getByText("Not in our area yet")).toBeVisible();
 });
 
 // Review of PR #1425: a failed ask is asked again, and a lookup that never answers does not hide the place-only answer for good.
-test("S3 asks that failed are asked again: network down, Current Location, network back, Current Location shows the new place", async ({ page, context }) => {
+test("S3 asks that failed are asked again: network down, Current Location, network back, Current Location shows the new place's answer, and Confirm its name", async ({ page, context }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await STEPS["first-open-pin"](context, page, "/customer/");
-  let down = true, looks = 0;
-  await context.route("https://test.supabase.co/functions/v1/geocode**", (route) => {
+  let down = true, asks = 0;
+  await context.route("https://test.supabase.co/functions/v1/geocode**", (route) => route.request().method() === "OPTIONS" ? route.fulfill({ status: 204, headers: CORS }) : route.fulfill({ status: 200, headers: CORS, body: JSON.stringify({ ok: true, address: "Radio Colony, Chhatarpur, Madhya Pradesh 471001", pin: "471001", locality: "Radio Colony", town: "Chhatarpur" }) }));
+  await context.route("https://test.supabase.co/functions/v1/serviceability**", (route) => {
     if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: CORS });
-    looks++;
-    return down ? route.abort() : route.fulfill({ status: 200, headers: CORS, body: JSON.stringify({ ok: true, address: "Radio Colony, Chhatarpur, Madhya Pradesh 471001", pin: "471001", locality: "Radio Colony", town: "Chhatarpur" }) });
+    asks++;
+    return down ? route.abort() : route.fulfill({ status: 200, headers: CORS, body: JSON.stringify(SERVED) });
   });
-  await context.route("https://test.supabase.co/functions/v1/serviceability**", (route) => route.request().method() === "OPTIONS" ? route.fulfill({ status: 204, headers: CORS }) : down ? route.abort() : route.fulfill({ status: 200, headers: CORS, body: JSON.stringify(SERVED) }));
   await context.setGeolocation({ latitude: 24.8901, longitude: 79.6012 });
   await page.getByRole("button", { name: "Current Location" }).click();
-  await expect.poll(() => looks).toBeGreaterThan(0);
-  await page.waitForTimeout(800);
+  await expect.poll(() => asks).toBeGreaterThan(0);
+  await expect(page.getByText("We could not check this place. Check your internet.")).toBeVisible();
   down = false;
-  const before = looks;
-  await page.getByRole("button", { name: "Current Location" }).click();
-  await expect.poll(() => looks).toBeGreaterThan(before);
-  await expect(page.getByText("Radio Colony", { exact: false }).first()).toBeVisible();
+  const before = asks;
+  await page.getByRole("button", { name: "Current Location" }).click();   // the same place: a failed ask is not a settled place
+  await expect.poll(() => asks).toBeGreaterThan(before);
+  await expect(page.getByText(/^We deliver here/)).toBeVisible();
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();
+  await expect(page.getByRole("dialog", { name: "Address details" })).toContainText("Radio Colony");
 });
 
-test("S4 a lookup that never answers: after the wait the place-only answer stands (Not in our area yet)", async ({ page, context }) => {
+test("S4 a lookup that never answers: Confirm says Finding the address, and after the wait the details open to type the area; the place-only answer stands", async ({ page, context }) => {
   test.setTimeout(45_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await STEPS["first-open-pin"](context, page, "/customer/");
@@ -80,6 +89,12 @@ test("S4 a lookup that never answers: after the wait the place-only answer stand
   await page.mouse.down();
   await page.mouse.move(map.x + map.width / 2 + 120, map.y + 260, { steps: 8 });
   await page.mouse.up();
-  await expect(page.getByText("Not in our area yet")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/^We deliver here/)).toHaveCount(0);   // the pin rested at the new place
+  await page.waitForTimeout(1000);
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();
+  await expect(page.getByRole("button", { name: "Finding the address…" })).toBeDisabled();
+  await expect(page.getByRole("dialog", { name: "Address details" }).getByLabel("Area or street")).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("button", { name: "Change" }).click();
+  await expect(page.getByText("Not in our area yet")).toBeVisible();
   await expect(page.getByText(/^We deliver here/)).toHaveCount(0);
 });

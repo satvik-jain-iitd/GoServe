@@ -24,8 +24,8 @@ test("S2 with location allowed Use my location opens the pin map at the phone; C
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Use my current location" }).click();
   await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
-  await expect(page.getByText("B-12", { exact: false }).first()).toBeVisible();   // the words of the pin
   await page.getByRole("button", { name: "Confirm & proceed" }).click();
+  await expect(page.getByRole("dialog", { name: "Address details" })).toContainText("B-12");   // the words of the pin, looked up on Confirm (story 1500)
   await page.getByLabel("House, street, colony, ward").fill("B-12, near the park gate");
   await page.getByRole("button", { name: "Save address" }).click();
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();

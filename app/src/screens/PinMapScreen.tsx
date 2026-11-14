@@ -83,6 +83,10 @@ export function PinMapScreen({ center, zoom = 17, follow, kicker, confirmLabel, 
   const [pick, setPick] = useState<PinPick | null>(null);
   const draft = useRef<Draft | null>(null);   // story 1421 (board ED2): what was typed on the sheet, kept across Change and back   // story #1038: set when Confirm is tapped; the details sheet shows over the same map
   const ask = useRef(0);
+  const placeOnly = useRef<Serve | null>(null);   // our own answer for the place alone, kept for Confirm
+  const looked = useRef<{ at: Place; words: Looked | null; serve: Serve | null } | null>(null);   // story 1500: what the one lookup at this place gave
+  const [finding, setFinding] = useState(false);
+  const quiet = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fns = useRef({ lookup, serve });
   fns.current = { lookup, serve };
@@ -93,32 +97,49 @@ export function PinMapScreen({ center, zoom = 17, follow, kicker, confirmLabel, 
   const touched = useRef(false);   // story 1502: this person moved the map, or chose a place, on this open; the map is never pulled to the phone after that
   const byHand = () => { touched.current = true; setMoved(true); try { localStorage.setItem("gs-pin-moved", "1"); } catch { /* blocked: it shows again next time */ } };
   const settled = useRef<Place | null>(null);
-  const settle = (p: Place) => {   // the pin rests: one lookup and one serviceability answer for the last place only
-    // Story 1393: a screen size change moves the map but not the place under the pin. Same place (under a metre): no new lookup, so no flash.
+  // Story 1500 (way B): a rest costs no address lookup. Only our own answer for the place is asked; a yes shows at once, a no or no answer stays neutral
+  // (story 1393: the server decides by pin code, so a place-only no can be false). The address is looked up once, on Confirm (confirm below).
+  const settle = (p: Place) => {
+    // Story 1393: a screen size change moves the map but not the place under the pin. Same place (under a metre): nothing is asked again, so no flash.
     if (settled.current && metres(settled.current.lat, settled.current.lng, p.lat, p.lng) < 1) return;
     settled.current = p;
+    const mine = ++ask.current;   // a newer rest takes over, also from a lookup that is still out
+    looked.current = null;
     setPoint(p);
+    setWords(null); setFailed(false); setServed(null); setFinding(false);   // story 1462: never the old place's name
     setBusy(true);
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(async () => {
-      const mine = ++ask.current;
-      // The strip does not wait for the lookup (a slow Ola or OpenStreetMap read once hid it for good): it is asked at once with the place, and again with the pin the lookup reads.
-      let pinAnswered = false;   // the pin answer is the better one: a slow place-only answer must not overwrite it
-      // Story 1393: the server decides by pin code, so a place-only "not served" can be false. It is shown at once only when it says yes; a no waits for the pin answer.
-      const placeOnly = limit(fns.current.serve(p, null)).catch(() => null);
-      void placeOnly.then((s0) => { if (mine === ask.current && s0?.serviceable && !pinAnswered) setServed(s0); });
-      const w = await limit(fns.current.lookup(p).catch(() => null));
-      if (mine !== ask.current) return;   // a newer rest has taken over
-      if (w) { setWords(w); setFailed(false); } else { setWords(null); setFailed(true); }   // story 1462: the pin moved and no name came: "Pin on the map", never the old place's name
-      // story #1102: the pin the lookup read goes with the place; no pin read: the place-only answer stands. Story 1426: a failed pin answer falls back only to a place-only yes.
-      const s0 = await placeOnly;
-      const s = w?.pin ? ((await limit(fns.current.serve(p, w.pin)).catch(() => null)) ?? (s0?.serviceable ? s0 : null)) : s0;
+      const s0 = await limit(fns.current.serve(p, null)).catch(() => null);
       if (mine !== ask.current) return;
-      if (s) { pinAnswered = true; setServed(s); setNoAnswer(false); }
-      else if (!kitchen) { setServed(null); setNoAnswer(true); }   // story 1426: never another place's answer; Try again instead of Confirm
-      if (!w || !s) settled.current = null;   // story 1393: a failed ask is not a settled place; the next rest there asks again
+      placeOnly.current = s0;
+      if (s0?.serviceable) setServed(s0);
+      setNoAnswer(!s0 && !kitchen);
+      if (!s0) settled.current = null;   // story 1426 (board PE1): no answer at all: Try again instead of Confirm. A no stays neutral until the lookup
       setBusy(false);
     }, SETTLE_MS);
+  };
+  // Confirm, Save location and Edit's first open: the one lookup for the pin's exact point, then the answer with the postal code it read.
+  const confirm = async () => {
+    const p = point;
+    if (looked.current) {   // story 1500: this place was looked up already (Change and back, or the no state): no second lookup
+      if (onPoint) return onPoint({ at: p, words: looked.current.words });
+      return setPick({ at: p, words: looked.current.words, served: looked.current.serve ? looked.current.serve.serviceable : null });
+    }
+    const mine = ++ask.current;
+    setNoAnswer(false); setFinding(true);
+    const w = await limit(fns.current.lookup(p).catch(() => null));
+    const s0 = placeOnly.current;
+    // story #1102: the pin the lookup read goes with the place; no pin read: the place-only answer stands. Story 1426: a failed pin answer falls back only to a place-only yes.
+    const s = w?.pin ? ((await limit(fns.current.serve(p, w.pin)).catch(() => null)) ?? (s0?.serviceable ? s0 : null)) : s0;
+    if (mine !== ask.current) return;   // the pin moved while the lookup was out
+    setFinding(false);
+    setWords(w); setFailed(!w); setServed(s);
+    if (onPoint) { looked.current = { at: p, words: w, serve: s }; return onPoint({ at: p, words: w }); }
+    if (!s) { settled.current = null; return setNoAnswer(true); }   // story 1426: never another place's answer; Try again asks again
+    looked.current = { at: p, words: w, serve: s };
+    if (!s.serviceable && !edit && onInvite && w?.pin && isPin(w.pin)) return;   // board C6d: the card now says the no and offers the invite
+    setPick({ at: p, words: w, served: s.serviceable });
   };
   const settleRef = useRef(settle);
   settleRef.current = settle;
@@ -152,7 +173,13 @@ export function PinMapScreen({ center, zoom = 17, follow, kicker, confirmLabel, 
       if (gone || !box.current) return;
       const map = L.map(box.current, { zoomControl: false, attributionControl: false, scrollWheelZoom: false, boxZoom: false, keyboard: false }).setView([center.lat, center.lng], zoom, { animate: false });
       if (TILES) L.tileLayer(TILES, { maxZoom: 19 }).addTo(map);
-      map.on("moveend", () => { const c = pinAt(map); settleRef.current({ lat: c.lat, lng: c.lng }); });
+      map.on("moveend", () => {
+        if (quiet.current || root.current?.dataset.step === "details") return;   // story 1500: the map is still behind the sheet; its re-centring is not a new place
+        const c = pinAt(map), was = looked.current?.at;
+        // Story 1500: when the sheet closes the confirmed place is put back under the pin, a pixel or two off. That is the same place: no new ask, no second lookup.
+        if (was && map.latLngToContainerPoint([was.lat, was.lng]).distanceTo(map.latLngToContainerPoint(c)) < 3) return;
+        settleRef.current({ lat: c.lat, lng: c.lng });
+      });
       map.on("dragstart dblclick", byHand);   // story 1389: a drag or a double tap by the person
       box.current.addEventListener("touchstart", (e) => { if (e.touches.length > 1) byHand(); }, { passive: true });   // a pinch
       live.current = { map, L, dot: null };
@@ -193,7 +220,9 @@ export function PinMapScreen({ center, zoom = 17, follow, kicker, confirmLabel, 
     for (const x of [h.dragging, h.touchZoom, h.doubleClickZoom]) (pick ? x.disable() : x.enable());
     const c = pick ? pick.at : held.current;   // bug #1203: on Change the map box grows back; without this the centre, and so the pin, slid about 260 m
     held.current = pick ? pick.at : null;
+    quiet.current = true;   // story 1500: the box changes size before the place is put back; that first move is not a place
     h.invalidateSize({ pan: false });
+    quiet.current = false;
     if (c) show(h, c, h.getZoom());
   }, [pick]);
 
@@ -216,11 +245,11 @@ export function PinMapScreen({ center, zoom = 17, follow, kicker, confirmLabel, 
   const far = !edit && !kitchen && onInvite && served?.serviceable === false && words?.pin && isPin(words.pin) ? { at: point, pin: words.pin, address: words.address } : null;
   const [sending, setSending] = useState(false);
   const opened = useRef(false);
-  useEffect(() => {   // story 1421 (board ED1): Edit opens the filled sheet; the map's own step shows only on Change
-    if (!edit || opened.current || busy || (!words && !failed)) return;
+  useEffect(() => {   // story 1421 (board ED1): Edit opens the filled sheet; the map's own step shows only on Change. Story 1500: this is the saved place's one lookup
+    if (!edit || opened.current || busy) return;
     opened.current = true;
-    setPick({ at: point, words, served: served ? served.serviceable : null });
-  }, [busy, words, failed]);   // once, when the first lookup at the saved pin has answered
+    void confirm();
+  }, [busy]);   // once, when the saved pin has rested
   const invite = async (f: NonNullable<typeof far>) => {
     setNote(null); setSending(true);
     const err = await onInvite!(f).catch(() => "Could not set that up. Try again.");
@@ -242,7 +271,7 @@ export function PinMapScreen({ center, zoom = 17, follow, kicker, confirmLabel, 
         const map = live.current?.map, at = map ? pinAt(map) : null;   // read with the old lift, before it changes
         lift.current = k;
         r.style.setProperty("--pin-y", `calc(50% - ${k}px)`);
-        if (map && at) show(map, at, map.getZoom());
+        if (map && at) { quiet.current = true; show(map, at, map.getZoom()); quiet.current = false; }   // story 1500: the same place under a pin that moved up or down: nothing is asked
       }
       // Story 1389: on a very short screen (320 x 568) the bubble would sit under the top row; with no room it is not shown.
       const tip = r.querySelector(".ui-pinmap-hint")?.getBoundingClientRect(), top = r.querySelector(".ui-pinmap-top")?.getBoundingClientRect();
@@ -287,7 +316,7 @@ export function PinMapScreen({ center, zoom = 17, follow, kicker, confirmLabel, 
         {strips.map((s) => <span key={s.kind} role="status" className={`ui-pinmap-strip ${s.kind}`}>{s.text}</span>)}
         {noAnswer && !kitchen && <span role="status" className="ui-pinmap-strip warn">We could not check this place. Check your internet.</span>}   {/* story 1426, board PE1: yellow, not the red no */}
         {noAnswer && !kitchen ? <button type="button" className="ui-btn big" disabled={busy} aria-busy={busy} onClick={() => { settled.current = null; settle(point); }}>Try again</button> :
-        <button type="button" className="ui-btn big" disabled={busy || sending} onClick={() => (onPoint ? onPoint({ at: point, words }) : far ? void invite(far) : setPick({ at: point, words, served: served ? served.serviceable : null }))}>{far ? "Invite the founders here" : confirmLabel}</button>}
+        <button type="button" className="ui-btn big" disabled={busy || sending || finding} aria-busy={finding || undefined} onClick={() => void (far ? invite(far) : confirm())}>{finding ? "Finding the address…" : far ? "Invite the founders here" : confirmLabel}</button>}
         <span className="mono ui-pinmap-credit">{words?.from === "ola" && <><a href={OSM} target="_blank" rel="noopener noreferrer">Ola Maps</a> · </>}<a href={OSM} target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a></span>
       </div>}
       {pick && <DetailsSheet pick={pick} edit={edit} draft={draft.current} onDraft={(d) => { draft.current = d; }} onChange={() => setPick(null)} onSave={onSave} onHeight={(h) => { root.current?.style.setProperty("--sheet-h", `${h}px`); live.current?.map.invalidateSize({ pan: false }); const c = pick.at; live.current?.map.setView([c.lat, c.lng], live.current.map.getZoom(), { animate: false }); }} />}

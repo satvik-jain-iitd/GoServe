@@ -90,16 +90,16 @@ test("S3 a kitchen with no location says Set the location; one with a location s
   await expect(line(page)).toContainText("28.7000, 77.1000 · set 6 Nov");
 });
 
-test("S4 Inside <pin> shows when the pin is in one of the kitchen's pin codes, and nothing when it is not", async ({ page, context }) => {
-  await start(page, context, [K1, { ...K1, id: "k-2", name: "Rohini Kitchen", pin_codes: ["110085"] }]);
+// Story 1500 (item 6): the kitchen's pin screen looks the address up on Save location only. "Inside <pin>" needed the lookup at rest, so it no longer shows.
+test("S4 the kitchen's pin screen makes no address lookup while the pin rests; Save location makes one", async ({ page, context }) => {
+  const net = await start(page, context, [K1]);
   await city(page);
   await page.getByRole("button", { name: /^Open kitchen Tau Ka Dhaba/ }).click();
   await row(page).click();
-  await expect(page.getByRole("status")).toContainText("Inside 110016");
-  await page.getByRole("button", { name: "Back", exact: true }).click();
-  await page.getByRole("button", { name: "Back to city" }).click();
-  await page.getByRole("button", { name: /^Open kitchen Rohini Kitchen/ }).click();
-  await row(page).click();
   await expect(page.getByRole("button", { name: "Save location" })).toBeEnabled();
   await expect(page.getByRole("status")).toHaveCount(0);
+  expect(net.calls.geocode).toHaveLength(0);
+  await page.getByRole("button", { name: "Save location" }).click();
+  await expect.poll(() => net.calls.kitchenWrites.length).toBe(1);
+  expect(net.calls.geocode).toHaveLength(1);
 });
