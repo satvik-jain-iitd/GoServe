@@ -86,7 +86,7 @@ test("TC 27.3 Tap a row: that order opens (the delivered slip)", async ({ page, 
   const rows = page.getByRole("button", { name: /^No\. / });
   await expect(rows).toHaveCount(4);   // the list is live before a row is tapped
   await rows.nth(1).click();   // No. a0000002, the delivered order
-  await expect(page.getByRole("heading", { name: "Delivered", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();
   await expect(page.locator(".ui-slip-lines")).toContainText("Veg Thali");
   await expect(page.locator(".ui-slip-lines")).toContainText("Roti");
   await expect(page.locator(".ui-slip-lines")).not.toContainText("Butter Chicken");   // another order's dish is not on this slip

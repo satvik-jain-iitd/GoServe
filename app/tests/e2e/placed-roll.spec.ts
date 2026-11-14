@@ -13,7 +13,7 @@ async function openAt(context: Parameters<typeof setup>[0], page: Page, status: 
   const net = await setup(context, page, [order(status === "delivered" ? "out_for_delivery" : status)]);
   net.state.kitchens = KITCHEN;
   await page.goto("/customer/");
-  if (status === "delivered") { await expect(now(page)).toHaveText("On the wayNow"); net.push("UPDATE", order("delivered", "2020-01-01T10:09:00Z")); await expect(page.getByRole("heading", { name: "Delivered" })).toBeVisible(); }
+  if (status === "delivered") { await expect(now(page)).toHaveText("On the wayNow"); net.push("UPDATE", order("delivered", "2020-01-01T10:09:00Z")); await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible(); }
   return net;
 }
 
