@@ -77,3 +77,5 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - IDEA (no vault id yet) (2026-11-13, taken, #1443): Rider incentive: an amount for each delivery on the Today tab; the admin turns it on or off and sets the amount.
 - IDEA (no vault id yet) (2026-11-13, open, later): In-app rider routing on our own Valhalla box (OSM data for Delhi NCR), with a custom rule for galis. Parked for after the pilot.
 - IDEA (no vault id yet) (2026-11-13, taken, #1445): Rider Me row "Kitchen ka raasta" for a new rider.
+- IDEA ID416 (2026-11-14, open, plan first): Maps: move fully to Ola Maps, with a map provider switch in the admin app (Ola, OpenStreetMap, later Google) that changes every map place in the app at once, like a plugin.
+- IDEA ID417 (2026-11-14, open, plan first): Maps: a pool of several Ola Maps API keys from several accounts; the admin sees the budget left on each key, and the app moves to the next key when one runs out.
