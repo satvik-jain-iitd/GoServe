@@ -14,6 +14,7 @@ import { BackChevron } from "./BillScreen";
 import { RiderMapScreen } from "./RiderMapScreen";
 import { CancelSheet } from "./CancelSheet";
 import { agoText, distanceText, lastSeenText, type Point } from "../lib/riderMap";
+import { riderLink } from "../lib/riderMode";
 import { useNowOnline } from "../lib/useNowOnline";
 import type { LatLng } from "../lib/riderTrack";
 
@@ -43,10 +44,11 @@ type Props = {
   onCall?: () => void;          // story H14: the Call tap is counted ("where is my food" calls)
   pay?: Pay;                    // story #552: an online order waits for its payment
   track?: Track;                // story #691: On the way, with the rider's place known
+  onSeeRider?: () => void;      // story 1498: a tap on the rider row (link or map) is counted
   eta?: Eta | null;             // story #1015: the server's delivery time
   declined?: { reason: string; at: string } | null;   // story #934: the kitchen said no, in its own words
 };
-export type Track = { you: LatLng | null; rider: Point; name: string; phone: string | null };   // story 1497: `you` is the order's own drop point; null when the order has none
+export type Track = { mode: "link" | "map"; you: LatLng | null; rider: Point; name: string; phone: string | null };   // story 1497: `you` is the order's own drop point; null when the order has none
 export type Pay = {
   state: "ready" | "starting" | "waiting" | "failed" | "paid";
   method: PayMethod;
@@ -59,6 +61,22 @@ const placeholderGone = import.meta.env.VITE_PAYMENTS_PROVIDER === "razorpay";
 // Story 1053 (boards T4, T5; before: #691 T2, T3): one rider row, no map in the page. A tap opens the full-screen map. The words refresh every 10 s; with no connection the row says when the rider was last seen.
 const MAP_ICON = <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z" /><path d="M9 3v15M15 6v15" /></svg>;
 const GO = <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>;
+// Story 1498 (board RL1): the admin picked "Google Maps link". One row that opens Google Maps at the rider's last place, with the clock time of that place.
+// An old place is not hidden: the time tells the truth. No Live mark.
+const PIN_ICON = <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></svg>;
+const OUT_ICON = <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg>;
+function RiderLink({ t, onTap }: { t: Track; onTap?: () => void }) {
+  return (
+    <a className="ui-locrow ui-riderrow" href={riderLink(t.rider, t.you)} target="_blank" rel="noreferrer" onClick={onTap}>
+      <span className="ui-locrow-icon">{PIN_ICON}</span>
+      <span className="ui-locrow-words">
+        <span className="ui-locrow-title">See <b>{t.name}</b> on Google Maps</span>
+        <span className="ui-locrow-sub mono">Last updated {clock12(new Date(t.rider.at))}</span>
+      </span>
+      <span className="ui-locrow-go">{OUT_ICON}</span>
+    </a>
+  );
+}
 function RiderRow({ t, onOpen }: { t: Track; onOpen: () => void }) {
   const { now, online } = useNowOnline();
   return (
@@ -85,7 +103,7 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "At your door" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
-export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, onYes, onNotYet, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, declined, eta }: Props) {
+export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, onYes, onNotYet, onMenu, onBack, onCancel, cancelling, rider, onCall, onSeeRider, pay, track, atDoor, declined, eta }: Props) {
   const [askCancel, setAskCancel] = useState(false);   // story #1227: the cancel sheet
   const [mapOpen, setMapOpen] = useState(false);   // story 1053: the full-screen rider map
   const steps = trackerSteps(status);
@@ -102,7 +120,8 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
       <header className="ui-head">
         <BackChevron label="Back to menu" onClick={onBack} />
         <h1>{title}</h1>
-        {!delivered && !cancelled && status !== "placed" ? online ? <span className="meta ui-livemark"><span aria-hidden="true" className="ui-live-dot" />Live</span> : <span className="meta">Offline</span> : <span className="meta">No. {shortId(order.id)}</span>}
+        {/* story 1498 (board RL1): with the Google Maps link the rider's place is a last place with its time, so the screen carries no Live mark */}
+        {track?.mode === "link" && status === "out_for_delivery" && online ? null : !delivered && !cancelled && status !== "placed" ? online ? <span className="meta ui-livemark"><span aria-hidden="true" className="ui-live-dot" />Live</span> : <span className="meta">Offline</span> : <span className="meta">No. {shortId(order.id)}</span>}
       </header>
       <div className="ui-scroll">
         {!online && <p role="status" className="ui-offline">No connection. This page shows your last update and catches up when you are back online.</p>}   {/* bug #1228 */}
@@ -152,7 +171,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
           </div>
         </section>
         <div className="ui-after">
-          {track && status === "out_for_delivery" && <RiderRow t={track} onOpen={() => setMapOpen(true)} />}   {/* board T4: the row sits under the slip, above the timeline */}
+          {track && status === "out_for_delivery" && (track.mode === "link" ? <RiderLink t={track} onTap={onSeeRider} /> : <RiderRow t={track} onOpen={() => { onSeeRider?.(); setMapOpen(true); }} />)}   {/* board T4: the row sits under the slip, above the timeline */}
           {!cancelled && <Timeline rows={3} steps={steps.map((x) => (atDoor && x.status === "out_for_delivery" ? "Rider at your door" : STEP_WORDS[x.status] ?? x.label))} current={steps.findIndex((x) => x.state === "current")} label="Order progress" />}   {/* story 1324 (PL6, PL4, PL7): three rows, the delivered slip too */}
           {!delivered && !cancelled && address && <p className="mono ui-addr ph-no-capture">{address}</p>}
           {rider && !(track && status === "out_for_delivery") && (
@@ -183,7 +202,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
           {error && <p role="alert" className="ui-field-error">{error}</p>}
         </div>
       </div>
-      {mapOpen && track && status === "out_for_delivery" && <RiderMapScreen t={track} orderNo={shortId(order.id)} door={door} onBack={() => setMapOpen(false)} onCall={onCall} />}
+      {mapOpen && track?.mode === "map" && status === "out_for_delivery" && <RiderMapScreen t={track} orderNo={shortId(order.id)} door={door} onBack={() => setMapOpen(false)} onCall={onCall} />}
       {(status === "placed" || status === "accepted") && askCancel && <CancelSheet lines={lines} kitchenName={kitchenName || "the kitchen"} paidOnline={pay?.state === "paid"} onKeep={() => setAskCancel(false)} onYes={() => { setAskCancel(false); onCancel(); }} />}
       <div className={declined ? "ui-bottom" : "ui-bottom ui-pair"}>   {/* story 1324 (board PL4): two outline buttons share one line */}
         {(status === "placed" || status === "accepted") && <button type="button" className="ui-btn ghost big" disabled={cancelling} onClick={() => setAskCancel(true)}>Cancel order</button>}

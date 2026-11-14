@@ -62,6 +62,7 @@ import { AdminScreen } from "./screens/AdminScreen";
 import { loadDraft, saveDraft } from "./lib/draft";
 import { PlacedScreen, type Track } from "./screens/PlacedScreen";
 import { readRider, watchRider, type Tracked } from "./lib/riderTrack";
+import { START_MODE, tapRiderRow, watchRiderMode, type RiderMode } from "./lib/riderMode";
 import { readEta, type Eta } from "./lib/eta";
 import { readArriving, riderArrivingAt, riderAtDoor, watchArriving } from "./lib/arriving";
 import type { Point } from "./lib/riderMap";
@@ -800,7 +801,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     const tick = setInterval(read, 30_000);
     return () => { alive = false; stop(); clearInterval(tick); };
   }, [placed?.id, onTheWay]);
-  const riderTrack: Track | undefined = onTheWay && riderPoint ? { you: riderPoint.you, rider: riderPoint.rider, name: rider?.name ?? "Your rider", phone: rider?.phone ?? null } : undefined;
+  // Story 1498: how the customer sees the rider is the admin's choice (link, map, off), read live while an order is on the way.
+  const [riderMode, setRiderMode] = useState<RiderMode>(START_MODE);
+  useEffect(() => (onTheWay ? watchRiderMode(getClient(), setRiderMode) : undefined), [onTheWay]);
+  const riderTrack: Track | undefined = onTheWay && riderPoint && riderMode !== "off" ? { mode: riderMode, you: riderPoint.you, rider: riderPoint.rider, name: rider?.name ?? "Your rider", phone: rider?.phone ?? null } : undefined;
 
   // A tap on a slip of "Your orders" opens it as the tracker or the delivered screen (story H10d).
   function openOrder(o: Order) {
@@ -1094,7 +1098,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             asking={asking} busy={confirming} error={confirmError}
             onYes={yes} onNotYet={notYetTap} pay={paidNow || payState || resumedOnline ? { state: paidNow ? "paid" : payState ?? "waiting", method: payMethod === "cod" ? "upi" : payMethod, startedAt: payState ? payStart : null, error: payError, onPay: payNow, onCash: payCash, onSimulate: () => void simulatePaid(import.meta.env.VITE_PAYMENTS_DEV_SECRET ?? "", payRef.current) } : undefined}
             onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }}
-            onCancel={cancelOrder} cancelling={cancelling} rider={rider} atDoor={atDoor} track={riderTrack} eta={eta} onCall={() => void tapCall(getClient(), placed.id)} />
+            onCancel={cancelOrder} cancelling={cancelling} rider={rider} atDoor={atDoor} track={riderTrack} eta={eta} onCall={() => void tapCall(getClient(), placed.id)} onSeeRider={() => { if (riderTrack) void tapRiderRow(getClient(), placed.id, riderTrack.mode); }} />
         )}
     </>
   );

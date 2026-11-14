@@ -5,6 +5,7 @@ import { formatRupees } from "../lib/money";
 import { Skeleton } from "../ui";
 import { getClient } from "../lib/supabase";
 import { readOtpSwitchAdmin, saveOtpSwitch } from "../lib/otpSwitch";
+import { readRiderModeAdmin, saveRiderMode, type RiderMode, type RiderModeAdmin } from "../lib/riderMode";
 import { qrAddress, readPayMethodsAdmin, readQrAdmin, setPayMethod, uploadQr, type PayMethodsAdmin, type QrAdmin } from "../lib/payMethods";
 import type { DoorMethod } from "../lib/doorMethods";
 import { amountProblem, readEarlyFriend, saveEarlyFriend, type EarlyFriendSetting } from "../lib/earlyFriend";
@@ -205,6 +206,44 @@ function RiderAppSettings() {
   );
 }
 
+// Story 1498 (board AM1): how the customer sees the rider on the order screen. Three choices, one tap saves; an open customer app follows in seconds.
+const RIDER_MODES: { id: RiderMode; label: string; sub: string }[] = [
+  { id: "link", label: "Google Maps link", sub: "The rider's last place, with its time" },
+  { id: "map", label: "Live map in the app", sub: "A dot that moves while the rider app is open" },
+  { id: "off", label: "Off", sub: "The minutes, the status and Call only" },
+];
+function MapsSettings() {
+  const [now, setNow] = useState<RiderModeAdmin | null>(null);
+  const [line, setLine] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { readRiderModeAdmin(getClient()).then(setNow, () => setLine("Could not load the setting. Try again.")); }, []);
+  async function pick(mode: RiderMode) {
+    if (!now || mode === now.mode) return;
+    const before = now;
+    setLine(null); setBusy(true);
+    setNow({ mode, updated_by: "you", updated_at: new Date().toISOString() });
+    const failed = await saveRiderMode(getClient(), mode);
+    setBusy(false);
+    if (failed) { setNow(before); setLine(failed); }   // the mark goes back to what the server holds
+  }
+  return (
+    <section className="ui-group" aria-label="Maps">
+      <h2 className="ui-h2-split">Maps <span className="mono">Admin only</span></h2>
+      <fieldset className="ui-choices" role="radiogroup" aria-labelledby="rider-mode-title" disabled={!now || busy}>
+        <div className="ui-row-label"><b id="rider-mode-title">How the customer sees the rider</b><span className="ui-row-sub mono">On the order screen, while the order is on the way</span></div>
+        {RIDER_MODES.map((m) => (
+          <label key={m.id} className="ui-row ui-row-static ui-row-tall">
+            <span className="ui-row-label"><b>{m.label}</b><span className="ui-row-sub mono">{m.sub}</span></span>
+            <input type="radio" name="rider-mode" checked={now?.mode === m.id} onChange={() => void pick(m.id)} />
+          </label>
+        ))}
+      </fieldset>
+      {now && <p className="mono ui-foot">Last changed by {now.updated_by ?? "the system"}, {when(now.updated_at)}</p>}
+      {line && <p role="alert" className="ui-note error">{line}</p>}
+    </section>
+  );
+}
+
 // Story 829: the phone code login switch. Off until an SMS provider is live; flipping it reaches an open customer app in seconds.
 function PhoneCodeSetting() {
   const [on, setOn] = useState<boolean | null>(null);
@@ -257,6 +296,7 @@ export function AdminNumbers({ live, kitchens, settings }: { live?: number; kitc
       {settings && <PaymentSettings />}
       {settings && <EarlyFriendSettings />}
       {settings && <RiderAppSettings />}
+      {settings && <MapsSettings />}
       {settings && <SwapSettings />}
       {settings && <PhoneCodeSetting />}
       <button type="button" className="ui-row" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}><span>Send feedback</span><span className="go" aria-hidden="true">›</span></button>
