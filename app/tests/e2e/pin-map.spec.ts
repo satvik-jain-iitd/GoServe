@@ -108,7 +108,8 @@ test("S7 Current Location moves the map to the phone, and the brown dot shows wi
   await expect(page.locator(".gs-here-dot")).toBeVisible();
   await context.setGeolocation({ latitude: 28.61, longitude: 77.23 });
   await page.getByRole("button", { name: "Current Location" }).click();
-  await expect.poll(() => net.calls.serve.at(-1) ?? "").toContain("lat=28.61");
+  // story 1502: on a short screen the pin sits above the middle, so the place can be a metre off (28.609998): compare the number, not its text
+  await expect.poll(() => Math.abs(Number(new URL(net.calls.serve.at(-1) ?? "https://x/?lat=0").searchParams.get("lat")) - 28.61)).toBeLessThan(0.00002);
 });
 
 test("S8 no permission: no dot, and the map never asks for it by itself", async ({ page, context }) => {

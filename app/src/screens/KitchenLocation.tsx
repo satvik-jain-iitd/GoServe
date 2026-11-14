@@ -32,7 +32,7 @@ export function KitchenLocation({ loc, name, pins, onChange }: Props) {
         <span className="ui-locrow-words"><span className="ui-locrow-title">{title}</span><span className="ui-locrow-sub mono" data-testid="location-line">{loc ? locationLine(loc) : "No location yet. Nearest rider cannot be picked."}</span></span>
         <span className="ui-locrow-go">{GO}</span>
       </button>
-      {open && <PinMapScreen center={loc ?? DELHI} zoom={loc ? 17 : 12} kicker={`Location of ${name.trim() || "the kitchen"}`} confirmLabel="Save location" kitchen={{ pins }}
+      {open && <PinMapScreen center={loc ?? DELHI} zoom={loc ? 17 : 12} follow={!loc} kicker={`Location of ${name.trim() || "the kitchen"}`} confirmLabel="Save location" kitchen={{ pins }}
         onBack={() => setOpen(false)} onSearch={() => undefined} onSave={() => undefined}
         onPoint={({ at, words }) => { setOpen(false); if (words) setSaid({ key: `${at.lat},${at.lng}`, words: words.address }); void onChange({ lat: at.lat, lng: at.lng, accuracy: null, at: new Date().toISOString() }); }} />}
     </div>

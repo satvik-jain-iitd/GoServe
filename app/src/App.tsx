@@ -19,6 +19,7 @@ import { OrdersScreen } from "./screens/OrdersScreen";
 import { AdminGate } from "./screens/AdminGate";
 import { RiderGate } from "./screens/RiderGate";
 import { readRates, type Rates } from "./lib/incentive";
+import { readPastDays } from "./lib/pastDays";
 import { fetchKitchen, fetchOnlyKitchen, riderChangePaid, type KitchenCard, type RiderGateState } from "./lib/rider";
 import { KitchenGate, type KitchenGateState } from "./screens/KitchenGate";
 import { enablePush, watchSession } from "./lib/push";
@@ -60,7 +61,7 @@ import { registerNative, wrapperToken } from "./lib/pushNative";
 import { AdminScreen } from "./screens/AdminScreen";
 import { loadDraft, saveDraft } from "./lib/draft";
 import { PlacedScreen, type Track } from "./screens/PlacedScreen";
-import { readPinPoint, readRider, watchRider, type LatLng } from "./lib/riderTrack";
+import { readRider, watchRider, type Tracked } from "./lib/riderTrack";
 import { readEta, type Eta } from "./lib/eta";
 import { readArriving, riderArrivingAt, riderAtDoor, watchArriving } from "./lib/arriving";
 import type { Point } from "./lib/riderMap";
@@ -520,7 +521,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // A placed order is never moved (the step is "placed" or "orders"), and an order being sent is let finish first.
   const [closedNote, setClosedNote] = useState<string | null>(null);
   const wasOpen = useRef(false);
-  const [pinMap, setPinMap] = useState<null | { center: Place; edit?: SavedAddress }>(null);   // story #1037: the one full-screen map, the door for Add new address, Use current location and a tapped search result
+  const [pinMap, setPinMap] = useState<null | { center: Place; edit?: SavedAddress; follow?: boolean }>(null);   // story #1037: the one full-screen map, the door for Add new address, Use current location and a tapped search result
   const [settingUp, setSettingUp] = useState(false);   // story 1384 (board A1e): the first Save address; the location slip waits with the rider until the kitchen is found
   useEffect(() => { if (areaError || area?.kind === "none") setSettingUp(false); }, [areaError, area]);   // a failed read or no kitchen here ends it, so a later change of place never shows it again
   useEffect(() => {
@@ -540,10 +541,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     window.addEventListener("pointerdown", off, { once: true, capture: true });
     return () => window.removeEventListener("pointerdown", off, { capture: true });
   }, [closedNote]);
-  const mapStart = (): Place => {   // where the map opens when nothing says otherwise: the phone, else the picked address, else the city centre
+  const mapStart = (): Place => {   // where the map opens when nothing says otherwise: the phone, else the picked address, else the kitchen whose menu shows (story 1502), else the city centre
     const row = (saved ?? []).find((r) => r.id === selectedId);
-    return here ?? (row && row.lat !== null && row.lng !== null ? { lat: row.lat, lng: row.lng } : { lat: 28.6139, lng: 77.209 });
+    const k = area?.kind === "ok" ? area.kitchen : null;
+    return here ?? (row && row.lat !== null && row.lng !== null ? { lat: row.lat, lng: row.lng } : k && typeof k.lat === "number" && typeof k.lng === "number" ? { lat: k.lat, lng: k.lng } : { lat: 28.6139, lng: 77.209 });
   };
+  const openAtStart = (edit?: SavedAddress) => setPinMap({ center: mapStart(), edit, follow: true });   // story 1502: an open the person did not aim follows the phone's place once
   const opened = useRef(false);
   const moved = useRef(false);   // true once the customer has left the first menu (the Bill, the placed screen, any page)
   if (step !== "menu") moved.current = true;
@@ -762,8 +765,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }, [placed?.id, riderStatus, demo]);
 
   // Story #691 (boards T2, T3): On the way, the rider's place comes from the order_tracking row (read now, again on every realtime event and every 30 s, the ping rhythm).
-  const [riderPoint, setRiderPoint] = useState<Point | null>(null);
-  const [youPoint, setYouPoint] = useState<LatLng | null>(null);
+  const [riderPoint, setRiderPoint] = useState<Tracked | null>(null);   // story 1497: the rider's place and the order's own drop point, both from the order's row
   const onTheWay = !!placed && !demo && riderStatus === "out_for_delivery";
   useEffect(() => {
     if (!onTheWay || !placed) return void setRiderPoint(null);
@@ -800,14 +802,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     const tick = setInterval(read, 30_000);
     return () => { alive = false; stop(); clearInterval(tick); };
   }, [placed?.id, onTheWay]);
-  useEffect(() => {
-    if (!onTheWay || !pin) return void setYouPoint(null);
-    let alive = true;
-    void readPinPoint(getClient(), pin).then((p) => { if (alive) setYouPoint(p); }).catch(() => undefined);
-    return () => { alive = false; };
-  }, [pin, onTheWay]);
-  const kitchenPoint = area?.kind === "ok" && area.kitchen.lat !== null && area.kitchen.lng !== null ? { lat: area.kitchen.lat, lng: area.kitchen.lng } : null;
-  const riderTrack: Track | undefined = onTheWay && riderPoint && youPoint && kitchenPoint ? { kitchen: kitchenPoint, you: youPoint, rider: riderPoint, name: rider?.name ?? "Your rider", phone: rider?.phone ?? null } : undefined;
+  const riderTrack: Track | undefined = onTheWay && riderPoint ? { you: riderPoint.you, rider: riderPoint.rider, name: rider?.name ?? "Your rider", phone: rider?.phone ?? null } : undefined;
 
   // A tap on a slip of "Your orders" opens it as the tracker or the delivered screen (story H10d).
   function openOrder(o: Order) {
@@ -986,6 +981,9 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     document.addEventListener("visibilitychange", back);
     return () => { alive = false; document.removeEventListener("visibilitychange", back); };
   }, [riderLive, orders.length]);   // and when an order comes or goes
+  const [pastDays, setPastDays] = useState<number | "fail" | null>(null);   // story 1442: the admin's "Past days" number, read at open; a failed read says so on the list
+  const loadPastDays = () => { setPastDays(null); readPastDays(getClient()).then(setPastDays, () => setPastDays("fail")); };
+  useEffect(() => { if (riderLive) loadPastDays(); }, [riderLive]);   // once at open; Try again reads it again
   const riderNoKitchen = role === "rider" && !demo && !jobKitchenId && !live.loading;   // stories 1445 and 1440: no order yet, so the one active kitchen, if there is only one
   useEffect(() => {
     if (!riderNoKitchen) return;
@@ -1012,7 +1010,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const riderScreen = (gate: RiderGateState | null) => (
     <RiderScreen orders={orders} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
       onAct={(o, a, method) => act(o, a, "rider", method)} methods={riderMethods} qrUrl={riderQr} onLoadMethods={loadRiderMethods} gate={gate} kitchen={jobKitchen} onAtDoor={(o, m) => { if (!demo) void riderAtDoor(getClient(), o.id, m); }}
-      incentive={incentive}
+      incentive={incentive} pastDays={demo ? 0 : pastDays} onRetryPastDays={loadPastDays}
       onChangePaid={async (o, m) => { const code = demo ? null : await riderChangePaid(getClient(), o.id, m); if (code === null) setOrders((cur) => cur.map((x) => (x.id === o.id ? { ...x, paid_by: m } : x))); return code; }} />
   );
   const riderView = lock === "rider" ? <RiderGate>{riderScreen}</RiderGate> : riderScreen(null);
@@ -1040,7 +1038,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <OtpSheet welcome googleOnly={!gate} phone={phone} onClose={() => undefined}
       onVerified={(p) => { setPhone(p); setSavedPhone(p); setVerified(true); setSignedIn(true); }} />
   ) : pinMap ? (
-    <PinMapScreen center={pinMap.center} edit={pinMap.edit} kicker={pinMap.edit ? `Editing ${pinMap.edit.label}` : undefined} confirmLabel={pinMap.edit ? "Save changes" : "Confirm & proceed"} onBack={() => { setFocusSearch(false); setPinMap(null); }} search={(q) => placeSearch(q)} searchOpen={focusSearch} onSearch={() => { setPinMap(null); if (needArea) setStep("deliver"); }}
+    <PinMapScreen center={pinMap.center} follow={pinMap.follow} edit={pinMap.edit} kicker={pinMap.edit ? `Editing ${pinMap.edit.label}` : undefined} confirmLabel={pinMap.edit ? "Save changes" : "Confirm & proceed"} onBack={() => { setFocusSearch(false); setPinMap(null); }} search={(q) => placeSearch(q)} searchOpen={focusSearch} onSearch={() => { setPinMap(null); if (needArea) setStep("deliver"); }}
       onInvite={async (f) => { const err = await askArea(f.pin, f.at); if (err) return err; setAreaAsk("done"); setPinMap(null); setFarPick(f); return null; }}
       onSave={(a) => { const e = pinMap.edit; setPinMap(null); if (!e && needArea) setSettingUp(true); if (e) void saveEdit(e.id, a); else void saveNew(a); }} />
   ) : farPick ? (
@@ -1052,18 +1050,18 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   ) : step === "deliver" ? (
     <DeliverToScreen focusSearch={focusSearch} list={saved ?? []} selectedId={selectedId} here={here} search={(q) => placeSearch(q)} onPlace={(h) => { setFocusSearch(false); setPinMap({ center: { lat: h.lat, lng: h.lng } }); }} onBack={() => { setFocusSearch(false); setStep("menu"); }}
       onSelect={(id) => { const r = (saved ?? []).find((x) => x.id === id); if (r) { useSaved(r, true); setStep("menu"); } }}
-      onUseLocation={() => { void currentPlace().then((p) => setPinMap({ center: p }), () => setPinMap({ center: mapStart() })); }} onAddNew={() => setPinMap({ center: mapStart() })}
-      onEditOnMap={(a) => setPinMap({ center: a.lat !== null && a.lng !== null ? { lat: a.lat, lng: a.lng } : mapStart(), edit: a })} onRemove={dropSaved} />
+      onUseLocation={() => { void currentPlace().then((p) => setPinMap({ center: p }), () => openAtStart()); }} onAddNew={() => openAtStart()}
+      onEditOnMap={(a) => (a.lat !== null && a.lng !== null ? setPinMap({ center: { lat: a.lat, lng: a.lng }, edit: a }) : openAtStart(a))} onRemove={dropSaved} />
   ) : waitingForAddresses ? (
     <div className="ui-pad"><Skeleton lines={3} /></div>
   ) : needArea && !alertsAsked && reminder === "ask" ? (
     <AlertsAsk busy={askingAlerts} onTurnOn={() => void turnOnFirst()} onNotNow={markAsked} />
   ) : needArea && pin && area?.kind === "none" ? (
     <NoKitchen address={address} ask={areaAsk} error={areaAskError} offerPaise={areaOffer} onTell={() => void tellMeWhenWeCome()}
-      onChange={() => { const at = from; changeArea(); setPinMap({ center: at ?? mapStart() }); }} />
+      onChange={() => { const at = from; changeArea(); if (at) setPinMap({ center: at }); else openAtStart(); }} />
   ) : needArea ? (
     <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={(pl) => { setAddress(pl.address); setFixAddress(null); choosePin(pl.pin); }}
-      onMap={(at) => setPinMap({ center: at })} onSearch={() => { setFocusSearch(true); setPinMap({ center: mapStart() }); }} />
+      onMap={(at) => setPinMap({ center: at })} onSearch={() => { setFocusSearch(true); openAtStart(); }} />
   ) : (
     <>
         {step === "menu" && (

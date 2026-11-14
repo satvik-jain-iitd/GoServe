@@ -2,10 +2,11 @@
 import { clock12 } from "./clock";
 
 export type Point = { lat: number; lng: number; at: string };
-type TrackRow = { rider_lat: number | null; rider_lng: number | null; updated_at: string };
+type TrackRow = { rider_lat: number | null; rider_lng: number | null; rider_at: string | null };
 
+// Story 1497: the time of a place is the time of the rider's ping (rider_at), never the time the row was written. A place with no ping time is not shown.
 export const toPoint = (row: TrackRow | null): Point | null =>
-  row && row.rider_lat !== null && row.rider_lng !== null ? { lat: row.rider_lat, lng: row.rider_lng, at: row.updated_at } : null;
+  row && row.rider_lat !== null && row.rider_lng !== null && row.rider_at ? { lat: row.rider_lat, lng: row.rider_lng, at: row.rider_at } : null;
 
 export function agoText(iso: string, now: number): string {
   const s = Math.max(0, Math.round((now - new Date(iso).getTime()) / 1000));
@@ -28,3 +29,8 @@ export const lastSeenText = (at: string, now: number): string => `Last seen ${cl
 // The tile address comes from the build (VITE_MAP_TILES). None means no tile call at all, which is how prod stays tile-free until the PMTiles test (radar, 29 Oct).
 export const tileUrl = (template: string | undefined): string | null =>
   template && ["{z}", "{x}", "{y}"].every((p) => template.includes(p)) ? template : null;
+
+/** Story 1498: Google Maps, no key. The route from the rider's last place (the start) to the order's map pin (the end), by two-wheeler. No pin on the order: the rider's place alone, no route. */
+export const riderLink = (rider: { lat: number; lng: number }, you: { lat: number; lng: number } | null): string => you
+  ? `https://www.google.com/maps/dir/?api=1&origin=${rider.lat},${rider.lng}&destination=${you.lat},${you.lng}&travelmode=two-wheeler`
+  : `https://www.google.com/maps/search/?api=1&query=${rider.lat},${rider.lng}`;

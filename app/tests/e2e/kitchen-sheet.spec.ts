@@ -53,7 +53,7 @@ test("KO1c given the New tab, the line accept within 2 min does not show", async
   await expect(page.locator(".ui-ticket").first().getByText("₹")).toHaveCount(0);
 });
 
-test("KO1c given the decline sheet, it shows no amount and no customer name: the head says Placed and the lead says Tell the customer why", async ({ page, context }) => {
+test("KO1d given the decline sheet, it shows no amount and no customer name: the head says Placed and the lead says Tell the customer why", async ({ page, context }) => {
   await open(page, context, "placed");
   await page.getByRole("button", { name: "Decline, with a reason" }).click();
   const sheet = page.getByRole("dialog", { name: "Decline order 0f0f0f0f" });
