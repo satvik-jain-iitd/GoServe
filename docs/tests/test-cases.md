@@ -523,4 +523,4 @@ Every test, with its story and scenario. Story #16 = architecture evolution page
 | `25-declined.spec.ts` (Order something else last) | #1458 | TC | Automatic | `app/tests/e2e/regression/25-declined.spec.ts` | Pass |
 | `pinmap-far.spec.ts` S9 (Pin on the map after a failed lookup) | #1462 | S9 | Automatic | `app/tests/e2e/pinmap-far.spec.ts` | Pass |
 | `first-open-layout.spec.ts` S9 (no scroll at 320 x 568 and 360 x 649) | #1471 | S9 | Automatic | `app/tests/e2e/first-open-layout.spec.ts` | Pass |
-| `admin-adddish-last.spec.ts` S1, S2 | #1476 | S1, S2 | Automatic | `app/tests/e2e/admin-adddish-last.spec.ts` | Pass (PR #1488) |
+| `admin-adddish-last.spec.ts` S1, S2 | #1476 | S1, S2 | Automatic | `app/tests/e2e/admin-adddish-last.spec.ts` | Pass |
