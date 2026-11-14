@@ -43,7 +43,7 @@ test("S3 the tracker has a timeline, an estimate and the short order number", as
   net.state.tracking = { eta_lo_min: 20, eta_hi_min: 30, eta_late: false, updated_at: new Date().toISOString() };   // story #1015: the server's time
   await page.goto("/customer/");
   await expect(page.getByRole("heading", { name: "Your order", exact: true })).toBeVisible();
-  await expect(page.getByRole("list", { name: "Order progress" }).locator('[aria-current="step"]')).toHaveText("Cooking");
+  await expect(page.getByRole("list", { name: "Order progress" }).locator('[aria-current="step"]')).toHaveText("CookingNow");   // story 1507: the step now says Now
   await expect(page.getByText("20 min", { exact: true })).toBeVisible();
   await expect(page.getByText(`No. ${ID.slice(0, 8)}`).first()).toBeVisible();   // the short order number is on the slip
   await expect(page.locator("body")).not.toContainText(ID);   // never the whole id

@@ -13,21 +13,21 @@ async function openAt(context: Parameters<typeof setup>[0], page: Page, status: 
   const net = await setup(context, page, [order(status === "delivered" ? "out_for_delivery" : status)]);
   net.state.kitchens = KITCHEN;
   await page.goto("/customer/");
-  if (status === "delivered") { await expect(now(page)).toHaveText("On the way"); net.push("UPDATE", order("delivered", "2020-01-01T10:09:00Z")); await expect(page.getByRole("heading", { name: "Delivered" })).toBeVisible(); }
+  if (status === "delivered") { await expect(now(page)).toHaveText("On the wayNow"); net.push("UPDATE", order("delivered", "2020-01-01T10:09:00Z")); await expect(page.getByRole("heading", { name: "Delivered" })).toBeVisible(); }
   return net;
 }
 
 test("R1 just placed: three rows, the first is the step now (PL6)", async ({ page, context }) => {
   await setup(context, page, [order("placed")]);
   await page.goto("/customer/");
-  await expect(rows(page)).toHaveText(["Placed", "Accepted", "Cooking"]);
+  await expect(rows(page)).toHaveText(["PlacedNow", "Accepted", "Cooking"])   // story 1507: the step now says Now;
   await expect(rows(page).first()).toHaveAttribute("aria-current", "step");
 });
 
 test("R2 cooking: three rows, the middle one is the step now (PL4)", async ({ page, context }) => {
   await setup(context, page, [order("preparing")]);
   await page.goto("/customer/");
-  await expect(rows(page)).toHaveText(["Accepted", "Cooking", "Ready, rider picks up"]);
+  await expect(rows(page)).toHaveText(["Accepted", "CookingNow", "Ready, rider picks up"]);
   await expect(rows(page).nth(1)).toHaveAttribute("aria-current", "step");
 });
 
@@ -41,15 +41,15 @@ test("R3 delivered: three rows, the last is the step now (PL7)", async ({ page, 
 
 test("R4 the status changes: the rows slide up one row, the box keeps its height and the main button keeps its place", async ({ page, context }) => {
   const net = await openAt(context, page, "accepted");
-  await expect(now(page)).toHaveText("Accepted");
+  await expect(now(page)).toHaveText("AcceptedNow");
   const box0 = (await page.locator(".ui-roll").boundingBox())!;
   const btn0 = (await page.locator(".ui-bottom .ui-btn").last().boundingBox())!;
   net.push("UPDATE", order("preparing", "2020-01-01T10:02:00Z"));
-  await expect(now(page)).toHaveText("Cooking");
+  await expect(now(page)).toHaveText("CookingNow");
   const t = await list(page).evaluate((e) => getComputedStyle(e).transitionDuration);
   expect(t).toBe("0.3s");   // the slide
   await page.waitForTimeout(400);
-  await expect(rows(page)).toHaveText(["Accepted", "Cooking", "Ready, rider picks up"]);
+  await expect(rows(page)).toHaveText(["Accepted", "CookingNow", "Ready, rider picks up"]);
   const box1 = (await page.locator(".ui-roll").boundingBox())!;
   const btn1 = (await page.locator(".ui-bottom .ui-btn").last().boundingBox())!;
   expect(box1.height).toBe(box0.height);
@@ -60,7 +60,7 @@ test("R5 reduce motion: the rows change with no slide", async ({ page, context }
   await page.emulateMedia({ reducedMotion: "reduce" });
   await setup(context, page, [order("accepted")]);
   await page.goto("/customer/");
-  await expect(now(page)).toHaveText("Accepted");
+  await expect(now(page)).toHaveText("AcceptedNow");
   expect(await list(page).evaluate((e) => getComputedStyle(e).transitionDuration)).toBe("0s");
 });
 
@@ -121,7 +121,7 @@ test("R8b delivered: Back to menu stays full width under Call the kitchen (story
 test("R7 no step count and no Ping me button", async ({ page, context }) => {
   await setup(context, page, [order("preparing")]);
   await page.goto("/customer/");
-  await expect(now(page)).toHaveText("Cooking");
+  await expect(now(page)).toHaveText("CookingNow");
   await expect(page.getByText(/\d of 6/)).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Ping me/ })).toHaveCount(0);
 });
