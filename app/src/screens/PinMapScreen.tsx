@@ -10,7 +10,7 @@ import { getClient } from "../lib/supabase";
 import type { Map as LMap, Marker } from "leaflet";
 import { currentPlace, findAddress, type Looked, type Place } from "../lib/locate";
 import { isPin } from "../lib/area";
-import type { PlaceHit } from "../lib/placeSearch";
+import { fromOla, usePlaces, type PlaceHit, type Search } from "../lib/placeSearch";
 import { addressText, boxOf, cardWords, serveAt, stripsFor, type Serve, type Strip } from "../lib/pinMap";
 import { metres, tileUrl } from "../lib/riderMap";
 
@@ -34,7 +34,7 @@ type Props = {
   kitchen?: { pins: string[] };   // story #1052 (board A12): a kitchen's place. No serviceability, no details step: Confirm hands the point back. "Inside <pin>" when the words are in one of its pin codes
   onPoint?: (p: { at: Place; words: Looked | null }) => void;
 
-  search?: (q: string) => Promise<PlaceHit[] | null>; searchOpen?: boolean;   // story #1127 (boards C6, C8): with a search function the bar searches ON the map: results over it, a pick moves the pin. Without one, onSearch leaves the map as before
+  search?: Search; searchOpen?: boolean;   // story #1127 (boards C6, C8): with a search function the bar searches ON the map: results over it, a pick moves the pin. Without one, onSearch leaves the map as before
   onBack: () => void; onSearch: () => void; onSave: (a: Saved) => void;
   lookup?: (p: Place) => Promise<Looked | null>; serve?: (p: Place, pin: string | null) => Promise<Serve | null>;
 };
@@ -67,19 +67,12 @@ export function PinMapScreen({ center, zoom = 17, follow, kicker, confirmLabel, 
     const k = liftNow();
     map.setView(k ? map.unproject(map.project([at.lat, at.lng], z).add([0, k]), z) : [at.lat, at.lng], z, { animate: false });
   };
-  const [sOpen, setSOpen] = useState(!!searchOpen && !!search);   // story #1127: the search bar is open (a text box and, after Enter, the places)
+  const [sOpen, setSOpen] = useState(!!searchOpen && !!search);   // story #1127: the search bar is open (a text box and, as you type, the places)
   const [sq, setSq] = useState("");
-  useBackCloses(!!search && sOpen, () => { setSOpen(false); setFound(null); setSq(""); });   // story 1248: the phone's Back closes the open search first, like the arrow
+  useBackCloses(!!search && sOpen, () => { setSOpen(false); setSq(""); });   // story 1248: the phone's Back closes the open search first, like the arrow
   const sRef = useRef<HTMLInputElement>(null);
-  const [found, setFound] = useState<{ words: string; state: "busy" | "short" | "error" | "ok"; hits: PlaceHit[] } | null>(null);
-  const runSearch = async () => {
-    const w = sq.trim();
-    if (w.length < 3) return setFound({ words: w, state: "short", hits: [] });
-    setFound({ words: w, state: "busy", hits: [] });
-    const hits = await search!(w);
-    setFound((c) => (c && c.words === w ? { words: w, state: hits === null ? "error" : "ok", hits: hits ?? [] } : c));
-  };
-  const take = (h: PlaceHit) => { touched.current = true; setSOpen(false); setFound(null); setSq(""); const m = live.current?.map; if (m) show(m, { lat: h.lat, lng: h.lng }, 17); };   // the move settles the pin through the map's own move end
+  const { found, ask: runSearch } = usePlaces(sq, search, point);   // story 1519: places near the pin, as you type
+  const take = (h: PlaceHit) => { touched.current = true; setSOpen(false); setSq(""); const m = live.current?.map; if (m) show(m, { lat: h.lat, lng: h.lng }, 17); };   // the move settles the pin through the map's own move end
   const [pick, setPick] = useState<PinPick | null>(null);
   const draft = useRef<Draft | null>(null);   // story 1421 (board ED2): what was typed on the sheet, kept across Change and back   // story #1038: set when Confirm is tapped; the details sheet shows over the same map
   const ask = useRef(0);
@@ -292,11 +285,11 @@ export function PinMapScreen({ center, zoom = 17, follow, kicker, confirmLabel, 
           <path d="M207 360 c-9 0 -15 7 -15 15 c0 11 15 29 15 29 s15 -18 15 -29 c0 -8 -6 -15 -15 -15z" fill="var(--md-primary)" /><circle cx="207" cy="375" r="5" fill="#ffffff" /></svg></span>
       {!moved && !kitchen && !pick && !(search && sOpen) && <p role={cramped ? undefined : "status"} aria-hidden={cramped || undefined} className={cramped ? "ui-pinmap-hint cramped" : "ui-pinmap-hint"}>Move the map to set the pin</p>}   {/* story 1389, board PH1 */}
       <div className="ui-pinmap-top">
-        <button type="button" className="ui-pinmap-back" aria-label="Back" onClick={search && sOpen && !pick ? () => { setSOpen(false); setFound(null); setSq(""); } : onBack}>{I(<path d="M19 12H5M11 18l-6-6 6-6" />)}</button>
+        <button type="button" className="ui-pinmap-back" aria-label="Back" onClick={search && sOpen && !pick ? () => { setSOpen(false); setSq(""); } : onBack}>{I(<path d="M19 12H5M11 18l-6-6 6-6" />)}</button>
         {!pick && !kitchen && !(search && sOpen) && <button type="button" className="ui-pinmap-search" aria-label="Search an area or address" onClick={search ? () => setSOpen(true) : onSearch}><span>Search an area or address</span>{I(<><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></>, 20)}</button>}
-        {!pick && !kitchen && search && sOpen && <form className="ui-pinmap-search open" onSubmit={(e) => { e.preventDefault(); void runSearch(); }}>
-          <input ref={sRef} type="search" role="searchbox" aria-label="Search an area or address" placeholder="Search an area or address" autoFocus value={sq} onChange={(e) => { setSq(e.target.value); setFound(null); }} />
-          <ClearCross show={sq !== ""} onClear={() => { setSq(""); setFound(null); }} input={sRef} />
+        {!pick && !kitchen && search && sOpen && <form className="ui-pinmap-search open" onSubmit={(e) => { e.preventDefault(); runSearch(); }}>
+          <input ref={sRef} type="search" role="searchbox" aria-label="Search an area or address" placeholder="Search an area or address" autoFocus value={sq} onChange={(e) => setSq(e.target.value)} />
+          <ClearCross show={sq !== ""} onClear={() => setSq("")} input={sRef} />
         </form>}
       </div>
       {!pick && search && sOpen && found && <section className="ui-pinmap-results" aria-label="Places">
@@ -304,7 +297,8 @@ export function PinMapScreen({ center, zoom = 17, follow, kicker, confirmLabel, 
         {found.state === "short" && <p className="ui-field-error" role="alert">Type at least 3 letters to search places.</p>}
         {found.state === "error" && <p className="ui-field-error" role="alert">Could not search places. Try again.</p>}
         {found.state === "ok" && found.hits.length === 0 && <p className="ui-row-sub">No place found. Try the start of a colony name or a pin code.</p>}
-        <ul className="ui-saved-list">{found.hits.map((h) => <li key={`${h.pin}-${h.name}`} className="ui-saved-row ui-place-row"><button type="button" className="ui-saved-main" onClick={() => take(h)}><span className="ui-saved-label"><span>{h.name}</span><span className={`ui-tag ${h.served ? "ready" : "placed"}`}>{h.served ? "We deliver here" : "Not yet"}</span></span><span className="ui-saved-addr">{h.address}</span></button></li>)}</ul>
+        <ul className="ui-saved-list">{found.hits.map((h, i) => <li key={`${i}-${h.name}`} className="ui-saved-row ui-place-row"><button type="button" className="ui-saved-main" onClick={() => take(h)}><span className="ui-saved-label"><span>{h.name}</span><span className={`ui-tag ${h.served ? "ready" : "placed"}`}>{h.served ? "We deliver here" : "Not yet"}</span></span><span className="ui-saved-addr">{h.address}</span></button></li>)}</ul>
+        {fromOla(found.hits) && <span className="mono ui-pinmap-credit"><a href={OSM} target="_blank" rel="noopener noreferrer">Ola Maps</a></span>}
       </section>}
       {!pick && <div ref={card} className="ui-pinmap-card">
         <button type="button" className="ui-pinmap-here" onClick={() => void toPhone()}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg><span>Current Location</span></button>

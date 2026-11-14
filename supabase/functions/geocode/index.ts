@@ -4,6 +4,7 @@
 // The data sources are injected so the tests need no network.
 import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
 import { withCors } from "../_shared/cors.ts";
+import { olaToken } from "../_shared/ola.ts";
 
 export type Found = { address: string; pin: string; locality: string; town: string };
 export type Deps = {
@@ -65,19 +66,9 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
   }
 };
 
-// Ola's token lasts about an hour. One token serves many lookups until its last minute.
+// One token serves many lookups until its last minute (_shared/ola.ts, shared with place-search since story 1519).
 export const makeOla = (o: { id: string; secret: string; fetchFn?: typeof fetch; now?: () => number }) => {
-  const fetchFn = o.fetchFn ?? fetch, now = o.now ?? Date.now;
-  let token = "", until = 0;
-  const fresh = async () => {
-    if (token && now() < until - 60_000) return token;
-    const res = await fetchFn("https://api.olamaps.io/auth/v1/token", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ grant_type: "client_credentials", scope: "openid", client_id: o.id, client_secret: o.secret }) });
-    if (!res.ok) throw new Error("token");
-    const t = (await res.json()).access_token as string;
-    const exp = JSON.parse(atob(t.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).exp as number;
-    token = t; until = exp * 1000;
-    return token;
-  };
+  const fetchFn = o.fetchFn ?? fetch, fresh = olaToken(o);
   return async (lat: number, lng: number): Promise<unknown> => {
     const res = await fetchFn(`https://api.olamaps.io/places/v1/reverse-geocode?latlng=${lat},${lng}`, { headers: { authorization: `Bearer ${await fresh()}`, "x-request-id": crypto.randomUUID() } });
     if (!res.ok) throw new Error("reverse");
