@@ -42,7 +42,7 @@ async function reach(context: BrowserContext, page: Page, delivered: Omit<typeof
 
 test("TC 26.1 Look: the Delivered stamp, At your door 4:53 pm, the lines, Cash paid, the thank-you line and two buttons", async ({ page, context }) => {
   await reach(context, page);
-  await expect(page.getByRole("heading", { name: "Delivered", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();
   const slip = page.getByRole("region", { name: "Order, delivered" });
   await expect(slip).toBeVisible();
   await expect(slip.getByText("Delivered", { exact: true })).toBeVisible();   // the stamp
@@ -51,7 +51,7 @@ test("TC 26.1 Look: the Delivered stamp, At your door 4:53 pm, the lines, Cash p
   await expect(slip.getByText("1 × Dal Makhani", { exact: true })).toBeVisible();
   await expect(slip.getByText("Cash paid", { exact: true })).toBeVisible();
   await expect(slip.getByText("₹830", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Delivered", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();
   await expect(page.locator(".ui-bottom").getByRole("button", { name: "Back to menu" })).toBeVisible();   // story 1434: was See the menu
   await expect(page.getByRole("link", { name: "Call the kitchen" })).toHaveAttribute("href", "tel:9876543210");
 });

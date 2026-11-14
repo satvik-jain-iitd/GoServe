@@ -60,6 +60,7 @@ body { margin: 0; background: var(--md-background); color: var(--md-on-backgroun
 .ui-slip-stamp { display: flex; justify-content: center; padding: 10px 0 4px; }
 .ui-clock { margin: 0; text-align: center; font-family: var(--gs-font-mono); font-size: var(--gs-mono-base); }
 .ui-clock b { font-size: var(--gs-mono-lg); font-weight: 500; }
+.ui-early { margin-top: 2px; font-size: var(--gs-mono-sm); color: var(--md-primary); }   /* story 1508 (board DL1): "4 min early", a small line of its own under the time */
 .ui-slip-rule { border-top: 1px dashed var(--md-outline-variant); }
 .ui-slip-lines { display: grid; gap: var(--gs-space-2); font-family: var(--gs-font-mono); font-size: var(--gs-mono-base); }
 .ui-slip-lines div { display: flex; justify-content: space-between; gap: 12px; }
