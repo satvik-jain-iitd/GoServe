@@ -107,7 +107,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
       void placeOnly.then((s0) => { if (mine === ask.current && s0?.serviceable && !pinAnswered) setServed(s0); });
       const w = await limit(fns.current.lookup(p).catch(() => null));
       if (mine !== ask.current) return;   // a newer rest has taken over
-      if (w) { setWords(w); setFailed(false); } else setFailed(true);   // the last words stay when this one fails; the point still counts
+      if (w) { setWords(w); setFailed(false); } else { setWords(null); setFailed(true); }   // story 1462: the pin moved and no name came: "Pin on the map", never the old place's name
       // story #1102: the pin the lookup read goes with the place; no pin read: the place-only answer stands. Story 1426: a failed pin answer falls back only to a place-only yes.
       const s0 = await placeOnly;
       const s = w?.pin ? ((await limit(fns.current.serve(p, w.pin)).catch(() => null)) ?? (s0?.serviceable ? s0 : null)) : s0;

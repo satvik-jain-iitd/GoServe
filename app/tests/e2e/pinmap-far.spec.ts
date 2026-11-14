@@ -133,3 +133,24 @@ test("S8 the serve check never answers: after the wait limit, the same could-not
   await drag(page);
   await failedState(page);
 });
+
+// Story 1462 (reviewer's call, rule 20): the pin moved and the new place's name did not come: the card never keeps the old place's name.
+test("S9 both lookups fail at a new place: the old name goes and the card says Pin on the map; Try again brings the new name", async ({ page, context }) => {
+  const net = await toMap(page, context, null);
+  const card = page.locator(".ui-pinmap-card");
+  await expect(card.locator(".ui-pinmap-name")).toHaveText("Green Park");
+  let down = true;
+  await context.route("https://test.supabase.co/functions/v1/serviceability**", (r) => r.request().method() === "OPTIONS" ? r.fulfill({ status: 204, headers: CORS }) : down ? r.fulfill({ status: 500, headers: CORS, body: "{}" }) : r.fulfill({ status: 200, headers: CORS, body: JSON.stringify(SERVED) }));
+  net.state.geocode = { status: 500, body: {} };
+  await drag(page);
+  await failedState(page);
+  await expect(card.locator(".ui-pinmap-name")).toHaveText("Pin on the map");
+  await expect(card.getByText("Green Park")).toHaveCount(0);
+  await expect(card.getByText("New Delhi, Delhi")).toHaveCount(0);   // the old address line is gone; only the quiet "Could not read the address" note stays
+  await expect(card.locator(".ui-pinmap-addr")).toHaveText("Could not read the address, the pin still counts");
+  down = false;
+  net.state.geocode = { status: 200, body: { ok: true, address: "Hauz Khas, New Delhi, Delhi", pin: "110016", locality: "Hauz Khas", town: "New Delhi" } };
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect(card.locator(".ui-pinmap-name")).toHaveText("Hauz Khas");
+  await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeEnabled();
+});
