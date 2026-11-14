@@ -218,3 +218,93 @@ Motive check: Ola and Google sell credits, so their price pages are true for the
 | 4 | The Google adapter | Only on the owner's ask |
 
 Sources, read 14 Nov 2026: maps.olakrutrim.com/pricing and /pricing/details (vendor); Ola Fair Usage Policy and Platform Terms of Use PDFs (vendor); developers.google.com/maps/billing-and-pricing/pricing-india (vendor); operations.osmfoundation.org/policies/tiles; github.com/maplibre/maplibre-gl-leaflet.
+
+## The owner's reply and what changed (14 Nov 2026, later, reviewer)
+
+Owner, 14 Nov 2026, after reading the plan: "I don't see the tracker anywhere in the application." He asks if a real-time live location map is needed at all for a 15 minute delivery, or if he can share "the latest location of the driver with the user by just giving like a Google map link". "If that will be like a free but viable solution, probably let's go for it. But I need all of this to be … easily configurable in the admin dashboard." On keys: "as soon as even one API key returns 401, we switch to the other API key automatically." He also asked if the names of Ola Maps and OpenStreetMap must be on the map, and why we put them. He is still deciding if the promise is 15 minutes, not 20 or 30.
+
+### Why the owner does not see the tracker (code on `dev` at ffc901c, Tier S)
+
+The tracker is a row on the order screen ("<rider> is 400 m away · On the map"). A tap opens the full-screen live map (`PlacedScreen.tsx`, `RiderMapScreen.tsx`, story 1053). The row shows only when all four are true (`App.tsx`, `riderTrack`):
+
+| Condition | Where it comes from |
+|---|---|
+| The order is on the way | The rider tapped pick up |
+| The rider's phone has sent a place | `rider_ping`, every 30 s, only while the rider app is open, Online and allowed to read the location (`RiderGate.tsx`) |
+| The kitchen has a saved map location | The admin kitchen pin |
+| The customer's pin code has a point | `pin_points` |
+
+With one missing the row is not there and nothing says why. The customer then sees only "<rider> is bringing your order" and Call.
+
+Three additions from the coder's read (PR #1499, dev at ffc901c):
+
+- A fifth condition hides in two of the four. The kitchen point and the "You" point come from the app's present Deliver-to place (`App.tsx` lines 804 to 811), not from the order. So the present place must still be served and be the order's place. This has the same root as bug #1497; one fix covers both.
+- The rider app sends a place only when the browser gives a new position, at most once in 30 s. A refused location permission fails with no word, so the rider is not told.
+- A stale place has no age rule today. The 3 minute rule of story #1498 adds one.
+
+- The row has run only in automated tests with made-up data. It was not seen on a real phone by the reviewer. Why the owner did not see it is a guess (0.6): the rider's phone sent no place during his tests. A prod read would settle it; it needs his yes.
+- The rider app is a web app. When the rider opens Google Maps to navigate, our app goes to the background and the pings may stop (0.7; phone test P1 in `docs/tests/phone-test-list.md` is not run).
+- The distance is measured to the pin code's point, not to the customer's door (`readPinPoint`). Bug #1497.
+- The first plan said "the tracker opens only on a tap". That was true and not enough: it did not say the row can be missing.
+
+### Does a 15 minute delivery need a live map (reviewer's view)
+
+On a 15 minute promise the rider is on the road for about 4 to 7 minutes. What the customer needs, most first: the minutes left, if the food has left, a call to the rider. All three exist and none needs the rider's place. "Where exactly is he" comes last.
+
+| Way | What the customer gets | Cost | Weak point |
+|---|---|---|---|
+| A. No place | The minutes, the status, Call | 0 | None. It always works |
+| B. A Google Maps link, "Rider kahan hai" | Google Maps opens with the route from the rider's last place to the door, and Google's minutes | 0. "You don't need a Google API key to use Maps URLs" (Google, Tier A, 0.85 that it stays free) | It leaves our app. The place is one picture in time, not live |
+| C. The live map in the app (built) | A dot that moves every 30 s | Map tiles: the public OSM server today, Ola map loads later | The heaviest. It hangs on the tiles |
+
+B and C both need the rider's pings, so both stop when the pings stop.
+
+The pick, on the owner's words ("free but viable … let's go for it"): B is the default. Two rules keep it true: the row says how old the place is ("2 min pehle"), and a place over 3 minutes old shows no row. C stays in the code behind the same admin switch, off. We count the taps on the row for two weeks. The live map opens again only if that count says people want it. Story #1498. Test E-LINK-1.
+
+### The 401 rule for keys (owner, 14 Nov 2026)
+
+1. Pin to words goes through our server. On a 401, 403 or 429 from Ola the key is marked failed (the code and the time), the next key is used in the same request, and the admin gets an alert. The customer sees nothing.
+2. Ola's login token grows old in normal use and that also gives a 401. So the function first gets a new token once. Only a second 401 marks the key failed. Without this, good keys would drop out every hour.
+3. A map tile key lives in the browser. On a 401 the app tells our server, gets the next key and draws again.
+4. A failed key is tried again on the first day of the next month, or when the admin taps "Try again".
+5. The counter stays, for the meter and the alert at 70 percent.
+6. A timeout or a 5xx is not a key failure. It is one retry, then the next provider.
+
+### Must the names be on the map (Tier A, read 14 Nov 2026)
+
+| Claim | What the page says | Tier | Conf | What it changes for us |
+|---|---|---|---|---|
+| The OSM credit is a must | "If you want to use OpenStreetMap data in something you create and distribute, you must attribute OpenStreetMap." The licence is the ODbL (OSMF Attribution Guidelines, adopted 25 June 2021, last edited 10 Sept 2026) | A | 0.9 | The credit is a licence term, not a design choice |
+| Where it goes | "the credit should typically appear in a corner of the map"; it "may be placed adjacent to the map or on a splash screen or pop-up"; it "should not require individuals to interact with the map" | A | 0.9 | A corner or right beside the map. Not only in About |
+| It may fade | "automatically after five seconds", on a map move, or on dismiss. Then the licence must still be found, for example an "(i)" button or an About entry | A | 0.9 | Allowed. We keep one small line that stays: less code |
+| The shortest words | "Attribution must be to 'OpenStreetMap'"; "© OpenStreetMap" is acceptable; a link to openstreetmap.org/copyright is one way to show the licence | A | 0.9 | "© OpenStreetMap" in place of "© OpenStreetMap contributors" |
+| A rule for phones or small screens | Not on the page. Size limits are for static images only | A | 0.8 | No way out for a phone |
+| No credit: what happens | The pages name no penalty. The guidelines say the legal text rules | A | 0.6 | The credit is the condition for using the data |
+| The Ola credit is a must | "You agree to prominently display attribution to Ola within any application or product that incorporates or uses the SDK, maps, API, or data. This attribution must be visible to end-users"; "Attribution must be to 'Ola Maps'"; notices inside the map "must remain visible" (Platform Terms, section 15) | A, vendor | 0.9 | One line on every screen that uses Ola |
+| One name can do both jobs | The ODbL part "may be done by making the text 'Ola Maps' a link to openstreetmap.org/copyright" (same section) | A, vendor | 0.9 | After the Ola map is in: one name, "Ola Maps", linked |
+| Ola's docs on a logo | No attribution or logo page was found in the docs index | A, vendor | 0.6 | The terms are the rule |
+
+Today the pin screen shows two names, "Ola Maps · © OpenStreetMap contributors", because the map picture is from OSM and the words are from Ola. With the Ola map there is one name. With the Google Maps link in place of the tracker map there is no map on that screen, so no name there.
+
+### The Ola browser key is bound to the prod domain (coder, 14 Nov 2026, Tier S)
+
+One probe each for the style file with the key from the vault (the key not printed): no Origin gives 403 "Domain is not allowed."; `http://localhost:5173` gives 403; the prod app's domain gives 200. So E-OLA-2 cannot run on localhost or on the dev app until the owner adds those domains on the Ola dashboard, or makes a second key for them.
+
+### The admin "Maps" block
+
+1. Map provider: Ola or OpenStreetMap.
+2. Rider location for the customer: off, Google Maps link, live map.
+3. Keys: a meter and a state for each key; the next key by itself on a 401.
+
+### The order of work, changed
+
+| Step | What | Done when |
+|---|---|---|
+| 0 | Tests: E-OLA-2, E-OLA-3, E-OLA-4, E-LINK-1, and phone test P1 (pings in the background) | The answers are in `experiments.md` |
+| 1 | The admin "Maps" block with the rider location choice and the Google Maps link (#1498), the door distance fix (#1497) | Seen right on prod |
+| 2 | The Ola map on the pin screens, the provider switch, one credit name | Seen right on prod |
+| 3 | The key pool, the meter, the alert, the 401 rule | Seen right on prod |
+| 4 | The road line and the road ETA | Seen right on prod |
+| 5 | The Google adapter | Only on the owner's ask |
+
+Step 1 moved first: it is small, free, and does not wait for the Ola tests.
