@@ -308,3 +308,111 @@ One probe each for the style file with the key from the vault (the key not print
 | 5 | The Google adapter | Only on the owner's ask |
 
 Step 1 moved first: it is small, free, and does not wait for the Ola tests.
+
+## The rider's place, end to end, and the pin lookup (14 Nov 2026, afternoon, reviewer)
+
+Owner, 14 Nov 2026: "when user … sets the pin, that is the exact coordinate where we have to deliver" and "the rider should always see" that point. The customer "should see … the last location of the driver with the time last updated at". In place of hiding an old place: "last updated at ho". On the pin screen: showing the address "every time the pin stops on the map is also a waste of credits"; the address matters only "when he is clicking on the current location".
+
+### Two different things called "pin"
+
+- The map pin: the point the customer sets on the map. It is saved on the address and goes with the order as `orders.drop_lat`, `drop_lng`.
+- The postal code's point: a table `pin_points` with one point for a 6 digit postal code. Earlier text in this file called it "the pin code point".
+
+### Where each point is used today (code on `dev` at ffc901c, Tier S)
+
+| Place | Point used | Right |
+|---|---|---|
+| Saved with the order | The customer's map pin (`dropFor`, `App.tsx` line 938) | yes |
+| The rider's Navigate button | The same pin (`RiderScreen.tsx` line 73) | yes |
+| The server's delivery time | The same pin; the postal code's point only when the order has none (`refresh_order_tracking`) | yes |
+| The customer's tracker row, "N m away" | The postal code's point, by the postal code the app holds now | no |
+| The "Home" mark on the customer's live map | The postal code's point | no |
+
+An order has no pin when the address was saved without one, or when the address words were changed by hand after the pin was set (story #910). Then the rider has no Navigate button.
+
+### Why the tracker row does not show
+
+`pin_points` is written only by two seed files (`0034_dream_city.sql`, `0037_wok_house.sql`): 26 postal codes, all starting with 110. For any other postal code "You" is empty and the row cannot show.
+
+Counts on goserve-dev (coder, 14 Nov 2026, counts only): `pin_points` 26 rows, all 110. Orders of Nov 2026: 16; 6 with a drop point, 10 without. 15 of the 16 have a postal code with no row in `pin_points`. Only 1 order has both points; they are 200 m apart. Prod was not read.
+
+### The time on the row is not the time of the place
+
+`order_tracking.updated_at` is set to now on every refresh, also on a status change. The place is `riders.lat`, `lng`: the rider's last ping of any age. So a place from an hour ago can show as "updated just now" at pick up. A refused location permission on the rider's phone fails with no word (`RiderGate.tsx`).
+
+### Pings stop when the rider app is not in front
+
+| Claim | Evidence | Tier | Conf |
+|---|---|---|---|
+| The rider app sends a place only inside a `watchPosition` callback, at most once in 30 s. No wake lock, no background work | `RiderGate.tsx` line 33, `rider.ts` | S | 0.95 |
+| A hidden page gets no positions | W3C Geolocation, Candidate Recommendation Draft of 5 Nov 2026: "Position updates are exclusively for fully-active visible documents"; otherwise they "get silently 'dropped on the floor'" | A | 0.9 that the standard says so |
+| Chrome follows this on a desktop | Test E-GEO-1: 0 of 8 moves reached a hidden tab; delivery came back when the tab was in front | S | 0.9 for desktop Chrome |
+| Chrome may also freeze a hidden page | Chrome Page Lifecycle page (updated 16 Oct 2026): hidden tabs are frozen "at their discretion"; frozen means "JavaScript timers and fetch callbacks don't run". No time limit and no Android rule on the page | A, vendor | 0.8 |
+| The same holds on an Android phone | Not tested. E-TWA-1 is the test (kit ready since 25 Oct) | - | 0.8, a guess from the three rows above |
+| One rider on dev: 16 pings in 24 hours, longest gap 31,094 s | `scripts/rider_gap.py dev --minutes 1440` (coder) | S | Dev is test use, not a shift |
+
+On a real delivery this means: the rider taps pick up with our app open (a fresh place, at the kitchen). He opens Google Maps to ride; our app is hidden; no place is sent. At the door he opens our app; one place is sent. A "live" map can show two places: the kitchen and the door. A link to the rider's last place (story #1498) will mostly show the kitchen, with the true time. A place from the road needs the rider's Android app with a foreground service (#252, ADR-020).
+
+### The pin screen: a lookup on every rest
+
+Today (`PinMapScreen.tsx`, `settle`): each time the pin rests more than 1 m away, after 400 ms, the app asks our server if we deliver there, asks Ola for the words and the postal code (one Ola call), then asks our server again with Ola's postal code. The server decides by postal code, so Ola's answer is not only for show. Search is on the map, runs on Enter and reads our own table.
+
+The new rule (story #1500): an Ola call only on a tap, never when the pin rests.
+
+| The customer | Ola calls | The card shows |
+|---|---|---|
+| Moves the map and rests the pin | 0 | "Pin on the map", the area and postal code from our own table, the deliver yes or no |
+| Taps Current Location | 1 | The address |
+| Picks a search result | 0 | That result's name |
+| Taps Confirm | 0 | The pin's exact point is the drop point |
+| Taps Confirm where our table says "not served" | 1 | Ola's postal code settles it before the customer sees a no |
+
+The last row is the reviewer's addition: our own table can give a false no at a postal border, and a false no is a lost customer. The estimate for reverse geocode at 100 orders a day falls from about 7,200 to about 1,400 calls a month, and each call now hangs on a tap, so moving the map cannot use up the free calls.
+
+Open: search by landmark needs Ola autocomplete (its own free 100,000). Test E-SEARCH-1 first.
+
+### The coder's read of the pin screen: three additions (14 Nov 2026, `dev` at ffc901c, Tier S)
+
+1. One more lookup, on open. `PinMapScreen.tsx` line 159 calls `settle(center)` when the map is ready. So each open of the pin screen is 1 Ola call before the customer touches anything. The table above gets one more row: "Opens the pin screen: 0".
+2. A failed ask is asked again. Line 117: when the lookup or the deliver answer fails, the place is not kept as settled. The next rest on the same spot calls Ola again. On a slow network this can double the calls today.
+3. A place-only "no" is not sure. It is shown at once only when it says "we deliver"; a "no" waits for the answer by postal code (story 1393). So story #1500 must say how a "no" becomes sure without Ola, or take the one call on Confirm.
+
+## The pin screen journey: where the map opens, and when the address is read (14 Nov 2026, evening, reviewer)
+
+Owner, 14 Nov 2026: "if the user has given us the location permission, we should by default open the map at his current location". Then, on the pin: give it "3 seconds of time … to settle where we show a small animation", read the address after that, "or … when they click confirm and proceed, only then we get the address. What do you suggest?" He also said the search bar on the map has no search button to tap.
+
+### Where the map opens today (code on `dev` at ffc901c; read by the reviewer, not run, not yet read by the coder)
+
+| Fact | Where |
+|---|---|
+| The start is: the phone's place, else the picked saved address's own pin, else a fixed point in the middle of Delhi (28.6139, 77.209). The point is not an office of ours | `App.tsx` line 544, `mapStart()` |
+| The phone's place is read once, at sign-in, only when location is already allowed, with a wait of 5 seconds at most. A late answer leaves it empty for the session | `App.tsx` lines 577 to 584 |
+| The map screen never asks for location by itself. With location allowed it draws a dot at the phone's place, but the map does not move to it | `PinMapScreen.tsx` lines 160 to 170 |
+| "Use current location" on the address screen asks the phone and opens the map there | `App.tsx` line 1059 |
+| The kitchen admin's pin screen opens at the same Delhi point when the kitchen has no place | `KitchenLocation.tsx` line 8 |
+
+So the map opens in Delhi when location is not allowed yet, or when it is allowed but the phone answered late, and there is no saved address with a pin. The good case (the phone's place is known) has a test in the suite (`regression/06-pinmap-plate.spec.ts`). The late case has no test; it is a read of the code. Story #1502 fixes it, with a red test first.
+
+### The search bar on the map
+
+The open search is a form with an input and a clear cross (`PinMapScreen.tsx` line 259). It has no button. The search runs only on the keyboard's Enter. The results come from our own table (0 Ola calls). Nothing found shows "No place found. Try the start of a colony name or a pin code."
+
+### When the address is read: two ways
+
+| Way | The address is read from Ola | Calls for one address |
+|---|---|---|
+| A (owner's first thought) | After the pin rests 3 seconds, with a small animation | One for each long rest |
+| B (owner's second thought) | Only on Confirm & proceed | Exactly one |
+
+The reviewer suggested B to the owner, for four reasons:
+
+1. The Confirm tap is the sure sign of a choice. A clock only guesses.
+2. A person can tap Confirm in one second. So the call on Confirm is needed in both ways; way A only adds calls and a wait.
+3. In way A the honest customer waits 3 seconds after each small move before he sees anything.
+4. In way B the cost is one call for each address, and moving the map can never use up the free calls.
+
+In way B there is no Ola call when the screen opens, none when the pin rests, and none on Current Location (the customer moves the pin after that tap, so the words would be old). While the pin rests the card shows the area and the postal code from our own table and the deliver line from our own server (board PC1, in discussion). On Confirm the button says it is finding the address, then the details sheet opens with the words filled in. When Ola does not answer, the sheet opens with "Area or street" to type, as today; an order is never blocked by Ola.
+
+This changes one row of the table above ("Taps Current Location: 1" becomes 0) and the row "Taps Confirm: 0" becomes 1. It is not final: the owner has not picked. Story #1500 is on hold until he does.
+
+Measured on goserve-dev under today's rule (test use, not customers): 344 Ola calls for 6 saved addresses.
