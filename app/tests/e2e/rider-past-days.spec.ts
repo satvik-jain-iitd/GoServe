@@ -139,3 +139,27 @@ test("AR1d the admin sets Past days: minus and plus in steps of 1, 0 to 30, star
   await page.getByRole("button", { name: "Numbers", exact: true }).click();
   await expect(block.getByRole("button", { name: "Fewer past days" })).toBeDisabled();
 });
+
+test("AR1e the row says 'Past days on Today' with '0 means today only', and sits above Incentive", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.admin = true;
+  await page.goto("/admin/");
+  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  const block = page.getByRole("region", { name: "Rider app" });
+  const rows = block.locator(".ui-row");
+  await expect(rows.first()).toContainText("Past days on Today");
+  await expect(rows.first()).toContainText("0 means today only");
+  await expect(rows.nth(1)).toContainText("Incentive");
+});
+
+test("AR1f 'Last changed by' shows the newer change of the block: the Past days change when it is the later one, and 'you' right after a change", async ({ page, context }) => {
+  const net = await setup(context, page);   // the mock: Past days changed 14 Nov, the incentive 13 Nov
+  net.state.admin = true;
+  await page.goto("/admin/");
+  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  const block = page.getByRole("region", { name: "Rider app" });
+  await expect(block.getByText(/^Last changed by owner@goserve\.test, 14 Nov/)).toBeVisible();
+  await block.getByRole("button", { name: "More past days" }).click();
+  await expect(block.getByTestId("past-days")).toHaveText("8");
+  await expect(block.getByText(/^Last changed by you, /)).toBeVisible();
+});

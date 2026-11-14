@@ -59,7 +59,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
         return json(route, 200, { ok: true });
       }
       if (name === "rider_past_days") return state.pastDaysFail ? json(route, 500, { code: "XX000", message: "boom" }) : json(route, 200, { days: state.pastDays });   // story 1442: the admin's number, read by the rider
-      if (name === "rider_past_days_get_v2") return json(route, 200, { days: state.pastDays, updated_by: "owner@goserve.test", updated_at: "2026-11-14T09:30:00Z" });
+      if (name === "rider_past_days_get_v2") return json(route, 200, { days: state.pastDays, updated_by: "owner@goserve.test", updated_at: "2026-11-14T00:30:00Z" });
       if (name === "rider_past_days_set_v2") { const b = route.request().postDataJSON(); state.pastDaysSets.push(b.p_days); state.pastDays = b.p_days; return json(route, 200, { ok: true }); }
       if (name === "rider_incentive_rates") return json(route, 200, state.incentive);   // stories 1443 and 1438: the switch now and its recent changes
       if (name === "rider_incentive_get_v2") return json(route, 200, { on: state.incentive.on, amount_paise: state.incentive.amount_paise, updated_by: "owner@goserve.test", updated_at: "2026-11-13T09:30:00Z" });
