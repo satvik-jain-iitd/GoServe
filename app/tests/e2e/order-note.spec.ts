@@ -8,7 +8,6 @@ const toBill = async (page: import("@playwright/test").Page) => {
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Phone").fill("9876543210");
-  await page.getByLabel("Address").fill("Flat 4, Green Park");
 };
 
 test("S1 the Bill has an optional note box that holds 200 characters, and the note goes with the order", async ({ page, context }) => {

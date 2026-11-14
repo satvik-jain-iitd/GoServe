@@ -9,7 +9,6 @@ async function placeOne(page: Page) {
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Phone").fill("9876543210");
-  await page.getByLabel("Address").fill("Flat 4, Green Park");
   await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
 }
@@ -48,7 +47,7 @@ test("S2 a slow phone location that answers after the order is placed does not p
   await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toHaveCount(0);
 });
 
-test("S3 a slow phone location that answers while the customer is on the Bill leaves the Bill and the typed address alone", async ({ page, context }) => {
+test("S3 a slow phone location that answers while the customer is on the Bill leaves the Bill and its place alone", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.addresses = [HOME];
   await context.grantPermissions(["geolocation"]);
@@ -60,8 +59,7 @@ test("S3 a slow phone location that answers while the customer is on the Bill le
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
-  await page.getByLabel("Address").fill("My own typed address, Chhatarpur");
   await page.waitForTimeout(5000);
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
-  await expect(page.getByLabel("Address")).toHaveValue("My own typed address, Chhatarpur");
+  await expect(page.getByRole("group", { name: "Deliver to" })).toContainText(HOME.address);
 });

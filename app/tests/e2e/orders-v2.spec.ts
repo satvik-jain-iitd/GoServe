@@ -32,7 +32,6 @@ async function toBill(page: any) {
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Phone").fill("9876543210");
-  await page.getByLabel("Address").fill("Flat 4, Green Park");
 }
 
 test("S1 the order goes to POST /orders with the price on the bill, and the v1 webhook is not called", async ({ page, context }) => {

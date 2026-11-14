@@ -99,7 +99,6 @@ test("S7 the bill says cash at the door in plain words", async ({ page, context 
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Phone").fill("9876543210");
-  await page.getByLabel("Address").fill("Flat 4");
   await expect(page.getByText("Pay the rider cash at the door.")).toHaveCount(0);   // story #659: the slip and the bar say cash
 });
 

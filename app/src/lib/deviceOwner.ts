@@ -4,7 +4,7 @@
 // (theme, the phone-code switch's last read) stay. The saved addresses live on the server, so the new account's own list loads as usual.
 type Store = Pick<Storage, "getItem" | "setItem" | "removeItem" | "key" | "length">;
 export const OWNER_KEY = "gs-device-user";
-const PERSONAL = ["gs-pin", "gs-kitchen", "gs-draft", "gs_alerts_asked", "gs-joined-session"];
+const PERSONAL = ["gs-place", "gs-pin", "gs-kitchen", "gs-draft", "gs_alerts_asked", "gs-joined-session"];
 
 /** The id of the signed-in user in the Supabase session kept in storage (key sb-<project>-auth-token), or null. */
 const signedIn = (s: Store, keys: string[]): { id: string; guest: boolean } | null => {

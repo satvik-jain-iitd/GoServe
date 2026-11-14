@@ -70,7 +70,6 @@ test("S6 with the switch off a Google customer orders without any code: the phon
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Phone").fill("9876543210");
-  await page.getByLabel("Address").fill("Flat 4, Green Park");
   await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByRole("dialog", { name: "Confirm your number" })).toHaveCount(0);
   await expect(page.getByText(/Order placed|Placed|Received/i).first()).toBeVisible();

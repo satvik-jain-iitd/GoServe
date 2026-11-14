@@ -10,7 +10,8 @@ const home = async (page: Page, context: Parameters<typeof setup>[0], avatar: st
   const net = await setup(context, page);
   net.state.menu = MENU;
   net.state.avatar = avatar;
-  await page.addInitScript((a) => { try { localStorage.setItem("gs-draft", JSON.stringify({ step: "menu", cart: {}, address: a, name: "Amit Kumar", phone: "9812345678" })); } catch { /* none */ } }, ADDRESS);
+  net.state.addresses = [{ id: "h1", label: "Home", address: ADDRESS, pin_code: "110016", lat: 28.59, lng: 77.26, last_used_at: new Date().toISOString() }];   // story 1532: the label comes from a saved row; the app makes none by itself
+  await page.addInitScript(() => { try { localStorage.setItem("gs-draft", JSON.stringify({ step: "menu", cart: {}, address: "", name: "Amit Kumar", phone: "9812345678" })); } catch { /* none */ } });
   await page.goto("/customer/");
   return net;
 };

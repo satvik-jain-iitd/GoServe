@@ -9,13 +9,12 @@ const toBill = async (page: import("@playwright/test").Page) => {
 };
 const fill = async (page: import("@playwright/test").Page) => {
   await page.getByLabel("Phone").fill("9876543210");
-  await page.getByLabel("Address").fill("Flat 4, Green Park");
 };
 
 test("S1 the address label says where the food goes, and the cash note is gone", async ({ page, context }) => {
   await setup(context, page);
   await toBill(page);
-  await expect(page.getByLabel("Address", { exact: true })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Deliver to" })).toContainText("Flat 4, Green Park");   // story 1532: the place's words, not a text box
   await expect(page.getByLabel("Phone number · the rider calls you on it", { exact: true })).toBeVisible();
   await expect(page.getByText("Pay the rider cash at the door.")).toHaveCount(0);
 });

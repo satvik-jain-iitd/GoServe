@@ -1,6 +1,6 @@
 // Story #976 and #1035: saved addresses. The pick on open (the last used one), the distance words, and the first row made from today's single saved address.
 import { describe, it, expect } from "vitest";
-import { distanceM, distanceWord, lastUsed, firstFromProfile, type SavedAddress } from "../../src/lib/addresses";
+import { distanceM, distanceWord, lastUsed, type SavedAddress } from "../../src/lib/addresses";
 
 const row = (id: string, label: string, lat: number | null, lng: number | null, used: string): SavedAddress => ({ id, label, address: `${label} street, town`, pin: "471001", lat, lng, last_used_at: used });
 const HOME = row("h", "Home", 24.9167, 79.5833, "2026-11-01T10:00:00Z");
@@ -35,16 +35,5 @@ describe("lastUsed (story #1035: on open the address used last, always)", () => 
     const list = [HOME, OFFICE];
     lastUsed(list);
     expect(list.map((r) => r.id)).toEqual(["h", "o"]);
-  });
-});
-
-describe("firstFromProfile", () => {
-  it("makes a Home row from today's single saved address", () => {
-    expect(firstFromProfile({ address: "C-128, Green Avenue Colony", pin: "471001" })).toEqual({ label: "Home", address: "C-128, Green Avenue Colony", pin: "471001" });
-  });
-  it("makes nothing from a missing address or a bad pin", () => {
-    expect(firstFromProfile({ address: "", pin: "471001" })).toBeNull();
-    expect(firstFromProfile({ address: "C-128, Green Avenue Colony", pin: "4710" })).toBeNull();
-    expect(firstFromProfile({ address: "abc", pin: "471001" })).toBeNull();
   });
 });

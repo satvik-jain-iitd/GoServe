@@ -27,10 +27,10 @@ describe("the other fields", () => {
     for (const bad of ["1100", "11001a", "1100160", ""]) expect(isPin(bad)).toBe(false);
   });
   it("quantity of a dish: 1 to 20", () => expect(MAX_QTY).toBe(20));
-  it("phone: 10 digits, address 300, coupon code 40 (the Bill's inputs; story 1417: the Bill has no name field)", () => {
+  it("phone: 10 digits, coupon code 40 (the Bill's inputs; story 1417: the Bill has no name field; story 1532: no address box, the place's words show)", () => {
     expect(bill).not.toMatch(/id="name"/);
     expect(bill).toMatch(/id="phone".*maxLength=\{10\}/);
-    expect(bill).toMatch(/id="address".*maxLength=\{300\}/);
+    expect(bill).not.toMatch(/id="address"/);
     expect(bill).toMatch(/id="code".*maxLength=\{40\}/);
   });
   it("feedback text: the app stops at 300, the database at 2000 (the app is stricter on purpose)", () => {

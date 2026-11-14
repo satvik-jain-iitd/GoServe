@@ -1,6 +1,6 @@
-// Story #905: the order keeps the customer's drop point. A device fix is saved as drop_lat and drop_lng; a typed address sends none.
+// Story #905: the order keeps the customer's drop point. A device fix is saved as drop_lat and drop_lng. Story 1532: a typed address has no point, so it cannot be ordered to.
 import { test, expect, type Page } from "@playwright/test";
-import { setup, typePlace } from "./helpers";
+import { setup } from "./helpers";
 import { firstOpenToMenu } from "./firstOpen";
 
 const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
@@ -40,13 +40,15 @@ test("S1 an order placed after the pin map carries the drop point", async ({ pag
   expect(orders[0].address.lng).toBeCloseTo(77.2432, 3);
 });
 
-test("S2 an order placed from a typed address carries no drop point", async ({ page, context }) => {
+test("S2 (story 1532) a typed address with no point cannot be ordered to: Place order waits for Confirm on the map", async ({ page, context }) => {
   const orders = await start(context, page);
   await page.goto("/customer/");
-  await typePlace(page, "110016", "Flat 4, Green Park");
-
-  await orderFromBill(page);
-  expect(orders).toHaveLength(1);
-  expect(orders[0].address.lat).toBeUndefined();
-  expect(orders[0].address.lng).toBeUndefined();
+  await page.evaluate(() => { localStorage.setItem("gs-pin", "110016"); localStorage.setItem("gs-draft", JSON.stringify({ step: "menu", cart: {}, address: "Flat 4, Green Park", name: "", phone: "" })); localStorage.setItem("gs_alerts_asked", "1"); });   // what the typed form left before this story
+  await page.reload();
+  await page.getByRole("button", { name: "Add Butter Chicken" }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
+  await page.getByLabel("Phone").fill("9876543210");
+  await expect(page.getByRole("button", { name: "Confirm on the map" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
+  expect(orders).toHaveLength(0);
 });
