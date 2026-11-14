@@ -81,3 +81,4 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - IDEA ID417 (2026-11-14, open, plan first): Maps: a pool of several Ola Maps API keys from several accounts; the admin sees the budget left on each key, and the app moves to the next key when one runs out.
 - IDEA ID418 (2026-11-14, taken, #1498): Instead of a live rider map, share the rider's latest location with the customer as a Google Maps link, for a quick idea of where the rider is. Free. Configurable in the admin dashboard.
 - IDEA ID419 (2026-11-14, taken, epic #1493): Count every map API call, and the moment any one API key returns 401, switch to the next key by itself. Configurable in the admin dashboard.
+- IDEA ID420 (2026-11-14, taken, #1500): Pin screen: stop turning the pin into an address every time the pin rests. Show the address only on Current Location. Search first, then move the pin by eye and confirm; the pin's exact coordinate is the delivery point.
