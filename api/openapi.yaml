@@ -200,7 +200,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "429":
-          description: More than 10 calls a minute from this caller (slow_down).
+          description: More than 10 calls a minute from this caller (slow_down), or this person is over the daily cap (over_cap).
           content:
             application/json:
               schema:
@@ -212,7 +212,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "503":
-          description: The provider switch is off (provider_off) or the month's free calls are used (over_cap).
+          description: The provider switch is off (provider_off) or the whole-app daily cap or the month's free calls are used (over_cap).
           content:
             application/json:
               schema:

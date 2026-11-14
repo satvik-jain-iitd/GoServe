@@ -10,6 +10,7 @@ export type Deps = {
   session: (req: Request) => Promise<string | null>;
   provider: () => Promise<string>;   // the settings row lookup_provider: "ola" (default) or "osm" (the old OpenStreetMap path stays in the app)
   allow: (session: string) => boolean;   // 10 calls a minute per caller
+  cap: (session: string) => Promise<"ok" | "person" | "app">;   // story 1512: today's count for this person and for the whole app; "ok" adds one to both
   budget: () => Promise<boolean>;   // false when this month's free calls are used up
   lookup: (lat: number, lng: number) => Promise<unknown>;
 };
@@ -53,6 +54,9 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
     if (!session) return json(401, { ok: false, error: "unauthorized" });
     if ((await deps.provider()) !== "ola") return json(503, { ok: false, error: "provider_off" });
     if (!deps.allow(session)) return json(429, { ok: false, error: "slow_down" });
+    const cap = await deps.cap(session);   // story 1512: over a daily cap Ola is not asked; the app falls back to OpenStreetMap and shows no error
+    if (cap === "person") return json(429, { ok: false, error: "over_cap" });
+    if (cap === "app") { console.log("geocode: the whole-app daily cap is reached"); return json(503, { ok: false, error: "over_cap" }); }   // no place and no person in the log
     if (!(await deps.budget())) return json(503, { ok: false, error: "over_cap" });
     const found = mapReply(await deps.lookup(lat, lng));
     return found ? json(200, { ok: true, ...found }) : json(404, { ok: false, error: "not_found" });
@@ -99,6 +103,11 @@ const live: Deps = {
     } catch { return "ola"; }
   },
   allow: allowCall,
+  cap: async (session) => {   // one atomic SQL function counts and decides; the two caps are settings rows. A failure throws, so no count means no Ola call.
+    const res = await fetch(`${url()}/rest/v1/rpc/geocode_count`, { method: "POST", headers: service(), body: JSON.stringify({ p_person: session }) });
+    if (!res.ok) throw new Error("cap");
+    return await res.json();
+  },
   budget: async () => {   // one settings row holds the month and its count; a new month starts at zero. Two calls at once can pass the last slot by one; the cap leaves room.
     const month = new Date().toISOString().slice(0, 7);
     const rows = await (await fetch(`${url()}/rest/v1/settings?select=value&name=eq.ola_calls&limit=1`, { headers: service() })).json();
