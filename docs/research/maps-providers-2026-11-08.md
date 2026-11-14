@@ -236,6 +236,12 @@ The tracker is a row on the order screen ("<rider> is 400 m away · On the map")
 
 With one missing the row is not there and nothing says why. The customer then sees only "<rider> is bringing your order" and Call.
 
+Three additions from the coder's read (PR #1499, dev at ffc901c):
+
+- A fifth condition hides in two of the four. The kitchen point and the "You" point come from the app's present Deliver-to place (`App.tsx` lines 804 to 811), not from the order. So the present place must still be served and be the order's place. This has the same root as bug #1497; one fix covers both.
+- The rider app sends a place only when the browser gives a new position, at most once in 30 s. A refused location permission fails with no word, so the rider is not told.
+- A stale place has no age rule today. The 3 minute rule of story #1498 adds one.
+
 - The row has run only in automated tests with made-up data. It was not seen on a real phone by the reviewer. Why the owner did not see it is a guess (0.6): the rider's phone sent no place during his tests. A prod read would settle it; it needs his yes.
 - The rider app is a web app. When the rider opens Google Maps to navigate, our app goes to the background and the pings may stop (0.7; phone test P1 in `docs/tests/phone-test-list.md` is not run).
 - The distance is measured to the pin code's point, not to the customer's door (`readPinPoint`). Bug #1497.
