@@ -110,3 +110,111 @@ Source: Valhalla's own pages, read 13 Nov 2026. Tier A (the project says it abou
 | Licence | MIT for the code. The OSM data is ODbL (credit line needed) | A | 0.9 | Free for commercial use, with the OSM credit |
 
 Open, so a test: RAM, disk and time to build one zone on the Oracle box, RAM to serve, and whether `motor_scooter` and `pedestrian` both answer from one graph.
+
+## The maps plan (14 Nov 2026, reviewer)
+
+Owner, 14 Nov 2026: "I want to transition fully to Ola Maps and remove OpenStreetMap from everywhere" and "I want the switch to be configurable in the admin app so we can change from Ola map back to OpenStreetMap anytime" and "tomorrow I will go to Google map". He also wants "multiple API keys and multiple accounts to club in all my credits" with the budget of each one shown in admin. He asked for a plan first. Nothing is built yet.
+
+### What runs today (code on `dev`, read 14 Nov 2026, Tier S)
+
+| Place | Who serves it today | Ola calls |
+|---|---|---|
+| Customer address pin, the map picture (`PinMapScreen.tsx`) | The public OSM tile server, through `VITE_MAP_TILES`, set at build time in both deploy workflows | 0 |
+| Pin to words (`locate.ts` `findAddress`, edge function `geocode`) | Ola reverse geocode, from our server. On a no: public Nominatim, then our `nearest_pin` | 1 each time the pin rests |
+| Place search (edge function `place-search`) | Our own pincodes table | 0 |
+| Can we deliver, distance, ETA, picking a rider | Our own database, straight-line metres | 0 |
+| Order tracker map (`RiderMap.tsx`) | The public OSM tile server. It opens only when the customer taps the rider row, and only while the order is out for delivery | 0 |
+| Admin kitchen pin (`KitchenLocation.tsx`) | The same pin screen | 1 each time the pin rests |
+| Rider Navigate and "Kitchen ka raasta" | A Google Maps link, no key | 0 |
+
+So Ola does one job today: pin to words. The Ola credit shows on the pin screen when the words came from Ola.
+
+Two additions from the coder's read (PR #1495, dev at 8f4b542):
+
+- The Nominatim fallback and `nearest_pin` are called from the customer's browser, not from our server. So Nominatim sees the customer's IP and the exact point. Step 1 takes this path out of the prod default.
+- The admin kitchen form also calls `findAddress` once when it shows a saved location. So it is 1 call for each open of a kitchen that has a location, plus 1 each time the pin rests.
+
+### What does not exist
+
+- Ola map tiles are used nowhere.
+- The tile provider is a build-time value. A change needs a deploy. The lookup switch is the `settings` row `lookup_provider`, set by SQL only. No admin screen reads it.
+- No road route line and no road ETA. The tracker draws a straight dashed line.
+- One Ola credential and one counter (`ola_calls`, hard stop at 100,000). No budget view in admin. No alert.
+- No Google API. Only the link.
+
+### Call estimate at 100 orders a day (a guess, not a measurement)
+
+Assumed: the address map opens 60 times a day (30 orders with a new address, 30 people who set an address and do not order). The pin rests 4 times in one open. 70 percent of customers open the tracker map, 1.5 times each. The high case: 150 opens, 8 rests, 3 tracker opens for every order. Prod counts were not read.
+
+| Ola API | Today | Calls a month (expected to high) | Share of the free 100,000 |
+|---|---|---|---|
+| Reverse geocode | runs | 7,200 to 36,000 | 7 to 36 percent |
+| Map loads (Ola tiles) | no | 5,000 to 13,500 | 5 to 14 percent |
+| Directions (route line, ETA) | no | 4,500 to 12,000 | 5 to 12 percent |
+| Autocomplete | no, own table | 0 | 0 |
+
+- The free 100,000 is for each API, not one shared pool (Ola rate card of 1 Sept 2026, Tier A, 0.9).
+- A side estimate the owner pasted said about 16,000 calls a month without tiles. About 9,000 of those were route and ETA calls that are not built. Today's real load is near 7,000.
+- The same estimate said about 2.5 lakh with tiles. That holds only if Ola counts each tile. The rate card bills "Dynamic Maps" for each map load (0.6 that a MapLibre map on Ola's vector style counts as one load). If each tile counts, the month is 1.5 to 4 lakh and passes the free cap. Test E-OLA-3 settles it.
+- If a load is one call, one account stays free up to about 800 orders a day (0.6), and up to about 280 in the high case. Past the cap the price is about ₹0.6 an order.
+- Dev numbers (Tier S, coder, Nov 2026): `ola_calls` 344, 6 saved addresses, 16 orders. Dev is test heavy, so the ratio is not a guide. A week of prod will give the real ratio.
+
+### What matters to the user, most first (reviewer's call, on the owner's delegation)
+
+| Rank | Thing | Why | What we do |
+|---|---|---|---|
+| 1 | The pin is on the right door and the words are known to the customer | A wrong pin is a lost rider and cold food | Ola calls are spent here. No new call when the pin moved under 20 m |
+| 2 | The map always opens, on a cheap phone too | A blank map means no order | Ola tiles. On a failure the next provider takes over by itself |
+| 3 | "Do you deliver here?" at once | The first question | Own database, 0 calls, as today |
+| 4 | The rider reaches the door | The 20 minute promise | The Google Maps link, as today: free, voice, traffic |
+| 5 | A true ETA and a road line | A straight line lies when a river or a railway is in the way | Later: 1 Directions call for an order |
+| 6 | Search for a landmark by typing | Dragging the pin does the job | Own table. Ola autocomplete only if people get stuck |
+| 7 | A pretty style, 3D, satellite, turn by turn inside our app | No effect on an order | Not built |
+
+### The design in short
+
+- One switch for the whole provider. A `settings` row holds `ola`, `osm`, and later `google`. The app reads it live, the way `otpSwitch.ts` reads `otp_login_on`. A change in admin reaches every open app on its next map open. No deploy. The switch changes the full set: the map picture, pin to words, and later the route.
+- The map layer. The Leaflet screens stay. Ola's vector style is drawn inside Leaflet with `@maplibre/maplibre-gl-leaflet` (radar run of 14 Nov). The three map screens use one component.
+- The server layer. Pin to words and the route sit behind our edge functions, one adapter for each provider. The `geocode` function already holds the seed: a provider setting and a monthly counter.
+- The key pool. One row for each key: provider, account label, on or off, calls this month for each API. The count is our own, since Ola shows no usage API (0.7). Alert the admin at 70 percent. At 90 percent, or on a 401 or 429 from Ola, the next key takes over; with no key left, the next provider; then our own tables. A saved key can never be read back. Only its last 4 letters show.
+- The admin "Maps" block. Pick the provider with one tap. See a meter for each key, such as "7,200 / 1,00,000". The Google row does not show until its adapter exists (a control that changes nothing must not reach prod).
+
+### Ways to keep the cost down
+
+1. No new Ola call when the pin moved under 20 m. A saved address costs 0 calls.
+2. The tracker map opens only on a tap (as today).
+3. Route: 1 call at pickup and the same line for the whole trip. A new call only when the rider is over 150 m off the line, at most 3 for an order.
+4. Search and "do you deliver here" stay on our own tables.
+5. An Ola answer is never kept in a table of ours and never cached by place (Ola terms, as noted in `geocode/index.ts`). So the saving comes only from fewer calls.
+
+### Findings of 14 Nov 2026
+
+| Claim | What the evidence says | Tier | Conf | What it changes for us |
+|---|---|---|---|---|
+| Free allowance is per API | "Your first 100,000 calls per API are included each month" (rate card, effective 1 Sept 2026) | A, vendor | 0.9 | Each of reverse geocode, map loads, directions and autocomplete has its own 100,000 |
+| Map tiles are billed for each load | Dynamic Maps ₹0.141 a load above the free tier: "Each time a map is loaded in your application counts toward usage". Tiles are not a line on the rate card | A, vendor | 0.6 that our use counts this way | Test E-OLA-3 before the tiles go to prod |
+| Per-minute limits | Fair Usage Policy (updated 28 Aug 2026): Reverse Geocoding 2000, Autocompletion 2000, Directions 2000, Direction Basics 1000, Vector Tiles 3000, Static Tiles 80 | A, vendor | 0.9 | No limit is near our load. Static tiles are not a path for us |
+| What Ola may do on misuse | "limiting or suspending your access to our APIs, terminating your account, or taking legal action" (Fair Usage Policy); "Ola may suspend, limit, or throttle access" on misuse or a breach (Platform Terms, section 7) | A, vendor | 0.9 | The pool must survive one account going dark |
+| Several accounts or several keys | No clause on it was found in the Platform Terms (sections 3, 6, 7, 11, 15) or the Fair Usage Policy. Section 3 asks for "true, correct and complete information" at sign-up. Whether the free allowance is for an account or for a key is not on the pages | A, vendor | 0.6 that it is not forbidden; 0.5 on account or key | Test E-OLA-4. One line of risk in the ADR |
+| No usage API | The docs show a credit balance and low-credit alerts on the account page only | A, vendor | 0.7 | The meter is our own counter |
+| Ola credit line | "Attribution must be to 'Ola Maps'", with a link that shows the ODbL credit (Platform Terms, section 15) | A, vendor | 0.9 | The credit goes on every Ola map. The OpenStreetMap name stays in the credit, since Ola's map is built on OSM data |
+| Mixing Ola content with other data | Section 6.a.VIII: other content may be layered with Ola content for display when the origin of each can be told apart and credited | A, vendor | 0.8 | One provider for the whole set is the clean way |
+| A wrong key | `401 {"message":"Unauthorized"}`; no key: `401 {"message":"No credentials provided"}` | S, 14 Nov 2026 | 0.9 | The auto-switch listens for 401 and 429 |
+| The vector style path is live | `/tiles/vector/v1/styles/default-light-standard/style.json` answers 401 with no key, not 404 | S, 14 Nov 2026 | 0.9 | A raster path for plain Leaflet was not found; the map needs a vector renderer |
+| Google, India prices | Free each month: Dynamic Maps 70,000; Geocoding 70,000; Autocomplete 70,000; Compute Routes Essentials 70,000; 2D Map Tiles 700,000 | A, vendor | 0.9 | Google fits the same adapters later |
+| Google answers only on a Google map | The terms page could not be read on 14 Nov | - | 0.7, from memory | Read it before any Google work |
+| The public OSM tile server on prod | "Commercial services … should be especially aware that access may be withdrawn at any point" (OSMF tile policy) | A | 0.9 | Prod must leave it. This is step 1 |
+
+Motive check: Ola and Google sell credits, so their price pages are true for the price and silent on what happens at the edge. The OSMF sells nothing and says plainly that it may cut us off.
+
+### The order of work
+
+| Step | What | Done when |
+|---|---|---|
+| 0 | Three tests on dev: E-OLA-2 (the Ola map on a cheap phone), E-OLA-3 (what Ola counts), E-OLA-4 (one meter or two) | The answers are in `experiments.md` |
+| 1 | The Ola map on the three screens, the provider switch in admin, the Ola credit. The public OSM server leaves the prod default | Seen right on prod |
+| 2 | The key pool, the meter, the alert, the auto-switch | Seen right on prod |
+| 3 | The road line and the road ETA | Seen right on prod |
+| 4 | The Google adapter | Only on the owner's ask |
+
+Sources, read 14 Nov 2026: maps.olakrutrim.com/pricing and /pricing/details (vendor); Ola Fair Usage Policy and Platform Terms of Use PDFs (vendor); developers.google.com/maps/billing-and-pricing/pricing-india (vendor); operations.osmfoundation.org/policies/tiles; github.com/maplibre/maplibre-gl-leaflet.

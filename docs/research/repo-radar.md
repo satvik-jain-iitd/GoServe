@@ -435,3 +435,17 @@ Run: `scout.py --need "routing engine openstreetmap"` plus `gh search repos --to
 | Project-OSRM/osrm-backend | topic search | - | BSD-2-Clause | 1 day | README, API docs, profiles folder | car, bicycle, foot only; turn codes, not sentences |
 
 READMEs read: yes, the top three (by a fetch agent, quotes in `maps-providers-2026-11-08.md`, section of 13 Nov). Nothing is built yet; the owner picks the option first.
+
+### Radar run 2026-11-14 | need: one map provider switch (tiles, geocode, route) and a pool of API keys | by: reviewer
+
+Run: `scout.py` with five need lines ("switch map provider tiles geocoding routing one interface", "API key pool rotation with per key quota budget and automatic failover", "map provider abstraction leaflet maplibre google switch tiles", "geocoder multiple providers fallback one interface", "api key rotation pool quota failover"). Four found no repos. One found a single repo (Kame696/kame-api-rotation-for-agent-zero, score 51, skip: an agent plugin, 1 contributor). Then a GitHub search by name and topic (maplibre leaflet, leaflet providers, `topic:geocoder`, olamaps, `topic:maplibre topic:google-maps`).
+
+| Repo | Score | Verdict | Licence | Pushed | Read | What we take |
+|---|---|---|---|---|---|---|
+| maplibre/maplibre-gl-leaflet | search | adopt, after test E-OLA-2 | ISC | 2026-10-30 | README | Draws a MapLibre vector style as a Leaflet layer. Our Leaflet screens stay; Ola's vector style goes inside |
+| ola-maps/olamaps-web-sdk | search | hold | Ola's own licence | 2026-01-20 | README | Ola's official web SDK (`new OlaMaps({apiKey})`, `init({style, container, center, zoom})`). Only built files, no source. Use it only if plain MapLibre cannot load the Ola style |
+| traccar/maplibre-google-maps | search | idea only | none stated | 2026-08-31 | README | Shows Google's Map Tiles API inside MapLibre (`googleProtocol`, `createGoogleStyle`). No licence, so no code is copied. It shows the Google step can use the same renderer |
+| leaflet-extras/leaflet-providers | search | skip | BSD-2-Clause | 2026-09-24 | description | A list of free tile servers. We need three providers, not two hundred |
+| nchaulet/node-geocoder | search | skip | MIT | 2025-10-06 | description | Many geocoders behind one call, for Node. Our functions run on Deno and need two providers. No Ola adapter. Not pushed for over 12 months |
+
+READMEs read: yes, the top three (maplibre-gl-leaflet, olamaps-web-sdk, maplibre-google-maps). For the key pool and the meter nothing fits: they are a table and a counter in our own database, built from the seed in `supabase/functions/geocode/index.ts`. Nothing is built yet; the plan is in `maps-providers-2026-11-08.md`, section of 14 Nov.
