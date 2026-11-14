@@ -486,3 +486,23 @@ READMEs read: yes, the top three (reg-suit, loki, lost-pixel). Use what exists: 
 - Our own code: the `settings` table for the two numbers, the house pattern of `20261114120000_rider_past_days.sql` for the check and the grants, and the `geocode` function's injected sources for tests.
 
 **Built from scratch:** one small SQL function and two count tables (about 50 lines of SQL). Nothing found fits without a new vendor or a database driver in the function.
+
+## 14 Nov 2026: an Ola Maps places client, and a typing pause for a search box (story 1519)
+
+**Need:** (1) an Ola Maps places (autocomplete) client for a Deno edge function; (2) a typing pause (debounce) for a search box in React.
+
+**Run:**
+- `scout.py --need "Ola Maps places autocomplete client"` and `scout.py --need "react debounce search input hook"` both printed `no repos found`.
+- `gh search repos "ola maps" --sort stars` and `gh search repos "topic:debounce topic:react-hooks" --sort stars`.
+
+**Top 3 READMEs read:**
+
+| Repo | What it is | Fit |
+|---|---|---|
+| `iSanjayAchar/ola-maps-node-sdk` (4 stars, last push July 2024) | A Node SDK for Ola Maps: places and routing. | No. It signs in with an API key, we use the OAuth client credentials already in `geocode`. It is an npm package for Node, not kept up for over a year (rule 13). Idea kept: one small function for each API. |
+| `shobhit-shukla/ola_maps` (3 stars, last push July 2024) | A Ruby wrapper for the same APIs. | No. Wrong language, API key only. |
+| `xnimorz/use-debounce` (3,381 stars, pushed Sept 2026) | A debounce hook for React. | Idea only. Our need is one 400 ms wait before one ask. That is a `setTimeout` in an effect, five lines. A new dependency for it is not worth it. |
+
+**Reused:** our own code: the Ola token code of `geocode` (moved to `_shared/ola.ts`, used by both functions), the daily cap pattern of story 1512, the `search_places` table function as the backup, the "older answer never replaces a newer one" guard the search box already had.
+
+**Built from scratch:** one `fetch` to Ola autocomplete with its answer mapped to our row shape (about 25 lines), and the pause in the two search boxes.
