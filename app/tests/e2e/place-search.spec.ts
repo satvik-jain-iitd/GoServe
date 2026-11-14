@@ -1,4 +1,5 @@
-// Story #1036, board C8-SearchResults: typing filters the saved list only; on submit (the arrow or Enter) a Places section from our own table appears, served first, five at most.
+// Story #1036, board C8-SearchResults: typing filters the saved list; a Places section appears on submit (the arrow or Enter), five at most.
+// Story #1519: it also appears by itself after 3 letters and a pause (tests/e2e/ola-search.spec.ts), and the rows keep the server's order.
 import { test, expect, type Page } from "@playwright/test";
 import { setup } from "./helpers";
 
@@ -21,15 +22,16 @@ async function open(page: Page, context: Parameters<typeof setup>[0], places = P
 }
 const box = (page: Page) => page.getByRole("searchbox", { name: "Search an area or address" });
 
-test("S1 typing filters the saved rows and makes no place call", async ({ page, context }) => {
+test("S1 typing filters the saved rows at once; the places are asked once, after the pause (story 1519)", async ({ page, context }) => {
   const net = await open(page, context);
   await box(page).fill("green park");
   await expect(page.getByRole("listitem").filter({ hasText: "Home" })).toBeVisible();
   await expect(page.getByRole("listitem").filter({ hasText: "Office" })).toHaveCount(0);
   await expect(page.getByText("Saved · 1 match")).toBeVisible();
-  await expect(page.getByText(/Places ·/)).toHaveCount(0);
-  await page.waitForTimeout(900);   // longer than any debounce: still nothing asked
-  expect(net.calls.places).toHaveLength(0);
+  expect(net.calls.places).toHaveLength(0);   // nothing is asked before the pause
+  await expect(page.getByText("Places · 2 found")).toBeVisible();
+  await page.waitForTimeout(900);
+  expect(net.calls.places).toHaveLength(1);
 });
 
 test("S2 Enter asks once and shows Places with the served tag first and Not yet after", async ({ page, context }) => {
@@ -85,11 +87,14 @@ test("S6 tapping a place opens the pin map at that place (story #1037)", async (
   await expect.poll(() => net.calls.serve.at(-1) ?? "").toContain("lat=28.5599");
 });
 
-test("S7 changing the words clears the places of the last search", async ({ page, context }) => {
-  await open(page, context);
+test("S7 changing the words keeps the places until the new ones come; an empty box clears them (story 1519)", async ({ page, context }) => {
+  const net = await open(page, context);
   await box(page).fill("green park");
   await box(page).press("Enter");
   await expect(page.getByText("Places · 2 found")).toBeVisible();
   await box(page).fill("green parks");
+  await expect(page.getByText("Places · 2 found")).toBeVisible();   // no flicker: the rows stay while the new ask is out
+  await expect.poll(() => net.calls.places.length).toBe(2);
+  await box(page).fill("");
   await expect(page.getByText(/Places ·/)).toHaveCount(0);
 });
