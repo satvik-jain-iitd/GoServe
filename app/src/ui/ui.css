@@ -60,6 +60,7 @@ body { margin: 0; background: var(--md-background); color: var(--md-on-backgroun
 .ui-slip-stamp { display: flex; justify-content: center; padding: 10px 0 4px; }
 .ui-clock { margin: 0; text-align: center; font-family: var(--gs-font-mono); font-size: var(--gs-mono-base); }
 .ui-clock b { font-size: var(--gs-mono-lg); font-weight: 500; }
+.ui-early { margin-top: 2px; font-size: var(--gs-mono-sm); color: var(--md-primary); }   /* story 1508 (board DL1): "4 min early", a small line of its own under the time */
 .ui-slip-rule { border-top: 1px dashed var(--md-outline-variant); }
 .ui-slip-lines { display: grid; gap: var(--gs-space-2); font-family: var(--gs-font-mono); font-size: var(--gs-mono-base); }
 .ui-slip-lines div { display: flex; justify-content: space-between; gap: 12px; }
@@ -979,6 +980,10 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
 @media (max-height: 820px) { .ui-alert-sample { top: 328px; } }   /* a 780 tall phone: 10 px closer to the bell keeps a clear gap above the later line */
 @media (max-height: 700px) { .ui-alert-sample { display: none; } }   /* a short phone has no room between the bell and the buttons; the sample is decoration, so it goes */
 @media (prefers-reduced-motion: reduce) { .ui-alert-sample { animation: none; } }
+/* story 1524: the ask of a first-open screen waits for the screen's motion. Not shown: the space is kept, no tap, no focus. Shown: a short fade, no pop. */
+.ui-await { visibility: hidden; }
+.ui-arrive { animation: ui-fade-in 250ms ease-out; }   /* no fill: once the fade is over the button is plain again, so its text is drawn as before */
+@media (prefers-reduced-motion: reduce) { .ui-arrive { animation: none; } }
 @media (max-height: 700px) { .ui-landing .ui-bellbadge { width: 70px; height: 70px; } .ui-landing .ui-bellbadge.ui-hero-abs { top: 203px; } .ui-landing .ui-bellbadge svg { width: 36px; height: 36px; } }   /* review of PR 1464: a short phone keeps 8 px or more between the bell and the later line, and the bell centre stays on the 238 hero line */
 
 /* stories 1381 and 1384 (boards A1d, A1e): the rider lane under the pin, in the sample alert's slot on step 2. Ride in once 1.2 s; ride out 0.8 s when the kitchen is found. */

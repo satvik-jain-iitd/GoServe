@@ -22,6 +22,7 @@ type Props = {
   paidBy: string | null;
   bill?: OrderBill | null;   // story #1295: every amount the server took off has its own line, so the lines add up to the total
   confirmedAt: string | null;   // when the order closed, shown as the customer's local time
+  early?: number | null;        // story 1508 (board DL1): minutes before the promised time; null on time, late or not known
   placedAt: string;             // when the order was made (ISO)
   lines: { name: string; qty: number; paise: number }[];
   kitchenName: string;
@@ -39,6 +40,7 @@ type Props = {
   cancelling: boolean;
   rider: RiderCard | null;      // story D2: shown once a rider has the order
   atDoor?: boolean;             // story #922: the rider tapped Arriving
+  times?: Record<string, string>;   // story 1507 (board ST1): when each step happened (status to ISO time), from the order's own events; a step with no entry shows no time
   onCall?: () => void;          // story H14: the Call tap is counted ("where is my food" calls)
   pay?: Pay;                    // story #552: an online order waits for its payment
   track?: Track;                // story #691: On the way, with the rider's place known
@@ -85,7 +87,7 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "At your door" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
-export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, onYes, onNotYet, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, declined, eta }: Props) {
+export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, onYes, onNotYet, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta }: Props) {
   const [askCancel, setAskCancel] = useState(false);   // story #1227: the cancel sheet
   const steps = trackerSteps(status);
   const { now, online } = useNowOnline();
@@ -93,7 +95,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
   const placed = new Date(placedAt);
   const delivered = status === "delivered";
   const cancelled = status === "cancelled";
-  const title = status === "placed" ? "Order placed" : delivered ? "Delivered" : cancelled ? (declined ? "Declined" : "Cancelled") : "Your order";
+  const title = status === "placed" ? "Order placed" : cancelled ? (declined ? "Declined" : "Cancelled") : "Your order";
   const head = [kitchenName, pin].filter(Boolean).join(" · ");
   return (
     <>
@@ -139,6 +141,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
             {!cancelled && !delivered && view.kind === "late" && <p className="ui-clock ui-eta-late" role="status">Running late, sorry</p>}
             {!cancelled && !delivered && view.kind === "working" && <p className="ui-clock ui-eta-by">Working out the time</p>}
             {delivered && confirmedAt && <p className="ui-clock">At your door <b>{clock12(new Date(confirmedAt))}</b></p>}
+            {delivered && confirmedAt && !!early && <p className="ui-clock ui-early">{early} min early</p>}   {/* story 1508 (board DL1): only when early; never "late" here */}
             <div className="ui-slip-rule" />
             <div className="ui-slip-lines">
               {lines.map((l) => <div key={l.name}><span>{l.qty} × {l.name}</span><span>{formatRupees(l.paise).replace("₹", "")}</span></div>)}
@@ -151,7 +154,8 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
         </section>
         <div className="ui-after">
           {track && status === "out_for_delivery" && <RiderRow t={track} />}   {/* board T4: the row sits under the slip, above the timeline */}
-          {!cancelled && <Timeline rows={3} steps={steps.map((x) => (atDoor && x.status === "out_for_delivery" ? "Rider at your door" : STEP_WORDS[x.status] ?? x.label))} current={steps.findIndex((x) => x.state === "current")} label="Order progress" />}   {/* story 1324 (PL6, PL4, PL7): three rows, the delivered slip too */}
+          {!cancelled && <Timeline rows={3} steps={steps.map((x) => (atDoor && x.status === "out_for_delivery" ? "Rider at your door" : STEP_WORDS[x.status] ?? x.label))} current={steps.findIndex((x) => x.state === "current")} label="Order progress"
+            right={steps.map((x) => (x.state === "current" && !delivered ? "Now" : x.state !== "todo" && times?.[x.status] ? clock12(new Date(times[x.status])) : null))} />}   {/* story 1324 (PL6, PL4, PL7): three rows, the delivered slip too */}
           {!delivered && !cancelled && address && <p className="mono ui-addr ph-no-capture">{address}</p>}
           {rider && !(track && status === "out_for_delivery") && (
             <div className="notice" data-testid="rider-card">
