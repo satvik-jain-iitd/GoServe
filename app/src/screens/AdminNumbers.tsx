@@ -8,6 +8,7 @@ import { readOtpSwitchAdmin, saveOtpSwitch } from "../lib/otpSwitch";
 import { qrAddress, readPayMethodsAdmin, readQrAdmin, setPayMethod, uploadQr, type PayMethodsAdmin, type QrAdmin } from "../lib/payMethods";
 import type { DoorMethod } from "../lib/doorMethods";
 import { amountProblem, readEarlyFriend, saveEarlyFriend, type EarlyFriendSetting } from "../lib/earlyFriend";
+import { MAX_DAYS, MIN_DAYS, readPastDaysAdmin, savePastDays, type PastDaysSetting } from "../lib/pastDays";
 import { MAX_RUPEES as INC_MAX, MIN_RUPEES as INC_MIN, STEP_RUPEES, readIncentive, saveIncentive, type IncentiveSetting } from "../lib/incentive";
 import { readSwapSetting, saveSwapSetting, swapPctProblem, type SwapSetting } from "../lib/swapSetting";
 
@@ -161,6 +162,15 @@ function RiderAppSettings() {
     setNow({ on, amount_paise: rupees * 100, updated_by: "you", updated_at: new Date().toISOString() });
   }
   const rupees = now ? now.amount_paise / 100 : 0;
+  const [days, setDays] = useState<PastDaysSetting | null>(null);   // story 1442: "Past days", 0 to 30; 0 hides the rider's Pichhle din row
+  useEffect(() => { readPastDaysAdmin(getClient()).then(setDays, () => setLine("Could not load the setting. Try again.")); }, []);
+  async function saveDays(n: number) {
+    setLine(null); setBusy(true);
+    const failed = await savePastDays(getClient(), n);
+    setBusy(false);
+    if (failed) return void setLine(failed);
+    setDays({ days: n, updated_by: "you", updated_at: new Date().toISOString() });
+  }
   return (
     <section className="ui-group" aria-label="Rider app">
       <h2>Rider app</h2>
@@ -175,6 +185,16 @@ function RiderAppSettings() {
             <button type="button" className="ui-btn ghost" aria-label="Less incentive" disabled={busy || rupees <= INC_MIN} onClick={() => void save(true, rupees - STEP_RUPEES)}>−</button>
             <b className="mono" data-testid="incentive-amount">{formatRupees(now.amount_paise)}</b>
             <button type="button" className="ui-btn ghost" aria-label="More incentive" disabled={busy || rupees >= INC_MAX} onClick={() => void save(true, rupees + STEP_RUPEES)}>+</button>
+          </span>
+        </div>
+      )}
+      {days && (
+        <div className="ui-row ui-row-static ui-row-tall">
+          <span className="ui-row-label"><b>Past days</b><span className="ui-row-sub mono">Pichhle din on the rider&apos;s Today · 0 hides it</span></span>
+          <span className="ui-stepper">
+            <button type="button" className="ui-btn ghost" aria-label="Fewer past days" disabled={busy || days.days <= MIN_DAYS} onClick={() => void saveDays(days.days - 1)}>−</button>
+            <b className="mono" data-testid="past-days">{days.days}</b>
+            <button type="button" className="ui-btn ghost" aria-label="More past days" disabled={busy || days.days >= MAX_DAYS} onClick={() => void saveDays(days.days + 1)}>+</button>
           </span>
         </div>
       )}
