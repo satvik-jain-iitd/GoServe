@@ -61,7 +61,7 @@ import { registerNative, wrapperToken } from "./lib/pushNative";
 import { AdminScreen } from "./screens/AdminScreen";
 import { loadDraft, saveDraft } from "./lib/draft";
 import { PlacedScreen, type Track } from "./screens/PlacedScreen";
-import { readPinPoint, readRider, watchRider, type LatLng } from "./lib/riderTrack";
+import { readRider, watchRider, type Tracked } from "./lib/riderTrack";
 import { readEta, type Eta } from "./lib/eta";
 import { readArriving, riderArrivingAt, riderAtDoor, watchArriving } from "./lib/arriving";
 import type { Point } from "./lib/riderMap";
@@ -763,8 +763,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }, [placed?.id, riderStatus, demo]);
 
   // Story #691 (boards T2, T3): On the way, the rider's place comes from the order_tracking row (read now, again on every realtime event and every 30 s, the ping rhythm).
-  const [riderPoint, setRiderPoint] = useState<Point | null>(null);
-  const [youPoint, setYouPoint] = useState<LatLng | null>(null);
+  const [riderPoint, setRiderPoint] = useState<Tracked | null>(null);   // story 1497: the rider's place and the order's own drop point, both from the order's row
   const onTheWay = !!placed && !demo && riderStatus === "out_for_delivery";
   useEffect(() => {
     if (!onTheWay || !placed) return void setRiderPoint(null);
@@ -801,14 +800,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     const tick = setInterval(read, 30_000);
     return () => { alive = false; stop(); clearInterval(tick); };
   }, [placed?.id, onTheWay]);
-  useEffect(() => {
-    if (!onTheWay || !pin) return void setYouPoint(null);
-    let alive = true;
-    void readPinPoint(getClient(), pin).then((p) => { if (alive) setYouPoint(p); }).catch(() => undefined);
-    return () => { alive = false; };
-  }, [pin, onTheWay]);
-  const kitchenPoint = area?.kind === "ok" && area.kitchen.lat !== null && area.kitchen.lng !== null ? { lat: area.kitchen.lat, lng: area.kitchen.lng } : null;
-  const riderTrack: Track | undefined = onTheWay && riderPoint && youPoint && kitchenPoint ? { kitchen: kitchenPoint, you: youPoint, rider: riderPoint, name: rider?.name ?? "Your rider", phone: rider?.phone ?? null } : undefined;
+  const riderTrack: Track | undefined = onTheWay && riderPoint ? { you: riderPoint.you, rider: riderPoint.rider, name: rider?.name ?? "Your rider", phone: rider?.phone ?? null } : undefined;
 
   // A tap on a slip of "Your orders" opens it as the tracker or the delivered screen (story H10d).
   function openOrder(o: Order) {

@@ -5,15 +5,12 @@ import { toPoint, type Point } from "./riderMap";
 
 export type LatLng = { lat: number; lng: number };
 
-export async function readRider(client: SupabaseClient, orderId: string): Promise<Point | null> {
-  const { data, error } = await client.from("order_tracking").select("rider_lat, rider_lng, updated_at").eq("order_id", orderId).maybeSingle();
-  return error ? null : toPoint(data);
-}
-
-// Where "You" is: the drop point of the pin (pin_points is public).
-export async function readPinPoint(client: SupabaseClient, pin: string): Promise<LatLng | null> {
-  const { data, error } = await client.from("pin_points").select("lat, lng").eq("pin", pin).maybeSingle();
-  return error || !data ? null : { lat: data.lat, lng: data.lng };
+// Story 1497: both points come from the order's own row. `you` is the order's drop point (the pin the customer set); an order with none has no "You".
+export type Tracked = { rider: Point; you: LatLng | null };
+export async function readRider(client: SupabaseClient, orderId: string): Promise<Tracked | null> {
+  const { data, error } = await client.from("order_tracking").select("rider_lat, rider_lng, rider_at, drop_lat, drop_lng").eq("order_id", orderId).maybeSingle();
+  const rider = error ? null : toPoint(data);
+  return rider ? { rider, you: typeof data?.drop_lat === "number" && typeof data?.drop_lng === "number" ? { lat: data.drop_lat, lng: data.drop_lng } : null } : null;
 }
 
 export function watchRider(client: SupabaseClient, orderId: string, onChange: () => void, tag = "track"): () => void {   // one channel name per watcher: a name can only be subscribed once

@@ -46,7 +46,7 @@ type Props = {
   eta?: Eta | null;             // story #1015: the server's delivery time
   declined?: { reason: string; at: string } | null;   // story #934: the kitchen said no, in its own words
 };
-export type Track = { kitchen: LatLng; you: LatLng; rider: Point; name: string; phone: string | null };
+export type Track = { you: LatLng | null; rider: Point; name: string; phone: string | null };   // story 1497: `you` is the order's own drop point; null when the order has none
 export type Pay = {
   state: "ready" | "starting" | "waiting" | "failed" | "paid";
   method: PayMethod;
@@ -65,7 +65,7 @@ function RiderRow({ t, onOpen }: { t: Track; onOpen: () => void }) {
     <button type="button" className="ui-locrow ui-riderrow" aria-label="See the rider on the map" onClick={onOpen}>
       <span className="ui-locrow-icon">{MAP_ICON}</span>
       <span className="ui-locrow-words">
-        <span className="ui-locrow-title"><b>{t.name}</b> is {distanceText(t.rider.lat, t.rider.lng, t.you.lat, t.you.lng)} away</span>
+        <span className="ui-locrow-title"><b>{t.name}</b> is {t.you ? `${distanceText(t.rider.lat, t.rider.lng, t.you.lat, t.you.lng)} away` : "on the way"}</span>
         <span className="ui-locrow-sub mono">{online ? `On the map · updated ${agoText(t.rider.at, now)}` : `No connection · ${lastSeenText(t.rider.at, now)}`}</span>
       </span>
       <span className="ui-locrow-go">{GO}</span>
