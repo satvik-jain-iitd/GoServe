@@ -125,3 +125,16 @@ test("S8 the number error line is centred and sits 12 px above Send code", async
   expect(await err.evaluate((el) => getComputedStyle(el).textAlign)).toBe("center");
   expect(Math.abs(b.y - (e.y + e.height) - 12)).toBeLessThanOrEqual(2);
 });
+
+// Story 1471: on the smallest phones the alerts and location steps fit with no scroll; the filled button's bottom edge is inside the screen.
+for (const [w, h] of [[320, 568], [360, 649]] as const) {
+  for (const s of [ALERTS, AREA]) {
+    test(`S9 ${s.name} at ${w} x ${h}: no scroll, the filled button in view`, async ({ page, context }) => {
+      await page.setViewportSize({ width: w, height: h });
+      await open(page, context, s);
+      expect(await page.evaluate(() => { const l = document.querySelector(".ui-landing") as HTMLElement; return [document.scrollingElement!.scrollHeight - window.innerHeight, l.scrollHeight - l.clientHeight]; })).toEqual([0, 0]);   // neither the page nor the step scrolls
+      const main = await y(page, s.main);
+      expect(main.y + main.height).toBeLessThanOrEqual(h);
+    });
+  }
+}
