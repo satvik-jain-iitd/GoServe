@@ -127,6 +127,22 @@ test("I delete my last address away from it: Where you are now is picked", async
   await expect(header(page, /^Where you are now\b/)).toBeVisible();
 });
 
+test("I delete my last address with a cart, and my phone is in another kitchen's area: the cart does not move to that kitchen", async ({ page, context }) => {
+  const net = await setup(context, page, [], { pin: null });
+  net.state.addresses = [HOME];
+  net.state.nearPin = "110099";   // no kitchen serves the place the phone is at
+  await stored(context, placeOf(HOME), { step: "menu", cart: { d1: 1 }, address: HOME.address, name: "", phone: "" });
+  await phoneLoc(page, { perm: "granted", pos: AWAY });
+  await page.goto("/customer/");
+  await expect(page.getByRole("button", { name: /View bill/ })).toBeVisible();   // the cart of the Home kitchen
+  await header(page, /^Home\b/).click();
+  await page.getByRole("button", { name: "Edit or remove Home" }).click();
+  await page.getByRole("button", { name: "Remove", exact: true }).click();
+  await expect.poll(() => net.state.addresses.length, { timeout: 10_000 }).toBe(0);
+  await expect(box(page)).toContainText("Where you are now");
+  await expect.poll(() => page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem("gs-draft") ?? "{}").cart ?? {}).length)).toBe(0);   // the old kitchen's cart is not carried to another kitchen
+});
+
 test("The first-open screen shows once only: a customer who confirmed a place before, on a new phone, lands on Deliver to", async ({ page, context }) => {
   const net = await setup(context, page, [], { pin: null });
   net.state.customer = { name: "Amit", phone: "9876543210", address: "", place_confirmed_at: "2026-11-01T10:00:00Z" };   // the mark on the server

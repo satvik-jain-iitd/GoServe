@@ -600,12 +600,15 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     const next: StoredPlace = row ? { address: row.address, pin, lat: row.lat, lng: row.lng, house: row.house ?? "", landmark: row.landmark ?? "", confirmed: true, id: row.id } : herePlace(at, pin);
     const cur = whereNow.current;
     if (cur && row && cur.id === row.id) return;
-    if (cur && Object.values(cartNow.current).some((q) => q > 0)) {
-      const all = await fetchKitchens(c).catch(() => null);
-      const kitchenOf = (p: StoredPlace) => { const a = chooseKitchen(all ?? [], p.pin, p.lat !== null && p.lng !== null ? { lat: p.lat, lng: p.lng } : undefined); return a.kind === "ok" ? a.kitchen.id : a.kind === "closed" ? a.id : null; };
-      if (!all || kitchenOf(cur) !== kitchenOf(next)) return;
-    }
+    if (cur && !(await cartFits(cur, next))) return;
     if (!held()) choosePlace(next);
+  }
+  // A cart belongs to one kitchen. True when there is no cart, or both places are served by the same kitchen. A lookup that fails is "no".
+  async function cartFits(cur: StoredPlace, next: StoredPlace): Promise<boolean> {
+    if (!Object.values(cartNow.current).some((q) => q > 0)) return true;
+    const all = await fetchKitchens(getClient()).catch(() => null);
+    const kitchenOf = (p: StoredPlace) => { const a = chooseKitchen(all ?? [], p.pin, p.lat !== null && p.lng !== null ? { lat: p.lat, lng: p.lng } : undefined); return a.kind === "ok" ? a.kitchen.id : a.kind === "closed" ? a.id : null; };
+    return !!all && kitchenOf(cur) === kitchenOf(next);
   }
   const lookAgain = useRef(() => {});
   lookAgain.current = () => { if (document.visibilityState === "visible" && whyNow.current && !finding) void find(false).then((at) => at && follow(at)); };
@@ -652,13 +655,17 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     if (!(await removeAddress(getClient(), id))) return;
     const rest = (savedNow.current ?? []).filter((r) => r.id !== id);
     setSaved(rest);
-    if (id !== whereNow.current?.id) return;
+    const was = whereNow.current;
+    if (id !== was?.id) return;
     const next = lastUsed(rest);
     if (next) return void useSaved(next, false);
     // Story 1529: the last address is gone. The customer stays on Deliver to, never the first-open screen: the place is where the phone is, or none (then the cart goes with the kitchen).
     const at = hereNow.current;
     const pin = at ? await nearestPin(at, undefined) : "";
-    if (at && pin) choosePlace(herePlace(at, pin)); else changeArea();
+    if (!at || !pin) return void changeArea();
+    const here = herePlace(at, pin);
+    if (!(await cartFits(was, here))) setCart({});   // review of PR 1539: the cart of the old kitchen never moves to another kitchen, where prices and dishes differ
+    choosePlace(here);
   }
   function changeArea() {
     setPlace(null);
