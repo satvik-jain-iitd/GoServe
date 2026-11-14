@@ -1,8 +1,13 @@
 // Story #1049 part 2 (board N0): first open, after the number, the customer is asked for order alerts once, so they never have to find the switch in the profile.
 // Turn on asks the phone's notification permission and moves on either way; I'll check the app myself moves on and the profile switch stays off.
+import { useRef } from "react";
+import { useAfterMotion } from "../lib/afterMotion";
+
 type Props = { busy: boolean; onTurnOn: () => void; onNotNow: () => void };
 
 export function AlertsAsk({ busy, onTurnOn, onNotNow }: Props) {
+  const sample = useRef<HTMLDivElement>(null);
+  const ask = useAfterMotion(sample) ? "ui-arrive" : "ui-await";   // story 1524: the two buttons show when the sample alert has landed; their space is kept
   return (
     <section className="ui-landing">
       <header className="ui-landing-head">
@@ -16,10 +21,10 @@ export function AlertsAsk({ busy, onTurnOn, onNotNow }: Props) {
           <p className="ui-slip-why">We tell you when your food leaves the kitchen and when it is at your door.</p>
           <span aria-hidden="true" className="ui-bellbadge ui-hero-abs"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0" /></svg></span>
           {/* stories 1376 (board N0c): a sample alert under the bell; it drops in once like a phone alert */}
-          <div aria-hidden="true" className="ui-alert-sample"><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0" /></svg></span><span><span className="mono">GOSERVE · now</span><span>Your thali is at the door</span></span></div>
+          <div ref={sample} aria-hidden="true" className="ui-alert-sample"><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0" /></svg></span><span><span className="mono">GOSERVE · now</span><span>Your thali is at the door</span></span></div>
           <p className="ui-slip-later ui-push">You can turn this on later in You.</p>
-          <button type="button" className="ui-btn ghost big" disabled={busy} onClick={onNotNow}>I'll check the app myself</button>
-          <button type="button" className="ui-btn big" disabled={busy} onClick={onTurnOn}>Turn on alerts</button>
+          <button type="button" className={`ui-btn ghost big ${ask}`} disabled={busy} onClick={onNotNow}>I'll check the app myself</button>
+          <button type="button" className={`ui-btn big ${ask}`} disabled={busy} onClick={onTurnOn}>Turn on alerts</button>
         </div>
       </div>
     </section>
