@@ -62,14 +62,14 @@ test("S2 the customer sees every step live, without a refresh, and it ends at De
 
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   const current = page.locator('[aria-current="step"]');
-  await expect(current).toHaveText("Placed");
+  await expect(current).toHaveText("PlacedNow");   // story 1507: the step now says Now
   await expect(page.getByRole("list", { name: "Order progress" }).getByRole("listitem")).toHaveCount(3);   // story 1324: three rows show
 
   const steps: [string, string][] = [["accepted", "Accepted"], ["preparing", "Cooking"], ["ready", "Ready, rider picks up"], ["out_for_delivery", "On the way"], ["delivered", "Delivered"]];
   for (const [i, [status, label]] of steps.entries()) {
     net.push("UPDATE", order(status, `2020-01-01T10:0${i + 1}:00Z`));
     if (label === "Delivered") await expect(page.getByRole("heading", { name: "Delivered", exact: true }).first()).toBeVisible({ timeout: 6000 });
-    else await expect(current).toHaveText(label, { timeout: 6000 });
+    else await expect(current).toHaveText(`${label}Now`, { timeout: 6000 });
   }
   await expect(current).toHaveText("At your door");   // the rows end on the delivered step (the thank-you line left in story 1324)
 });
