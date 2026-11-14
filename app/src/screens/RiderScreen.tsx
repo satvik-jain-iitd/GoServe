@@ -7,6 +7,8 @@ import { distanceText, metres } from "../lib/riderMap";
 import type { DoorMethod } from "../lib/doorMethods";
 import { Skeleton, Tabs } from "../ui";
 import { incentiveFor, type Rates } from "../lib/incentive";
+import { dayName, dayShort, olderDue, pastDays as listPastDays } from "../lib/pastDays";
+import { useBackCloses } from "../lib/back";
 
 type Tab = "job" | "today" | "me";
 type Props = {
@@ -19,11 +21,13 @@ type Props = {
   kitchen: KitchenCard | null;   // the kitchen of the delivery in hand
   onAtDoor: (order: Order, metres: number | null) => void;   // story 1182: the rider tapped "I am at the door" while the phone said far
   onChangePaid: (order: Order, method: DoorMethod) => Promise<string | null>;
+  pastDays?: number | "fail" | null;   // story 1442: the admin's "Past days" number; "fail" when the read failed, null while it is on its way
+  onRetryPastDays?: () => void;
   incentive?: Rates | null;   // stories 1443 and 1438: the admin's switch and its recent changes; null when the read failed or is on its way   // story 1448: put a wrong cash or UPI tap right; the refusal code, or null when saved
 };
 const TABS: { key: Tab; label: string; icon: Tab }[] = [{ key: "job", label: "Delivery", icon: "job" }, { key: "today", label: "Today", icon: "today" }, { key: "me", label: "Me", icon: "me" }];
 
-export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, methods: methodsRead, qrUrl, onLoadMethods, gate, kitchen, onAtDoor, onChangePaid, incentive = null }: Props) {
+export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, methods: methodsRead, qrUrl, onLoadMethods, gate, kitchen, onAtDoor, onChangePaid, incentive = null, pastDays = null, onRetryPastDays }: Props) {
   const methods = qrUrl === undefined ? null : methodsRead;   // the screen names nothing until both answers are in
   const [tab, setTab] = useState<Tab>("job");
   const [doneId, setDoneId] = useState<string | null>(null);   // the slip just delivered stays until "Next delivery" (R7)
@@ -35,6 +39,12 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
   const today = deliveredToday(orders, new Date(), hoursOf(kitchen));   // story #229: the day ends at the kitchen's closing time
   const cash = cashInHand(today);
   const handed = handedOver(today);
+  const older = olderDue(orders, new Date(), hoursOf(kitchen));   // story 1442, board PD1: the kitchen's own rule, so both screens show one number
+  const [past, setPast] = useState<null | "list" | string>(null);   // board PD2 ("list") or PD3 (a day's key)
+  useBackCloses(past !== null, () => setPast(null));
+  useBackCloses(past !== null && past !== "list", () => setPast("list"));
+  const days = typeof pastDays === "number" ? listPastDays(orders, pastDays, new Date(), hoursOf(kitchen)) : [];
+  const openDay = past && past !== "list" ? days.find((d) => d.key === past) ?? null : null;
   const paidLabel = (p: string | null | undefined) => (p === "upi_door" ? "Paid by UPI" : p === "cash" ? "Cash collected" : "Collected");   // never guess cash: an empty paid_by is just Collected
   const paidShort = (p: string | null | undefined) => (p === "upi_door" ? "UPI" : p === "cash" ? "Cash" : "Collected");   // board TI1
   // Story 1448: Change stays until the night's hand-over. A UPI order is never stamped itself, so any of his cash stamped at or after this delivery closes it too (the server's rule).
@@ -293,6 +303,40 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
     ? (job && !done && job.status === "ready" ? { h: "Pick up", meta: "Ready" }   // boards RP3 and RT1
       : job || done ? { h: job && !done && job.status === "out_for_delivery" ? "On the way" : "Delivery", meta: `No. ${shortId((done ?? job)!.id)}` } : { h: "Deliveries", meta: gate ? (gate.online ? "Online" : "Offline") : "" })
     : tab === "today" ? { h: "Today", meta: `${today.length} delivered` } : { h: "Me", meta: gate?.name ?? "" };
+  const BACK = <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>;
+  if (tab === "today" && past) return (
+    <>
+      <header className="ui-head">
+        {openDay
+          ? <button type="button" className="ui-back" aria-label="Back to Pichhle din" onClick={() => setPast("list")}>{BACK}</button>
+          : <button type="button" className="ui-back" aria-label="Back to Today" onClick={() => setPast(null)}>{BACK}</button>}
+        <h1>{openDay ? dayName(openDay.date) : "Pichhle din"}</h1>
+        {openDay && <span className="meta">{openDay.orders.length} delivered</span>}
+      </header>
+      <div className="ui-scroll ui-today">
+        {!openDay && pastDays === "fail" && <p role="alert" className="ui-note error">Could not load the past days. <button type="button" className="ui-link" onClick={onRetryPastDays}>Try again</button></p>}
+        {!openDay && pastDays === null && <Skeleton />}
+        {!openDay && typeof pastDays === "number" && days.length === 0 && <div className="ui-empty"><h2>No deliveries in these days</h2></div>}
+        {!openDay && days.map((d) => (
+          <button key={d.key} type="button" className="ui-row" data-testid="past-day" onClick={() => setPast(d.key)}>   {/* board PD2 */}
+            <span className="ui-row-label"><span>{dayName(d.date)}</span><span className="ui-row-sub mono">{d.orders.length} delivery</span></span>
+            <span className="ui-row-end"><span className="mono">Cash {formatRupees(d.cash)}</span><span className={`mono ui-row-sub${d.due > 0 ? " ui-due" : ""}`}>{d.due > 0 ? `Baaki ${formatRupees(d.due)}` : "Jama ho gaya"}</span></span>
+            <span className="go" aria-hidden="true">›</span>
+          </button>
+        ))}
+        {openDay && <>   {/* board PD3: the tally only; no customer name, no address, nothing opens */}
+          <div className="ui-row ui-row-static ui-row-tall" data-testid="past-cash"><span className="ui-row-label"><span>Cash</span>{openDay.due > 0 && <span className="ui-row-sub mono">Baaki {formatRupees(openDay.due)} · kitchen me jama karein</span>}</span><span className="mono ui-cash">{formatRupees(openDay.cash)}</span></div>
+          {openDay.orders.map((o) => (
+            <div key={o.id} className="ui-row ui-row-static" data-testid="past-order">
+              <span className="ui-row-label"><span className="mono">No. {shortId(o.id)}</span><span className="ui-row-sub mono">{hhmm(deliveredAt(o))}</span></span>
+              <span className="ui-row-end"><span className="mono">{formatRupees(o.total_paise)}</span><span className="ui-row-sub mono">{paidShort(o.paid_by)}</span></span>
+            </div>
+          ))}
+        </>}
+      </div>
+      <Tabs current={tab} tabs={TABS} onPick={(t) => { setPast(null); setTab(t); }} />
+    </>
+  );
   return (
     <>
       <header className="ui-head">
@@ -303,6 +347,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
       {tab === "job" && jobView()}
       {tab === "today" && (
         <div className="ui-scroll ui-today">
+          {older.paise > 0 && older.from && <div className="ui-row ui-row-static ui-row-tall" data-testid="older-cash"><span className="ui-row-label"><span>Purana cash baaki</span><span className="ui-row-sub mono">{dayShort(older.from)} ka · kitchen me jama karein</span></span><span className="mono ui-cash ui-due">{formatRupees(older.paise)}</span></div>}   {/* board PD1: on top, only while cash is due */}
           <div className="ui-row ui-row-static ui-row-tall" data-testid="cash"><span className="ui-row-label"><span>Cash aapke paas</span><span className="ui-row-sub mono">Aaj raat kitchen me jama karein{hoursOf(kitchen)?.closes ? ` · ${hoursOf(kitchen)!.closes} tak` : ""}</span></span><span className="mono ui-cash">{formatRupees(cash)}</span></div>
           {incentive?.on && (() => {   // board TI1: never part of the cash he holds; each delivery at the amount set when it was delivered
             const inc = incentiveFor(today, incentive.log);
@@ -317,6 +362,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
               <span className="go" aria-hidden="true">›</span>
             </button>
           ))}
+          {pastDays !== 0 && <button type="button" className="ui-row" onClick={() => setPast("list")}><span>Pichhle din</span><span className="go" aria-hidden="true">›</span></button>}   {/* board PD1: the last row; the admin number 0 hides it */}
         </div>
       )}
       {tab === "me" && (

@@ -19,6 +19,7 @@ import { OrdersScreen } from "./screens/OrdersScreen";
 import { AdminGate } from "./screens/AdminGate";
 import { RiderGate } from "./screens/RiderGate";
 import { readRates, type Rates } from "./lib/incentive";
+import { readPastDays } from "./lib/pastDays";
 import { fetchKitchen, fetchOnlyKitchen, riderChangePaid, type KitchenCard, type RiderGateState } from "./lib/rider";
 import { KitchenGate, type KitchenGateState } from "./screens/KitchenGate";
 import { enablePush, watchSession } from "./lib/push";
@@ -986,6 +987,9 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     document.addEventListener("visibilitychange", back);
     return () => { alive = false; document.removeEventListener("visibilitychange", back); };
   }, [riderLive, orders.length]);   // and when an order comes or goes
+  const [pastDays, setPastDays] = useState<number | "fail" | null>(null);   // story 1442: the admin's "Past days" number, read at open; a failed read says so on the list
+  const loadPastDays = () => { setPastDays(null); readPastDays(getClient()).then(setPastDays, () => setPastDays("fail")); };
+  useEffect(() => { if (riderLive) loadPastDays(); }, [riderLive]);   // once at open; Try again reads it again
   const riderNoKitchen = role === "rider" && !demo && !jobKitchenId && !live.loading;   // stories 1445 and 1440: no order yet, so the one active kitchen, if there is only one
   useEffect(() => {
     if (!riderNoKitchen) return;
@@ -1012,7 +1016,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const riderScreen = (gate: RiderGateState | null) => (
     <RiderScreen orders={orders} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
       onAct={(o, a, method) => act(o, a, "rider", method)} methods={riderMethods} qrUrl={riderQr} onLoadMethods={loadRiderMethods} gate={gate} kitchen={jobKitchen} onAtDoor={(o, m) => { if (!demo) void riderAtDoor(getClient(), o.id, m); }}
-      incentive={incentive}
+      incentive={incentive} pastDays={demo ? 0 : pastDays} onRetryPastDays={loadPastDays}
       onChangePaid={async (o, m) => { const code = demo ? null : await riderChangePaid(getClient(), o.id, m); if (code === null) setOrders((cur) => cur.map((x) => (x.id === o.id ? { ...x, paid_by: m } : x))); return code; }} />
   );
   const riderView = lock === "rider" ? <RiderGate>{riderScreen}</RiderGate> : riderScreen(null);

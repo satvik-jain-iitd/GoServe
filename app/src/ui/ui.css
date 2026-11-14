@@ -1033,3 +1033,4 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
   .ui-landing .ui-hero-abs { top: 136px; }
   .ui-landing .ui-bellbadge.ui-hero-abs { top: 149px; }
 }
+.ui-due { color: var(--md-error); }   /* story 1442, boards PD1 to PD3: cash still due is in the error colour */
