@@ -5,6 +5,7 @@ import { useSheetFit } from "../ui";
 import { capture } from "../lib/analytics";
 import { finishSignIn, isMobile, sendCode, sendSignInCode, showPhone, verifyCode, type OtpResult } from "../lib/otp";
 import { getClient } from "../lib/supabase";
+import { Thali } from "../ui/Thali";
 import { SignIn } from "./SignIn";
 
 const RESEND_S = 30;
@@ -94,10 +95,11 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false, g
   if (welcome && googleOnly) {
     return frame(
       <>
-        {head("One tap and you are in")}
-        <img className="ui-welcome-pic ui-hero-abs-pic" src="/brand/thali-welcome.png" srcSet="/brand/thali-welcome.png 1x, /brand/thali-welcome@2x.png 2x" width={306} height={181}
-          alt="A steel thali with dal, paneer, roti, rice and raita" />   {/* story #1103, board O0g-B: the picture sits between the title and the button */}
-        <SignIn mode="signin" big filled />
+        {head("Sign in to start")}
+        <p className="ui-welcome-sub">Then: order alerts and your address.</p>
+        <div className="ui-welcome-thali"><Thali /></div>   {/* stories 1374, board O0g-F: the thali sets itself, 123 px under the slip top */}
+        <p className="ui-welcome-terms">By continuing you agree to our <a href="/terms/">Terms</a> and <a href="/privacy/">Privacy</a></p>
+        <SignIn mode="signin" big filled mark />
       </>,
     );
   }

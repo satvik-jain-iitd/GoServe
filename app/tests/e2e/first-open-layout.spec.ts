@@ -1,13 +1,13 @@
 // Story #1133 (boards O0g-C, N0b, A1c; owner approved 9 Nov; ShipQuick #164): the first-open steps share one layout. The slip runs to 24 px above the edge plus the safe area; the main
 // (filled) button is last at the bottom, an outline one sits above it, and the main button has the same y on every step; the hero (thali plate, bell, pin circle) centre sits 268 px
-// below the slip top; nothing scrolls sideways at 320 px with large text. Enter address manually opens the search, focused, and Type it by hand is gone.
+// below the slip top; nothing scrolls sideways at 320 px with large text. Search for my address opens the search, focused, and Type it by hand is gone.
 import { test, expect, type Page, type BrowserContext } from "@playwright/test";
 import { setup } from "./helpers";
 
 type Step = { name: string; main: string; ghost?: string; hero: string };
-const WELCOME: Step = { name: "welcome", main: "Continue with Google", hero: ".ui-welcome-pic" };
+const WELCOME: Step = { name: "welcome", main: "Continue with Google", hero: ".ui-thali" };
 const ALERTS: Step = { name: "alerts", main: "Turn on alerts", ghost: "I'll check the app myself", hero: ".ui-bellbadge" };
-const AREA: Step = { name: "area", main: "Set delivery location", ghost: "Enter address manually", hero: ".ui-pinbadge" };
+const AREA: Step = { name: "area", main: "Use my current location", ghost: "Search for my address", hero: ".ui-pinbadge" };
 
 async function open(page: Page, context: BrowserContext, s: Step) {
   const net = await setup(context, page, [], { guest: s === WELCOME, pin: null });
@@ -49,7 +49,7 @@ test("S2 the outline button sits above the main one, and the main one is last, a
 
 test("S3 the hero centre sits 268 px below the slip top on every step", async () => {
   for (const n of ["alerts", "area"]) expect(Math.abs(seen[n].hero.y + seen[n].hero.h / 2 - (seen[n].slipTop + 268))).toBeLessThanOrEqual(2);
-  expect(Math.abs(seen.welcome.hero.y - (seen.welcome.slipTop + 157))).toBeLessThanOrEqual(2);   // the thali picture sits 157 px below the slip top: its plate is at the same 268
+  expect(Math.abs(seen.welcome.hero.y + seen.welcome.hero.h * 0.583 - (seen.welcome.slipTop + 268))).toBeLessThanOrEqual(2);   // board O0g-F: the thali's plate centre (58.3 % down the picture) is on the same 268
 });
 
 test("S4 at 320 px with large text nothing scrolls sideways and no button clips its words", async ({ page, context }) => {
@@ -74,10 +74,10 @@ for (const s of [WELCOME, AREA]) {
   });
 }
 
-test("S5 Type it by hand is gone; Enter address manually opens the search, focused", async ({ page, context }) => {
+test("S5 Type it by hand is gone; Search for my address opens the search, focused", async ({ page, context }) => {
   await open(page, context, AREA);
   await expect(page.getByRole("button", { name: "Type it by hand" })).toHaveCount(0);
-  await page.getByRole("button", { name: "Enter address manually" }).click();
+  await page.getByRole("button", { name: "Search for my address" }).click();
   const search = page.getByRole("searchbox", { name: "Search an area or address" });
   await expect(search).toBeVisible();
   await expect(search).toBeFocused();
@@ -89,7 +89,7 @@ const PLACES = { status: 200, body: { ok: true, results: [{ name: "Green Park", 
 test("S7 a search on the map shows results over the map and a pick moves the pin, never leaving the map", async ({ page, context }) => {
   const net = await open(page, context, AREA);
   net.state.places = PLACES;
-  await page.getByRole("button", { name: "Enter address manually" }).click();
+  await page.getByRole("button", { name: "Search for my address" }).click();
   const search = page.getByRole("searchbox", { name: "Search an area or address" });
   await search.fill("green park");
   await search.press("Enter");
@@ -100,12 +100,12 @@ test("S7 a search on the map shows results over the map and a pick moves the pin
   await expect(page.getByRole("searchbox")).toHaveCount(0);   // the results close after a pick
 });
 
-test("S6 Set delivery location with the location denied lands on the same search, focused", async ({ page, context }) => {
+test("S6 Use my current location with the location denied lands on the same search, focused", async ({ page, context }) => {
   await open(page, context, AREA);
   await context.setGeolocation(null as never).catch(() => undefined);
   await page.addInitScript(() => { navigator.geolocation.getCurrentPosition = (_ok, err) => err?.({ code: 1, message: "denied" } as GeolocationPositionError); });
   await page.reload();
-  await page.getByRole("button", { name: "Set delivery location" }).click();
+  await page.getByRole("button", { name: "Use my current location" }).click();
   await expect(page.getByRole("searchbox", { name: "Search an area or address" })).toBeFocused();
 });
 

@@ -3,7 +3,7 @@
 import { expect, type Page } from "@playwright/test";
 
 export async function firstOpenToMenu(page: Page, house = "B-12, ground floor") {
-  await page.getByRole("button", { name: "Set delivery location" }).click();
+  await page.getByRole("button", { name: "Use my current location" }).click();
   await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
   const confirm = page.getByRole("button", { name: "Confirm & proceed" });
   await expect(confirm).toBeEnabled();

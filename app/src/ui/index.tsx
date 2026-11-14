@@ -76,14 +76,19 @@ export function StickyBar({ children }: { children: ReactNode }) {
   return <div className="ui-sticky">{children}</div>;
 }
 
-export function Timeline({ steps, current, label }: { steps: string[]; current: number; label?: string }) {
-  return (
-    <ol className="ui-timeline" aria-label={label}>
+export function Timeline({ steps, current, label, rows }: { steps: string[]; current: number; label?: string; rows?: number }) {
+  // Story 1324 (boards PL6, PL4, PL7): with rows, only that many show, the step now in the middle (on top at the start, at the bottom at the end).
+  // All the steps stay in the list and it slides up behind a fixed window, so a new status rolls in from below and the box never changes height.
+  const start = rows ? Math.max(0, Math.min(current - Math.floor(rows / 2), steps.length - rows)) : 0;
+  const list = (
+    <ol className="ui-timeline" aria-label={label} style={rows ? { transform: `translateY(calc(${-start} * var(--gs-roll-row)))` } : undefined}>
       {steps.map((s, i) => (
-        <li key={s} className={i < current ? "done" : i === current ? "now" : "next"} aria-current={i === current ? "step" : undefined}>{s}</li>
+        <li key={s} className={i < current ? "done" : i === current ? "now" : "next"} aria-current={i === current ? "step" : undefined}
+          aria-hidden={rows && (i < start || i >= start + rows) ? true : undefined}>{s}</li>
       ))}
     </ol>
   );
+  return rows ? <div className="ui-roll" style={{ ["--gs-roll-rows" as string]: rows }}>{list}</div> : list;
 }
 
 // Stories #954 and #980: the overlay follows the visual viewport only while the keyboard is up (see sheetFit.ts).
@@ -238,4 +243,16 @@ export function StaffLanding({ kicker, app, right, label, error, children }: { k
 // Story #1276 (board K5-NoteBand): the customer's note for the kitchen, a filled band that wraps and is never cut. Spans, so it can sit inside a button.
 export function NoteBand({ text }: { text: string }) {
   return <span className="ui-noteband"><span className="ui-noteband-label">Customer says</span><span className="ui-noteband-text">{text}</span></span>;
+}
+
+// Story 1324 (boards PL3, PL4; owner rule 11): white paper torn at the top only. 25 whole teeth in the paper's colour with the slip's hairline, stretched to the
+// slip's width so no tooth is cut. It sits right above a `ui-slip` (which then drops its straight top); the bottom stays straight.
+const TEETH = Array.from({ length: 25 }, (_, i) => `${i * 14},10 ${i * 14 + 7},0`).join(" ") + " 350,10";
+export function TornTop() {
+  return (
+    <svg className="ui-torn-top" aria-hidden="true" viewBox="0 0 350 10" preserveAspectRatio="none">
+      <polygon points={`${TEETH} 0,10`} />
+      <polyline points={TEETH} />
+    </svg>
+  );
 }

@@ -8,7 +8,7 @@ import type { RiderCard } from "../lib/supabase";
 import { useEffect, useState } from "react";
 import { PAY_WINDOW_S, PAY_METHODS, type PayMethod } from "../lib/payments";
 import { devHelperOn } from "../lib/payGateway";
-import { Timeline } from "../ui";
+import { Timeline, TornTop } from "../ui";
 import { AdjustLines } from "../ui/AdjustLines";
 import { BackChevron } from "./BillScreen";
 import { RiderMapScreen } from "./RiderMapScreen";
@@ -132,6 +132,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
           </div>
         )}
         <section className="ui-slip ui-slip-pad" aria-label={delivered ? "Order, delivered" : "Order"}>
+          <TornTop />
           <div className="ui-slip-body">
             <div className="ui-slip-head"><span>{head}</span><span>{delivered ? `${placed.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${clock12(placed)}` : `No. ${shortId(order.id)}`}</span></div>
             <div className="ui-slip-stamp"><span className={`ui-stamp ${STAMP[status] ?? "placed"}`}>{declined ? "Declined" : statusLabel(status)}</span></div>
@@ -151,9 +152,8 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
           </div>
         </section>
         <div className="ui-after">
-          {status === "placed" && <p>The kitchen has your order. This page updates on its own.</p>}
           {track && status === "out_for_delivery" && <RiderRow t={track} onOpen={() => setMapOpen(true)} />}   {/* board T4: the row sits under the slip, above the timeline */}
-          {!delivered && !cancelled && <Timeline steps={steps.map((x) => (atDoor && x.status === "out_for_delivery" ? "Rider at your door" : STEP_WORDS[x.status] ?? x.label))} current={steps.findIndex((x) => x.state === "current")} label="Order progress" />}
+          {!cancelled && <Timeline rows={3} steps={steps.map((x) => (atDoor && x.status === "out_for_delivery" ? "Rider at your door" : STEP_WORDS[x.status] ?? x.label))} current={steps.findIndex((x) => x.state === "current")} label="Order progress" />}   {/* story 1324 (PL6, PL4, PL7): three rows, the delivered slip too */}
           {!delivered && !cancelled && address && <p className="mono ui-addr ph-no-capture">{address}</p>}
           {rider && !(track && status === "out_for_delivery") && (
             <div className="notice" data-testid="rider-card">
@@ -181,20 +181,15 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
             </div>
           )}
           {error && <p role="alert" className="ui-field-error">{error}</p>}
-          {delivered && (
-            <>
-              <p>Delivered. Thank you for eating with GoServe.</p>
-            </>
-          )}
         </div>
       </div>
       {mapOpen && track && status === "out_for_delivery" && <RiderMapScreen t={track} orderNo={shortId(order.id)} door={door} onBack={() => setMapOpen(false)} onCall={onCall} />}
       {(status === "placed" || status === "accepted") && askCancel && <CancelSheet lines={lines} kitchenName={kitchenName || "the kitchen"} paidOnline={pay?.state === "paid"} onKeep={() => setAskCancel(false)} onYes={() => { setAskCancel(false); onCancel(); }} />}
-      <div className="ui-bottom">
-        {declined && <button type="button" className="ui-btn big" onClick={onMenu}>Order something else</button>}
+      <div className={declined ? "ui-bottom" : "ui-bottom ui-pair"}>   {/* story 1324 (board PL4): two outline buttons share one line */}
         {(status === "placed" || status === "accepted") && <button type="button" className="ui-btn ghost big" disabled={cancelling} onClick={() => setAskCancel(true)}>Cancel order</button>}
         {track?.phone && status === "out_for_delivery" && <a href={`tel:${track.phone}`} className="ui-btn ghost big" onClick={onCall}>Call the rider</a>}
         {kitchenPhone && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
+        {declined && <button type="button" className="ui-btn big" onClick={onMenu}>Order something else</button>}   {/* story 1458 (board T2b): the main button last, as on every end slip */}
         {(delivered || cancelled) && !declined && <button type="button" className="ui-btn big" onClick={onMenu}>Back to menu</button>}   {/* story 1434 (boards T1b, Delivered b): one name on both end slips, the main button last; the same dishes again only from History */}
       </div>
     </>

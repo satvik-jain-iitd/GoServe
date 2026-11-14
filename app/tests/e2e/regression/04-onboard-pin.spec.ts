@@ -153,7 +153,7 @@ test("TC 4.7 Back: returns to Step 3, not to welcome", async ({ page, context })
   await page.getByRole("button", { name: "Back" }).click();
   await expect(page.getByRole("heading", { name: "Where does the food go?" })).toBeVisible();
   await expect(page.getByText(/Step \d of \d/)).toHaveCount(0);   // 1404 (owner, 13 Nov): no step count anywhere
-  await expect(page.getByRole("heading", { name: "One tap and you are in" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Sign in to start" })).toHaveCount(0);
 });
 
 test("TC 4.8 bad network, the place name is slow: Confirm waits for it", async ({ page, context }) => {

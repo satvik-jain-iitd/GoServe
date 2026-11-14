@@ -22,7 +22,7 @@ test("C1 UPI at the door on: Delivered opens Collect payment with the name, the 
   await expect(page.getByText("Rahul Verma")).toBeVisible();
   await expect(page.getByTestId("collect-total")).toHaveText("₹640");
   await expect(page.getByRole("img", { name: "UPI QR to scan" })).toHaveAttribute("src", SRC);
-  await expect(page.getByText("Wait for the customer's paid screen. Then tap below.")).toBeVisible();
+  await expect(page.getByText("Pehle paisa, phir button.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Took cash ₹640" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Paid by UPI ₹640" })).toBeVisible();
   expect(deliverCalls(net)).toEqual([]);
@@ -33,9 +33,9 @@ test("C2 Paid by UPI delivers with upi_door, the slip says Paid by UPI, Today sa
   await page.getByRole("button", { name: "Paid by UPI ₹640" }).click();
   await expect(page.getByText("Paid by UPI", { exact: true })).toBeVisible();
   expect(deliverCalls(net)).toEqual([{ order_id: ID, action: "deliver", method: "upi_door" }]);
-  await page.getByRole("button", { name: "Next delivery" }).click();
+  await page.getByRole("button", { name: "Done", exact: true }).click();   // story 1448: no order waits
   await page.getByRole("button", { name: "Today", exact: true }).click();
-  await expect(page.locator(".ui-row", { hasText: "No. 0f0f0f0f" })).toContainText("Paid by UPI");
+  await expect(page.locator(".ui-row", { hasText: "No. 0f0f0f0f" })).toContainText("UPI");   // story 1448, board TI1: the short word
   await expect(page.getByTestId("cash")).toContainText("₹0");
 });
 
@@ -44,7 +44,7 @@ test("C3 Took cash delivers with cash, and the cash in hand grows by the amount"
   await page.getByRole("button", { name: "Took cash ₹640" }).click();
   await expect(page.getByText("Cash collected", { exact: true })).toBeVisible();
   expect(deliverCalls(net)).toEqual([{ order_id: ID, action: "deliver", method: "cash" }]);
-  await page.getByRole("button", { name: "Next delivery" }).click();
+  await page.getByRole("button", { name: "Done", exact: true }).click();   // story 1448: no order waits
   await page.getByRole("button", { name: "Today", exact: true }).click();
   await expect(page.getByTestId("cash")).toContainText("₹640");
 });

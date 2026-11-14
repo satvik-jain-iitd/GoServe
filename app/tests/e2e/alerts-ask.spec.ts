@@ -20,7 +20,7 @@ test("S1 first open shows Order alerts, no step count, before the location ask",
   await expect(step2(page)).not.toContainText(/Step \d of \d/);   // 1404: no step count
   await expect(page.locator(".ui-slip-head")).toHaveCount(0);   // 1404: the slip has no top line either
   await expect(page.getByRole("heading", { name: "Get order alerts" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Set delivery location" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Use my current location" })).toHaveCount(0);
   expect(await asked(page)).toBe(0);   // nothing is asked until the tap
 });
 
@@ -29,11 +29,11 @@ test("S2 Turn on alerts asks the permission and moves on to the location, even w
   await phone(context, "default", "denied");
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Turn on alerts" }).click();
-  await expect(page.getByRole("button", { name: "Set delivery location" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Use my current location" })).toBeVisible();
   await expect(page.getByText(/Step \d of \d/)).toHaveCount(0);   // 1404 (owner, 13 Nov): no step count anywhere
   expect(await asked(page)).toBe(1);
   await page.reload();
-  await expect(page.getByRole("button", { name: "Set delivery location" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Use my current location" })).toBeVisible();
   await expect(step2(page)).toHaveCount(0);
 });
 
@@ -42,7 +42,7 @@ test("S3 Not now moves on without asking the phone", async ({ page, context }) =
   await phone(context, "default");
   await page.goto("/customer/");
   await page.getByRole("button", { name: "I'll check the app myself" }).click();
-  await expect(page.getByRole("button", { name: "Set delivery location" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Use my current location" })).toBeVisible();
   expect(await asked(page)).toBe(0);
 });
 
@@ -50,7 +50,7 @@ test("S4 alerts blocked in the phone settings: the step is not shown", async ({ 
   await setup(context, page, [], { pin: null });
   await phone(context, "denied");
   await page.goto("/customer/");
-  await expect(page.getByRole("button", { name: "Set delivery location" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Use my current location" })).toBeVisible();
   await expect(step2(page)).toHaveCount(0);
 });
 
@@ -66,6 +66,6 @@ test("TC 2.1 Turn on alerts always moves on, even when the phone never answers (
   await page.getByRole("button", { name: "Turn on alerts" }).click();
   await expect(step2(page)).toBeVisible();   // still waiting
   await page.clock.fastForward(8_500);
-  await expect(page.getByRole("button", { name: "Set delivery location" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Use my current location" })).toBeVisible();
   await expect(page.getByText(/Step \d of \d/)).toHaveCount(0);   // 1404 (owner, 13 Nov): no step count anywhere
 });

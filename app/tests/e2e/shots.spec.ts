@@ -150,17 +150,17 @@ for (const theme of ["day", "night"] as const) {
     await page.getByRole("button", { name: /^Collect ₹/ }).click();   // story 1182, board RY3: Collect opens Collect payment
     await page.getByText("Cash collected").waitFor();
     await shot("R-Delivered");
-    await page.getByRole("button", { name: "Next delivery" }).click();
+    await page.getByRole("button", { name: /^(Next delivery|Done)$/ }).click();
     await page.getByRole("heading", { name: "Waiting for a delivery" }).waitFor();
     await shot("R-Online");
     await page.getByRole("button", { name: "Today", exact: true }).click();
-    await page.getByText("Cash in hand").waitFor();
+    await page.getByText("Cash aapke paas").waitFor();
     await shot("R-Today");
     await page.getByRole("button", { name: "Me", exact: true }).click();
-    await page.getByRole("switch", { name: "Online" }).waitFor();
+    await page.getByText("Sign out").waitFor();
     await shot("R-Me");
-    await page.getByRole("switch", { name: "Online" }).click();
     await page.getByRole("button", { name: "Delivery", exact: true }).click();
+    await page.getByRole("button", { name: "Go offline" }).click();
     await page.getByRole("heading", { name: "You are offline" }).waitFor();
     await shot("R-Offline");
   });
@@ -202,7 +202,7 @@ for (const theme of ["day", "night"] as const) {
     await shot("K-Ticket");
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Cooking", exact: true }).click();
-    await page.getByRole("heading", { name: "Ready · rider on the way" }).waitFor();
+    await page.getByRole("heading", { name: "Ready · give to the rider" }).waitFor();
     await shot("K-Cooking");
     await page.getByRole("button", { name: "Today", exact: true }).click();
     await page.getByRole("switch", { name: "Open for orders" }).waitFor();

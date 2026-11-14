@@ -5,6 +5,7 @@ import { isPhone } from "../lib/profile";
 import { DOOR_METHODS, type DoorMethod } from "../lib/doorMethods";
 import type { Alternative, Quote } from "../lib/quote";
 import { useEffect, useRef, useState } from "react";
+import { TornTop } from "../ui";
 
 type Props = {
   lines: Line[]; total: number; kitchenName: string; pin: string | null;
@@ -45,6 +46,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
       {notice && <p role="status" className="ui-note ui-again-line">{notice}</p>}
       <div className="ui-scroll">
         <section className="ui-slip ui-slip-pad" aria-label={empty ? "Empty bill" : "Items"}>
+          <TornTop />
           <div className="ui-slip-body">
             <div className="ui-slip-head"><span>{head}</span></div>
             {empty ? (

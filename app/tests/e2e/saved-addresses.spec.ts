@@ -73,7 +73,7 @@ test("S5 Remove the selected address: after the Undo bar runs out the next most 
   await page.getByRole("button", { name: "Edit or remove Home" }).click();
   await page.getByRole("button", { name: "Remove", exact: true }).click();
   await page.clock.runFor(6_500);
-  await expect(page.getByRole("button", { name: "Set delivery location" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Use my current location" })).toBeVisible();
 });
 
 test("S6 Edit opens the filled details (story 1421, ED1); the label changes and the row is updated", async ({ page, context }) => {

@@ -39,7 +39,7 @@ test("D3 D11 D12 the staff apps have a Send feedback row that opens the sheet, a
   await page.goto("/rider/");
   for (const name of ["Delivery", "Today", "Me"]) await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Me", exact: true }).click();
-  await expect(page.getByText("Your phone")).toBeVisible();
+  await expect(page.getByText("Phone", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Send feedback" }).click();
   await expect(page.getByRole("dialog", { name: "Feedback" })).toBeVisible();
   await page.goto("/kitchen/");
@@ -58,7 +58,7 @@ test("D3 D11 D12 the staff apps have a Send feedback row that opens the sheet, a
 test("D4 D5 the pin screen has one button and plain words", async ({ page, context }) => {
   await setup(context, page, [], { pin: null });
   await page.goto("/customer/");
-  await expect(page.getByRole("button", { name: "Set delivery location" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Use my current location" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Track an order" })).toHaveCount(0);
   await expect(page.getByText("We serve a few pin codes for now.")).toHaveCount(0);
   await expect(page.getByText("Cash only")).toHaveCount(0);
@@ -85,7 +85,7 @@ test("D7 D13 the placed screen says the kitchen has the order and offers Back to
   await setup(context, page, [{ ...order("placed", new Date().toISOString(), new Date().toISOString()), reminder: "ask" }]);
   await page.goto("/customer/");
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
-  await expect(page.getByText("The kitchen has your order. This page updates on its own.")).toBeVisible();
+  await expect(page.getByText("The kitchen has your order. This page updates on its own.")).toHaveCount(0);   // review of PR 1466: board PL6 has no such line
   await expect(page.getByRole("button", { name: "Back to menu" })).toBeVisible();
   await expect(page.getByText("Tap Yes when you have it")).toHaveCount(0);
 });
