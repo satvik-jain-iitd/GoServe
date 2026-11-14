@@ -1,11 +1,10 @@
 // The kitchen app on the Ink v3 boards K3 to K6 (story H11, #194): New tickets, Cooking, the Kitchen tab, and one ticket (K4) over the tabs.
 import { useEffect, useRef, useState } from "react";
-import { cashByRider, cookingTickets, deliveredToday, hhmm, justCancelled, minutesAway, newTickets, nextStep, outsideHours, readyTickets, shortId, staffLabel, type Order } from "../lib/kitchen";
+import { cancelLine, cashByRider, cookingTickets, deliveredToday, hhmm, justCancelled, minutesAway, newTickets, nextStep, outsideHours, readyTickets, shortId, staffLabel, type Order } from "../lib/kitchen";
 import { listRiders, type RiderListRow } from "../lib/admin";
 import { getClient } from "../lib/supabase";
-import { formatRupees, linePaise } from "../lib/money";
+import { formatRupees } from "../lib/money";
 import { NoteBand, Skeleton, Tabs } from "../ui";
-import { AdjustLines } from "../ui/AdjustLines";
 import { DishList } from "./KitchenTools";
 import { OrderSheet } from "./OrderSheet";
 import type { KitchenGateState } from "./KitchenGate";
@@ -20,6 +19,7 @@ type Props = {
 };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready" };
 const stamp = (status: string): [string, string] => [staffLabel(status), STAMP[status] ?? ""];
+const stepClass = (to: string) => (to === "preparing" ? "ui-btn ghost big" : "ui-btn big");   // story 1454 (board KC1): Start is an outline, Ready stays filled; same size, same place
 
 export function KitchenScreen({ orders, loading, error, busyId, onStep, onDecline, onHandover, gate }: Props) {
   const [tab, setTab] = useState<Tab>("new");
@@ -31,6 +31,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
   cooking.forEach((o) => seen.current.add(o.id));
   const done = deliveredToday(orders, new Date(), gate ? { opens: gate.opensAt, closes: gate.closesAt } : null);   // story #229: the day ends at closing time
   const onSlips = done.reduce((n, o) => n + o.total_paise, 0);
+  const cash = cashByRider(done, orders);
   const [riders, setRiders] = useState<RiderListRow[]>([]);
   const [handoverError, setHandoverError] = useState<string | null>(null);
   const [minute, setMinute] = useState(() => hhmm(new Date().toISOString()));
@@ -58,8 +59,8 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
     const failed = await onStep(o, next.to);
     if (!failed && opened) { setOpenId(null); setTab(next.to === "accepted" ? "cooking" : tab); }
   };
-  const lines = (o: Order, prices = false) => (
-    <div className="ui-slip-lines ui-ticket-big">{o.items.map((i) => <div key={i.menu_item_id}><span>{i.qty} × {i.name}</span>{prices && <span>{formatRupees(linePaise(i))}</span>}</div>)}{prices && <AdjustLines bill={o.bill} />}</div>
+  const lines = (o: Order) => (   // story 1455 (boards KO1, KK1): the dishes and counts only; the cook needs no prices
+    <div className="ui-slip-lines ui-ticket-big">{o.items.map((i) => <div key={i.menu_item_id}><span>{i.qty} × {i.name}</span></div>)}</div>
   );
   const row = (o: Order) => {
     const [word, cls] = stamp(o.status);
@@ -71,7 +72,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
           {lines(o)}
           {o.instructions?.trim() && <NoteBand text={o.instructions.trim()} />}
         </button>
-        {next && o.status !== "placed" ? <button type="button" className="ui-btn big" aria-label={`${next.label} ${shortId(o.id)}`} disabled={busyId === o.id} onClick={() => void step(o)}>{next.label}</button>
+        {next && o.status !== "placed" ? <button type="button" className={stepClass(next.to)} aria-label={`${next.label} ${shortId(o.id)}`} disabled={busyId === o.id} onClick={() => void step(o)}>{next.label}</button>
           : o.status === "placed" ? null   // story #934: a new order is a tap target; Accept and Decline are on its sheet
           : <span className="mono ui-ticket-wait">{riderLine(o).split(" · ").map((part) => <span key={part}>{part}</span>)}</span>}
       </div>
@@ -83,8 +84,8 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
   const gone = justCancelled(orders, seen.current, new Date());   // recomputed on every render; the minute tick re-renders, so the stamp leaves on its own
   const cancelledRow = (o: Order) => (
     <div key={o.id} className="ui-ticket ui-ticket-cancelled">
-      <div className="ui-ticket-open"><span className="ui-ticket-head"><span className="mono">No. {shortId(o.id)} · {hhmm(o.created_at)}</span><span className="ui-tag error">Cancelled</span></span>{lines(o)}</div>
-      <span className="mono ui-ticket-wait">Cancelled · {o.cancel_reason || "by the customer"} · stop cooking</span>
+      <div className="ui-ticket-open"><span className="ui-ticket-head"><span className="mono">No. {shortId(o.id)} · {hhmm(o.created_at)}</span></span>{lines(o)}</div>
+      <span className="mono ui-ticket-wait">{cancelLine(o)}</span>
     </div>
   );
   const todayLine = <p className="mono ui-foot">Today · {done.length} done{tab === "kitchen" ? ` · ${formatRupees(onSlips)} cash today` : ""}</p>;
@@ -109,28 +110,22 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
         <div className="ui-scroll">
           <section className="ui-slip ui-slip-pad" aria-label={`Order ${shortId(opened.id)}`}>
             <div className="ui-slip-body">
-              <div className="ui-slip-head"><span>Placed {hhmm(opened.created_at)}</span><span>Cash at door</span></div>
+              <div className="ui-slip-head"><span>Placed {hhmm(opened.created_at)}</span></div>
               <div className="ui-slip-stamp"><span className={`ui-stamp ${cls}`}>{word}</span></div>
-              {lines(opened, true)}
+              {lines(opened)}
               {opened.instructions?.trim() && <><div className="ui-slip-rule" /><NoteBand text={opened.instructions.trim()} /></>}
-              <div className="ui-slip-rule" />
-              <div className="ui-deliver"><span className="mono ui-kicker">Deliver to</span><b>{opened.customer_name || "The customer"}</b><span>{opened.address}</span></div>
-              <div className="ui-slip-rule" />
-              <div className="ui-slip-total"><b>Rider collects</b><span>{formatRupees(opened.total_paise)}</span></div>
             </div>
           </section>
-          <p className="mono ui-foot">Accept. Start when cooking. Ready calls the rider.</p>
         </div>
         <div className="ui-bottom">
-          {next && <button type="button" className="ui-btn big" aria-label={`${next.label} ${shortId(opened.id)}`} disabled={busyId === opened.id} onClick={() => void step(opened)}>{next.label}</button>}
-          <button type="button" className="ui-btn ghost big" onClick={() => setOpenId(null)}>Back to {tab === "cooking" ? "cooking" : "new"}</button>
+          {next && <button type="button" className={stepClass(next.to)} aria-label={`${next.label} ${shortId(opened.id)}`} disabled={busyId === opened.id} onClick={() => void step(opened)}>{next.label}</button>}
         </div>
       </>
     );
   }
   const head = tab === "new" ? { h: "New", meta: state ? `${state} · ${fresh.length ? `${fresh.length} new` : "quiet"}` : `${fresh.length} new` }
     : tab === "cooking" ? { h: "Cooking", meta: state ? `${state} · ${cooking.length} on the stove` : `${cooking.length} on the stove` }
-    : { h: "Kitchen", meta: gate?.name ?? "" };
+    : { h: "Today", meta: gate?.name ?? "" };   // story 1456 (board KD1): the header says the tab's word
   return (
     <>
       <header className="ui-head">
@@ -146,14 +141,14 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
       {tab === "new" && (fresh.length === 0 ? (
         <div className="ui-scroll ui-center"><div className="ui-empty"><h2>No new tickets</h2><p className="ui-meta">No new orders. Keep this page open.</p>{todayLine}</div></div>
       ) : (
-        <div className="ui-scroll ui-tickets">{fresh.map(row)}<p className="mono ui-foot">New tickets land here · accept within 2 min</p></div>
+        <div className="ui-scroll ui-tickets">{fresh.map(row)}</div>
       ))}
       {tab === "cooking" && (
         <div className="ui-scroll ui-tickets">
           {gone.map(cancelledRow)}
           {cooking.length === 0 && ready.length === 0 && gone.length === 0 && <div className="ui-empty"><h2>Nothing on the stove</h2><p className="ui-meta">Accepted tickets come here. Start when the pan is on, Ready when it is packed.</p></div>}
           {cooking.map(row)}
-          {ready.length > 0 && <section className="ui-group"><h2>Ready · rider on the way</h2>{ready.map(row)}</section>}
+          {ready.length > 0 && <section className="ui-group"><h2>Ready · give to the rider</h2>{ready.map(row)}</section>}
         </div>
       )}
       {tab === "kitchen" && (
@@ -161,23 +156,25 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
           {todayLine}
           {gate ? (
             <>
-              <div className="ui-row ui-row-static ui-row-tall" data-testid="signed-in-row">
-                <span className="ui-row-label"><span>Signed in as</span><span className="ui-row-sub mono">{gate.email ?? "This Google account"}</span></span>
-                <button type="button" className="ui-btn ghost small" onClick={gate.signOut}>Sign out</button>
-              </div>
               <div className="ui-row ui-row-static ui-row-tall">
                 <label htmlFor="open" className="ui-row-label"><span>Open for orders</span><span className="ui-row-sub mono">{gate.open === null ? "Could not read the kitchen." : !gate.open ? "Closed · customers see it now" : pastClose ? `Past ${gate.closesAt} · "closed" till opening time` : `${gate.closesAt ? `Till ${gate.closesAt} · off` : "Off"} shows "closed" at once`}</span></label>
                 {gate.open === null ? <button type="button" className="ui-btn ghost small" onClick={gate.retry}>Try again</button>
                   : <input id="open" className="ui-switch" type="checkbox" role="switch" checked={gate.open} onChange={() => void gate.flipOpen()} />}
               </div>
-              {cashByRider(done, orders).map((r) => (
+              <DishList kitchenId={gate.kitchenId} />   {/* story 1456 (board KD1): the dishes first; cash and account after */}
+              {cash.length > 0 && <section className="ui-group" aria-label="Cash from riders"><h2>Cash from riders</h2>{cash.map((r) => (
                 <div key={r.rider_id} className="ui-row ui-row-static">
                   <span className="ui-row-label"><span>{riderName(r.rider_id)}</span><span className="ui-row-sub mono">{formatRupees(r.inHand)} in hand{r.handed > 0 ? ` · ${formatRupees(r.handed)} handed over` : ""}{r.older > 0 ? ` · older: ${formatRupees(r.older)}` : ""}</span></span>
                   <button type="button" className="ui-btn ghost small" aria-label={`Confirm hand-over ${riderName(r.rider_id)}`} disabled={r.inHand + r.older === 0} onClick={() => void handover(r)}>Confirm hand-over</button>
                 </div>
-              ))}
+              ))}</section>}
               {handoverError && <p role="alert" className="ui-note error">{handoverError}</p>}
-              <DishList kitchenId={gate.kitchenId} />
+              <section className="ui-group" aria-label="Account"><h2>Account</h2>
+                <div className="ui-row ui-row-static ui-row-tall" data-testid="signed-in-row">
+                  <span className="ui-row-label"><span>Signed in as</span><span className="ui-row-sub mono">{gate.email ?? "This Google account"}</span></span>
+                  <button type="button" className="ui-btn ghost small" onClick={gate.signOut}>Sign out</button>
+                </div>
+              </section>
               <button type="button" className="ui-row" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}><span>Send feedback</span><span className="go" aria-hidden="true">›</span></button>
             </>
           ) : <p className="ui-meta ui-pad">The open switch and the dishes are on the kitchen app, after a Google sign-in.</p>}

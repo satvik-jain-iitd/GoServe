@@ -26,7 +26,7 @@ test("S3 before pickup there is no Navigate yet", async ({ page, context }) => {
   const net = await setup(context, page, [job("ready", { drop_lat: 28.5677, drop_lng: 77.2432 })]);
   net.state.kitchens = [KITCHEN];
   await page.goto("/rider/");
-  await expect(page.getByText("Pick up at")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Pick up" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Navigate" })).toHaveCount(0);
 });
 

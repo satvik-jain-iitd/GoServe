@@ -41,7 +41,7 @@ test("S5 on /rider/ even a kitchen staff user reads only the orders assigned to 
 });
 
 // Story #849 (board K-Account, approved 2026-11-04): the Today tab says which Google account is signed in, with Sign out beside it, at the top.
-test("S6 (#849) the kitchen tab starts with Signed in as, the email and Sign out, above the open switch", async ({ page, context }) => {
+test("S6 the Today tab ends with Account: Signed in as, the email and Sign out, below the open switch (board KD1)", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.kitchen = "k-1";
   net.state.userEmail = "sunita.devi@gmail.com";
@@ -53,8 +53,8 @@ test("S6 (#849) the kitchen tab starts with Signed in as, the email and Sign out
   const out = row.getByRole("button", { name: "Sign out" });
   await expect(out).toBeVisible();
   const outY = (await out.boundingBox())!.y, openY = (await page.getByRole("switch", { name: "Open for orders" }).boundingBox())!.y;
-  expect(outY).toBeLessThan(openY);   // at the top, not at the bottom
-  await expect(page.getByRole("button", { name: "Sign out" })).toHaveCount(1);   // the old row at the bottom is gone, one way out
+  expect(outY).toBeGreaterThan(openY);   // board KD1: daily work first, the account last
+  await expect(page.getByRole("button", { name: "Sign out" })).toHaveCount(1);   // one way out
   expect(await scan(page)).toEqual([]);
 });
 

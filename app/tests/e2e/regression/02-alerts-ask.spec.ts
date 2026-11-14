@@ -101,7 +101,7 @@ test("TC 2.9 close the app on this step and open it again: back on Step 2, not w
   await STEPS["alerts-ask"](context, page, PATH);
   await page.reload();
   await expect(page.getByRole("heading", { name: "Get order alerts" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "One tap and you are in" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Sign in to start" })).toHaveCount(0);
 });
 
 // Story #1336: on a short phone the round icon must not cover the buttons, and the outline button is as tall as the green one.

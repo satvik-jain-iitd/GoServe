@@ -7,7 +7,7 @@ export type Order = {
   id: string; session_id: string; status: string; address: string; items: OrderLine[]; total_paise: number; created_at: string; updated_at: string; paid_by?: string | null; bill?: OrderBill | null;
   payment_method?: string | null; paid_at?: string | null;   // story #552: online orders wait for the payment
   customer_name?: string | null; customer_phone?: string | null;
-  kitchen_id?: string; rider_id?: string | null; cash_handed_at?: string | null; cancel_reason?: string | null; cancelled_by?: string | null; instructions?: string | null;
+  kitchen_id?: string; rider_id?: string | null; cash_handed_at?: string | null; delivered_at?: string | null; cancel_reason?: string | null; cancelled_by?: string | null; instructions?: string | null;
   drop_lat?: number | null; drop_lng?: number | null;   // story #1182: the customer's exact pin, when the order has one
 };
 
@@ -33,6 +33,13 @@ export const cancelKind = (o: { status: string; cancelled_by?: string | null; ca
   const why = o.cancel_reason?.trim();
   return !why || why === "cancelled by customer" ? "customer" : why === "refused_at_door" ? "rider" : "declined";
 };
+/** Story 1454 (board KC1): the kitchen's cancelled row says the word once: by the customer, or the kitchen's or admin's own reason. */
+export const cancelLine = (o: { status: string; cancelled_by?: string | null; cancel_reason?: string | null }): string => {
+  const kind = cancelKind(o);
+  if (kind === "customer") return "Cancelled by the customer · stop cooking";
+  const why = kind === "rider" ? "refused at the door" : o.cancel_reason?.trim().replace(/^cancell?ed\b[\s:·-]*/i, "");   // review of PR 1477: the rider's code in words
+  return why ? `Cancelled · ${why} · stop cooking` : "Cancelled · stop cooking";
+};
 export const statusLabel = (status: string): string => LABELS[status] ?? status;
 /** The staff apps (kitchen, admin) say "New" for a placed order; the customer sees "Placed". One place for the difference (H12). */
 export const staffLabel = (status: string): string => (status === "placed" ? "New" : statusLabel(status));
@@ -49,7 +56,9 @@ export const readyTickets = (orders: Order[]): Order[] => orders.filter((o) => o
 /** Story #230: a ticket the cook had on Cooking that turned cancelled stays a minute, stamped Cancelled, so the cook knows. `seen` = ids that were on Cooking. */
 export const justCancelled = (orders: Order[], seen: Set<string>, now: Date, ms = 60_000): Order[] =>
   orders.filter((o) => o.status === "cancelled" && seen.has(o.id) && now.getTime() - Date.parse(o.updated_at) < ms).sort(oldestFirst);
-export type Done = { status: string; updated_at: string; total_paise: number; paid_by?: string | null; cash_handed_at?: string | null; rider_id?: string | null };
+export type Done = { status: string; updated_at: string; delivered_at?: string | null; total_paise: number; paid_by?: string | null; cash_handed_at?: string | null; rider_id?: string | null };
+/** When the order was delivered (story 1448). updated_at moves on every later change (a Change, the night's hand-over); delivered_at is set once. Older rows have none. */
+export const deliveredAt = (o: { updated_at: string; delivered_at?: string | null }): string => o.delivered_at ?? o.updated_at;
 export type Hours = { opens: string | null; closes: string | null };
 /** The cash day a time belongs to (story #229). A kitchen that closes past midnight (closes before opens, "18:00" to "02:00") keeps the night in one day:
  *  the closing hours are rolled back before the date is read. Any other kitchen, or unknown hours, uses the calendar day. */
@@ -60,8 +69,8 @@ export const dayOf = (iso: string | Date, hours?: Hours | null): string => {
 };
 /** The orders delivered today, by the phone's clock, newest first (the rider's Today, the kitchen's done count). */
 export const deliveredToday = <T extends Done>(orders: T[], now = new Date(), hours?: Hours | null): T[] =>
-  orders.filter((o) => o.status === "delivered" && dayOf(o.updated_at, hours) === dayOf(now, hours))
-    .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+  orders.filter((o) => o.status === "delivered" && dayOf(deliveredAt(o), hours) === dayOf(now, hours))
+    .sort((a, b) => deliveredAt(b).localeCompare(deliveredAt(a)));
 export const hhmm = (iso: string): string => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
 /** True when "HH:MM" now lies outside the opening hours; a kitchen open 18:00 to 02:00 crosses midnight. Unknown hours: never outside. */
 export const outsideHours = (opens: string | null, closes: string | null, now: string): boolean => {

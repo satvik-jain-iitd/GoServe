@@ -15,7 +15,7 @@ test("S1 a new ticket sits on the New tab with Accept, opens as one ticket, and 
   await expect(page.getByLabel("1 new")).toBeVisible();   // the badge on the New tab
   await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
   await expect(page.getByRole("dialog", { name: "Order 0f0f0f0f" })).toBeVisible();   // story 934: a new order opens as a sheet
-  await expect(page.getByText("Rider collects")).toBeVisible();
+  await expect(page.getByText("Rider collects")).toHaveCount(0);   // story 1455 (board KO1): no amount for the cook
   await page.getByRole("button", { name: "Accept 0f0f0f0f" }).click();
   await expect(page.getByRole("heading", { name: "Cooking" })).toBeVisible();   // K4 Accept lands on the Cooking tab
   await expect(page.getByRole("button", { name: "Start 0f0f0f0f" })).toBeVisible();
@@ -29,7 +29,7 @@ test("S2 the Cooking tab holds Start and Ready, and a ready ticket waits for the
   await tab(page, "Cooking").click();
   await expect(page.getByRole("button", { name: "Start 0f0f0f0f" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Ready 0b0b0b0b" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Ready · rider on the way" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ready · give to the rider" })).toBeVisible();
   await expect(page.getByText("No. 0c0c0c0c")).toBeVisible();
   await expect(page.getByRole("button", { name: /^(Accept|Start|Ready) 0c0c0c0c/ })).toHaveCount(0);   // no step once the rider is called
 });

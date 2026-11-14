@@ -3,14 +3,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { hhmmOf, type Hours } from "./kitchen";
 
 export type RiderRow = { name: string | null; phone?: string | null; online: boolean };
-export type KitchenCard = { name: string; address: string | null; opens_at?: string | null; closes_at?: string | null };
+export type KitchenCard = { name: string; address: string | null; opens_at?: string | null; closes_at?: string | null; lat?: number | null; lng?: number | null; phone?: string | null };
 /** What the rider screens get from the gate (story H11): who, online or not, and the two taps. Null in the demo console. */
 export type RiderGateState = { name: string | null; phone: string | null; online: boolean; flip: () => Promise<void>; signOut: () => void };
 export const LOCATION_EVERY_MS = 30_000;
 /** Story 1182: the rider is "near" the door within this many metres of the order's pin, and the Arriving button shows. A guess (docs/assumptions.md). */
 export const DOOR_NEAR_M = 150;
-/** The words on the Offline and Me screens, built from LOCATION_EVERY_MS so they never drift: "every 30 seconds". */
-export const locationLabel = (): string => `every ${LOCATION_EVERY_MS / 1000} seconds`;
 export const shouldSendLocation = (lastSentMs: number | null, nowMs: number): boolean => lastSentMs === null || nowMs - lastSentMs >= LOCATION_EVERY_MS;
 
 type Client = Pick<SupabaseClient, "from" | "rpc">;
@@ -29,12 +27,26 @@ export async function sendLocation(c: Client, lat: number, lng: number): Promise
 
 // Story H11 (#194): the kitchen to pick up at, by the order's kitchen_id. Null when the row cannot be read.
 export async function fetchKitchen(c: Pick<SupabaseClient, "from">, kitchenId: string): Promise<KitchenCard | null> {
-  const { data, error } = await c.from("kitchens").select("name, address, opens_at, closes_at").eq("id", kitchenId).limit(1);
+  const { data, error } = await c.from("kitchens").select(KITCHEN_COLS).eq("id", kitchenId).limit(1);
   if (error) throw error;
   return (data?.[0] as KitchenCard | undefined) ?? null;
+}
+const KITCHEN_COLS = "name, address, opens_at, closes_at, lat, lng, phone";   // stories 1445 and 1440: the point and the phone for the Me rows
+/** Stories 1445 and 1440: a rider on his first day has no order yet, so no kitchen. When exactly one real kitchen is active, it is his; else null (never a wrong place). */
+export async function fetchOnlyKitchen(c: Pick<SupabaseClient, "from">): Promise<KitchenCard | null> {
+  const { data, error } = await c.from("kitchens").select(KITCHEN_COLS).eq("active", true).eq("synthetic", false).limit(2);
+  return !error && data?.length === 1 ? (data[0] as KitchenCard) : null;
 }
 /** The cash the rider holds from today's deliveries: every order is cash at the door (paid_by unset or "cash"). */
 export { cashInHand, handedOver } from "./kitchen";   // story #229: one cash rule for both screens
 /** The kitchen's hours as the cash day needs them ("HH:MM" or null). */
 export const hoursOf = (k: KitchenCard | null): Hours | null => (k ? { opens: hhmmOf(k.opens_at), closes: hhmmOf(k.closes_at) } : null);
 export const firstName = (name: string | null | undefined): string => (name ?? "").trim().split(/\s+/)[0] || "customer";
+
+/** Story 1448: the rider puts a wrong cash or UPI tap right on a delivered order. Null when saved; else the refusal (handed_over, order_not_found, bad_method) or "failed". */
+export async function riderChangePaid(c: Pick<SupabaseClient, "rpc">, orderId: string, method: "cash" | "upi_door"): Promise<string | null> {
+  const { data, error } = await c.rpc("rider_change_paid", { p_order: orderId, p_method: method });
+  if (error) return "failed";
+  const r = data as { ok?: boolean; error?: string } | null;
+  return r?.ok ? null : r?.error ?? "failed";
+}
