@@ -9,7 +9,7 @@ import { TornTop } from "../ui";
 
 type Props = {
   lines: Line[]; total: number; kitchenName: string; pin: string | null;
-  address: string; onAddress: (v: string) => void;
+  address: string; confirmed: boolean; onChangePlace: () => void; onConfirmPlace: () => void;   // story 1532: the words of the stored place, never a text box; confirmed = it has a point the customer set
   note: string; onNote: (v: string) => void;   // story #935: one optional line for the kitchen, up to 200 characters
   details?: { phone: string; onPhone: (v: string) => void; saved: string | null };   // story 1417 (boards BF1, BF2, BC1): the phone once, never the name; saved = the phone kept on the account
   offers?: { quote: Quote; codeError: string | null; onApply: (code: string) => void; onRemove: () => void };   // story #588: the quote's bill and the Offers block (boards C1, C2)
@@ -20,6 +20,11 @@ type Props = {
 };
 
 export const NOTE_MAX = 200;
+export const CONFIRM_PLACE_LINE = "Confirm your place on the map to place the order.";
+// Story 1532: where the food goes, as words with Change (the Bill and You). The same row as the saved phone (board BF2).
+export const PlaceRow = ({ words, onChange }: { words: string; onChange: () => void }) => (
+  <div className="ui-phone-row" role="group" aria-label="Deliver to"><span><small className="mono">Deliver to</small><span>{words.trim() || "Not set yet"}</span></span><button type="button" className="ui-pinmap-change" aria-label="Change address" onClick={onChange}>Change</button></div>
+);
 const plain = (paise: number) => formatRupees(paise).replace("₹", "");
 export const BackChevron = ({ label, onClick }: { label: string; onClick: () => void }) => (
   <button type="button" className="ui-back" aria-label={label} onClick={onClick}>
@@ -27,11 +32,11 @@ export const BackChevron = ({ label, onClick }: { label: string; onClick: () => 
   </button>
 );
 
-export function BillScreen({ lines, total, kitchenName, pin, address, onAddress, note, onNote, details, offers, soldOut, door, sending, error, notice, onBack, onPlace }: Props) {
+export function BillScreen({ lines, total, kitchenName, pin, address, confirmed, onChangePlace, onConfirmPlace, note, onNote, details, offers, soldOut, door, sending, error, notice, onBack, onPlace }: Props) {
   const [typed, setTyped] = useState("");
   const q = offers?.quote;
   const empty = lines.length === 0;
-  const ready = !empty && !soldOut && address.trim().length > 0 && (!details || isPhone(details.phone));
+  const ready = !empty && !soldOut && confirmed && (!details || isPhone(details.phone));
   const [changing, setChanging] = useState(false);   // board BC1: Change turns the saved row into the field, in place
   const phoneRef = useRef<HTMLInputElement>(null);
   useEffect(() => { if (changing) phoneRef.current?.focus(); }, [changing]);
@@ -125,7 +130,8 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
             {details && (savedRow
               ? <div className="ui-phone-row"><span><small className="mono">The rider calls you on</small><span className="mono">{details.phone}</span></span><button type="button" className="ui-pinmap-change" onClick={() => setChanging(true)}>Change</button></div>   /* board BF2: ten digits together */
               : <div className="ui-field"><label htmlFor="phone">Phone number · the rider calls you on it</label><input ref={phoneRef} id="phone" className="mono-input ui-eg" type="tel" placeholder="10 digit number" value={details.phone} inputMode="numeric" maxLength={10} autoComplete="tel-national" onChange={(e) => details.onPhone(e.target.value.replace(/\D/g, ""))} /></div>)}
-            <div className="ui-field"><label htmlFor="address">Address</label><textarea id="address" className="ui-eg" rows={2} value={address} maxLength={300} placeholder="e.g. C-128, Green Avenue Colony" onChange={(e) => onAddress(e.target.value)} /></div>
+            <PlaceRow words={address} onChange={onChangePlace} />
+            {!confirmed && <button type="button" className="ui-btn ghost" onClick={onConfirmPlace}>Confirm on the map</button>}
             <div className="ui-field"><label htmlFor="note">Note for the kitchen (optional)</label><textarea id="note" className="ui-eg" rows={2} value={note} maxLength={NOTE_MAX} placeholder="e.g. less spicy, no onion" onChange={(e) => onNote(e.target.value)} /><p className="mono ui-note-count"><span>{note.length} / {NOTE_MAX}</span></p></div>
             {door && (
               <fieldset className="ui-pay" role="radiogroup">
@@ -142,7 +148,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, onAddress,
       </div>
       {!empty && (
         <div className="ui-sticky float">
-          {!ready && !sending && !soldOut && <p role="status" className="ui-reason">{address.trim().length === 0 ? "Add your address to place the order." : details && details.phone.length === 10 ? "The phone must be ten digits and start with 6, 7, 8 or 9." : "Add your 10 digit phone number."}</p>}   {/* story #1170: why the button is off */}
+          {!ready && !sending && !soldOut && <p role="status" className="ui-reason">{!confirmed ? CONFIRM_PLACE_LINE : details && details.phone.length === 10 ? "The phone must be ten digits and start with 6, 7, 8 or 9." : "Add your 10 digit phone number."}</p>}   {/* story #1170: why the button is off */}
           <button type="button" className="ui-btn bar" disabled={!ready || sending} onClick={onPlace}>
             <span className="mono">{door?.value === "upi_door" ? "UPI" : door?.value === "cash" ? "Cash" : "At door"} · {formatRupees(total)}</span><span className="verb">{sending ? "Placing…" : soldOut ? "Fix the bill first" : "Place order ›"}</span>
           </button>

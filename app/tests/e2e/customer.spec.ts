@@ -1,6 +1,7 @@
 // Story #48: menu, cart, bill, place order. Every network call is answered by the test, so this runs without Supabase or n8n.
 // Build-time keys come from playwright.config.ts (VITE_SUPABASE_URL=https://test.supabase.co, VITE_ORDER_URL=https://orders.test/gs-order).
 import { test, expect, type BrowserContext } from "@playwright/test";
+import { placeAt } from "./helpers";
 
 const SESSION = "7e57ab1e-0000-4000-8000-0000000000a1";
 const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
@@ -15,7 +16,7 @@ const ORDER = { id: "0f0f0f0f-1111-4222-8333-444444444444", status: "placed", to
 type Net = { orders: { headers: Record<string, string>; body: any }[]; menuUp: boolean; orderReply: { status: number; body: unknown } };
 
 async function mockNetwork(context: BrowserContext): Promise<Net> {
-  await context.addInitScript(() => { try { window.localStorage.setItem("gs-pin", "110016"); } catch { /* blocked */ } });   // story B2: this device already knows its pin code
+  await context.addInitScript((p) => { try { window.localStorage.setItem("gs-pin", p.pin); window.localStorage.setItem("gs-place", JSON.stringify(p)); } catch { /* blocked */ } }, placeAt("110016", "Flat 4, Green Park, Delhi"));   // story 1532: this device already holds its place, with a point
   const net: Net = { orders: [], menuUp: true, orderReply: { status: 201, body: { ok: true, created: true, order: ORDER } } };
   const reply = (route: any, status: number, body: unknown) => route.fulfill({ status, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(body) });
   await context.route("https://test.supabase.co/**", async (route) => {
@@ -50,7 +51,6 @@ test("S1 order path: add 2 dishes, see the bill, place the order (cash on delive
   await page.getByRole("button", { name: /View bill/ }).click();
 
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
-  await page.getByLabel("Address").fill("Flat 4, Green Park, Delhi");
 
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
   await expect(page.getByTestId("bill-total")).toHaveText("₹380.50");
@@ -69,14 +69,15 @@ test("S1 order path: add 2 dishes, see the bill, place the order (cash on delive
   expect(JSON.stringify(net.orders[0].body)).not.toMatch(/session_id/);   // who is ordering comes from the token, not from the body
 });
 
-test("S1 the address is required before the bill", async ({ page, context }) => {
+test("S1 a place confirmed on the map is required before the order (story 1532: no typed address)", async ({ page, context }) => {
   await mockNetwork(context);
+  await context.addInitScript(() => { window.localStorage.removeItem("gs-place"); window.localStorage.removeItem("gs-pin"); });   // a phone with no place
   await page.goto("/console/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
   await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
-  await page.getByLabel("Address").fill("Flat 4");
-  await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Confirm on the map" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Address" })).toHaveCount(0);
 });
 
 test("S1 quantity buttons change the bill", async ({ page, context }) => {
@@ -85,7 +86,6 @@ test("S1 quantity buttons change the bill", async ({ page, context }) => {
   await page.getByRole("button", { name: "Add Samosa (2 pieces)" }).click();
   await page.getByRole("button", { name: "More Samosa (2 pieces)" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
-  await page.getByLabel("Address").fill("x");
   await expect(page.getByTestId("bill-total")).toHaveText("₹121");
 });
 
@@ -95,7 +95,6 @@ test("S1 a refused order shows the reason, and the retry sends the same order ke
   await page.goto("/console/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
-  await page.getByLabel("Address").fill("Flat 4");
   await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByRole("alert")).toHaveText("Orders are paused. Please try again soon.");
   await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();

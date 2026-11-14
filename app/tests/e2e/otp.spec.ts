@@ -53,7 +53,6 @@ async function toCodeStep(page: Page, phone = "9876543210") {
 async function toBill(page: Page) {
   await menu(page).click();
   await page.getByRole("button", { name: /View bill/ }).click();
-  await page.getByLabel("Address").fill("Flat 4, Green Park");
 }
 
 test("S1 a guest enters the number and the code on the welcome wall; the Bill shows that number and the order goes with it, no sheet (story 1417)", async ({ page, context }) => {

@@ -9,8 +9,8 @@ import { clientPlatform } from "./lib/platform";
 import { riderRefused, savePlatform, tapCall } from "./lib/signals";
 import { useLiveOrders } from "./lib/useLiveOrders";
 import { loadMenu, MENU_KEY, type Dish } from "./lib/menu";
-import { fetchKitchens, forgetArea, loadArea, loadPin, closedCopy, clearedLine, openingText, resolveArea, savePin, shownArea, type Area } from "./lib/area";
-import { dropFor } from "./lib/locate";
+import { fetchKitchens, loadArea, closedCopy, clearedLine, openingText, resolveArea, shownArea, type Area } from "./lib/area";
+import { clearPlace, loadPlace, pointOf, savePlace, type StoredPlace } from "./lib/place";
 import { AreaScreen } from "./screens/AreaScreen";
 import { AlertsAsk } from "./screens/AlertsAsk";
 import { LocationOffSheet } from "./screens/LocationOffSheet";
@@ -40,11 +40,11 @@ import { AccountScreen } from "./screens/AccountScreen";
 import { DeliverToScreen } from "./screens/DeliverToScreen";
 import { placeSearch } from "./lib/placeSearch";
 import { PinMapScreen } from "./screens/PinMapScreen";
-import { distanceM, FAR_M, addAddress, editAddress, firstFromProfile, listAddresses, lastUsed, removeAddress, touchAddress, type SavedAddress } from "./lib/addresses";
+import { distanceM, FAR_M, addAddress, editAddress, listAddresses, lastUsed, removeAddress, touchAddress, type SavedAddress } from "./lib/addresses";
 import { currentPlace, type Place } from "./lib/locate";
 import { currentSession, scopeFor } from "./lib/session";
 import { MenuScreen } from "./screens/MenuScreen";
-import { BillScreen } from "./screens/BillScreen";
+import { BillScreen, CONFIRM_PLACE_LINE } from "./screens/BillScreen";
 import { OFFERS_ON } from "./lib/quote";
 import { watchMenu } from "./lib/liveMenu";
 import { placeOrderV2, PriceChanged, v2Deps } from "./lib/ordersV2";
@@ -82,7 +82,15 @@ const LOC_WAIT_MS = 5000;   // story #1056: how long the app waits for a positio
 export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [menu, setMenu] = useState<{ dishes: Dish[]; fromCache: boolean; slow?: boolean } | null>(null);
   // The customer app asks for a pin code and shows the menu of the kitchen that serves it (story B2). The demo console and the other apps keep the plain menu.
-  const [pin, setPin] = useState<string | null>(() => (lock === "customer" ? loadPin() : null));
+  // Story 1532: the one delivery place (point, words, postal code, house, confirmed mark), kept in the phone as one thing (lib/place.ts). The postal code, the words and the point are read from it.
+  const [where, setPlaceNow] = useState<StoredPlace | null>(loadPlace);
+  const setPlace = (next: StoredPlace | null) => { setPlaceNow(next); if (next) savePlace(next); else clearPlace(); };
+  const pin = lock === "customer" ? where?.pin ?? null : null;
+  const address = where?.address ?? "";
+  const selectedId = where?.id ?? null;
+  const lat = where?.lat ?? null;
+  const lng = where?.lng ?? null;
+  const from = useMemo(() => (lat !== null && lng !== null ? { lat, lng } : null), [lat, lng]);   // where the food goes, confirmed or not: it picks the nearest kitchen
   const [area, setArea] = useState<Area | null>(() => (lock === "customer" ? loadArea() : null));   // #242 D15: a saved kitchen opens the menu before the network answers
   const [areaError, setAreaError] = useState<string | null>(null);
   const [clock, setClock] = useState(() => new Date());   // #321: the kitchen's hours are checked against this, so the menu closes at closing time without a reload
@@ -94,8 +102,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const shown = shownArea(area, clock);
   const [looking, setLooking] = useState(false);
   const [menuError, setMenuError] = useState<string | null>(null);
-  const [fixAddress, setFixAddress] = useState<string | null>(null);   // story #910: the address the fix belongs to; a hand edit after it clears the drop point
-  const [from, setFrom] = useState<{ lat: number; lng: number } | null>(null);   // story #668: where the customer is, when they allowed location; it picks the nearest kitchen
   const [menuTry, setMenuTry] = useState(0);   // story #637: Try again and the phone coming back online read the menu again
   useEffect(() => {
     const again = () => setMenuTry((n) => n + 1);
@@ -123,7 +129,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     screenStep(step, stepped, was === "bill" && step === "placed");   // a placed order: Back from the tracker shows the menu, never the bill again
   }, [step]);
   const [cart, setCart] = useState<Cart>(draft0?.cart ?? {});
-  const [address, setAddress] = useState(draft0?.address ?? "");
   const [note, setNote] = useState("");   // story #935: the note for the kitchen is for this order only, never kept
   const [name, setName] = useState(draft0?.name ?? "");
   const [phone, setPhone] = useState(draft0?.phone ?? "");
@@ -172,7 +177,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       setName((v) => p.name || v);   // story 1417: a name saved on You wins over the sign-in name
       setPhone((v) => v || p.phone);
       if (isPhone(p.phone)) setSavedPhone(p.phone);
-      setAddress((v) => v || p.address);
     }).catch(() => {});
   }, [lock]);
   const [sending, setSending] = useState(false);
@@ -501,20 +505,19 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     loadMenu(() => fetchMenuRows(areaKitchenId), window.localStorage, `${MENU_KEY}.${areaKitchenId}`, { onLater: (m) => { if (alive) setMenu(m); } }).then((loaded) => { if (alive) { setMenu(loaded); setMenuError(null); } }, () => undefined);
     return () => { alive = false; };
   }, [liveTick]);   // eslint-disable-line react-hooks/exhaustive-deps
-  function choosePin(p: string, at?: { lat: number; lng: number }) {
-    setFrom(at ?? null);
-    savePin(p);
-    capture("address_set", { from: at ? "location" : "typed" });
-    setArea(null);
-    setMenu(null);
-    setMenuError(null);
-    setPin(p);
-    ensureSession().then((uid) => getClient().from("customers").upsert({ user_id: uid, pin_code: p, updated_at: new Date().toISOString() }, { onConflict: "user_id" })).catch(() => {});
+  function choosePlace(next: StoredPlace) {   // a new postal code finds the kitchen again; the same one only moves the point
+    if (lock === "customer" && next.pin !== pin) {
+      capture("address_set", { from: next.lat !== null ? "location" : "typed" });
+      setArea(null);
+      setMenu(null);
+      setMenuError(null);
+      ensureSession().then((uid) => getClient().from("customers").upsert({ user_id: uid, pin_code: next.pin, updated_at: new Date().toISOString() }, { onConflict: "user_id" })).catch(() => {});
+    }
+    setPlace(next);
   }
   // Story #976, changed by #1035: the saved addresses. On open the one used last is picked, always; the phone's place only shows "here" or "N km" on the rows.
   const [saved, setSaved] = useState<SavedAddress[] | null>(null);
   const [addrTried, setAddrTried] = useState(false);   // story #1112: the saved addresses were asked for (answered or failed): until then a signed-in phone with no pin is loading, not new
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [here, setHere] = useState<Place | null>(null);
   const [locOff, setLocOff] = useState<null | { denied: boolean; busy: boolean; how: boolean }>(null);   // story #1056: the location-off sheet, shown once per app open
   // Story #1162 (owner, 9 Nov): the kitchen closes (live, or by the clock) under a customer who has items but has NOT placed the order: the app goes to the closed menu, the bill is cleared, and a line says so.
@@ -547,15 +550,15 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     return here ?? (row && row.lat !== null && row.lng !== null ? { lat: row.lat, lng: row.lng } : k && typeof k.lat === "number" && typeof k.lng === "number" ? { lat: k.lat, lng: k.lng } : { lat: 28.6139, lng: 77.209 });
   };
   const openAtStart = (edit?: SavedAddress) => setPinMap({ center: mapStart(), edit, follow: true });   // story 1502: an open the person did not aim follows the phone's place once
+  const confirmOnMap = () => {   // story 1532: the Bill's "Confirm on the map". An old saved row with no pin gets its pin; any other place opens the map at its point
+    const row = (saved ?? []).find((r) => r.id === selectedId);
+    if (row) openAtStart(row); else if (from) setPinMap({ center: from }); else openAtStart();
+  };
   const opened = useRef(false);
   const moved = useRef(false);   // true once the customer has left the first menu (the Bill, the placed screen, any page)
   if (step !== "menu") moved.current = true;
-  function useSaved(a: SavedAddress, touch: boolean) {   // the Bill reads `address`; a new pin code finds the kitchen again
-    setSelectedId(a.id);
-    setAddress(a.address);
-    setFixAddress(a.lat !== null && a.lng !== null ? a.address : null);   // story #1049: a saved place with its pin carries its drop point while the words stay as saved
-    const at = a.lat !== null && a.lng !== null ? { lat: a.lat, lng: a.lng } : undefined;
-    if (a.pin !== pin) choosePin(a.pin, at); else setFrom(at ?? null);   // story #1182: the same pin code still moves the drop point to this address's own pin
+  function useSaved(a: SavedAddress, touch: boolean) {   // story 1532: a saved address with its pin is a confirmed place; an old row with no pin must be confirmed on the map
+    choosePlace({ address: a.address, pin: a.pin, lat: a.lat, lng: a.lng, house: a.house ?? "", landmark: a.landmark ?? "", confirmed: a.lat !== null && a.lng !== null, id: a.id });
     if (touch) {
       const at = new Date().toISOString();
       setSaved((cur) => (cur ?? []).map((r) => (r.id === a.id ? { ...r, last_used_at: at } : r)));
@@ -587,24 +590,17 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       if (off && !moved.current) setLocOff({ denied: off === "denied", busy: false, how: false });
     })().catch(() => undefined);
   }, [signedIn]);   // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => {   // today's single saved address becomes the first row, Home, once (only while the list is empty)
-    if (saved === null || saved.length > 0) return;
-    const first = firstFromProfile({ address, pin });
-    if (!first) return;
-    let alive = true;
-    addAddress(getClient(), { ...first, lat: from?.lat ?? null, lng: from?.lng ?? null }).then((row) => { if (alive && row) { setSaved([row]); setSelectedId(row.id); } });
-    return () => { alive = false; };
-  }, [saved, address, pin]);   // eslint-disable-line react-hooks/exhaustive-deps
   async function saveNew(pl: { pin: string; address: string; label?: string; from?: Place; house?: string; landmark?: string }) {
     const row = await addAddress(getClient(), { label: pl.label || "Home", address: pl.address, pin: pl.pin, lat: pl.from?.lat ?? null, lng: pl.from?.lng ?? null, house: pl.house, landmark: pl.landmark });
-    if (row) { setSaved((cur) => [row, ...(cur ?? [])]); useSaved(row, false); } else { setAddress(pl.address); choosePin(pl.pin, pl.from); }
-    setStep("menu");
+    if (row) { setSaved((cur) => [row, ...(cur ?? [])]); useSaved(row, false); }
+    else choosePlace({ address: pl.address, pin: pl.pin, lat: pl.from?.lat ?? null, lng: pl.from?.lng ?? null, house: pl.house ?? "", landmark: pl.landmark ?? "", confirmed: !!pl.from, id: null });   // story 1532: the save failed; the place the customer confirmed stays, with its point
+    setStep((s) => (s === "bill" ? "bill" : "menu"));   // "Confirm on the map" from the Bill comes back to the Bill
   }
   async function saveEdit(id: string, a: { pin: string; address: string; label: string; from: Place; house: string; landmark: string }) {   // story #1051: the same row, the new words and the new pin
     const v = { label: a.label, address: a.address, pin: a.pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark };
     if (!(await editAddress(getClient(), id, v))) return;
     setSaved((cur) => (cur ?? []).map((r) => (r.id === id ? { ...r, ...v } : r)));
-    if (id === selectedId) { setAddress(v.address); if (v.pin !== pin) choosePin(v.pin, a.from); }
+    if (id === selectedId) choosePlace({ address: v.address, pin: v.pin, lat: v.lat, lng: v.lng, house: v.house, landmark: v.landmark, confirmed: true, id });   // story 1532: the picked address keeps its point after an edit
   }
   async function dropSaved(id: string) {
     if (!(await removeAddress(getClient(), id))) return;
@@ -613,14 +609,11 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     if (id !== selectedId) return;
     const next = [...rest].sort((a, b) => b.last_used_at.localeCompare(a.last_used_at))[0];
     if (next) return void useSaved(next, false);
-    setSelectedId(null);
-    setAddress("");
     setStep("menu");
     changeArea();
   }
   function changeArea() {
-    forgetArea();
-    setPin(null);
+    setPlace(null);
     setArea(null);
     setMenu(null);
     setCart({});
@@ -914,7 +907,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     void place();
   }, [pendingPlace, otpOpen, nameOpen, nameAsked, name]);   // eslint-disable-line react-hooks/exhaustive-deps
 
-  const readPinOrEmpty = () => { try { return window.localStorage.getItem("gs-pin") ?? ""; } catch { return ""; } };   // the console has no area step; it uses the pin this phone saved
   async function demoKitchenId(): Promise<string | null> {
     const { data } = await getClient().from("kitchens").select("id").eq("active", true).eq("open", true).limit(1);
     return (data?.[0] as { id?: string } | undefined)?.id ?? null;
@@ -924,6 +916,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     if (lock && lock !== "customer") return;   // story H2: only the customer app and the demo console place orders
     // Story 1417 (issue text; the reviewer asks the owner for the switch-on case): checkout never opens the number, code or name sheet. The phone is the Bill's field.
     // The switch and OtpSheet stay: the welcome wall still uses them. The sheet form (otpOpen) and NameSheet below have no opener now; they stay until the owner rules on the switch-on case.
+    const drop = pointOf(where);
+    if (!drop) return void setError(CONFIRM_PLACE_LINE);   // story 1532: no order leaves without a confirmed point (the Bill's button already waits)
     pushTrail("place order");
     setSending(true);
     setError(null);
@@ -939,7 +933,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       if (lock === "customer") setSavedPhone(phone);   // story 1417: the next bill shows this phone on one line
       const kitchenId = areaKitchenId ?? (lock ? null : await demoKitchenId());   // the demo console has no area step: it orders from the first open kitchen
       if (!kitchenId) throw new Error("Choose where the food goes first.");   // story #940: the order is placed for a kitchen by POST /orders, as the signed-in user
-      const { order, confirm } = await placeOrderV2({ kitchenId, pin: pin ?? (lock ? "" : readPinOrEmpty()), items, address: address.trim(), key: keyRef.current.key, expectedPaise: total, code: offers.code, none: offers.none, drop: dropFor(from, fixAddress, address), instructions: note }, v2Deps());
+      const { order, confirm } = await placeOrderV2({ kitchenId, pin: pin ?? where?.pin ?? "", items, address: address.trim(), key: keyRef.current.key, expectedPaise: total, code: offers.code, none: offers.none, drop, instructions: note }, v2Deps());
       setPlaced(order);
       capture("order_placed", { items_count: lines.length, phone_to_address_m: farM === null ? null : Math.round(farM) });   // story #1056, rule 10: how often the phone is far from the chosen address at an order
       setPlacedLines(lines.map((l) => ({ name: l.dish.name, qty: l.qty, paise: l.line_paise })));
@@ -1070,7 +1064,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <NoKitchen address={address} ask={areaAsk} error={areaAskError} offerPaise={areaOffer} onTell={() => void tellMeWhenWeCome()}
       onChange={() => { const at = from; changeArea(); if (at) setPinMap({ center: at }); else openAtStart(); }} />
   ) : needArea ? (
-    <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={(pl) => { setAddress(pl.address); setFixAddress(null); choosePin(pl.pin); }}
+    <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={(pl) => choosePlace({ address: pl.address, pin: pl.pin, lat: null, lng: null, house: "", landmark: "", confirmed: false, id: null })}
       onMap={(at) => setPinMap({ center: at })} onSearch={() => { setFocusSearch(true); openAtStart(); }} />
   ) : (
     <>
@@ -1086,12 +1080,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         )}
         {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} onAgain={orderAgain} againLine={againLine} />}
         {step === "account" && (
-          <AccountScreen photo={photo} email={email} onGivenName={(n) => setName((v) => v || n)} name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone} onAddress={setAddress}
+          <AccountScreen photo={photo} email={email} onGivenName={(n) => setName((v) => v || n)} name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone}
             alerts={reminder} onAlerts={toggleAlerts} alertsError={alertsError} live={openLive} onForget={forgetMe} onDeleteAccount={deleteAccount}
             onMenu={() => setStep("menu")} onAddresses={() => setStep("deliver")} onOrders={() => setStep("orders")} />
         )}
         {menu && step === "bill" && (
-          <BillScreen notice={againLine} note={note} onNote={setNote} lines={billLines} total={total} soldOut={dead && step === "bill" ? { id: dead.dish.id, name: dead.dish.name, alt: offers.alt, canSwap, onSwap: () => setSwapped((s) => [...s, dead.dish.id]), onRemove: () => takeOut(dead.dish.id) } : undefined} offers={OFFERS_ON && offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove } : undefined} kitchenName={kitchenName} pin={pin} address={address} onAddress={setAddress}
+          <BillScreen notice={againLine} note={note} onNote={setNote} lines={billLines} total={total} soldOut={dead && step === "bill" ? { id: dead.dish.id, name: dead.dish.name, alt: offers.alt, canSwap, onSwap: () => setSwapped((s) => [...s, dead.dish.id]), onRemove: () => takeOut(dead.dish.id) } : undefined} offers={OFFERS_ON && offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove } : undefined} kitchenName={kitchenName} pin={pin} address={address} confirmed={!!pointOf(where)} onChangePlace={() => setStep("deliver")} onConfirmPlace={confirmOnMap}
             details={lock === "customer" ? { phone, onPhone: setPhone, saved: savedPhone } : undefined}
             door={lock === "customer" ? { methods: doorMethods ?? [], value: doorValue, onChange: setDoorPick } : undefined} sending={sending} error={error}
             onBack={() => setStep("menu")} onPlace={place} />

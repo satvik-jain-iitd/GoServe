@@ -88,13 +88,14 @@ test("S6 Edit opens the filled details (story 1421, ED1); the label changes and 
   await expect.poll(() => net.state.addresses.find((r: any) => r.id === "o1")?.label).toBe("Work");
 });
 
-test("S7 today's single saved address becomes the first row labelled Home, once", async ({ page, context }) => {
+test("S7 (story 1532) the profile's single address makes no saved row: it has no point", async ({ page, context }) => {
   const net = await open(page, context, null, [], (s) => { s.customer = { user_id: "u", name: "Asha", phone: "9876543210", address: "Flat 4, Green Park", pin_code: "110016" }; });
-  await expect.poll(() => net.state.addresses.length).toBe(1);
-  expect(net.state.addresses[0]).toMatchObject({ label: "Home", address: "Flat 4, Green Park", pin_code: "110016" });
+  await page.waitForLoadState("networkidle");
+  expect(net.state.addresses).toHaveLength(0);
   await page.reload();
-  await expect(page.getByRole("button", { name: /^Home\b/ })).toBeVisible();
-  expect(net.state.addresses).toHaveLength(1);
+  await expect(page.getByRole("button", { name: /^Deliver to\b/ })).toBeVisible();
+  await page.waitForLoadState("networkidle");
+  expect(net.state.addresses).toHaveLength(0);
 });
 
 test("S8 the search box on the Deliver to page is 48 px high, not stretched down the column", async ({ page, context }) => {

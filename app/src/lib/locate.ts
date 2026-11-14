@@ -82,9 +82,6 @@ export const currentFix = (): Promise<Fix> =>
     navigator.geolocation.getCurrentPosition((p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: Number.isFinite(p.coords.accuracy) ? p.coords.accuracy : null }), reject, { enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 });
   });
 
-// Story #910: the drop point follows the address. The fix is kept only while the address is still the one the location found; a hand edit clears it.
-export const dropFor = (from: Place | null, located: string | null, address: string): Place | null =>
-  from && located !== null && address.trim() === located.trim() ? from : null;
 // Story #998: the address words and the pin from Ola Maps, asked through our own function (the browser never holds a key); when it says no for any reason, OpenStreetMap answers as before.
 // Ola's answer is shown to the customer and kept only on their own address. It is never stored by place or in a table of ours (Ola's terms).
 export type Looked = Found & { from: "ola" | "osm" };

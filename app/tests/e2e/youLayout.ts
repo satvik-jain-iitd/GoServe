@@ -25,7 +25,7 @@ export async function youLayout(page: Page, context: BrowserContext, theme: "day
   await page.getByRole("button", { name: "Edit delivery details" }).click();
   // The fields open inside the card, with Save and Cancel; the Google row moves down by their height and still has its air.
   const c = (await card.boundingBox())!;
-  for (const b of [page.locator("#acc-name"), page.locator("#acc-phone"), page.locator("#acc-address"), page.getByRole("button", { name: "Save", exact: true }), page.getByRole("button", { name: "Cancel" })]) {
+  for (const b of [page.locator("[id=acc-name]"), page.locator("[id=acc-phone]"), page.getByRole("button", { name: "Save", exact: true }), page.getByRole("button", { name: "Cancel" })]) {
     const r = (await b.boundingBox())!;
     expect(r.y).toBeGreaterThanOrEqual(c.y);
     expect(r.y + r.height).toBeLessThanOrEqual(c.y + c.height);
@@ -33,11 +33,11 @@ export async function youLayout(page: Page, context: BrowserContext, theme: "day
   const editing = await gap();
   expect(editing.overlap).toBe(false);
   expect(editing.air).toBeGreaterThanOrEqual(16);
-  await page.locator("#acc-name").fill("Rahul V");
+  await page.locator("[id=acc-name]").fill("Rahul V");
   await page.getByRole("button", { name: "Cancel" }).click();
   await expect(page.getByTestId("account")).toContainText("Rahul Verma");   // Cancel keeps the old details
   await page.getByRole("button", { name: "Edit delivery details" }).click();
-  await page.locator("#acc-name").fill("Rahul Verma Jr");
+  await page.locator("[id=acc-name]").fill("Rahul Verma Jr");
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByTestId("account")).toContainText("Rahul Verma Jr");
 }

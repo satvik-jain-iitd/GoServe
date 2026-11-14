@@ -20,12 +20,6 @@ const byUsed = (a: SavedAddress, b: SavedAddress) => b.last_used_at.localeCompar
 // Story #1035: on open the address used last is picked, always. No nearest-200 m rule, no ask on open (owner, 8 Nov 2026). The row with the newest last_used_at; null for an empty list.
 export const lastUsed = (list: SavedAddress[]): SavedAddress | null => [...list].sort(byUsed)[0] ?? null;
 
-// The single address saved before this story becomes the first row, labelled Home. A missing address or a pin that is not six digits makes nothing.
-export function firstFromProfile(p: { address: string; pin: string | null }): NewAddress | null {
-  const address = p.address.trim();
-  return address.length >= 5 && /^\d{6}$/.test(p.pin ?? "") ? { label: "Home", address, pin: p.pin as string } : null;
-}
-
 type Client = Pick<SupabaseClient, "from" | "rpc">;
 // Story 1421: the box and the landmark, whole, when the sheet gave them (a row from an older path sends neither and keeps what it had).
 const parts = (a: { house?: string; landmark?: string }) => (a.house === undefined ? {} : { house: a.house.trim() || null, landmark: a.landmark?.trim() || null });
