@@ -449,3 +449,17 @@ Run: `scout.py` with five need lines ("switch map provider tiles geocoding routi
 | nchaulet/node-geocoder | search | skip | MIT | 2025-10-06 | description | Many geocoders behind one call, for Node. Our functions run on Deno and need two providers. No Ola adapter. Not pushed for over 12 months |
 
 READMEs read: yes, the top three (maplibre-gl-leaflet, olamaps-web-sdk, maplibre-google-maps). For the key pool and the meter nothing fits: they are a table and a counter in our own database, built from the seed in `supabase/functions/geocode/index.ts`. Nothing is built yet; the plan is in `maps-providers-2026-11-08.md`, section of 14 Nov.
+
+### Radar run 2026-11-14 | need: compare the design canvas boards with the built app (design drift) | by: reviewer
+
+Run: `scout.py --need "visual regression testing"` (a longer need line found no repos), plus the GitHub topic `visual-regression-testing` by stars. Why: the owner asked for an audit of every board on the canvas against dev and prod.
+
+| Repo | Score | Verdict | Licence | Pushed | Read | What we take |
+|---|---|---|---|---|---|---|
+| reg-viz/reg-suit | 63 | idea only | MIT | 2026-11 | README | Compares two sets of pictures and makes an HTML report. It compares one build with the last build and stores pictures in cloud storage. Our pair is a board and an app screen, so we keep only the idea of one report page with both pictures |
+| oblador/loki | 61 | skip | MIT | 2026-10 | README | Visual tests for Storybook stories. We have no Storybook |
+| lost-pixel/lost-pixel | search | skip | MIT | 2026-04 | README | The README says the product is being closed ("joining Figma"). Rule 13: not kept up |
+| argos-ci/argos | search | skip | MIT | 2026-11-13 | description | A hosted review platform. One more service to run for a one-time audit |
+| Visual-Regression-Tracker | 48 | skip | Apache-2.0 | 2026-11 | description | A server to host. Too much for this need |
+
+READMEs read: yes, the top three (reg-suit, loki, lost-pixel). Use what exists: Playwright is already installed and takes the pictures, and our own `app/tests/e2e/board-match.spec.ts` (story #1168) already matches a screen to its board by text, role and boxes. The audit takes the end picture of every existing test on `dev` and on `main` and pairs it with the board the test names. No new library. New code is glue only, in the QA home (`canvas-audit-2026-11-14/scripts`).
