@@ -1,6 +1,6 @@
 // Story #1056 (board SW3), rebuilt by bug 1526 (boards LO-V1, LF-SHEET-Blocked, LF-SHEET-Busy): the phone was not found on open. A sheet over the menu, once per app open:
 // "Where to bring your food?". The place stays until the customer chooses another here. The line is true for the cause, the filled button is last and it works:
-// blocked for the app, asking again is the outline button and search is the filled one. A tap on the find button always asks again and says "Finding you…".
+// after a find that failed (any cause), asking again is the outline button and search is the filled one. A tap on the find button always asks again and says "Finding you…".
 import { useEffect } from "react";
 import { useBackCloses } from "../lib/back";
 import type { SavedAddress } from "../lib/addresses";
@@ -16,7 +16,7 @@ export function LocationOffSheet({ list, selectedId, why, busy, onFind, onPick, 
   useBackCloses(true, onClose);   // story 1415
   const fit = useSheetFit();
   useEffect(() => { const k = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); }; document.addEventListener("keydown", k); return () => document.removeEventListener("keydown", k); }, [onClose]);
-  const blocked = why === "denied" || why === "still";
+  const failed = why !== "ask";   // story 1530: one rule with the first-open screen. A find that failed, for any cause: search is the filled, last button and the retry is the outline above it
   const words = locWords(why, "");
   const find = (kind: string, label: string) => <button type="button" className={`ui-btn ${kind}big`} disabled={busy} onClick={onFind}>{busy ? "Finding you…" : label}</button>;
   const search = (kind: string) => <button type="button" className={`ui-btn ${kind}big`} onClick={onSearch}>Search your area</button>;
@@ -42,8 +42,8 @@ export function LocationOffSheet({ list, selectedId, why, busy, onFind, onPick, 
             <button type="button" className="ui-locoff-all" onClick={onViewAll}>View all</button>
           </>
         )}
-        {blocked ? find("ghost ", "Try location again") : search("ghost ")}
-        {blocked ? search("") : find("", "Use my current location")}
+        {failed ? find("ghost ", "Try location again") : search("ghost ")}
+        {failed ? search("") : find("", "Use my current location")}
       </section>
     </div>
   );

@@ -636,8 +636,6 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-circle img { display: block; width: 36px; height: 36px; object-fit: cover; }
 .ui-top-search { grid-column: 1 / -1; display: flex; align-items: center; gap: var(--gs-space-3); margin-top: 4px; }
 .ui-search-box { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; box-sizing: border-box; border: 1px solid var(--md-outline); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--gs-text-muted); }
-.ui-search-go { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: var(--gs-radius-pill); background: var(--md-primary); color: var(--md-on-primary); cursor: pointer; }   /* story 1036: the round arrow inside the box */
-.ui-search-go:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
 .ui-search-box input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--md-on-surface); font: inherit; font-size: 16px; }
 .ui-search-box:focus-within { outline: none; border: 2px solid var(--md-primary); padding: 0 13px; }   /* story 1397: the box border is the field border; no ring */   /* story 1397: the field's own border shows the tap, no ring around the box */
 .ui-search-filter { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; margin-right: -6px; padding: 0; border: 0; border-radius: var(--gs-radius-s); background: transparent; color: var(--md-primary); cursor: pointer; }
@@ -711,6 +709,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-pinmap-top { position: absolute; left: 16px; right: 16px; top: calc(env(safe-area-inset-top, 0px) + 12px); z-index: 700; display: flex; gap: 12px; align-items: center; }
 .ui-pinmap-back { flex: none; width: 48px; height: 48px; display: grid; place-items: center; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-pill); background: var(--md-surface); color: var(--md-on-surface); box-shadow: 0 8px 24px rgba(38, 53, 40, 0.12); cursor: pointer; }
 .ui-pinmap-search { flex: 1; min-width: 0; height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 16px 0 18px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-pill); background: var(--md-surface); color: var(--gs-text-muted); font: inherit; font-size: 16px; text-align: left; box-shadow: 0 8px 24px rgba(38, 53, 40, 0.12); cursor: pointer; }
+.ui-pinmap-search { justify-content: flex-start; padding: 0 16px; }   /* story 1530 (board LF14): the magnifier at the left, the words after it */
 .ui-pinmap-search span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ui-pinmap-here { position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, -16px); display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 20px; white-space: nowrap; border: 1px solid var(--md-outline-variant); border-radius: 10px; background: var(--md-surface); color: var(--md-on-surface); font: inherit; font-size: 16px; font-weight: 600; box-shadow: 0 8px 24px rgba(38, 53, 40, 0.12); cursor: pointer; }
 .ui-pinmap-here svg { color: var(--md-primary); }
@@ -856,10 +855,6 @@ a.ui-locrow { text-decoration: none; }   /* story 1498: the rider row is a link 
 /* Story 1117 (board C7a): an example reads as an example, not as typed text (about 3.3:1), and the field edge is seen (3:1, WCAG 1.4.11). Typed text stays full ink. */
 .ui-field input.ui-eg, .ui-field textarea.ui-eg { border-color: color-mix(in srgb, var(--gs-text-muted) 65%, var(--md-surface)); }
 .ui-field input.ui-eg::placeholder, .ui-field textarea.ui-eg::placeholder { color: color-mix(in srgb, var(--gs-text-muted) 65%, var(--md-surface)); opacity: 1; }
-/* Story 1127 (boards C6, C8): the search runs on the map. The bar is a text box; the places list sits over the map under it. */
-.ui-pinmap-search.open { padding: 0 6px 0 18px; cursor: text; }
-.ui-pinmap-search.open input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--md-on-surface); font: inherit; outline: none; }
-.ui-pinmap-results { position: absolute; left: 16px; right: 16px; top: calc(env(safe-area-inset-top, 0px) + 72px); z-index: 700; max-height: 50%; overflow: auto; padding: 8px 12px; border: 1px solid var(--md-outline-variant); border-radius: 10px; background: var(--md-surface); box-shadow: 0 8px 24px rgba(38, 53, 40, 0.12); }
 .ui-landing .ui-slip-body > .ui-field-error, .ui-welcome .ui-slip-body > .ui-field-error { text-align: center; margin-bottom: -4px; }   /* story 1133 (T3): the error under the number is centred, 12 px above the main button */
 /* Story 1117 (board C7a): an example reads as an example, not as typed text (about 3.3:1), and the field edge is seen (3:1, WCAG 1.4.11). Typed text stays full ink. */
 .ui-field input.ui-eg { border-color: color-mix(in srgb, var(--gs-text-muted) 65%, var(--md-surface)); }
@@ -935,7 +930,6 @@ body .ui-field select:focus-visible { outline: none; border: 2px solid var(--md-
 input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
 .ui-clear-x { flex: none; width: 44px; height: 44px; margin: -8px -10px -8px 0;   /* the 44 px touch area reaches past the box edge; the box keeps its height */
   display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; background: none; color: var(--gs-text-muted); cursor: pointer; }
-.ui-pinmap-search .ui-clear-x { margin-right: 0; }
 
 /* Story 1417, board BF2: the saved phone on one line with Change; the ten digits together. */
 .ui-phone-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

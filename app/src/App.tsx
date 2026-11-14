@@ -39,7 +39,8 @@ import { openTill } from "./lib/browse";
 import { AccountScreen } from "./screens/AccountScreen";
 import { DeliverToScreen } from "./screens/DeliverToScreen";
 import { placeSearch } from "./lib/placeSearch";
-import { PinMapScreen } from "./screens/PinMapScreen";
+import { PinMapScreen, type Saved } from "./screens/PinMapScreen";
+import { keepRecent, listRecents, recentAt, recentWords, RECENTS_MAX, touchRecent, type Recent, type Searched } from "./lib/recents";
 import { distanceM, FAR_M, addAddress, editAddress, hasPoint, listAddresses, lastUsed, nearM, nearSaved, removeAddress, touchAddress, type SavedAddress } from "./lib/addresses";
 import { findPhone, nearestPin, type LocWhy, type Place } from "./lib/locate";
 import { currentSession, scopeFor } from "./lib/session";
@@ -368,7 +369,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // Story #1049 part 3 (board NK-A): no kitchen serves this pin. One stored ask per person and pin (area_request_add_v2); nothing is sent from here.
   const [areaAsk, setAreaAsk] = useState<"idle" | "busy" | "done">("idle");
   const [areaAskError, setAreaAskError] = useState<string | null>(null);
-  const [focusSearch, setFocusSearch] = useState(false);   // story 1133: Search for my address (was Enter address manually) opens the search with the cursor in it
+  const [focusSearch, setFocusSearch] = useState(false);   // story 1133: Search for my address opens the search with the cursor in it. Story 1530: with the pin map open it is the one search, shown in place of the map until a pick or Back
   const [farPick, setFarPick] = useState<null | { at: Place; pin: string; address: string }>(null);   // story #1128 (board C6b): Confirm on a pin no kitchen reaches; NK-A shows for it, C7 never opens
   const [areaOffer, setAreaOffer] = useState<number | null>(null);   // story #1129: the promise the stored row holds; the letter shows it only when the server said so
   // One ask: the stored row for this account and pin (area_request_add_v2). Answers an error in words, or null. The Rs 100 promise comes back in the answer and the letter shows it only then.
@@ -526,6 +527,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [known, setKnown] = useState(false);   // story 1529: this customer has confirmed a place once (the mark on the server, a saved address, or a place on this phone): never the first-open screen again
   const marked = useRef(false);
   const savedNow = useRef(saved); savedNow.current = saved;
+  const [recents, setRecents] = useState<Recent[]>([]);   // story 1530: "Recently searched", the customer's own rows
+  const recentsNow = useRef(recents); recentsNow.current = recents;
   const hereNow = useRef(here); hereNow.current = here;
   const whyNow = useRef(why); whyNow.current = why;
   const cartNow = useRef(cart); cartNow.current = cart;
@@ -533,7 +536,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // A placed order is never moved (the step is "placed" or "orders"), and an order being sent is let finish first.
   const [closedNote, setClosedNote] = useState<string | null>(null);
   const wasOpen = useRef(false);
-  const [pinMap, setPinMap] = useState<null | { center: Place; edit?: SavedAddress; follow?: boolean }>(null);   // story #1037: the one full-screen map, the door for Add new address, Use current location and a tapped search result
+  const [pinMap, setPinMap] = useState<null | { center: Place; edit?: SavedAddress; follow?: boolean; recent?: Searched }>(null);   // recent (story 1530): the map was opened from search, so Confirm makes a recent, not a saved address   // story 1037: the one full-screen map, the door for Add new address, Use current location and a tapped search result
   const [settingUp, setSettingUp] = useState(false);   // story 1384 (board A1e): the first Save address; the location slip waits with the rider until the kitchen is found
   useEffect(() => { if (areaError || area?.kind === "none") setSettingUp(false); }, [areaError, area]);   // a failed read or no kitchen here ends it, so a later change of place never shows it again
   useEffect(() => {
@@ -544,7 +547,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     if (!justClosed || sending) return;
     const items = Object.values(cart).some((q) => q > 0);
     if (!items || !(step === "menu" || step === "bill" || step === "deliver" || pinMap)) return;
-    setCart({}); setNote(""); setPinMap(null); setStep("menu");
+    setCart({}); setNote(""); setPinMap(null); setFocusSearch(false); setStep("menu");
     setClosedNote(clearedLine(shown.opens_at, shown.paused === true));
   }, [shown?.kind]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -594,7 +597,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   async function follow(at: Place) {
     if (held()) return;
     const c = getClient();
-    const row = nearSaved(savedNow.current ?? [], at, await nearM(c));
+    const near = await nearM(c), was = whereNow.current;
+    const row = nearSaved(savedNow.current ?? [], at, near);
+    // Story 1530: no saved address here, but the phone is at the confirmed place this phone holds (its save failed, or it is a recent): that place stays, never "Where you are now".
+    if (!row && was && was.confirmed && !was.id && was.lat !== null && was.lng !== null && distanceM(at, { lat: was.lat, lng: was.lng }) <= near) return;
     const pin = row ? row.pin : await nearestPin(at, undefined);
     if (!pin) return;   // no postal code for this point (no network, the sea): the place stays
     const next: StoredPlace = row ? { address: row.address, pin, lat: row.lat, lng: row.lng, house: row.house ?? "", landmark: row.landmark ?? "", confirmed: true, id: row.id } : herePlace(at, pin);
@@ -623,19 +629,20 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     opened.current = true;
     (async () => {
       const c = getClient();
-      const [list, mark] = await Promise.all([listAddresses(c), placeMark(c).catch(() => false)]);
+      const [list, mark] = await Promise.all([listAddresses(c), placeMark(c).catch(() => false), listRecents(c).then(setRecents, () => undefined)]);
       const rows = list ?? [];
       if (list) { setSaved(list); savedNow.current = list; }
       marked.current = mark;
       if (rows.length > 0) markOnce();   // a saved address is a place confirmed once (customers from before the mark)
       else if (mark || whereNow.current) setKnown(true);
       if (!mark && rows.length === 0 && !whereNow.current) return;   // a new customer: the first-open screen, and the phone is asked on the tap
-      const at = await find(false);   // one find by itself per app open
-      if (at) return await follow(at);
-      if (held()) return;
-      const row = whereNow.current ? null : lastUsed(rows.filter(hasPoint));   // not found: the place on this phone stays; a new phone takes the address used last (a row with no pin is skipped)
+      // Story 1530: the screen does not wait for the find (up to 5 s). What is known shows now: the place on this phone, else the address used last (a row with no pin is skipped).
+      const row = whereNow.current || held() ? null : lastUsed(rows.filter(hasPoint));
       if (row) useSaved(row, false);
-      if (rows.length > 0) setSheet(true);
+      setAddrTried(true);
+      const at = await find(false);   // one find by itself per app open; found, the place follows the phone
+      if (at) return await follow(at);
+      if (!held() && rows.length > 0) setSheet(true);
     })().catch(() => undefined).finally(() => setAddrTried(true));
   }, [signedIn]);   // eslint-disable-line react-hooks/exhaustive-deps
   async function saveNew(pl: { pin: string; address: string; label?: string; from?: Place; house?: string; landmark?: string }) {
@@ -644,6 +651,26 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     if (row) { setSaved((cur) => [row, ...(cur ?? [])]); useSaved(row, false); }
     else choosePlace({ address: pl.address, pin: pl.pin, lat: pl.from?.lat ?? null, lng: pl.from?.lng ?? null, house: pl.house ?? "", landmark: pl.landmark ?? "", confirmed: !!pl.from, id: null });   // story 1532: the save failed; the place the customer confirmed stays, with its point
     setStep((s) => (s === "bill" ? "bill" : "menu"));   // "Confirm on the map" from the Bill comes back to the Bill
+  }
+  // Story 1530 (owner, 15 Nov 2026): a place picked from search and confirmed on the pin map is the place now and becomes a recent, never a saved address.
+  // The recent holds the confirmed point, the customer's own words and a postal code that is ours (nearest_pin) or his (typed on the sheet): nothing of Ola's answer.
+  function useSearched(a: Saved, s: Searched) {
+    markOnce();
+    choosePlace({ address: a.address, pin: a.pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark, confirmed: true, id: null });
+    setStep((st) => (st === "bill" ? "bill" : "menu"));
+    void (async () => {
+      const pin = (await nearestPin(a.from, undefined)) || (a.pinTyped ? a.pin : "");
+      if (!pin) return;   // no postal code of our own for this point: no recent; the place itself stays
+      const row = await keepRecent(getClient(), recentsNow.current, { ...recentWords(s.typed, s.hit, a), pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark });
+      if (row) setRecents((cur) => [row, ...cur.filter((r) => r.id !== row.id)].slice(0, RECENTS_MAX));
+    })().catch(() => undefined);
+  }
+  function pickRecent(r: Recent) {   // a recent is a confirmed place with its point; the tap makes it the newest
+    const used_at = new Date().toISOString();
+    choosePlace({ address: r.address, pin: r.pin, lat: r.lat, lng: r.lng, house: r.house, landmark: r.landmark, confirmed: true, id: null });
+    setRecents((cur) => [{ ...r, used_at }, ...cur.filter((x) => x.id !== r.id)]);
+    void touchRecent(getClient(), r.id);
+    setFocusSearch(false); setPinMap(null); setSheet(false); setStep("menu");
   }
   async function saveEdit(id: string, a: { pin: string; address: string; label: string; from: Place; house: string; landmark: string }) {   // story #1051: the same row, the new words and the new pin
     const v = { label: a.label, address: a.address, pin: a.pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark };
@@ -1093,27 +1120,31 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const waitingForAddresses = lock === "customer" && signedIn === true && step !== "placed" && step !== "orders" && ((!pin && !addrTried) || (!!pin && area === null && !areaError));   // or the pin is known and the kitchen of that pin is still being found
   const needArea = lock === "customer" && step !== "placed" && step !== "orders" && !(pin && (area?.kind === "ok" || area?.kind === "closed"));
   const noPlace = known && needArea && !pin && !waitingForAddresses;   // story 1529: a customer who confirmed a place before and has none now (the last address deleted, a new phone, not found): Deliver to, never the first-open screen
+  const deliverTo = (
+    <DeliverToScreen focusSearch={focusSearch} forMap={pinMap?.center} list={saved ?? []} selectedId={selectedId} here={here} search={placeSearch}
+      recents={recents} recentId={recentAt(recents, where)} onRecent={pickRecent}
+      // Story 1530: a pick from search opens the map at the place's own point. Under a map that was not opened from search (Add new address, an edit) the pick only moves the pin.
+      onPlace={(h, typed) => { setFocusSearch(false); setPinMap({ ...pinMap, center: { lat: h.lat, lng: h.lng }, follow: false, recent: !pinMap || pinMap.recent ? { typed, hit: h } : undefined }); }}
+      onBack={pinMap ? () => setFocusSearch(false) : noPlace ? undefined : () => { setFocusSearch(false); setStep("menu"); }} current={where && isHere(where) ? `Pin code ${where.pin}` : null} why={why} finding={finding}
+      onSelect={(id) => { const r = (saved ?? []).find((x) => x.id === id); if (r) { setFocusSearch(false); setPinMap(null); pickRow(r); } }}
+      onUseLocation={() => { void find(true).then((at) => { if (at) { setFocusSearch(false); setPinMap({ center: at }); } }); }} onAddNew={() => { setFocusSearch(false); openAtStart(); }}
+      onEditOnMap={(a) => { setFocusSearch(false); if (a.lat !== null && a.lng !== null) setPinMap({ center: { lat: a.lat, lng: a.lng }, edit: a }); else openAtStart(a); }} onRemove={dropSaved} />
+  );
   // Story #667: with the phone code on, the first screen is the number and the code (or Google); nothing else shows before it.
   const customerView = wall && (signedIn === null || otpSetting === undefined) ? <div className="ui-pad"><Skeleton lines={3} /></div> : wall && signedIn === false ? (
     <OtpSheet welcome googleOnly={!gate} phone={phone} onClose={() => undefined}
       onVerified={(p) => { setPhone(p); setSavedPhone(p); setVerified(true); setSignedIn(true); }} />
-  ) : pinMap ? (
-    <PinMapScreen center={pinMap.center} follow={pinMap.follow} edit={pinMap.edit} kicker={pinMap.edit ? `Editing ${pinMap.edit.label}` : undefined} confirmLabel={pinMap.edit ? "Save changes" : "Confirm & proceed"} onBack={() => { setFocusSearch(false); setPinMap(null); }} search={placeSearch} searchOpen={focusSearch} onSearch={() => { setPinMap(null); if (needArea) setStep("deliver"); }}
+  ) : pinMap && !focusSearch ? (
+    <PinMapScreen center={pinMap.center} follow={pinMap.follow} edit={pinMap.edit} kicker={pinMap.edit ? `Editing ${pinMap.edit.label}` : undefined} confirmLabel={pinMap.edit ? "Save changes" : "Confirm & proceed"} onBack={() => { setFocusSearch(false); setPinMap(null); }} recent={!!pinMap.recent?.typed} onSearch={(at) => { setPinMap({ ...pinMap, center: at, follow: false }); setFocusSearch(true); }}
       onInvite={async (f) => { const err = await askArea(f.pin, f.at); if (err) return err; setAreaAsk("done"); setPinMap(null); setFarPick(f); return null; }}
-      onSave={(a) => { const e = pinMap.edit; setPinMap(null); if (!e && needArea) setSettingUp(true); if (e) void saveEdit(e.id, a); else void saveNew(a); }} />
-  ) : farPick ? (
+      onSave={(a) => { const e = pinMap.edit, r = pinMap.recent; setPinMap(null); if (!e && needArea) setSettingUp(true); if (e) void saveEdit(e.id, a); else if (r?.typed) useSearched(a, r); else void saveNew(a); }} />
+  ) : pinMap ? deliverTo : farPick ? (
     <NoKitchen address={farPick.address} ask={areaAsk} error={areaAskError} offerPaise={areaOffer} onTell={() => undefined}
       onChange={() => { const at = farPick.at; setFarPick(null); setAreaAsk("idle"); setPinMap({ center: at }); }} />
   ) : settingUp && !areaError && !(pin && area?.kind === "none") ? (   // a failed read or no kitchen here: the screens for those show at once
     <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={() => undefined} onMap={() => undefined} onSearch={() => undefined}
       finding={{ leaving: !needArea, onLeft: () => setSettingUp(false) }} />
-  ) : step === "deliver" || noPlace ? (
-    <DeliverToScreen focusSearch={focusSearch} list={saved ?? []} selectedId={selectedId} here={here} search={placeSearch} onPlace={(h) => { setFocusSearch(false); setPinMap({ center: { lat: h.lat, lng: h.lng } }); }}
-      onBack={noPlace ? undefined : () => { setFocusSearch(false); setStep("menu"); }} current={where && isHere(where) ? `Pin code ${where.pin}` : null} why={why} finding={finding}
-      onSelect={(id) => { const r = (saved ?? []).find((x) => x.id === id); if (r) pickRow(r); }}
-      onUseLocation={() => { void find(true).then((at) => at && setPinMap({ center: at })); }} onAddNew={() => openAtStart()}
-      onEditOnMap={(a) => (a.lat !== null && a.lng !== null ? setPinMap({ center: { lat: a.lat, lng: a.lng }, edit: a }) : openAtStart(a))} onRemove={dropSaved} />
-  ) : waitingForAddresses ? (
+  ) : step === "deliver" || noPlace ? deliverTo : waitingForAddresses ? (
     <div className="ui-pad"><Skeleton lines={3} /></div>
   ) : needArea && !known && !alertsAsked && reminder === "ask" ? (   // story 1529: the alerts ask is part of the first open, so it goes by the same mark
     <AlertsAsk busy={askingAlerts} onTurnOn={() => void turnOnFirst()} onNotNow={markAsked} />
@@ -1122,7 +1153,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       onChange={() => { const at = from; changeArea(); if (at) setPinMap({ center: at }); else openAtStart(); }} />
   ) : needArea ? (
     <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={(pl) => choosePlace({ address: pl.address, pin: pl.pin, lat: null, lng: null, house: "", landmark: "", confirmed: false, id: null })}
-      onMap={(at) => setPinMap({ center: at })} onSearch={() => { setFocusSearch(true); openAtStart(); }} />
+      onMap={(at) => setPinMap({ center: at })} onSearch={() => { setFocusSearch(true); setPinMap({ center: mapStart(), follow: true, recent: { typed: "", hit: null } }); }} />
   ) : (
     <>
         {step === "menu" && (

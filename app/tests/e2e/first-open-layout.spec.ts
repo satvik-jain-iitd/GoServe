@@ -81,12 +81,11 @@ test("S5 Type it by hand is gone; Search for my address opens the search, focuse
   const search = page.getByRole("searchbox", { name: "Search an area or address" });
   await expect(search).toBeVisible();
   await expect(search).toBeFocused();
-  await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();   // story #1127: the search runs on the map, the saved list never opens
-  await expect(page.getByRole("heading", { name: "Deliver to" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();   // story 1530: one search, the Deliver to search; a pick lands on the pin map
 });
 
 const PLACES = { status: 200, body: { ok: true, results: [{ name: "Green Park", address: "Green Park, Delhi, 110016", lat: 28.5599, lng: 77.2065, pin: "110016", served: true }] } };
-test("S7 a search on the map shows results over the map and a pick moves the pin, never leaving the map", async ({ page, context }) => {
+test("S7 a search from the first-open screen shows results and a pick lands on the pin map at the place (story 1530: one search)", async ({ page, context }) => {
   const net = await open(page, context, AREA);
   net.state.places = PLACES;
   await page.getByRole("button", { name: "Search for my address" }).click();

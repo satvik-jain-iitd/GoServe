@@ -179,7 +179,7 @@ test("Location is blocked on the first open: I see a true line, and no button do
   await expect(line).toContainText("Still blocked");   // the second tap says something new
   expect(await asked(page)).toBe(2);
   await page.getByRole("button", { name: "Search for my address" }).click();
-  await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
+  await expect(page.getByRole("searchbox", { name: "Search an area or address" })).toBeFocused();   // story 1530: the one search
 });
 
 test("I turn location on and come back: my place is found without a tap", async ({ page, context }) => {

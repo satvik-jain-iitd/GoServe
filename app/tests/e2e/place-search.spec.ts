@@ -1,4 +1,4 @@
-// Story #1036, board C8-SearchResults: typing filters the saved list; a Places section appears on submit (the arrow or Enter), five at most.
+// Story 1036, board C8-SearchResults: typing filters the saved list; a Places section appears on submit (Enter; the arrow went with story 1530), five at most.
 // Story #1519: it also appears by itself after 3 letters and a pause (tests/e2e/ola-search.spec.ts), and the rows keep the server's order.
 import { test, expect, type Page } from "@playwright/test";
 import { setup, phoneAt, toDeliverTo } from "./helpers";
@@ -49,10 +49,10 @@ test("S2 Enter asks once and shows Places with the served tag first and Not yet 
   await expect(page.locator(".ui-deliver-foot")).toHaveCount(0);   // owner rule 8 Nov: no explanation line under the list
 });
 
-test("S3 the round arrow in the box submits too", async ({ page, context }) => {
+test("S3 the box has no round arrow (story 1530); the places still come by themselves", async ({ page, context }) => {
   const net = await open(page, context);
   await box(page).fill("green park");
-  await page.getByRole("button", { name: "Search places" }).click();
+  await expect(page.getByRole("button", { name: "Search places" })).toHaveCount(0);
   await expect(page.getByText("Places · 2 found")).toBeVisible();
   expect(net.calls.places).toHaveLength(1);
 });

@@ -76,17 +76,18 @@ export const currentPlace = (): Promise<Place> =>
 
 // Bug 1526: every failure was called "blocked". The browser's error code says which it is: 1 blocked for this app, 2 the phone's location is off or gives no fix, 3 too slow.
 // "ask": the phone was never asked (no permission yet), so nothing failed. "still": blocked, tapped again and blocked again, so the second tap says something new.
-export type LocWhy = "ask" | "denied" | "still" | "off" | "slow";
+export type LocWhy = "ask" | "denied" | "still" | "off" | "slow" | "none";   // none (story 1530): an error with no code; the line claims no cause
 const WORDS: Record<LocWhy, [string, string]> = {
   ask: ["We can't see where you are right now", "Tap Use current location"],
   denied: ["Location is blocked for GoServe", "Turn on location in your phone settings"],
   still: ["Still blocked", "In your phone: Settings, Apps, GoServe, Permissions, Location"],
   off: ["Your phone's location is off", "Turn it on"],
   slow: ["Finding you is taking too long", "Try again"],
+  none: ["We could not find where you are", "Try again"],
 };
 export const locWhy = (e: unknown, before?: LocWhy | null): LocWhy => {
   const code = (e as { code?: unknown } | null)?.code;
-  return code === 1 ? (before === "denied" || before === "still" ? "still" : "denied") : code === 3 ? "slow" : "off";
+  return code === 1 ? (before === "denied" || before === "still" ? "still" : "denied") : code === 3 ? "slow" : code === 2 ? "off" : "none";
 };
 /** The true words for a cause: the fact, and the way out. `out` is the other way this screen offers ("search above"). */
 export const locWords = (why: LocWhy, out: string): { title: string; sub: string } => ({ title: WORDS[why][0], sub: why === "still" ? `${WORDS[why][1]}.` : `${WORDS[why][1]}, or ${out}.` });
