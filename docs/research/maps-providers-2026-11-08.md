@@ -416,3 +416,89 @@ In way B there is no Ola call when the screen opens, none when the pin rests, an
 This changes one row of the table above ("Taps Current Location: 1" becomes 0) and the row "Taps Confirm: 0" becomes 1. It is not final: the owner has not picked. Story #1500 is on hold until he does.
 
 Measured on goserve-dev under today's rule (test use, not customers): 344 Ola calls for 6 saved addresses.
+
+## The pin-map search: our own table against Ola autocomplete (14 Nov 2026, night, reviewer)
+
+Owner, 14 Nov 2026, from his phone on prod: a search for "Central secretariat" showed one row, a post office in another state, marked "Not yet". He asked for proper suggestions and addresses, "top 3 atleast". Then he decided: "our own data should become backup, we should rely on trusted data from ola maps or google maps for this. I dont want to change the map tiles". Ideas ID431 and ID432. Story #1519.
+
+### How the search works today (code on `dev` at a83ab3b, read by the reviewer)
+
+| Step | What it does | Where |
+|---|---|---|
+| The app | Asks only on Enter. Keeps 5 rows. No suggestions while typing | `PinMapScreen.tsx` (`runSearch`), `lib/placeSearch.ts` |
+| The function | 3 to 100 letters, 10 asks a minute for a person. Takes up to 50 rows from `search_places`. Served places first, then the rest, 5 rows | `supabase/functions/place-search/index.ts` |
+| The SQL | A match on the start of the name, the start of a word in it, or the start of a postal code. Order: exact, then start, then the alphabet. No nearness | `20261108180000_place_aliases.sql` |
+| The data | `pincodes`: the GeoNames India postal file (CC BY 4.0), one post-office name for each postal code, plus 8 hand-made names for two postal codes | the four seed files of 8 Nov |
+
+### Our own table, measured from the seed files (no network; Tier S, 0.95)
+
+| Measure | Value |
+|---|---|
+| Postal codes with a name | 10,892, one name each |
+| Different centre points | 3,111. 9,309 postal codes share their point with another postal code |
+| Names in the 110 area | 79 |
+| Names in the 471 area | 15. One postal code starts with 4710 |
+| "central secretariat" | 1 row, in another state |
+| "green park", "panna road" | 0 rows |
+| "satai" | 0 in the seed. Found only through a hand-made name |
+| "bus stand" | 4 rows, none in the test town's state |
+| "connaught", "hauz khas" | 1 row each |
+| "saket" | 1 row, in another state |
+
+So this is a post-office name lookup. It cannot know colonies, roads, landmarks or shops. It does not rank by nearness. It does not suggest while typing. A pick moves the pin to the middle of a postal code, and most postal codes share that point.
+
+### Ola autocomplete, measured (20 asks, 14 Nov 2026; Tier S, 0.8: one run, texts picked by the reviewer, not by the owner)
+
+Method: a script on the reviewer's Mac. An OAuth token from the vault's client id and secret (never printed). No Origin header. `GET https://api.olamaps.io/places/v1/autocomplete?input=…&location=lat,lng`. The script printed only counts, distances and yes or no. No Ola answer was stored or read by a model (Ola terms). "Delhi" is the fixed point the app opens at. "Test town" is the project's public test point.
+
+| Text | Map on | Places | How far the places are from the map |
+|---|---|---|---|
+| central secretariat | Delhi | 5 | 0 to 1 km |
+| connaught place | Delhi | 5 | 2 to 3 km |
+| green park | Delhi | 5 | 6 km |
+| hauz khas | Delhi | 5 | 7 to 8 km |
+| saket | Delhi | 5 | 10 to 11 km |
+| laxmi nagar | Delhi | 5 | 7 km |
+| central sec (half typed) | Delhi | 5 | 0 to 1 km |
+| centr (five letters) | Delhi | 5 | 0, 22, 13, 5, 22 km |
+| satai road | test town | 5 | 1 to 5 km |
+| green avenue | test town | 5 | 4 to 5 km |
+| the town's own name | test town | 5 | 1 to 10 km |
+| panna road | test town | 5 | 42, 2, 3, 2, 47 km |
+| district hospital | test town | 5 | 1, 1, 52, 65, 77 km |
+| railway station | test town | 5 | 47, 319, 698, 1,572, 1,435 km |
+| bus stand | test town | 5 | 703 to 1,344 km |
+| bus stand, with `radius=20000&strictbounds=true` | test town | 5 | 1, 1, 1, 18, 18 km |
+| civil lines | test town | 5 | 235 to 479 km |
+| the town's 6-digit postal code | test town | 1 | 4 km |
+| c-128 radio colony (a house) | test town | 5 | 291 to 843 km, and the words do not match |
+
+One more ask ran with no map point ("central secretariat"): 5 places.
+
+Other facts from the run: each answer took 135 to 273 ms. Each place has `description`, `structured_formatting.main_text` and `secondary_text`, `geometry.location`, `place_id`, `distance_meters` and `types`. The point comes with the place. No second call is needed for it.
+
+What it means:
+
+1. A named place (a colony, a road, a market, a station) is found near the map, in Delhi and in the test town.
+2. `location` alone is only a nudge. A common word ("bus stand", "railway station") goes to far cities. `radius` with `strictbounds` keeps it local. So the search asks near the map first, and asks wide only when that gives fewer than 3 places.
+3. A house number is not found. The house is typed in the details sheet, as today.
+
+### Ola's rules for this API
+
+| Claim | Evidence | Tier | Confidence | What we do |
+|---|---|---|---|---|
+| Autocomplete has its own 100,000 free calls a month | "Your first 100,000 calls per API are included each month" (rate card, effective 1 Sept 2026) | A, vendor | 0.9 | Search does not use up the address lookup's free calls |
+| After that, ₹0.056 a request (100,001 to 5,000,000 a month) | Rate card | A, vendor | 0.9 | The app cap of 2,500 a day keeps a month under 77,500 |
+| Rate limit: 2,000 a minute for Autocompletion | Fair Usage Policy (last updated 28 Aug 2026, effective 1 Sept 2026), table "Ola Maps Platform Rate Limit (Per Minute)" | A, vendor | 0.9 | No risk at our size |
+| Each request is billed, not a session | The rate card says "/ request". The word "session" is not on the pricing pages | A, vendor | 0.7 | Count each ask. A typing pause saves calls |
+| Ola's docs ask for a typing pause | "use a debounce function … to avoid making multiple requests while the user is typing" (AutoComplete API page) | A, vendor | 0.9 | A pause of 400 ms |
+| An API key or an OAuth token, both work | Auth page; the OAuth path is also measured by our run | A, vendor, and S | 0.9 | The server uses the OAuth token, as `geocode` does |
+| The docs page has no list of parameters and no sample answer | Read 14 Nov. `radius` and `strictbounds` are not on the page | A, vendor | 0.9 | The fields above come from our own run. The coder's tests pin them |
+
+The opposite view was not searched: no independent source on how well Ola knows small towns was looked for. The owner's own test E-SEARCH-1, with places he knows, is the check.
+
+### The decision and the reviewer's calls
+
+The owner decided: Ola first, our own table as the backup, the map tiles stay, no address is read until Confirm & proceed. The reviewer's calls, for his review: Ola and not Google (his own word earlier the same day, and Ola measured well); suggestions while typing after 3 letters and a pause of 400 ms; near the map first (25 km to start), then anywhere; caps of 100 asks a day for a person and 2,500 for the app, and over a cap our own table answers; Ola's order is kept and served places are not moved to the top; no search button.
+
+Sources, read 14 Nov 2026 (all vendor): maps.olakrutrim.com/docs/places-apis/autocomplete-api, /docs/auth, /pricing, /pricing/details, /legal-docs/fair-usage-policy.pdf.
