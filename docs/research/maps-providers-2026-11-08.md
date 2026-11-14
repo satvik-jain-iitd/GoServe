@@ -129,6 +129,11 @@ Owner, 14 Nov 2026: "I want to transition fully to Ola Maps and remove OpenStree
 
 So Ola does one job today: pin to words. The Ola credit shows on the pin screen when the words came from Ola.
 
+Two additions from the coder's read (PR #1495, dev at 8f4b542):
+
+- The Nominatim fallback and `nearest_pin` are called from the customer's browser, not from our server. So Nominatim sees the customer's IP and the exact point. Step 1 takes this path out of the prod default.
+- The admin kitchen form also calls `findAddress` once when it shows a saved location. So it is 1 call for each open of a kitchen that has a location, plus 1 each time the pin rests.
+
 ### What does not exist
 
 - Ola map tiles are used nowhere.
