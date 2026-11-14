@@ -506,3 +506,17 @@ READMEs read: yes, the top three (reg-suit, loki, lost-pixel). Use what exists: 
 **Reused:** our own code: the Ola token code of `geocode` (moved to `_shared/ola.ts`, used by both functions), the daily cap pattern of story 1512, the `search_places` table function as the backup, the "older answer never replaces a newer one" guard the search box already had.
 
 **Built from scratch:** one `fetch` to Ola autocomplete with its answer mapped to our row shape (about 25 lines), and the pause in the two search boxes.
+
+## 14 Nov 2026: wait for a CSS animation to end before showing buttons (story 1524)
+
+**Need:** in React, show two buttons only when an element's CSS animation has ended.
+
+**Run:**
+- `python3 ~/Documents/AGI/plugins/radar/scripts/scout.py --need "react hook wait for css animationend before showing buttons"` printed `no repos found`.
+- `gh search repos "topic:react-hooks topic:css-animations" --sort stars` and `gh search repos "react animationend hook" --sort stars`.
+
+**Top 3 READMEs read:** none. The step was skipped and is named here: the searches gave only general libraries (`react-hook-form`, `refinedev/refine`, `jaredpalmer/formik`, `aidenybai/million`, `alibaba/hooks`). None is about animation ends, so there was no candidate to read.
+
+**Reused:** the browser's own `animationend` event and `Element.getAnimations()` (for "is there a motion at all" and for the fallback's length), and our own `ui-fade-in` keyframes.
+
+**Built from scratch:** one hook, `app/src/lib/afterMotion.ts` (21 lines), and two CSS classes.
