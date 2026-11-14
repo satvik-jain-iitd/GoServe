@@ -22,6 +22,7 @@ type Props = {
   paidBy: string | null;
   bill?: OrderBill | null;   // story #1295: every amount the server took off has its own line, so the lines add up to the total
   confirmedAt: string | null;   // when the order closed, shown as the customer's local time
+  early?: number | null;        // story 1508 (board DL1): minutes before the promised time; null on time, late or not known
   placedAt: string;             // when the order was made (ISO)
   lines: { name: string; qty: number; paise: number }[];
   kitchenName: string;
@@ -86,7 +87,7 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "At your door" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
-export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, onYes, onNotYet, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta }: Props) {
+export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, onYes, onNotYet, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta }: Props) {
   const [askCancel, setAskCancel] = useState(false);   // story #1227: the cancel sheet
   const steps = trackerSteps(status);
   const { now, online } = useNowOnline();
@@ -94,7 +95,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
   const placed = new Date(placedAt);
   const delivered = status === "delivered";
   const cancelled = status === "cancelled";
-  const title = status === "placed" ? "Order placed" : delivered ? "Delivered" : cancelled ? (declined ? "Declined" : "Cancelled") : "Your order";
+  const title = status === "placed" ? "Order placed" : cancelled ? (declined ? "Declined" : "Cancelled") : "Your order";
   const head = [kitchenName, pin].filter(Boolean).join(" · ");
   return (
     <>
@@ -140,6 +141,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
             {!cancelled && !delivered && view.kind === "late" && <p className="ui-clock ui-eta-late" role="status">Running late, sorry</p>}
             {!cancelled && !delivered && view.kind === "working" && <p className="ui-clock ui-eta-by">Working out the time</p>}
             {delivered && confirmedAt && <p className="ui-clock">At your door <b>{clock12(new Date(confirmedAt))}</b></p>}
+            {delivered && confirmedAt && !!early && <p className="ui-clock ui-early">{early} min early</p>}   {/* story 1508 (board DL1): only when early; never "late" here */}
             <div className="ui-slip-rule" />
             <div className="ui-slip-lines">
               {lines.map((l) => <div key={l.name}><span>{l.qty} × {l.name}</span><span>{formatRupees(l.paise).replace("₹", "")}</span></div>)}

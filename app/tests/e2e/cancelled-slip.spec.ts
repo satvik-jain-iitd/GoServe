@@ -57,7 +57,7 @@ test("S5 a delivered slip: Back to menu (no longer See the menu) is the main but
   await page.goto("/customer/");
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   net.push("UPDATE", { ...order("delivered", new Date().toISOString()), paid_by: "cash" });
-  await expect(page.getByRole("heading", { name: "Delivered", exact: true })).toBeVisible({ timeout: 6000 });
+  await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible({ timeout: 6000 });
   await expect(page.getByRole("button", { name: "See the menu" })).toHaveCount(0);
   await lastIsMain(page);
   await main(page).click();

@@ -211,3 +211,15 @@ describe("cancelLine", () => {
       expect(cancelLine(x).match(/cancel/gi)).toHaveLength(1);
   });
 });
+
+// Story 1508 (board DL1): "N min early" only when the food came at least a whole minute before the promise, and both times are known.
+import { earlyMin } from "../../src/lib/kitchen";
+it("earlyMin: early, on time, late, under a minute, a time not known", () => {
+  const p = "2026-11-14T14:42:00Z";
+  expect(earlyMin({ delivered_at: "2026-11-14T14:38:00Z", promised_at: p })).toBe(4);
+  expect(earlyMin({ delivered_at: p, promised_at: p })).toBeNull();
+  expect(earlyMin({ delivered_at: "2026-11-14T14:50:00Z", promised_at: p })).toBeNull();
+  expect(earlyMin({ delivered_at: "2026-11-14T14:41:30Z", promised_at: p })).toBeNull();
+  expect(earlyMin({ delivered_at: null, promised_at: p })).toBeNull();
+  expect(earlyMin({ delivered_at: p })).toBeNull();
+});

@@ -55,7 +55,7 @@ test("S3 Yes closes the order: Paid cash, and the server got the Yes once", asyn
   net.push("INSERT", order("ready", now(), now()));
   await expect(prompt(page)).toBeVisible({ timeout: 8000 });
   await page.getByRole("button", { name: "Yes, I have it" }).click();
-  await expect(page.getByRole("heading", { name: "Delivered", exact: true })).toBeVisible();   // story #660: no Paid tail; review of PR 1466: the thank-you line is gone, the stamp says it
+  await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();   // story #660: no Paid tail; review of PR 1466: the thank-you line is gone, the stamp says it
   await expect(prompt(page)).toHaveCount(0);
   expect(net.calls.confirm).toHaveLength(1);
   expect(net.calls.confirm[0].body).toEqual({ order_id: ID, action: "confirm" });
@@ -70,7 +70,7 @@ test("S4 a second Yes is not an error", async ({ page, context }) => {
   net.push("INSERT", order("ready", now(), now()));
   await expect(prompt(page)).toBeVisible({ timeout: 8000 });
   await page.getByRole("button", { name: "Yes, I have it" }).click();
-  await expect(page.getByRole("heading", { name: "Delivered", exact: true })).toBeVisible();   // story #660: no Paid tail; review of PR 1466: the thank-you line is gone, the stamp says it
+  await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();   // story #660: no Paid tail; review of PR 1466: the thank-you line is gone, the stamp says it
   await expect(page.getByRole("alert")).toHaveCount(0);
 });
 
@@ -122,10 +122,10 @@ test("S5 a live event with the same moment and no paid_by after the Yes does not
   net.push("INSERT", order("ready", now(), now()));
   await expect(prompt(page)).toBeVisible({ timeout: 8000 });
   await page.getByRole("button", { name: "Yes, I have it" }).click();
-  await expect(page.getByRole("heading", { name: "Delivered", exact: true })).toBeVisible();   // story #660: no Paid tail; review of PR 1466: the thank-you line is gone, the stamp says it
+  await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();   // story #660: no Paid tail; review of PR 1466: the thank-you line is gone, the stamp says it
   net.push("UPDATE", { ...order("delivered", at, now()), paid_by: null });
   await page.waitForTimeout(2500);   // the event is held until the screen has joined the channel, then sent
-  await expect(page.getByRole("heading", { name: "Delivered", exact: true })).toBeVisible();   // story #660: no Paid tail; review of PR 1466: the thank-you line is gone, the stamp says it
+  await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();   // story #660: no Paid tail; review of PR 1466: the thank-you line is gone, the stamp says it
 });
 
 test("#501 a hidden app never asks; the question comes when the app is visible again", async ({ page, context }) => {

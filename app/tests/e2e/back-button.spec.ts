@@ -78,7 +78,7 @@ test("S8 Back on orders shows the menu; Back on a slip opened from orders shows 
   await page.getByRole("button", { name: "History" }).click();
   await expect(page.getByRole("heading", { name: "History", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /Butter Chicken/ }).click();
-  await expect(page.getByRole("heading", { name: "Delivered", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();
   await page.goBack();
   await expect(page.getByRole("heading", { name: "History", exact: true })).toBeVisible();
   await page.goBack();
