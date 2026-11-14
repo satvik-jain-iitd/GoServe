@@ -11,7 +11,7 @@ test("S1 a tap on a slip opens it, a delivered slip (the tracker) offers Back to
   await page.getByRole("button", { name: "History" }).click();
   await expect(page.getByRole("heading", { name: "History", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /Butter Chicken/ }).click();
-  await expect(page.getByRole("heading", { name: "Delivered", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();
   await expect(page.locator(".ui-bottom").getByRole("button", { name: "Back to menu" })).toBeVisible();
   await expect(page.getByRole("button", { name: /order again/i })).toHaveCount(0);
 });

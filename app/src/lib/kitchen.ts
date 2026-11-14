@@ -7,7 +7,7 @@ export type Order = {
   id: string; session_id: string; status: string; address: string; items: OrderLine[]; total_paise: number; created_at: string; updated_at: string; paid_by?: string | null; bill?: OrderBill | null;
   payment_method?: string | null; paid_at?: string | null;   // story #552: online orders wait for the payment
   customer_name?: string | null; customer_phone?: string | null;
-  kitchen_id?: string; rider_id?: string | null; cash_handed_at?: string | null; delivered_at?: string | null; cancel_reason?: string | null; cancelled_by?: string | null; instructions?: string | null;
+  kitchen_id?: string; rider_id?: string | null; cash_handed_at?: string | null; delivered_at?: string | null; promised_at?: string | null; cancel_reason?: string | null; cancelled_by?: string | null; instructions?: string | null;
   drop_lat?: number | null; drop_lng?: number | null;   // story #1182: the customer's exact pin, when the order has one
 };
 
@@ -59,6 +59,12 @@ export const justCancelled = (orders: Order[], seen: Set<string>, now: Date, ms 
 export type Done = { status: string; updated_at: string; delivered_at?: string | null; total_paise: number; paid_by?: string | null; cash_handed_at?: string | null; rider_id?: string | null };
 /** When the order was delivered (story 1448). updated_at moves on every later change (a Change, the night's hand-over); delivered_at is set once. Older rows have none. */
 export const deliveredAt = (o: { updated_at: string; delivered_at?: string | null }): string => o.delivered_at ?? o.updated_at;
+/** Story 1508 (board DL1): whole minutes the food came before the promise. Null when on time, late, under a minute early, or when either time is not known (never a guess). */
+export const earlyMin = (o: { delivered_at?: string | null; promised_at?: string | null }): number | null => {
+  if (!o.delivered_at || !o.promised_at) return null;
+  const min = Math.floor((new Date(o.promised_at).getTime() - new Date(o.delivered_at).getTime()) / 60_000);
+  return min >= 1 ? min : null;
+};
 export type Hours = { opens: string | null; closes: string | null };
 /** The cash day a time belongs to (story #229). A kitchen that closes past midnight (closes before opens, "18:00" to "02:00") keeps the night in one day:
  *  the closing hours are rolled back before the date is read. Any other kitchen, or unknown hours, uses the calendar day. */
