@@ -31,6 +31,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
   cooking.forEach((o) => seen.current.add(o.id));
   const done = deliveredToday(orders, new Date(), gate ? { opens: gate.opensAt, closes: gate.closesAt } : null);   // story #229: the day ends at closing time
   const onSlips = done.reduce((n, o) => n + o.total_paise, 0);
+  const cash = cashByRider(done, orders);
   const [riders, setRiders] = useState<RiderListRow[]>([]);
   const [handoverError, setHandoverError] = useState<string | null>(null);
   const [minute, setMinute] = useState(() => hhmm(new Date().toISOString()));
@@ -124,7 +125,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
   }
   const head = tab === "new" ? { h: "New", meta: state ? `${state} · ${fresh.length ? `${fresh.length} new` : "quiet"}` : `${fresh.length} new` }
     : tab === "cooking" ? { h: "Cooking", meta: state ? `${state} · ${cooking.length} on the stove` : `${cooking.length} on the stove` }
-    : { h: "Kitchen", meta: gate?.name ?? "" };
+    : { h: "Today", meta: gate?.name ?? "" };   // story 1456 (board KD1): the header says the tab's word
   return (
     <>
       <header className="ui-head">
@@ -155,23 +156,25 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
           {todayLine}
           {gate ? (
             <>
-              <div className="ui-row ui-row-static ui-row-tall" data-testid="signed-in-row">
-                <span className="ui-row-label"><span>Signed in as</span><span className="ui-row-sub mono">{gate.email ?? "This Google account"}</span></span>
-                <button type="button" className="ui-btn ghost small" onClick={gate.signOut}>Sign out</button>
-              </div>
               <div className="ui-row ui-row-static ui-row-tall">
                 <label htmlFor="open" className="ui-row-label"><span>Open for orders</span><span className="ui-row-sub mono">{gate.open === null ? "Could not read the kitchen." : !gate.open ? "Closed · customers see it now" : pastClose ? `Past ${gate.closesAt} · "closed" till opening time` : `${gate.closesAt ? `Till ${gate.closesAt} · off` : "Off"} shows "closed" at once`}</span></label>
                 {gate.open === null ? <button type="button" className="ui-btn ghost small" onClick={gate.retry}>Try again</button>
                   : <input id="open" className="ui-switch" type="checkbox" role="switch" checked={gate.open} onChange={() => void gate.flipOpen()} />}
               </div>
-              {cashByRider(done, orders).map((r) => (
+              <DishList kitchenId={gate.kitchenId} />   {/* story 1456 (board KD1): the dishes first; cash and account after */}
+              {cash.length > 0 && <section className="ui-group" aria-label="Cash from riders"><h2>Cash from riders</h2>{cash.map((r) => (
                 <div key={r.rider_id} className="ui-row ui-row-static">
                   <span className="ui-row-label"><span>{riderName(r.rider_id)}</span><span className="ui-row-sub mono">{formatRupees(r.inHand)} in hand{r.handed > 0 ? ` · ${formatRupees(r.handed)} handed over` : ""}{r.older > 0 ? ` · older: ${formatRupees(r.older)}` : ""}</span></span>
                   <button type="button" className="ui-btn ghost small" aria-label={`Confirm hand-over ${riderName(r.rider_id)}`} disabled={r.inHand + r.older === 0} onClick={() => void handover(r)}>Confirm hand-over</button>
                 </div>
-              ))}
+              ))}</section>}
               {handoverError && <p role="alert" className="ui-note error">{handoverError}</p>}
-              <DishList kitchenId={gate.kitchenId} />
+              <section className="ui-group" aria-label="Account"><h2>Account</h2>
+                <div className="ui-row ui-row-static ui-row-tall" data-testid="signed-in-row">
+                  <span className="ui-row-label"><span>Signed in as</span><span className="ui-row-sub mono">{gate.email ?? "This Google account"}</span></span>
+                  <button type="button" className="ui-btn ghost small" onClick={gate.signOut}>Sign out</button>
+                </div>
+              </section>
               <button type="button" className="ui-row" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}><span>Send feedback</span><span className="go" aria-hidden="true">›</span></button>
             </>
           ) : <p className="ui-meta ui-pad">The open switch and the dishes are on the kitchen app, after a Google sign-in.</p>}
