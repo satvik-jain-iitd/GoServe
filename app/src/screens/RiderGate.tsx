@@ -11,6 +11,7 @@ export function RiderGate({ children }: { children: (gate: RiderGateState) => Re
   const [uid, setUid] = useState<string | null>(null);
   const [anonymous, setAnonymous] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [noLocation, setNoLocation] = useState(false);   // story 1497: the phone refused the location while Online; the rider is told, since the customer cannot see him
   const lastSent = useRef<number | null>(null);
 
   useEffect(() => {
@@ -28,13 +29,14 @@ export function RiderGate({ children }: { children: (gate: RiderGateState) => Re
   // While online, the browser reports the position; it is saved at once the first time and then every 30 seconds.
   const online = rider?.online === true;
   useEffect(() => {
-    if (!online || !uid || !("geolocation" in navigator)) return;
+    if (!online || !uid || !("geolocation" in navigator)) return void setNoLocation(false);
     lastSent.current = null;
     const watch = navigator.geolocation.watchPosition((p) => {
+      setNoLocation(false);
       if (!shouldSendLocation(lastSent.current, Date.now())) return;
       lastSent.current = Date.now();
       void sendLocation(getClient(), p.coords.latitude, p.coords.longitude);
-    }, () => {}, { enableHighAccuracy: true, maximumAge: 10_000 });
+    }, (e) => { if (e.code === e.PERMISSION_DENIED) setNoLocation(true); }, { enableHighAccuracy: true, maximumAge: 10_000 });   // a weak signal or a timeout is not a refusal: no word for those
     return () => navigator.geolocation.clearWatch(watch);
   }, [online, uid]);
 
@@ -67,6 +69,7 @@ export function RiderGate({ children }: { children: (gate: RiderGateState) => Re
   return (
     <>
       {error && <p role="alert" className="ui-note error">{error}</p>}
+      {noLocation && <p role="status" className="ui-note error">Location band hai. Phone ki settings me is app ko location allow karein, tabhi customer ko aap dikhenge.</p>}
       {children({ name: rider.name, phone: rider.phone ?? null, online, flip, signOut })}
     </>
   );
