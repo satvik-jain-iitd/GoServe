@@ -230,6 +230,7 @@ test("A saved address with no pin says Set the pin, and the pick on open skips i
 });
 
 // Reviewer's ask (15 Nov 2026): "Confirm on the map" from the Bill, and the pin is confirmed in ANOTHER postal code. This states what the app does today, as found:
+// Story 1540 will change this: the Bill must say the kitchen changed, mark a changed price and show a missing dish as sold out. Until then this test pins the silent change.
 // the kitchen becomes the one that serves the new postal code, the customer stays on the Bill, a dish the new kitchen also has stays at the new kitchen's price,
 // and a dish it does not have leaves the Bill without a word. The last two are for the owner to rule on; this test only keeps them from changing unseen.
 for (const same of [true, false]) {
