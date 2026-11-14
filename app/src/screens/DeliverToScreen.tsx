@@ -2,13 +2,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useBackCloses } from "../lib/back";
 import { distanceM, distanceWord, lastUsed, NEAR_M, type Place, type SavedAddress } from "../lib/addresses";
-import { splitMatch, type PlaceHit } from "../lib/placeSearch";
+import { fromOla, splitMatch, usePlaces, type PlaceHit, type Search } from "../lib/placeSearch";
 import { ClearCross, useSheetFit } from "../ui";
 
 type Props = {
   focusSearch?: boolean;   // story #1133: the cursor starts in the search
   list: SavedAddress[]; selectedId: string | null; here: Place | null;
-  search: (q: string) => Promise<PlaceHit[] | null>; onPlace: (hit: PlaceHit) => void;
+  search: Search; onPlace: (hit: PlaceHit) => void;
   onBack: () => void; onSelect: (id: string) => void; onUseLocation: () => void; onAddNew: (words?: string) => void;
   onEditOnMap: (a: SavedAddress) => void; onRemove: (id: string) => Promise<void>;
 };
@@ -46,16 +46,8 @@ export function DeliverToScreen({ focusSearch, list, selectedId, here, search, o
   const q = query.trim().toLowerCase();
   const matches = q ? rows.filter((a) => `${a.label} ${a.address}`.toLowerCase().includes(q)) : rows;
   const shown = !q && !all && matches.length > SHORT ? matches.slice(0, SHORT) : matches;
-  // Story #1036: typing only filters the saved rows. On submit one call asks our own table; any change of the words clears the places of the last search.
-  const [found, setFound] = useState<{ words: string; state: "busy" | "short" | "error" | "ok"; hits: PlaceHit[] } | null>(null);
-  const change = (v: string) => { setQuery(v); setFound(null); };
-  const submit = async () => {
-    const words = query.trim();
-    if (words.length < 3) return setFound({ words, state: "short", hits: [] });
-    setFound({ words, state: "busy", hits: [] });
-    const hits = await search(words);
-    setFound((cur) => (cur && cur.words === words ? { words, state: hits === null ? "error" : "ok", hits: hits ?? [] } : cur));
-  };
+  // Story #1036, changed by #1519: typing filters the saved rows and, after 3 letters and a pause, asks for places near the phone. Enter and the arrow ask at once.
+  const { found, ask: submit } = usePlaces(query, search, here);
   const bold = (text: string) => { const [a, m, b] = splitMatch(text, query.trim()); return m ? <>{a}<b>{m}</b>{b}</> : text; };
   return (
     <>
@@ -67,9 +59,9 @@ export function DeliverToScreen({ focusSearch, list, selectedId, here, search, o
       <div className="ui-scroll ui-deliver-to">
         <label className="ui-search-box">
           <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
-          <input ref={searchRef} type="search" autoFocus={focusSearch} aria-label="Search an area or address" placeholder="Search an area or address" value={query} onChange={(e) => change(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submit(); } }} />
-          <ClearCross show={query !== ""} onClear={() => change("")} input={searchRef} />
-          <button type="button" className="ui-search-go" aria-label="Search places" onClick={() => void submit()}>{I(<><path d="M5 12h14" /><path d="M13 6l6 6-6 6" /></>)}</button>
+          <input ref={searchRef} type="search" autoFocus={focusSearch} aria-label="Search an area or address" placeholder="Search an area or address" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); submit(); } }} />
+          <ClearCross show={query !== ""} onClear={() => setQuery("")} input={searchRef} />
+          <button type="button" className="ui-search-go" aria-label="Search places" onClick={submit}>{I(<><path d="M5 12h14" /><path d="M13 6l6 6-6 6" /></>)}</button>
         </label>
         <div className="ui-two-cards">
           <button type="button" className="ui-card-btn" onClick={onUseLocation}>{I(<><circle cx="12" cy="12" r="7" /><circle cx="12" cy="12" r="2.5" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></>)}<span>Use current location</span></button>
@@ -110,8 +102,8 @@ export function DeliverToScreen({ focusSearch, list, selectedId, here, search, o
             {found.state === "ok" && <h2 className="mono ui-saved-head">{found.hits.length ? `Places · ${found.hits.length} found` : "Places · 0 found"}</h2>}
             {found.state === "ok" && found.hits.length === 0 && <p className="ui-row-sub">No place found. Try the start of a colony name or a pin code.</p>}
             <ul className="ui-saved-list">
-              {found.hits.map((h) => (
-                <li key={`${h.pin}-${h.name}`} className="ui-saved-row ui-place-row">
+              {found.hits.map((h, i) => (
+                <li key={`${i}-${h.name}`} className="ui-saved-row ui-place-row">
                   <button type="button" className="ui-saved-main" onClick={() => onPlace(h)}>
                     <span className="ui-saved-label"><span>{bold(h.name)}</span><span className={`ui-tag ${h.served ? "ready" : "placed"}`}>{h.served ? "We deliver here" : "Not yet"}</span></span>
                     <span className="ui-saved-addr">{h.address}</span>
@@ -119,6 +111,7 @@ export function DeliverToScreen({ focusSearch, list, selectedId, here, search, o
                 </li>
               ))}
             </ul>
+            {fromOla(found.hits) && <span className="mono ui-pinmap-credit"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">Ola Maps</a></span>}
           </section>
         )}
       </div>

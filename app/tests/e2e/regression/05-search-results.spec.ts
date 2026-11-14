@@ -91,11 +91,9 @@ test("TC 5.7 type fast, 10 letters: one search after the typing stops, not 10", 
   await search(page).fill("");
   await search(page).pressSequentially("greenparkx", { delay: 0 });
   await expect(search(page)).toHaveValue("greenparkx");
-  await expect(page.getByRole("heading", { name: /^Places ·/ })).toHaveCount(0);   // typing cleared the old results
-  expect(searches).toBe(1);   // typing alone asks nobody
-  await search(page).press("Enter");
-  await expect(page.getByRole("heading", { name: "Places · 2 found" })).toBeVisible();
-  expect(searches).toBe(2);   // one search for the whole word
+  await expect(page.getByRole("heading", { name: "Places · 2 found" })).toBeVisible();   // story 1519: the places come by themselves after the pause
+  await page.waitForTimeout(900);
+  expect(searches).toBe(2);   // one search for the whole word, not 10
 });
 
 test("TC 5.8 no network while typing: a line that search needs the internet, saved rows still match", async ({ page, context }) => {

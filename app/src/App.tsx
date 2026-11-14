@@ -1038,7 +1038,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <OtpSheet welcome googleOnly={!gate} phone={phone} onClose={() => undefined}
       onVerified={(p) => { setPhone(p); setSavedPhone(p); setVerified(true); setSignedIn(true); }} />
   ) : pinMap ? (
-    <PinMapScreen center={pinMap.center} follow={pinMap.follow} edit={pinMap.edit} kicker={pinMap.edit ? `Editing ${pinMap.edit.label}` : undefined} confirmLabel={pinMap.edit ? "Save changes" : "Confirm & proceed"} onBack={() => { setFocusSearch(false); setPinMap(null); }} search={(q) => placeSearch(q)} searchOpen={focusSearch} onSearch={() => { setPinMap(null); if (needArea) setStep("deliver"); }}
+    <PinMapScreen center={pinMap.center} follow={pinMap.follow} edit={pinMap.edit} kicker={pinMap.edit ? `Editing ${pinMap.edit.label}` : undefined} confirmLabel={pinMap.edit ? "Save changes" : "Confirm & proceed"} onBack={() => { setFocusSearch(false); setPinMap(null); }} search={placeSearch} searchOpen={focusSearch} onSearch={() => { setPinMap(null); if (needArea) setStep("deliver"); }}
       onInvite={async (f) => { const err = await askArea(f.pin, f.at); if (err) return err; setAreaAsk("done"); setPinMap(null); setFarPick(f); return null; }}
       onSave={(a) => { const e = pinMap.edit; setPinMap(null); if (!e && needArea) setSettingUp(true); if (e) void saveEdit(e.id, a); else void saveNew(a); }} />
   ) : farPick ? (
@@ -1048,7 +1048,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={() => undefined} onMap={() => undefined} onSearch={() => undefined}
       finding={{ leaving: !needArea, onLeft: () => setSettingUp(false) }} />
   ) : step === "deliver" ? (
-    <DeliverToScreen focusSearch={focusSearch} list={saved ?? []} selectedId={selectedId} here={here} search={(q) => placeSearch(q)} onPlace={(h) => { setFocusSearch(false); setPinMap({ center: { lat: h.lat, lng: h.lng } }); }} onBack={() => { setFocusSearch(false); setStep("menu"); }}
+    <DeliverToScreen focusSearch={focusSearch} list={saved ?? []} selectedId={selectedId} here={here} search={placeSearch} onPlace={(h) => { setFocusSearch(false); setPinMap({ center: { lat: h.lat, lng: h.lng } }); }} onBack={() => { setFocusSearch(false); setStep("menu"); }}
       onSelect={(id) => { const r = (saved ?? []).find((x) => x.id === id); if (r) { useSaved(r, true); setStep("menu"); } }}
       onUseLocation={() => { void currentPlace().then((p) => setPinMap({ center: p }), () => openAtStart()); }} onAddNew={() => openAtStart()}
       onEditOnMap={(a) => (a.lat !== null && a.lng !== null ? setPinMap({ center: { lat: a.lat, lng: a.lng }, edit: a }) : openAtStart(a))} onRemove={dropSaved} />
