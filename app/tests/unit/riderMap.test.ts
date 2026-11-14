@@ -8,8 +8,9 @@ const at = (secondsAgo: number) => new Date(NOW - secondsAgo * 1000).toISOString
 
 describe("ping to marker", () => {
   it("S1 a tracking row with a place gives a point; no place gives none", () => {
-    expect(toPoint({ rider_lat: 28.57, rider_lng: 77.24, updated_at: at(20) })).toEqual({ lat: 28.57, lng: 77.24, at: at(20) });
-    expect(toPoint({ rider_lat: null, rider_lng: null, updated_at: at(20) })).toBeNull();
+    expect(toPoint({ rider_lat: 28.57, rider_lng: 77.24, rider_at: at(20) })).toEqual({ lat: 28.57, lng: 77.24, at: at(20) });
+    expect(toPoint({ rider_lat: null, rider_lng: null, rider_at: at(20) })).toBeNull();
+    expect(toPoint({ rider_lat: 28.57, rider_lng: 77.24, rider_at: null })).toBeNull();   // story 1497: a place with no ping time is not shown
     expect(toPoint(null)).toBeNull();
   });
 });

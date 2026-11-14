@@ -27,6 +27,7 @@ export type PinPick = { at: Place; words: Looked | null; served: boolean | null 
 export type Saved = { pin: string; address: string; label: string; from: Place; house: string; landmark: string };   // story 1421: the box and the landmark, whole   // story #1038: what the details step hands to the save
 type Props = {
   center: Place; zoom?: number; kicker?: string; confirmLabel: string;
+  follow?: boolean;   // story 1502: this open did not start from a place the person chose, so the map moves once to the phone's place when it comes (only when location is already allowed)
   onInvite?: (far: { at: Place; pin: string; address: string }) => Promise<string | null>;   // story #1128 (board C6d): a pin no kitchen reaches. The button reads Invite the founders here; it saves the ask and opens the founder note. Answers an error in words, or null; not used when editing
   kitchensNear?: () => Promise<{ lat: number | null; lng: number | null; synthetic?: boolean }[]>;   // story #1138 (board C6e): the GoServe kitchens drawn on the map; tests give their own
   edit?: { label: string; address: string };   // story #1051 (board C9): the saved row being changed; the details open filled with it
@@ -38,7 +39,7 @@ type Props = {
   lookup?: (p: Place) => Promise<Looked | null>; serve?: (p: Place, pin: string | null) => Promise<Serve | null>;
 };
 
-export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, kitchen, onInvite, kitchensNear = async () => await fetchKitchens(getClient()), onPoint, search, searchOpen, onBack, onSearch, onSave, lookup = (p) => findAddress(p.lat, p.lng), serve = (p, pin) => (kitchen ? Promise.resolve(null) : serveAt(p, undefined, pin)) }: Props) {
+export function PinMapScreen({ center, zoom = 17, follow, kicker, confirmLabel, edit, kitchen, onInvite, kitchensNear = async () => await fetchKitchens(getClient()), onPoint, search, searchOpen, onBack, onSearch, onSave, lookup = (p) => findAddress(p.lat, p.lng), serve = (p, pin) => (kitchen ? Promise.resolve(null) : serveAt(p, undefined, pin)) }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const live = useRef<{ map: LMap; L: typeof import("leaflet"); dot: Marker | null } | null>(null);
   const [point, setPoint] = useState<Place>(center);
@@ -78,7 +79,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
     const hits = await search!(w);
     setFound((c) => (c && c.words === w ? { words: w, state: hits === null ? "error" : "ok", hits: hits ?? [] } : c));
   };
-  const take = (h: PlaceHit) => { setSOpen(false); setFound(null); setSq(""); const m = live.current?.map; if (m) show(m, { lat: h.lat, lng: h.lng }, 17); };   // the move settles the pin through the map's own move end
+  const take = (h: PlaceHit) => { touched.current = true; setSOpen(false); setFound(null); setSq(""); const m = live.current?.map; if (m) show(m, { lat: h.lat, lng: h.lng }, 17); };   // the move settles the pin through the map's own move end
   const [pick, setPick] = useState<PinPick | null>(null);
   const draft = useRef<Draft | null>(null);   // story 1421 (board ED2): what was typed on the sheet, kept across Change and back   // story #1038: set when Confirm is tapped; the details sheet shows over the same map
   const ask = useRef(0);
@@ -89,7 +90,8 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
   // Story 1389 (board PH1): the hint shows until this person moves the map once on this phone. Moves the app makes (centring, Current Location, a search pick) do not count.
   const [cramped, setCramped] = useState(false);
   const [moved, setMoved] = useState(() => { try { return localStorage.getItem("gs-pin-moved") === "1"; } catch { return false; } });
-  const byHand = () => { setMoved(true); try { localStorage.setItem("gs-pin-moved", "1"); } catch { /* blocked: it shows again next time */ } };
+  const touched = useRef(false);   // story 1502: this person moved the map, or chose a place, on this open; the map is never pulled to the phone after that
+  const byHand = () => { touched.current = true; setMoved(true); try { localStorage.setItem("gs-pin-moved", "1"); } catch { /* blocked: it shows again next time */ } };
   const settled = useRef<Place | null>(null);
   const settle = (p: Place) => {   // the pin rests: one lookup and one serviceability answer for the last place only
     // Story 1393: a screen size change moves the map but not the place under the pin. Same place (under a metre): no new lookup, so no flash.
@@ -107,7 +109,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
       void placeOnly.then((s0) => { if (mine === ask.current && s0?.serviceable && !pinAnswered) setServed(s0); });
       const w = await limit(fns.current.lookup(p).catch(() => null));
       if (mine !== ask.current) return;   // a newer rest has taken over
-      if (w) { setWords(w); setFailed(false); } else setFailed(true);   // the last words stay when this one fails; the point still counts
+      if (w) { setWords(w); setFailed(false); } else { setWords(null); setFailed(true); }   // story 1462: the pin moved and no name came: "Pin on the map", never the old place's name
       // story #1102: the pin the lookup read goes with the place; no pin read: the place-only answer stands. Story 1426: a failed pin answer falls back only to a place-only yes.
       const s0 = await placeOnly;
       const s = w?.pin ? ((await limit(fns.current.serve(p, w.pin)).catch(() => null)) ?? (s0?.serviceable ? s0 : null)) : s0;
@@ -166,6 +168,11 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
           if (!m) return;
           if (!m.dot) m.dot = m.L.marker([at.lat, at.lng], { interactive: false, keyboard: false, icon: m.L.divIcon({ className: "gs-here-dot", iconSize: [26, 26], iconAnchor: [13, 13], html: "<i></i>" }) }).addTo(m.map);
           else m.dot.setLatLng([at.lat, at.lng]);
+          if (follow && !touched.current && root.current?.dataset.step === "pin") {   // story 1502: once, and never after the person moved the map
+            touched.current = true;
+            const c = pinAt(m.map);
+            if (metres(at.lat, at.lng, c.lat, c.lng) > 30) show(m.map, at, 17);   // already there (the start was the phone's place): no move, so no second lookup
+          }
         }, () => undefined, { enableHighAccuracy: true });
       }).catch(() => undefined);
     });
@@ -179,6 +186,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
 
   const held = useRef<Place | null>(null);   // the confirmed pin while the details sheet is open
   useEffect(() => {   // the map stays behind the sheet, still, and shrinks to the part above it so the pin stays in view
+    if (pick) touched.current = true;   // story 1502: a confirmed place is the person's choice; after Change the map is not pulled to the phone
     const m = live.current;
     if (!m) return;
     const h = m.map;
@@ -190,6 +198,7 @@ export function PinMapScreen({ center, zoom = 17, kicker, confirmLabel, edit, ki
   }, [pick]);
 
   const toPhone = async () => {
+    touched.current = true;   // story 1502: Current Location is the person's own move; the follow ends
     setNote(null);
     try {
       const p = await currentPlace();

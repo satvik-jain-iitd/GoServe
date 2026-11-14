@@ -8,6 +8,7 @@ import { readOtpSwitchAdmin, saveOtpSwitch } from "../lib/otpSwitch";
 import { qrAddress, readPayMethodsAdmin, readQrAdmin, setPayMethod, uploadQr, type PayMethodsAdmin, type QrAdmin } from "../lib/payMethods";
 import type { DoorMethod } from "../lib/doorMethods";
 import { amountProblem, readEarlyFriend, saveEarlyFriend, type EarlyFriendSetting } from "../lib/earlyFriend";
+import { MAX_DAYS, MIN_DAYS, readPastDaysAdmin, savePastDays, type PastDaysSetting } from "../lib/pastDays";
 import { MAX_RUPEES as INC_MAX, MIN_RUPEES as INC_MIN, STEP_RUPEES, readIncentive, saveIncentive, type IncentiveSetting } from "../lib/incentive";
 import { readSwapSetting, saveSwapSetting, swapPctProblem, type SwapSetting } from "../lib/swapSetting";
 
@@ -161,9 +162,29 @@ function RiderAppSettings() {
     setNow({ on, amount_paise: rupees * 100, updated_by: "you", updated_at: new Date().toISOString() });
   }
   const rupees = now ? now.amount_paise / 100 : 0;
+  const [days, setDays] = useState<PastDaysSetting | null>(null);   // story 1442, board AR1: "Past days on Today", 0 to 30; 0 hides the rider's Pichhle din row
+  useEffect(() => { readPastDaysAdmin(getClient()).then(setDays, () => setLine("Could not load the setting. Try again.")); }, []);
+  async function saveDays(n: number) {
+    setLine(null); setBusy(true);
+    const failed = await savePastDays(getClient(), n);
+    setBusy(false);
+    if (failed) return void setLine(failed);
+    setDays({ days: n, updated_by: "you", updated_at: new Date().toISOString() });
+  }
+  const last = [now, days].filter((x) => x !== null).sort((x, y) => y.updated_at.localeCompare(x.updated_at))[0];   // the newer change of the block (both stamps are ISO, so text order is time order)
   return (
     <section className="ui-group" aria-label="Rider app">
       <h2>Rider app</h2>
+      {days && (
+        <div className="ui-row ui-row-static ui-row-tall">
+          <span className="ui-row-label"><b>Past days on Today</b><span className="ui-row-sub mono">0 means today only</span></span>
+          <span className="ui-stepper">
+            <button type="button" className="ui-btn ghost" aria-label="Fewer past days" disabled={busy || days.days <= MIN_DAYS} onClick={() => void saveDays(days.days - 1)}>−</button>
+            <b className="mono" data-testid="past-days">{days.days}</b>
+            <button type="button" className="ui-btn ghost" aria-label="More past days" disabled={busy || days.days >= MAX_DAYS} onClick={() => void saveDays(days.days + 1)}>+</button>
+          </span>
+        </div>
+      )}
       <div className="ui-row ui-row-static ui-row-tall">
         <label htmlFor="incentive-on" className="ui-row-label"><b>Incentive</b><span className="ui-row-sub mono">The rider sees it on Today</span></label>
         <input id="incentive-on" className="ui-switch" type="checkbox" role="switch" checked={now?.on === true} disabled={!now || busy} onChange={(e) => void save(e.target.checked, rupees)} />
@@ -178,7 +199,7 @@ function RiderAppSettings() {
           </span>
         </div>
       )}
-      {now && <p className="mono ui-foot">Last changed by {now.updated_by ?? "the system"}, {when(now.updated_at)}</p>}
+      {last && <p className="mono ui-foot">Last changed by {last.updated_by ?? "the system"}, {when(last.updated_at)}</p>}
       {line && <p role="alert" className="ui-note error">{line}</p>}
     </section>
   );

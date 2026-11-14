@@ -80,12 +80,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     Object.assign(net.state.kitchens[0], { lat: 28.57, lng: 77.24 });
     net.state.tracking = { rider_lat: 28.5792, rider_lng: 77.26, eta_lo_min: 8, eta_hi_min: 18, eta_late: false, updated_at: new Date(NINE.getTime() - 20_000).toISOString() };
     await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+vg+AAVYAqhyXHCrAAAAAElFTkSuQmCC", "base64") }));
-    await page.goto(path); await expect(page.getByRole("button", { name: "See the rider on the map" })).toBeVisible(); },
-  "rider-map": async (context, page, path) => {   // board T5: the rider on the full-screen map
-    await page.emulateMedia({ reducedMotion: "reduce" });   // the rider's mark pulses forever; a still picture needs it still
-    await STEPS["tracker-rider-row"](context, page, path);
-    await page.getByRole("button", { name: "See the rider on the map" }).click();
-    await expect(page.getByRole("region", { name: "Rider on the map" }).getByRole("img", { name: "Rider" })).toBeVisible(); },
+    await page.goto(path); await expect(page.getByRole("link", { name: "See the rider on Google Maps" })).toBeVisible(); },
   // Story #1015: the boards E2a (big number), E1b (running late) and E1c (working out the time) with the clock fixed at NINE: 25 min from 9:00 am is "By 9:25 am" where the board says 8:12 pm.
   "eta-big": async (context, page, path) => {   // board E2a
     const net = await setup(context, page, [order("preparing", "2020-01-01T10:02:00Z")]);
@@ -188,6 +183,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
   "pin-map-far": async (context, page, path) => {   // board C6b: the pin far from the phone and outside our area, both strips
     await deliverFrom(context, page, path, 3, { serve: false });
     await page.getByRole("button", { name: "Add new address" }).click();
+    await expect(page.locator(".gs-here-dot")).toBeVisible();   // story 1502: the map follows the phone's first place; the phone moves only after that
     await context.setGeolocation({ latitude: 25.9, longitude: 79.5 });   // the phone moves away after the map opened: the pin is now far from it
     await expect(page.getByText("Not in our area yet")).toBeVisible(); await expect(page.getByText(/km from where you are now$/)).toBeVisible(); },
   "pin-map-far-off": async (context, page, path) => {   // board C6d-off: the pin far outside our area, the phone's location off, so no distance line
