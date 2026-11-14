@@ -6,8 +6,7 @@ import { SESSION, order, setup } from "./helpers";
 
 const SEEN = new Date(2026, 9, 29, 20, 0, 0);   // 8:00 pm on the phone's own clock
 const iso = (ms: number) => new Date(ms).toISOString();
-const row = (page: Page) => page.getByRole("button", { name: "See the rider on the map" });
-const map = (page: Page) => page.getByRole("region", { name: "Rider on the map" });
+const row = (page: Page) => page.getByRole("link", { name: "See the rider on Google Maps" });   // story 1498: the row is a link to Google Maps; the app's own map is gone
 
 async function onTheWay(page: Page, context: BrowserContext, tracking: object) {
   const net = await setup(context, page, [order("out_for_delivery", "2020-01-01T10:05:00Z")]);
@@ -32,15 +31,12 @@ test("T2 given the postal code has no point and the kitchen has no saved locatio
   await expect(row(page)).toContainText("Ravi is 2.0 km away");
 });
 
-test("T3 given the order has no drop point, the row shows the rider with no distance, and the map has no Home mark", async ({ page, context }) => {
+test("T3 given the order has no drop point, the row shows the rider with no distance, and its link has no route", async ({ page, context }) => {
   await onTheWay(page, context, { drop_lat: null, drop_lng: null });
   await page.goto("/customer/");
   await expect(row(page)).toContainText("Ravi is on the way");
   await expect(row(page)).not.toContainText("away");
-  await row(page).click();
-  await expect(map(page).getByRole("img", { name: "Rider" })).toBeVisible();
-  await expect(map(page).getByRole("img", { name: "Home" })).toHaveCount(0);
-  await expect(map(page).getByText("Ravi is on the way")).toBeVisible();
+  await expect(row(page)).toHaveAttribute("href", /maps\/search\/\?api=1&query=/);   // story 1498: no drop point, so no route: the rider's place only
 });
 
 test("T4 given the row was written just now but the rider's last ping is 40 minutes old, the row says 40 min ago", async ({ page, context }) => {

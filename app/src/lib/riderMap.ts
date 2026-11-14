@@ -29,3 +29,8 @@ export const lastSeenText = (at: string, now: number): string => `Last seen ${cl
 // The tile address comes from the build (VITE_MAP_TILES). None means no tile call at all, which is how prod stays tile-free until the PMTiles test (radar, 29 Oct).
 export const tileUrl = (template: string | undefined): string | null =>
   template && ["{z}", "{x}", "{y}"].every((p) => template.includes(p)) ? template : null;
+
+/** Story 1498: Google Maps, no key. The route from the rider's last place (the start) to the order's map pin (the end), by two-wheeler. No pin on the order: the rider's place alone, no route. */
+export const riderLink = (rider: { lat: number; lng: number }, you: { lat: number; lng: number } | null): string => you
+  ? `https://www.google.com/maps/dir/?api=1&origin=${rider.lat},${rider.lng}&destination=${you.lat},${you.lng}&travelmode=two-wheeler`
+  : `https://www.google.com/maps/search/?api=1&query=${rider.lat},${rider.lng}`;
