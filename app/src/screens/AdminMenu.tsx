@@ -1,5 +1,5 @@
 // The menu of one kitchen on board A6 (story H12, #195; story A3): the dishes with sold out, a new price and delete, and the Add a dish form with a photo from the phone.
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { addDish, deleteDish, listDishes, photoProblem, rupeesToPaise, setDish, uploadDishPhoto, type DishChange, type DishRow } from "../lib/admin";
 import { dishProblem } from "../lib/validate";
 import { formatRupees } from "../lib/money";
@@ -9,6 +9,8 @@ import { DangerSheet, DishPlate, VegMark, useSheetFit } from "../ui";
 export function AdminMenu({ kitchenId, kitchenName, onError }: { kitchenId: string; kitchenName?: string; onError: (m: string | null) => void }) {
   const [dishes, setDishes] = useState<DishRow[]>([]);
   const [adding, setAdding] = useState(false);
+  const dishActs = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (adding) dishActs.current?.scrollIntoView({ block: "nearest" }); }, [adding]);   // story 1476: the form opens with both buttons in view, once, not on every key
   const [form, setForm] = useState({ name: "", price: "", category: "", description: "", veg: true });
   const [photo, setPhoto] = useState<File | null>(null);
   const [editing, setEditing] = useState<DishRow | null>(null);   // story #936: the Edit sheet
@@ -52,7 +54,7 @@ export function AdminMenu({ kitchenId, kitchenName, onError }: { kitchenId: stri
           <div className="ui-field"><label htmlFor="dish-line">Short line (optional)</label><input id="dish-line" type="text" value={form.description} placeholder="Slow cooked overnight, butter on top" onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
           <div className="ui-row ui-row-static"><label htmlFor="dish-veg" className="ui-row-label"><span>Veg</span></label><input id="dish-veg" className="ui-switch" type="checkbox" role="switch" checked={form.veg} onChange={(e) => setForm({ ...form, veg: e.target.checked })} /></div>
           <div className="ui-field"><label htmlFor="dish-photo">Photo</label><input id="dish-photo" key={fileKey} type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} /></div>
-          <div className="ui-form-acts"><button type="button" className="ui-btn big" onClick={() => void submit()}>Add dish</button><button type="button" className="ui-btn ghost big" onClick={() => setAdding(false)}>Not now</button></div>
+          <div className="ui-form-acts" ref={dishActs}><button type="button" className="ui-btn ghost big" onClick={() => setAdding(false)}>Not now</button><button type="button" className="ui-btn big" onClick={() => void submit()}>Add dish</button></div>   {/* story 1476 (rule 8, as #1457): the main button last, both in view when the form opens */}
         </div>
       )}
       {editing && <DishSheet dish={editing} kitchenId={kitchenId} kitchenName={kitchenName} onError={onError} onClose={() => setEditing(null)} onDone={async () => { setEditing(null); await load(); }} />}
