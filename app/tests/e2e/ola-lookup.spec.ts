@@ -18,9 +18,13 @@ async function start(context: any, page: Page, geocode: { status: number; body: 
   return { net, osm };
 }
 
-test("S1 Ola answers: the words show on the pin map card, OpenStreetMap is not asked, the credit line shows", async ({ page, context }) => {
+// Story 1500: the lookup runs on Confirm; back on the map (Change) the card carries its words and the Ola credit.
+test("S1 Ola answers on Confirm: the words show on the details and on the pin map card, OpenStreetMap is not asked, the credit line shows", async ({ page, context }) => {
   const { net, osm } = await start(context, page, OLA);
   await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();
+  await expect(page.getByRole("dialog", { name: "Address details" })).toContainText("Radio Colony");
+  await page.getByRole("button", { name: "Change" }).click();
   await expect(page.getByText("Radio Colony", { exact: true })).toBeVisible();
   const credit = page.locator(".ui-pinmap-credit");
   await expect(credit.getByRole("link", { name: "Ola Maps" })).toHaveAttribute("href", "https://www.openstreetmap.org/copyright");
@@ -33,6 +37,9 @@ test("S3 our function says no (off, over the cap, an error): OpenStreetMap answe
   for (const status of [503, 429, 502]) {
     const { osm } = await start(context, page, { status, body: { ok: false } });
     await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
+    await page.getByRole("button", { name: "Confirm & proceed" }).click();
+    await expect(page.getByRole("dialog", { name: "Address details" })).toContainText("Link Road");
+    await page.getByRole("button", { name: "Change" }).click();
     await expect(page.getByText("Link Road", { exact: false }).first()).toBeVisible();
     await expect(page.locator(".ui-pinmap-credit").getByText("Ola Maps")).toHaveCount(0);
     await expect(page.getByRole("alert")).toHaveCount(0);

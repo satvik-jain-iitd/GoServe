@@ -39,7 +39,8 @@ const addNew = async (page: Page) => {
   await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
 };
 // Where the pin rests: the place of the last address lookup.
-const pinAt = (net: { calls: { geocode: string[] } }) => { const u = new URL(net.calls.geocode.at(-1) ?? "https://x/?lat=0&lng=0"); return { lat: Number(u.searchParams.get("lat")), lng: Number(u.searchParams.get("lng")) }; };
+// Story 1500: a rest asks only our own serviceability answer, so the place under the pin is read from that call.
+const pinAt = (net: { calls: { serve: string[] } }) => { const u = new URL(net.calls.serve.at(-1) ?? "https://x/?lat=0&lng=0"); return { lat: Number(u.searchParams.get("lat")), lng: Number(u.searchParams.get("lng")) }; };
 const metres = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => Math.hypot((a.lat - b.lat) * 111_320, (a.lng - b.lng) * 111_320 * Math.cos(a.lat * Math.PI / 180));
 async function drag(page: Page, dx: number) {
   const b = (await page.locator(".ui-pinmap-map").boundingBox())!;
@@ -113,5 +114,8 @@ test("M5 the kitchen admin's pin screen, for a kitchen with no place yet, moves 
   await page.getByRole("button", { name: "+ Add a kitchen" }).click();
   await page.locator(".ui-locrow").click();
   await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
-  await expect.poll(() => metres(pinAt(net), PHONE), { timeout: 8000 }).toBeLessThan(50);
+  await expect(page.locator(".gs-here-dot")).toHaveCount(1, { timeout: 8000 });
+  await page.waitForTimeout(800);
+  await page.getByRole("button", { name: "Save location" }).click();   // story 1500: the kitchen screen reads the place once, on Save location
+  await expect.poll(() => { const u = new URL(net.calls.geocode.at(-1) ?? "https://x/?lat=0&lng=0"); return metres({ lat: Number(u.searchParams.get("lat")), lng: Number(u.searchParams.get("lng")) }, PHONE); }, { timeout: 8000 }).toBeLessThan(50);
 });

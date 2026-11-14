@@ -62,42 +62,54 @@ test("S2 the pin colour is the primary green, and the pin sits at the centre of 
   expect(Math.abs(p.y + p.height * 0.625 - (m.y + m.height / 2))).toBeLessThanOrEqual(2);   // its tip (62.5 percent down the marker with its halo, board C6) is the centre of the map
 });
 
-test("S3 the card gives the place name, the address line, the lime served strip and the credit line", async ({ page, context }) => {
+// Story 1500: the resting card has no looked-up name. The name, the address line and the Ola credit come with Confirm's one lookup.
+test("S3 the resting card says Pin on the map with the lime served strip and the credit line; after Confirm and Change it gives the place name and the address line", async ({ page, context }) => {
   const net = await open(page, context);
   await page.getByRole("button", { name: "Add new address" }).click();
+  await expect(screen(page).getByText("Pin on the map")).toBeVisible();
+  await expect(screen(page).getByText("We deliver here · the kitchen is 1.2 km from the pin")).toBeVisible();
+  await expect(screen(page).getByText(/© OpenStreetMap contributors/)).toBeVisible();
+  expect(net.calls.geocode).toHaveLength(0);
+  expect(net.calls.serve).toHaveLength(1);   // the place alone
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();
+  await page.getByRole("button", { name: "Change" }).click();
   await expect(screen(page).getByText("Green Park", { exact: true })).toBeVisible();
   await expect(screen(page).getByText("New Delhi, Delhi")).toBeVisible();
-  await expect(screen(page).getByText("We deliver here · the kitchen is 1.2 km from the pin")).toBeVisible();
   await expect(screen(page).getByText(/Ola Maps/)).toBeVisible();
-  await expect(screen(page).getByText(/© OpenStreetMap contributors/)).toBeVisible();
   expect(net.calls.geocode).toHaveLength(1);
-  expect(net.calls.serve).toHaveLength(2);   // story #1102: once at once with the place, once more with the pin the lookup read
+  expect(net.calls.serve).toHaveLength(2);   // story #1102: once more with the pin the lookup read
 });
 
-test("S4 dragging the map asks once, 400 ms after it stops, with the new centre", async ({ page, context }) => {
+test("S4 dragging the map asks our own answer once, 400 ms after it stops, with the new centre, and never the address (story 1500)", async ({ page, context }) => {
   const net = await open(page, context);
   await page.getByRole("button", { name: "Add new address" }).click();
-  await expect(screen(page).getByText("Green Park", { exact: true })).toBeVisible();
-  const before = net.calls.geocode.length;
+  await expect(screen(page).getByText(/We deliver here/)).toBeVisible();
+  const before = net.calls.serve.length;
   await drag(page, 120);   // one drag: one answer for the place it rests on
-  await expect.poll(() => net.calls.geocode.length, { timeout: 5000 }).toBe(before + 1);
+  await expect.poll(() => net.calls.serve.length, { timeout: 5000 }).toBe(before + 1);
   await page.waitForTimeout(900);
-  expect(net.calls.geocode.length).toBe(before + 1);
-  expect(net.calls.serve.length).toBe(2 * (before + 1));   // two serviceability asks per rest (the place, then the place with its pin)
-  const last = new URL(net.calls.geocode.at(-1)!);
+  expect(net.calls.serve.length).toBe(before + 1);
+  expect(net.calls.geocode).toHaveLength(0);
+  const last = new URL(net.calls.serve.at(-1)!);
   expect(Number(last.searchParams.get("lng"))).not.toBeCloseTo(77.2, 3);   // it moved
 });
 
-test("S5 a pin no kitchen reaches gets the red strip", async ({ page, context }) => {
+test("S5 a pin no kitchen reaches gets the red strip after Confirm's lookup, not while it rests (story 1500)", async ({ page, context }) => {
   await open(page, context, { serve: { status: 200, body: { ok: true, serviceable: false, request_here: true, kitchens: [] } } });
   await page.getByRole("button", { name: "Add new address" }).click();
+  await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeEnabled();
+  await expect(screen(page).getByText("Not in our area yet")).toHaveCount(0);
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();
   await expect(screen(page).getByText("Not in our area yet")).toBeVisible();
   await expect(screen(page).getByText(/We deliver here/)).toHaveCount(0);
 });
 
-test("S6 a lookup that fails keeps the pin and says so in words; Confirm still works", async ({ page, context }) => {
+test("S6 a lookup that fails on Confirm still opens the details; back on the map the card says so in words and keeps the pin", async ({ page, context }) => {
   await open(page, context, { geocode: { status: 503, body: { ok: false } } });
   await page.getByRole("button", { name: "Add new address" }).click();
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();
+  await expect(page.getByRole("dialog", { name: "Address details" }).getByLabel("Area or street")).toBeVisible();
+  await page.getByRole("button", { name: "Change" }).click();
   await expect(screen(page).getByText("Could not read the address, the pin still counts")).toBeVisible();
   await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeEnabled();
 });
@@ -123,14 +135,14 @@ test("S9 Use current location opens the map at the phone; a tapped search result
   const net = await open(page, context, { places: { status: 200, body: { ok: true, results: [{ name: "Chhatarpur", address: "Chhatarpur, Madhya Pradesh, 471001", lat: 24.9, lng: 79.58, pin: "471001", served: false }] } } });
   await page.getByRole("button", { name: "Use current location" }).click();
   await expect(screen(page)).toBeVisible();
-  await expect.poll(() => net.calls.geocode.at(-1) ?? "").toContain("lat=28.56");
+  await expect.poll(() => net.calls.serve.at(-1) ?? "").toContain("lat=28.56");
   await page.getByRole("button", { name: "Back" }).click();
   await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();
   const box = page.getByRole("searchbox", { name: "Search an area or address" });
   await box.fill("chhat"); await box.press("Enter");
   await page.getByRole("region", { name: "Places" }).getByRole("button").first().click();
   await expect(screen(page)).toBeVisible();
-  await expect.poll(() => net.calls.geocode.at(-1) ?? "").toContain("lat=24.9");
+  await expect.poll(() => net.calls.serve.at(-1) ?? "").toContain("lat=24.9");
 });
 
 test("S10 Confirm & proceed opens the details step over the same map (story #1038), and saving stores the pin's place", async ({ page, context }) => {

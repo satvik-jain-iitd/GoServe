@@ -26,14 +26,16 @@ test("a hanging address lookup does not hide the served strip", async ({ page, c
   await expect(page.getByText(/We deliver here/)).toBeVisible({ timeout: 6_000 });
 });
 
-test("when the lookup brings a pin, the strip is asked again with it", async ({ page, context }) => {
+test("when Confirm's lookup brings a pin, the strip is asked again with it (story 1500: not before Confirm)", async ({ page, context }) => {
   const net = await open(page, context, false);
   await expect(page.getByText(/We deliver here/)).toBeVisible();
+  expect(net.calls.serve.some((u: string) => u.includes("pin="))).toBe(false);
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();
   await expect.poll(() => net.calls.serve.some((u: string) => u.includes("pin=110016"))).toBe(true);
   expect(net.calls.serve.some((u: string) => !u.includes("pin="))).toBe(true);   // and once at once, with the place alone
 });
 
-test("a slow place-only answer cannot overwrite the pin answer", async ({ page, context }) => {
+test("the pin answer after Confirm wins over a place-only yes, and stays", async ({ page, context }) => {
   // the place alone says "served" late (1.5 s); the pin answer says "not served" at once. The pin answer is the better one and must stay.
   const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "*" };
   const slow = async () => {
@@ -47,6 +49,7 @@ test("a slow place-only answer cannot overwrite the pin answer", async ({ page, 
     });
   };
   await open(page, context, false, slow);
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();   // story 1500: enabled once the place-only answer is in
   await expect(page.getByText("Not in our area yet")).toBeVisible();
   await page.waitForTimeout(2_500);   // the slow place-only answer has landed by now
   await expect(page.getByText("Not in our area yet")).toBeVisible();

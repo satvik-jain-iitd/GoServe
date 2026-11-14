@@ -66,7 +66,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await page.goto(path); await page.getByRole("button", { name: "City", exact: true }).click(); await page.getByRole("button", { name: "Add a kitchen" }).click();
     await page.getByLabel("Kitchen name").fill("Chhatarpur chhole bhature"); await page.getByLabel("Pin codes").fill("471001");
     await page.locator(".ui-locrow").click(); await page.getByRole("button", { name: "Current Location" }).click();
-    await expect(page.getByText("Inside 471001")).toBeVisible(); },
+    await expect(page.getByRole("button", { name: "Save location" })).toBeEnabled(); },   // story 1500: no lookup at rest, so no "Inside <pin>" line
   "add-kitchen-location": async (context, page, path) => {   // board A11: the Add a kitchen form with the Location row filled
     await STEPS["kitchen-pin"](context, page, path);
     await page.getByRole("button", { name: "Save location" }).click();
@@ -185,10 +185,12 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await page.getByRole("button", { name: "Add new address" }).click();
     await expect(page.locator(".gs-here-dot")).toBeVisible();   // story 1502: the map follows the phone's first place; the phone moves only after that
     await context.setGeolocation({ latitude: 25.9, longitude: 79.5 });   // the phone moves away after the map opened: the pin is now far from it
+    await page.getByRole("button", { name: "Confirm & proceed" }).click();   // story 1500: the no is said after Confirm's lookup
     await expect(page.getByText("Not in our area yet")).toBeVisible(); await expect(page.getByText(/km from where you are now$/)).toBeVisible(); },
   "pin-map-far-off": async (context, page, path) => {   // board C6d-off: the pin far outside our area, the phone's location off, so no distance line
     await deliverFrom(context, page, path, 3, { serve: false, locate: false });
     await page.getByRole("button", { name: "Add new address" }).click();
+    await page.getByRole("button", { name: "Confirm & proceed" }).click();   // story 1500: the no is said after Confirm's lookup
     await expect(page.getByText("Not in our area yet")).toBeVisible();
     await expect(page.getByText(/km from where you are now/)).toHaveCount(0);   // the counter is live: the sheet is up above, so zero is real
     await expect(page.getByText(/\b0 km\b/)).toHaveCount(0); },
