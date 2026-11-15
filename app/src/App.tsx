@@ -79,6 +79,7 @@ type Step = "menu" | "bill" | "placed" | "orders" | "account" | "deliver";
 type Role = "customer" | "kitchen" | "rider" | "split" | "ops" | "admin";
 
 const api = orderDeps;
+const CITY_CENTRE: Place = { lat: 28.6139, lng: 77.209 };   // story 1573: where the map opens when nothing else says; a guess, so the address search never uses it as its centre
 
 // `lock` makes this one of the role apps (story #83): that role only, no role tabs, no demo tools. Without it, this is the demo console.
 export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
@@ -568,7 +569,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const mapStart = (): Place => {   // where the map opens when nothing says otherwise: the phone, else the picked address, else the kitchen whose menu shows (story 1502), else the city centre
     const row = (saved ?? []).find((r) => r.id === selectedId);
     const k = area?.kind === "ok" ? area.kitchen : null;
-    return here ?? (row && row.lat !== null && row.lng !== null ? { lat: row.lat, lng: row.lng } : k && typeof k.lat === "number" && typeof k.lng === "number" ? { lat: k.lat, lng: k.lng } : { lat: 28.6139, lng: 77.209 });
+    return here ?? (row && row.lat !== null && row.lng !== null ? { lat: row.lat, lng: row.lng } : k && typeof k.lat === "number" && typeof k.lng === "number" ? { lat: k.lat, lng: k.lng } : CITY_CENTRE);
   };
   const openAtStart = (edit?: SavedAddress) => setPinMap({ center: mapStart(), edit, follow: true });   // story 1502: an open the person did not aim follows the phone's place once
   const confirmOnMap = () => {   // story 1532: the Bill's "Confirm on the map". An old saved row with no pin gets its pin; any other place opens the map at its point
@@ -1173,7 +1174,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const needArea = lock === "customer" && step !== "placed" && step !== "orders" && !(pin && (area?.kind === "ok" || area?.kind === "closed"));
   const noPlace = known && needArea && !pin && !waitingForAddresses;   // story 1529: a customer who confirmed a place before and has none now (the last address deleted, a new phone, not found): Deliver to, never the first-open screen
   const deliverTo = (
-    <DeliverToScreen focusSearch={focusSearch} forMap={pinMap?.center} list={saved ?? []} selectedId={selectedId} here={here} search={placeSearch}
+    <DeliverToScreen focusSearch={focusSearch} forMap={pinMap?.center} list={saved ?? []} selectedId={selectedId} here={here} search={(q, at) => placeSearch(q, at && at.lat === CITY_CENTRE.lat && at.lng === CITY_CENTRE.lng ? undefined : at)}   // story 1573: the fixed city centre is where the map opens, never where the search looks
       recents={recents} recentId={recentAt(recents, where)} onRecent={pickRecent}
       // Story 1530: a pick from search opens the map at the place's own point. Under a map that was not opened from search (Add new address, an edit) the pick only moves the pin.
       onPlace={(h, typed) => { setFocusSearch(false); setPinMap({ ...pinMap, center: { lat: h.lat, lng: h.lng }, follow: false, recent: !pinMap || pinMap.recent ? { typed, hit: h } : undefined }); }}
