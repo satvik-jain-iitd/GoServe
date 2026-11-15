@@ -34,7 +34,8 @@ export function addressFrom(r: Reply): Found | null {
 // is "no pin": the field stays empty and says so. The state check (story 827) still applies to the answer.
 const NEAR_WAIT_MS = 4_000;
 type PinDeps = { fetchFn: typeof fetch; url: string; anon: string; token: () => Promise<string> };
-export async function nearestPin(at: Place, state: string | undefined, deps?: PinDeps): Promise<string> {
+// Story 1548: null means the read failed (a server fault, no network, the 4 second wait); an empty string means our table has no pin near this point.
+export async function readNearestPin(at: Place, state: string | undefined, deps?: PinDeps): Promise<string | null> {
   const stop = new AbortController();
   const timer = setTimeout(() => stop.abort(), NEAR_WAIT_MS);
   try {
@@ -44,15 +45,17 @@ export async function nearestPin(at: Place, state: string | undefined, deps?: Pi
       headers: { apikey: d.anon, authorization: `Bearer ${await d.token()}`, "content-type": "application/json" },
       body: JSON.stringify({ p_lat: at.lat, p_lng: at.lng }),
     });
-    if (!res.ok) return "";
+    if (!res.ok) return null;
     const pin = await res.json();
     return typeof pin === "string" && /^\d{6}$/.test(pin) && pinFits(pin, state) ? pin : "";
   } catch {
-    return "";
+    return null;
   } finally {
     clearTimeout(timer);
   }
 }
+
+export const nearestPin = async (at: Place, state: string | undefined, deps?: PinDeps): Promise<string> => (await readNearestPin(at, state, deps)) ?? "";
 
 export async function reverseAddress(lat: number, lng: number, fetchFn: typeof fetch = fetch, pinDeps?: PinDeps): Promise<Found | null> {
   try {
@@ -68,10 +71,13 @@ export async function reverseAddress(lat: number, lng: number, fetchFn: typeof f
 }
 
 // The phone's place, once. Rejects when location is not allowed or not found.
-export const currentPlace = (): Promise<Place> =>
+// Story 1548: the fix also says how rough it is (accuracy, metres) and how fast the phone moves (speed, metres a second); null when the phone does not say.
+export type Phone = Place & { accuracy: number | null; speed: number | null };
+const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
+export const currentPlace = (): Promise<Phone> =>
   new Promise((resolve, reject) => {
     if (!("geolocation" in navigator)) return reject(new Error("no_geolocation"));
-    navigator.geolocation.getCurrentPosition((p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }), reject, { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 });
+    navigator.geolocation.getCurrentPosition((p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: num(p.coords.accuracy), speed: num(p.coords.speed) }), reject, { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 });
   });
 
 // Bug 1526: every failure was called "blocked". The browser's error code says which it is: 1 blocked for this app, 2 the phone's location is off or gives no fix, 3 too slow.
@@ -95,7 +101,7 @@ export const locLine = (why: LocWhy, out: string): string => { const w = locWord
 
 // Stories 1529 and 1526: the phone's place, or why not. By itself (no tap) the app never makes the browser ask: it uses only a permission given before, and waits waitMs.
 // A browser with no permissions.query (an older iPhone) is treated as never asked. A tap always asks.
-export async function findPhone(tap: boolean, before: LocWhy | null = null, waitMs = 5000): Promise<Place | LocWhy> {
+export async function findPhone(tap: boolean, before: LocWhy | null = null, waitMs = 5000): Promise<Phone | LocWhy> {
   if (!tap) {
     let state: string | undefined;
     try { state = (await navigator.permissions?.query({ name: "geolocation" as PermissionName }))?.state; } catch { /* never asked */ }

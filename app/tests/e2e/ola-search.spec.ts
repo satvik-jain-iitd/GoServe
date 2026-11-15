@@ -1,6 +1,6 @@
 // Story #1519: the search shows places from Ola Maps near the map, as you type. The server (place-search) is a stand-in here; no test holds a real Ola answer.
 import { test, expect, type Page } from "@playwright/test";
-import { setup } from "./helpers";
+import { answeredAt, setup } from "./helpers";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
 const HOME = { id: "h1", label: "Home", address: "C-4, Model Town, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
@@ -15,7 +15,7 @@ async function deliverTo(page: Page, context: Parameters<typeof setup>[0], place
   net.state.addresses = [HOME];
   net.state.places = places as typeof net.state.places;
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
-  await context.grantPermissions(["geolocation"]); await context.setGeolocation(PHONE);
+  await context.grantPermissions(["geolocation"]); await context.setGeolocation(PHONE); await answeredAt(context, PHONE);   // story 1548: the box is not this spec's subject
   await page.goto("/customer/");
   await page.getByTitle("Change the delivery address").click();   // story 1529: the place follows the phone, so the header is not always Home
   return net;

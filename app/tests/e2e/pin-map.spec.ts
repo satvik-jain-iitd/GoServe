@@ -1,7 +1,7 @@
 // Story #1037 (board C6-PinMap): one full-screen map screen is the door for Add new address, Use current location and a tapped search result.
 // A plain DOM pin sits at the centre, the map moves under it, 400 ms after it stops the words and the served strip follow. No zoom control, no tooltip, no inline map.
 import { test, expect, type Page } from "@playwright/test";
-import { setup } from "./helpers";
+import { answeredAt, setup } from "./helpers";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
 const OSM_CORS = { "access-control-allow-origin": "*", "content-type": "application/json" };
@@ -18,7 +18,7 @@ async function open(page: Page, context: Parameters<typeof setup>[0], over: { ge
   if (over.places) net.state.places = over.places as { status: number; body: object };
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
   await context.route("https://nominatim.openstreetmap.org/reverse**", (r) => r.fulfill({ status: 500, headers: OSM_CORS, body: "{}" }));
-  if (over.permission !== false) { await context.grantPermissions(["geolocation"]); await context.setGeolocation(PHONE); }
+  if (over.permission !== false) { await context.grantPermissions(["geolocation"]); await context.setGeolocation(PHONE); await answeredAt(context, PHONE); }   // story 1548: the box is not this spec's subject
   await page.goto("/customer/");
   // story 1529: the place follows the phone, so the header is not always Home. Story 1547: with no permission the place on this phone stays and no sheet opens
   await page.getByTitle("Change the delivery address").click();
