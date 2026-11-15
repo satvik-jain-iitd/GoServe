@@ -272,9 +272,9 @@ test("Nothing moves: when the location is found or not found only the Delivering
     if (kind === "blocked" && withRecents) {
       const going = page.getByRole("region", { name: "Delivering to" });
       const card = page.getByRole("button", { name: "Use current location" });
-      await expect(going).toContainText("Location is blocked for GoServe");
-      for (const [name, pos, words] of [["off", 2, "Your phone's location is off"], ["slow", 3, "Finding you is taking too long"], ["still", 1, "Still blocked"]] as const) {
-        if (name === "still") { await setLoc(page, { perm: "denied", pos: 1 }); await card.click(); await expect(going).toContainText("Location is blocked for GoServe"); }   // blocked, then blocked again
+      await expect(going).toContainText("Location is off or blocked");
+      for (const [name, pos, words] of [["off", 2, "Your phone's location is off"], ["slow", 3, "Finding you is taking too long"], ["still", 1, "Still off or blocked"]] as const) {
+        if (name === "still") { await setLoc(page, { perm: "denied", pos: 1 }); await card.click(); await expect(going).toContainText("Location is off or blocked"); }   // blocked, then blocked again
         await setLoc(page, { perm: "denied", pos });
         await card.click();
         await expect(going).toContainText(words);

@@ -11,6 +11,7 @@ export type Deps = QuoteDeps & {
   existing: (session: string, key: string) => Promise<Record<string, unknown> | null>;   // story #537: the order this caller already made with this key
   rate: (order: string, session: string, food: number, rider: number | null, comment: string | null) => Promise<{ ok: true } | { ok: false; error: string; message: string }>;   // story #354
   place: (session: string, key: string, kitchen: string, lines: unknown, address: string, itemTotal: number, bill: Record<string, unknown>, drop: Drop | null, instructions: string | null, pin: string) => Promise<Placed>;   // story #1145: the pin of the address the order goes to
+  needsPoint: () => Promise<boolean>;   // story 1528: the settings switch order_needs_point. Read only for an order with no point.
 };
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const bad = () => json(400, { ok: false, error: "invalid_request" });
@@ -36,7 +37,10 @@ const NOTE_MAX = 200;
 const noteOf = (v: unknown): { ok: true; note: string | null } | { ok: false } =>
   v === undefined || v === null ? { ok: true, note: null } : typeof v === "string" ? { ok: true, note: v.trim() || null } : { ok: false };
 
-// Story #905: the customer app's device fix, saved on the order. A missing or bad fix is null and never refuses the order.
+// Story 905: the customer app's device fix, saved on the order. A missing or bad fix is null.
+// Story 1528: every order has an exact point. With the settings switch order_needs_point on, an order with no point is refused here and again in place_order_v2.
+// The switch starts off: it goes on only after every live build sends a point. Off, an order with no point still goes, as before.
+const POINT_REQUIRED = { ok: false, error: "point_required", message: "Set your place on the map to place the order." };
 type Drop = { lat: number; lng: number };
 const dropOf = (a: { lat?: unknown; lng?: unknown } | undefined): Drop | null =>
   typeof a?.lat === "number" && typeof a?.lng === "number" && Math.abs(a.lat) <= 90 && Math.abs(a.lng) <= 180 ? { lat: a.lat, lng: a.lng } : null;
@@ -60,12 +64,14 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
     // A retry (a double tap, a phone that retried after a drop) gets the order it already made, before the dish or the price is looked at again.
     const prior = await deps.existing(session, key);
     if (prior) return json(200, { ok: true, created: false, order: Object.fromEntries(ORDER_FIELDS.map((f) => [f, prior[f]])) });
+    const drop = dropOf(b?.address);
+    if (!drop && await deps.needsPoint()) return json(422, POINT_REQUIRED);   // after the retry answer above: an order that exists is never refused
     const out = await runQuote(deps, q, session);
     if (!out.ok) return json(422, out.error === "dish_sold_out" ? { ...out, error: "sold_out" } : out);   // story #619: the refusal carries the server's alternative
     const quote = { ...out, kitchen_id: q.kitchen };
     if (out.to_pay_paise !== expected) return json(409, { ok: false, error: "price_changed", message: "A price changed. Check the bill again.", quote });
     const { ok: _ok, lines: _lines, offers: _offers, effective, ...bill } = out;   // the offers are for the screen, not for the order; story #619: a swap orders the lines after the swap, not the sold-out one
-    const res = await deps.place(session, key, q.kitchen, effective ?? q.lines, text.trim(), out.item_total_paise, { ...bill, lines: out.lines }, dropOf(b?.address), note.note, q.pin);
+    const res = await deps.place(session, key, q.kitchen, effective ?? q.lines, text.trim(), out.item_total_paise, { ...bill, lines: out.lines }, drop, note.note, q.pin);
     if (!res.ok) return json(res.error === "price_changed" ? 409 : 422, { ok: false, error: res.error, message: res.message });
     const order = Object.fromEntries(ORDER_FIELDS.map((f) => [f, res.order[f]]));
     return json(res.created ? 201 : 200, { ok: true, created: res.created, order });
@@ -101,6 +107,12 @@ const live: Deps = {
     });
     if (!res.ok) throw new Error("place failed");
     return await res.json();
+  },
+  needsPoint: async () => {
+    const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;   // settings is not public to read
+    const res = await fetch(`${Deno.env.get("SUPABASE_URL")}/rest/v1/settings?select=value&name=eq.order_needs_point&limit=1`, { headers: { apikey: service, authorization: `Bearer ${service}` } });
+    if (!res.ok) throw new Error("read failed");
+    return (await res.json())[0]?.value === true;   // no row: off
   },
 };
 export const handler = withCors(withRunLog("orders", makeHandler(live), writeRunLog));   // story #356: one run_log row per call

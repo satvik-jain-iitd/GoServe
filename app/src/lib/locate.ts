@@ -79,8 +79,8 @@ export const currentPlace = (): Promise<Place> =>
 export type LocWhy = "ask" | "denied" | "still" | "off" | "slow" | "none";   // none (story 1530): an error with no code; the line claims no cause
 const WORDS: Record<LocWhy, [string, string]> = {
   ask: ["We can't see where you are right now", "Tap Use current location"],
-  denied: ["Location is blocked for GoServe", "Turn on location in your phone settings"],
-  still: ["Still blocked", "In your phone: Settings, Apps, GoServe, Permissions, Location"],
+  denied: ["Location is off or blocked", "Turn on location in your phone settings"],
+  still: ["Still off or blocked", "Turn on location in your phone's settings, or pick a place"],
   off: ["Your phone's location is off", "Turn it on"],
   slow: ["Finding you is taking too long", "Try again"],
   none: ["We could not find where you are", "Try again"],

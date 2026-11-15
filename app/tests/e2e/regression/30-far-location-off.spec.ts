@@ -42,7 +42,7 @@ test("TC 30.3 Look: location blocked shows the sheet Where to bring your food? w
   await STEPS["location-off"](context, page, "/customer/");
   await expect(sheet(page)).toBeVisible();   // proves the sheet shows before its parts are checked
   await expect(sheet(page).getByRole("heading", { name: "Where to bring your food?" })).toBeVisible();
-  await expect(sheet(page).getByRole("status")).toHaveText("Location is blocked for GoServe. Pick a place.");
+  await expect(sheet(page).getByRole("status")).toHaveText("Location is off or blocked. Pick a place.");
   await expect(sheet(page).getByRole("button", { name: "Try location again" })).toBeVisible();
   await expect(sheet(page).getByRole("button", { name: /^Home\b/ })).toBeVisible();
   await expect(sheet(page).getByRole("button", { name: "View all" })).toBeVisible();

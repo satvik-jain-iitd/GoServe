@@ -305,6 +305,8 @@ paths:
                   properties:
                     pin_code: { type: string, pattern: "^[0-9]{6}$" }
                     text: { type: string, minLength: 1, maxLength: 300 }
+                    lat: { type: number, minimum: -90, maximum: 90, description: "The exact point the food goes to, set by the customer on the map. Sent with lng. With the settings switch order_needs_point on, an order with no valid lat and lng is refused with 422 point_required. With the switch off (the start) it still goes, with no point." }
+                    lng: { type: number, minimum: -180, maximum: 180 }
                 coupon_code: { type: string, maxLength: 40 }
                 no_coupon: { type: boolean, description: "true: apply no coupon, not even the best one. Not allowed together with coupon_code." }
                 idempotency_key: { type: string, minLength: 8, maxLength: 64 }
@@ -341,7 +343,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/PriceChanged"
         "422":
-          description: A rule refused the order (empty, sold_out, kitchen_closed, quantity, add-on pick, coupon rule, session_order_cap). error is a stable code, message is for the customer.
+          description: A rule refused the order (empty, sold_out, kitchen_closed, quantity, add-on pick, coupon rule, session_order_cap, point_required when the address has no point and the switch order_needs_point is on). error is a stable code, message is for the customer.
           content:
             application/json:
               schema:

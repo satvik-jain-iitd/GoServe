@@ -2,10 +2,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { placeOrderV2, PriceChanged } from "../../src/lib/ordersV2";
+import { placeOrderV2 as send, PriceChanged, type PlaceV2Input, type V2Deps } from "../../src/lib/ordersV2";
 import { PlaceError } from "../../src/lib/orders";
 
 const input = { kitchenId: "k-1", pin: "110016", items: [{ menu_item_id: "d1", qty: 2 }], address: " Flat 4, Green Park ", key: "key-12345678", expectedPaise: 29000, code: null as string | null, none: false };
+const placeOrderV2 = (i: Omit<PlaceV2Input, "drop">, d: V2Deps) => send({ ...i, drop: { lat: 28.5677, lng: 77.2432 } }, d);   // story 1528: every order has a point
 const deps = (status: number, body: unknown, token = "tok") => {
   const fetchFn = vi.fn(async () => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } }));
   return { fetchFn: fetchFn as unknown as typeof fetch, token: async () => token, url: "https://x.supabase.co", anon: "anon" };
@@ -20,7 +21,7 @@ describe("placeOrderV2", () => {
     expect(url).toBe("https://x.supabase.co/functions/v1/orders");
     expect(init.headers.authorization).toBe("Bearer tok");
     expect(init.headers.apikey).toBe("anon");
-    expect(JSON.parse(init.body)).toEqual({ kitchen_id: "k-1", lines: [{ menu_item_id: "d1", qty: 2, option_ids: [] }], address: { pin_code: "110016", text: "Flat 4, Green Park" },
+    expect(JSON.parse(init.body)).toEqual({ kitchen_id: "k-1", lines: [{ menu_item_id: "d1", qty: 2, option_ids: [] }], address: { pin_code: "110016", text: "Flat 4, Green Park", lat: 28.5677, lng: 77.2432 },
       idempotency_key: "key-12345678", expected_to_pay_paise: 29000 });
     expect(r.order).toMatchObject({ id: "o1", status: "placed", total_paise: 29000, updated_at: "2026-10-29T10:00:00Z" });
     expect(r.created).toBe(true);

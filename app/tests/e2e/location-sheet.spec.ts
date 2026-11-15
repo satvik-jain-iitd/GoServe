@@ -36,10 +36,10 @@ test("The phone's location is off: I tap Try location again, I do not see the wo
 
 test("Location is blocked for the app: no button on the sheet does nothing when tapped", async ({ page, context }) => {
   await open(page, context, { perm: "denied", pos: 1 });
-  await expect(sheet(page).getByRole("status")).toHaveText("Location is blocked for GoServe. Pick a place.");
+  await expect(sheet(page).getByRole("status")).toHaveText("Location is off or blocked. Pick a place.");
   await expect(main(page)).toHaveCount(0);   // asking a blocked phone is not the main way
   await sheet(page).getByRole("button", { name: "Try location again" }).click();
-  await expect(sheet(page).getByRole("status")).toContainText("Still blocked. In your phone: Settings");   // the tap says something new
+  await expect(sheet(page).getByRole("status")).toContainText("Still off or blocked. Turn on location in your phone's settings, or pick a place.");   // the tap says something new
   await sheet(page).getByRole("button", { name: /Work/ }).click();   // a saved address picks it
   await expect(sheet(page)).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^Work\b/ }).first()).toBeVisible();
@@ -124,3 +124,32 @@ test("The pin map, Current Location: the line is true for the cause", async ({ p
   await expect(page.getByText("Finding you is taking too long. Try again, or move the map to your place.")).toBeVisible();
   await expect(page.getByText(/Allow location/)).toHaveCount(0);
 });
+
+// Rule 23 (no layout shift), reviewer's order of 15 Nov: the sheet has one height for every cause. The line keeps two lines, so a short line and a long one make the same sheet.
+for (const [width, height] of [[360, 640], [390, 844]] as const) {
+  test(`The sheet keeps one size for every cause, and fits with no scroll (${width} px)`, async ({ page, context }) => {
+    await page.setViewportSize({ width, height });
+    const sizes: Record<string, string> = {};
+    const measure = async (name: string, words: string) => {
+      await expect(sheet(page).getByRole("status")).toContainText(words);
+      await sheet(page).evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));   // the sheet rises for 200 ms
+      const b = (await sheet(page).boundingBox())!;
+      expect(b.y, `${name}: the top of the sheet is on the screen`).toBeGreaterThanOrEqual(0);
+      expect(b.y + b.height, `${name}: the bottom of the sheet is on the screen`).toBeLessThanOrEqual(height);
+      expect(await sheet(page).evaluate((el) => el.scrollHeight <= el.clientHeight), `${name}: no scroll inside the sheet`).toBe(true);
+      sizes[name] = `${Math.round(b.width)}x${Math.round(b.height)} at ${Math.round(b.y)}`;
+    };
+    await open(page, context, { perm: "prompt", pos: "never" });
+    await measure("never asked", "We can't see where you are right now");
+    await setLoc(page, { perm: "granted", pos: 2 }); await main(page).click();
+    await measure("the phone's location is off", "Your phone's location is off");
+    const again = sheet(page).getByRole("button", { name: "Try location again" });
+    await setLoc(page, { perm: "granted", pos: 3 }); await again.click();
+    await measure("too slow", "Finding you is taking too long");
+    await setLoc(page, { perm: "denied", pos: 1 }); await again.click();
+    await measure("refused", "Location is off or blocked");
+    await again.click();
+    await measure("refused again", "Still off or blocked");
+    expect(new Set(Object.values(sizes)).size, JSON.stringify(sizes)).toBe(1);
+  });
+}
