@@ -110,3 +110,24 @@ describe("userToken (story 1580)", () => {
     vi.doUnmock("../../src/lib/supabase");
   });
 });
+
+describe("userToken after a 401 (story 1580)", () => {
+  const run = async (refreshError: { name: string } | null) => {
+    vi.resetModules();
+    const signOut = vi.fn(async () => ({ error: null }));
+    vi.doMock("../../src/lib/supabase", () => ({ ensureSession: async () => "u1", getClient: () => ({ auth: { getSession: async () => ({ data: { session: { access_token: "tok" } } }), refreshSession: async () => ({ error: refreshError }), signOut } }) }));
+    const { userToken } = await import("../../src/lib/ordersV2");
+    await userToken(true);
+    vi.doUnmock("../../src/lib/supabase");
+    return signOut;
+  };
+  it("a refused refresh drops the dead local session so a new one is made", async () => {
+    expect(await run({ name: "AuthApiError" })).toHaveBeenCalledWith({ scope: "local" });
+  });
+  it("a dead network does not drop the session", async () => {
+    expect(await run({ name: "AuthRetryableFetchError" })).not.toHaveBeenCalled();
+  });
+  it("a good refresh keeps it", async () => {
+    expect(await run(null)).not.toHaveBeenCalled();
+  });
+});

@@ -17,7 +17,10 @@ export type V2Deps = { fetchFn: typeof fetch; token: (fresh?: boolean) => Promis
 // Story 1580: always a signed-in user's token, never the anon key (a bearer that is no user is a 401 on every order until the app is reopened).
 export async function userToken(fresh = false): Promise<string> {
   const c = getClient();
-  if (fresh && (await c.auth.refreshSession()).error) await ensureSession();
+  if (fresh) {   // a refused refresh (the session was ended on the server) keeps the dead session in storage: drop it here so ensureSession makes a new one. A dead network is not a refusal.
+    const { error } = await c.auth.refreshSession();
+    if (error && error.name !== "AuthRetryableFetchError") await c.auth.signOut({ scope: "local" });
+  }
   await ensureSession();   // signs in anonymously when the phone lost its session
   const t = (await c.auth.getSession()).data.session?.access_token;
   if (!t) throw new Error("Could not connect. Check your internet and try again.");
