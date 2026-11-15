@@ -13,7 +13,7 @@ test("S1 the bill asks a ten digit phone (story 1417: never the name) and saves 
   await toCart(page);
   await expect(page.getByRole("button", { name: /Add your phone number/ })).toBeEnabled();   // story 1574: the bar asks for the phone
   await page.getByLabel("Phone").fill("98765");
-  await expect(page.getByRole("button", { name: /Add your phone number/ })).toBeEnabled();
+  await expect(page.getByRole("button", { name: /Check your phone number/ })).toBeEnabled();
   await page.getByLabel("Phone").fill("9876543210");
   await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
   await page.getByRole("button", { name: /Place order/ }).click();
