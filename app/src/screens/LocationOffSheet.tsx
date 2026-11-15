@@ -17,7 +17,7 @@ export function LocationOffSheet({ list, selectedId, why, busy, onFind, onPick, 
   const fit = useSheetFit();
   useEffect(() => { const k = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); }; document.addEventListener("keydown", k); return () => document.removeEventListener("keydown", k); }, [onClose]);
   const failed = why !== "ask";   // story 1530: one rule with the first-open screen. A find that failed, for any cause: search is the filled, last button and the retry is the outline above it
-  const words = locWords(why, "");
+  const words = locWords(why, "pick a place");
   const find = (kind: string, label: string) => <button type="button" className={`ui-btn ${kind}big`} disabled={busy} onClick={onFind}>{busy ? "Finding you…" : label}</button>;
   const search = (kind: string) => <button type="button" className={`ui-btn ${kind}big`} onClick={onSearch}>Search your area</button>;
   return (
