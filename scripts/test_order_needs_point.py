@@ -50,6 +50,17 @@ class OrderNeedsPoint(unittest.TestCase):
                 go(f"update settings set value = '{v}'::jsonb where name = 'order_needs_point'")
             self.assertIn("settings_order_needs_point_rule", str(refused.exception), v)
 
+    def test_s8_a_signed_in_user_cannot_write_the_switch(self):
+        for write in ("update settings set value = 'true'::jsonb where name = 'order_needs_point'", "delete from settings where name = 'order_needs_point'",
+                      "insert into settings (name, value) values ('order_needs_point', 'true'::jsonb) on conflict (name) do update set value = excluded.value"):
+            for role in ("authenticated", "anon"):
+                try:
+                    r = go(f"set local role {role}", write, "reset role", final="(select value from settings where name = 'order_needs_point') as v")
+                except AssertionError as refused:   # the helper raises on a database error: the write was refused outright
+                    self.assertRegex(str(refused), "permission denied|row-level security", (role, write))
+                    continue
+                self.assertIs(r["v"], False, (role, write, r))   # no error: row level security let no row through, the switch is as it was
+
     def test_s7_the_migration_is_safe_to_run_twice_and_keeps_a_switch_that_is_on(self):
         mig = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "supabase", "migrations", FILE)).read()
         r = go(ON, mig, mig, final="(select value from settings where name = 'order_needs_point') as v")

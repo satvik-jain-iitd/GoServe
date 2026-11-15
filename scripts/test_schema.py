@@ -7,7 +7,14 @@ REF = "tmxyizmkpwwfyazvrfhw"  # goserve-dev
 TOKEN = os.environ.get("SUPABASE_ACCESS_TOKEN")
 
 
+# Story 1528: dev carries the switch order_needs_point ON (rule 20: dev carries every switch prod will carry). Most tests here place an order with no point,
+# so every transaction first sets the switch off for itself; the ROLLBACK puts it back. A test of the switch turns it on again inside its own transaction.
+POINT_OFF = "update settings set value = 'false'::jsonb where name = 'order_needs_point'"
+
+
 def sql(query):
+    if query.startswith("begin;"):
+        query = f"begin; {POINT_OFF};" + query[len("begin;"):]
     req = urllib.request.Request(
         f"https://api.supabase.com/v1/projects/{REF}/database/query",
         data=json.dumps({"query": query}).encode(),

@@ -80,7 +80,7 @@ export type LocWhy = "ask" | "denied" | "still" | "off" | "slow" | "none";   // 
 const WORDS: Record<LocWhy, [string, string]> = {
   ask: ["We can't see where you are right now", "Tap Use current location"],
   denied: ["Location is off or blocked", "Turn on location in your phone settings"],
-  still: ["Still off or blocked", "Turn on location in your phone's settings, or pick a place"],
+  still: ["Still off or blocked", "Turn on location in your phone's settings"],
   off: ["Your phone's location is off", "Turn it on"],
   slow: ["Finding you is taking too long", "Try again"],
   none: ["We could not find where you are", "Try again"],
@@ -90,7 +90,7 @@ export const locWhy = (e: unknown, before?: LocWhy | null): LocWhy => {
   return code === 1 ? (before === "denied" || before === "still" ? "still" : "denied") : code === 3 ? "slow" : code === 2 ? "off" : "none";
 };
 /** The true words for a cause: the fact, and the way out. `out` is the other way this screen offers ("search above"). */
-export const locWords = (why: LocWhy, out: string): { title: string; sub: string } => ({ title: WORDS[why][0], sub: why === "still" ? `${WORDS[why][1]}.` : `${WORDS[why][1]}, or ${out}.` });
+export const locWords = (why: LocWhy, out: string): { title: string; sub: string } => ({ title: WORDS[why][0], sub: `${WORDS[why][1]}, or ${out}.` });   // the way out is the screen's own: "pick a place" only where there is a list
 export const locLine = (why: LocWhy, out: string): string => { const w = locWords(why, out); return `${w.title}. ${w.sub}`; };
 
 // Stories 1529 and 1526: the phone's place, or why not. By itself (no tap) the app never makes the browser ask: it uses only a permission given before, and waits waitMs.

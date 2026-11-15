@@ -52,8 +52,8 @@ Deno.test("served places come first, then the table's own order, five at most", 
 });
 
 Deno.test("a pin with no state still gives a clean address line", async () => {
-  const res = await get(deps({ lookup: async () => [{ pin: "471001", place: "Chhatarpur", state: null, lat: 24.9, lng: 79.6 }] }), "?q=chhat");
-  assertEquals((await res.json()).results[0].address, "Chhatarpur, 471001");
+  const res = await get(deps({ lookup: async () => [{ pin: "900001", place: "Sampletown", state: null, lat: 28.56, lng: 77.24 }] }), "?q=sampl");
+  assertEquals((await res.json()).results[0].address, "Sampletown, 900001");
 });
 
 Deno.test("no match is an empty list, not an error", async () => {
@@ -190,14 +190,14 @@ Deno.test("The credit: the answer says where the rows came from, ola or own", as
 
 Deno.test("mapPlaces: a name, the area line, the place's own point and its id; a six digit pin when the text has one; a broken place is dropped", () => {
   const reply = { predictions: [
-    { place_id: "p1", structured_formatting: { main_text: "Test Chowk", secondary_text: "Ward 4, Test Town, Test State, 471001, India" }, geometry: { location: { lat: 24.9, lng: 79.58 } } },
-    { place_id: "p2", structured_formatting: { main_text: "No Pin Road", secondary_text: "Test Town" }, geometry: { location: { lat: 24.91, lng: 79.59 } } },
+    { place_id: "p1", structured_formatting: { main_text: "Test Chowk", secondary_text: "Ward 4, Test Town, Test State, 900001, India" }, geometry: { location: { lat: 28.56, lng: 77.24 } } },
+    { place_id: "p2", structured_formatting: { main_text: "No Pin Road", secondary_text: "Test Town" }, geometry: { location: { lat: 28.57, lng: 77.25 } } },
     { place_id: "p3", structured_formatting: { main_text: "No Point" } },
     { place_id: "p4", structured_formatting: { main_text: "" }, geometry: { location: { lat: 1, lng: 2 } } },
   ] };
   assertEquals(mapPlaces(reply), [
-    { id: "p1", name: "Test Chowk", address: "Ward 4, Test Town, Test State, 471001, India", lat: 24.9, lng: 79.58, pin: "471001" },
-    { id: "p2", name: "No Pin Road", address: "Test Town", lat: 24.91, lng: 79.59, pin: "" },
+    { id: "p1", name: "Test Chowk", address: "Ward 4, Test Town, Test State, 900001, India", lat: 28.56, lng: 77.24, pin: "900001" },
+    { id: "p2", name: "No Pin Road", address: "Test Town", lat: 28.57, lng: 77.25, pin: "" },
   ]);
   assertEquals(mapPlaces(null), []);
 });
@@ -212,12 +212,12 @@ Deno.test("makeOlaSearch: the near ask carries the text, the map's place, the ra
     return new Response(JSON.stringify({ predictions: [] }));
   }) as typeof fetch;
   const search = makeOlaSearch({ id: "i", secret: "s", fetchFn });
-  await search("bus stand", { lat: 24.9, lng: 79.58 }, 25_000);
-  await search("bus stand", { lat: 24.9, lng: 79.58 }, null);
+  await search("bus stand", { lat: 28.56, lng: 77.24 }, 25_000);
+  await search("bus stand", { lat: 28.56, lng: 77.24 }, null);
   assertEquals(seen[0], "token");
   const near = new URL(seen[1]), wide = new URL(seen[2]);
   assertEquals(near.origin + near.pathname, "https://api.olamaps.io/places/v1/autocomplete");
-  assertEquals([near.searchParams.get("input"), near.searchParams.get("location"), near.searchParams.get("radius"), near.searchParams.get("strictbounds")], ["bus stand", "24.9,79.58", "25000", "true"]);
-  assertEquals([wide.searchParams.get("location"), wide.searchParams.get("radius"), wide.searchParams.get("strictbounds")], ["24.9,79.58", null, null]);
+  assertEquals([near.searchParams.get("input"), near.searchParams.get("location"), near.searchParams.get("radius"), near.searchParams.get("strictbounds")], ["bus stand", "28.56,77.24", "25000", "true"]);
+  assertEquals([wide.searchParams.get("location"), wide.searchParams.get("radius"), wide.searchParams.get("strictbounds")], ["28.56,77.24", null, null]);
   assertEquals(seen.length, 3);   // one token
 });

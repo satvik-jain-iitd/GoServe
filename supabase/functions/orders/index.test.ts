@@ -195,11 +195,13 @@ Deno.test("with the switch on the same key again still answers the order that ex
   assertEquals([res.status, (await res.json()).created], [200, false]);
 });
 
-Deno.test("a switch that cannot be read is 502 with no detail, and nothing is placed", async () => {
+// Review of PR 1550: the function's read is the first of two checks. When it fails the switch counts as off here, and place_order_v2 checks again in the database.
+// So a failed read never turns an old build's order into a 502.
+Deno.test("a switch that cannot be read counts as off here: the order goes to the database, which checks again", async () => {
   placed.length = 0;
   const res = await post(makeHandler(deps({ needsPoint: async () => { throw new Error("db down: secret detail"); } })), body());
-  assertEquals([res.status, await res.json()], [502, { ok: false, error: "order_unavailable" }]);
-  assertEquals(placed.length, 0);
+  assertEquals(res.status, 201);
+  assertEquals(placed.length, 1);
 });
 
 // Story #935: an optional note for the kitchen, up to 200 characters, trimmed, null when blank; a longer one is refused before anything is written.
