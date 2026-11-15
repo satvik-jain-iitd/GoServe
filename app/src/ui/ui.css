@@ -143,7 +143,8 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-switch:checked::before { transform: translateX(20px); }
 .ui-switch:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
 /* A floating cart bar above the tab bar: no shadow line between them, the bar sits on the page colour */
-.ui-sticky.float { position: static; padding: var(--gs-space-2) var(--gs-gutter) max(var(--gs-space-5), env(safe-area-inset-bottom)); background: transparent; box-shadow: none; }
+.ui-sticky.float { position: static; padding: var(--gs-space-2) var(--gs-gutter); background: transparent; box-shadow: none; }
+.ui-sticky.float.bill-foot { padding-bottom: max(var(--gs-space-5), env(safe-area-inset-bottom)); }   /* story 1572: the Bill's bar ends 24 px above the edge plus the safe area; the Menu's bar keeps its 8 px */
 
 /* One header for every screen: 52 px above, 12 below, a hairline, the title at display-l, one mono slot on the right.
    A pushed screen adds the 44 px chevron on the left; a home screen has none. */
@@ -904,8 +905,6 @@ a.ui-locrow { text-decoration: none; }   /* story 1498: the rider row is a link 
 .ui-btn:disabled:not(.danger-fill) { opacity: 1; background: var(--gs-disabled-bg); color: var(--gs-disabled-text); border: 0; box-shadow: none; cursor: not-allowed; }   /* pointer-events stay none (story 953): a touch does nothing, so the cursor shows only where a mouse can reach it elsewhere */
 .ui-btn:disabled:not(.danger-fill) .mono, .ui-btn:disabled:not(.danger-fill) .verb { color: inherit; }
 .ui-reason { margin: 0 0 12px; text-align: center; font-size: var(--gs-text-sm); color: var(--gs-text-muted); }
-.ui-sticky.float:has(.ui-reason) { flex-direction: column; align-items: center; }
-.ui-sticky.float:has(.ui-reason) .ui-btn { width: 100%; }
 
 /* story 1262, board R7: the QR card on Collect payment: the picture the admin uploaded */
 .ui-qr { display: flex; flex-direction: column; align-items: center; gap: var(--gs-space-2); padding: var(--gs-space-4) 0; }
