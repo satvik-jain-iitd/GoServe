@@ -3,7 +3,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { setup } from "./helpers";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
-const HOME = { id: "h1", label: "Home", address: "C-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
+const HOME = { id: "h1", label: "Home", address: "Z-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
 const GREEN_PARK = { ok: true, address: "Green Park, New Delhi, Delhi", pin: "110016", locality: "Green Park", town: "New Delhi" };
 const NO = { status: 200, body: { ok: true, serviceable: false, request_here: true, kitchens: [] } };
 
@@ -15,7 +15,7 @@ async function toMap(page: Page, context: Parameters<typeof setup>[0], over: { g
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
   await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.56, longitude: 77.2 });
   await page.goto("/customer/");
-  await page.getByRole("button", { name: /^Home\b/ }).click();
+  await page.getByTitle("Change the delivery address").click();   // story 1529: the place follows the phone, so the header is not always Home
   await page.getByRole("button", { name: "Add new address" }).click();
   await expect(confirm(page)).toBeEnabled();
   return net;

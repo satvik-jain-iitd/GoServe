@@ -24,7 +24,6 @@ test("S2 Place order stays off until the name, a ten digit phone and the address
   await page.getByRole("button", { name: /View bill/ }).click();
   await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
   await page.getByLabel("Phone").fill("9876543210");
-  await page.getByLabel("Address").fill("Flat 4");
   await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
 });
 
@@ -35,7 +34,6 @@ test("S4 a delivered order shows the Delivered stamp, Cash paid and a way to cal
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Phone").fill("9876543210");
-  await page.getByLabel("Address").fill("Flat 4, Green Park");
   await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   net.push("UPDATE", { ...order("delivered", new Date().toISOString()), paid_by: "cash" });

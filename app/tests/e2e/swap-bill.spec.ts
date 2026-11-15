@@ -74,7 +74,6 @@ test("S2 Swap it in: the new dish and the discount are on the bill, and the orde
   await expect(page.getByTestId("bill-total")).toHaveText("₹218");   // 22000 + 2000 less 2200
   expect(seen.quotes.at(-1).lines.find((l: any) => l.menu_item_id === "d1")).toMatchObject({ swap: true, qty: 1 });
   await page.getByLabel("Phone").fill("9876543210");
-  await page.getByLabel("Address").fill("Flat 4, Green Park");
   await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   expect(seen.orders[0].lines.find((l: any) => l.menu_item_id === "d1")).toMatchObject({ swap: true, qty: 1 });

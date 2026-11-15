@@ -5,10 +5,11 @@ import { DEFAULT_THEME, readPin, pinTheme, type Theme } from "../lib/theme";
 import { buildLabel } from "../lib/updates";
 import { useSheetFit } from "../ui";
 import { SignIn } from "./SignIn";
+import { PlaceRow } from "./BillScreen";
 
 type Props = {
   name: string; phone: string; address: string; pin: string | null; photo: string | null; email: string | null;
-  onName: (v: string) => void; onPhone: (v: string) => void; onAddress: (v: string) => void;
+  onName: (v: string) => void; onPhone: (v: string) => void;
   alerts: "ask" | "on" | "off" | "none"; onAlerts: () => void; alertsError?: string | null;
   live: { label: string; no: string; onOpen: () => void } | null;
   onGivenName: (name: string) => void;   // story 527: the Google first name fills an empty name
@@ -19,12 +20,12 @@ type Props = {
 
 const store = (): Storage | null => { try { return window.localStorage; } catch { return null; } };
 
-export function AccountScreen({ name, phone, address, pin, photo, email, onName, onPhone, onAddress, alerts, onAlerts, alertsError, live, onGivenName, onForget, onDeleteAccount, onMenu, onAddresses, onOrders }: Props) {
+export function AccountScreen({ name, phone, address, pin, photo, email, onName, onPhone, alerts, onAlerts, alertsError, live, onGivenName, onForget, onDeleteAccount, onMenu, onAddresses, onOrders }: Props) {
   const sheetRef = useSheetFit();   // story #975: the profile sheet follows the visual viewport too
   const [photoBad, setPhotoBad] = useState(false);
   const fit = useSheetFit();   // story #954: the overlay follows the visual viewport
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState({ name, phone, address });   // story 640: Edit opens a draft; Save applies it, Cancel drops it
+  const [draft, setDraft] = useState({ name, phone });   // story 640: Edit opens a draft; Save applies it, Cancel drops it
   const [look, setLook] = useState<Theme>(() => readPin(store()) ?? DEFAULT_THEME);
   const [sure, setSure] = useState(false);
   const [deleting, setDeleting] = useState<null | { busy: boolean; error: string | null }>(null);   // story #771: the confirm sheet
@@ -47,16 +48,16 @@ export function AccountScreen({ name, phone, address, pin, photo, email, onName,
           <div className="ui-profile-head">
             <span className="ui-profile-photo" aria-hidden="true">{photo && !photoBad ? <img src={photo} alt="" width={48} height={48} referrerPolicy="no-referrer" onError={() => setPhotoBad(true)} /> : name.trim().charAt(0).toUpperCase() || "·"}</span>
             <div className="ui-profile-who"><h2>{name.trim() || "You"}</h2><span className="mono">{[phone, email].filter(Boolean).join(" · ") || "No details saved yet"}</span></div>
-            {!editing && <button type="button" className="ui-link" aria-label="Edit delivery details" onClick={() => { setDraft({ name, phone, address }); setEditing(true); }}>Edit</button>}
+            {!editing && <button type="button" className="ui-link" aria-label="Edit delivery details" onClick={() => { setDraft({ name, phone }); setEditing(true); }}>Edit</button>}
           </div>
           {editing && (
             <div className="ui-form ui-form-flush">
               <div className="ui-field"><label htmlFor="acc-name">Your name</label><input id="acc-name" type="text" value={draft.name} maxLength={80} onChange={(e) => setDraft({ ...draft, name: e.target.value })} /></div>
               <div className="ui-field"><label htmlFor="acc-phone">Phone</label><input id="acc-phone" className="mono-input" type="tel" inputMode="numeric" maxLength={10} value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value.replace(/\D/g, "") })} /></div>
-              <div className="ui-field"><label htmlFor="acc-address">Address</label><textarea id="acc-address" rows={2} maxLength={300} value={draft.address} onChange={(e) => setDraft({ ...draft, address: e.target.value })} /></div>
-              <div className="ui-edit-actions"><button type="button" className="ui-btn small" onClick={() => { onName(draft.name); onPhone(draft.phone); onAddress(draft.address); setEditing(false); }}>Save</button><button type="button" className="ui-btn ghost small" onClick={() => setEditing(false)}>Cancel</button></div>
+              <div className="ui-edit-actions"><button type="button" className="ui-btn small" onClick={() => { onName(draft.name); onPhone(draft.phone); setEditing(false); }}>Save</button><button type="button" className="ui-btn ghost small" onClick={() => setEditing(false)}>Cancel</button></div>
             </div>
           )}
+          <PlaceRow words={address} onChange={onAddresses} />   {/* story 1532: the place's words; Change opens Deliver to */}
         </section>
         <div className="ui-google"><SignIn returnTo="account" onGivenName={onGivenName} /></div>
         <div className="ui-you-card">

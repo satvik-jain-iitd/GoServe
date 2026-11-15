@@ -17,7 +17,7 @@ async function deliverTo(page: Page, context: Parameters<typeof setup>[0], place
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
   await context.grantPermissions(["geolocation"]); await context.setGeolocation(PHONE);
   await page.goto("/customer/");
-  await page.getByRole("button", { name: /^Home\b/ }).click();
+  await page.getByTitle("Change the delivery address").click();   // story 1529: the place follows the phone, so the header is not always Home
   return net;
 }
 async function onMap(page: Page, context: Parameters<typeof setup>[0], places: object = OLA) {

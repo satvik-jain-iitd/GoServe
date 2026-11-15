@@ -6,7 +6,8 @@ import { cardWords } from "../lib/pinMap";
 const SITE = "https://letsdwelo.in/";
 const LINKEDIN = "https://www.linkedin.com/in/satvik-jain-iitd/";
 
-type Props = { address: string; ask: "idle" | "busy" | "done"; error: string | null; offerPaise: number | null; onChange: () => void; onTell: () => void };
+type Props = { address: string; ask: "idle" | "busy" | "done"; error: string | null; offerPaise: number | null; onChange: () => void; onTell: () => void;
+  onSaved?: () => void };   // story 1529 (board LF-NOKITCHEN-Away): a customer with saved addresses can go to one from here
 
 /** Story #1129 (board NK-L2): the co-founder's letter. The promise is written only when the stored row holds it (offerPaise), so the words are always true. */
 function letterText(place: string, offerPaise: number | null) {
@@ -57,7 +58,7 @@ function FounderNote({ place, offerPaise, onChange }: { place: string; offerPais
   );
 }
 
-export function NoKitchen({ address, ask, error, offerPaise, onChange, onTell }: Props) {
+export function NoKitchen({ address, ask, error, offerPaise, onChange, onTell, onSaved }: Props) {
   const place = cardWords(address.trim() || null);
   if (ask === "done") return <FounderNote place={place.name} offerPaise={offerPaise} onChange={onChange} />;
   return (
@@ -74,8 +75,9 @@ export function NoKitchen({ address, ask, error, offerPaise, onChange, onTell }:
             <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.5" /></svg>
             <span><b>{place.name}</b>{place.rest && <span>{place.rest}</span>}</span>
           </div>
-          <button type="button" className="ui-btn big" onClick={onChange}>Change location</button>
           <button type="button" className="ui-btn ghost big" disabled={ask === "busy"} onClick={onTell}>Tell me when you come here</button>
+          {onSaved && <button type="button" className="ui-btn ghost big" onClick={onSaved}>Deliver to a saved address</button>}
+          <button type="button" className="ui-btn big" onClick={onChange}>Change location</button>   {/* board LF12: the filled button is last */}
           {error && <p role="alert" className="ui-field-error">{error}</p>}
         </div>
       </div>

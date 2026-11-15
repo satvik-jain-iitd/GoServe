@@ -15,7 +15,7 @@ const MENU = [
 const deps = (pct = 10): Deps => ({
   catalog: async (_k, ids) => ({ dishes: Object.fromEntries(MENU.filter((m) => ids.includes(m.id)).map((m) => [m.id, m])), options: {} }),
   rules: async () => DEFAULT_RULES, coupon: async () => null, coupons: async () => [], validate: async () => ({ ok: true }), firstOrder: async () => false,
-  session: async () => "s1", existing: async () => null, rate: async () => ({ ok: true }),
+  session: async () => "s1", existing: async () => null, needsPoint: async () => false, rate: async () => ({ ok: true }),
   place: async (...a) => { placed.push(a); return { ok: true, created: true, order: { id: "o1", kitchen_id: K, status: "placed", total_paise: 0, address: "x", items: [], bill: {}, created_at: "2026-10-29T10:00:00Z" } }; },
   menu: async () => MENU, swapPct: async () => pct,
 });

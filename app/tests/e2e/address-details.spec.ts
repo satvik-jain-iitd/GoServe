@@ -4,7 +4,7 @@ import { setup } from "./helpers";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
 const NOW = Date.now();
-const HOME = { id: "h1", label: "Home", address: "C-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: new Date(NOW - 3 * 86_400_000).toISOString() };
+const HOME = { id: "h1", label: "Home", address: "Z-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: new Date(NOW - 3 * 86_400_000).toISOString() };
 const GREEN_PARK = { ok: true, address: "Green Park, New Delhi, Delhi", pin: "110016", locality: "Green Park", town: "New Delhi" };
 
 async function toDetails(page: Page, context: Parameters<typeof setup>[0], geocode: { status: number; body: object } = { status: 200, body: GREEN_PARK }) {
@@ -14,7 +14,7 @@ async function toDetails(page: Page, context: Parameters<typeof setup>[0], geoco
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
   await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.56, longitude: 77.2 });
   await page.goto("/customer/");
-  await page.getByRole("button", { name: /^Home\b/ }).click();
+  await page.getByTitle("Change the delivery address").click();   // story 1529: the place follows the phone, so the header is not always Home
   await page.getByRole("button", { name: "Add new address" }).click();
   await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeEnabled();
   await page.getByRole("button", { name: "Confirm & proceed" }).click();
@@ -33,7 +33,7 @@ test("S1 the sheet opens over the same map: no step count, the place and a Chang
   for (const c of ["Home", "Office", "Other"]) await expect(sheet(page).getByRole("button", { name: c, exact: true })).toBeVisible();
   await expect(sheet(page).getByRole("button", { name: "Save address" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Search an area or address" })).toHaveCount(0);   // the top shows only Back while the sheet is open
-  await expect(sheet(page).getByLabel("House, street, colony, ward")).toHaveAttribute("placeholder", "e.g. C-128, Gali 3, Radio Colony");   // story 1421, board AD3
+  await expect(sheet(page).getByLabel("House, street, colony, ward")).toHaveAttribute("placeholder", "e.g. Flat 4, Green Park");   // story 1421, board AD3
   await expect(sheet(page).getByLabel("Landmark (optional)")).toHaveAttribute("placeholder", "e.g. near the park gate");
   const bar = (await sheet(page).getByRole("group", { name: "Save as" }).boundingBox())!;   // story 1422: the joined bar, not 36 px pills
   expect(Math.round(bar.height)).toBe(44);

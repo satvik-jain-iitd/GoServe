@@ -7,7 +7,7 @@ import { setup, typePlace } from "../helpers";
 import { firstOpenToMenu } from "../firstOpen";
 
 const PATH = "/customer/";
-const ADDRESS = "C-128, Green Avenue Colony, Satai Road, Chhatarpur 471001";
+const ADDRESS = "Z-900, Sample Garden Colony, Sample Road, Sampletown 900001";
 const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
 test.use({ viewport: { width: 390, height: 844 } });
 
@@ -21,7 +21,7 @@ const MENU = [
   dish("d4", "Veg Thali", "Thali", true, { price_paise: 19900 }),
   dish("d5", "Chicken Thali", "Thali", false, { price_paise: 24900 }),
 ];
-const HOME = { id: "h1", label: "Home", address: ADDRESS, pin_code: "110016", lat: 24.9167, lng: 79.5833, last_used_at: "2026-11-08T10:00:00Z" };
+const HOME = { id: "h1", label: "Home", address: ADDRESS, pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-08T10:00:00Z" };
 
 const isPath = (path: string) => (url: URL) => url.pathname === path;
 // Answers a REST read (and the browser's preflight); any write goes to the shared step's own answer.

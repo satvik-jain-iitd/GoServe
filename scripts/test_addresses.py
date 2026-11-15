@@ -22,7 +22,7 @@ def as_user(uid, body):
     return f"set local role authenticated; select set_config('request.jwt.claim.sub', '{uid}', true); {body}; reset role"
 
 
-def add(uid, label="Home", address="C-128, Green Avenue Colony, Satai Road", pin="471001"):
+def add(uid, label="Home", address="Z-900, Sample Garden Colony, Sample Road", pin="900001"):
     return as_user(uid, f"insert into addresses (label, address, pin_code) values ('{label}', '{address}', '{pin}')")
 
 
@@ -30,7 +30,7 @@ def add(uid, label="Home", address="C-128, Green Avenue Colony, Satai Road", pin
 class Addresses(unittest.TestCase):
     def test_s1_a_customer_adds_and_reads_their_own_address(self):
         r = run(user(A), add(A), as_user(A, "select label, pin_code from addresses"))
-        self.assertEqual(r, [{"label": "Home", "pin_code": "471001"}])
+        self.assertEqual(r, [{"label": "Home", "pin_code": "900001"}])
 
     def test_s2_another_customer_sees_none_and_cannot_change_or_delete_it(self):
         r = run(user(A), user(B), add(A), as_user(B, "select count(*) as n from addresses"))
@@ -39,17 +39,17 @@ class Addresses(unittest.TestCase):
         self.assertIn("'n': 1", str(r))
 
     def test_s3_a_customer_cannot_write_a_row_for_someone_else(self):
-        r = str(run(user(A), user(B), as_user(A, f"insert into addresses (user_id, label, address, pin_code) values ('{B}', 'Home', 'C-128, Green Avenue', '471001')")))
+        r = str(run(user(A), user(B), as_user(A, f"insert into addresses (user_id, label, address, pin_code) values ('{B}', 'Home', 'Z-900, Sample Lane', '900001')")))
         self.assertIn("row-level security", r)
 
     def test_s4_the_rules_on_label_words_and_pin(self):
-        for label, address, pin in (("", "C-128, Green Avenue", "471001"), ("Home", "abc", "471001"), ("Home", "C-128, Green Avenue", "47100"), ("Home", "C-128, Green Avenue", "47100a")):
+        for label, address, pin in (("", "Z-900, Sample Lane", "900001"), ("Home", "abc", "900001"), ("Home", "Z-900, Sample Lane", "90000"), ("Home", "Z-900, Sample Lane", "90000a")):
             r = str(run(user(A), add(A, label, address, pin)))
             self.assertIn("check", r, (label, address, pin))
 
     def test_s5_a_customer_has_at_most_20(self):
-        many = [add(A, "L%d" % i, "C-128, Green Avenue %d" % i) for i in range(20)]
-        r = str(run(user(A), *many, add(A, "One more", "C-128, Green Avenue 99")))
+        many = [add(A, "L%d" % i, "Z-900, Sample Lane %d" % i) for i in range(20)]
+        r = str(run(user(A), *many, add(A, "One more", "Z-900, Sample Lane 99")))
         self.assertIn("addresses_cap", r)
 
     def test_s6_a_signed_out_caller_reads_nothing(self):

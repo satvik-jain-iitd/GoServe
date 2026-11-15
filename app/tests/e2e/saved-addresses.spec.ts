@@ -1,10 +1,10 @@
 // Story #976, board C2-AddressSheet: saved addresses, the pick on open by the phone's place, the Deliver to page with add, select, edit and remove.
 import { test, expect, type Page } from "@playwright/test";
-import { setup } from "./helpers";
+import { setup, toDeliverTo } from "./helpers";
 
 const NOW = Date.now();
 const row = (id: string, label: string, address: string, lat: number, lng: number, agoDays: number) => ({ id, label, address, pin_code: "110016", lat, lng, last_used_at: new Date(NOW - agoDays * 86_400_000).toISOString() });
-const HOME = row("h1", "Home", "C-4, Green Park Extension, New Delhi", 28.5677, 77.2432, 3);
+const HOME = row("h1", "Home", "Z-4, Green Park Extension, New Delhi", 28.5677, 77.2432, 3);
 const OFFICE = row("o1", "Office", "Tower B, Connaught Place, New Delhi", 28.6315, 77.2167, 1);   // more recently used, about 8 km from Home
 
 async function open(page: Page, context: Parameters<typeof setup>[0], at: { latitude: number; longitude: number } | null, list = [HOME, OFFICE], tune?: (s: any) => void) {
@@ -18,38 +18,40 @@ async function open(page: Page, context: Parameters<typeof setup>[0], at: { lati
 const AT_HOME = { latitude: 28.5678, longitude: 77.2433 };
 const dialog = (page: Page) => page.getByRole("heading", { name: "Deliver to", exact: true });
 
-test("S1 story #1035: phone at Home, the one used last (Office) is still picked on open; Home shows here, Office 8 km", async ({ page, context }) => {
+test("S1 story 1529 (this reverses story 1035): phone at Home, Home is picked on open, not the one used last (Office); Home shows here, Office 8 km", async ({ page, context }) => {
   await open(page, context, AT_HOME);
-  await expect(page.getByRole("button", { name: /^Office\b/ })).toContainText("Connaught Place");
+  await expect(page.getByRole("button", { name: /^Home\b/ })).toContainText("Green Park Extension");
   await expect(dialog(page)).toHaveCount(0);
-  await page.getByRole("button", { name: /^Office\b/ }).click();
+  await page.getByRole("button", { name: /^Home\b/ }).click();
   await expect(dialog(page)).toBeVisible();
   await expect(page.getByText("2 saved")).toBeVisible();
-  await expect(page.getByRole("listitem").filter({ hasText: "Office" })).toContainText("Selected");
+  await expect(page.getByRole("listitem").filter({ hasText: "Home" })).toContainText("Selected");
   await expect(page.getByRole("listitem").filter({ hasText: "Home" })).toContainText("here");
   await expect(page.getByRole("listitem").filter({ hasText: "Office" })).toContainText("8 km");
 });
 
-test("S2 story #1035: phone far from every saved address, the page does not open by itself, the last used one is picked, and the radius is never read", async ({ page, context }) => {
+test("S2 story 1529: phone far from every saved address, the page does not open by itself, Where you are now is picked, and the radius is read once (200 m when it cannot be)", async ({ page, context }) => {
   let reads = 0;
-  await context.route("**/rest/v1/rpc/address_near_m", (r) => { reads++; return r.abort(); });
+  await page.route("**/rest/v1/rpc/address_near_m", (r) => { reads++; return r.abort(); });   // a page route wins over the helper's
   await open(page, context, { latitude: 28.5, longitude: 77.3 });
-  await expect(page.getByRole("button", { name: /^Office\b/ })).toContainText("Connaught Place");
+  await expect(page.getByRole("button", { name: /^Where you are now\b/ })).toBeVisible();
   await expect(dialog(page)).toHaveCount(0);
-  expect(reads).toBe(0);
-  await page.getByRole("button", { name: /^Office\b/ }).click();
+  expect(reads).toBe(1);
+  await toDeliverTo(page);
   await expect(page.locator(".ui-deliver-foot")).toHaveCount(0);   // owner rule 8 Nov: the page ends with the list, no line about why
 });
 
-test("S3 no location permission: the last used address stays picked and the page does not open by itself", async ({ page, context }) => {
+test("S3 no location permission: the place on this phone stays, no sheet opens (story 1547), and the page does not open by itself", async ({ page, context }) => {
   await open(page, context, null);
-  await expect(page.getByRole("button", { name: /^Office\b/ })).toContainText("Connaught Place");
+  await expect(page.getByRole("button", { name: /^Deliver to\b/ })).toContainText("Flat 4, Green Park");
+  await page.waitForTimeout(500);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(dialog(page)).toHaveCount(0);
 });
 
 test("S4 Add new address with a label saves a row, shows it with its distance, and the Bill uses it", async ({ page, context }) => {
   const net = await open(page, context, AT_HOME, [HOME, OFFICE], (st) => { st.geocode = { status: 200, body: { ok: true, address: "Hauz Khas Village, New Delhi, Delhi", pin: "110016", locality: "Hauz Khas", town: "New Delhi" } }; });
-  await page.getByRole("button", { name: /^Office\b/ }).click();   // story #1035: the last used one is on top
+  await toDeliverTo(page);
   await page.getByRole("button", { name: "Add new address" }).click();
   await page.getByRole("button", { name: "Confirm & proceed" }).click();   // story #1037: the map is the door
   const sheet = page.getByRole("dialog", { name: "Address details" });   // story #1038: then the details
@@ -62,10 +64,10 @@ test("S4 Add new address with a label saves a row, shows it with its distance, a
   await expect(page.getByRole("button", { name: /^Nani's house\b/ })).toBeVisible();
 });
 
-test("S5 Remove the selected address: after the Undo bar runs out the next most recent is Selected; with none left the first-visit screen shows", async ({ page, context }) => {
+test("S5 Remove: after the Undo bar runs out Home is still Selected; with none left I stay on Deliver to and the place is where I am (story 1529)", async ({ page, context }) => {
   await page.clock.install({ time: new Date(NOW) });
   await open(page, context, AT_HOME);
-  await page.getByRole("button", { name: /^Office\b/ }).click();
+  await toDeliverTo(page);
   await page.getByRole("button", { name: "Edit or remove Office" }).click();
   await page.getByRole("button", { name: "Remove", exact: true }).click();
   await page.clock.runFor(6_500);   // story #1051: the delete waits for Undo
@@ -73,12 +75,14 @@ test("S5 Remove the selected address: after the Undo bar runs out the next most 
   await page.getByRole("button", { name: "Edit or remove Home" }).click();
   await page.getByRole("button", { name: "Remove", exact: true }).click();
   await page.clock.runFor(6_500);
-  await expect(page.getByRole("button", { name: "Use my current location" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Delivering to" })).toContainText("Where you are now");
+  await expect(dialog(page)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Use my current location" })).toHaveCount(0);   // never the first-open screen
 });
 
 test("S6 Edit opens the filled details (story 1421, ED1); the label changes and the row is updated", async ({ page, context }) => {
   const net = await open(page, context, AT_HOME, [HOME, OFFICE], (st) => { st.geocode = { status: 200, body: { ok: true, address: "Connaught Place, New Delhi", pin: "110016", locality: "Connaught Place", town: "New Delhi" } }; });
-  await page.getByRole("button", { name: /^Office\b/ }).click();
+  await toDeliverTo(page);
   await page.getByRole("button", { name: "Edit or remove Office" }).click();
   await page.getByRole("button", { name: "Edit", exact: true }).click();
   const sheet = page.getByRole("dialog", { name: "Edit address" });
@@ -88,18 +92,19 @@ test("S6 Edit opens the filled details (story 1421, ED1); the label changes and 
   await expect.poll(() => net.state.addresses.find((r: any) => r.id === "o1")?.label).toBe("Work");
 });
 
-test("S7 today's single saved address becomes the first row labelled Home, once", async ({ page, context }) => {
+test("S7 (story 1532) the profile's single address makes no saved row: it has no point", async ({ page, context }) => {
   const net = await open(page, context, null, [], (s) => { s.customer = { user_id: "u", name: "Asha", phone: "9876543210", address: "Flat 4, Green Park", pin_code: "110016" }; });
-  await expect.poll(() => net.state.addresses.length).toBe(1);
-  expect(net.state.addresses[0]).toMatchObject({ label: "Home", address: "Flat 4, Green Park", pin_code: "110016" });
+  await page.waitForLoadState("networkidle");
+  expect(net.state.addresses).toHaveLength(0);
   await page.reload();
-  await expect(page.getByRole("button", { name: /^Home\b/ })).toBeVisible();
-  expect(net.state.addresses).toHaveLength(1);
+  await expect(page.getByRole("button", { name: /^Deliver to\b/ })).toBeVisible();
+  await page.waitForLoadState("networkidle");
+  expect(net.state.addresses).toHaveLength(0);
 });
 
 test("S8 the search box on the Deliver to page is 48 px high, not stretched down the column", async ({ page, context }) => {
   await open(page, context, AT_HOME);
-  await page.getByRole("button", { name: /^(Office|Deliver to)\b/ }).click();
+  await toDeliverTo(page);
   const box = (await page.locator(".ui-deliver-to .ui-search-box").boundingBox())!;
   expect(Math.round(box.height)).toBe(48);
   const cards = (await page.locator(".ui-two-cards").boundingBox())!;

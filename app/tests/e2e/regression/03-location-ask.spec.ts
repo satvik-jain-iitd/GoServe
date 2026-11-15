@@ -44,11 +44,11 @@ test("TC 3.2 Search for my address is above, Use my current location is last, th
 test("TC 3.3 Use my current location, allow: the pin map opens centred on my spot", async ({ page, context }) => {
   const looked: string[] = [];
   page.on("request", (r) => { if (r.url().includes("/functions/v1/geocode")) looked.push(r.url()); });   // the map asks for the words at its centre once it settles
-  await STEPS["first-open-pin"](context, page, PATH);   // the shared step gives the phone 24.8847, 79.597 and taps the button
+  await STEPS["first-open-pin"](context, page, PATH);   // the shared step gives the phone 28.5377, 77.2532 and taps the button
   await expect(map(page)).toBeVisible();
   await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeVisible();
-  await expect.poll(() => looked.at(-1) ?? "").toContain("lat=24.88");   // centred where the phone is (a map in the wrong place asks for another spot)
-  expect(looked.at(-1)).toContain("lng=79.59");
+  await expect.poll(() => looked.at(-1) ?? "").toContain("lat=28.53");   // centred where the phone is (a map in the wrong place asks for another spot)
+  expect(looked.at(-1)).toContain("lng=77.25");
 });
 
 test("TC 3.4 Use my current location, block: the map opens with search ready, no dead end", async ({ page, context }) => {

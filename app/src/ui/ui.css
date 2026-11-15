@@ -64,6 +64,7 @@ body { margin: 0; background: var(--md-background); color: var(--md-on-backgroun
 .ui-slip-rule { border-top: 1px dashed var(--md-outline-variant); }
 .ui-slip-lines { display: grid; gap: var(--gs-space-2); font-family: var(--gs-font-mono); font-size: var(--gs-mono-base); }
 .ui-slip-lines div { display: flex; justify-content: space-between; gap: 12px; }
+.ui-slip-lines .was { margin-right: var(--gs-space-2); color: var(--gs-text-muted); }   /* story 1540: the price at the kitchen before, struck, left of the new price */
 .ui-slip-total { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .ui-slip-total b { font-family: var(--gs-font-display); font-weight: 800; font-size: var(--gs-text-base); letter-spacing: 0.04em; }
 .ui-slip-total span { font-family: var(--gs-font-mono); font-weight: 500; font-size: var(--gs-mono-xl); }
@@ -147,6 +148,9 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 /* One header for every screen: 52 px above, 12 below, a hairline, the title at display-l, one mono slot on the right.
    A pushed screen adds the 44 px chevron on the left; a home screen has none. */
 .ui-head { display: flex; align-items: center; gap: var(--gs-space-2); padding: max(env(safe-area-inset-top), var(--gs-space-3)) var(--gs-gutter) var(--gs-space-3); border-bottom: 1px solid var(--md-outline-variant); }
+/* Story 1540: one short line under the title, in the free band of the header (it is out of the flow, so the header keeps its size and nothing under it moves). */
+.ui-head:has(.ui-head-under) { position: relative; }
+.ui-head-under { position: absolute; left: calc(var(--gs-gutter) + var(--gs-tap) + var(--gs-space-2)); right: var(--gs-gutter); bottom: var(--gs-space-1); margin: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: var(--gs-text-xs); line-height: 16px; color: var(--gs-text-muted); }
 .ui-head-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .ui-head h1 { margin: 0; flex: 1; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
 .ui-head-text h1 { flex: none; }
@@ -636,8 +640,6 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-circle img { display: block; width: 36px; height: 36px; object-fit: cover; }
 .ui-top-search { grid-column: 1 / -1; display: flex; align-items: center; gap: var(--gs-space-3); margin-top: 4px; }
 .ui-search-box { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; box-sizing: border-box; border: 1px solid var(--md-outline); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--gs-text-muted); }
-.ui-search-go { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: var(--gs-radius-pill); background: var(--md-primary); color: var(--md-on-primary); cursor: pointer; }   /* story 1036: the round arrow inside the box */
-.ui-search-go:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
 .ui-search-box input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--md-on-surface); font: inherit; font-size: 16px; }
 .ui-search-box:focus-within { outline: none; border: 2px solid var(--md-primary); padding: 0 13px; }   /* story 1397: the box border is the field border; no ring */   /* story 1397: the field's own border shows the tap, no ring around the box */
 .ui-search-filter { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; margin-right: -6px; padding: 0; border: 0; border-radius: var(--gs-radius-s); background: transparent; color: var(--md-primary); cursor: pointer; }
@@ -676,6 +678,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-two-cards { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
 .ui-card-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; box-sizing: border-box; padding: 14px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font: inherit; font-size: 16px; font-weight: 600; text-align: left; cursor: pointer; }
 .ui-card-btn svg { width: 22px; height: 22px; color: var(--md-primary); }
+.ui-card-btn span { min-height: 2.9em; min-height: 2lh; }   /* story 1530, no layout shift: the label keeps two lines, so "Finding you…" (one line) and "Use current location" (two on a narrow phone) make the same card */
 .ui-saved-head { margin: 0 0 8px; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; color: var(--gs-text-muted); }
 .ui-saved-list { margin: 0; padding: 0; list-style: none; }
 .ui-saved-row { display: grid; grid-template-columns: 56px minmax(0, 1fr) 32px; gap: 12px; align-items: start; padding: 14px 0; border-bottom: 1px solid var(--md-outline-variant); }
@@ -711,6 +714,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-pinmap-top { position: absolute; left: 16px; right: 16px; top: calc(env(safe-area-inset-top, 0px) + 12px); z-index: 700; display: flex; gap: 12px; align-items: center; }
 .ui-pinmap-back { flex: none; width: 48px; height: 48px; display: grid; place-items: center; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-pill); background: var(--md-surface); color: var(--md-on-surface); box-shadow: 0 8px 24px rgba(38, 53, 40, 0.12); cursor: pointer; }
 .ui-pinmap-search { flex: 1; min-width: 0; height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 16px 0 18px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-pill); background: var(--md-surface); color: var(--gs-text-muted); font: inherit; font-size: 16px; text-align: left; box-shadow: 0 8px 24px rgba(38, 53, 40, 0.12); cursor: pointer; }
+.ui-pinmap-search { justify-content: flex-start; padding: 0 16px; }   /* story 1530 (board LF14): the magnifier at the left, the words after it */
 .ui-pinmap-search span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ui-pinmap-here { position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, -16px); display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 20px; white-space: nowrap; border: 1px solid var(--md-outline-variant); border-radius: 10px; background: var(--md-surface); color: var(--md-on-surface); font: inherit; font-size: 16px; font-weight: 600; box-shadow: 0 8px 24px rgba(38, 53, 40, 0.12); cursor: pointer; }
 .ui-pinmap-here svg { color: var(--md-primary); }
@@ -783,14 +787,29 @@ a.ui-locrow { text-decoration: none; }   /* story 1498: the rider row is a link 
 .ui-bellbadge { width: 96px; height: 96px; border-radius: var(--gs-radius-pill); background: var(--gs-lime-soft); display: flex; align-items: center; justify-content: center; color: var(--md-primary); margin: 8px auto; }
 
 /* Story 1056, board SW3: the location-off sheet. */
-.ui-locoff { display: flex; flex-direction: column; align-items: stretch; gap: 12px; text-align: center; }
+.ui-locoff { display: flex; flex-direction: column; align-items: stretch; gap: 12px; }   /* board LO-V1: the words start at the left, no icon */
 .ui-locoff h2 { margin: 0; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
-.ui-locoff-icon { align-self: center; display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; box-sizing: border-box; border: 1px solid var(--md-outline-variant); border-radius: 14px; background: var(--md-surface); color: var(--md-on-surface); }
 .ui-locoff-how { margin: 0; font-size: 14px; color: var(--gs-text-muted); }
-.ui-locoff-head { display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid var(--md-outline-variant); text-align: left; }
-.ui-locoff-all { border: 0; background: transparent; padding: 8px 0; min-height: 44px; color: var(--md-primary); font: inherit; font-weight: 700; font-size: 14px; }
+.ui-locoff-how { min-height: 2.9em; min-height: 2lh; }   /* rule 23, no layout shift: the line keeps two lines, so the sheet has one height for every cause (a second refusal is two lines on a phone) */
+.ui-locoff-rows { border-top: 1px solid var(--md-outline-variant); }
+.ui-locoff-all { align-self: flex-end; border: 0; background: transparent; padding: 8px 0; min-height: 44px; color: var(--md-primary); font: inherit; font-weight: 700; font-size: 14px; }
 .ui-locoff-row { display: grid; grid-template-columns: 28px 1fr 16px; gap: 12px; align-items: center; width: 100%; min-height: 56px; padding: 8px 0; border: 0; border-bottom: 1px solid var(--md-outline-variant); background: transparent; color: var(--md-on-surface); font: inherit; text-align: left; }
 .ui-locoff-home { color: var(--md-primary); display: inline-flex; }
+.ui-locoff-row[aria-current] .ui-locrow-go { color: var(--md-primary); }
+/* Story 1529 (boards LF5, LF6, LF2, LF3): the "Delivering to" box on Deliver to. One size in every state: the second line is always two lines high, so nothing under it moves. */
+.ui-going > div { display: grid; grid-template-columns: 24px 1fr; gap: 12px; align-items: start; padding: 14px; border: 1px solid var(--md-outline-variant); border-radius: 12px; background: var(--md-surface); }
+.ui-going.here > div { border-color: var(--md-primary); }
+.ui-going svg { margin-top: 2px; color: var(--md-primary); }
+.ui-going-words { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ui-going-title { display: flex; align-items: center; gap: 8px; min-height: 24px; font-weight: 600; line-height: 1.25; }
+.ui-going-title .ui-tag { font-size: 11px; }
+.ui-going-sub { height: 38px; font-size: 14px; line-height: 1.35; color: var(--gs-text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ui-card-btn:disabled { color: var(--gs-text-muted); cursor: default; }   /* board LF6d: Finding you… */
+.ui-card-btn:disabled svg { color: var(--gs-text-muted); }
+.ui-saved-row.unpinned .ui-saved-main, .ui-saved-row.unpinned .ui-chip-box { color: var(--gs-text-muted); }   /* board LF11: an old row with no pin */
+.ui-loc-note { display: grid; grid-template-columns: 20px 1fr; gap: 10px; margin: auto 0 0; padding: 12px; border: 1px solid var(--md-outline-variant); border-radius: 8px; background: var(--md-surface); color: var(--md-on-surface); font-size: 14px; line-height: 1.4; text-align: left; }   /* board LF1: the true line on the first-open screen */
+.ui-loc-note svg { color: var(--md-primary); }
+.ui-loc-note span { min-height: 4.2em; min-height: 3lh; }   /* rule 23, no layout shift: the line keeps three lines (the longest cause on a 360 px phone), so the box is the same for every cause */
 /* Story 1049 part 3, board NK-A: the place of a pin no kitchen serves. */
 .ui-nkplace { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-top: 1px solid var(--md-outline-variant); border-bottom: 1px solid var(--md-outline-variant); color: var(--md-primary); }
 .ui-nkplace > span { display: flex; flex-direction: column; color: var(--md-on-surface); min-width: 0; }
@@ -843,10 +862,6 @@ a.ui-locrow { text-decoration: none; }   /* story 1498: the rider row is a link 
 /* Story 1117 (board C7a): an example reads as an example, not as typed text (about 3.3:1), and the field edge is seen (3:1, WCAG 1.4.11). Typed text stays full ink. */
 .ui-field input.ui-eg, .ui-field textarea.ui-eg { border-color: color-mix(in srgb, var(--gs-text-muted) 65%, var(--md-surface)); }
 .ui-field input.ui-eg::placeholder, .ui-field textarea.ui-eg::placeholder { color: color-mix(in srgb, var(--gs-text-muted) 65%, var(--md-surface)); opacity: 1; }
-/* Story 1127 (boards C6, C8): the search runs on the map. The bar is a text box; the places list sits over the map under it. */
-.ui-pinmap-search.open { padding: 0 6px 0 18px; cursor: text; }
-.ui-pinmap-search.open input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--md-on-surface); font: inherit; outline: none; }
-.ui-pinmap-results { position: absolute; left: 16px; right: 16px; top: calc(env(safe-area-inset-top, 0px) + 72px); z-index: 700; max-height: 50%; overflow: auto; padding: 8px 12px; border: 1px solid var(--md-outline-variant); border-radius: 10px; background: var(--md-surface); box-shadow: 0 8px 24px rgba(38, 53, 40, 0.12); }
 .ui-landing .ui-slip-body > .ui-field-error, .ui-welcome .ui-slip-body > .ui-field-error { text-align: center; margin-bottom: -4px; }   /* story 1133 (T3): the error under the number is centred, 12 px above the main button */
 /* Story 1117 (board C7a): an example reads as an example, not as typed text (about 3.3:1), and the field edge is seen (3:1, WCAG 1.4.11). Typed text stays full ink. */
 .ui-field input.ui-eg { border-color: color-mix(in srgb, var(--gs-text-muted) 65%, var(--md-surface)); }
@@ -860,12 +875,14 @@ a.ui-locrow { text-decoration: none; }   /* story 1498: the rider row is a link 
 .ui-you-card { display: flex; flex-direction: column; padding: 4px 16px; border: 1px solid var(--md-outline-variant); border-radius: 12px; background: var(--md-surface); }
 .ui-you-card.lime { padding: 16px; background: var(--gs-lime-soft); }
 .ui-you-card.lime .ui-profile-head { margin-bottom: 0; }
+.ui-you-card.lime .ui-phone-row { margin-top: 12px; }
+.ui-you-card.lime .ui-pinmap-change { padding-right: 0; }   /* its edge under the Edit link's edge */   /* story 1532: the place's words under the name, dark ink on lime like the Edit link */
 .ui-you-card .ui-row { border: 0; background: transparent; padding-left: 0; padding-right: 0; }
 .ui-you-card.risky { margin-top: 12px; }   /* 12 px from the column gap plus 12 here: 24 px above it */
 .ui-you-card.risky .ui-row, .ui-you-card.risky .ui-row span { color: var(--md-error); }
 .ui-you-page ~ .ui-sheet-back { z-index: 50; }   /* the delete-account sheet sits over the page */
-.ui-you-card.lime, .ui-you-card.lime h2, .ui-you-card.lime .ui-profile-who .mono, .ui-you-card.lime label { color: var(--md-on-tertiary-container); }   /* dark ink on lime in Night too */
-.ui-you-card.lime .ui-link { color: var(--md-on-tertiary-container); font-weight: 700; text-decoration: underline; }   /* the Edit link reads on the lime card (contrast) */
+.ui-you-card.lime, .ui-you-card.lime h2, .ui-you-card.lime .ui-profile-who .mono, .ui-you-card.lime label, .ui-you-card.lime .ui-phone-row small { color: var(--md-on-tertiary-container); }   /* dark ink on lime in Night too */
+.ui-you-card.lime .ui-link, .ui-you-card.lime .ui-pinmap-change { color: var(--md-on-tertiary-container); font-weight: 700; text-decoration: underline; }   /* the Edit link reads on the lime card (contrast) */
 .ui-you-page .ui-you-top h1, .ui-you-page .ui-legal { color: var(--gs-you-page-text); }   /* the page is light in Night too, so the words on it stay dark */
 
 /* Story 1163 (owner, 9 Nov): no zigzag anywhere. It keeps its 8 px, so nothing around it moves; the slip top is a straight hairline of the same 8 px. */
@@ -920,7 +937,6 @@ body .ui-field select:focus-visible { outline: none; border: 2px solid var(--md-
 input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
 .ui-clear-x { flex: none; width: 44px; height: 44px; margin: -8px -10px -8px 0;   /* the 44 px touch area reaches past the box edge; the box keeps its height */
   display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; background: none; color: var(--gs-text-muted); cursor: pointer; }
-.ui-pinmap-search .ui-clear-x { margin-right: 0; }
 
 /* Story 1417, board BF2: the saved phone on one line with Change; the ten digits together. */
 .ui-phone-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

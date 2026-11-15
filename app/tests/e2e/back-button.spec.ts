@@ -111,7 +111,6 @@ test("S11 after Place order, Back on the tracker shows the menu, never the bill 
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Phone").fill("9876543210");
-  await page.getByLabel("Address").fill("Flat 4, Green Park");
   await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   await page.goBack();

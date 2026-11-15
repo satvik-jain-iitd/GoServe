@@ -7,7 +7,7 @@ export const handler = makeHandler({
   allow: () => true,
   cap: async () => "ok",
   budget: async () => true,
-  lookup: async () => ({ results: [{ formatted_address: "Radio Colony, Chhatarpur, Madhya Pradesh 471001, India", address_components: [
-    { types: ["postal_code"], long_name: "471001", short_name: "471001" }, { types: ["sublocality"], long_name: "Radio Colony", short_name: "Radio Colony" },
-    { types: ["locality"], long_name: "Chhatarpur", short_name: "Chhatarpur" }, { types: ["administrative_area_level_1"], long_name: "Madhya Pradesh", short_name: "MP" }] }] }),
+  lookup: async () => ({ results: [{ formatted_address: "Example Colony, Sampletown, Sample State 900001, India", address_components: [
+    { types: ["postal_code"], long_name: "900001", short_name: "900001" }, { types: ["sublocality"], long_name: "Example Colony", short_name: "Example Colony" },
+    { types: ["locality"], long_name: "Sampletown", short_name: "Sampletown" }, { types: ["administrative_area_level_1"], long_name: "Sample State", short_name: "SS" }] }] }),
 });

@@ -29,7 +29,6 @@ test("S1 the order asks what the last quote asked: the server's best, then none 
   await page.getByRole("button", { name: "Remove FLAT50" }).click();
   await expect(page.getByTestId("bill-total")).toHaveText("₹320");
   await page.getByLabel("Phone").fill("9876543210");
-  await page.getByLabel("Address").fill("Flat 4, Green Park");
   await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   const last = quotes.at(-1);

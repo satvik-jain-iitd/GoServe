@@ -1,6 +1,6 @@
 // Story #1011: an empty pin box shows 123456 in the muted placeholder colour on every pin box, so nobody reads a real-looking pin as a filled value. The value stays empty; Continue stays off until six real digits.
 import { test, expect, type Page } from "@playwright/test";
-import { setup } from "./helpers";
+import { setup, phoneAt, toDeliverTo } from "./helpers";
 
 const muted = (page: Page, sel: string) => page.evaluate((s) => {
   const el = document.querySelector<HTMLInputElement>(s)!;
@@ -9,10 +9,11 @@ const muted = (page: Page, sel: string) => page.evaluate((s) => {
 
 test("S2 the address details on the map show the grey 123456 hint when the map gave no pin code", async ({ page, context }) => {
   const net = await setup(context, page, [], { pin: "110016" });
-  net.state.addresses = [{ id: "h1", label: "Home", address: "C-4, Green Park Extension, New Delhi", pin_code: "110016", lat: null, lng: null, last_used_at: new Date().toISOString() }];
+  net.state.addresses = [{ id: "h1", label: "Home", address: "Z-4, Green Park Extension, New Delhi", pin_code: "110016", lat: null, lng: null, last_used_at: new Date().toISOString() }];
   net.state.geocode = { status: 200, body: { ok: true, address: "Green Park, New Delhi", pin: null, locality: "Green Park", town: "New Delhi" } };   // story #1051: the old edit sheet is gone; Edit opens the map and its details
+  await phoneAt(context, { lat: 28.59, lng: 77.26 });   // story 1529: the phone is found, so no sheet asks
   await page.goto("/customer/");
-  await page.getByRole("button", { name: /^(Home|Deliver to)\b/ }).click();
+  await toDeliverTo(page);
   await page.getByRole("button", { name: "Edit or remove Home" }).click();
   await page.getByRole("button", { name: "Edit", exact: true }).click();   // story 1421 (ED1): Edit opens the filled details at once
   await expect(page.getByLabel("Pin code")).toHaveAttribute("placeholder", "e.g. 123456");

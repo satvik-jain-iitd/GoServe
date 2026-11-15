@@ -23,3 +23,13 @@ export async function saveProfile(c: Client, userId: string, p: Profile & { pin:
   const { error } = await c.from("customers").upsert({ user_id: userId, name: p.name.trim() || null,   /* story 1417: no name is null; the column takes 1 to 80 letters or null */ phone: p.phone, address: p.address.trim(), pin_code: p.pin, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
   return !error;
 }
+
+// Story 1529: the mark "this customer has confirmed a place once", on the customer's own row. The first-open screen and the alerts ask show only without it,
+// so a second phone and a sign out do not bring them back. A read that fails is "no mark": the app then goes by the saved addresses and the place on this phone.
+export async function placeMark(c: Client): Promise<boolean> {
+  const { data, error } = await c.from("customers").select("place_confirmed_at").limit(1);
+  return !error && !!(data?.[0] as { place_confirmed_at?: string | null } | undefined)?.place_confirmed_at;
+}
+export async function markPlace(c: Client, userId: string): Promise<void> {
+  await c.from("customers").upsert({ user_id: userId, place_confirmed_at: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+}
