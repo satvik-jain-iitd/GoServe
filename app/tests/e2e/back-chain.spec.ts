@@ -53,9 +53,9 @@ test("S14 a reload on the bill: one Back shows the menu", async ({ page, context
   await onMenu(page);
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
-  await expect(page.getByRole("button", { name: /Place order/ })).toBeVisible();
+  await expect(page.locator(".ui-sticky .ui-btn")).toBeVisible();
   await page.reload();
-  await expect(page.getByRole("button", { name: /Place order/ })).toBeVisible();
+  await expect(page.locator(".ui-sticky .ui-btn")).toBeVisible();
   await page.goBack();
   await onMenu(page);
 });
@@ -71,7 +71,7 @@ test("S15 You, reload (the app shows the menu), View bill, Back shows the menu, 
   await page.reload();
   await onMenu(page);
   await page.getByRole("button", { name: /View bill/ }).click();
-  await expect(page.getByRole("button", { name: /Place order/ })).toBeVisible();
+  await expect(page.locator(".ui-sticky .ui-btn")).toBeVisible();
   await page.goBack();
   await onMenu(page);   // the menu, never You from before the reload
 });

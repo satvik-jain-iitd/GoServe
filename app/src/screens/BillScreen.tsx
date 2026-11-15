@@ -42,7 +42,8 @@ export function BillScreen({ lines, total, kitchenName, pin, address, farKm = nu
   const empty = lines.length === 0;
   const phoneOk = !details || isPhone(details.phone);
   const ready = !empty && !soldOut && confirmed && phoneOk;
-  const needMap = !empty && !soldOut && !confirmed && phoneOk;   // story 1574: only the map point is missing, so the bar itself takes the customer to the map
+  const needPhone = !empty && !soldOut && !phoneOk;   // story 1574: the bar itself says what is missing and takes the customer there: phone first, then the map, then Place order
+  const needMap = !empty && !soldOut && phoneOk && !confirmed;
   const [changing, setChanging] = useState(false);   // board BC1: Change turns the saved row into the field, in place
   const phoneRef = useRef<HTMLInputElement>(null);
   useEffect(() => { if (changing) phoneRef.current?.focus(); }, [changing]);
@@ -154,9 +155,8 @@ export function BillScreen({ lines, total, kitchenName, pin, address, farKm = nu
       </div>
       {!empty && (
         <div className="ui-sticky float">
-          {!ready && !needMap && !sending && !soldOut && <p role="status" className="ui-reason">{details && details.phone.length === 10 ? "The phone must be ten digits and start with 6, 7, 8 or 9." : "Add your 10 digit phone number."}</p>}   {/* story #1170: why the button is off */}
-          <button type="button" className="ui-btn bar" disabled={!(ready || needMap) || sending} onClick={needMap ? onConfirmPlace : onPlace}>
-            <span className="mono">{door?.value === "upi_door" ? "UPI" : door?.value === "cash" ? "Cash" : "At door"} · {formatRupees(total)}</span><span className="verb">{sending ? "Placing…" : soldOut ? "Fix the bill first" : needMap ? "Confirm on the map ›" : "Place order ›"}</span>
+          <button type="button" className="ui-btn bar" disabled={!(ready || needMap || needPhone) || sending} onClick={needPhone ? () => phoneRef.current?.focus() : needMap ? onConfirmPlace : onPlace}>
+            <span className="mono">{door?.value === "upi_door" ? "UPI" : door?.value === "cash" ? "Cash" : "At door"} · {formatRupees(total)}</span><span className="verb">{sending ? "Placing…" : soldOut ? "Fix the bill first" : needPhone ? "Add your phone number ›" : needMap ? "Confirm on the map ›" : "Place order ›"}</span>
           </button>
         </div>
       )}

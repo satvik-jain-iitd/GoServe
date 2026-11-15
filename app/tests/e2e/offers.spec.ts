@@ -48,7 +48,7 @@ test("S1 the best offer is applied, the slip shows the discount and To pay, the 
   await expect(slip.getByText("−50")).toBeVisible();
   await expect(slip.getByText("To pay")).toBeVisible();
   await expect(page.getByTestId("bill-total")).toHaveText("₹310");
-  await expect(page.getByRole("button", { name: /Place order/ })).toContainText("₹310");
+  await expect(page.locator(".ui-sticky .ui-btn")).toContainText("₹310");
   expect(seen.bodies[0]).toMatchObject({ kitchen_id: "k-1", address: { pin_code: "110016" }, lines: [{ menu_item_id: "d1", qty: 1 }] });
   expect(seen.bodies[0].coupon_code ?? null).toBeNull();
   expect(seen.auth[0]).toMatch(/^Bearer .+/);
@@ -115,7 +115,7 @@ test("S10 the early-friend gift shows on the slip, To pay has it off, and Place 
   await expect(slip.getByText("Early friend gift")).toBeVisible();
   await expect(slip.getByText("−100")).toBeVisible();
   await expect(page.getByTestId("bill-total")).toHaveText("₹260");
-  await expect(page.getByRole("button", { name: /Place order/ })).toContainText("₹260");
+  await expect(page.locator(".ui-sticky .ui-btn")).toContainText("₹260");
   expect(seen.bodies[0].early_friend_paise).toBeUndefined();   // the app never sends it
 });
 

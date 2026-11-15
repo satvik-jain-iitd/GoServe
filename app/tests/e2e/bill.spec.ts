@@ -22,7 +22,7 @@ test("S2 Place order stays off until the name, a ten digit phone and the address
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
-  await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /Add your phone number/ })).toBeEnabled();   // story 1574: the bar asks for the phone
   await page.getByLabel("Phone").fill("9876543210");
   await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
 });

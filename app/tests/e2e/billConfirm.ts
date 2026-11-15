@@ -16,7 +16,7 @@ const boxes = (page: Page) => page.evaluate(() => {
 
 export function billConfirm() {
   for (const [width, height] of [[360, 640], [390, 844]]) {
-    test(`The bar takes me to the map and then places the order, at the same spot (${width}x${height})`, async ({ page, context }) => {
+    test(`The bar says what is missing, phone first, then the map, then Place order, in the same box in every state (${width}x${height})`, async ({ page, context }) => {
       await page.setViewportSize({ width, height });
       const net = await setup(context, page, [], { pin: null });
       net.state.geocode = { status: 200, body: GREEN_PARK };
@@ -25,41 +25,51 @@ export function billConfirm() {
       await page.goto("/customer/");
       await page.getByRole("button", { name: "Add Butter Chicken" }).click();
       await page.getByRole("button", { name: /View bill/ }).click();
+      const none = async () => { await expect(page.getByRole("status")).toHaveCount(0); await expect(page.locator(".ui-reason")).toHaveCount(0); };   // no grey line, ever
+      // 1 phone missing
+      await expect(bar(page)).toContainText("Add your phone number ›");
+      await expect(bar(page)).toBeEnabled();
+      await none();
+      const missing = await boxes(page);
+      await bar(page).click();   // a tap puts the cursor in the phone field
+      await expect(page.getByLabel("Phone")).toBeFocused();
+      // 2 phone wrong
+      await page.getByLabel("Phone").fill("987654321");
+      await expect(bar(page)).toContainText("Add your phone number ›");
+      await none();
+      const wrong = await boxes(page);
+      await page.getByLabel("Phone").fill("1234567890");   // ten digits, not a mobile
+      await expect(bar(page)).toContainText("Add your phone number ›");
+      await none();
+      // 3 map missing
       await page.getByLabel("Phone").fill("9876543210");
       await expect(bar(page)).toContainText("Confirm on the map ›");
       await expect(bar(page)).toBeEnabled();
       await expect(page.getByRole("button", { name: "Confirm on the map" })).toHaveCount(1);   // the bar only: no outline button under the address
-      await expect(page.getByText("Confirm your place on the map to place the order.")).toHaveCount(0);   // and no grey line
-      const before = await boxes(page);
+      await none();
+      const map = await boxes(page);
       await bar(page).click();
       await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
       await page.getByRole("button", { name: "Confirm & proceed" }).click();
       await page.getByLabel("House, street, colony, ward").fill("B-12, ground floor");
       await page.getByRole("button", { name: "Save address" }).click();
       await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
+      // 4 ready
       await expect(bar(page)).toContainText("Place order ›");
       await expect(bar(page)).toBeEnabled();
-      const after = await boxes(page);
-      expect(after.bar).toBe(before.bar);   // rule 23: the bar is the same box in both states
-      expect(after.sticky).toBe(before.sticky);
-      const grew = after.placeH - before.placeH;   // the one thing that may differ: the place's words now carry the house line
-      expect(after.scroll - before.scroll - grew).toBeLessThanOrEqual(1);   // the bar adds no scroll of its own
-      expect(after.page).toBe(before.page);
+      await none();
+      const ready = await boxes(page);
+      for (const [name, b] of Object.entries({ wrong, map, ready })) {   // rule 23: the bar is one box in all four states
+        expect(b.bar, `bar, ${name}`).toBe(missing.bar);
+        expect(b.sticky, `sticky, ${name}`).toBe(missing.sticky);
+      }
+      expect(ready.page).toBe(missing.page);
+      const grew = ready.placeH - map.placeH;   // the one thing that may differ: the place's words carry the house line
+      expect(ready.scroll - map.scroll - grew).toBeLessThanOrEqual(1);   // the bar adds no scroll
+      console.log(`${width}x${height} ${missing.bar} | ${missing.sticky}`);
       await bar(page).click();
       await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
       expect(net.calls.place).toHaveLength(1);
     });
   }
-
-  test("With the phone number also missing the bar asks for the phone first, and it is off", async ({ page, context }) => {
-    const net = await setup(context, page, [], { pin: null });
-    await context.addInitScript((p) => { if (window.localStorage.getItem("gs-place")) return; window.localStorage.setItem("gs-place", JSON.stringify(p)); window.localStorage.setItem("gs-pin", "110016"); }, RAW);
-    await page.goto("/customer/");
-    await page.getByRole("button", { name: "Add Butter Chicken" }).click();
-    await page.getByRole("button", { name: /View bill/ }).click();
-    await expect(bar(page)).toContainText("Place order ›");
-    await expect(bar(page)).toBeDisabled();
-    await expect(page.getByRole("status").filter({ hasText: "Add your 10 digit phone number." })).toBeVisible();
-    expect(net.calls.place).toHaveLength(0);
-  });
 }
