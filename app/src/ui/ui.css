@@ -451,6 +451,9 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .otp-boxes input { box-sizing: border-box; width: 100%; min-width: 0; height: 56px; min-height: 0; padding: 0; text-align: center; font-size: var(--gs-text-lg, 1.25rem); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius, 6px); background: var(--md-surface); color: var(--md-on-surface); }
 .otp-choices { display: flex; flex-direction: column; gap: var(--gs-space-2); margin: var(--gs-space-3) 0; }
 .ui-sheet .ui-btn { width: 100%; margin-top: var(--gs-space-3); }
+.ui-sheet .ui-btn.icon { width: var(--gs-tap); flex: none; }   /* story 1565: an icon button in a sheet keeps its own size; the full width is for the sheet's answers */
+.ui-sheet .ui-sheet-head .ui-btn { margin-top: 0; flex: none; }   /* story 1565: a control in a sheet's head sits beside the title, never under it */
+.ui-sheet .ui-sheet-head .ui-btn:not(.icon) { width: auto; }
 .ui-link { background: none; border: 0; padding: 0; font: inherit; color: var(--md-primary); text-decoration: underline; cursor: pointer; min-height: 24px; }
 .ui-meta .ui-link { text-decoration: none; }
 .otp-toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 40; padding: var(--gs-space-2) var(--gs-space-4); border-radius: var(--gs-radius-s); background: var(--md-primary); color: var(--md-on-primary); }
