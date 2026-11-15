@@ -35,11 +35,11 @@ export function billConfirm() {
       await expect(page.getByLabel("Phone")).toBeFocused();
       // 2 phone wrong
       await page.getByLabel("Phone").fill("987654321");
-      await expect(bar(page)).toContainText("Add your phone number ›");
+      await expect(bar(page)).toContainText("Check your phone number ›");
       await none();
       const wrong = await boxes(page);
       await page.getByLabel("Phone").fill("1234567890");   // ten digits, not a mobile
-      await expect(bar(page)).toContainText("Add your phone number ›");
+      await expect(bar(page)).toContainText("Check your phone number ›");
       await none();
       // 3 map missing
       await page.getByLabel("Phone").fill("9876543210");

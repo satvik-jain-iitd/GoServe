@@ -158,7 +158,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, farKm = nu
       {!empty && (
         <div className="ui-sticky float">
           <button type="button" className="ui-btn bar" disabled={!(ready || needMap || needPhone) || sending} onClick={needPhone ? () => phoneRef.current?.focus() : needMap ? onConfirmPlace : onPlace}>
-            <span className="mono">{door?.value === "upi_door" ? "UPI" : door?.value === "cash" ? "Cash" : "At door"} · {formatRupees(total)}</span><span className="verb">{sending ? "Placing…" : soldOut ? "Fix the bill first" : needPhone ? "Add your phone number ›" : needMap ? "Confirm on the map ›" : "Place order ›"}</span>
+            <span className="mono">{door?.value === "upi_door" ? "UPI" : door?.value === "cash" ? "Cash" : "At door"} · {formatRupees(total)}</span><span className="verb">{sending ? "Placing…" : soldOut ? "Fix the bill first" : needPhone ? (details?.phone.trim() ? "Check your phone number ›" : "Add your phone number ›") : needMap ? "Confirm on the map ›" : "Place order ›"}</span>
           </button>
         </div>
       )}

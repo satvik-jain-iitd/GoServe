@@ -22,7 +22,7 @@ test("P1 (BF1) a first order: one phone field with its reason, no name field, th
   await expect(page.getByRole("button", { name: /Add your phone number/ })).toBeEnabled();   // story 1574: the bar asks for the phone, no grey line
   await expect(page.getByText("Add your 10 digit phone number.")).toHaveCount(0);
   await field.fill("98765");
-  await expect(page.getByRole("button", { name: /Add your phone number/ })).toBeEnabled();
+  await expect(page.getByRole("button", { name: /Check your phone number/ })).toBeEnabled();
   await field.fill("9876543210");
   await expect(page.getByRole("button", { name: /Add your phone number/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
@@ -97,10 +97,10 @@ test("P7 (BF1) ten digits that are not a mobile say why; the bar keeps asking; t
   const field = page.getByLabel(LABEL);
   await expect(field).toHaveAttribute("placeholder", "10 digit number");
   await field.fill("1234567890");
-  await expect(page.getByRole("button", { name: /Add your phone number/ })).toBeEnabled();   // story 1574: the bar asks again; no grey line
+  await expect(page.getByRole("button", { name: /Check your phone number/ })).toBeEnabled();   // story 1574: the bar asks again; no grey line
   await expect(page.getByRole("status")).toHaveCount(0);
   await field.fill("98765");
-  await expect(page.getByRole("button", { name: /Add your phone number/ })).toBeEnabled();
+  await expect(page.getByRole("button", { name: /Check your phone number/ })).toBeEnabled();
 });
 
 test("P8 (BF2) the saved ten digits are in the regular mono weight at 16 px, not bold", async ({ page, context }) => {
