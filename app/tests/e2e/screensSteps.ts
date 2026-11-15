@@ -55,6 +55,27 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await page.getByRole("button", { name: /View bill/ }).click();
     await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
   },
+  // Story 1540 (review of PR 1546, note 16): the Bill after the place moved to another kitchen. The header line, one struck old price, one "is not made by this kitchen." row with "Take it out".
+  "bill-kitchen-changed": async (context, page, path) => {
+    const net = await setup(context, page, [], { pin: null });
+    const dish = (id: string, name: string, price_paise: number) => ({ id, name, price_paise, image_url: null, image_credit: null });
+    net.state.menu = [dish("d1", "Butter Chicken", 32000), dish("d2", "Dal Makhani", 22000)];
+    const kitchens = net.state.kitchens as { id: string; name: string; pin_codes: string[] }[];
+    kitchens.push({ ...kitchens[0], id: "k-2", name: "Saket Kitchen", pin_codes: ["110017"] });   // the other kitchen: its own dish id, a new price, no Dal Makhani
+    await page.route("**/rest/v1/menu_items*kitchen_id=eq.k-2*", (r) => r.fulfill({ status: 200, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify([dish("b1", "Butter Chicken", 35000)]) }));
+    net.state.geocode = { status: 200, body: { ok: true, address: "Saket, New Delhi, Delhi", pin: "110017", locality: "Saket", town: "New Delhi" } };
+    net.state.serve = { status: 200, body: { ok: true, serviceable: true, request_here: false, kitchens: [{ kitchen_id: "k-2", name: "Saket Kitchen", distance_m: 900, eta_min: 25, open: true }] } };
+    await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+vg+AAVYAqhyXHCrAAAAAElFTkSuQmCC", "base64") }));
+    await context.addInitScript(() => { if (!window.localStorage.getItem("gs-place")) { window.localStorage.setItem("gs-place", JSON.stringify({ address: "Where you are now", pin: "110016", lat: 28.5677, lng: 77.2432, house: "", landmark: "", confirmed: false, id: null })); window.localStorage.setItem("gs-pin", "110016"); } });
+    await page.goto(path);
+    await page.getByRole("button", { name: "Add Butter Chicken" }).click(); await page.getByRole("button", { name: "Add Dal Makhani" }).click();
+    await page.getByRole("button", { name: /View bill/ }).click();
+    await page.getByRole("button", { name: "Confirm on the map" }).click(); await page.getByRole("button", { name: "Confirm & proceed" }).click();
+    await page.getByLabel("House, street, colony, ward").fill("Flat 4"); await page.getByRole("button", { name: "Save address" }).click();
+    await expect(page.getByText("Saket Kitchen · 110017")).toBeVisible();
+    await expect(page.locator(".ui-head-under")).toHaveText("The kitchen changed. Prices are new.");
+    await expect(page.locator(".ui-slip-lines s")).toHaveText("320");
+    await expect(page.getByRole("button", { name: "Take it out" })).toBeVisible(); },
   account: async (context, page, path) => { const net = await setup(context, page); net.state.phoneUser = true; await page.goto(path);   // story 829: signed in by phone code (no Google name), so You shows the Google row as in the accepted picture
     await page.getByRole("button", { name: "Account" }).click(); await expect(page.getByTestId("account")).toBeVisible(); },
   cancelled: async (context, page, path) => {   // story 916: the slip after a cancel

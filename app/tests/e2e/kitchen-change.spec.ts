@@ -5,7 +5,8 @@ import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { phoneLoc, setup, toDeliverTo } from "./helpers";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
-const CHANGED = "The kitchen changed for this place. Prices are from the new kitchen.";   // the menu's line
+const CHANGED = "The kitchen changed. See your bill.";   // the menu's line: one short line in the greeting box, so nothing on the menu moves (owner's rule 23); the Bill names the dishes and the prices
+const greet = (page: Page) => page.locator(".ui-greet-line");
 const ON_BILL = "The kitchen changed. Prices are new.";   // the Bill's line: one short line under the title, in the header that is always there
 const HOME = { id: "h1", label: "Home", address: "Z-900, Sample Garden Colony, Sampletown", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
 const SAKET = { id: "s1", label: "Office", address: "B-12, Saket", pin_code: "110017", lat: 28.5245, lng: 77.2066, last_used_at: "2026-11-01T10:00:00Z" };
@@ -74,6 +75,23 @@ test("The kitchen changes on the Bill: the Bill says the kitchen changed, each c
   await expect(total(page)).toHaveText("₹570");   // 350 + 220
 });
 
+// Review of PR 1546, note 11: "Prices are new" is said only when a price differs for this customer.
+const SAME = [{ ...BOTH[0], price_paise: 32000 }, BOTH[1]];   // the other kitchen: its own ids, the same prices
+test("The kitchen changes and no price differs: the Bill says only that the kitchen changed", async ({ page, context }) => {
+  await billThenSaket(page, context, SAME);
+  await expect(page.locator(".ui-head-under")).toHaveText("The kitchen changed.");
+  await expect(page.locator(".ui-slip-lines s")).toHaveCount(0);   // no price is marked, so no line may say a price is new
+  await expect(total(page)).toHaveText("₹540");
+});
+
+test("The kitchen changes, no price differs and one dish is not made: the Bill says only that the kitchen changed, and the dish has its row", async ({ page, context }) => {
+  await billThenSaket(page, context, [SAME[0]]);
+  await expect(page.locator(".ui-head-under")).toHaveText("The kitchen changed.");
+  await expect(page.getByRole("alert").filter({ hasText: "Dal Makhani is not made by this kitchen." })).toBeVisible();
+  await expect(row(page, "1 × Butter Chicken").locator("s")).toHaveCount(0);
+  await expect(total(page)).toHaveText("₹320");
+});
+
 test("Nothing moves when the Bill says the kitchen changed: only the header carries the line, and every part keeps its place and its size", async ({ page, context }) => {
   // The same Bill twice, after the place is confirmed in Saket: once as the new kitchen's own bill (after a reload the line is gone), once with the line.
   await billThenSaket(page, context, BOTH);
@@ -131,36 +149,34 @@ test("The order: it goes to kitchen B at the prices on the Bill, for the dishes 
   expect(sent.address).toMatchObject({ pin_code: "110017" });
 });
 
-test("I pick a saved address of another kitchen with a cart: the menu says the kitchen changed and names the dish it does not make, and the Bill marks the price", async ({ page, context }) => {
+test("I pick a saved address of another kitchen with a cart: the menu says the kitchen changed, and the Bill marks the price and shows the dish it does not make", async ({ page, context }) => {
   await menuWithCart(page, context, ONE);
   await toDeliverTo(page);
   await page.getByRole("button", { name: "Deliver to Office" }).click();
-  await expect(page.getByRole("status").filter({ hasText: `${CHANGED} It does not make Dal Makhani.` })).toBeVisible();
-  await expect(page.getByRole("button", { name: /View bill/ })).toContainText("₹350");
-  expect(await cartIds(page)).toEqual(["b1"]);   // the cart holds the new kitchen's dish
-  await page.getByRole("button", { name: /View bill/ }).click();
-  await expect(page.getByRole("status").filter({ hasText: ON_BILL })).toBeVisible();   // the Bill still says it
-  await expect(row(page, "1 × Butter Chicken").locator("s")).toHaveText("320");
-  await expect(page.getByRole("alert")).toHaveCount(0);   // the dish it does not make was named on the menu; the Bill has nothing to fix
-  await expect(total(page)).toHaveText("₹350");
+  await saysItChanged(page);
+  await page.getByRole("button", { name: "Take it out" }).click();
   await page.getByRole("button", { name: "Back to menu" }).click();
-  await expect(page.getByText(CHANGED)).toHaveCount(0);   // the menu's line went on the tap
+  await expect(greet(page)).toHaveText(/^Open till/);   // the Bill was opened: the greeting is back
 });
 
 // The reviewer's ask: a place changes in three ways (a saved address above, a recent, a search confirmed on the pin map). Each one ends at the same point in the app.
 const RECENT = { id: "r1", name: "Sample Nagar", address: "Flat 2, Sample Nagar", pin_code: "110017", lat: SAKET.lat, lng: SAKET.lng, house: "Flat 2", landmark: null, used_at: "2026-11-10T10:00:00Z" };
 async function saysItChanged(page: Page) {   // the same as for a saved address
-  await expect(page.getByRole("status").filter({ hasText: `${CHANGED} It does not make Dal Makhani.` })).toBeVisible();
+  await expect(greet(page)).toHaveText(CHANGED);   // the menu names no dish and no price
+  await expect(greet(page)).toHaveAttribute("role", "status");
+  await expect(page.locator(".ui-closed-note")).toHaveCount(0);   // no box in the flow of the menu
   await expect(page.getByRole("button", { name: /View bill/ })).toContainText("₹350");
   expect(await cartIds(page)).toEqual(["b1"]);   // the cart holds the new kitchen's dish
   await page.getByRole("button", { name: /View bill/ }).click();
   await expect(page.getByRole("status").filter({ hasText: ON_BILL })).toBeVisible();   // the Bill still says it
   await expect(row(page, "1 × Butter Chicken").locator("s")).toHaveText("320");
-  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(page.getByRole("alert").filter({ hasText: "Dal Makhani is not made by this kitchen." })).toBeVisible();   // nothing is lost without a word: the dish is a row on the Bill, with the way out
+  await expect(row(page, "1 × Dal Makhani")).toHaveCSS("text-decoration-line", "line-through");
+  await expect(page.getByRole("button", { name: /Fix the bill first/ })).toBeDisabled();
   await expect(total(page)).toHaveText("₹350");
 }
 
-test("I tap a recent of another kitchen with a cart: the menu says the kitchen changed and names the dish it does not make, and the Bill marks the price", async ({ page, context }) => {
+test("I tap a recent of another kitchen with a cart: the menu says the kitchen changed, and the Bill marks the price and shows the dish it does not make", async ({ page, context }) => {
   await menuWithCart(page, context, ONE, SAKET, [RECENT]);
   await toDeliverTo(page);
   await page.getByRole("region", { name: "Recently searched" }).getByRole("button", { name: "Deliver to Sample Nagar" }).click();
@@ -187,7 +203,7 @@ test("I pick a saved address the same kitchen serves: no line, no mark, the cart
   await toDeliverTo(page);
   await page.getByRole("button", { name: "Deliver to Office" }).click();
   await expect(page.getByRole("button", { name: /View bill/ })).toContainText("₹540");
-  await expect(page.getByText(CHANGED)).toHaveCount(0);
+  await expect(greet(page)).toHaveText(/^Open till/);
   await page.getByRole("button", { name: /View bill/ }).click();
   await expect(page.locator(".ui-slip-lines s")).toHaveCount(0);
   expect(await cartIds(page)).toEqual(["d1", "d2"]);
@@ -219,3 +235,48 @@ test("The kitchens cannot be read after the place changes: the cart is kept, and
   await expect(page.getByRole("button", { name: /View bill/ })).toContainText("₹570");
   expect(await cartIds(page)).toEqual(["b1", "b2"]);
 });
+
+test("I empty the cart on the menu after the kitchen changed: the greeting is back, there is no bill to see", async ({ page, context }) => {
+  await menuWithCart(page, context, ONE);
+  await toDeliverTo(page);
+  await page.getByRole("button", { name: "Deliver to Office" }).click();
+  await expect(greet(page)).toHaveText(CHANGED);
+  await page.getByRole("button", { name: "Less Butter Chicken" }).click();
+  await expect(page.getByRole("button", { name: /View bill/ })).toHaveCount(0);
+  await expect(greet(page)).toHaveText(/^Open till/);
+});
+
+test("No dish of my cart is made by the new kitchen: the menu says the bill was cleared, in the greeting box", async ({ page, context }) => {
+  await menuWithCart(page, context, [{ id: "b9", name: "Veg Thali", price_paise: 19900 }]);
+  await toDeliverTo(page);
+  await page.getByRole("button", { name: "Deliver to Office" }).click();
+  await expect(greet(page)).toHaveText("Place changed. Your bill was cleared.");
+  await expect(page.getByRole("button", { name: /View bill/ })).toHaveCount(0);
+  await page.getByRole("button", { name: "Add Veg Thali" }).click();   // the next tap on the menu uses the line up
+  await expect(greet(page)).toHaveText(/^Open till/);
+});
+
+// Owner's rule 23 on the menu (review of PR 1546, note 15): the menu with the line laid over the menu without it, in the same state (the same place, the same strip, the same cart).
+// Only the words of the greeting box differ. Each line is one line, whole, inside the box of a 360 px wide phone.
+const MENU_PARTS = [".ui-top", ".ui-farstrip", ".ui-scroll", ".ui-greet", ".ui-greet-line", ".ui-section", ".ui-tile", ".ui-sticky", ".ui-sticky .ui-btn", ".ui-tabs"];
+const menuBoxes = (page: Page) => page.evaluate((sels) => Object.fromEntries(sels.map((s) => [s, [...document.querySelectorAll(s)].map((el) => { const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; })])), MENU_PARTS);
+const oneLine = (page: Page) => greet(page).evaluate((el) => ({ whole: el.scrollWidth <= el.clientWidth, lines: Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)), width: el.getBoundingClientRect().width }));
+for (const width of [360, 412]) {
+  test(`Nothing moves on the menu when it says the kitchen changed, at ${width} px wide: only the words of the greeting box differ`, async ({ page, context }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await menuWithCart(page, context, BOTH);
+    await toDeliverTo(page);
+    await page.getByRole("button", { name: "Deliver to Office" }).click();
+    await expect(greet(page)).toHaveText(CHANGED);
+    await expect(page.getByRole("button", { name: /View bill/ })).toContainText("₹570");
+    const withLine = await menuBoxes(page);
+    expect(await oneLine(page)).toEqual({ whole: true, lines: 1, width: width - 40 });   // one line, none of it cut, in the 320 px box of a 360 px phone
+    await page.getByRole("button", { name: /View bill/ }).click();
+    await page.getByRole("button", { name: "Back to menu" }).click();
+    await expect(greet(page)).toHaveText(/^Open till/);   // the same menu, the same place and cart, without the line
+    const without = await menuBoxes(page);
+    for (const sel of MENU_PARTS.filter((s) => s !== ".ui-farstrip")) expect(without[sel].length, sel).toBeGreaterThan(0);
+    expect(without[".ui-tile"].length).toBe(2);
+    expect(without).toEqual(withLine);
+  });
+}
