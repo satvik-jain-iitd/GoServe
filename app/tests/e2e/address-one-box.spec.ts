@@ -59,12 +59,12 @@ test("O4 an old saved address opens with its whole text before the pin words in 
 test("O5 the typed box and landmark are kept across Change and back, in first set-up", async ({ page, context }) => {
   await STEPS["first-open-pin"](context, page, "/customer/");
   await page.getByRole("button", { name: "Confirm & proceed" }).click();
-  await sheet(page).getByLabel(BOX).fill("Z-900, Gali 3, Radio Colony");
+  await sheet(page).getByLabel(BOX).fill("Z-900, Gali 3, Example Colony");
   await sheet(page).getByLabel("Landmark (optional)").fill("near the water tank");
   await sheet(page).getByRole("button", { name: "Change", exact: true }).click();
   await expect(sheet(page)).toHaveCount(0);
   await page.getByRole("button", { name: "Confirm & proceed" }).click();
-  await expect(sheet(page).getByLabel(BOX)).toHaveValue("Z-900, Gali 3, Radio Colony");
+  await expect(sheet(page).getByLabel(BOX)).toHaveValue("Z-900, Gali 3, Example Colony");
   await expect(sheet(page).getByLabel("Landmark (optional)")).toHaveValue("near the water tank");
 });
 
@@ -86,7 +86,7 @@ test("O7 (board AD3L1) a long address: the box stays one line of the same height
   const h0 = (await sheet(page).boundingBox())!.height;
   const b0 = (await box.boundingBox())!.height;   // 45 px today, like every field on this sheet
   await box.fill("");
-  await box.pressSequentially("Z-900, Gali 3, Radio Colony, behind the old water tank, near Sharma General Store, ward 14, Sample Road extension ok");
+  await box.pressSequentially("Z-900, Gali 3, Example Colony, behind the old water tank, near Sharma General Store, ward 14, Sample Road extension ok");
   await box.pressSequentially("x".repeat(20));
   const v = await box.inputValue();
   expect(v.length).toBe(120);

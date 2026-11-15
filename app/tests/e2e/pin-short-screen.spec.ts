@@ -3,7 +3,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { STEPS } from "./screensSteps";
 
-const PHONE = { lat: 24.8847, lng: 79.597 };   // the place the step gives the browser
+const PHONE = { lat: 28.5377, lng: 77.2532 };   // the place the step gives the browser
 const box = async (page: Page, sel: string) => (await page.locator(sel).first().boundingBox())!;
 const overlap = (a: { x: number; y: number; width: number; height: number }, b: typeof a) =>
   !(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y);

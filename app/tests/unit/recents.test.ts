@@ -18,7 +18,7 @@ describe("recentWords", () => {
     expect(recentWords("olan", hit("own"), typed)).toEqual({ name: "Olaname Market", address: "12B, near park gate, Olaname Market, Olatown" });
   });
   it("the area the customer typed on the details sheet wins over the search words", () => {
-    expect(recentWords("green park", hit("ola"), { house: "12B", landmark: "", area: "Gali 3, Radio Colony" }).address).toBe("12B, Gali 3, Radio Colony");
+    expect(recentWords("green park", hit("ola"), { house: "12B", landmark: "", area: "Gali 3, Example Colony" }).address).toBe("12B, Gali 3, Example Colony");
   });
   it("long words are cut to what the table takes", () => {
     const w = recentWords("x".repeat(200), hit("ola"), { house: "h".repeat(120), landmark: "l".repeat(120), area: "a".repeat(200) });

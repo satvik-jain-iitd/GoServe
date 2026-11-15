@@ -36,11 +36,11 @@ test("TC 7.2 Invite the founders here: the founder's letter for that place, and 
   await expect(invite(page)).toBeVisible();   // the sheet is up before the tap
   const asked = page.waitForRequest((r) => r.url().includes("/rest/v1/rpc/area_request_add_v2"));
   await invite(page).click();
-  expect((await asked).postDataJSON().p_pin).toBe("471001");   // the ask is for the pin the map read, not another spot
+  expect((await asked).postDataJSON().p_pin).toBe("900001");   // the ask is for the pin the map read, not another spot
   await expect(page.getByRole("heading", { name: "You found us early. Thank you." })).toBeVisible();
   const letter = page.locator(".ui-founder-text");
-  await expect(letter).toContainText("We don't reach Green Avenue Colony yet");   // the letter names that place
-  await expect(letter).toContainText("the day we open in Green Avenue Colony, your first order is ₹100 off");   // the promise, from the stored offer
+  await expect(letter).toContainText("We don't reach Sample Garden Colony yet");   // the letter names that place
+  await expect(letter).toContainText("the day we open in Sample Garden Colony, your first order is ₹100 off");   // the promise, from the stored offer
   await expect(page.getByRole("button", { name: "Share this note" })).toBeVisible();
 });
 

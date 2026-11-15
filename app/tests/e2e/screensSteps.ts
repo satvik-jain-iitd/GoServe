@@ -17,29 +17,29 @@ export const NINE = new Date(2026, 9, 27, 9, 0, 0);   // the greeting depends on
 
 // The steps below are the ones the other specs already use to reach these screens.
 // Story 829: `welcome` is the front door as production shows it (phone code switch off: Google only); `welcome-phone` is the same door with the switch on.
-// The rows of the boards C9 to C13, the phone in Chhatarpur, and Deliver to opened. serve: false answers "no kitchen reaches this".
+// The rows of the boards C9 to C13, the phone in the sample town, and Deliver to opened. serve: false answers "no kitchen reaches this".
 // pin_code is the test kitchen's so the menu opens; the boards show the pin inside the words, which are untouched.
 // The words are invented samples of the same length as the boards' rows (no person's name, no real house): the layout is tried the same way.
 const BOARD_ROWS = [
-  { id: "h1", label: "Home", address: "Z-900, In front of the Sample Park gate, Green Avenue Colony, Chhatarpur, Madhya Pradesh 471001", pin_code: "110016", lat: 24.9167, lng: 79.5833, last_used_at: "2026-11-08T10:00:00Z" },
-  { id: "o1", label: "Office", address: "2nd floor, Sample Road, near the bus stand, Chhatarpur 471001", pin_code: "110016", lat: 24.9437, lng: 79.5833, last_used_at: "2026-11-07T10:00:00Z" },
-  { id: "b1", label: "Parents", address: "Flat 00, Sample Nagar, Kotra, Example Nagar Phase 2, Bhopal 462003", pin_code: "110016", lat: 23.2599, lng: 77.4126, last_used_at: "2026-11-06T10:00:00Z" },
-  { id: "w1", label: "Work", address: "000/0, Sample House Block Zero, Gali Number 0, Test Enclave, Gurugram 122004", pin_code: "110016", lat: 28.4595, lng: 77.0266, last_used_at: "2026-11-05T10:00:00Z" },
-  { id: "s1", label: "Friend", address: "Room no. 000, beside Sample Tower, Example Nagar, Madhapur, Hyderabad 500081", pin_code: "110016", lat: 17.4486, lng: 78.3908, last_used_at: "2026-11-04T10:00:00Z" },
+  { id: "h1", label: "Home", address: "Z-900, In front of the Sample Park gate, Sample Garden Colony, Sampletown, Sample State 900001", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-08T10:00:00Z" },
+  { id: "o1", label: "Office", address: "2nd floor, Sample Road, near the bus stand, Sampletown 900001", pin_code: "110016", lat: 28.5947, lng: 77.2432, last_used_at: "2026-11-07T10:00:00Z" },
+  { id: "b1", label: "Parents", address: "Flat 00, Sample Nagar, Block K, Example Nagar Phase 2, Samplepur 900002", pin_code: "110016", lat: 26.0677, lng: 77.2432, last_used_at: "2026-11-06T10:00:00Z" },
+  { id: "w1", label: "Work", address: "000/0, Sample House Block Zero, Gali Number 0, Test Enclave, Testnagar 900003", pin_code: "110016", lat: 28.5677, lng: 72.2432, last_used_at: "2026-11-05T10:00:00Z" },
+  { id: "s1", label: "Friend", address: "Room no. 000, beside Sample Tower, Example Nagar, Testpura, Examplecity 900004", pin_code: "110016", lat: 21.0677, lng: 77.2432, last_used_at: "2026-11-04T10:00:00Z" },
 ];
 const RECENT_ROWS = [   // invented samples: a recent has a name, the customer's own words and a confirmed point
-  { id: "r1", name: "Sample Nagar", address: "Flat 2, near the park gate, Sample Nagar", pin_code: "110016", lat: 24.9201, lng: 79.5861, house: "Flat 2", landmark: "the park gate", used_at: "2026-10-26T10:00:00Z" },
-  { id: "r2", name: "Example Market", address: "Shop 9, Example Market, Chhatarpur", pin_code: "110016", lat: 24.9105, lng: 79.5790, house: "Shop 9", landmark: null, used_at: "2026-10-25T10:00:00Z" },
+  { id: "r1", name: "Sample Nagar", address: "Flat 2, near the park gate, Sample Nagar", pin_code: "110016", lat: 28.5711, lng: 77.2460, house: "Flat 2", landmark: "the park gate", used_at: "2026-10-26T10:00:00Z" },
+  { id: "r2", name: "Example Market", address: "Shop 9, Example Market, Sampletown", pin_code: "110016", lat: 28.5615, lng: 77.2389, house: "Shop 9", landmark: null, used_at: "2026-10-25T10:00:00Z" },
 ];
 const viaSheet = (page: Page) => page.getByRole("dialog", { name: "Where to bring your food?" }).getByRole("button", { name: "View all" }).click();   // stories 1529 and 1526: the phone was not found and there are saved addresses
 async function deliverFrom(context: BrowserContext, page: Page, path: string, rows: number, o: { serve?: boolean; locate?: boolean; recents?: object[] } = {}) {
   const net = await setup(context, page, [], { pin: o.locate === false ? null : "110016" });   // the test kitchen serves 110016; the rows keep the boards words. Phone not found: a new phone takes the address used last
   net.state.addresses = BOARD_ROWS.slice(0, rows);
   net.state.recents = o.recents ?? [];
-  net.state.geocode = { status: 200, body: { ok: true, address: "Green Avenue Colony, Chhatarpur, Madhya Pradesh", pin: "471001", locality: "Chhatarpur", town: "Chhatarpur" } };
+  net.state.geocode = { status: 200, body: { ok: true, address: "Sample Garden Colony, Sampletown, Sample State", pin: "900001", locality: "Sampletown", town: "Sampletown" } };
   if (o.serve === false) net.state.serve = { status: 200, body: { ok: true, serviceable: false, kitchens: [] } };
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+vg+AAVYAqhyXHCrAAAAAElFTkSuQmCC", "base64") }));
-  if (o.locate !== false) { await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 24.9167, longitude: 79.5833 }); }   // locate: false = the phone's location is off
+  if (o.locate !== false) { await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.5677, longitude: 77.2432 }); }   // locate: false = the phone's location is off
   await page.goto(path);
   if (o.locate === false && rows > 0) await viaSheet(page); else await toDeliverTo(page);   // story 1529: the place follows the phone; not found, the sheet is over the menu
   await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();
@@ -65,23 +65,23 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     const net = await setup(context, page); net.state.admin = true; await page.goto(path);
     await page.getByRole("button", { name: "City", exact: true }).click(); await page.getByRole("button", { name: "Add a kitchen" }).click();
     await expect(page.getByLabel("Kitchen name")).toBeVisible(); },
-  // Story #1052: the boards A11 and A12 with their own data (a kitchen in Chhatarpur). The clock is fixed, so the row says "set 27 Oct" where the board says "set 6 Nov".
+  // Story 1052: the boards A11 and A12 with their own data (a kitchen in the sample town). The clock is fixed, so the row says "set 27 Oct" where the board says "set 6 Nov".
   "kitchen-pin": async (context, page, path) => {   // board A12: the kitchen's place on the shared map, Save location
     const net = await setup(context, page); net.state.admin = true;
-    net.state.geocode = { status: 200, body: { ok: true, address: "Green Avenue Colony, Satai Road, Chhatarpur, Madhya Pradesh 471001", pin: "471001", locality: "Green Avenue Colony", town: "Chhatarpur" } };
+    net.state.geocode = { status: 200, body: { ok: true, address: "Sample Garden Colony, Sample Road, Sampletown, Sample State 900001", pin: "900001", locality: "Sample Garden Colony", town: "Sampletown" } };
     await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+vg+AAVYAqhyXHCrAAAAAElFTkSuQmCC", "base64") }));
-    await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 24.8847, longitude: 79.597 });
+    await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.5377, longitude: 77.2532 });
     await page.goto(path); await page.getByRole("button", { name: "City", exact: true }).click(); await page.getByRole("button", { name: "Add a kitchen" }).click();
-    await page.getByLabel("Kitchen name").fill("Chhatarpur chhole bhature"); await page.getByLabel("Pin codes").fill("471001");
+    await page.getByLabel("Kitchen name").fill("Sampletown chhole bhature"); await page.getByLabel("Pin codes").fill("900001");
     await page.locator(".ui-locrow").click(); await page.getByRole("button", { name: "Current Location" }).click();
     await expect(page.getByRole("button", { name: "Save location" })).toBeEnabled(); },   // story 1500: no lookup at rest, so no "Inside <pin>" line
   "add-kitchen-location": async (context, page, path) => {   // board A11: the Add a kitchen form with the Location row filled
     await STEPS["kitchen-pin"](context, page, path);
     await page.getByRole("button", { name: "Save location" }).click();
     await expect(page.getByRole("region", { name: "Pin map" })).toHaveCount(0);   // story 1500: Save location looks the address up first; the form is typed in after the map closed
-    await page.getByLabel("Address").fill("Green avenue, near bus stand"); await page.getByLabel("Phone").fill("9876500011");
+    await page.getByLabel("Address").fill("Sample lane, near bus stand"); await page.getByLabel("Phone").fill("9876500011");
     await page.getByLabel("Opens at").fill("11:00"); await page.getByLabel("Closes at").fill("22:00");
-    await expect(page.locator(".ui-locrow")).toContainText("Green Avenue Colony, Satai Road"); await page.getByRole("heading", { name: "Add a kitchen" }).click(); },   // a click on the title takes the focus off Closes at: no ring in the picture
+    await expect(page.locator(".ui-locrow")).toContainText("Sample Garden Colony, Sample Road"); await page.getByRole("heading", { name: "Add a kitchen" }).click(); },   // a click on the title takes the focus off Closes at: no ring in the picture
   // Story 1053: the boards T4 and T5 with their own words (Rahul, 1.2 km, 20 sec ago). The clock is fixed at NINE, so the door time is the test's, not the board's 8:12 pm.
   "tracker-rider-row": async (context, page, path) => {   // board T4: On the way with the rider row, no map in the page
     const net = await setup(context, page, [order("out_for_delivery", new Date(NINE.getTime() - 60_000).toISOString())]);   // changed a minute ago: the "Was your order delivered?" box has not come yet
@@ -105,7 +105,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await page.goto(path); await expect(page.getByText("Working out the time")).toBeVisible(); },
   "menu-far": async (context, page, path) => {   // story #1056, board SW2: the menu with Home kept in the header and the strip "You are 6 km from Home · Deliver here"
     const net = await setup(context, page, [], { pin: null });
-    const home = { id: "h1", label: "Home", address: "Z-900, Green Avenue Colony, Sample Road, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
+    const home = { id: "h1", label: "Home", address: "Z-900, Sample Garden Colony, Sample Road, Sampletown", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
     net.state.addresses = [home];
     net.state.nearPin = "110099";   // story 1529: the strip is for a cart in progress whose kitchen does not serve the place the phone is at
     await context.addInitScript((h) => { window.localStorage.setItem("gs-place", JSON.stringify({ address: h.address, pin: h.pin_code, lat: h.lat, lng: h.lng, house: "", landmark: "", confirmed: true, id: h.id })); window.localStorage.setItem("gs-pin", h.pin_code); window.localStorage.setItem("gs-draft", JSON.stringify({ step: "menu", cart: { d1: 1 }, address: h.address, name: "", phone: "" })); }, home);
@@ -129,14 +129,14 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await expect(page.getByRole("heading", { name: "You found us early. Thank you." })).toBeVisible(); await page.evaluate(() => document.fonts.ready); },
   "first-open-pin": async (context, page, path) => {   // board A1p: after Use my location, the full map, the same screen as C6
     const net = await setup(context, page, [], { pin: null });
-    net.state.geocode = { status: 200, body: { ok: true, address: "Green Avenue Colony, Satai Road, Chhatarpur, Madhya Pradesh 471001", pin: "471001", locality: "Green Avenue Colony", town: "Chhatarpur" } };
+    net.state.geocode = { status: 200, body: { ok: true, address: "Sample Garden Colony, Sample Road, Sampletown, Sample State 900001", pin: "900001", locality: "Sample Garden Colony", town: "Sampletown" } };
     await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+vg+AAVYAqhyXHCrAAAAAElFTkSuQmCC", "base64") }));
-    await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 24.8847, longitude: 79.597 });
+    await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.5377, longitude: 77.2532 });
     await page.goto(path); await page.getByRole("button", { name: "Use my current location" }).click();
     await expect(page.getByText("We deliver here · the kitchen is 1.2 km from the pin")).toBeVisible(); },
   "location-off": async (context, page, path) => {   // story #1056, board SW3: the sheet over the menu (bug 1526, board LF-SHEET-Blocked)
     const net = await setup(context, page, [], { pin: null });
-    net.state.addresses = [{ id: "h1", label: "Home", address: "Z-900, Green Avenue Colony, Sample Road, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" }];
+    net.state.addresses = [{ id: "h1", label: "Home", address: "Z-900, Sample Garden Colony, Sample Road, Sampletown", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" }];
     await page.addInitScript(() => { Object.defineProperty(navigator, "permissions", { value: { query: async () => ({ state: "denied" }) }, configurable: true }); });
     await page.goto(path); await expect(page.getByRole("dialog", { name: "Where to bring your food?" })).toBeVisible(); },
   "add-dish": async (context, page, path) => {   // story 923: the admin's Add dish form
@@ -174,7 +174,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+vg+AAVYAqhyXHCrAAAAAElFTkSuQmCC", "base64") }));
     await page.goto(path); await viaSheet(page); await page.getByRole("button", { name: "Add new address" }).click();
     await expect(page.getByText("We deliver here · the kitchen is 1.2 km from the pin")).toBeVisible(); },
-  // Story #1051: the boards of batch B. The data is the boards' own (a phone in Chhatarpur, the rows of C12), so the picture and the board can be laid side by side.
+  // Story 1051: the boards of batch B. The data is the boards' own (a phone in the sample town, the rows of C12), so the picture and the board can be laid side by side.
   "deliver-five": async (context, page, path) => {   // boards C12 (this, three rows and View all)
     await deliverFrom(context, page, path, 5);
     await expect(page.getByRole("button", { name: "View all" })).toBeVisible(); },
@@ -199,7 +199,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await deliverFrom(context, page, path, 3, { serve: false });
     await page.getByRole("button", { name: "Add new address" }).click();
     await expect(page.locator(".gs-here-dot")).toBeVisible();   // story 1502: the map follows the phone's first place; the phone moves only after that
-    await context.setGeolocation({ latitude: 25.9, longitude: 79.5 });   // the phone moves away after the map opened: the pin is now far from it
+    await context.setGeolocation({ latitude: 29.5677, longitude: 77.2432 });   // the phone moves away after the map opened: the pin is now far from it
     await page.getByRole("button", { name: "Confirm & proceed" }).click();   // story 1500: the no is said after Confirm's lookup
     await expect(page.getByText("Not in our area yet")).toBeVisible(); await expect(page.getByText(/km from where you are now$/)).toBeVisible(); },
   "pin-map-far-off": async (context, page, path) => {   // board C6d-off: the pin far outside our area, the phone's location off, so no distance line

@@ -3,7 +3,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { order, setup, phoneAt, PLACE_WORDS } from "./helpers";
 
 const NEW = { ...order("placed", new Date(Date.now() + 1000).toISOString()), id: "0f0f0f0f-aaaa-4bbb-8ccc-dddddddddddd", total_paise: 32000 };
-const HOME = { id: "h1", label: "Home", address: "C-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: new Date().toISOString() };
+const HOME = { id: "h1", label: "Home", address: "Z-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: new Date().toISOString() };
 
 async function placeOne(page: Page) {
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();

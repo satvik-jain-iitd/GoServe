@@ -53,23 +53,23 @@ describe("reverseAddress", () => {
 });
 
 // Story #987 (was #969): Nominatim has no postcode in most of small-town India. The fallback asks our own table (rpc nearest_pin, GeoNames), never a third party.
-// The Chhatarpur reply is the one measured on 7 Nov 2026 (no postcode at any zoom).
+// The reply has the shape of one measured on 7 Nov 2026 (no postcode at any zoom); the words are samples.
 describe("the nearest pin when the reverse lookup has none (story 987)", () => {
-  const CHHATARPUR = { address: { road: "Link Road", village: "Rajnagar", state_district: "Chhatarpur", state: "Madhya Pradesh", country: "India" } };
+  const SAMPLETOWN = { address: { road: "Link Road", village: "Sample Village", state_district: "Sampletown", state: "Sample State", country: "India" } };
   const deps = (fetchFn: typeof fetch) => ({ fetchFn, url: "https://x.supabase.co", anon: "anon-key", token: async () => "tok" });
-  const route = (calls: { url: string; init?: RequestInit }[], pin: () => Promise<Response>, nominatim: unknown = CHHATARPUR) => (async (u: string | URL | Request, init?: RequestInit) => {
+  const route = (calls: { url: string; init?: RequestInit }[], pin: () => Promise<Response>, nominatim: unknown = SAMPLETOWN) => (async (u: string | URL | Request, init?: RequestInit) => {
     const url = String(u); calls.push({ url, init });
     return url.includes("nominatim") ? new Response(JSON.stringify(nominatim)) : pin();
   }) as typeof fetch;
-  const ask = (f: typeof fetch, lat = 24.91, lng = 79.59) => reverseAddress(lat, lng, f, deps(f));
+  const ask = (f: typeof fetch, lat = 28.57, lng = 77.24) => reverseAddress(lat, lng, f, deps(f));
 
   it("fills the pin from our own table with exactly two calls, the second to the Supabase rpc and nowhere else", async () => {
     const calls: { url: string; init?: RequestInit }[] = [];
-    const r = await ask(route(calls, async () => new Response(JSON.stringify("471001"))));
-    expect(r).toEqual({ address: "Link Road, Rajnagar, Madhya Pradesh", pin: "471001" });
+    const r = await ask(route(calls, async () => new Response(JSON.stringify("900001"))));
+    expect(r).toEqual({ address: "Link Road, Sample Village, Sample State", pin: "900001" });
     expect(calls).toHaveLength(2);
     expect(calls[1].url).toBe("https://x.supabase.co/rest/v1/rpc/nearest_pin");
-    expect(JSON.parse(String(calls[1].init?.body))).toEqual({ p_lat: 24.91, p_lng: 79.59 });
+    expect(JSON.parse(String(calls[1].init?.body))).toEqual({ p_lat: 28.57, p_lng: 77.24 });
     expect(calls.some((c) => c.url.includes("overpass"))).toBe(false);
   });
 
@@ -89,18 +89,18 @@ describe("the nearest pin when the reverse lookup has none (story 987)", () => {
   it("leaves the pin empty (never a guess) when the table has nothing, fails, or answers with an error", async () => {
     for (const pin of [async () => new Response("null"), async () => { throw new Error("offline"); }, async () => new Response("busy", { status: 429 }), async () => new Response("not json")]) {
       const r = await ask(route([], pin));
-      expect(r).toEqual({ address: "Link Road, Rajnagar, Madhya Pradesh", pin: "" });
+      expect(r).toEqual({ address: "Link Road, Sample Village, Sample State", pin: "" });
     }
   });
 
   it("gives up after 4 seconds and leaves the pin empty", async () => {
     vi.useFakeTimers();
     try {
-      const f = (async (u: string | URL | Request, init?: RequestInit) => String(u).includes("nominatim") ? new Response(JSON.stringify(CHHATARPUR))
+      const f = (async (u: string | URL | Request, init?: RequestInit) => String(u).includes("nominatim") ? new Response(JSON.stringify(SAMPLETOWN))
         : new Promise<Response>((_res, rej) => init?.signal?.addEventListener("abort", () => rej(new DOMException("aborted", "AbortError"))))) as typeof fetch;
       const p = ask(f);
       await vi.advanceTimersByTimeAsync(4100);
-      expect(await p).toEqual({ address: "Link Road, Rajnagar, Madhya Pradesh", pin: "" });
+      expect(await p).toEqual({ address: "Link Road, Sample Village, Sample State", pin: "" });
     } finally { vi.useRealTimers(); }
   });
 });

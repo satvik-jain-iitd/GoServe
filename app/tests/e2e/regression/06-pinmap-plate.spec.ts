@@ -6,7 +6,7 @@ const PATH = "/customer/";
 test.use({ viewport: { width: 390, height: 844 } });
 
 // The phone. The map opens on it (mapStart is the phone once it is known), so the pin sits here.
-const HERE = { lat: 24.8847, lng: 79.597 };
+const HERE = { lat: 28.5377, lng: 77.2532 };
 const ZOOM = 17;   // PinMapScreen's default zoom
 const WORLD = 256 * 2 ** ZOOM;   // Leaflet's Web Mercator world size in CSS pixels at this zoom
 const mercX = (lng: number) => ((lng + 180) / 360) * WORLD;

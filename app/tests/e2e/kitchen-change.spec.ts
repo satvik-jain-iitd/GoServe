@@ -7,7 +7,7 @@ import { phoneLoc, setup, toDeliverTo } from "./helpers";
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
 const CHANGED = "The kitchen changed for this place. Prices are from the new kitchen.";   // the menu's line
 const ON_BILL = "The kitchen changed. Prices are new.";   // the Bill's line: one short line under the title, in the header that is always there
-const HOME = { id: "h1", label: "Home", address: "Z-900, Green Avenue Colony, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
+const HOME = { id: "h1", label: "Home", address: "Z-900, Sample Garden Colony, Sampletown", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
 const SAKET = { id: "s1", label: "Office", address: "B-12, Saket", pin_code: "110017", lat: 28.5245, lng: 77.2066, last_used_at: "2026-11-01T10:00:00Z" };
 const AT_HOME = { latitude: 28.5690, longitude: 77.2440 };
 const MENU_A = [{ id: "d1", name: "Butter Chicken", price_paise: 32000, image_url: null, image_credit: null }, { id: "d2", name: "Dal Makhani", price_paise: 22000, image_url: null, image_credit: null }];
