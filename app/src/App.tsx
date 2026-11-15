@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchDoorMethods, type DoorMethod } from "./lib/doorMethods";
 import { onBackScreen, screenStep } from "./lib/back";
 import { readRiderQr } from "./lib/payMethods";
-import { addDish, cartLines, cartTotal, changeQty, reorderCart, toOrderItems, type Cart } from "./lib/cart";
+import { addDish, BILL_CLEARED_LINE, cartLines, KITCHEN_CHANGED_BILL, cartTotal, changeQty, kitchenChangedLine, moveCart, notMadeLine, reorderCart, toOrderItems, type Cart, type Held, type Line } from "./lib/cart";
 import { mergeOrder, riderOrders, cancelKind, shortId, statusLabel, type Order, type RiderAction, confirmHandover, deliveredAt, earlyMin, isCash } from "./lib/kitchen";
 import { clientPlatform } from "./lib/platform";
 import { riderRefused, savePlatform, tapCall } from "./lib/signals";
@@ -80,7 +80,7 @@ const api = orderDeps;
 
 // `lock` makes this one of the role apps (story #83): that role only, no role tabs, no demo tools. Without it, this is the demo console.
 export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
-  const [menu, setMenu] = useState<{ dishes: Dish[]; fromCache: boolean; slow?: boolean } | null>(null);
+  const [menu, setMenu] = useState<{ dishes: Dish[]; fromCache: boolean; slow?: boolean; kitchen?: string } | null>(null);   // kitchen (story 1540): whose menu this is, in the customer app
   // The customer app asks for a pin code and shows the menu of the kitchen that serves it (story B2). The demo console and the other apps keep the plain menu.
   // Story 1532: the one delivery place (point, words, postal code, house, confirmed mark), kept in the phone as one thing (lib/place.ts). The postal code, the words and the point are read from it.
   const [where, setPlaceNow] = useState<StoredPlace | null>(loadPlace);
@@ -484,8 +484,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   useEffect(() => {
     if (lock !== "customer" || !areaKitchenId) return;
     let alive = true;
-    loadMenu(() => fetchMenuRows(areaKitchenId), window.localStorage, `${MENU_KEY}.${areaKitchenId}`, { onLater: (m) => { if (alive) setMenu(m); } })   // story #930: a second read lands, or fails, after the first
-      .then((loaded) => { if (alive) { setMenu(loaded); setMenuError(null); } }, (e: Error) => { if (alive) setMenuError(e.message); });
+    loadMenu(() => fetchMenuRows(areaKitchenId), window.localStorage, `${MENU_KEY}.${areaKitchenId}`, { onLater: (m) => { if (alive) setMenu({ ...m, kitchen: areaKitchenId }); } })   // story 930: a second read lands, or fails, after the first
+      .then((loaded) => { if (alive) { setMenu({ ...loaded, kitchen: areaKitchenId }); setMenuError(null); } }, (e: Error) => { if (alive) setMenuError(e.message); });
     return () => { alive = false; };
   }, [lock, areaKitchenId, menuTry]);
   // Story #619: the kitchen's switch, its hours and its dishes follow live. Any change reads the kitchen and the menu again, quietly (no loading screen).
@@ -500,7 +500,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     if (liveTick === 0 || lock !== "customer" || !pin || !areaKitchenId) return;
     let alive = true;
     resolveArea(pin, () => fetchKitchens(getClient()), window.localStorage, from ?? undefined).then((found) => { if (alive) setArea(found); }, () => undefined);
-    loadMenu(() => fetchMenuRows(areaKitchenId), window.localStorage, `${MENU_KEY}.${areaKitchenId}`, { onLater: (m) => { if (alive) setMenu(m); } }).then((loaded) => { if (alive) { setMenu(loaded); setMenuError(null); } }, () => undefined);
+    loadMenu(() => fetchMenuRows(areaKitchenId), window.localStorage, `${MENU_KEY}.${areaKitchenId}`, { onLater: (m) => { if (alive) setMenu({ ...m, kitchen: areaKitchenId }); } }).then((loaded) => { if (alive) { setMenu({ ...loaded, kitchen: areaKitchenId }); setMenuError(null); } }, () => undefined);
     return () => { alive = false; };
   }, [liveTick]);   // eslint-disable-line react-hooks/exhaustive-deps
   function choosePlace(next: StoredPlace) {   // a new postal code finds the kitchen again; the same one only moves the point
@@ -548,8 +548,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }, [shown?.kind]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!closedNote) return;
-    const off = () => setClosedNote(null);
-    window.addEventListener("pointerdown", off, { once: true, capture: true });
+    const off = () => { if (document.querySelector(".ui-closed-note")) setClosedNote(null); };   // story 1540: only a tap while the line is on screen (the menu) uses it up; a line set on Deliver to waits for the menu
+    window.addEventListener("pointerdown", off, { capture: true });
     return () => window.removeEventListener("pointerdown", off, { capture: true });
   }, [closedNote]);
   const mapStart = (): Place => {   // where the map opens when nothing says otherwise: the phone, else the picked address, else the kitchen whose menu shows (story 1502), else the city centre
@@ -656,7 +656,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setStep((st) => (st === "bill" ? "bill" : "menu"));
     void (async () => {
       const pin = (await nearestPin(a.from, undefined)) || (a.pinTyped ? a.pin : "");
-      if (!pin) return;   // no postal code of our own for this point: no recent; the place itself stays
       const row = await keepRecent(getClient(), recentsNow.current, { ...recentWords(s.typed, s.hit, a), pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark });
       if (row) setRecents((cur) => [row, ...cur.filter((r) => r.id !== row.id)].slice(0, RECENTS_MAX));
     })().catch(() => undefined);
@@ -687,15 +686,16 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     const pin = at ? await nearestPin(at, undefined) : "";
     if (!at || !pin) return void changeArea();
     const here = herePlace(at, pin);
-    if (!(await cartFits(was, here))) setCart({});   // review of PR 1539: the cart of the old kitchen never moves to another kitchen, where prices and dishes differ
+    if (!(await cartFits(was, here))) clearBill();   // review of PR 1539: the app chose this place, not the customer, so the cart of the old kitchen is not moved to another kitchen; story 1540: the menu says the bill was cleared
     choosePlace(here);
   }
   function changeArea() {
     setPlace(null);
     setArea(null);
     setMenu(null);
-    setCart({});
+    clearBill();
   }
+  const clearBill = () => { if (Object.values(cartNow.current).some((q) => q > 0)) setClosedNote(BILL_CLEARED_LINE); setCart({}); };   // story 1540: a bill is never cleared without a word
 
   // One tap for the kitchen and the rider: a status step or an event, sent as that role. The answer's updated_at decides which copy is newer.
   // Returns null when it worked, or the error code. The offline demo changes the local copy only and sends nothing.
@@ -932,7 +932,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const kitchenName = area?.kind === "ok" ? area.kitchen.name : area?.kind === "closed" ? area.name : "";
   // Story #619, board L3: a dish the customer chose to swap goes to the server with swap true; the server puts its own alternative in its place.
   const [swapped, setSwapped] = useState<string[]>([]);
-  const orderItems = useMemo(() => toOrderItems(cart).map((i) => (swapped.includes(i.menu_item_id) ? { ...i, swap: true } : i)), [cart, swapped]);
+  // Story 1540: only the dishes on this kitchen's menu are sent (the rows the customer sees), never an id the cart still holds from another kitchen.
+  const orderItems = useMemo(() => toOrderItems(Object.fromEntries(lines.map((l) => [l.dish.id, l.qty]))).map((i) => (swapped.includes(i.menu_item_id) ? { ...i, swap: true } : i)), [lines, swapped]);
   const offers = useOffers(lock === "customer" && step === "bill", area?.kind === "ok" ? area.kitchen.id : null, pin, orderItems, !OFFERS_ON);   // story #588; story #995: the quote is always asked on the Bill so the total is the server's; with the offers off it asks for no coupon
   const total = offers.quote ? offers.quote.to_pay_paise : cartTotal(lines);
   const dead = lines.find((l) => l.dish.available === false && !swapped.includes(l.dish.id));   // the first dish in the bill that is sold out
@@ -944,10 +945,31 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     if (offers.alt === null || !canSwap) { takeOut(dead.dish.id); setStep("menu"); }
   }, [step, dead?.dish.id, offers.alt, canSwap]);   // eslint-disable-line react-hooks/exhaustive-deps
   // After a swap the Bill shows the lines the server priced: the new dish instead of the sold-out one.
-  const billLines = offers.quote?.swaps?.length && offers.quote.lines
-    ? offers.quote.lines.map((l) => ({ dish: { id: l.menu_item_id, name: l.name, price_paise: l.unit_paise, image_url: null, image_credit: null }, qty: l.qty, line_paise: l.line_paise }))
-    : lines;
   const count = lines.reduce((n, l) => n + l.qty, 0);
+  // Story 1540: the ONE point where a cart meets another kitchen. Every change of place (a saved address, a recent, a search, the map, "Deliver here", an edit, a delete) ends in
+  // a kitchen and its menu; when that menu is of another kitchen than the one the cart was read against, the cart moves to the new kitchen's own dishes and the customer is told:
+  // the Bill's notice line, the old price struck on each changed row, and a dish the kitchen does not make as a struck row with "Take it out". Away from the Bill the menu says it.
+  const [moved, setMoved] = useState<{ was: Record<string, number>; gone: Held[] } | null>(null);
+  const cartMenu = useRef<{ id: string; dishes: Dish[] } | null>(null);   // the kitchen and the menu the cart was last read against
+  useEffect(() => {
+    if (lock !== "customer" || !menu?.kitchen || menu.kitchen !== areaKitchenId) return;
+    const old = cartMenu.current;
+    cartMenu.current = { id: menu.kitchen, dishes: menu.dishes };
+    if (!old || old.id === menu.kitchen) return;
+    const held = [...cartLines(cart, old.dishes).map((l) => ({ id: l.dish.id, name: l.dish.name, qty: l.qty, price_paise: l.dish.price_paise, veg: l.dish.veg })), ...(moved?.gone ?? [])];
+    if (held.length === 0) return;
+    const next = moveCart(held, menu.dishes), onBill = stepNow.current === "bill";
+    setCart(next.cart);
+    setMoved({ was: next.was, gone: onBill ? next.gone : [] });
+    if (!onBill) setClosedNote(kitchenChangedLine(next.gone.map((g) => g.name)));
+  }, [menu, areaKitchenId]);
+  useEffect(() => { if (moved && count === 0 && moved.gone.length === 0) setMoved(null); }, [moved, count]);   // the bill is empty (ordered, or all taken out): nothing is left to say
+  useEffect(() => { if (step !== "bill") setMoved((m) => (m?.gone.length ? { ...m, gone: [] } : m)); }, [step]);   // the rows to take out are the Bill's; leaving it lets them go
+  const goneLines: Line[] = (moved?.gone ?? []).map((g) => ({ dish: { id: g.id, name: g.name, price_paise: g.price_paise, image_url: null, image_credit: null }, qty: g.qty, line_paise: g.price_paise * g.qty, gone: true }));
+  const billLines: Line[] = [...(offers.quote?.swaps?.length && offers.quote.lines
+    ? offers.quote.lines.map((l) => ({ dish: { id: l.menu_item_id, name: l.name, price_paise: l.unit_paise, image_url: null, image_credit: null }, qty: l.qty, line_paise: l.line_paise }))
+    : lines.map((l) => (moved?.was[l.dish.id] !== undefined ? { ...l, was_paise: moved.was[l.dish.id] * l.qty } : l))), ...goneLines];
+  const notMade = goneLines[0]?.dish;
 
   const [cancelling, setCancelling] = useState(false);
   // The customer cancels until cooking starts: placed or accepted (stories B3, #904). The database checks the rule; the live list brings the new status.
@@ -1162,7 +1184,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             onMenu={() => setStep("menu")} onAddresses={() => setStep("deliver")} onOrders={() => setStep("orders")} />
         )}
         {menu && step === "bill" && (
-          <BillScreen notice={againLine} note={note} onNote={setNote} lines={billLines} total={total} soldOut={dead && step === "bill" ? { id: dead.dish.id, name: dead.dish.name, alt: offers.alt, canSwap, onSwap: () => setSwapped((s) => [...s, dead.dish.id]), onRemove: () => takeOut(dead.dish.id) } : undefined} offers={OFFERS_ON && offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove } : undefined} kitchenName={kitchenName} pin={pin} address={address} confirmed={!!pointOf(where)} onChangePlace={() => setStep("deliver")} onConfirmPlace={confirmOnMap}
+          <BillScreen notice={againLine} under={moved ? KITCHEN_CHANGED_BILL : null} note={note} onNote={setNote} lines={billLines} total={total} soldOut={dead && step === "bill" ? { id: dead.dish.id, name: dead.dish.name, alt: offers.alt, canSwap, onSwap: () => setSwapped((s) => [...s, dead.dish.id]), onRemove: () => takeOut(dead.dish.id) }
+            : notMade ? { id: notMade.id, name: notMade.name, line: notMadeLine(notMade.name), alt: null, canSwap: false, onSwap: () => undefined, onRemove: () => setMoved((m) => m && { ...m, gone: m.gone.filter((g) => g.id !== notMade.id) }) } : undefined} offers={OFFERS_ON && offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove } : undefined} kitchenName={kitchenName} pin={pin} address={address} confirmed={!!pointOf(where)} onChangePlace={() => setStep("deliver")} onConfirmPlace={confirmOnMap}
             details={lock === "customer" ? { phone, onPhone: setPhone, saved: savedPhone } : undefined}
             door={lock === "customer" ? { methods: doorMethods ?? [], value: doorValue, onChange: setDoorPick } : undefined} sending={sending} error={error}
             onBack={() => setStep("menu")} onPlace={place} />

@@ -79,11 +79,11 @@ describe("addressText (story #1038: what the rider reads)", () => {
 describe("boxOf (story 1421, board ED1: Edit shows the box whole)", () => {
   it("gives back a saved box and landmark whole, commas and all", async () => {
     const { boxOf } = await import("../../src/lib/pinMap");
-    expect(boxOf({ address: "x", house: "C-128, second floor", landmark: "blue gate, by the temple" }, "Green Park")).toEqual({ house: "C-128, second floor", landmark: "blue gate, by the temple" });
+    expect(boxOf({ address: "x", house: "Z-900, second floor", landmark: "blue gate, by the temple" }, "Green Park")).toEqual({ house: "Z-900, second floor", landmark: "blue gate, by the temple" });
   });
   it("puts all of an older row before the pin words in the box, and keeps it all when the words differ", async () => {
     const { boxOf } = await import("../../src/lib/pinMap");
-    expect(boxOf({ address: "C-128, second floor, near the park gate, Green Park, New Delhi", house: null }, "Green Park, New Delhi")).toEqual({ house: "C-128, second floor, near the park gate", landmark: "" });
+    expect(boxOf({ address: "Z-900, second floor, near the park gate, Green Park, New Delhi", house: null }, "Green Park, New Delhi")).toEqual({ house: "Z-900, second floor, near the park gate", landmark: "" });
     expect(boxOf({ address: "Tower B, Connaught Place, New Delhi" }, "Green Park")).toEqual({ house: "Tower B, Connaught Place, New Delhi", landmark: "" });
   });
 });

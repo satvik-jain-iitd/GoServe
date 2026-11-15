@@ -5,9 +5,9 @@ import { setup, phoneAt, toDeliverTo } from "./helpers";
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
 const NOW = Date.now();
 const row = (id: string, label: string, address: string, lat: number, lng: number, agoDays: number) => ({ id, label, address, pin_code: "110016", lat, lng, last_used_at: new Date(NOW - agoDays * 86_400_000).toISOString() });
-const HOME = row("h1", "Home", "C-128, near the park gate, Green Park, New Delhi", 28.5677, 77.2432, 3);
+const HOME = row("h1", "Home", "Z-900, near the park gate, Green Park, New Delhi", 28.5677, 77.2432, 3);
 const OFFICE = row("o1", "Office", "Tower B, Connaught Place, New Delhi", 28.6315, 77.2167, 1);
-const MORE = [row("a1", "Bhopal home", "Flat 41, Chitragupt Nagar, Bhopal", 23.2, 77.4, 4), row("a2", "Work", "171/7, Hans Enclave, Gurugram", 28.4, 77.0, 5), row("a3", "Shubhi", "Room 407, Patrika Nagar, Hyderabad", 17.4, 78.4, 6)];
+const MORE = [row("a1", "Parents", "Flat 00, Sample Nagar, Bhopal", 23.2, 77.4, 4), row("a2", "Work", "000/0, Test Enclave, Gurugram", 28.4, 77.0, 5), row("a3", "Friend", "Room 000, Example Nagar, Hyderabad", 17.4, 78.4, 6)];
 const GREEN_PARK = { ok: true, address: "Green Park, New Delhi, Delhi", pin: "110016", locality: "Green Park", town: "New Delhi" };
 
 async function open(page: Page, context: Parameters<typeof setup>[0], list: object[]) {
@@ -27,7 +27,7 @@ test("S1 (C9, story 1421 ED1 and ED2) Edit opens the filled details; Change show
   await page.getByRole("button", { name: "Edit or remove Home" }).click();
   await page.getByRole("button", { name: "Edit", exact: true }).click();
   const sheet = page.getByRole("dialog", { name: "Edit address" });
-  await expect(sheet.getByLabel("House, street, colony, ward")).toHaveValue("C-128, near the park gate, Green Park, New Delhi");   // an older row: all of its text, nothing lost
+  await expect(sheet.getByLabel("House, street, colony, ward")).toHaveValue("Z-900, near the park gate, Green Park, New Delhi");   // an older row: all of its text, nothing lost
   await expect(sheet.getByRole("button", { name: "Home", exact: true })).toHaveAttribute("aria-pressed", "true");
   await sheet.getByLabel("House, street, colony, ward").fill("C-129, near the park gate");
   await sheet.getByRole("button", { name: "Change", exact: true }).click();

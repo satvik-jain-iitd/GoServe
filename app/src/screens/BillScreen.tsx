@@ -13,9 +13,10 @@ type Props = {
   note: string; onNote: (v: string) => void;   // story #935: one optional line for the kitchen, up to 200 characters
   details?: { phone: string; onPhone: (v: string) => void; saved: string | null };   // story 1417 (boards BF1, BF2, BC1): the phone once, never the name; saved = the phone kept on the account
   offers?: { quote: Quote; codeError: string | null; onApply: (code: string) => void; onRemove: () => void };   // story #588: the quote's bill and the Offers block (boards C1, C2)
-  soldOut?: { id: string; name: string; alt: Alternative | null | undefined; canSwap: boolean; onSwap: () => void; onRemove: () => void };   // story #619, board L3: the first dish in the bill that is sold out
+  soldOut?: { id: string; name: string; line?: string; alt: Alternative | null | undefined; canSwap: boolean; onSwap: () => void; onRemove: () => void };   // story 619, board L3: the first dish in the bill that is sold out; line (story 1540): other words for a dish the kitchen does not make
   door?: { methods: DoorMethod[]; value: DoorMethod | null; onChange: (v: DoorMethod) => void };   // story #1261, board P6: how you pay at the door, only the methods that are on (the customer app only)
   sending: boolean; error: string | null; notice?: string | null;   // story #977: what the History button could not put back
+  under?: string | null;   // story 1540: one short line under the title, inside the header, so nothing on the Bill moves (the kitchen changed)
   onBack: () => void; onPlace: () => void;
 };
 
@@ -32,7 +33,7 @@ export const BackChevron = ({ label, onClick }: { label: string; onClick: () => 
   </button>
 );
 
-export function BillScreen({ lines, total, kitchenName, pin, address, confirmed, onChangePlace, onConfirmPlace, note, onNote, details, offers, soldOut, door, sending, error, notice, onBack, onPlace }: Props) {
+export function BillScreen({ lines, total, kitchenName, pin, address, confirmed, onChangePlace, onConfirmPlace, note, onNote, details, offers, soldOut, door, sending, error, notice, under, onBack, onPlace }: Props) {
   const [typed, setTyped] = useState("");
   const q = offers?.quote;
   const empty = lines.length === 0;
@@ -47,6 +48,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, confirmed,
       <header className="ui-head">
         <BackChevron label="Back to menu" onClick={onBack} />
         <h1>Your bill</h1>
+        {under && <p role="status" className="ui-head-under">{under}</p>}
       </header>
       {notice && <p role="status" className="ui-note ui-again-line">{notice}</p>}
       <div className="ui-scroll">
@@ -62,9 +64,9 @@ export function BillScreen({ lines, total, kitchenName, pin, address, confirmed,
               </div>
             ) : (
               <div className="ui-slip-lines">
-                {lines.map(({ dish, qty, line_paise }) => soldOut?.id === dish.id
+                {lines.map(({ dish, qty, line_paise, was_paise, gone }) => soldOut?.id === dish.id || gone   /* story 1540: a dish the kitchen of this place does not make is struck like a sold-out one */
                   ? <div key={dish.id} style={{ color: "var(--gs-text-muted)", textDecoration: "line-through" }}><span>{qty} × {dish.name}</span><span>{plain(line_paise)}</span></div>
-                  : <div key={dish.id}><span>{qty} × {dish.name}</span><span>{plain(line_paise)}</span></div>)}
+                  : <div key={dish.id}><span>{qty} × {dish.name}</span><span>{was_paise !== undefined && <s className="was">{plain(was_paise)}</s>}{plain(line_paise)}</span></div>)}   {/* story 1540: the price at the kitchen before, struck, on the same row */}
                 <div><span>Delivery</span><span>{q && q.fees.delivery_paise > 0 ? plain(q.fees.delivery_paise) : "Free"}</span></div>
                 {q && q.fees.packaging_paise > 0 && <div><span>Packaging</span><span>{plain(q.fees.packaging_paise)}</span></div>}
                 {q && q.tax_mode === "exclusive" && q.tax_paise > 0 && <div><span>Tax</span><span>{plain(q.tax_paise)}</span></div>}
@@ -80,7 +82,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, confirmed,
         </section>
         {soldOut && (
           <div role="alert" className="ui-swap">
-            <p className="ui-swap-reason">{soldOut.name} is sold out.</p>
+            <p className="ui-swap-reason">{soldOut.line ?? `${soldOut.name} is sold out.`}</p>
             {soldOut.alt && soldOut.canSwap && (
               <>
                 <div className="ui-swap-alt">

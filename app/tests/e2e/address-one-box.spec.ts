@@ -32,44 +32,44 @@ test("O1 the first box is House, street, colony, ward with the board's example, 
   await expect(sheet(page).getByLabel("Landmark (optional)")).toBeVisible();
 });
 
-test("O2 the box is saved whole: C-128, second floor keeps its floor, and the landmark keeps its words", async ({ page, context }) => {
-  const net = await toEdit(page, context, row({ address: "C-128, near the park gate, Green Park, New Delhi, Delhi", house: "C-128", landmark: "the park gate" }));
-  await sheet(page).getByLabel(BOX).fill("C-128, second floor, Gali 3");
+test("O2 the box is saved whole: Z-900, second floor keeps its floor, and the landmark keeps its words", async ({ page, context }) => {
+  const net = await toEdit(page, context, row({ address: "Z-900, near the park gate, Green Park, New Delhi, Delhi", house: "Z-900", landmark: "the park gate" }));
+  await sheet(page).getByLabel(BOX).fill("Z-900, second floor, Gali 3");
   await sheet(page).getByLabel("Landmark (optional)").fill("blue gate, by the temple");
   await sheet(page).getByRole("button", { name: "Save changes" }).click();
-  await expect.poll(() => net.state.addresses[0].house).toBe("C-128, second floor, Gali 3");
+  await expect.poll(() => net.state.addresses[0].house).toBe("Z-900, second floor, Gali 3");
   expect(net.state.addresses[0].landmark).toBe("blue gate, by the temple");
-  expect(net.state.addresses[0].address).toBe("C-128, second floor, Gali 3, near blue gate, by the temple, Green Park, New Delhi, Delhi");   // the rider reads the box, the landmark, then the pin words
+  expect(net.state.addresses[0].address).toBe("Z-900, second floor, Gali 3, near blue gate, by the temple, Green Park, New Delhi, Delhi");   // the rider reads the box, the landmark, then the pin words
 });
 
 test("O3 Edit opens the filled sheet, not the map, and shows the box and landmark whole", async ({ page, context }) => {
-  await toEdit(page, context, row({ address: "C-128, second floor, near the park gate, Green Park, New Delhi, Delhi", house: "C-128, second floor", landmark: "the park gate" }));
+  await toEdit(page, context, row({ address: "Z-900, second floor, near the park gate, Green Park, New Delhi, Delhi", house: "Z-900, second floor", landmark: "the park gate" }));
   await expect(sheet(page)).toBeVisible();
-  await expect(sheet(page).getByLabel(BOX)).toHaveValue("C-128, second floor");
+  await expect(sheet(page).getByLabel(BOX)).toHaveValue("Z-900, second floor");
   await expect(sheet(page).getByLabel("Landmark (optional)")).toHaveValue("the park gate");
   await expect(page.getByRole("button", { name: "Save changes" })).toHaveCount(1);   // only the sheet's button: the map's own step is not shown
 });
 
 test("O4 an old saved address opens with its whole text before the pin words in the box; nothing is lost", async ({ page, context }) => {
-  await toEdit(page, context, row({ address: "C-128, second floor, near the park gate, Green Park, New Delhi, Delhi", house: null, landmark: null }));
-  await expect(sheet(page).getByLabel(BOX)).toHaveValue("C-128, second floor, near the park gate");
+  await toEdit(page, context, row({ address: "Z-900, second floor, near the park gate, Green Park, New Delhi, Delhi", house: null, landmark: null }));
+  await expect(sheet(page).getByLabel(BOX)).toHaveValue("Z-900, second floor, near the park gate");
   await expect(sheet(page).getByLabel("Landmark (optional)")).toHaveValue("");
 });
 
 test("O5 the typed box and landmark are kept across Change and back, in first set-up", async ({ page, context }) => {
   await STEPS["first-open-pin"](context, page, "/customer/");
   await page.getByRole("button", { name: "Confirm & proceed" }).click();
-  await sheet(page).getByLabel(BOX).fill("C-128, Gali 3, Radio Colony");
+  await sheet(page).getByLabel(BOX).fill("Z-900, Gali 3, Radio Colony");
   await sheet(page).getByLabel("Landmark (optional)").fill("near the water tank");
   await sheet(page).getByRole("button", { name: "Change", exact: true }).click();
   await expect(sheet(page)).toHaveCount(0);
   await page.getByRole("button", { name: "Confirm & proceed" }).click();
-  await expect(sheet(page).getByLabel(BOX)).toHaveValue("C-128, Gali 3, Radio Colony");
+  await expect(sheet(page).getByLabel(BOX)).toHaveValue("Z-900, Gali 3, Radio Colony");
   await expect(sheet(page).getByLabel("Landmark (optional)")).toHaveValue("near the water tank");
 });
 
 test("O6 Edit: Change opens the map, and back keeps what was typed", async ({ page, context }) => {
-  await toEdit(page, context, row({ address: "C-128, near the park gate, Green Park, New Delhi, Delhi", house: "C-128", landmark: "the park gate" }));
+  await toEdit(page, context, row({ address: "Z-900, near the park gate, Green Park, New Delhi, Delhi", house: "Z-900", landmark: "the park gate" }));
   await sheet(page).getByLabel(BOX).fill("C-130");
   await sheet(page).getByRole("button", { name: "Change", exact: true }).click();
   await expect(page.getByText("Editing Home")).toBeVisible();
@@ -86,7 +86,7 @@ test("O7 (board AD3L1) a long address: the box stays one line of the same height
   const h0 = (await sheet(page).boundingBox())!.height;
   const b0 = (await box.boundingBox())!.height;   // 45 px today, like every field on this sheet
   await box.fill("");
-  await box.pressSequentially("C-128, Gali 3, Radio Colony, behind the old water tank, near Sharma General Store, ward 14, Satai Road extension ok");
+  await box.pressSequentially("Z-900, Gali 3, Radio Colony, behind the old water tank, near Sharma General Store, ward 14, Sample Road extension ok");
   await box.pressSequentially("x".repeat(20));
   const v = await box.inputValue();
   expect(v.length).toBe(120);
@@ -97,7 +97,7 @@ test("O7 (board AD3L1) a long address: the box stays one line of the same height
 });
 
 test("O8 (board ED1) the sheet title is Edit address on Edit, and Address details in first set-up", async ({ page, context }) => {
-  await toEdit(page, context, row({ address: "C-128, Green Park, New Delhi, Delhi", house: "C-128", landmark: "" }));
+  await toEdit(page, context, row({ address: "Z-900, Green Park, New Delhi, Delhi", house: "Z-900", landmark: "" }));
   await expect(page.getByRole("heading", { name: "Edit address" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Address details" })).toHaveCount(0);
 });

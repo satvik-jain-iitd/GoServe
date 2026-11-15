@@ -115,7 +115,7 @@ test("L6 (1384) reduce motion: the rider stands still and the menu shows as soon
 
 test("L7 (1384) a returning customer with a saved address never sees Finding your kitchen", async ({ page, context }) => {
   const net = await setup(context, page, [], { pin: "110016" });
-  net.state.addresses = [{ id: "h1", label: "Home", address: "C-128, Green Avenue Colony", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" }];
+  net.state.addresses = [{ id: "h1", label: "Home", address: "Z-900, Green Avenue Colony", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" }];
   const seen: boolean[] = [];
   await page.goto("/customer/");
   for (let i = 0; i < 10; i++) { seen.push(await page.getByRole("heading", { name: "Finding your kitchen" }).isVisible()); await page.waitForTimeout(50); }

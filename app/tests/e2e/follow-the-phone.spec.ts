@@ -6,7 +6,7 @@ import { asked, comeBack, phoneLoc, setLoc, setup } from "./helpers";
 import { firstOpenToMenu } from "./firstOpen";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
-const HOME = { id: "h1", label: "Home", address: "C-128, Green Avenue Colony, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-01T10:00:00Z" };
+const HOME = { id: "h1", label: "Home", address: "Z-900, Green Avenue Colony, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-01T10:00:00Z" };
 const WORK = { id: "w1", label: "Work", address: "Tower B, Sector 62, Noida", pin_code: "110016", lat: 28.6208, lng: 77.3639, last_used_at: "2026-11-05T10:00:00Z" };   // used last
 const AT_HOME = { latitude: 28.5690, longitude: 77.2440 };   // about 150 m from Home
 const AWAY = { latitude: 28.6139, longitude: 77.209 };   // about 6 km from Home, far from Work too
@@ -127,10 +127,12 @@ test("I delete my last address away from it: Where you are now is picked", async
   await expect(header(page, /^Where you are now\b/)).toBeVisible();
 });
 
-test("I delete my last address with a cart, and my phone is in another kitchen's area: the cart does not move to that kitchen", async ({ page, context }) => {
+test("I delete my last address with a cart, and my phone is in another kitchen's area: the bill is cleared, and the menu says so", async ({ page, context }) => {
   const net = await setup(context, page, [], { pin: null });
   net.state.addresses = [HOME];
-  net.state.nearPin = "110099";   // no kitchen serves the place the phone is at
+  net.state.nearPin = "110017";   // another kitchen serves the place the phone is at
+  const kitchens = net.state.kitchens as { id: string; name: string; pin_codes: string[] }[];
+  kitchens.push({ ...kitchens[0], id: "k-2", name: "Saket Kitchen", pin_codes: ["110017"] });
   await stored(context, placeOf(HOME), { step: "menu", cart: { d1: 1 }, address: HOME.address, name: "", phone: "" });
   await phoneLoc(page, { perm: "granted", pos: AWAY });
   await page.goto("/customer/");
@@ -140,7 +142,11 @@ test("I delete my last address with a cart, and my phone is in another kitchen's
   await page.getByRole("button", { name: "Remove", exact: true }).click();
   await expect.poll(() => net.state.addresses.length, { timeout: 10_000 }).toBe(0);
   await expect(box(page)).toContainText("Where you are now");
-  await expect.poll(() => page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem("gs-draft") ?? "{}").cart ?? {}).length)).toBe(0);   // the old kitchen's cart is not carried to another kitchen
+  await expect.poll(() => page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem("gs-draft") ?? "{}").cart ?? {}).length)).toBe(0);   // the app chose this place, not the customer: the old kitchen's cart is not carried over
+  // Story 1540: the cleared bill is said in words, on the menu, where the customer next sees his bill is gone. The taps on Deliver to do not use the line up.
+  await page.getByRole("button", { name: "Back" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Your delivery place changed, so your bill was cleared. Add dishes from this menu." })).toBeVisible();
+  await expect(page.getByRole("button", { name: /View bill/ })).toHaveCount(0);
 });
 
 test("The first-open screen shows once only: a customer who confirmed a place before, on a new phone, lands on Deliver to", async ({ page, context }) => {
@@ -245,12 +251,11 @@ test("A saved address with no pin says Set the pin, and the pick on open skips i
   await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();   // the tap opens the map, the row is not picked
 });
 
-// Reviewer's ask (15 Nov 2026): "Confirm on the map" from the Bill, and the pin is confirmed in ANOTHER postal code. This states what the app does today, as found:
-// Story 1540 will change this: the Bill must say the kitchen changed, mark a changed price and show a missing dish as sold out. Until then this test pins the silent change.
-// the kitchen becomes the one that serves the new postal code, the customer stays on the Bill, a dish the new kitchen also has stays at the new kitchen's price,
-// and a dish it does not have leaves the Bill without a word. The last two are for the owner to rule on; this test only keeps them from changing unseen.
+// Reviewer's ask (15 Nov 2026): "Confirm on the map" from the Bill, and the pin is confirmed in ANOTHER postal code. The kitchen becomes the one that serves the new postal
+// code and the customer stays on the Bill. Story 1540: the Bill says the kitchen changed, a dish both kitchens make shows the old price struck next to the new one, and a dish
+// the new kitchen does not make stays on the Bill, struck, with "Take it out" (the sold-out pattern). Nothing changes without a word.
 for (const same of [true, false]) {
-  test(`Confirm on the map from the Bill, in another postal code: the other kitchen takes over and the Bill stays (${same ? "it has my dish, at its own price" : "it does not have my dish, the Bill is empty"})`, async ({ page, context }) => {
+  test(`Confirm on the map from the Bill, in another postal code: the other kitchen takes over, the Bill stays and says so (${same ? "it has my dish: the changed price is marked" : "it does not have my dish: the dish shows as not made, with Take it out"})`, async ({ page, context }) => {
     const net = await setup(context, page, [], { pin: null });
     net.state.geocode = { status: 200, body: { ok: true, address: "Saket, New Delhi, Delhi", pin: "110017", locality: "Saket", town: "New Delhi" } };
     const kitchens = net.state.kitchens as { id: string; name: string; pin_codes: string[] }[];
@@ -271,16 +276,23 @@ for (const same of [true, false]) {
     await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();   // the Bill stays
     await expect(page.getByText("Saket Kitchen · 110017")).toBeVisible();   // the kitchen of the new postal code
     await expect(page.getByRole("button", { name: "Confirm on the map" })).toHaveCount(0);
+    await expect(page.getByRole("status").filter({ hasText: "The kitchen changed. Prices are new." })).toBeVisible();
+    const line = page.locator(".ui-slip-lines > div").filter({ hasText: "1 × Butter Chicken" });
     if (same) {
-      await expect(page.getByText("1 × Butter Chicken")).toBeVisible();
-      await expect(page.getByText("₹350", { exact: true })).toBeVisible();   // the new kitchen's price (it was 320)
+      await expect(line.locator("s")).toHaveText("320");   // the price it was, struck
+      await expect(line).toContainText("350");   // the new kitchen's price
+      await expect(page.getByTestId("bill-total")).toHaveText("₹350");
       await page.getByLabel("Phone").fill("9876543210");
       await page.getByRole("button", { name: /Place order/ }).click();
       await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
-      expect(net.calls.place[0].body.address).toMatchObject({ pin_code: "110017" });
+      expect(net.calls.place[0].body).toMatchObject({ kitchen_id: "k-2", expected_to_pay_paise: 35000, address: { pin_code: "110017" } });
     } else {
-      await expect(page.getByText("Nothing on it yet")).toBeVisible();   // the dish is gone, with no line saying why
-      await expect(page.getByRole("button", { name: /Place order/ })).toHaveCount(0);
+      await expect(page.getByRole("alert").filter({ hasText: "Butter Chicken is not made by this kitchen." })).toBeVisible();
+      await expect(line).toHaveCSS("text-decoration-line", "line-through");
+      await expect(page.getByTestId("bill-total")).toHaveText("₹0");   // it is not in the total
+      await expect(page.getByRole("button", { name: /Fix the bill first/ })).toBeDisabled();
+      await page.getByRole("button", { name: "Take it out" }).click();
+      await expect(page.getByText("Nothing on it yet")).toBeVisible();
     }
   });
 }

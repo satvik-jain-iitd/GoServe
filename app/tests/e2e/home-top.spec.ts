@@ -4,7 +4,7 @@ import { setup, phoneAt } from "./helpers";
 
 const dish = (id: string, name: string, category: string, veg: boolean) => ({ id, name, price_paise: 10000, category, veg, available: true, image_url: null, image_credit: null });
 const MENU = [dish("d1", "Dal Makhani", "Mains", true), dish("d2", "Butter Chicken", "Mains", false), dish("d3", "Veg Thali", "Thali", true), dish("d4", "Chicken Thali", "Thali", false)];
-const ADDRESS = "C-128, Green Avenue Colony, Satai Road, Chhatarpur 471001";
+const ADDRESS = "Z-900, Green Avenue Colony, Sample Road, Chhatarpur 471001";
 
 const home = async (page: Page, context: Parameters<typeof setup>[0], avatar: string | null = null) => {
   const net = await setup(context, page);

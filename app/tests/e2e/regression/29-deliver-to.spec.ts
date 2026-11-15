@@ -21,7 +21,7 @@ test("TC 29.1 Look: Back, Deliver to, 2 saved, search, Use current location, Add
   await expect(rows).toHaveCount(2);
   await expect(rowOf(page, "Home").getByText("Home", { exact: true })).toBeVisible();
   await expect(rowOf(page, "Office").getByText("Office", { exact: true })).toBeVisible();
-  await expect(rowOf(page, "Home").getByText("C-4, Green Park Extension, New Delhi")).toBeVisible();
+  await expect(rowOf(page, "Home").getByText("Z-4, Green Park Extension, New Delhi")).toBeVisible();
   for (const i of [0, 1]) await expect(rows.nth(i).locator("svg").first()).toBeVisible();   // each row starts with its icon
   await expect(rowOf(page, "Home").getByText("Selected", { exact: true })).toBeVisible();   // the one used last
   await expect(rowOf(page, "Office").getByText("Selected", { exact: true })).toHaveCount(0);
@@ -38,7 +38,7 @@ test("TC 29.2 Load: 5 saved shows 3 rows and View all; tapping View all shows al
   await page.getByRole("button", { name: "View all" }).click();
   await expect(rows).toHaveCount(5);
   await expect(page.getByRole("button", { name: "View all" })).toHaveCount(0);
-  await expect(rowOf(page, "Shubhi")).toBeVisible();
+  await expect(rowOf(page, "Friend")).toBeVisible();
 });
 
 test("TC 29.3 Empty: the pin icon and No saved address yet, no rows", async ({ page, context }) => {

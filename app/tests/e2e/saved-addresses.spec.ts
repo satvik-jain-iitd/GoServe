@@ -4,7 +4,7 @@ import { setup, toDeliverTo } from "./helpers";
 
 const NOW = Date.now();
 const row = (id: string, label: string, address: string, lat: number, lng: number, agoDays: number) => ({ id, label, address, pin_code: "110016", lat, lng, last_used_at: new Date(NOW - agoDays * 86_400_000).toISOString() });
-const HOME = row("h1", "Home", "C-4, Green Park Extension, New Delhi", 28.5677, 77.2432, 3);
+const HOME = row("h1", "Home", "Z-4, Green Park Extension, New Delhi", 28.5677, 77.2432, 3);
 const OFFICE = row("o1", "Office", "Tower B, Connaught Place, New Delhi", 28.6315, 77.2167, 1);   // more recently used, about 8 km from Home
 
 async function open(page: Page, context: Parameters<typeof setup>[0], at: { latitude: number; longitude: number } | null, list = [HOME, OFFICE], tune?: (s: any) => void) {
