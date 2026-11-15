@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchDoorMethods, type DoorMethod } from "./lib/doorMethods";
 import { onBackScreen, screenStep } from "./lib/back";
 import { readRiderQr } from "./lib/payMethods";
-import { addDish, BILL_CLEARED_LINE, cartLines, cartTotal, changeQty, kitchenChangedBill, kitchenChangedLine, moveCart, notMadeLine, reorderCart, toOrderItems, type Cart, type Held, type Line } from "./lib/cart";
+import { addDish, BILL_CLEARED_LINE, cartLines, cartTotal, changeQty, kitchenChangedBill, KITCHEN_CHANGED_MENU, moveCart, notMadeLine, reorderCart, toOrderItems, type Cart, type Held, type Line } from "./lib/cart";
 import { mergeOrder, riderOrders, cancelKind, shortId, statusLabel, type Order, type RiderAction, confirmHandover, deliveredAt, earlyMin, isCash } from "./lib/kitchen";
 import { clientPlatform } from "./lib/platform";
 import { riderRefused, savePlatform, tapCall } from "./lib/signals";
@@ -548,7 +548,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }, [shown?.kind]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!closedNote) return;
-    const off = () => { if (document.querySelector(".ui-closed-note")) setClosedNote(null); };   // story 1540: only a tap while the line is on screen (the menu) uses it up; a line set on Deliver to waits for the menu
+    const off = () => { if (document.querySelector(".ui-closed-note, .ui-greet-line[role=status]")) setClosedNote(null); };   // story 1540: only a tap while the line is on screen (the menu) uses it up; a line set on Deliver to waits for the menu
     window.addEventListener("pointerdown", off, { capture: true });
     return () => window.removeEventListener("pointerdown", off, { capture: true });
   }, [closedNote]);
@@ -950,7 +950,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // Story 1540: the ONE point where a cart meets another kitchen. Every change of place (a saved address, a recent, a search, the map, "Deliver here", an edit, a delete) ends in
   // a kitchen and its menu; when that menu is of another kitchen than the one the cart was read against, the cart moves to the new kitchen's own dishes and the customer is told:
   // the Bill's notice line, the old price struck on each changed row, and a dish the kitchen does not make as a struck row with "Take it out". Away from the Bill the menu says it.
-  const [moved, setMoved] = useState<{ was: Record<string, number>; gone: Held[] } | null>(null);
+  const [moved, setMoved] = useState<{ was: Record<string, number>; gone: Held[]; seen: boolean } | null>(null);   // seen: the Bill was open since the change, so the menu has nothing left to point at
   const cartMenu = useRef<{ id: string; dishes: Dish[] } | null>(null);   // the kitchen and the menu the cart was last read against
   useEffect(() => {
     if (lock !== "customer" || !menu?.kitchen || menu.kitchen !== areaKitchenId) return;
@@ -961,11 +961,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     if (held.length === 0) return;
     const next = moveCart(held, menu.dishes), onBill = stepNow.current === "bill";
     setCart(next.cart);
-    setMoved({ was: next.was, gone: onBill ? next.gone : [] });
-    if (!onBill) setClosedNote(kitchenChangedLine(next.gone.map((g) => g.name)));
+    const none = !onBill && Object.keys(next.cart).length === 0;   // away from the Bill and no dish is made here: there is no bill to open, so the menu says the bill was cleared
+    setMoved(none ? null : { was: next.was, gone: next.gone, seen: onBill });   // the dishes this kitchen does not make stay as rows of the Bill, wherever the change happened
+    if (none) setClosedNote(BILL_CLEARED_LINE);
   }, [menu, areaKitchenId]);
-  useEffect(() => { if (moved && count === 0 && moved.gone.length === 0) setMoved(null); }, [moved, count]);   // the bill is empty (ordered, or all taken out): nothing is left to say
-  useEffect(() => { if (step !== "bill") setMoved((m) => (m?.gone.length ? { ...m, gone: [] } : m)); }, [step]);   // the rows to take out are the Bill's; leaving it lets them go
+  useEffect(() => { if (moved && count === 0 && (moved.gone.length === 0 || step !== "bill")) setMoved(null); }, [moved, count, step]);   // the bill is empty (ordered, all taken out, or emptied on the menu): nothing is left to say
+  useEffect(() => { setMoved((m) => (!m ? m : step === "bill" ? (m.seen ? m : { ...m, seen: true }) : m.seen && m.gone.length ? { ...m, gone: [] } : m)); }, [step]);   // the rows to take out are the Bill's; leaving it, once seen, lets them go
   const goneLines: Line[] = (moved?.gone ?? []).map((g) => ({ dish: { id: g.id, name: g.name, price_paise: g.price_paise, image_url: null, image_credit: null }, qty: g.qty, line_paise: g.price_paise * g.qty, gone: true }));
   const billLines: Line[] = [...(offers.quote?.swaps?.length && offers.quote.lines
     ? offers.quote.lines.map((l) => ({ dish: { id: l.menu_item_id, name: l.name, price_paise: l.unit_paise, image_url: null, image_credit: null }, qty: l.qty, line_paise: l.line_paise }))
@@ -1177,7 +1178,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             pin={pin} name={name} qty={cart} cartCount={count} cartTotal={total}
             kitchenName={kitchenName}
             openText={shown?.kind === "ok" ? openTill(shown.kitchen.closes_at) : ""}
-            closed={shown?.kind === "closed" ? closedCopy(shown.opens_at, shown.paused === true) : null} closedNote={closedNote}
+            closed={shown?.kind === "closed" ? closedCopy(shown.opens_at, shown.paused === true) : null} closedNote={closedNote === BILL_CLEARED_LINE ? null : closedNote} greetNote={closedNote === BILL_CLEARED_LINE ? closedNote : moved && !moved.seen ? KITCHEN_CHANGED_MENU : null}
             tellMe={tellMe} tellMeError={tellMeError} onTellMe={tellMeWhenOpen}
             onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
             onChangePin={() => setStep("deliver")} onOrders={() => setStep("orders")} address={isHere(where) ? "" : address} label={isHere(where) ? HERE : saved?.find((r) => r.id === selectedId)?.label ?? "Deliver to"} photo={photo} onProfile={() => setStep("account")} far={far} />

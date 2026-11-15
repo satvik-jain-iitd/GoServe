@@ -145,7 +145,12 @@ test("I delete my last address with a cart, and my phone is in another kitchen's
   await expect.poll(() => page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem("gs-draft") ?? "{}").cart ?? {}).length)).toBe(0);   // the app chose this place, not the customer: the old kitchen's cart is not carried over
   // Story 1540: the cleared bill is said in words, on the menu, where the customer next sees his bill is gone. The taps on Deliver to do not use the line up.
   await page.getByRole("button", { name: "Back" }).click();
-  await expect(page.getByRole("status").filter({ hasText: "Your delivery place changed, so your bill was cleared. Add dishes from this menu." })).toBeVisible();
+  await expect(page.locator(".ui-greet-line")).toHaveText("Place changed. Your bill was cleared.");   // in the greeting box: nothing on the menu moves (owner's rule 23)
+  await expect(page.locator(".ui-greet-line")).toHaveAttribute("role", "status");
+  expect(await page.locator(".ui-greet-line").evaluate((el) => el.scrollWidth <= el.clientWidth && el.getBoundingClientRect().height < 20)).toBe(true);   // one line, whole
+  await expect(page.locator(".ui-closed-note")).toHaveCount(0);
+  await page.setViewportSize({ width: 360, height: 800 });   // the narrow phone: still one whole line
+  expect(await page.locator(".ui-greet-line").evaluate((el) => el.scrollWidth <= el.clientWidth && el.getBoundingClientRect().height < 20)).toBe(true);
   await expect(page.getByRole("button", { name: /View bill/ })).toHaveCount(0);
 });
 
