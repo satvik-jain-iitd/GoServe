@@ -4,7 +4,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { setup } from "./helpers";
 
 const NOW = Date.now();
-const HOME = { id: "h1", label: "Home", address: "C-128, Green Avenue Colony, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: new Date(NOW - 3 * 86_400_000).toISOString() };
+const HOME = { id: "h1", label: "Home", address: "Z-900, Green Avenue Colony, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: new Date(NOW - 3 * 86_400_000).toISOString() };
 const FAR_PHONE = { latitude: 28.6139, longitude: 77.209 };   // about 6 km from Home
 const NEAR_PHONE = { latitude: 28.5690, longitude: 77.2440 };   // about 150 m
 const GREEN_PARK = { ok: true, address: "Green Park, New Delhi, Delhi", pin: "110016", locality: "Green Park", town: "New Delhi" };

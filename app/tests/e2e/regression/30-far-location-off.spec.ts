@@ -52,8 +52,8 @@ test("TC 30.3 Look: location blocked shows the sheet Where to bring your food? w
 test("TC 30.4 Tap a saved address in the sheet: the sheet closes and the menu is for that address", async ({ page, context }) => {
   await STEPS["location-off"](context, page, "/customer/");
   // Home and Office are both saved. Home is in the header before the tap, so the tap must move the header to Office.
-  const OFFICE = { id: "o1", label: "Office", address: "2nd floor, Mahoba Road, near the bus stand, Chhatarpur 471001", pin_code: "110016", lat: 24.9437, lng: 79.5833, last_used_at: "2026-11-04T10:00:00Z" };
-  const HOME = { id: "h1", label: "Home", address: "C-128, Green Avenue Colony, Satai Road, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
+  const OFFICE = { id: "o1", label: "Office", address: "2nd floor, Sample Road, near the bus stand, Chhatarpur 471001", pin_code: "110016", lat: 24.9437, lng: 79.5833, last_used_at: "2026-11-04T10:00:00Z" };
+  const HOME = { id: "h1", label: "Home", address: "Z-900, Green Avenue Colony, Sample Road, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
   await context.route((url) => url.pathname === "/rest/v1/addresses", (r) => (r.request().method() === "GET"
     ? r.fulfill({ status: 200, headers: { "access-control-allow-origin": "*", "content-type": "application/json" }, body: JSON.stringify([HOME, OFFICE]) })
     : r.fallback()));

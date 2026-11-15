@@ -19,12 +19,13 @@ export const NINE = new Date(2026, 9, 27, 9, 0, 0);   // the greeting depends on
 // Story 829: `welcome` is the front door as production shows it (phone code switch off: Google only); `welcome-phone` is the same door with the switch on.
 // The rows of the boards C9 to C13, the phone in Chhatarpur, and Deliver to opened. serve: false answers "no kitchen reaches this".
 // pin_code is the test kitchen's so the menu opens; the boards show the pin inside the words, which are untouched.
+// The words are invented samples of the same length as the boards' rows (no person's name, no real house): the layout is tried the same way.
 const BOARD_ROWS = [
-  { id: "h1", label: "Home", address: "C-128, In front of Shiv Mandir Ground, Green Avenue Colony, Chhatarpur, Madhya Pradesh 471001", pin_code: "110016", lat: 24.9167, lng: 79.5833, last_used_at: "2026-11-08T10:00:00Z" },
-  { id: "o1", label: "Office", address: "2nd floor, Mahoba Road, near the bus stand, Chhatarpur 471001", pin_code: "110016", lat: 24.9437, lng: 79.5833, last_used_at: "2026-11-07T10:00:00Z" },
-  { id: "b1", label: "Bhopal home", address: "Flat 41, Chitragupt Nagar, Kotra, Aradhana Nagar, Bhopal 462003", pin_code: "110016", lat: 23.2599, lng: 77.4126, last_used_at: "2026-11-06T10:00:00Z" },
-  { id: "w1", label: "Work", address: "171/7, Hari Singh Yadav House, Gali Number 7, Hans Enclave, Gurugram 122004", pin_code: "110016", lat: 28.4595, lng: 77.0266, last_used_at: "2026-11-05T10:00:00Z" },
-  { id: "s1", label: "Shubhi", address: "Room no. 407, beside Melange Tower, Patrika Nagar, Madhapur, Hyderabad 500081", pin_code: "110016", lat: 17.4486, lng: 78.3908, last_used_at: "2026-11-04T10:00:00Z" },
+  { id: "h1", label: "Home", address: "Z-900, In front of the Sample Park gate, Green Avenue Colony, Chhatarpur, Madhya Pradesh 471001", pin_code: "110016", lat: 24.9167, lng: 79.5833, last_used_at: "2026-11-08T10:00:00Z" },
+  { id: "o1", label: "Office", address: "2nd floor, Sample Road, near the bus stand, Chhatarpur 471001", pin_code: "110016", lat: 24.9437, lng: 79.5833, last_used_at: "2026-11-07T10:00:00Z" },
+  { id: "b1", label: "Parents", address: "Flat 00, Sample Nagar, Kotra, Example Nagar Phase 2, Bhopal 462003", pin_code: "110016", lat: 23.2599, lng: 77.4126, last_used_at: "2026-11-06T10:00:00Z" },
+  { id: "w1", label: "Work", address: "000/0, Sample House Block Zero, Gali Number 0, Test Enclave, Gurugram 122004", pin_code: "110016", lat: 28.4595, lng: 77.0266, last_used_at: "2026-11-05T10:00:00Z" },
+  { id: "s1", label: "Friend", address: "Room no. 000, beside Sample Tower, Example Nagar, Madhapur, Hyderabad 500081", pin_code: "110016", lat: 17.4486, lng: 78.3908, last_used_at: "2026-11-04T10:00:00Z" },
 ];
 const RECENT_ROWS = [   // invented samples: a recent has a name, the customer's own words and a confirmed point
   { id: "r1", name: "Sample Nagar", address: "Flat 2, near the park gate, Sample Nagar", pin_code: "110016", lat: 24.9201, lng: 79.5861, house: "Flat 2", landmark: "the park gate", used_at: "2026-10-26T10:00:00Z" },
@@ -104,7 +105,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await page.goto(path); await expect(page.getByText("Working out the time")).toBeVisible(); },
   "menu-far": async (context, page, path) => {   // story #1056, board SW2: the menu with Home kept in the header and the strip "You are 6 km from Home · Deliver here"
     const net = await setup(context, page, [], { pin: null });
-    const home = { id: "h1", label: "Home", address: "C-128, Green Avenue Colony, Satai Road, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
+    const home = { id: "h1", label: "Home", address: "Z-900, Green Avenue Colony, Sample Road, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
     net.state.addresses = [home];
     net.state.nearPin = "110099";   // story 1529: the strip is for a cart in progress whose kitchen does not serve the place the phone is at
     await context.addInitScript((h) => { window.localStorage.setItem("gs-place", JSON.stringify({ address: h.address, pin: h.pin_code, lat: h.lat, lng: h.lng, house: "", landmark: "", confirmed: true, id: h.id })); window.localStorage.setItem("gs-pin", h.pin_code); window.localStorage.setItem("gs-draft", JSON.stringify({ step: "menu", cart: { d1: 1 }, address: h.address, name: "", phone: "" })); }, home);
@@ -135,7 +136,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await expect(page.getByText("We deliver here · the kitchen is 1.2 km from the pin")).toBeVisible(); },
   "location-off": async (context, page, path) => {   // story #1056, board SW3: the sheet over the menu (bug 1526, board LF-SHEET-Blocked)
     const net = await setup(context, page, [], { pin: null });
-    net.state.addresses = [{ id: "h1", label: "Home", address: "C-128, Green Avenue Colony, Satai Road, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" }];
+    net.state.addresses = [{ id: "h1", label: "Home", address: "Z-900, Green Avenue Colony, Sample Road, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" }];
     await page.addInitScript(() => { Object.defineProperty(navigator, "permissions", { value: { query: async () => ({ state: "denied" }) }, configurable: true }); });
     await page.goto(path); await expect(page.getByRole("dialog", { name: "Where to bring your food?" })).toBeVisible(); },
   "add-dish": async (context, page, path) => {   // story 923: the admin's Add dish form
@@ -152,13 +153,13 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await page.getByRole("button", { name: "Edit details" }).click(); await expect(page.getByRole("dialog", { name: "Edit Hauz Khas Kitchen" })).toBeVisible(); },
   "deliver-to": async (context, page, path) => {   // story #976: the Deliver to page, board C2-AddressSheet
     const net = await setup(context, page, [], { pin: null }); net.state.addresses = [
-      { id: "h1", label: "Home", address: "C-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" },
+      { id: "h1", label: "Home", address: "Z-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" },
       { id: "o1", label: "Office", address: "Tower B, Connaught Place, New Delhi", pin_code: "110016", lat: 28.6315, lng: 77.2167, last_used_at: "2026-11-01T10:00:00Z" }];
     await page.goto(path);
     await viaSheet(page); await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible(); },
   "deliver-to-search": async (context, page, path) => {   // story #1036: Deliver to after a submitted search, board C8-SearchResults
     const net = await setup(context, page, [], { pin: null }); net.state.addresses = [
-      { id: "h1", label: "Home", address: "C-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" },
+      { id: "h1", label: "Home", address: "Z-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" },
       { id: "o1", label: "Office", address: "Tower B, Connaught Place, New Delhi", pin_code: "110016", lat: 28.6315, lng: 77.2167, last_used_at: "2026-11-01T10:00:00Z" }];
     net.state.places = { status: 200, body: { ok: true, results: [
       { name: "Green Park", address: "Green Park, Delhi, 110016", lat: 28.5599, lng: 77.2065, pin: "110016", served: true },
@@ -168,7 +169,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     const box = page.getByRole("searchbox", { name: "Search an area or address" }); await box.fill("green park"); await box.press("Enter");
     await expect(page.getByText("Places · 2 found")).toBeVisible(); },
   "pin-map": async (context, page, path) => {   // story #1037: the one full-screen map, board C6-PinMap (tiles answered with one warm grey pixel, words and served answered by the mocks)
-    const net = await setup(context, page, [], { pin: null }); net.state.addresses = [{ id: "h1", label: "Home", address: "C-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" }];
+    const net = await setup(context, page, [], { pin: null }); net.state.addresses = [{ id: "h1", label: "Home", address: "Z-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" }];
     net.state.geocode = { status: 200, body: { ok: true, address: "Green Park, New Delhi, Delhi", pin: "110016", locality: "Green Park", town: "New Delhi" } };
     await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+vg+AAVYAqhyXHCrAAAAAElFTkSuQmCC", "base64") }));
     await page.goto(path); await viaSheet(page); await page.getByRole("button", { name: "Add new address" }).click();

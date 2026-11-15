@@ -5,7 +5,7 @@ import { setup, phoneAt, toDeliverTo } from "./helpers";
 
 const NOW = Date.now();
 const row = (id: string, label: string, address: string, agoDays: number) => ({ id, label, address, pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: new Date(NOW - agoDays * 86_400_000).toISOString() });
-const HOME = row("h1", "Home", "C-4, Green Park Extension, New Delhi", 3);
+const HOME = row("h1", "Home", "Z-4, Green Park Extension, New Delhi", 3);
 const OFFICE = row("o1", "Office", "Tower B, Connaught Place, New Delhi", 1);
 const PLACES = { status: 200, body: { ok: true, results: [
   { name: "Green Park", address: "Green Park, Delhi, 110016", lat: 28.5599, lng: 77.2065, pin: "110016", served: true },

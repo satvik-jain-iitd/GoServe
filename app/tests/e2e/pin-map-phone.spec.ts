@@ -5,7 +5,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { setup, toDeliverTo } from "./helpers";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
-const HOME = { id: "h1", label: "Home", address: "C-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: new Date(Date.now() - 3 * 86_400_000).toISOString() };
+const HOME = { id: "h1", label: "Home", address: "Z-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: new Date(Date.now() - 3 * 86_400_000).toISOString() };
 const PHONE = { lat: 28.56, lng: 77.2 };
 const KITCHEN = { lat: 28.5494, lng: 77.2001 };
 const DELHI = { lat: 28.6139, lng: 77.209 };

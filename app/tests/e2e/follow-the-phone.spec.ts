@@ -6,7 +6,7 @@ import { asked, comeBack, phoneLoc, setLoc, setup } from "./helpers";
 import { firstOpenToMenu } from "./firstOpen";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
-const HOME = { id: "h1", label: "Home", address: "C-128, Green Avenue Colony, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-01T10:00:00Z" };
+const HOME = { id: "h1", label: "Home", address: "Z-900, Green Avenue Colony, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-01T10:00:00Z" };
 const WORK = { id: "w1", label: "Work", address: "Tower B, Sector 62, Noida", pin_code: "110016", lat: 28.6208, lng: 77.3639, last_used_at: "2026-11-05T10:00:00Z" };   // used last
 const AT_HOME = { latitude: 28.5690, longitude: 77.2440 };   // about 150 m from Home
 const AWAY = { latitude: 28.6139, longitude: 77.209 };   // about 6 km from Home, far from Work too

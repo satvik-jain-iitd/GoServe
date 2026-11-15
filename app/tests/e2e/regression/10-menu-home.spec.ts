@@ -7,7 +7,7 @@ import { setup, typePlace } from "../helpers";
 import { firstOpenToMenu } from "../firstOpen";
 
 const PATH = "/customer/";
-const ADDRESS = "C-128, Green Avenue Colony, Satai Road, Chhatarpur 471001";
+const ADDRESS = "Z-900, Green Avenue Colony, Sample Road, Chhatarpur 471001";
 const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
 test.use({ viewport: { width: 390, height: 844 } });
 

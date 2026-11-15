@@ -11,7 +11,7 @@ const toBill = async (page: Page) => {
   await page.getByRole("button", { name: /View bill/ }).click();
   await expect(page.getByRole("button", { name: /Place order/ })).toBeVisible();
 };
-const SAVED = { name: null, phone: "9876543210", address: "C-128, Green Park, New Delhi" };
+const SAVED = { name: null, phone: "9876543210", address: "Z-900, Green Park, New Delhi" };
 
 test("P1 (BF1) a first order: one phone field with its reason, no name field, Place order off until ten digits", async ({ page, context }) => {
   await setup(context, page);

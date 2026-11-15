@@ -9,7 +9,7 @@ const muted = (page: Page, sel: string) => page.evaluate((s) => {
 
 test("S2 the address details on the map show the grey 123456 hint when the map gave no pin code", async ({ page, context }) => {
   const net = await setup(context, page, [], { pin: "110016" });
-  net.state.addresses = [{ id: "h1", label: "Home", address: "C-4, Green Park Extension, New Delhi", pin_code: "110016", lat: null, lng: null, last_used_at: new Date().toISOString() }];
+  net.state.addresses = [{ id: "h1", label: "Home", address: "Z-4, Green Park Extension, New Delhi", pin_code: "110016", lat: null, lng: null, last_used_at: new Date().toISOString() }];
   net.state.geocode = { status: 200, body: { ok: true, address: "Green Park, New Delhi", pin: null, locality: "Green Park", town: "New Delhi" } };   // story #1051: the old edit sheet is gone; Edit opens the map and its details
   await phoneAt(context, { lat: 28.59, lng: 77.26 });   // story 1529: the phone is found, so no sheet asks
   await page.goto("/customer/");

@@ -4,7 +4,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { setup, phoneAt, toDeliverTo } from "./helpers";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
-const HOME = { id: "h1", label: "Home", address: "C-128, near the park gate, Green Park, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
+const HOME = { id: "h1", label: "Home", address: "Z-900, near the park gate, Green Park, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
 const WORK = { id: "w1", label: "Work", address: "Tower B, Sector 62, Noida", pin_code: "110016", lat: 28.6208, lng: 77.3639, last_used_at: "2026-11-01T10:00:00Z" };
 const onMenu = (page: Page) => expect(page.getByRole("searchbox", { name: "Search dishes" })).toBeVisible();
 const deliverTo = (page: Page) => page.getByRole("heading", { name: "Deliver to", exact: true });
