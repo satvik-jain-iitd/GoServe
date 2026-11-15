@@ -63,6 +63,10 @@ describe("an order starts only at the Bill's button", () => {
     expect(app.match(/\{place\}/g)).toEqual(["{place}"]);
     expect(app.match(/onPlace=\{place\}/g)).toHaveLength(1);
   });
+  it("the name sheet of the old checkout path is gone: it had no caller", () => {
+    expect(readFileSync(resolve(__dirname, "../../src/screens/OtpSheet.tsx"), "utf8")).not.toMatch(/NameSheet/);
+    expect(app).not.toMatch(/NameSheet/);
+  });
   it("the phone-code sheet shows only as the welcome wall, never at checkout", () => {
     expect(app.match(/<OtpSheet\b/g)).toHaveLength(1);
     expect(app).toMatch(/<OtpSheet welcome\b/);
