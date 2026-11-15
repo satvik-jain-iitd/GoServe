@@ -1,6 +1,6 @@
 // Story #668 (boards A1 to A3): the customer's own address from the phone's location, through OpenStreetMap's reverse lookup (no key). Any failure means "type it by hand".
 import { describe, expect, it, vi } from "vitest";
-import { addressFrom, reverseAddress, dropFor } from "../../src/lib/locate";
+import { addressFrom, locLine, locWhy, locWords, reverseAddress } from "../../src/lib/locate";
 
 const NOMINATIM = { display_name: "B-12, Lajpat Nagar II, Lajpat Nagar, South Delhi, New Delhi, Delhi, 110024, India", address: { house_number: "B-12", road: "Lajpat Nagar II", suburb: "Lajpat Nagar", city: "New Delhi", state: "Delhi", postcode: "110024", country: "India" } };
 
@@ -52,44 +52,24 @@ describe("reverseAddress", () => {
   });
 });
 
-// Story #910: the drop point follows the address. A hand edit after a location fix clears the fix; the same address keeps it; a new fix brings its own address.
-describe("dropFor", () => {
-  const fix = { lat: 28.5677, lng: 77.2432 };
-  it("keeps the fix while the address is the one the location found", () => {
-    expect(dropFor(fix, "B-12, Lajpat Nagar II", "B-12, Lajpat Nagar II")).toEqual(fix);
-    expect(dropFor(fix, "B-12, Lajpat Nagar II", "  B-12, Lajpat Nagar II  ")).toEqual(fix);
-  });
-  it("clears the fix when the customer typed a different address", () => {
-    expect(dropFor(fix, "B-12, Lajpat Nagar II", "B-12, Lajpat Nagar II, near the park gate")).toBeNull();
-  });
-  it("is null with no fix, or with no located address", () => {
-    expect(dropFor(null, null, "Flat 4")).toBeNull();
-    expect(dropFor(fix, null, "Flat 4")).toBeNull();
-  });
-  it("a second location from another place carries its own fix and its own address", () => {
-    const again = { lat: 28.6, lng: 77.3 };
-    expect(dropFor(again, "C-4, Hauz Khas", "C-4, Hauz Khas")).toEqual(again);
-  });
-});
-
 // Story #987 (was #969): Nominatim has no postcode in most of small-town India. The fallback asks our own table (rpc nearest_pin, GeoNames), never a third party.
-// The Chhatarpur reply is the one measured on 7 Nov 2026 (no postcode at any zoom).
+// The reply has the shape of one measured on 7 Nov 2026 (no postcode at any zoom); the words are samples.
 describe("the nearest pin when the reverse lookup has none (story 987)", () => {
-  const CHHATARPUR = { address: { road: "Link Road", village: "Rajnagar", state_district: "Chhatarpur", state: "Madhya Pradesh", country: "India" } };
+  const SAMPLETOWN = { address: { road: "Link Road", village: "Sample Village", state_district: "Sampletown", state: "Sample State", country: "India" } };
   const deps = (fetchFn: typeof fetch) => ({ fetchFn, url: "https://x.supabase.co", anon: "anon-key", token: async () => "tok" });
-  const route = (calls: { url: string; init?: RequestInit }[], pin: () => Promise<Response>, nominatim: unknown = CHHATARPUR) => (async (u: string | URL | Request, init?: RequestInit) => {
+  const route = (calls: { url: string; init?: RequestInit }[], pin: () => Promise<Response>, nominatim: unknown = SAMPLETOWN) => (async (u: string | URL | Request, init?: RequestInit) => {
     const url = String(u); calls.push({ url, init });
     return url.includes("nominatim") ? new Response(JSON.stringify(nominatim)) : pin();
   }) as typeof fetch;
-  const ask = (f: typeof fetch, lat = 24.91, lng = 79.59) => reverseAddress(lat, lng, f, deps(f));
+  const ask = (f: typeof fetch, lat = 28.57, lng = 77.24) => reverseAddress(lat, lng, f, deps(f));
 
   it("fills the pin from our own table with exactly two calls, the second to the Supabase rpc and nowhere else", async () => {
     const calls: { url: string; init?: RequestInit }[] = [];
-    const r = await ask(route(calls, async () => new Response(JSON.stringify("471001"))));
-    expect(r).toEqual({ address: "Link Road, Rajnagar, Madhya Pradesh", pin: "471001" });
+    const r = await ask(route(calls, async () => new Response(JSON.stringify("900001"))));
+    expect(r).toEqual({ address: "Link Road, Sample Village, Sample State", pin: "900001" });
     expect(calls).toHaveLength(2);
     expect(calls[1].url).toBe("https://x.supabase.co/rest/v1/rpc/nearest_pin");
-    expect(JSON.parse(String(calls[1].init?.body))).toEqual({ p_lat: 24.91, p_lng: 79.59 });
+    expect(JSON.parse(String(calls[1].init?.body))).toEqual({ p_lat: 28.57, p_lng: 77.24 });
     expect(calls.some((c) => c.url.includes("overpass"))).toBe(false);
   });
 
@@ -109,18 +89,46 @@ describe("the nearest pin when the reverse lookup has none (story 987)", () => {
   it("leaves the pin empty (never a guess) when the table has nothing, fails, or answers with an error", async () => {
     for (const pin of [async () => new Response("null"), async () => { throw new Error("offline"); }, async () => new Response("busy", { status: 429 }), async () => new Response("not json")]) {
       const r = await ask(route([], pin));
-      expect(r).toEqual({ address: "Link Road, Rajnagar, Madhya Pradesh", pin: "" });
+      expect(r).toEqual({ address: "Link Road, Sample Village, Sample State", pin: "" });
     }
   });
 
   it("gives up after 4 seconds and leaves the pin empty", async () => {
     vi.useFakeTimers();
     try {
-      const f = (async (u: string | URL | Request, init?: RequestInit) => String(u).includes("nominatim") ? new Response(JSON.stringify(CHHATARPUR))
+      const f = (async (u: string | URL | Request, init?: RequestInit) => String(u).includes("nominatim") ? new Response(JSON.stringify(SAMPLETOWN))
         : new Promise<Response>((_res, rej) => init?.signal?.addEventListener("abort", () => rej(new DOMException("aborted", "AbortError"))))) as typeof fetch;
       const p = ask(f);
       await vi.advanceTimersByTimeAsync(4100);
-      expect(await p).toEqual({ address: "Link Road, Rajnagar, Madhya Pradesh", pin: "" });
+      expect(await p).toEqual({ address: "Link Road, Sample Village, Sample State", pin: "" });
     } finally { vi.useRealTimers(); }
+  });
+});
+
+// Bug 1526: every failure was called "blocked". The browser's error code says which of the three it is; the line is true for that cause.
+describe("locWhy and its words (bug 1526)", () => {
+  it("reads the error code: 1 blocked, 2 the phone's location is off, 3 too slow; no code is a line true for any cause", () => {
+    expect(locWhy({ code: 1 })).toBe("denied");
+    expect(locWhy({ code: 2 })).toBe("off");
+    expect(locWhy({ code: 3 })).toBe("slow");
+    expect(locWhy(new Error("no_geolocation"))).toBe("none");   // story 1530: an error with no code is not called "off"
+    expect(locWhy(null)).toBe("none");
+    expect(locLine("none" as never, "search above")).toBe("We could not find where you are. Try again, or search above.");
+    expect(locLine("none" as never, "search above")).not.toMatch(/off|blocked/i);
+  });
+  it("blocked again after a tap says so, so the second tap shows something new", () => {
+    expect(locWhy({ code: 1 }, "denied")).toBe("still");
+    expect(locWhy({ code: 1 }, "still")).toBe("still");
+    expect(locWhy({ code: 1 }, "off")).toBe("denied");
+    expect(locWhy({ code: 2 }, "denied")).toBe("off");
+  });
+  it("only the blocked lines say blocked", () => {
+    for (const why of ["ask", "off", "slow"] as const) expect(locLine(why, "search above")).not.toMatch(/blocked/i);
+    expect(locLine("denied", "search above")).toBe("Location is off or blocked. Turn on location in your phone settings, or search above.");
+    expect(locLine("off", "search for your address")).toBe("Your phone's location is off. Turn it on, or search for your address.");
+    expect(locLine("slow", "search above")).toBe("Finding you is taking too long. Try again, or search above.");
+    expect(locWords("still", "search above")).toEqual({ title: "Still off or blocked", sub: "Turn on location in your phone's settings, or search above." });   // the way out is the screen's own: no "pick a place" where there is no list
+    expect(locLine("still", "search for your address")).toBe("Still off or blocked. Turn on location in your phone's settings, or search for your address.");
+    expect(locWords("ask", "search above")).toEqual({ title: "We can't see where you are right now", sub: "Tap Use current location, or search above." });
   });
 });

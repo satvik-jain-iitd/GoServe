@@ -6,7 +6,7 @@ import { setup } from "./helpers";
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
 const OSM_CORS = { "access-control-allow-origin": "*", "content-type": "application/json" };
 const NOW = Date.now();
-const HOME = { id: "h1", label: "Home", address: "C-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: new Date(NOW - 3 * 86_400_000).toISOString() };
+const HOME = { id: "h1", label: "Home", address: "Z-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: new Date(NOW - 3 * 86_400_000).toISOString() };
 const GREEN_PARK = { ok: true, address: "Green Park, New Delhi, Delhi", pin: "110016", locality: "Green Park", town: "New Delhi" };
 const PHONE = { latitude: 28.56, longitude: 77.2 };
 
@@ -20,7 +20,8 @@ async function open(page: Page, context: Parameters<typeof setup>[0], over: { ge
   await context.route("https://nominatim.openstreetmap.org/reverse**", (r) => r.fulfill({ status: 500, headers: OSM_CORS, body: "{}" }));
   if (over.permission !== false) { await context.grantPermissions(["geolocation"]); await context.setGeolocation(PHONE); }
   await page.goto("/customer/");
-  await page.getByRole("button", { name: /^Home\b/ }).click();
+  // story 1529: the place follows the phone, so the header is not always Home. Story 1547: with no permission the place on this phone stays and no sheet opens
+  await page.getByTitle("Change the delivery address").click();
   return net;
 }
 const screen = (page: Page) => page.getByRole("region", { name: "Pin map" });
@@ -132,17 +133,17 @@ test("S8 no permission: no dot, and the map never asks for it by itself", async 
 });
 
 test("S9 Use current location opens the map at the phone; a tapped search result opens it at the place; back returns to Deliver to", async ({ page, context }) => {
-  const net = await open(page, context, { places: { status: 200, body: { ok: true, results: [{ name: "Chhatarpur", address: "Chhatarpur, Madhya Pradesh, 471001", lat: 24.9, lng: 79.58, pin: "471001", served: false }] } } });
+  const net = await open(page, context, { places: { status: 200, body: { ok: true, results: [{ name: "Sampletown", address: "Sampletown, Sample State, 900001", lat: 26.07, lng: 77.24, pin: "900001", served: false }] } } });
   await page.getByRole("button", { name: "Use current location" }).click();
   await expect(screen(page)).toBeVisible();
   await expect.poll(() => net.calls.serve.at(-1) ?? "").toContain("lat=28.56");
   await page.getByRole("button", { name: "Back" }).click();
   await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();
   const box = page.getByRole("searchbox", { name: "Search an area or address" });
-  await box.fill("chhat"); await box.press("Enter");
+  await box.fill("sample"); await box.press("Enter");
   await page.getByRole("region", { name: "Places" }).getByRole("button").first().click();
   await expect(screen(page)).toBeVisible();
-  await expect.poll(() => net.calls.serve.at(-1) ?? "").toContain("lat=24.9");
+  await expect.poll(() => net.calls.serve.at(-1) ?? "").toContain("lat=26.07");
 });
 
 test("S10 Confirm & proceed opens the details step over the same map (story #1038), and saving stores the pin's place", async ({ page, context }) => {

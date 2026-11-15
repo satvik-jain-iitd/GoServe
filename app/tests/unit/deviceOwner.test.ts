@@ -5,7 +5,7 @@ import { claimDevice, OWNER_KEY } from "../../src/lib/deviceOwner";
 
 const mem = (init: Record<string, string> = {}) => { const m = { ...init }; return { getItem: (k: string) => m[k] ?? null, setItem: (k: string, v: string) => { m[k] = v; }, removeItem: (k: string) => { delete m[k]; }, key: (i: number) => Object.keys(m)[i] ?? null, get length() { return Object.keys(m).length; }, dump: () => m }; };
 const session = (id: string | null): Record<string, string> => (id ? { "sb-abc-auth-token": JSON.stringify({ user: { id } }) } : {});
-const MINE = { "gs-pin": "110016", "gs-kitchen": "{}", "gs-draft": "{}", gs_alerts_asked: "1" };
+const MINE = { "gs-place": "{}", "gs-pin": "110016", "gs-kitchen": "{}", "gs-draft": "{}", gs_alerts_asked: "1" };
 
 describe("claimDevice", () => {
   it("a different account clears the area, the draft and the alerts choice, and takes the device", () => {

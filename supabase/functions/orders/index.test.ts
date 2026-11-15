@@ -14,6 +14,7 @@ const deps = (o: Partial<Deps> = {}): Deps => ({
   rules: async () => DEFAULT_RULES, coupon: async () => null, coupons: async () => [], validate: async () => ({ ok: true }), firstOrder: async () => false,
   session: async () => "s1",
   existing: async () => null,
+  needsPoint: async () => false,   // story 1528: the switch starts off
   rate: async (...a) => { rated.push(a); return { ok: true }; },
   place: async (...a) => { placed.push(a); return { ok: true, created: true, order: row }; }, ...o,
 });
@@ -161,12 +162,46 @@ Deno.test("a drop point in the address reaches the DB as lat and lng", async () 
   assertEquals(placed[0][7], { lat: 28.5677, lng: 77.2432 });
 });
 
-Deno.test("no drop point, or a bad one, reaches the DB as null and the order still goes", async () => {
-  for (const address of [{ pin_code: "110016", text: "Flat 4" }, { pin_code: "110016", text: "Flat 4", lat: 91, lng: 77 }, { pin_code: "110016", text: "Flat 4", lat: "x", lng: 77 }, { pin_code: "110016", text: "Flat 4", lat: 28.5 }]) {
+const NO_POINT = [{ pin_code: "110016", text: "Flat 4" }, { pin_code: "110016", text: "Flat 4", lat: 91, lng: 77 }, { pin_code: "110016", text: "Flat 4", lat: "x", lng: 77 }, { pin_code: "110016", text: "Flat 4", lat: 28.5 }];
+Deno.test("with the switch order_needs_point off: no drop point, or a bad one, reaches the DB as null and the order still goes", async () => {
+  for (const address of NO_POINT) {
     placed.length = 0;
     assertEquals((await post(makeHandler(deps()), body({ address }))).status, 201);
     assertEquals(placed[0][7], null);
   }
+});
+
+// Story 1528, scenario "The server refuses an order with no point". The refusal waits behind the settings switch order_needs_point (off until every live build sends a point).
+Deno.test("The server refuses an order with no point: with the switch on, no point or a bad one is 422 point_required, nothing is quoted or placed", async () => {
+  const on = makeHandler(deps({ needsPoint: async () => true, catalog: async () => { throw new Error("the dishes must not be read"); } }));
+  for (const address of NO_POINT) {
+    placed.length = 0;
+    const res = await post(on, body({ address }));
+    assertEquals([res.status, await res.json()], [422, { ok: false, error: "point_required", message: "Set your place on the map to place the order." }]);
+    assertEquals(placed.length, 0);
+  }
+});
+
+Deno.test("with the switch on an order with a point still goes, and the switch is not read for it", async () => {
+  placed.length = 0;
+  const on = makeHandler(deps({ needsPoint: async () => { throw new Error("not read when the order has a point"); } }));
+  assertEquals((await post(on, body({ address: { pin_code: "110016", text: "Flat 4", lat: 28.5677, lng: 77.2432 } }))).status, 201);
+  assertEquals(placed[0][7], { lat: 28.5677, lng: 77.2432 });
+});
+
+Deno.test("with the switch on the same key again still answers the order that exists, even with no point (a retry from an old build)", async () => {
+  const on = makeHandler(deps({ needsPoint: async () => true, existing: async () => row }));
+  const res = await post(on, body());
+  assertEquals([res.status, (await res.json()).created], [200, false]);
+});
+
+// Review of PR 1550: the function's read is the first of two checks. When it fails the switch counts as off here, and place_order_v2 checks again in the database.
+// So a failed read never turns an old build's order into a 502.
+Deno.test("a switch that cannot be read counts as off here: the order goes to the database, which checks again", async () => {
+  placed.length = 0;
+  const res = await post(makeHandler(deps({ needsPoint: async () => { throw new Error("db down: secret detail"); } })), body());
+  assertEquals(res.status, 201);
+  assertEquals(placed.length, 1);
 });
 
 // Story #935: an optional note for the kitchen, up to 200 characters, trimmed, null when blank; a longer one is refused before anything is written.

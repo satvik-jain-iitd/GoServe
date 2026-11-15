@@ -1,6 +1,6 @@
 // Story #48, S1: the bill shows the right total. The cart is plain data; the server checks the price again (place_order).
 import { describe, expect, it } from "vitest";
-import { addDish, cartLines, cartTotal, changeQty, MAX_QTY, toOrderItems } from "../../src/lib/cart";
+import { addDish, cartLines, cartTotal, changeQty, MAX_QTY, moveCart, toOrderItems } from "../../src/lib/cart";
 import { formatRupees } from "../../src/lib/money";
 
 const menu = [
@@ -56,5 +56,37 @@ describe("money", () => {
     expect(formatRupees(32000)).toBe("₹320");
     expect(formatRupees(6050)).toBe("₹60.50");
     expect(formatRupees(0)).toBe("₹0");
+  });
+});
+
+// Story 1540: the delivery place changes to another kitchen's area. The cart moves to that kitchen's own dishes, and what changed is kept so the Bill can say it.
+describe("moveCart: a cart moves to another kitchen's menu", () => {
+  const held = [{ id: "a", name: "Butter Chicken", qty: 2, price_paise: 32000 }, { id: "b", name: "Dal Makhani", qty: 1, price_paise: 22000 }];
+  const dish = (id: string, name: string, price_paise: number) => ({ id, name, price_paise, image_url: null, image_credit: null });
+  it("a dish with the same name becomes the new kitchen's dish; a changed price keeps the old one, the same price keeps nothing", () => {
+    expect(moveCart(held, [dish("x", " butter chicken ", 35000), dish("y", "Dal Makhani", 22000)])).toEqual({ cart: { x: 2, y: 1 }, was: { x: 32000 }, gone: [] });
+  });
+  it("the same id wins over a name", () => {
+    expect(moveCart([held[0]], [dish("z", "Butter Chicken", 1), dish("a", "Murgh Makhani", 32000)])).toEqual({ cart: { a: 2 }, was: {}, gone: [] });
+  });
+  it("a dish the new kitchen does not make is named, never dropped in silence, and is not in the cart", () => {
+    expect(moveCart(held, [dish("x", "Butter Chicken", 32000)])).toEqual({ cart: { x: 2 }, was: {}, gone: [held[1]] });
+    expect(moveCart(held, [])).toEqual({ cart: {}, was: {}, gone: held });
+  });
+  it("two held dishes that land on one dish add up, within the limit", () => {
+    expect(moveCart([{ ...held[0], qty: 15 }, { id: "c", name: "butter chicken", qty: 15, price_paise: 32000 }], [dish("x", "Butter Chicken", 32000)]).cart).toEqual({ x: MAX_QTY });
+  });
+  // The reviewer's guards on the name match (15 Nov 2026): a name is a guess, so it must point at one dish only, of the same kind.
+  it("guard a: a name that two or more dishes of the new kitchen carry is not a match; the dish is not made there", () => {
+    expect(moveCart([held[0]], [dish("x", "Butter Chicken", 32000), dish("y", "butter chicken", 18000)])).toEqual({ cart: {}, was: {}, gone: [held[0]] });
+  });
+  it("guard b: the veg mark must be the same on both dishes, else it is not a match", () => {
+    const paneer = { id: "p", name: "Paneer Roll", qty: 1, price_paise: 12000, veg: true };
+    expect(moveCart([paneer], [{ ...dish("x", "Paneer Roll", 12000), veg: false }])).toEqual({ cart: {}, was: {}, gone: [paneer] });
+    expect(moveCart([paneer], [{ ...dish("x", "Paneer Roll", 12000), veg: true }])).toEqual({ cart: { x: 1 }, was: {}, gone: [] });
+    expect(moveCart([paneer], [dish("x", "Paneer Roll", 12000)]).gone).toEqual([paneer]);   // no mark on one side: not the same mark
+  });
+  it("guard c: a match that is sold out in the new kitchen goes in the cart, so the Bill's sold-out pattern takes it; it is never 'not made'", () => {
+    expect(moveCart([held[0]], [{ ...dish("x", "Butter Chicken", 32000), available: false }])).toEqual({ cart: { x: 2 }, was: {}, gone: [] });
   });
 });

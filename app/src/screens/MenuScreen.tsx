@@ -10,7 +10,7 @@ import { ClearCross, DishPlate, Empty, Stepper, TabBar, VegMark, useSheetFit } f
 
 type Props = {
   dishes: Dish[] | null; fromCache: boolean; slow?: boolean; error: string | null; onRetry: () => void;
-  pin: string | null; kitchenName: string; openText: string; name: string; closed: { main: string; sub: string } | null; closedNote?: string | null;   // story #1162: the kitchen closed under a bill, which was cleared
+  pin: string | null; kitchenName: string; openText: string; name: string; closed: { main: string; sub: string } | null; closedNote?: string | null; greetNote?: string | null;   // story 1162: the kitchen closed under a bill, which was cleared. greetNote (story 1540): one short line in place of the greeting, so nothing on the menu moves
   tellMe: "idle" | "busy" | "done"; tellMeError: string | null; onTellMe: () => void;   // #718: ask for one push when the closed kitchen opens
   qty: Record<string, number>; cartCount: number; cartTotal: number;
   onAdd: (id: string) => void; onChange: (id: string, delta: number) => void; onOpenCart: () => void;
@@ -106,7 +106,8 @@ export function MenuScreen(p: Props) {
       {p.far && <div className="ui-farstrip" role="status"><span>You are {p.far.km} km from {p.far.label}</span><button type="button" onClick={p.far.onHere}>Deliver here</button></div>}
       <div className="ui-scroll" aria-busy={!view.ready && !p.error ? true : undefined} aria-label={!view.ready && !p.error ? "Loading the menu" : undefined}>
         <div className="ui-greet">
-          {(SHOW_KITCHEN_NAME ? p.kitchenName : "") || p.openText ? <h2 className="ui-greet-line">{[SHOW_KITCHEN_NAME ? p.kitchenName : "", p.openText].filter(Boolean).join(" · ")}</h2> : null}
+          {p.greetNote ? <h2 role="status" className="ui-greet-line">{p.greetNote}</h2>
+            : (SHOW_KITCHEN_NAME ? p.kitchenName : "") || p.openText ? <h2 className="ui-greet-line">{[SHOW_KITCHEN_NAME ? p.kitchenName : "", p.openText].filter(Boolean).join(" · ")}</h2> : null}
         </div>
         {p.closedNote && <p role="status" className="ui-closed-note">{p.closedNote}</p>}
         {closed && (

@@ -1,4 +1,4 @@
-// The phone code sheets of the Ink journeys boards O1 to O9 (story #551): number, code with a resend timer, the contract's errors, a number that is already used, the name.
+// The phone code sheets of the Ink journeys boards O1 to O9 (story #551): number, code with a resend timer, the contract's errors, a number that is already used.
 import { useEffect, useRef, useState } from "react";
 import { useBackCloses } from "../lib/back";
 import { useSheetFit } from "../ui";
@@ -152,22 +152,5 @@ export function OtpSheet({ phone: start, onVerified, onClose, welcome = false, g
           </>
         )}
     </>
-  );
-}
-
-// O9: asked once, after the first sign in. Skippable.
-export function NameSheet({ onDone }: { onDone: (name: string | null) => void }) {
-  useBackCloses(true, () => onDone(null));   // story 1415: Back is Skip
-  const fit = useSheetFit();   // story #954
-  const [name, setName] = useState("");
-  return (
-    <div ref={fit} className="ui-sheet-back">
-      <div role="dialog" aria-modal="true" aria-label="Your name" className="ui-sheet">
-        <div className="ui-sheet-head"><h2>What should we call you?</h2></div>
-        <div className="ui-field"><label htmlFor="otp-name">Your name</label><input id="otp-name" type="text" maxLength={80} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} /></div>
-        <button type="button" className="ui-btn bar" disabled={!name.trim()} onClick={() => onDone(name.trim())}>Continue</button>
-        <button type="button" className="ui-btn ghost" onClick={() => onDone(null)}>Skip</button>
-      </div>
-    </div>
   );
 }

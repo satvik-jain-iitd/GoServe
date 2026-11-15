@@ -78,7 +78,6 @@ test("S5 a placed order is never moved: the tracker stays when the kitchen close
   await add(page, "Butter Chicken").click();
   await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Phone").fill("9876543210");
-  await page.getByLabel("Address").fill("Flat 4, Green Park, Delhi");
   await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   close(net);

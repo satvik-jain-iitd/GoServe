@@ -7,7 +7,7 @@ describe("cardWords", () => {
     expect(cardWords("Green Park, New Delhi, Delhi")).toEqual({ name: "Green Park", rest: "New Delhi, Delhi" });
   });
   it("one part is the name alone; nothing is a quiet fallback", () => {
-    expect(cardWords("Chhatarpur")).toEqual({ name: "Chhatarpur", rest: "" });
+    expect(cardWords("Sampletown")).toEqual({ name: "Sampletown", rest: "" });
     expect(cardWords(null)).toEqual({ name: "Pin on the map", rest: "" });
   });
 });
@@ -22,10 +22,10 @@ describe("stripsFor", () => {
     expect(stripsFor({ serve: { serviceable: false, kitchenM: null }, here: null, pin: PIN })).toEqual([{ kind: "error", text: "Not in our area yet" }]);
   });
   it("a pin far from the phone adds the warm strip with the distance, above the served one (board C6b)", () => {
-    const far = stripsFor({ serve: { serviceable: true, kitchenM: 900 }, here: { lat: 24.9, lng: 79.6 }, pin: PIN });
+    const far = stripsFor({ serve: { serviceable: true, kitchenM: 900 }, here: { lat: 26.07, lng: 77.24 }, pin: PIN });
     expect(far.map((s) => s.kind)).toEqual(["warn", "ready"]);
     expect(far[0].text).toMatch(/^\d{3} km from where you are now$/);
-    expect(stripsFor({ serve: { serviceable: false, kitchenM: null }, here: { lat: 24.9, lng: 79.6 }, pin: PIN }).map((s) => s.text)).toEqual([expect.stringMatching(/km from where you are now$/), "Not in our area yet"]);
+    expect(stripsFor({ serve: { serviceable: false, kitchenM: null }, here: { lat: 26.07, lng: 77.24 }, pin: PIN }).map((s) => s.text)).toEqual([expect.stringMatching(/km from where you are now$/), "Not in our area yet"]);
   });
   it("near the phone adds nothing; no answer yet adds nothing; never more than two", () => {
     expect(stripsFor({ serve: { serviceable: true, kitchenM: 900 }, here: { lat: 28.5501, lng: 77.2001 }, pin: PIN })).toHaveLength(1);
@@ -79,11 +79,11 @@ describe("addressText (story #1038: what the rider reads)", () => {
 describe("boxOf (story 1421, board ED1: Edit shows the box whole)", () => {
   it("gives back a saved box and landmark whole, commas and all", async () => {
     const { boxOf } = await import("../../src/lib/pinMap");
-    expect(boxOf({ address: "x", house: "C-128, second floor", landmark: "blue gate, by the temple" }, "Green Park")).toEqual({ house: "C-128, second floor", landmark: "blue gate, by the temple" });
+    expect(boxOf({ address: "x", house: "Z-900, second floor", landmark: "blue gate, by the temple" }, "Green Park")).toEqual({ house: "Z-900, second floor", landmark: "blue gate, by the temple" });
   });
   it("puts all of an older row before the pin words in the box, and keeps it all when the words differ", async () => {
     const { boxOf } = await import("../../src/lib/pinMap");
-    expect(boxOf({ address: "C-128, second floor, near the park gate, Green Park, New Delhi", house: null }, "Green Park, New Delhi")).toEqual({ house: "C-128, second floor, near the park gate", landmark: "" });
+    expect(boxOf({ address: "Z-900, second floor, near the park gate, Green Park, New Delhi", house: null }, "Green Park, New Delhi")).toEqual({ house: "Z-900, second floor, near the park gate", landmark: "" });
     expect(boxOf({ address: "Tower B, Connaught Place, New Delhi" }, "Green Park")).toEqual({ house: "Tower B, Connaught Place, New Delhi", landmark: "" });
   });
 });

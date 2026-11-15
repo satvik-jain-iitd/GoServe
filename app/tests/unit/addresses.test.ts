@@ -1,10 +1,10 @@
 // Story #976 and #1035: saved addresses. The pick on open (the last used one), the distance words, and the first row made from today's single saved address.
 import { describe, it, expect } from "vitest";
-import { distanceM, distanceWord, lastUsed, firstFromProfile, type SavedAddress } from "../../src/lib/addresses";
+import { distanceM, distanceWord, lastUsed, nearSaved, type SavedAddress } from "../../src/lib/addresses";
 
-const row = (id: string, label: string, lat: number | null, lng: number | null, used: string): SavedAddress => ({ id, label, address: `${label} street, town`, pin: "471001", lat, lng, last_used_at: used });
-const HOME = row("h", "Home", 24.9167, 79.5833, "2026-11-01T10:00:00Z");
-const OFFICE = row("o", "Office", 24.95, 79.62, "2026-11-05T10:00:00Z");   // about 5 km from Home, used more recently
+const row = (id: string, label: string, lat: number | null, lng: number | null, used: string): SavedAddress => ({ id, label, address: `${label} street, town`, pin: "900001", lat, lng, last_used_at: used });
+const HOME = row("h", "Home", 28.5677, 77.2432, "2026-11-01T10:00:00Z");
+const OFFICE = row("o", "Office", 28.6, 77.28, "2026-11-05T10:00:00Z");   // about 5 km from Home, used more recently
 
 describe("distanceM and distanceWord", () => {
   it("is about 111 km for one degree of latitude and 0 for the same place", () => {
@@ -38,13 +38,16 @@ describe("lastUsed (story #1035: on open the address used last, always)", () => 
   });
 });
 
-describe("firstFromProfile", () => {
-  it("makes a Home row from today's single saved address", () => {
-    expect(firstFromProfile({ address: "C-128, Green Avenue Colony", pin: "471001" })).toEqual({ label: "Home", address: "C-128, Green Avenue Colony", pin: "471001" });
+// Story 1529: on open the saved address the phone is at is picked: the nearest one inside the near distance. A row with no pin is never picked.
+describe("nearSaved (story 1529)", () => {
+  const row = (id: string, lat: number | null, lng: number | null): SavedAddress => ({ id, label: id, address: "x", pin: "110016", lat, lng, last_used_at: "2026-11-01T10:00:00Z" });
+  const at = { lat: 28.5690, lng: 77.2440 };
+  it("gives the nearest row inside the distance", () => {
+    expect(nearSaved([row("far", 28.6208, 77.3639), row("home", 28.5677, 77.2432), row("door", 28.5691, 77.2441)], at, 200)?.id).toBe("door");
   });
-  it("makes nothing from a missing address or a bad pin", () => {
-    expect(firstFromProfile({ address: "", pin: "471001" })).toBeNull();
-    expect(firstFromProfile({ address: "C-128, Green Avenue Colony", pin: "4710" })).toBeNull();
-    expect(firstFromProfile({ address: "abc", pin: "471001" })).toBeNull();
+  it("gives null when every row is past the distance, has no pin, or the list is empty", () => {
+    expect(nearSaved([row("home", 28.5677, 77.2432)], at, 100)).toBeNull();   // about 165 m away
+    expect(nearSaved([row("old", null, null)], at, 200)).toBeNull();
+    expect(nearSaved([], at, 200)).toBeNull();
   });
 });

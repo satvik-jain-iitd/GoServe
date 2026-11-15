@@ -11,7 +11,6 @@ test("S1 the bill asks a ten digit phone (story 1417: never the name) and saves 
   const net = await setup(context, page);
   await page.goto("/customer/");
   await toCart(page);
-  await page.getByLabel("Address").fill("Flat 4, Green Park");
   await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
   await page.getByLabel("Phone").fill("98765");
   await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
@@ -30,7 +29,7 @@ test("S2 next time the details are filled in already: the phone on one line (boa
   await toCart(page);
   await expect(page.getByLabel("Your name")).toHaveCount(0);
   await expect(page.getByText("9876543210", { exact: true })).toBeVisible();
-  await expect(page.getByLabel("Address")).toHaveValue("Flat 4, Green Park");
+  await expect(page.getByRole("group", { name: "Deliver to" })).toContainText("Flat 4, Green Park");
   await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
 });
 
@@ -38,7 +37,6 @@ test("S3 the demo console at / still needs only the address", async ({ page, con
   await setup(context, page);
   await page.goto("/console/");
   await toCart(page);
-  await page.getByLabel("Address").fill("Flat 4");
   await expect(page.getByLabel("Your name")).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
 });

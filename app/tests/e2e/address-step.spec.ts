@@ -33,12 +33,14 @@ test("S2 with location allowed Use my location opens the pin map at the phone; C
   await expect(page.getByText(/Open till/)).toBeVisible();
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
-  await expect(page.getByLabel("Address", { exact: true })).toHaveValue(/near the park gate/);
+  await expect(page.getByRole("group", { name: "Deliver to" })).toContainText(/near the park gate/);   // story 1532: the words, not a text box
 });
 
-test("S4 location not given: the search opens, and a picked place lands on the same pin map", async ({ page, context }) => {
+test("S4 location not given: a true line says why (bug 1526), and Search for my address opens the search", async ({ page, context }) => {
   await setup(context, page, [], { pin: null });
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Use my current location" }).click();   // not allowed in this context
+  await expect(page.getByRole("group", { name: "Your address" }).getByRole("status")).toContainText("Location is off or blocked");
+  await page.getByRole("button", { name: "Search for my address" }).click();
   await expect(page.getByRole("searchbox", { name: "Search an area or address" })).toBeVisible();
 });

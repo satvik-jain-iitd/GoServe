@@ -30,8 +30,8 @@ async function drag(page: Page, dx: number, dy = 0) {
   await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x + dx, y + dy, { steps: 6 }); await page.mouse.up();
 }
 const fill = async (page: Page) => {
-  await page.getByLabel("Kitchen name").fill("Chhatarpur Kitchen");
-  await page.getByLabel("Address").fill("Chhatarpur Main Road");
+  await page.getByLabel("Kitchen name").fill("Sampletown Kitchen");
+  await page.getByLabel("Address").fill("Sampletown Main Road");
   await page.getByLabel("Phone").fill("9876500011");
   await page.getByLabel("Pin codes").fill("110016");
 };
@@ -44,7 +44,7 @@ test("S1 the form has a Location row and no map; the row opens the shared map, S
   await fill(page);
   await row(page).click();
   await expect(screen(page)).toBeVisible();
-  await expect(screen(page)).toContainText("Location of Chhatarpur Kitchen");
+  await expect(screen(page)).toContainText("Location of Sampletown Kitchen");
   await expect(page.getByRole("button", { name: "Confirm & proceed" })).toHaveCount(0);
   await expect(page.getByTestId("map-pin")).toBeVisible();
   await drag(page, 80);
@@ -57,7 +57,7 @@ test("S1 the form has a Location row and no map; the row opens the shared map, S
   await page.getByRole("button", { name: "Save kitchen" }).click();
   await expect.poll(() => net.calls.kitchenWrites.length).toBeGreaterThan(0);
   const body = net.calls.kitchenWrites[0].body;
-  expect(body).toMatchObject({ name: "Chhatarpur Kitchen", location_accuracy_m: null });
+  expect(body).toMatchObject({ name: "Sampletown Kitchen", location_accuracy_m: null });
   expect(typeof body.lat).toBe("number");
   expect(body.lat).not.toBe(28.6139);   // the map moved under the pin before it was saved
   expect(typeof body.location_at).toBe("string");

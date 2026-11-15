@@ -3,16 +3,16 @@ import { test, expect, type Page } from "@playwright/test";
 import { setup } from "./helpers";
 
 const OSM = { "access-control-allow-origin": "*", "content-type": "application/json" };
-const OLA = { status: 200, body: { ok: true, address: "Radio Colony, Chhatarpur, Madhya Pradesh", pin: "471001", locality: "Radio Colony", town: "Chhatarpur" } };
-const CHHATARPUR = { address: { road: "Link Road", village: "Rajnagar", state_district: "Chhatarpur", state: "Madhya Pradesh", postcode: "471001", country: "India" } };
+const OLA = { status: 200, body: { ok: true, address: "Example Colony, Sampletown, Sample State", pin: "900001", locality: "Example Colony", town: "Sampletown" } };
+const SAMPLETOWN = { address: { road: "Link Road", village: "Sample Village", state_district: "Sampletown", state: "Sample State", postcode: "900001", country: "India" } };
 
 async function start(context: any, page: Page, geocode: { status: number; body: object } | null) {
   const net = await setup(context, page, [], { pin: null });
   net.state.geocode = geocode;
   const osm = { n: 0 };
-  await context.route("https://nominatim.openstreetmap.org/reverse**", (r: any) => { osm.n++; return r.fulfill({ status: 200, headers: OSM, body: JSON.stringify(CHHATARPUR) }); });
+  await context.route("https://nominatim.openstreetmap.org/reverse**", (r: any) => { osm.n++; return r.fulfill({ status: 200, headers: OSM, body: JSON.stringify(SAMPLETOWN) }); });
   await context.grantPermissions(["geolocation"]);
-  await context.setGeolocation({ latitude: 24.9, longitude: 79.58 });
+  await context.setGeolocation({ latitude: 28.57, longitude: 77.24 });
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Use my current location" }).click();
   return { net, osm };
@@ -23,9 +23,9 @@ test("S1 Ola answers on Confirm: the words show on the details and on the pin ma
   const { net, osm } = await start(context, page, OLA);
   await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
   await page.getByRole("button", { name: "Confirm & proceed" }).click();
-  await expect(page.getByRole("dialog", { name: "Address details" })).toContainText("Radio Colony");
+  await expect(page.getByRole("dialog", { name: "Address details" })).toContainText("Example Colony");
   await page.getByRole("button", { name: "Change" }).click();
-  await expect(page.getByText("Radio Colony", { exact: true })).toBeVisible();
+  await expect(page.getByText("Example Colony", { exact: true })).toBeVisible();
   const credit = page.locator(".ui-pinmap-credit");
   await expect(credit.getByRole("link", { name: "Ola Maps" })).toHaveAttribute("href", "https://www.openstreetmap.org/copyright");
   await expect(credit.getByRole("link", { name: /OpenStreetMap contributors/ })).toHaveAttribute("href", "https://www.openstreetmap.org/copyright");

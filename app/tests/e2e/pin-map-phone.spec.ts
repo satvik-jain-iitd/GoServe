@@ -2,10 +2,10 @@
 // even when the phone answers late. It is never pulled back after the person moved it. With no location and no saved address it opens at the kitchen,
 // not at the fixed Delhi point. The screen never asks for location by itself. All points here are public test points.
 import { test, expect, type Page } from "@playwright/test";
-import { setup } from "./helpers";
+import { setup, toDeliverTo } from "./helpers";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
-const HOME = { id: "h1", label: "Home", address: "C-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: new Date(Date.now() - 3 * 86_400_000).toISOString() };
+const HOME = { id: "h1", label: "Home", address: "Z-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: new Date(Date.now() - 3 * 86_400_000).toISOString() };
 const PHONE = { lat: 28.56, lng: 77.2 };
 const KITCHEN = { lat: 28.5494, lng: 77.2001 };
 const DELHI = { lat: 28.6139, lng: 77.209 };
@@ -24,17 +24,21 @@ const latePhone = (context: Ctx, lateMs: number) => context.addInitScript(([at, 
 }, [PHONE, lateMs] as const);
 
 async function start(page: Page, context: Ctx, over: { addresses?: object[]; kitchenAt?: { lat: number; lng: number } | null } = {}) {
-  const net = await setup(context, page, [], { pin: "110016" });
+  const net = await setup(context, page, [], { pin: null });
   net.state.addresses = over.addresses ?? [HOME];
+  await context.addInitScript((h) => {   // story 1529: Home is the place on this phone, so the map starts there until the phone's place comes
+    if (window.localStorage.getItem("gs-place")) return;
+    window.localStorage.setItem("gs-place", JSON.stringify({ address: h.address, pin: h.pin_code, lat: h.lat, lng: h.lng, house: "", landmark: "", confirmed: true, id: h.id })); window.localStorage.setItem("gs-pin", h.pin_code);
+  }, HOME);
   net.state.geocode = { status: 200, body: { ok: true, address: "Green Park, New Delhi, Delhi", pin: "110016", locality: "Green Park", town: "New Delhi" } };
   if (over.kitchenAt !== undefined) net.state.kitchens = (net.state.kitchens as object[]).map((k) => ({ ...k, lat: over.kitchenAt?.lat ?? null, lng: over.kitchenAt?.lng ?? null }));
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
   await context.route("https://nominatim.openstreetmap.org/reverse**", (r) => r.fulfill({ status: 500, headers: { "access-control-allow-origin": "*", "content-type": "application/json" }, body: "{}" }));
   return net;
 }
-const addNew = async (page: Page) => {
+const addNew = async (page: Page) => {   // story 1547: Home is the place on this phone, so no sheet opens even when the phone was not found
   await page.goto("/customer/");
-  await page.getByRole("button", { name: /^(Home|Deliver to)\b/ }).click();
+  await toDeliverTo(page);
   await page.getByRole("button", { name: "Add new address" }).click();
   await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
 };

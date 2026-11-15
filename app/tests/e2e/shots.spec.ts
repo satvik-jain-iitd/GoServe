@@ -80,7 +80,6 @@ for (const theme of ["day", "night"] as const) {
     for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "More Tandoori Roti" }).click();
     await page.getByRole("button", { name: /View bill/ }).click();
     await page.getByLabel("Phone").fill("9876543210");
-    await page.getByLabel("Address").fill("B-12, Lajpat Nagar II, near the park gate");
     await shot("Bill");
     await page.getByRole("button", { name: /Place order/ }).click();
     await page.getByRole("heading", { name: "Order placed" }).waitFor();
