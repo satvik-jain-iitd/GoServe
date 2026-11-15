@@ -2,7 +2,7 @@
 // With a place chosen the app never opens it: the phone is followed when its place can be read without asking, else the place stays and nothing is shown.
 // One list of scenarios, run by Chromium (sheet-only-with-no-place.spec.ts) and by WebKit, the iPhone engine (sheet-only-with-no-place.webkit.spec.ts).
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
-import { asked, phoneLoc, setup, toDeliverTo, type Loc } from "./helpers";
+import { asked, comeBack, phoneLoc, setup, toDeliverTo, type Loc } from "./helpers";
 
 const HOME = { id: "h1", label: "Home", address: "Z-900, Green Avenue Colony, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
 const WORK = { id: "w1", label: "Work", address: "Tower B, Sector 62, Noida", pin_code: "110016", lat: 28.6208, lng: 77.3639, last_used_at: "2026-11-01T10:00:00Z" };
@@ -78,6 +78,16 @@ export function sheetOnlyWithNoPlace() {
     await quiet(page, 6000);   // the app waits 5 seconds for the phone
     await menuOfHome(page);
   });
+
+  for (const [name, loc] of CANNOT.slice(0, 2)) {   // only a find that failed is tried again on a return (lookAgain)
+    test(`I come back to the app after a find that failed (${name}), with a place chosen: the place stays and no sheet opens`, async ({ page, context }) => {
+      await open(context, page, loc);
+      await menuOfHome(page);
+      await quiet(page);
+      for (let n = 0; n < 2; n++) { await comeBack(page); await quiet(page); }   // back from the phone's settings, twice
+      await menuOfHome(page);
+    });
+  }
 
   test("The phone's place can be read without asking: the place follows the phone, as in story 1529, and no sheet opens", async ({ page, context }) => {
     await open(context, page, { perm: "granted", pos: AT_WORK });
