@@ -15,12 +15,9 @@ describe("customerLine", () => {
     ["place", "unknown", "Missing or wrong demo token."],
     ["place", "unknown", "Unknown event."],
     ["place", "unknown", "Unknown status."],
-    ["place", "invalid_request", "The event is missing something."],
-    ["place", "invalid_request", "Only the customer can confirm."],
     ["confirm", "invalid_request", "Only the customer can confirm."],
-    ["place", "database_error", "Anything the server wrote."],
   ] as const)("%s %s %s -> a generic line", (action, code, message) => {
-    expect(customerLine(action, code, message)).toBe(GENERIC);
+    expect(customerLine(action, code, message)).toBe(action === "place" ? "Something went wrong. Your order was not placed and nothing was charged. Please try again." : GENERIC);
   });
   it("paused keeps its line", () => {
     expect(customerLine("place", "kill_switch", "Orders are paused. Please try again soon.")).toBe("Orders are paused. Please try again soon.");
@@ -71,5 +68,39 @@ describe("cancelLine", () => {
     expect(cancelLine("reason_required")).toBe(line);
     expect(cancelLine("JWT expired")).toBe(line);
     expect(cancelLine(undefined)).toBe(line);
+  });
+});
+
+// Story #1580: every refusal at Place order has its own true line with the way out. "Went wrong" only for a fault we cannot name, and then it says nothing was charged.
+const OLD_GENERIC = "Something went wrong. Please try again.";
+const NOT_PLACED = "Something went wrong. Your order was not placed and nothing was charged. Please try again.";
+const TRY_LATER = "We could not place your order. Nothing was charged. Try again in a minute.";
+describe("customerLine at Place order (story 1580)", () => {
+  it.each([
+    ["not_served", 422, "We do not deliver to this place yet. Choose another address."],
+    ["point_required", 422, "Set your place on the map, then place the order."],
+    ["invalid_address", 422, "Add a delivery address."],
+    ["empty_order", 422, "Your bag is empty. Add a dish, then place the order."],
+    ["unknown_dish", 422, "Something in the bill did not go through. Check it and try again."],
+    ["invalid_quantity", 422, "Something in the bill did not go through. Check it and try again."],
+    ["unknown_option", 422, "Something in the bill did not go through. Check it and try again."],
+    ["option_group_max", 422, "Something in the bill did not go through. Check it and try again."],
+    ["option_group_min", 422, "Something in the bill did not go through. Check it and try again."],
+    ["option_unavailable", 422, "Something in the bill did not go through. Check it and try again."],
+    ["invalid_request", 400, "Something in the bill did not go through. Check it and try again."],
+    ["coupon_invalid", 422, "That code is not valid. Remove it or pick another."],
+    ["price_changed", 409, "The price changed. Check the bill again, then tap Place order."],
+    ["unauthorized", 401, "Your sign-in ended. Close the app, open it again and place the order."],
+    ["order_unavailable", 502, TRY_LATER],
+    ["quote_unavailable", 502, TRY_LATER],
+    ["internal_error", 500, TRY_LATER],
+    ["unknown", 503, TRY_LATER],
+    ["unknown", 401, "Your sign-in ended. Close the app, open it again and place the order."],
+    ["brand_new_code", 422, NOT_PLACED],
+  ])("%s (%i) -> its own line", (code, status, line) => {
+    const got = customerLine("place", code, "server text", null, status);
+    expect(got).toBe(line);
+    expect(got).not.toBe(OLD_GENERIC);
+    if (got !== NOT_PLACED) expect(got).not.toContain("went wrong");
   });
 });

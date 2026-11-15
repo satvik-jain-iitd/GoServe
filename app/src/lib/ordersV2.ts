@@ -42,5 +42,5 @@ export async function placeOrderV2(input: PlaceV2Input, deps: V2Deps): Promise<{
     throw new PriceChanged({ ...a.quote, offers: Array.isArray(a.quote.offers) ? a.quote.offers : [] });
   }
   const code = typeof a?.error === "string" ? a.error : "unknown";
-  throw new PlaceError(customerLine("place", code, typeof a?.message === "string" ? a.message : "", a?.opens_at) ?? "Already done.", code);
+  throw new PlaceError(customerLine("place", code, typeof a?.message === "string" ? a.message : "", a?.opens_at, res.status) ?? "Already done.", code);
 }

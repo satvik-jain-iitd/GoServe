@@ -48,7 +48,9 @@ describe("placeOrderV2", () => {
     expect(closed).toBeInstanceOf(PlaceError);
     expect(closed.message).toBe("The kitchen closed just now. Check back later.");
     const odd = await placeOrderV2(input, deps(502, { ok: false, error: "order_unavailable" })).catch((e) => e);
-    expect(odd.message).toBe("Something went wrong. Please try again.");
+    expect(odd.message).toBe("We could not place your order. Nothing was charged. Try again in a minute.");
+    const noBody = await placeOrderV2(input, { ...deps(401, {}), fetchFn: (async () => new Response("no", { status: 401 })) as unknown as typeof fetch }).catch((e) => e);   // story 1580: a 401 with no code still gets its own line
+    expect(noBody.message).toBe("Your sign-in ended. Close the app, open it again and place the order.");
     const net = await placeOrderV2(input, { ...deps(200, {}), fetchFn: (async () => { throw new Error("down"); }) as unknown as typeof fetch }).catch((e) => e);
     expect(net.message).toBe("No internet. Check your internet and try again.");
   });

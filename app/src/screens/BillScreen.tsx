@@ -46,6 +46,8 @@ export function BillScreen({ lines, total, kitchenName, pin, address, farKm = nu
   const needMap = !empty && !soldOut && phoneOk && !confirmed;
   const [changing, setChanging] = useState(false);   // board BC1: Change turns the saved row into the field, in place
   const phoneRef = useRef<HTMLInputElement>(null);
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => { if (error) errorRef.current?.scrollIntoView?.({ block: "nearest" }); }, [error]);   // story 1580: a refusal below the fold, behind the floating bar, is not told to anyone
   useEffect(() => { if (changing) phoneRef.current?.focus(); }, [changing]);
   const savedRow = !!details?.saved && isPhone(details.saved) && details.phone === details.saved && !changing;
   const head = [kitchenName, pin].filter(Boolean).join(" · ");
@@ -149,7 +151,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, farKm = nu
                 {door.methods.length === 0 && <p className="ui-pay-sub">You pay at the door.</p>}
               </fieldset>
             )}
-            {error && <p role="alert" className="ui-field-error">{error}</p>}
+            {error && <p ref={errorRef} role="alert" className="ui-field-error" style={{ scrollMarginBottom: 96 }}>{error}</p>}
           </form>
         )}
       </div>
