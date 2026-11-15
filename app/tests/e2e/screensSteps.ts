@@ -59,6 +59,14 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await page.getByRole("button", { name: /View bill/ }).click();
     await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
   },
+  "bill-far": async (context, page, path) => {   // story 1548, rule 11: the phone is 6 km from the delivery place; the Deliver to row says so, and nothing else on the Bill moves
+    const net = await setup(context, page, [], { pin: null });
+    const home = { id: "h1", label: "Home", address: "Z-900, Sample Garden Colony, Sample Road, Sampletown", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
+    net.state.addresses = [home];
+    await context.addInitScript((h) => { window.localStorage.setItem("gs-place", JSON.stringify({ address: h.address, pin: h.pin_code, lat: h.lat, lng: h.lng, house: "", landmark: "", confirmed: true, id: h.id })); window.localStorage.setItem("gs-pin", h.pin_code); window.localStorage.setItem("gs-draft", JSON.stringify({ step: "bill", cart: { d1: 1 }, address: h.address, name: "", phone: "9876543210" })); }, home);
+    await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.6139, longitude: 77.209 });
+    await page.goto(path); await expect(page.getByText("6 km from your current location")).toBeVisible();
+  },
   // Story 1540 (review of PR 1546, note 16): the Bill after the place moved to another kitchen. The header line, one struck old price, one "is not made by this kitchen." row with "Take it out".
   "bill-kitchen-changed": async (context, page, path) => {
     const net = await setup(context, page, [], { pin: null });

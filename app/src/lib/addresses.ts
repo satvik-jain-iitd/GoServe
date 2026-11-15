@@ -11,6 +11,7 @@ export const distanceM = (a: Place, b: Place): number => {   // haversine: right
   const h = Math.sin(rad(b.lat - a.lat) / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(rad(b.lng - a.lng) / 2) ** 2;
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
 };
+export const FAR_M = 2000;   // past this the phone is far from the delivery place: the Bill says how far (story 1548, rule 11; first story 1056)
 export const NEAR_M = 200;   // the "here" word on a row, and the start value of the setting address_near_m (story 1529: on open the saved address the phone is at is picked)
 export const distanceWord = (m: number, nearM: number): string => (m <= nearM ? "here" : `${Math.max(1, Math.round(m / 1000))} km`);
 

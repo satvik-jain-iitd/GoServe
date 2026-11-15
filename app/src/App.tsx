@@ -43,7 +43,7 @@ import { DeliverToScreen } from "./screens/DeliverToScreen";
 import { placeSearch } from "./lib/placeSearch";
 import { PinMapScreen, type Saved } from "./screens/PinMapScreen";
 import { keepRecent, listRecents, recentAt, recentWords, RECENTS_MAX, touchRecent, type Recent, type Searched } from "./lib/recents";
-import { distanceM, addAddress, editAddress, hasPoint, listAddresses, lastUsed, nearM, nearSaved, removeAddress, touchAddress, type SavedAddress } from "./lib/addresses";
+import { distanceM, FAR_M, addAddress, editAddress, hasPoint, listAddresses, lastUsed, nearM, nearSaved, removeAddress, touchAddress, type SavedAddress } from "./lib/addresses";
 import { findPhone, nearestPin, readNearestPin, type LocWhy, type Phone, type Place } from "./lib/locate";
 import { currentSession, scopeFor } from "./lib/session";
 import { MenuScreen } from "./screens/MenuScreen";
@@ -1164,10 +1164,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} onDecline={decline} onHandover={handover} gate={gate} />
   );
   const kitchenView = lock === "kitchen" ? <KitchenGate>{kitchenScreen}</KitchenGate> : kitchenScreen(null);
-  // How far the phone is from the chosen saved address, for the order's own count (story 1056, rule 10). Only the phone's place when location is already allowed and the saved lat and lng:
-  // no map call, no geocode, nothing asked. Story 1548: the strip "You are n km from Home" that used it is gone; the box "Where should we deliver?" asks.
-  const chosen = (saved ?? []).find((r) => r.id === selectedId);
-  const farM = here && chosen && chosen.lat !== null && chosen.lng !== null ? distanceM(here, { lat: chosen.lat, lng: chosen.lng }) : null;
+  // How far the phone's last known place is from the delivery place. Only the phone's place when location is already allowed and the place's own point: no map call,
+  // no geocode, nothing asked. It goes with an order (story 1056, rule 10), and past the far distance the Bill says it (story 1548, rule 11).
+  const farM = here && from ? distanceM(here, from) : null;
+  const farKm = farM !== null && farM > FAR_M ? Math.round(farM / 1000) : null;   // story 1548: the Bill and the You page say it
   // Story #1112 (TC 1.6): signed in, no pin yet and the saved addresses not answered: the first screen waits (a returning customer never sees N0). The wait ends when they answer or fail.
   const waitingForAddresses = lock === "customer" && signedIn === true && step !== "placed" && step !== "orders" && ((!pin && !addrTried) || (!!pin && area === null && !areaError));   // or the pin is known and the kitchen of that pin is still being found
   const needArea = lock === "customer" && step !== "placed" && step !== "orders" && !(pin && (area?.kind === "ok" || area?.kind === "closed"));
@@ -1220,13 +1220,13 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         )}
         {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} onAgain={orderAgain} againLine={againLine} />}
         {step === "account" && (
-          <AccountScreen photo={photo} email={email} onGivenName={(n) => setName((v) => v || n)} name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone}
+          <AccountScreen farKm={farKm} photo={photo} email={email} onGivenName={(n) => setName((v) => v || n)} name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone}
             alerts={reminder} onAlerts={toggleAlerts} alertsError={alertsError} live={openLive} onForget={forgetMe} onDeleteAccount={deleteAccount}
             onMenu={() => setStep("menu")} onAddresses={() => setStep("deliver")} onOrders={() => setStep("orders")} />
         )}
         {menu && step === "bill" && (
           <BillScreen notice={againLine} under={moved ? kitchenChangedBill(billLines.some((l) => l.was_paise !== undefined)) : null} note={note} onNote={setNote} lines={billLines} total={total} soldOut={dead && step === "bill" ? { id: dead.dish.id, name: dead.dish.name, alt: offers.alt, canSwap, onSwap: () => setSwapped((s) => [...s, dead.dish.id]), onRemove: () => takeOut(dead.dish.id) }
-            : notMade ? { id: notMade.id, name: notMade.name, line: notMadeLine(notMade.name), alt: null, canSwap: false, onSwap: () => undefined, onRemove: () => setMoved((m) => m && { ...m, gone: m.gone.filter((g) => g.id !== notMade.id) }) } : undefined} offers={OFFERS_ON && offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove } : undefined} kitchenName={kitchenName} pin={pin} address={address} confirmed={!!pointOf(where)} onChangePlace={() => setStep("deliver")} onConfirmPlace={confirmOnMap}
+            : notMade ? { id: notMade.id, name: notMade.name, line: notMadeLine(notMade.name), alt: null, canSwap: false, onSwap: () => undefined, onRemove: () => setMoved((m) => m && { ...m, gone: m.gone.filter((g) => g.id !== notMade.id) }) } : undefined} offers={OFFERS_ON && offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove } : undefined} kitchenName={kitchenName} pin={pin} address={address} farKm={farKm} confirmed={!!pointOf(where)} onChangePlace={() => setStep("deliver")} onConfirmPlace={confirmOnMap}
             details={lock === "customer" ? { phone, onPhone: setPhone, saved: savedPhone } : undefined}
             door={lock === "customer" ? { methods: doorMethods ?? [], value: doorValue, onChange: setDoorPick } : undefined} sending={sending} error={error}
             onBack={() => setStep("menu")} onPlace={place} />
