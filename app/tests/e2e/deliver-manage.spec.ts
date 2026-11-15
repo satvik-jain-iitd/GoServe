@@ -1,6 +1,6 @@
 // Story #1051 (boards C9 to C13, C6b): Deliver to. Edit opens the same map screen, Remove leaves an Undo bar for 6 seconds, an empty list says so, more than three rows hide behind View all.
 import { test, expect, type Page } from "@playwright/test";
-import { setup, phoneAt, toDeliverTo } from "./helpers";
+import { answeredAt, setup, phoneAt, toDeliverTo } from "./helpers";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
 const NOW = Date.now();
@@ -16,6 +16,7 @@ async function open(page: Page, context: Parameters<typeof setup>[0], list: obje
   net.state.geocode = { status: 200, body: GREEN_PARK };
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
   await phoneAt(context, { lat: 28.5677, lng: 77.2432 });   // story 1529: the phone is at Home, so Home is the place and no sheet asks
+  await answeredAt(context, { latitude: 28.5677, longitude: 77.2432 });   // story 1548: with no saved address the phone is far from the place it holds; the box is not this spec's subject
   await page.goto("/customer/");
   await toDeliverTo(page);
   await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();

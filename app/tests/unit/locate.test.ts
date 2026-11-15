@@ -1,6 +1,6 @@
 // Story #668 (boards A1 to A3): the customer's own address from the phone's location, through OpenStreetMap's reverse lookup (no key). Any failure means "type it by hand".
 import { describe, expect, it, vi } from "vitest";
-import { addressFrom, locLine, locWhy, locWords, reverseAddress } from "../../src/lib/locate";
+import { addressFrom, currentPlace, locLine, locWhy, locWords, reverseAddress } from "../../src/lib/locate";
 
 const NOMINATIM = { display_name: "B-12, Lajpat Nagar II, Lajpat Nagar, South Delhi, New Delhi, Delhi, 110024, India", address: { house_number: "B-12", road: "Lajpat Nagar II", suburb: "Lajpat Nagar", city: "New Delhi", state: "Delhi", postcode: "110024", country: "India" } };
 
@@ -130,5 +130,20 @@ describe("locWhy and its words (bug 1526)", () => {
     expect(locWords("still", "search above")).toEqual({ title: "Still off or blocked", sub: "Turn on location in your phone's settings, or search above." });   // the way out is the screen's own: no "pick a place" where there is no list
     expect(locLine("still", "search for your address")).toBe("Still off or blocked. Turn on location in your phone's settings, or search for your address.");
     expect(locWords("ask", "search above")).toEqual({ title: "We can't see where you are right now", sub: "Tap Use current location, or search above." });
+  });
+});
+
+// Story 1548: the fix says how rough it is and how fast the phone moves; a phone that says neither gives null, never a guess.
+describe("the phone's fix carries its accuracy and its speed (story 1548)", () => {
+  const withFix = async (coords: object) => {
+    vi.stubGlobal("navigator", { geolocation: { getCurrentPosition: (ok: (p: unknown) => void) => ok({ coords }) } });
+    try { return await currentPlace(); } finally { vi.unstubAllGlobals(); }
+  };
+  it("keeps the accuracy and the speed the phone gave", async () => {
+    expect(await withFix({ latitude: 28.5, longitude: 77.2, accuracy: 35, speed: 12 })).toEqual({ lat: 28.5, lng: 77.2, accuracy: 35, speed: 12 });
+  });
+  it("gives null for a speed or an accuracy the phone did not give", async () => {
+    expect(await withFix({ latitude: 28.5, longitude: 77.2, accuracy: undefined, speed: null })).toEqual({ lat: 28.5, lng: 77.2, accuracy: null, speed: null });
+    expect(await withFix({ latitude: 28.5, longitude: 77.2, speed: NaN })).toEqual({ lat: 28.5, lng: 77.2, accuracy: null, speed: null });
   });
 });

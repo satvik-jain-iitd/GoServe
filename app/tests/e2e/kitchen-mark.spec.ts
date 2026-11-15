@@ -1,7 +1,7 @@
 // Story #1138 (board C6e-PinMapPlate, owner approved 9 Nov): GoServe kitchens are our own, so the pin map shows each one near the view as the #937 plate, fork and spoon
 // (about 28 px, green strokes on a white plate, no square frame) with a "GoServe Kitchen" tag. It is not interactive and never covers the customer's pin.
 import { test, expect, type Page } from "@playwright/test";
-import { setup } from "./helpers";
+import { answeredAt, setup } from "./helpers";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
 const HOME = { id: "h1", label: "Home", address: "Z-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
@@ -14,7 +14,7 @@ async function toMap(page: Page, context: Parameters<typeof setup>[0], kitchens:
   net.state.kitchens = kitchens;
   net.state.geocode = { status: 200, body: { ok: true, address: "Green Park, New Delhi, Delhi", pin: "110016", locality: "Green Park", town: "New Delhi" } };
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
-  await context.grantPermissions(["geolocation"]); await context.setGeolocation(PHONE);
+  await context.grantPermissions(["geolocation"]); await context.setGeolocation(PHONE); await answeredAt(context, PHONE);   // story 1548: the box is not this spec's subject
   await page.goto("/customer/");
   await page.getByTitle("Change the delivery address").click();   // story 1529: the place follows the phone, so the header is not always Home
   await page.getByRole("button", { name: "Add new address" }).click();

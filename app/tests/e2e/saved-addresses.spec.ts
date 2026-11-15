@@ -1,6 +1,6 @@
 // Story #976, board C2-AddressSheet: saved addresses, the pick on open by the phone's place, the Deliver to page with add, select, edit and remove.
 import { test, expect, type Page } from "@playwright/test";
-import { setup, toDeliverTo } from "./helpers";
+import { setup, toDeliverTo, whereBox } from "./helpers";
 
 const NOW = Date.now();
 const row = (id: string, label: string, address: string, lat: number, lng: number, agoDays: number) => ({ id, label, address, pin_code: "110016", lat, lng, last_used_at: new Date(NOW - agoDays * 86_400_000).toISOString() });
@@ -30,14 +30,15 @@ test("S1 story 1529 (this reverses story 1035): phone at Home, Home is picked on
   await expect(page.getByRole("listitem").filter({ hasText: "Office" })).toContainText("8 km");
 });
 
-test("S2 story 1529: phone far from every saved address, the page does not open by itself, Where you are now is picked, and the radius is read once (200 m when it cannot be)", async ({ page, context }) => {
+test("S2 story 1548 (was 1529): phone far from every saved address, the page does not open by itself, the place stays and the box asks, and the radius is read once (200 m when it cannot be)", async ({ page, context }) => {
   let reads = 0;
   await page.route("**/rest/v1/rpc/address_near_m", (r) => { reads++; return r.abort(); });   // a page route wins over the helper's
   await open(page, context, { latitude: 28.5, longitude: 77.3 });
-  await expect(page.getByRole("button", { name: /^Where you are now\b/ })).toBeVisible();
+  await expect(whereBox(page)).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Deliver to\b/ })).toContainText("Flat 4, Green Park");   // the place on this phone, not "Where you are now"
   await expect(dialog(page)).toHaveCount(0);
   expect(reads).toBe(1);
-  await toDeliverTo(page);
+  await whereBox(page).getByRole("button", { name: "Use another address" }).click();
   await expect(page.locator(".ui-deliver-foot")).toHaveCount(0);   // owner rule 8 Nov: the page ends with the list, no line about why
 });
 

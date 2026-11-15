@@ -50,4 +50,11 @@ describe("nearSaved (story 1529)", () => {
     expect(nearSaved([row("old", null, null)], at, 200)).toBeNull();
     expect(nearSaved([], at, 200)).toBeNull();
   });
+  it("story 1548: a rough fix that could be inside the near distance counts as near; a sharp one does not", () => {
+    const home = [row("home", 28.5677, 77.2432)];
+    const halfKm = { lat: 28.5722, lng: 77.2432 };   // about 500 m from home
+    expect(nearSaved(home, halfKm, 200)).toBeNull();
+    expect(nearSaved(home, halfKm, 200, 50)).toBeNull();
+    expect(nearSaved(home, halfKm, 200, 400)?.id).toBe("home");
+  });
 });

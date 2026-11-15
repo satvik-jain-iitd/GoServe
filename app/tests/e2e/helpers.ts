@@ -397,7 +397,8 @@ export async function typePlace(page: import("@playwright/test").Page, pin: stri
 
 // Stories 1529 and 1526: the phone's location as the browser tells it. perm is what permissions.query answers (null: this browser has no permissions.query, an older iPhone).
 // pos is a point, an error code (1 blocked, 2 the phone's location is off, 3 too slow) or "never" (no answer). setLoc changes it while the page is open; asked counts the asks.
-export type Loc = { perm: "granted" | "denied" | "prompt" | null; pos: { latitude: number; longitude: number } | 1 | 2 | 3 | "never" };
+// Story 1548: a point may carry how rough it is (accuracy, in metres) and how fast the phone moves (speed, in metres a second).
+export type Loc = { perm: "granted" | "denied" | "prompt" | null; pos: { latitude: number; longitude: number; accuracy?: number; speed?: number | null } | 1 | 2 | 3 | "never" };
 type LocWindow = { __loc: Loc; __asked: number };
 export const phoneLoc = (page: Page, loc: Loc) => page.addInitScript((l) => {
   const w = window as unknown as LocWindow;
@@ -417,3 +418,10 @@ export const comeBack = (page: Page) => page.evaluate(() => { document.dispatchE
 // place and no sheet asks. toDeliverTo opens Deliver to from the menu whatever the place is called (a saved address, "Where you are now").
 export async function phoneAt(context: BrowserContext, at: { lat: number; lng: number }) { await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: at.lat, longitude: at.lng }); }
 export const toDeliverTo = (page: Page) => page.getByTitle("Change the delivery address").click();
+// Story 1548: far from every saved address the app asks "Where should we deliver?" and waits. A spec that is about something else, with the phone far from the place,
+// starts as a customer who answered "Use another address" at this spot today: the phone remembers it, so the box does not come up.
+export const answeredAt = (context: BrowserContext, at: { latitude: number; longitude: number }) => context.addInitScript((p) => {
+  const d = new Date();
+  try { window.localStorage.setItem("gs-asked-spots", JSON.stringify([{ lat: p.latitude, lng: p.longitude, day: `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`, at: d.getTime(), moving: false }])); } catch { /* blocked */ }
+}, at);
+export const whereBox = (page: Page) => page.getByRole("dialog", { name: "Where should we deliver?" });

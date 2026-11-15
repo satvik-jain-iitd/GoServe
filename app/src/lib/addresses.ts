@@ -19,8 +19,9 @@ const byUsed = (a: SavedAddress, b: SavedAddress) => b.last_used_at.localeCompar
 
 // Story 1529 (owner, 15 Nov 2026, this reverses story #1035): on open the saved address the phone is at is picked: the nearest one with a pin inside nearM. None: null.
 export const hasPoint = (a: SavedAddress): a is SavedAddress & Place => a.lat !== null && a.lng !== null;
-export const nearSaved = (list: SavedAddress[], at: Place, nearM: number): SavedAddress | null =>
-  list.filter(hasPoint).map((a) => ({ a, m: distanceM(at, a) })).filter((x) => x.m <= nearM).sort((x, y) => x.m - y.m)[0]?.a ?? null;
+// Story 1548: slack is how rough the phone's fix is (metres). A saved address is near when the fix could be inside the near distance of it.
+export const nearSaved = (list: SavedAddress[], at: Place, nearM: number, slack = 0): SavedAddress | null =>
+  list.filter(hasPoint).map((a) => ({ a, m: distanceM(at, a) })).filter((x) => x.m - slack <= nearM).sort((x, y) => x.m - y.m)[0]?.a ?? null;
 /** The setting address_near_m (metres); the start value when it cannot be read. */
 export async function nearM(c: Pick<SupabaseClient, "rpc">): Promise<number> {
   try { const { data } = await c.rpc("address_near_m"); return typeof data === "number" && data > 0 ? data : NEAR_M; } catch { return NEAR_M; }

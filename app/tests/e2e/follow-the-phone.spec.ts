@@ -1,8 +1,9 @@
 // Story 1529 (with the "Delivering to" box of 1530): app open follows the phone, and the first-open screen shows once only.
-// Near a saved address: that address. Away from all: "Where you are now", not confirmed, not saved, no Ola call. Not found: the sheet, or Deliver to when there is no place.
+// Near a saved address: that address. Away from all (changed by story 1548): the place stays and the box "Where should we deliver?" asks; never "Where you are now" by itself.
+// Not found: the sheet, or Deliver to when there is no place.
 // A customer on the Bill is never pulled, a cart never moves to another kitchen by itself, and the phone is never asked on open when it was not allowed before.
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
-import { asked, comeBack, phoneLoc, setLoc, setup } from "./helpers";
+import { asked, comeBack, phoneLoc, setLoc, setup, whereBox } from "./helpers";
 import { firstOpenToMenu } from "./firstOpen";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
@@ -20,6 +21,8 @@ const header = (page: Page, name: RegExp) => page.getByRole("button", { name }).
 const sheet = (page: Page) => page.getByRole("dialog", { name: "Where to bring your food?" });
 const box = (page: Page) => page.getByRole("region", { name: "Delivering to" });
 const firstScreen = (page: Page) => page.getByRole("heading", { name: "Where does the food go?" });
+const HERE_AWAY = { address: "Where you are now", pin: "110016", lat: AWAY.latitude, lng: AWAY.longitude, house: "", landmark: "", confirmed: false, id: null };   // the place a phone holds after its last address was deleted there
+const anotherAddress = (page: Page) => whereBox(page).getByRole("button", { name: "Use another address" }).click();   // story 1548: far from every saved address, Deliver to opens from the box
 
 test("I open the app at home: my phone is near my saved address Home, and Home is picked", async ({ page, context }) => {
   const net = await setup(context, page, [], { pin: null });
@@ -34,21 +37,19 @@ test("I open the app at home: my phone is near my saved address Home, and Home i
   await expect(page.getByRole("button", { name: "Confirm on the map" })).toHaveCount(0);   // a saved address with its pin is confirmed
 });
 
-test("I open the app somewhere else: Where you are now is picked, the menu is of the kitchen that serves that place, and the order waits for the map", async ({ page, context }) => {
+test("I open the app somewhere else: my place stays, Where you are now is never picked by itself, and the box asks where to deliver (story 1548)", async ({ page, context }) => {
   const net = await setup(context, page, [], { pin: null });
   net.state.addresses = [HOME, WORK];
   await stored(context, placeOf(HOME));
   await phoneLoc(page, { perm: "granted", pos: AWAY });
   await page.goto("/customer/");
-  await expect(header(page, /^Where you are now\b/)).toBeVisible();
-  await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();   // the kitchen that serves the postal code of that point
-  expect(net.calls.rpc.find((c) => c.name === "nearest_pin")?.body).toMatchObject({ p_lat: AWAY.latitude, p_lng: AWAY.longitude });   // our own table gives the postal code
+  await expect(whereBox(page)).toBeVisible();
+  await expect(header(page, /^Home\b/)).toBeVisible();   // the place did not change by itself
+  await expect(page.getByText("Where you are now")).toHaveCount(0);
+  expect(net.calls.rpc.find((c) => c.name === "nearest_pin")?.body).toMatchObject({ p_lat: AWAY.latitude, p_lng: AWAY.longitude });   // our own table says if we deliver there
   expect(net.calls.geocode).toHaveLength(0);   // no Ola call on open
-  expect(net.calls.addressWrites.filter((w) => w.method === "POST")).toHaveLength(0);   // it is not saved as an address
-  await page.getByRole("button", { name: "Add Butter Chicken" }).click();
-  await page.getByRole("button", { name: /View bill/ }).click();
-  await expect(page.getByRole("button", { name: "Confirm on the map" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
+  expect(net.calls.addressWrites.filter((w) => w.method === "POST")).toHaveLength(0);   // nothing is saved as an address
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("gs-place")!))).toMatchObject({ id: "h1", confirmed: true });
 });
 
 test("A cart in progress: the place does not move by itself to another kitchen, and the far strip stays", async ({ page, context }) => {
@@ -137,7 +138,7 @@ test("I delete my last address with a cart, and my phone is in another kitchen's
   await phoneLoc(page, { perm: "granted", pos: AWAY });
   await page.goto("/customer/");
   await expect(page.getByRole("button", { name: /View bill/ })).toBeVisible();   // the cart of the Home kitchen
-  await header(page, /^Home\b/).click();
+  await anotherAddress(page);
   await page.getByRole("button", { name: "Edit or remove Home" }).click();
   await page.getByRole("button", { name: "Remove", exact: true }).click();
   await expect.poll(() => net.state.addresses.length, { timeout: 10_000 }).toBe(0);
@@ -234,12 +235,14 @@ test("I turn location on and come back: my place is found without a tap", async 
   await expect(sheet(page)).toHaveCount(0);
   await expect(header(page, /^Home\b/)).toBeVisible();
   const asks = await asked(page);
-  await comeBack(page);   // a find that worked is not made again
+  await comeBack(page);   // story 1548: a find that worked is made again on a return (the customer may be somewhere new), with no ask to the customer; at home nothing changes
+  await expect.poll(() => asked(page)).toBe(asks + 1);
   await page.waitForTimeout(300);
-  expect(await asked(page)).toBe(asks);
+  await expect(header(page, /^Home\b/)).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
-test("Deliver to: at home there is no Delivering to box and Home keeps Selected; away the box says Where you are now", async ({ page, context }) => {
+test("Deliver to: at home there is no Delivering to box and Home keeps Selected; away Home stays Selected too (story 1548: the place does not move by itself)", async ({ page, context }) => {
   const net = await setup(context, page, [], { pin: null });
   net.state.addresses = [HOME, WORK];
   await phoneLoc(page, { perm: "granted", pos: AT_HOME });
@@ -249,10 +252,10 @@ test("Deliver to: at home there is no Delivering to box and Home keeps Selected;
   await expect(box(page)).toHaveCount(0);
   await phoneLoc(page, { perm: "granted", pos: AWAY });   // the next open is somewhere else
   await page.reload();
-  await header(page, /^Where you are now\b/).click();
-  await expect(box(page)).toContainText("Where you are now");
-  await expect(box(page)).toContainText("Selected");
-  await expect(page.getByRole("list").getByText("Selected")).toHaveCount(0);   // no saved row is the place
+  await anotherAddress(page);
+  await expect(page.getByRole("button", { name: "Deliver to Home" })).toContainText("Selected");   // Home is still the place
+  await expect(box(page)).toHaveCount(0);
+  await expect(page.getByText("Where you are now")).toHaveCount(0);
 });
 
 test("Nothing moves: when the location is found or not found, only the Delivering to box changes", async ({ page, context }) => {
@@ -260,9 +263,10 @@ test("Nothing moves: when the location is found or not found, only the Deliverin
   net.state.addresses = [HOME, WORK];
   const rects = () => page.evaluate(() => [".ui-head", ".ui-search-box", ".ui-two-cards", "[aria-label='Delivering to']", "[aria-label='Saved addresses']", ".ui-saved-row:nth-child(1)", ".ui-saved-row:nth-child(2)"]
     .map((s) => { const r = document.querySelector(s)!.getBoundingClientRect(); return [s, Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)]; }));
+  await stored(context, HERE_AWAY);   // story 1548: the place is "Where you are now" only when the phone already holds it (the last address was deleted there)
   await phoneLoc(page, { perm: "granted", pos: AWAY });
   await page.goto("/customer/");
-  await header(page, /^Where you are now\b/).click();
+  await anotherAddress(page);
   await expect(box(page)).toBeVisible();
   const found = await rects();
   await setLoc(page, { perm: "granted", pos: 3 });   // the phone does not answer in time on the next tap

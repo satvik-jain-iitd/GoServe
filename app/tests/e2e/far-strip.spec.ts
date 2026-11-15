@@ -1,7 +1,7 @@
 // Story #1056 (board SW2), changed by story 1529: on open the place follows the phone, so the strip is for the one case where it does not: a cart in progress whose kitchen does not
 // serve the place the phone is at. The header keeps the chosen address, and a strip says how far and offers "Deliver here". Within 2 km, or with location not allowed, nothing shows.
 import { test, expect, type Page } from "@playwright/test";
-import { setup } from "./helpers";
+import { setup, whereBox } from "./helpers";
 
 const NOW = Date.now();
 const HOME = { id: "h1", label: "Home", address: "Z-900, Sample Garden Colony, Sampletown", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: new Date(NOW - 3 * 86_400_000).toISOString() };
@@ -29,6 +29,8 @@ async function open(page: Page, context: Parameters<typeof setup>[0], phone: { l
 
 test("S1 more than 2 km from Home, with a cart in progress: the strip says how far; Deliver here opens the pin map at the phone, then the details sheet", async ({ page, context }) => {
   const net = await open(page, context, FAR_PHONE);
+  await whereBox(page).getByRole("button", { name: "Use another address" }).click();   // story 1548: far from Home the box asks first; Home is my answer
+  await page.getByRole("button", { name: "Deliver to Home" }).click();
   await expect(strip(page)).toContainText("You are 6 km from Home");
   await expect(page.getByRole("button", { name: /^Home\b/ })).toBeVisible();   // the header keeps Home
   expect(net.calls.geocode).toHaveLength(0);   // the check made no map or geocode call
