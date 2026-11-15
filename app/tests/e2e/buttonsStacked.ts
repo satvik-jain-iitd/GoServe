@@ -6,7 +6,7 @@ import { setup, order } from "./helpers";
 const STATES: [string, string, string[]][] = [
   ["placed", "placed", ["Cancel order", "Call the kitchen"]],
   ["accepted", "accepted", ["Cancel order", "Call the kitchen"]],
-  ["out_for_delivery", "out for delivery", ["Call the rider", "Call the kitchen"]],
+  ["out_for_delivery", "out for delivery", ["Call the rider"]],
   ["delivered", "delivered", ["Call the kitchen", "Back to menu"]],
   ["cancelled", "cancelled", ["Call the kitchen", "Back to menu"]],
   ["declined", "declined", ["Call the kitchen", "Order something else"]],
@@ -39,11 +39,11 @@ export function buttonsStacked() {
         for (const r of b) { expect(Math.abs(r.x - col.l)).toBeLessThan(1); expect(Math.abs(r.w - col.w)).toBeLessThan(1); }   // the same left and the full width of the column
         for (let i = 1; i < b.length; i++) expect(b[i].y).toBeGreaterThanOrEqual(b[i - 1].y + b[i - 1].h - 0.5);   // each on its own line, none over another
         // Rule 11 (reviewer's call, 16 Nov 2026): the page never scrolls and the bar stays at the foot. At 360x640 only the inner pane scrolls (it already did by 31 px on Placed);
-        // on the taller phones a screen that fits still fits.
+        // on the taller phones a screen that fits still fits. Story 1572, pick A: on the way only "Call the rider" stays; the kitchen is not called then.
         const s = await page.evaluate(() => ({ doc: document.documentElement.scrollHeight, win: window.innerHeight, foot: document.querySelector(".ui-bottom")!.getBoundingClientRect().bottom, over: document.querySelector(".ui-scroll")!.scrollHeight - document.querySelector(".ui-scroll")!.clientHeight }));
         expect(s.doc).toBeLessThanOrEqual(s.win);
         expect(Math.abs(s.foot - s.win)).toBeLessThan(1);
-        if (height >= 844 && key !== "out_for_delivery") expect(s.over).toBeLessThanOrEqual(0);
+        if (height >= 844) expect(s.over).toBeLessThanOrEqual(0);
       });
     }
   }

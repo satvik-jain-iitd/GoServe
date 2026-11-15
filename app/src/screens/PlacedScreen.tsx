@@ -189,7 +189,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, 
       <div className="ui-bottom">   {/* story 1572: one button per line, full width, never side by side */}
         {(status === "placed" || status === "accepted") && <button type="button" className="ui-btn ghost big" disabled={cancelling} onClick={() => setAskCancel(true)}>Cancel order</button>}
         {track?.phone && status === "out_for_delivery" && <a href={`tel:${track.phone}`} className="ui-btn ghost big" onClick={onCall}>Call the rider</a>}
-        {kitchenPhone && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
+        {kitchenPhone && status !== "out_for_delivery" && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
         {declined && <button type="button" className="ui-btn big" onClick={onMenu}>Order something else</button>}   {/* story 1458 (board T2b): the main button last, as on every end slip */}
         {(delivered || cancelled) && !declined && <button type="button" className="ui-btn big" onClick={onMenu}>Back to menu</button>}   {/* story 1434 (boards T1b, Delivered b): one name on both end slips, the main button last; the same dishes again only from History */}
       </div>

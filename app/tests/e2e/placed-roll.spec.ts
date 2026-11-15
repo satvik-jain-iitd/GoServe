@@ -12,6 +12,7 @@ const KITCHEN = [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: "
 async function openAt(context: Parameters<typeof setup>[0], page: Page, status: string) {
   const net = await setup(context, page, [order(status === "delivered" ? "out_for_delivery" : status)]);
   net.state.kitchens = KITCHEN;
+  if (status === "out_for_delivery") { net.state.riderCard = { name: "Ravi", phone: "9876500000" }; net.state.tracking = { rider_lat: 28.58, rider_lng: 77.25, updated_at: new Date().toISOString() }; }   // story 1572: on the way, the one button is Call the rider, which needs a rider with a phone
   await page.goto("/customer/");
   if (status === "delivered") { await expect(now(page)).toHaveText("On the wayNow"); net.push("UPDATE", order("delivered", "2020-01-01T10:09:00Z")); await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible(); }
   return net;
