@@ -24,7 +24,7 @@ test("S2 while name, phone or address is missing one line says so above the grey
   await toBill(page);
   const line = page.getByText("Add your name, phone and address to place the order.");
   await expect(line).toHaveCount(0);   // story #1044: no line says why the button is grey
-  await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /Add your phone number/ })).toBeEnabled();   // story 1574: the bar asks for the phone
   await fill(page);
   await expect(line).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();

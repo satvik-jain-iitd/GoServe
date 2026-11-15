@@ -308,6 +308,7 @@ for (const same of [true, false]) {
     await page.getByRole("button", { name: "Add Butter Chicken" }).click();
     await page.getByRole("button", { name: /View bill/ }).click();
     await expect(page.getByText("Hauz Khas Kitchen · 110016")).toBeVisible();
+    await page.getByLabel("Phone").fill("9876543210");
     await page.getByRole("button", { name: "Confirm on the map" }).click();
     await page.getByRole("button", { name: "Confirm & proceed" }).click();
     await page.getByLabel("House, street, colony, ward").fill("B-12");

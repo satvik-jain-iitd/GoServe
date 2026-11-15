@@ -80,11 +80,11 @@ test("The server refuses an order with no point: the order is refused, and the a
   net.state.reply = { status: 422, body: { ok: false, error: "point_required", message: "Set your place on the map to place the order." } };
   await toBill(page);
   await page.getByRole("button", { name: /Place order/ }).click();
-  await expect(page.getByRole("status").filter({ hasText: "Confirm your place on the map to place the order." })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm on the map" })).toBeEnabled();   // story 1574: the bar itself says what to do
   await expect(page.getByText("Something went wrong")).toHaveCount(0);   // never the catch-all line for this refusal
-  await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /Place order/ })).toHaveCount(0);
   expect(net.calls.place).toHaveLength(1);
-  await page.getByRole("button", { name: "Confirm on the map" }).click();   // the way out, next to the place's words
+  await page.getByRole("button", { name: "Confirm on the map" }).click();   // the way out is the bar
   await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
 });
 
@@ -109,7 +109,7 @@ test("The demo console is not a way around: with no place on the phone, Place or
   await page.goto("/console/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
-  await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
-  await expect(page.getByText("Confirm your place on the map to place the order.")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Place order/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Confirm on the map" })).toBeEnabled();
   expect(net.calls.place).toHaveLength(0);
 });

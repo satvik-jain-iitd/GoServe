@@ -75,7 +75,7 @@ test("S1 a place confirmed on the map is required before the order (story 1532: 
   await page.goto("/console/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
-  await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /Place order/ })).toHaveCount(0);   // story 1574: the bar reads Confirm on the map, not Place order
   await expect(page.getByRole("button", { name: "Confirm on the map" })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Address" })).toHaveCount(0);
 });
