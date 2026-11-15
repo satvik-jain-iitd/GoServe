@@ -28,4 +28,21 @@ export function placeRefused() {
     const lineBottom = await line.evaluate((el) => el.getBoundingClientRect().bottom);
     expect(lineBottom).toBeLessThanOrEqual(before[1] + 0.5);
   });
+
+  // Story 1580: the stored sign-in is gone (cleared, or lost to the admin app on the same address). Place order signs in again and the order is placed.
+  test("The stored sign-in is gone: Place order makes a new sign-in and places the order, never an error and never the anon key as bearer", async ({ page, context }) => {
+    const net = await setup(context, page, [], { pin: null });
+    net.state.addresses = [HOME];
+    net.state.geocode = { status: 200, body: { ok: true, address: "Green Park, New Delhi, Delhi", pin: "110016", locality: "Green Park", town: "New Delhi" } };
+    await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64") }));
+    await phoneAt(context, HOME);
+    await page.goto("/customer/");
+    await page.getByRole("button", { name: "Add Butter Chicken" }).click();
+    await page.getByRole("button", { name: /View bill/ }).click();
+    await page.getByLabel("Phone").fill("9876543210");
+    await page.evaluate(() => { for (const k of Object.keys(localStorage)) if (k.startsWith("sb-")) localStorage.removeItem(k); });
+    await page.getByRole("button", { name: /Place order/ }).click();
+    await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
+    expect(net.calls.place[0].headers.authorization).not.toBe("Bearer anon-test");
+  });
 }

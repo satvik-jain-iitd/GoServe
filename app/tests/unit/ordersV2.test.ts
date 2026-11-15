@@ -68,3 +68,45 @@ describe("the switch", () => {
     }
   });
 });
+
+// Story 1580: a phone that lost its sign-in must not send the anon key as the bearer. A 401 refreshes once and retries once with the same key.
+describe("placeOrderV2 sign-in (story 1580)", () => {
+  const seq = (...answers: [number, unknown][]) => {
+    const fetchFn = vi.fn(async () => { const [st, b] = answers.shift()!; return new Response(JSON.stringify(b), { status: st, headers: { "content-type": "application/json" } }); });
+    const token = vi.fn(async (_fresh?: boolean) => "user-tok");
+    return { fetchFn: fetchFn as unknown as typeof fetch, token, url: "https://x.supabase.co", anon: "anon", calls: fetchFn.mock.calls as unknown as [string, RequestInit][] };
+  };
+  it("no request ever carries the anon key as the bearer", async () => {
+    const d = seq([201, placed]);
+    await placeOrderV2(input, d);
+    expect((d.calls[0][1].headers as Record<string, string>).authorization).toBe("Bearer user-tok");
+  });
+  it("a first 401 then a 200 places one order, the second request with the same key and a fresh token", async () => {
+    const d = seq([401, { ok: false, error: "unauthorized" }], [201, placed]);
+    const r = await placeOrderV2(input, d);
+    expect(r.order.id).toBe("o1");
+    expect(d.calls).toHaveLength(2);
+    expect(JSON.parse(d.calls[1][1].body as string).idempotency_key).toBe("key-12345678");
+    expect(d.token).toHaveBeenLastCalledWith(true);
+  });
+  it("two 401s show the sign-in line after exactly two requests", async () => {
+    const d = seq([401, { ok: false, error: "unauthorized" }], [401, { ok: false, error: "unauthorized" }]);
+    const err = await placeOrderV2(input, d).catch((e) => e);
+    expect(err.message).toBe("Your sign-in ended. Close the app, open it again and place the order.");
+    expect(d.calls).toHaveLength(2);
+  });
+});
+
+
+describe("userToken (story 1580)", () => {
+  it("with no stored session it signs in first and returns the user's token, never the anon key", async () => {
+    vi.resetModules();
+    let session: { access_token: string } | null = null;
+    const ensure = vi.fn(async () => { session = { access_token: "made-tok" }; return "u1"; });
+    vi.doMock("../../src/lib/supabase", () => ({ ensureSession: ensure, getClient: () => ({ auth: { getSession: async () => ({ data: { session } }), refreshSession: async () => ({ error: null }) } }) }));
+    const { userToken } = await import("../../src/lib/ordersV2");
+    expect(await userToken()).toBe("made-tok");
+    expect(ensure).toHaveBeenCalled();
+    vi.doUnmock("../../src/lib/supabase");
+  });
+});
