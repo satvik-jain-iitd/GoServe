@@ -65,7 +65,7 @@ export const makeHandler = (deps: Deps) => async (req: Request): Promise<Respons
     const prior = await deps.existing(session, key);
     if (prior) return json(200, { ok: true, created: false, order: Object.fromEntries(ORDER_FIELDS.map((f) => [f, prior[f]])) });
     const drop = dropOf(b?.address);
-    if (!drop && await deps.needsPoint()) return json(422, POINT_REQUIRED);   // after the retry answer above: an order that exists is never refused
+    if (!drop && await deps.needsPoint().catch(() => false)) return json(422, POINT_REQUIRED);   // a read that fails counts as off here: place_order_v2 checks the switch again, so an old build never gets a 502 for it   // after the retry answer above: an order that exists is never refused
     const out = await runQuote(deps, q, session);
     if (!out.ok) return json(422, out.error === "dish_sold_out" ? { ...out, error: "sold_out" } : out);   // story #619: the refusal carries the server's alternative
     const quote = { ...out, kitchen_id: q.kitchen };
