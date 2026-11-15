@@ -50,10 +50,11 @@ async function billThenSaket(page: Page, context: BrowserContext, menuB: object[
   return { net };
 }
 // On the menu at Home with both dishes in the cart; Office is in the other kitchen's postal code.
-async function menuWithCart(page: Page, context: BrowserContext, menuB: object[], other: object = SAKET) {
+async function menuWithCart(page: Page, context: BrowserContext, menuB: object[], other: object = SAKET, recents: object[] = []) {
   const net = await setup(context, page, [], { pin: null });
   await twoKitchens(net, page, menuB);
   net.state.addresses = [HOME, other];
+  net.state.recents = recents;
   await context.addInitScript(([p, d]) => { if (!window.localStorage.getItem("gs-place")) { window.localStorage.setItem("gs-place", JSON.stringify(p)); window.localStorage.setItem("gs-pin", "110016"); window.localStorage.setItem("gs-draft", JSON.stringify(d)); } },
     [{ address: HOME.address, pin: "110016", lat: HOME.lat, lng: HOME.lng, house: "", landmark: "", confirmed: true, id: "h1" }, { step: "menu", cart: { d1: 1, d2: 1 }, address: HOME.address, name: "", phone: "" }] as const);
   await phoneLoc(page, { perm: "granted", pos: AT_HOME });
@@ -144,6 +145,41 @@ test("I pick a saved address of another kitchen with a cart: the menu says the k
   await expect(total(page)).toHaveText("₹350");
   await page.getByRole("button", { name: "Back to menu" }).click();
   await expect(page.getByText(CHANGED)).toHaveCount(0);   // the menu's line went on the tap
+});
+
+// The reviewer's ask: a place changes in three ways (a saved address above, a recent, a search confirmed on the pin map). Each one ends at the same point in the app.
+const RECENT = { id: "r1", name: "Sample Nagar", address: "Flat 2, Sample Nagar", pin_code: "110017", lat: SAKET.lat, lng: SAKET.lng, house: "Flat 2", landmark: null, used_at: "2026-11-10T10:00:00Z" };
+async function saysItChanged(page: Page) {   // the same as for a saved address
+  await expect(page.getByRole("status").filter({ hasText: `${CHANGED} It does not make Dal Makhani.` })).toBeVisible();
+  await expect(page.getByRole("button", { name: /View bill/ })).toContainText("₹350");
+  expect(await cartIds(page)).toEqual(["b1"]);   // the cart holds the new kitchen's dish
+  await page.getByRole("button", { name: /View bill/ }).click();
+  await expect(page.getByRole("status").filter({ hasText: ON_BILL })).toBeVisible();   // the Bill still says it
+  await expect(row(page, "1 × Butter Chicken").locator("s")).toHaveText("320");
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(total(page)).toHaveText("₹350");
+}
+
+test("I tap a recent of another kitchen with a cart: the menu says the kitchen changed and names the dish it does not make, and the Bill marks the price", async ({ page, context }) => {
+  await menuWithCart(page, context, ONE, SAKET, [RECENT]);
+  await toDeliverTo(page);
+  await page.getByRole("region", { name: "Recently searched" }).getByRole("button", { name: "Deliver to Sample Nagar" }).click();
+  await saysItChanged(page);
+});
+
+test("I search a place of another kitchen and confirm it on the pin map with a cart: the menu says the kitchen changed, and the Bill marks the price", async ({ page, context }) => {
+  const net = await menuWithCart(page, context, ONE);
+  net.state.places = { status: 200, body: { ok: true, results: [{ name: "Sample Nagar", address: "Sample Nagar, Delhi, 110017", lat: SAKET.lat, lng: SAKET.lng, pin: "110017", served: true, from: "own" }] } };
+  net.state.geocode = { status: 200, body: { ok: true, address: "Saket, New Delhi, Delhi", pin: "110017", locality: "Saket", town: "New Delhi" } };
+  net.state.nearPin = "110017";
+  await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
+  await toDeliverTo(page);
+  await page.getByRole("searchbox", { name: "Search an area or address" }).fill("sample");
+  await page.getByRole("region", { name: "Places" }).getByRole("button").first().click();
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();
+  await page.getByLabel("House, street, colony, ward").fill("Flat 2");
+  await page.getByRole("button", { name: "Deliver here" }).click();
+  await saysItChanged(page);
 });
 
 test("I pick a saved address the same kitchen serves: no line, no mark, the cart as it was", async ({ page, context }) => {

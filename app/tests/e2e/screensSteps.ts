@@ -26,10 +26,15 @@ const BOARD_ROWS = [
   { id: "w1", label: "Work", address: "171/7, Hari Singh Yadav House, Gali Number 7, Hans Enclave, Gurugram 122004", pin_code: "110016", lat: 28.4595, lng: 77.0266, last_used_at: "2026-11-05T10:00:00Z" },
   { id: "s1", label: "Shubhi", address: "Room no. 407, beside Melange Tower, Patrika Nagar, Madhapur, Hyderabad 500081", pin_code: "110016", lat: 17.4486, lng: 78.3908, last_used_at: "2026-11-04T10:00:00Z" },
 ];
+const RECENT_ROWS = [   // invented samples: a recent has a name, the customer's own words and a confirmed point
+  { id: "r1", name: "Sample Nagar", address: "Flat 2, near the park gate, Sample Nagar", pin_code: "110016", lat: 24.9201, lng: 79.5861, house: "Flat 2", landmark: "the park gate", used_at: "2026-10-26T10:00:00Z" },
+  { id: "r2", name: "Example Market", address: "Shop 9, Example Market, Chhatarpur", pin_code: "110016", lat: 24.9105, lng: 79.5790, house: "Shop 9", landmark: null, used_at: "2026-10-25T10:00:00Z" },
+];
 const viaSheet = (page: Page) => page.getByRole("dialog", { name: "Where to bring your food?" }).getByRole("button", { name: "View all" }).click();   // stories 1529 and 1526: the phone was not found and there are saved addresses
-async function deliverFrom(context: BrowserContext, page: Page, path: string, rows: number, o: { serve?: boolean; locate?: boolean } = {}) {
+async function deliverFrom(context: BrowserContext, page: Page, path: string, rows: number, o: { serve?: boolean; locate?: boolean; recents?: object[] } = {}) {
   const net = await setup(context, page, [], { pin: o.locate === false ? null : "110016" });   // the test kitchen serves 110016; the rows keep the boards words. Phone not found: a new phone takes the address used last
   net.state.addresses = BOARD_ROWS.slice(0, rows);
+  net.state.recents = o.recents ?? [];
   net.state.geocode = { status: 200, body: { ok: true, address: "Green Avenue Colony, Chhatarpur, Madhya Pradesh", pin: "471001", locality: "Chhatarpur", town: "Chhatarpur" } };
   if (o.serve === false) net.state.serve = { status: 200, body: { ok: true, serviceable: false, kitchens: [] } };
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+vg+AAVYAqhyXHCrAAAAAElFTkSuQmCC", "base64") }));
@@ -175,6 +180,9 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
   "deliver-all": async (context, page, path) => {   // board C13: View all opened
     await STEPS["deliver-five"](context, page, path);
     await page.getByRole("button", { name: "View all" }).click(); await expect(page.getByRole("listitem")).toHaveCount(5); },
+  "deliver-recents": async (context, page, path) => {   // story 1530, board LF4b: two saved rows, then "Recently searched" with two rows
+    await deliverFrom(context, page, path, 2, { recents: RECENT_ROWS });
+    await expect(page.getByRole("region", { name: "Recently searched" }).getByRole("listitem")).toHaveCount(2); },
   "deliver-removed": async (context, page, path) => {   // board C10: Home removed, the Undo bar
     await deliverFrom(context, page, path, 3);
     await page.getByRole("button", { name: "Edit or remove Home" }).click(); await page.getByRole("button", { name: "Remove", exact: true }).click();

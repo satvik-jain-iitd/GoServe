@@ -656,7 +656,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setStep((st) => (st === "bill" ? "bill" : "menu"));
     void (async () => {
       const pin = (await nearestPin(a.from, undefined)) || (a.pinTyped ? a.pin : "");
-      if (!pin) return;   // no postal code of our own for this point: no recent; the place itself stays
       const row = await keepRecent(getClient(), recentsNow.current, { ...recentWords(s.typed, s.hit, a), pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark });
       if (row) setRecents((cur) => [row, ...cur.filter((r) => r.id !== row.id)].slice(0, RECENTS_MAX));
     })().catch(() => undefined);

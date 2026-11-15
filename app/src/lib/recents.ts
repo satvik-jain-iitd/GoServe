@@ -30,6 +30,7 @@ export async function listRecents(c: Client): Promise<Recent[]> {
 }
 /** Keeps a confirmed place as the newest recent. The same name at the same place takes the older row. A failure is no recent; the place itself is not lost. */
 export async function keepRecent(c: Client, list: Recent[], r: Omit<Recent, "id" | "used_at">): Promise<Recent | null> {
+  if (!r.pin) return null;   // no postal code of our own or of the customer for this point: no recent; the place itself stays
   const used_at = new Date().toISOString();
   const row = { name: r.name, address: r.address, pin_code: r.pin, lat: r.lat, lng: r.lng, house: r.house || null, landmark: r.landmark || null };   // a new row takes the server's own time
   const same = list.find((x) => x.name === r.name && distanceM(x, r) <= SAME_M);

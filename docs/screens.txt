@@ -38,6 +38,7 @@ order-decline | /kitchen/ | 412x915 | order-decline
 declined | /customer/ | 412x915 | declined
 deliver-five | /customer/ | 412x915 | deliver-five
 deliver-all | /customer/ | 412x915 | deliver-all
+deliver-recents | /customer/ | 412x915 | deliver-recents
 deliver-removed | /customer/ | 412x915 | deliver-removed
 deliver-empty | /customer/ | 412x915 | deliver-empty
 edit-on-map | /customer/ | 412x915 | edit-on-map
