@@ -52,7 +52,8 @@ export function moveCart(held: Held[], menu: Dish[]): { cart: Cart; was: Record<
 }
 // The lines the customer reads. The menu also names the dishes that left the bill there; on the Bill each one is a row with "Take it out".
 // The Bill's line is short: it is one line under the title, in the header, so no part of the Bill moves (owner's rule 23).
-export const KITCHEN_CHANGED_BILL = "The kitchen changed. Prices are new.";
+// "Prices are new" is said only when a price differs for this customer (review of PR 1546, note 11).
+export const kitchenChangedBill = (priced: boolean): string => (priced ? "The kitchen changed. Prices are new." : "The kitchen changed.");
 export const kitchenChangedLine = (gone: string[] = []): string =>
   `The kitchen changed for this place. Prices are from the new kitchen.${gone.length ? ` It does not make ${gone.join(", ")}.` : ""}`;
 export const notMadeLine = (name: string): string => `${name} is not made by this kitchen.`;

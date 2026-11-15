@@ -74,6 +74,23 @@ test("The kitchen changes on the Bill: the Bill says the kitchen changed, each c
   await expect(total(page)).toHaveText("₹570");   // 350 + 220
 });
 
+// Review of PR 1546, note 11: "Prices are new" is said only when a price differs for this customer.
+const SAME = [{ ...BOTH[0], price_paise: 32000 }, BOTH[1]];   // the other kitchen: its own ids, the same prices
+test("The kitchen changes and no price differs: the Bill says only that the kitchen changed", async ({ page, context }) => {
+  await billThenSaket(page, context, SAME);
+  await expect(page.locator(".ui-head-under")).toHaveText("The kitchen changed.");
+  await expect(page.locator(".ui-slip-lines s")).toHaveCount(0);   // no price is marked, so no line may say a price is new
+  await expect(total(page)).toHaveText("₹540");
+});
+
+test("The kitchen changes, no price differs and one dish is not made: the Bill says only that the kitchen changed, and the dish has its row", async ({ page, context }) => {
+  await billThenSaket(page, context, [SAME[0]]);
+  await expect(page.locator(".ui-head-under")).toHaveText("The kitchen changed.");
+  await expect(page.getByRole("alert").filter({ hasText: "Dal Makhani is not made by this kitchen." })).toBeVisible();
+  await expect(row(page, "1 × Butter Chicken").locator("s")).toHaveCount(0);
+  await expect(total(page)).toHaveText("₹320");
+});
+
 test("Nothing moves when the Bill says the kitchen changed: only the header carries the line, and every part keeps its place and its size", async ({ page, context }) => {
   // The same Bill twice, after the place is confirmed in Saket: once as the new kitchen's own bill (after a reload the line is gone), once with the line.
   await billThenSaket(page, context, BOTH);
