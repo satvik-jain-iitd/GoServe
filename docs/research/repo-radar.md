@@ -550,3 +550,46 @@ Tier A for what each repo and the registry say of themselves. Not checked by rea
 **Verdict (hypothesis, confidence 0.6, the test decides):** try `modern-screenshot` 4.7.0 first: the smallest, a release inside 12 months, not brand new. Adopt it only if the picture laid over a screenshot of the letter passes the look test on Chromium and WebKit, with the brand font and the photo in it. If it fails on WebKit, try `@zumer/snapdom` pinned to 3.7.2 or older (never a release younger than a week). `html-to-image` is out. The measured numbers and the choice go in the story's PR and in the next row here.
 
 **Built from scratch:** nothing yet.
+## 2026-11-15 · need: capture a non-technical owner's intent before coding (repeat back, find the affected code, plan with a plain-words part and a technical part)
+
+Asked by the owner (ideas ID445, ID446). Run by the reviewer session.
+
+- `scout.py --need "capture a non-technical owner's intent before coding: restate the ask, find affected code, write a plan with a plain-words intent and impact part and a technical part"`: printed "no repos found".
+- GitHub topic search: `topic:spec-driven-development`, `topic:requirements-elicitation topic:claude-code`.
+
+| Repo | Found by | Verdict | READMEs read | Note |
+|---|---|---|---|---|
+| Fission-AI/OpenSpec | topic search | borrow the idea | README, top part | `proposal.md` (why, what changes) apart from `design.md` (how). Our two-part plan takes this shape. Not installed: it adds its own folder and commands, and our stories and Gherkin already do that job |
+| agrislis/product-ai-skills | topic search | watch | README | skills for interview questions and answer gaps; written for another agent; 3 stars; nothing taken |
+| abhigyanpatwari/GitNexus | named by the owner | adopt for impact, later | README, top part | MCP tools `query`, `context`, `impact`, `detect_changes`. On the Mac already, GoServe not indexed. Integration asked of ShipQuick: shipquick_latest issue 520 |
+
+READMEs read: yes, these three, top part only (not the full files). Built: one skill file, `~/.claude/skills/intent/SKILL.md`, because nothing found does the repeat-back and the owner part in his language. No app code.
+
+## 2026-11-15 · need: keep the design canvas and the shipped app in sync (design drift)
+
+Asked by the owner. `scout.py --need "keep design files and the shipped app in sync: detect design drift by comparing design screens with real app screenshots"` printed "no repos found". GitHub API lookups and topic searches (`topic:visual-regression-testing`, `topic:design-tokens topic:figma`), numbers as of 15 Nov 2026:
+
+| Repo | Stars | Last push | Licence | Verdict | Note |
+|---|---|---|---|---|---|
+| storybookjs/storybook | 91,569 | 2026-11-14 | MIT | watch | one source of truth by making components the design; big change for us |
+| garris/BackstopJS | 7,202 | 2026-10-10 | MIT | watch | page screenshots against accepted ones; same job as our Playwright pictures |
+| mapbox/pixelmatch | 7,023 | 2026-10-06 | ISC | in use | ships with Playwright; our sync check uses it |
+| reg-viz/reg-suit | 1,309 | 2026-11-11 | MIT | watch | compares picture folders, report page |
+| argos-ci/argos | 660 | 2026-11-13 | MIT | watch | review page for changed pictures on each PR |
+| oblador/loki | 1,916 | 2026-10-29 | MIT | watch | pictures of Storybook stories |
+| lost-pixel/lost-pixel | 1,678 | 2026-04-22 | MIT | no | archived |
+| aman-a-k/drift-design-diff | 0 | 2026-09-12 | - | no | the only "design against live app" tool found; no users |
+
+READMEs read: NO (only the descriptions and numbers from the API). Finding, confidence 0.6: popular tools catch "the app changed from its last accepted picture" (code against code). No popular open tool found for "the app differs from the design board". Nothing built.
+
+### Storybook, a closer look (15 Nov 2026, owner's ask; he recalls it from Amex, Tier S memory, not checked)
+
+| Claim | Evidence | Tier | Confidence |
+|---|---|---|---|
+| Storybook renders components and pages alone, one "story" per state | its README | A (what the tool does) | 0.9 |
+| It supports our stack on its main branch: React 18 or 19, Vite 6 to 8, TypeScript 5.9 to 7 | `code/frameworks/react-vite/package.json`, version 11.0.0-beta.3 | A | 0.8; the stable release v10.6.7 (10 Nov 2026) was NOT checked |
+| Its own visual test path is Chromatic, a paid cloud service by the same team | `docs/writing-tests/visual-testing.mdx` names Chromatic 19 times | A; motive: they sell it | 0.9 |
+| Our screens fit: `BillScreen`, `AreaScreen`, `MenuScreen` take their data as props, no database call inside | read on dev 0e1423a0, three of 33 screen files | S | 0.7 (three files read, not all) |
+| It stops drift between the design board and the app | no evidence; it only helps if the stories replace the hand-drawn boards | - | 0.5, needs a test |
+
+Free path if adopted: stories + our own Playwright pictures of each story (no Chromatic). Nothing built. Proposed test: 5 screens, see `docs/research/experiments.md` when the owner says yes.
