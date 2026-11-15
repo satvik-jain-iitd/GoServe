@@ -44,7 +44,7 @@ test("S1 a saved address with its pin, in the same pin code, puts the pin on the
 
 test("S2 (story 1532) an old saved address with no pin cannot be ordered to: Confirm on the map opens the map for that address", async ({ page, context }) => {
   const orders = await toBill(page, context, { ...HOME, lat: null, lng: null });
-  await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /Place order/ })).toHaveCount(0);   // story 1574: the bar reads Confirm on the map, not Place order
   await page.getByRole("button", { name: "Confirm on the map" }).click();
   await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
   await expect(page.getByText("Editing Home")).toBeVisible();

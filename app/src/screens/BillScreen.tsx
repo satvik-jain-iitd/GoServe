@@ -40,7 +40,9 @@ export function BillScreen({ lines, total, kitchenName, pin, address, farKm = nu
   const [typed, setTyped] = useState("");
   const q = offers?.quote;
   const empty = lines.length === 0;
-  const ready = !empty && !soldOut && confirmed && (!details || isPhone(details.phone));
+  const phoneOk = !details || isPhone(details.phone);
+  const ready = !empty && !soldOut && confirmed && phoneOk;
+  const needMap = !empty && !soldOut && !confirmed && phoneOk;   // story 1574: only the map point is missing, so the bar itself takes the customer to the map
   const [changing, setChanging] = useState(false);   // board BC1: Change turns the saved row into the field, in place
   const phoneRef = useRef<HTMLInputElement>(null);
   useEffect(() => { if (changing) phoneRef.current?.focus(); }, [changing]);
@@ -136,7 +138,6 @@ export function BillScreen({ lines, total, kitchenName, pin, address, farKm = nu
               ? <div className="ui-phone-row"><span><small className="mono">The rider calls you on</small><span className="mono">{details.phone}</span></span><button type="button" className="ui-pinmap-change" onClick={() => setChanging(true)}>Change</button></div>   /* board BF2: ten digits together */
               : <div className="ui-field"><label htmlFor="phone">Phone number · the rider calls you on it</label><input ref={phoneRef} id="phone" className="mono-input ui-eg" type="tel" placeholder="10 digit number" value={details.phone} inputMode="numeric" maxLength={10} autoComplete="tel-national" onChange={(e) => details.onPhone(e.target.value.replace(/\D/g, ""))} /></div>)}
             <PlaceRow words={address} onChange={onChangePlace} farKm={farKm} />
-            {!confirmed && <button type="button" className="ui-btn ghost" onClick={onConfirmPlace}>Confirm on the map</button>}
             <div className="ui-field"><label htmlFor="note">Note for the kitchen (optional)</label><textarea id="note" className="ui-eg" rows={2} value={note} maxLength={NOTE_MAX} placeholder="e.g. less spicy, no onion" onChange={(e) => onNote(e.target.value)} /><p className="mono ui-note-count"><span>{note.length} / {NOTE_MAX}</span></p></div>
             {door && (
               <fieldset className="ui-pay" role="radiogroup">
@@ -153,9 +154,9 @@ export function BillScreen({ lines, total, kitchenName, pin, address, farKm = nu
       </div>
       {!empty && (
         <div className="ui-sticky float">
-          {!ready && !sending && !soldOut && <p role="status" className="ui-reason">{!confirmed ? CONFIRM_PLACE_LINE : details && details.phone.length === 10 ? "The phone must be ten digits and start with 6, 7, 8 or 9." : "Add your 10 digit phone number."}</p>}   {/* story #1170: why the button is off */}
-          <button type="button" className="ui-btn bar" disabled={!ready || sending} onClick={onPlace}>
-            <span className="mono">{door?.value === "upi_door" ? "UPI" : door?.value === "cash" ? "Cash" : "At door"} · {formatRupees(total)}</span><span className="verb">{sending ? "Placing…" : soldOut ? "Fix the bill first" : "Place order ›"}</span>
+          {!ready && !needMap && !sending && !soldOut && <p role="status" className="ui-reason">{details && details.phone.length === 10 ? "The phone must be ten digits and start with 6, 7, 8 or 9." : "Add your 10 digit phone number."}</p>}   {/* story #1170: why the button is off */}
+          <button type="button" className="ui-btn bar" disabled={!(ready || needMap) || sending} onClick={needMap ? onConfirmPlace : onPlace}>
+            <span className="mono">{door?.value === "upi_door" ? "UPI" : door?.value === "cash" ? "Cash" : "At door"} · {formatRupees(total)}</span><span className="verb">{sending ? "Placing…" : soldOut ? "Fix the bill first" : needMap ? "Confirm on the map ›" : "Place order ›"}</span>
           </button>
         </div>
       )}
