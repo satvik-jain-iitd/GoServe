@@ -133,17 +133,17 @@ test("S8 no permission: no dot, and the map never asks for it by itself", async 
 });
 
 test("S9 Use current location opens the map at the phone; a tapped search result opens it at the place; back returns to Deliver to", async ({ page, context }) => {
-  const net = await open(page, context, { places: { status: 200, body: { ok: true, results: [{ name: "Chhatarpur", address: "Chhatarpur, Madhya Pradesh, 471001", lat: 24.9, lng: 79.58, pin: "471001", served: false }] } } });
+  const net = await open(page, context, { places: { status: 200, body: { ok: true, results: [{ name: "Sampletown", address: "Sampletown, Sample State, 900001", lat: 26.07, lng: 77.24, pin: "900001", served: false }] } } });
   await page.getByRole("button", { name: "Use current location" }).click();
   await expect(screen(page)).toBeVisible();
   await expect.poll(() => net.calls.serve.at(-1) ?? "").toContain("lat=28.56");
   await page.getByRole("button", { name: "Back" }).click();
   await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();
   const box = page.getByRole("searchbox", { name: "Search an area or address" });
-  await box.fill("chhat"); await box.press("Enter");
+  await box.fill("sample"); await box.press("Enter");
   await page.getByRole("region", { name: "Places" }).getByRole("button").first().click();
   await expect(screen(page)).toBeVisible();
-  await expect.poll(() => net.calls.serve.at(-1) ?? "").toContain("lat=24.9");
+  await expect.poll(() => net.calls.serve.at(-1) ?? "").toContain("lat=26.07");
 });
 
 test("S10 Confirm & proceed opens the details step over the same map (story #1038), and saving stores the pin's place", async ({ page, context }) => {

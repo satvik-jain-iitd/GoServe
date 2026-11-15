@@ -5,7 +5,7 @@ import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { phoneLoc, setLoc, setup } from "./helpers";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
-const HOME = { id: "h1", label: "Home", address: "Z-900, Green Avenue Colony, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
+const HOME = { id: "h1", label: "Home", address: "Z-900, Sample Garden Colony, Sampletown", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
 const WORK = { id: "w1", label: "Work", address: "Tower B, Sector 62, Noida", pin_code: "110016", lat: 28.6208, lng: 77.3639, last_used_at: "2026-11-01T10:00:00Z" };
 const AT_HOME = { latitude: 28.5690, longitude: 77.2440 };   // about 150 m from Home
 const AWAY = { latitude: 28.6139, longitude: 77.209 };   // about 6 km from Home
@@ -318,14 +318,14 @@ const stored = (context: BrowserContext, place: object) => context.addInitScript
 test("A confirmed place that is not a saved address is kept when my phone is at it", async ({ page, context }) => {
   const net = await setup(context, page, [], { pin: null });
   net.state.addresses = [];   // the save failed, so the place is only on this phone
-  await stored(context, { address: "12B, Green Avenue Colony", pin: "110016", lat: HOME.lat, lng: HOME.lng, house: "12B", landmark: "", confirmed: true, id: null });
+  await stored(context, { address: "12B, Sample Garden Colony", pin: "110016", lat: HOME.lat, lng: HOME.lng, house: "12B", landmark: "", confirmed: true, id: null });
   await phoneLoc(page, { perm: "granted", pos: AT_HOME });   // about 150 m from it
   await page.goto("/customer/");
   await expect(page.getByRole("searchbox", { name: "Search dishes" })).toBeVisible();
   await expect.poll(() => net.calls.rpc.filter((r: { name?: string } | string) => JSON.stringify(r).includes("address_near_m")).length).toBeGreaterThan(0);   // the open-time find has run
   await page.waitForTimeout(500);
   await expect(page.getByText("Where you are now")).toHaveCount(0);
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("gs-place")!))).toMatchObject({ address: "12B, Green Avenue Colony", confirmed: true });
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("gs-place")!))).toMatchObject({ address: "12B, Sample Garden Colony", confirmed: true });
 });
 
 for (const [name, pos, perm] of [["off", 2, "granted"], ["too slow", 3, "granted"], ["blocked", 1, "denied"]] as const) {

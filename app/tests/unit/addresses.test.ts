@@ -2,9 +2,9 @@
 import { describe, it, expect } from "vitest";
 import { distanceM, distanceWord, lastUsed, nearSaved, type SavedAddress } from "../../src/lib/addresses";
 
-const row = (id: string, label: string, lat: number | null, lng: number | null, used: string): SavedAddress => ({ id, label, address: `${label} street, town`, pin: "471001", lat, lng, last_used_at: used });
-const HOME = row("h", "Home", 24.9167, 79.5833, "2026-11-01T10:00:00Z");
-const OFFICE = row("o", "Office", 24.95, 79.62, "2026-11-05T10:00:00Z");   // about 5 km from Home, used more recently
+const row = (id: string, label: string, lat: number | null, lng: number | null, used: string): SavedAddress => ({ id, label, address: `${label} street, town`, pin: "900001", lat, lng, last_used_at: used });
+const HOME = row("h", "Home", 28.5677, 77.2432, "2026-11-01T10:00:00Z");
+const OFFICE = row("o", "Office", 28.6, 77.28, "2026-11-05T10:00:00Z");   // about 5 km from Home, used more recently
 
 describe("distanceM and distanceWord", () => {
   it("is about 111 km for one degree of latitude and 0 for the same place", () => {

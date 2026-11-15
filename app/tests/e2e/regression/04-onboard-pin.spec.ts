@@ -6,11 +6,11 @@ const PATH = "/customer/";
 test.use({ viewport: { width: 390, height: 844 } });
 
 // The phone's place (the step gives it to the browser). The map's own lookups and serviceability answers are set by mapAnswers below.
-const START = { lat: 24.8847, lng: 79.597 };
-const GREEN = "Green Avenue Colony, Satai Road, Chhatarpur, Madhya Pradesh 471001";
-const SHANTI = "Shanti Nagar, Satai Road, Chhatarpur, Madhya Pradesh 471001";
-const KITCHEN = { lat: 24.8847, lng: 79.60919 };   // the test kitchen: 1.2 km east of the phone
-const FAR_LNG = 79.61;   // east of this, no kitchen reaches the pin (about 1.3 km past the phone)
+const START = { lat: 28.5377, lng: 77.2532 };
+const FIRST = "Sample Garden Colony, Sample Road, Sampletown, Sample State 900001";
+const MOVED = "Example Nagar, Sample Road, Sampletown, Sample State 900001";
+const KITCHEN = { lat: 28.5377, lng: 77.26579 };   // the test kitchen: 1.2 km east of the phone
+const FAR_LNG = 77.2666;   // east of this, no kitchen reaches the pin (about 1.3 km past the phone)
 const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*", "access-control-expose-headers": "content-range" };
 
 const box = async (loc: Locator) => (await loc.boundingBox())!;
@@ -21,7 +21,7 @@ const json = (route: import("@playwright/test").Route, body: unknown) => route.f
 const at = (url: string) => { const u = new URL(url); return { lat: Number(u.searchParams.get("lat")), lng: Number(u.searchParams.get("lng")) }; };
 const metres = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => Math.hypot((a.lat - b.lat) * 111_320, (a.lng - b.lng) * 111_320 * Math.cos((a.lat * Math.PI) / 180));
 
-// The map's own answers, registered after the shared step (a route added later wins over the step's). The words follow the pin: GREEN at the phone, SHANTI once moved.
+// The map's own answers, registered after the shared step (a route added later wins over the step's). The words follow the pin: FIRST at the phone, MOVED once moved.
 // Serviceability: a kitchen 1.2 km from the phone, 'the kitchen is N m' follows the pin; east of FAR_LNG nothing reaches. holdLookup keeps the words waiting until release() is called.
 async function mapAnswers(context: BrowserContext, { holdLookup = false } = {}) {
   const lookups: { lat: number; lng: number }[] = [];
@@ -32,7 +32,7 @@ async function mapAnswers(context: BrowserContext, { holdLookup = false } = {}) 
     const p = at(route.request().url());
     lookups.push(p);
     if (holdLookup) await gate;
-    return json(route, { ok: true, address: metres(p, START) > 100 ? SHANTI : GREEN, pin: "471001" });
+    return json(route, { ok: true, address: metres(p, START) > 100 ? MOVED : FIRST, pin: "900001" });
   });
   await context.route("https://test.supabase.co/functions/v1/serviceability**", (route) => {
     if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: CORS });
@@ -61,7 +61,7 @@ test("TC 4.1 map opens: Back and search on top, pin in the middle, Current Locat
   const back = await box(page.getByRole("button", { name: "Back" }));
   const search = await box(page.getByRole("button", { name: "Search an area or address" }));
   const here = await box(page.getByRole("button", { name: "Current Location" }));
-  const name = page.getByText("Green Avenue Colony", { exact: true });
+  const name = page.getByText("Sample Garden Colony", { exact: true });
   await expect(name).toBeVisible();
   const nameBox = await box(name);
   const pin = await box(pinSpan(page));
@@ -72,7 +72,7 @@ test("TC 4.1 map opens: Back and search on top, pin in the middle, Current Locat
   expect(Math.abs(pin.y + pin.height / 2 - (map.y + map.height / 2))).toBeLessThanOrEqual(24);
   expect(here.y).toBeGreaterThan(pin.y);   // Current Location chip is in the sheet, above the place name
   expect(here.y).toBeLessThan(nameBox.y);
-  await expect(page.getByText("Satai Road, Chhatarpur, Madhya Pradesh 471001", { exact: true })).toBeVisible();   // full address
+  await expect(page.getByText("Sample Road, Sampletown, Sample State 900001", { exact: true })).toBeVisible();   // full address
   await expect(page.getByText("We deliver here · the kitchen is 1.2 km from the pin")).toBeVisible();
   await expect(confirm(page)).toBeEnabled();   // filled, live
   await expect(page.getByRole("link", { name: "Ola Maps" })).toBeVisible();
@@ -87,17 +87,17 @@ test("TC 4.2 Confirm & proceed: Address details, no step count, with the same pl
   const details = page.getByRole("dialog", { name: "Address details" });
   await expect(details).toBeVisible();
   await expect(details.getByText(/Step \d of \d/)).toHaveCount(0);   // 1404 (owner, 13 Nov): no step count anywhere
-  await expect(details.getByText("Green Avenue Colony", { exact: true })).toBeVisible();   // the same place the map rested on
+  await expect(details.getByText("Sample Garden Colony", { exact: true })).toBeVisible();   // the same place the map rested on
   await expect(page.getByRole("button", { name: "Confirm & proceed" })).toHaveCount(0);   // the map step is gone
 });
 
 test("TC 4.3 drag the map about 1 km: the pin stays centred, the place and the distance update once the map stops", async ({ page, context }) => {
   await STEPS["first-open-pin"](context, page, PATH);
   const { lookups } = await mapAnswers(context);
-  await expect(page.getByText("Green Avenue Colony", { exact: true })).toBeVisible();   // the first place shows before the drag
+  await expect(page.getByText("Sample Garden Colony", { exact: true })).toBeVisible();   // the first place shows before the drag
   for (let i = 0; i < 5; i++) await dragMap(page, 300, true);   // five drags of 300 px, roughly 1 km at this zoom (3 drags gave about 650 m)
-  await expect(page.getByText("Shanti Nagar", { exact: true })).toBeVisible();   // the place follows the map once it stops
-  await expect(page.getByText("Green Avenue Colony", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Example Nagar", { exact: true })).toBeVisible();   // the place follows the map once it stops
+  await expect(page.getByText("Sample Garden Colony", { exact: true })).toHaveCount(0);
   await expect(page.getByText(/the kitchen is [\d.]+ (km|m) from the pin/)).toBeVisible();   // a distance line shows for the new spot
   await expect(page.getByText("the kitchen is 1.2 km from the pin")).toHaveCount(0);   // and it moved on from the first spot's 1.2 km
   const last = lookups.at(-1)!;
@@ -114,9 +114,9 @@ test("TC 4.4 Current Location: the map flies back to my spot", async ({ page, co
   const { lookups } = await mapAnswers(context);
   await dragMap(page);
   await dragMap(page);
-  await expect(page.getByText("Shanti Nagar", { exact: true })).toBeVisible();   // moved away from the phone
+  await expect(page.getByText("Example Nagar", { exact: true })).toBeVisible();   // moved away from the phone
   await page.getByRole("button", { name: "Current Location" }).click();
-  await expect(page.getByText("Green Avenue Colony", { exact: true })).toBeVisible();   // back on the phone's place
+  await expect(page.getByText("Sample Garden Colony", { exact: true })).toBeVisible();   // back on the phone's place
   await expect.poll(() => metres(lookups.at(-1) ?? { lat: 0, lng: 0 }, START)).toBeLessThan(5);   // the last lookup is at my spot
 });
 

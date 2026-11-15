@@ -7,7 +7,7 @@ const NOW = Date.now();
 const row = (id: string, label: string, address: string, lat: number, lng: number, agoDays: number) => ({ id, label, address, pin_code: "110016", lat, lng, last_used_at: new Date(NOW - agoDays * 86_400_000).toISOString() });
 const HOME = row("h1", "Home", "Z-900, near the park gate, Green Park, New Delhi", 28.5677, 77.2432, 3);
 const OFFICE = row("o1", "Office", "Tower B, Connaught Place, New Delhi", 28.6315, 77.2167, 1);
-const MORE = [row("a1", "Parents", "Flat 00, Sample Nagar, Bhopal", 23.2, 77.4, 4), row("a2", "Work", "000/0, Test Enclave, Gurugram", 28.4, 77.0, 5), row("a3", "Friend", "Room 000, Example Nagar, Hyderabad", 17.4, 78.4, 6)];
+const MORE = [row("a1", "Parents", "Flat 00, Sample Nagar, Samplepur", 26.07, 77.24, 4), row("a2", "Work", "000/0, Test Enclave, Testnagar", 28.57, 72.24, 5), row("a3", "Friend", "Room 000, Example Nagar, Examplecity", 21.07, 77.24, 6)];
 const GREEN_PARK = { ok: true, address: "Green Park, New Delhi, Delhi", pin: "110016", locality: "Green Park", town: "New Delhi" };
 
 async function open(page: Page, context: Parameters<typeof setup>[0], list: object[]) {

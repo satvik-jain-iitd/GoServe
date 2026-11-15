@@ -7,7 +7,7 @@ describe("cardWords", () => {
     expect(cardWords("Green Park, New Delhi, Delhi")).toEqual({ name: "Green Park", rest: "New Delhi, Delhi" });
   });
   it("one part is the name alone; nothing is a quiet fallback", () => {
-    expect(cardWords("Chhatarpur")).toEqual({ name: "Chhatarpur", rest: "" });
+    expect(cardWords("Sampletown")).toEqual({ name: "Sampletown", rest: "" });
     expect(cardWords(null)).toEqual({ name: "Pin on the map", rest: "" });
   });
 });
@@ -22,10 +22,10 @@ describe("stripsFor", () => {
     expect(stripsFor({ serve: { serviceable: false, kitchenM: null }, here: null, pin: PIN })).toEqual([{ kind: "error", text: "Not in our area yet" }]);
   });
   it("a pin far from the phone adds the warm strip with the distance, above the served one (board C6b)", () => {
-    const far = stripsFor({ serve: { serviceable: true, kitchenM: 900 }, here: { lat: 24.9, lng: 79.6 }, pin: PIN });
+    const far = stripsFor({ serve: { serviceable: true, kitchenM: 900 }, here: { lat: 26.07, lng: 77.24 }, pin: PIN });
     expect(far.map((s) => s.kind)).toEqual(["warn", "ready"]);
     expect(far[0].text).toMatch(/^\d{3} km from where you are now$/);
-    expect(stripsFor({ serve: { serviceable: false, kitchenM: null }, here: { lat: 24.9, lng: 79.6 }, pin: PIN }).map((s) => s.text)).toEqual([expect.stringMatching(/km from where you are now$/), "Not in our area yet"]);
+    expect(stripsFor({ serve: { serviceable: false, kitchenM: null }, here: { lat: 26.07, lng: 77.24 }, pin: PIN }).map((s) => s.text)).toEqual([expect.stringMatching(/km from where you are now$/), "Not in our area yet"]);
   });
   it("near the phone adds nothing; no answer yet adds nothing; never more than two", () => {
     expect(stripsFor({ serve: { serviceable: true, kitchenM: 900 }, here: { lat: 28.5501, lng: 77.2001 }, pin: PIN })).toHaveLength(1);

@@ -2110,7 +2110,7 @@
    "tag": "button",
    "role": "",
    "cls": "ui-btn",
-   "text": "Edit or remove Bhopal home",
+   "text": "Edit or remove Sample home",
    "box": [
     338,
     519,
@@ -3179,7 +3179,7 @@
    "tag": "section",
    "role": "dialog",
    "cls": "",
-   "text": "Address details Step 2 of 2 Green Avenue Colony Satai Road, ",
+   "text": "Address details Step 2 of 2 Sample Garden Colony Sample Road, ",
    "box": [
     0,
     364,
@@ -3211,7 +3211,7 @@
    "tag": "input",
    "role": "",
    "cls": "",
-   "text": "C-128, second floor",
+   "text": "Flat 4, second floor",
    "box": [
     20,
     531,
@@ -3360,7 +3360,7 @@
    "tag": "button",
    "role": "",
    "cls": "ui-btn",
-   "text": "Edit or remove Bhopal home",
+   "text": "Edit or remove Sample home",
    "box": [
     326,
     420,
@@ -3493,7 +3493,7 @@
    "tag": "button",
    "role": "",
    "cls": "ui-btn",
-   "text": "Edit or remove Bhopal home",
+   "text": "Edit or remove Sample home",
    "box": [
     326,
     509,
@@ -3575,7 +3575,7 @@
    "tag": "button",
    "role": "",
    "cls": "ui-btn",
-   "text": "Edit or remove Bhopal home",
+   "text": "Edit or remove Sample home",
    "box": [
     326,
     509,
@@ -5819,7 +5819,7 @@
    "tag": "section",
    "role": "dialog",
    "cls": "",
-   "text": "Address details Step 2 of 2 Green Avenue Colony Satai Road, ",
+   "text": "Address details Step 2 of 2 Sample Garden Colony Sample Road, ",
    "box": [
     0,
     364,
@@ -5851,7 +5851,7 @@
    "tag": "input",
    "role": "",
    "cls": "",
-   "text": "e.g. C-128, second floor",
+   "text": "e.g. Flat 4, second floor",
    "box": [
     20,
     531,

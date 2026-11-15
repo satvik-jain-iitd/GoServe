@@ -5,7 +5,7 @@ import { test, expect, type BrowserContext, type Page, type Route } from "@playw
 import { STEPS } from "../screensSteps";
 
 const PATH = "/customer/";
-const ADDRESS = "Z-900, Green Avenue Colony, Sample Road, Chhatarpur 471001";
+const ADDRESS = "Z-900, Sample Garden Colony, Sample Road, Sampletown 900001";
 const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
 test.use({ viewport: { width: 390, height: 844 } });
 
@@ -46,7 +46,7 @@ test("TC 21.1 Look: the kitchen and pin, the one line, Delivery, To pay at door,
   await expect(page.getByRole("button", { name: "+ Add more" })).toBeVisible();
   await expect(nameBox(page)).toBeVisible();
   await expect(phoneBox(page)).toBeVisible();
-  await expect(addressBox(page)).toHaveAttribute("placeholder", "e.g. C-128, Green Avenue Colony");
+  await expect(addressBox(page)).toHaveAttribute("placeholder", "e.g. Flat 4, Green Park");
   await expect(noteBox(page)).toHaveAttribute("placeholder", "e.g. less spicy, no onion");
   await expect(page.getByText("0 / 200", { exact: true })).toBeVisible();
   const pay = page.getByRole("radiogroup", { name: "How you pay" });

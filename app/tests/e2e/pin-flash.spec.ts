@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test";
 import { STEPS } from "./screensSteps";
 
 const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "content-type": "application/json" };
-const SERVED = { ok: true, serviceable: true, request_here: false, kitchens: [{ kitchen_id: "k-1", name: "Chhatarpur Kitchen", distance_m: 1230, eta_min: 30, open: true }] };
+const SERVED = { ok: true, serviceable: true, request_here: false, kitchens: [{ kitchen_id: "k-1", name: "Sampletown Kitchen", distance_m: 1230, eta_min: 30, open: true }] };
 const NOT = { ok: true, serviceable: false, request_here: true, kitchens: [] };
 
 test("S1 changing the screen size on a served pin never shows Not in our area yet, and the pin is not looked up again", async ({ page, context }) => {
@@ -59,13 +59,13 @@ test("S3 asks that failed are asked again: network down, Current Location, netwo
   await page.setViewportSize({ width: 390, height: 844 });
   await STEPS["first-open-pin"](context, page, "/customer/");
   let down = true, asks = 0;
-  await context.route("https://test.supabase.co/functions/v1/geocode**", (route) => route.request().method() === "OPTIONS" ? route.fulfill({ status: 204, headers: CORS }) : route.fulfill({ status: 200, headers: CORS, body: JSON.stringify({ ok: true, address: "Radio Colony, Chhatarpur, Madhya Pradesh 471001", pin: "471001", locality: "Radio Colony", town: "Chhatarpur" }) }));
+  await context.route("https://test.supabase.co/functions/v1/geocode**", (route) => route.request().method() === "OPTIONS" ? route.fulfill({ status: 204, headers: CORS }) : route.fulfill({ status: 200, headers: CORS, body: JSON.stringify({ ok: true, address: "Example Colony, Sampletown, Sample State 900001", pin: "900001", locality: "Example Colony", town: "Sampletown" }) }));
   await context.route("https://test.supabase.co/functions/v1/serviceability**", (route) => {
     if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: CORS });
     asks++;
     return down ? route.abort() : route.fulfill({ status: 200, headers: CORS, body: JSON.stringify(SERVED) });
   });
-  await context.setGeolocation({ latitude: 24.8901, longitude: 79.6012 });
+  await context.setGeolocation({ latitude: 28.5431, longitude: 77.2574 });
   await page.getByRole("button", { name: "Current Location" }).click();
   await expect.poll(() => asks).toBeGreaterThan(0);
   await expect(page.getByText("We could not check this place. Check your internet.")).toBeVisible();
@@ -75,7 +75,7 @@ test("S3 asks that failed are asked again: network down, Current Location, netwo
   await expect.poll(() => asks).toBeGreaterThan(before);
   await expect(page.getByText(/^We deliver here/)).toBeVisible();
   await page.getByRole("button", { name: "Confirm & proceed" }).click();
-  await expect(page.getByRole("dialog", { name: "Address details" })).toContainText("Radio Colony");
+  await expect(page.getByRole("dialog", { name: "Address details" })).toContainText("Example Colony");
 });
 
 test("S4 a lookup that never answers: Confirm says Finding the address, and after the wait the details open to type the area; the place-only answer stands", async ({ page, context }) => {

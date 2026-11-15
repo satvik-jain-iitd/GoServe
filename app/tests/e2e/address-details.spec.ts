@@ -33,7 +33,7 @@ test("S1 the sheet opens over the same map: no step count, the place and a Chang
   for (const c of ["Home", "Office", "Other"]) await expect(sheet(page).getByRole("button", { name: c, exact: true })).toBeVisible();
   await expect(sheet(page).getByRole("button", { name: "Save address" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Search an area or address" })).toHaveCount(0);   // the top shows only Back while the sheet is open
-  await expect(sheet(page).getByLabel("House, street, colony, ward")).toHaveAttribute("placeholder", "e.g. C-128, Gali 3, Radio Colony");   // story 1421, board AD3
+  await expect(sheet(page).getByLabel("House, street, colony, ward")).toHaveAttribute("placeholder", "e.g. Flat 4, Green Park");   // story 1421, board AD3
   await expect(sheet(page).getByLabel("Landmark (optional)")).toHaveAttribute("placeholder", "e.g. near the park gate");
   const bar = (await sheet(page).getByRole("group", { name: "Save as" }).boundingBox())!;   // story 1422: the joined bar, not 36 px pills
   expect(Math.round(bar.height)).toBe(44);

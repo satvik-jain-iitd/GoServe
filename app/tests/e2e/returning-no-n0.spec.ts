@@ -3,7 +3,7 @@
 import { test, expect } from "@playwright/test";
 import { setup } from "./helpers";
 
-const HOME = { id: "h1", label: "Home", address: "Z-900, Green Avenue Colony, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
+const HOME = { id: "h1", label: "Home", address: "Z-900, Sample Garden Colony, Sampletown", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
 
 test("TC 1.6 returning customer never sees N0 while the saved addresses load (#1112)", async ({ page, context }) => {
   const net = await setup(context, page, [], { pin: null });
