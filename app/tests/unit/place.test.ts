@@ -1,4 +1,6 @@
 // Story 1532: the one stored delivery place. It comes back whole, an old phone's postal code and typed words become a place with no point, and only a confirmed point can be ordered to.
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { clearPlace, loadPlace, pointOf, savePlace, type StoredPlace } from "../../src/lib/place";
 
@@ -49,5 +51,20 @@ describe("pointOf: the point an order may carry", () => {
     expect(pointOf({ ...HOME, confirmed: false })).toBeNull();
     expect(pointOf({ ...HOME, lat: null, lng: null })).toBeNull();
     expect(pointOf(null)).toBeNull();
+  });
+});
+
+// Story 1532, review of PR 1541: the Bill's button is off for a place that is not confirmed, and the guard inside place() uses the same pointOf.
+// That holds only while the button is the one way into place(). The old phone-code sheet at checkout called place() by itself, past the button. This reads the source so no such path comes back.
+describe("an order starts only at the Bill's button", () => {
+  const app = readFileSync(resolve(__dirname, "../../src/App.tsx"), "utf8");
+  it("nothing calls place() by itself; the Bill gets it as onPlace, once", () => {
+    expect(app.replace("async function place()", "").match(/\bplace\(\)/g) ?? []).toEqual([]);
+    expect(app.match(/\{place\}/g)).toEqual(["{place}"]);
+    expect(app.match(/onPlace=\{place\}/g)).toHaveLength(1);
+  });
+  it("the phone-code sheet shows only as the welcome wall, never at checkout", () => {
+    expect(app.match(/<OtpSheet\b/g)).toHaveLength(1);
+    expect(app).toMatch(/<OtpSheet welcome\b/);
   });
 });

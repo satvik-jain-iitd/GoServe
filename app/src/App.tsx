@@ -52,7 +52,7 @@ import { placeOrderV2, PriceChanged, v2Deps } from "./lib/ordersV2";
 import { useOffers } from "./lib/useOffers";
 import { openOrderToResume } from "./lib/resume";
 import { SignIn } from "./screens/SignIn";
-import { NameSheet, OtpSheet } from "./screens/OtpSheet";
+import { OtpSheet } from "./screens/OtpSheet";
 import { Skeleton } from "./ui";
 import { otpLoginOn, rememberOtpSetting } from "./lib/otpGate";
 import { watchOtpSwitch } from "./lib/otpSwitch";
@@ -152,10 +152,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [signedIn, setSignedIn] = useState<boolean | null>(null);   // story #667: null = not asked yet; the first screen waits so a returning customer never sees it flash
   const [email, setEmail] = useState<string | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);   // story #975: the Google photo in the profile circle; none for a phone or guest account
-  const [otpOpen, setOtpOpen] = useState(false);
-  const [nameOpen, setNameOpen] = useState(false);
-  const [nameAsked, setNameAsked] = useState(false);
-  const [pendingPlace, setPendingPlace] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   // Story #552: how you pay. cod = today's cash order. UPI or Card: the order is placed, then Pay now makes the payment (the state machine lives here).
   const [payMethod, setPayMethod] = useState<PayMethod>("cod");
@@ -965,7 +961,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setCancelling(false);
   }
 
-  // Story #551: a guest confirms a phone number before the order goes; the continuation runs once the sheets are closed (so it sees the new name and phone).
   useEffect(() => {
     if (!gate && !wall) return;
     let alive = true;
@@ -982,12 +977,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     }).catch(() => { if (alive) setSignedIn(false); });
     return () => { alive = false; };
   }, [gate, wall]);
-  useEffect(() => {
-    if (!pendingPlace || otpOpen || nameOpen) return;
-    if (!name.trim() && !nameAsked) return void setNameOpen(true);
-    setPendingPlace(false);
-    void place();
-  }, [pendingPlace, otpOpen, nameOpen, nameAsked, name]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   async function demoKitchenId(): Promise<string | null> {
     const { data } = await getClient().from("kitchens").select("id").eq("active", true).eq("open", true).limit(1);
@@ -997,7 +986,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   async function place() {
     if (lock && lock !== "customer") return;   // story H2: only the customer app and the demo console place orders
     // Story 1417 (issue text; the reviewer asks the owner for the switch-on case): checkout never opens the number, code or name sheet. The phone is the Bill's field.
-    // The switch and OtpSheet stay: the welcome wall still uses them. The sheet form (otpOpen) and NameSheet below have no opener now; they stay until the owner rules on the switch-on case.
+    // The switch and OtpSheet stay: the welcome wall uses them. The Bill is the one caller of this function (tests/unit/place.test.ts).
     const drop = pointOf(where);
     if (!drop) return void setError(CONFIRM_PLACE_LINE);   // story 1532: no order leaves without a confirmed point (the Bill's button already waits)
     pushTrail("place order");
@@ -1207,14 +1196,11 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
           </button>
         ))}
       </nav>}
-      {otpOpen && <OtpSheet phone={phone} onClose={() => setOtpOpen(false)}
-        onVerified={(p) => { setPhone(p); setVerified(true); setOtpOpen(false); setToast("Number confirmed"); setTimeout(() => setToast(null), 2500); setPendingPlace(true); }} />}
       {sheet && step === "menu" && !pinMap && !needArea && (
         <LocationOffSheet list={saved ?? []} selectedId={selectedId} why={why ?? "ask"} busy={finding} onClose={() => setSheet(false)}
           onFind={() => { void find(true).then((at) => at && follow(at)); }}
           onPick={pickRow} onViewAll={() => { setSheet(false); setStep("deliver"); }} onSearch={() => { setSheet(false); setStep("deliver"); }} />
       )}
-      {nameOpen && <NameSheet onDone={(n) => { if (n) setName(n); setNameAsked(true); setNameOpen(false); }} />}
       {toast && <p role="status" className="otp-toast">{toast}</p>}
       {demo && <p role="status" className="notice"><strong>Offline demo</strong></p>}
       {!lock && <DemoBar autoOn={auto || demo} autoNote={autoNote} onAuto={toggleAuto} />}
