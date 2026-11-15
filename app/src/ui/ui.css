@@ -839,6 +839,7 @@ a.ui-locrow { text-decoration: none; }   /* story 1498: the rider row is a link 
 .ui-founder-links { margin: 2px 0 0; font-family: var(--gs-font-mono); font-size: 12px; color: var(--gs-text-muted); }
 .ui-founder-links a { color: inherit; }
 .ui-founder-share { margin-top: auto; }
+.ui-founder-foot { margin: 12px 0 5px; text-align: center; font-family: var(--gs-font-mono); font-size: 12px; line-height: 12px; color: var(--gs-text-muted); }   /* story 1563: the site address on the shared picture only, hidden on the screen. 12 + the body's gap of 12 = 24 px under the signature; 5 + the body's 18 + the 1 px border = 24 px to the picture's end */
 
 /* Story 1133 (boards O0g-C, N0b, A1c; ShipQuick 164): the first-open steps share one layout. The slip runs to 24 px above the edge plus the safe area. The main button is last, at the
    foot of the slip, so it has the same y on every step; an outline button sits above it. The hero (thali picture, bell, pin circle) is placed from the slip top, so its centre is at the
