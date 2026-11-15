@@ -23,9 +23,9 @@ async function open(page: Page, context: Parameters<typeof setup>[0], perm: "den
 test("S1 location blocked: the sheet shows at once; Try location again explains the settings; the auto-picked address stays", async ({ page, context }) => {
   await open(page, context, "denied", "never");
   await expect(sheet(page)).toBeVisible();
-  await expect(sheet(page).getByText(/In your phone: Settings/)).toHaveCount(0);
+  await expect(sheet(page).getByText(/Turn on location in your phone's settings/)).toHaveCount(0);
   await sheet(page).getByRole("button", { name: "Try location again" }).click();
-  await expect(sheet(page).getByText(/In your phone: Settings/)).toBeVisible();   // still blocked: the way is explained, no crash
+  await expect(sheet(page).getByText(/Turn on location in your phone's settings/)).toBeVisible();   // still blocked: the way is explained, no crash
   await sheet(page).getByRole("button", { name: /Work/ }).click();
   await expect(sheet(page)).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^Work\b/ }).first()).toBeVisible();   // choosing a saved address picks it
