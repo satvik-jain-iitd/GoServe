@@ -36,9 +36,9 @@ async function start(page: Page, context: Ctx, over: { addresses?: object[]; kit
   await context.route("https://nominatim.openstreetmap.org/reverse**", (r) => r.fulfill({ status: 500, headers: { "access-control-allow-origin": "*", "content-type": "application/json" }, body: "{}" }));
   return net;
 }
-const addNew = async (page: Page, viaSheet = false) => {   // viaSheet: the phone was not found, so the sheet is over the menu and its View all opens Deliver to
+const addNew = async (page: Page) => {   // story 1547: Home is the place on this phone, so no sheet opens even when the phone was not found
   await page.goto("/customer/");
-  if (viaSheet) await page.getByRole("dialog", { name: "Where to bring your food?" }).getByRole("button", { name: "View all" }).click(); else await toDeliverTo(page);
+  await toDeliverTo(page);
   await page.getByRole("button", { name: "Add new address" }).click();
   await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
 };
@@ -103,7 +103,7 @@ test("M3b no kitchen has a place: the old fixed point stays as the last step", a
 test("M4 The map screen does not ask for location by itself", async ({ page, context }) => {
   await latePhone(context, 100);   // the phone was never asked: the permission is still a question
   await start(page, context);
-  await addNew(page, true);
+  await addNew(page);
   await page.waitForTimeout(1500);
   expect(await page.evaluate(() => (window as unknown as { __asks: number }).__asks)).toBe(0);
 });

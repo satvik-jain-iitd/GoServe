@@ -41,10 +41,11 @@ test("S2 story 1529: phone far from every saved address, the page does not open 
   await expect(page.locator(".ui-deliver-foot")).toHaveCount(0);   // owner rule 8 Nov: the page ends with the list, no line about why
 });
 
-test("S3 no location permission: the place on this phone stays, the sheet asks, and the page does not open by itself", async ({ page, context }) => {
+test("S3 no location permission: the place on this phone stays, no sheet opens (story 1547), and the page does not open by itself", async ({ page, context }) => {
   await open(page, context, null);
-  await expect(page.getByRole("dialog", { name: "Where to bring your food?" })).toBeVisible();
   await expect(page.getByRole("button", { name: /^Deliver to\b/ })).toContainText("Flat 4, Green Park");
+  await page.waitForTimeout(500);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(dialog(page)).toHaveCount(0);
 });
 

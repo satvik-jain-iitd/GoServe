@@ -20,9 +20,8 @@ async function open(page: Page, context: Parameters<typeof setup>[0], over: { ge
   await context.route("https://nominatim.openstreetmap.org/reverse**", (r) => r.fulfill({ status: 500, headers: OSM_CORS, body: "{}" }));
   if (over.permission !== false) { await context.grantPermissions(["geolocation"]); await context.setGeolocation(PHONE); }
   await page.goto("/customer/");
-  // story 1529: the place follows the phone, so the header is not always Home; with no permission the sheet is over the menu
-  if (over.permission === false) await page.getByRole("dialog", { name: "Where to bring your food?" }).getByRole("button", { name: "View all" }).click();
-  else await page.getByTitle("Change the delivery address").click();
+  // story 1529: the place follows the phone, so the header is not always Home. Story 1547: with no permission the place on this phone stays and no sheet opens
+  await page.getByTitle("Change the delivery address").click();
   return net;
 }
 const screen = (page: Page) => page.getByRole("region", { name: "Pin map" });

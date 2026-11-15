@@ -1,7 +1,7 @@
 // Bug 1526 (board LO-V1, LF-SHEET-Blocked, LF-SHEET-Busy): the sheet "Where to bring your food?". The line is true for the cause (blocked for the app, the phone's
 // location is off, too slow), every tap asks again and shows something, and no button is dead. The same true lines show on Deliver to and on the pin map.
 import { test, expect, type Page } from "@playwright/test";
-import { asked, comeBack, phoneLoc, setLoc, setup, type Loc } from "./helpers";
+import { asked, comeBack, phoneLoc, setLoc, setup, toDeliverTo, type Loc } from "./helpers";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
 const HOME = { id: "h1", label: "Home", address: "Z-900, Green Avenue Colony, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
@@ -43,6 +43,11 @@ test("Location is blocked for the app: no button on the sheet does nothing when 
   await sheet(page).getByRole("button", { name: /Work/ }).click();   // a saved address picks it
   await expect(sheet(page)).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^Work\b/ }).first()).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("button", { name: /^Work\b/ }).first()).toBeVisible();
+  await page.waitForTimeout(500);
+  await expect(sheet(page)).toHaveCount(0);   // story 1547: Work is the place on this phone now, so the sheet does not open by itself again
+  await page.evaluate(() => { localStorage.removeItem("gs-place"); localStorage.removeItem("gs-pin"); });   // a phone with no place again
   await page.reload();
   await sheet(page).getByRole("button", { name: "Search your area" }).click();   // the filled button opens the search
   await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
@@ -100,7 +105,7 @@ test("Deliver to, Use current location: the card says Finding you…, then the b
   await page.getByRole("button", { name: "Use current location" }).click();
   await expect(page.getByRole("button", { name: "Finding you…" })).toBeDisabled();
   await page.reload();
-  await sheet(page).getByRole("button", { name: "View all" }).click();
+  await toDeliverTo(page);   // story 1547: Home is the place on this phone now, so no sheet opens; the place at the top opens Deliver to
   await setLoc(page, { perm: "granted", pos: 2 });
   await page.getByRole("button", { name: "Use current location" }).click();
   await expect(box).toContainText("Your phone's location is off");
