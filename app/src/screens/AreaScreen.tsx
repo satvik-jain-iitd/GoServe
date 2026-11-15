@@ -1,28 +1,25 @@
 // The first question of the customer app (story B2, rebuilt in story #668, boards A1 to A3): where does the food go? The customer's own address, never the kitchen's.
-// Ask (use my location, or type it by hand). Story #1049 (boards A1, A1p): Use my location opens the full-screen pin map at the phone (the same screen as C6); the phone not giving
+// Ask (use my location, or search). Story 1049 (boards A1, A1p): Use my location opens the full-screen pin map at the phone (the same screen as C6); the phone not giving
 // its place says why in a true line (bug 1526, board LF-ASK-B): then asking again is the outline button and search is the filled one. The kitchen is matched behind the scenes
 // from the pin code and, when allowed, the place.
+// Story 1528: no box to type an address and a postal code here; a place always comes with a point from the map. When the kitchen of a place could not be read (no internet),
+// the same box says so and the filled button is "Try again".
 import { useEffect, useRef, useState, type Ref } from "react";
-import { isPin } from "../lib/area";
 import type { Area } from "../lib/area";
 import { currentPlace, locLine, locWhy, type LocWhy, type Place } from "../lib/locate";
 import { useAfterMotion } from "../lib/afterMotion";
 
-type Props = { pin: string | null; address: string; area: Area | null; busy: boolean; error: string | null; onPlace: (p: { pin: string; address: string }) => void;
+type Props = { area: Area | null; busy: boolean; error: string | null; onRetry: () => void;   // error: the kitchen of the place could not be read; onRetry reads it again
   onMap: (at: Place) => void; onSearch: () => void;   // story #1049: the pin map at the phone; the search
   finding?: { leaving: boolean; onLeft: () => void };   // story 1384 (board A1e): the first Save address; the kitchen is being found. leaving: it was found, the rider rides out, then onLeft
 };
-type Mode = "ask" | "hand";
 const OFF = <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /><path d="M3 3l18 18" /></svg>;
+const WARN = <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v6M12 16.5v.5" /></svg>;
 
-export function AreaScreen({ pin, address: start, area, busy, error, onPlace, onMap, onSearch, finding }: Props) {
-  const [mode, setMode] = useState<Mode>(pin ? "hand" : "ask");
-  const [address, setAddress] = useState(start);
-  const [text, setText] = useState(pin ?? "");
+export function AreaScreen({ busy, error, onRetry, onMap, onSearch, finding }: Props) {
   const [locating, setLocating] = useState(false);
   const [why, setWhy] = useState<LocWhy | null>(null);   // bug 1526: why the phone did not give its place
-  const [note, setNote] = useState<string | null>(null);
-  const ready = address.trim().length > 0 && isPin(text);
+  const line = error ?? (why && locLine(why, "search for your address"));
   const leaving = !!finding?.leaving;
   const riding = useRef<HTMLSpanElement>(null);
   const ask = useAfterMotion(riding) ? "ui-arrive" : "ui-await";   // story 1524: the two buttons show when the rider has stopped; their space is kept
@@ -36,7 +33,6 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace, on
 
   async function useLocation() {
     setLocating(true);
-    setNote(null);
     try {
       onMap(await currentPlace());   // the map opens at the phone; the words come from the pin there
     } catch (e) {
@@ -45,24 +41,6 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace, on
       setLocating(false);
     }
   }
-
-  const form = (
-    <>
-      <div className="ui-field">
-        <label htmlFor="address">Address</label>
-        <textarea id="address" rows={2} maxLength={300} value={address} onChange={(e) => setAddress(e.target.value)} />
-      </div>
-      <div className="ui-field">
-        <label htmlFor="pin">Pin code</label>
-        <input id="pin" className="ui-pin-input" type="tel" inputMode="numeric" maxLength={6} placeholder="123456" value={text}
-          aria-invalid={!!error || undefined} aria-describedby={error ? "pin-help" : undefined}
-          onChange={(e) => setText(e.target.value.trim())} />
-        {error && <p id="pin-help" role="alert" className="ui-field-error">{error}</p>}
-      </div>
-      {busy && <p role="status" className="ui-note">Finding your kitchen…</p>}
-      <button type="button" className="ui-btn big" disabled={busy || !ready} onClick={() => onPlace({ pin: text, address: address.trim() })}>See the menu</button>
-    </>
-  );
 
   return (
     <section className="ui-landing">
@@ -80,24 +58,19 @@ export function AreaScreen({ pin, address: start, area, busy, error, onPlace, on
               <span aria-hidden="true" className="ui-pinbadge ui-hero-abs"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.5" /></svg></span>
               {lane(leaving ? "out" : "wait")}
             </>
-          ) : mode === "ask" && (
+          ) : (
             <>
               <h2 className="ui-slip-title">Where does the food go?</h2>
               <p className="ui-slip-why">We use it only to find your address <br />and the kitchen near you.</p>
               <span aria-hidden="true" className="ui-pinbadge ui-hero-abs"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.5" /></svg></span>
-              {!why && lane("in", riding)}
-              {why && <p role="status" className="ui-loc-note">{OFF}<span>{locLine(why, "search for your address")}</span></p>}   {/* board LF-ASK-B: the rider is left out, so no two boxes meet */}
-              {why ? <button type="button" className="ui-btn ghost big" disabled={locating} onClick={useLocation}>{locating ? "Finding you…" : "Try location again"}</button>
+              {!line && lane("in", riding)}
+              {line && <p role={error ? "alert" : "status"} className="ui-loc-note">{error ? WARN : OFF}<span>{line}</span></p>}   {/* board LF-ASK-B: the rider is left out, so no two boxes meet */}
+              {error ? <button type="button" className="ui-btn ghost big" onClick={onSearch}>Search for my address</button>
+                : why ? <button type="button" className="ui-btn ghost big" disabled={locating} onClick={useLocation}>{locating ? "Finding you…" : "Try location again"}</button>
                 : <button type="button" className={`ui-btn ghost big ui-push ${ask}`} onClick={onSearch}>Search for my address</button>}
-              {why ? <button type="button" className="ui-btn big" onClick={onSearch}>Search for my address</button>
+              {error ? <button type="button" className="ui-btn big" disabled={busy} onClick={onRetry}>Try again</button>
+                : why ? <button type="button" className="ui-btn big" onClick={onSearch}>Search for my address</button>
                 : <button type="button" className={`ui-btn big ${ask}`} disabled={locating} onClick={useLocation}>{locating ? "Finding you…" : "Use my current location"}</button>}
-            </>
-          )}
-          {!finding && mode === "hand" && (
-            <>
-              <h2 className="ui-slip-title">Where does the food go?</h2>
-              {note && <p role="status" className="ui-note">{note}</p>}
-              {form}
             </>
           )}
         </div>

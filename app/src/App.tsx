@@ -1048,6 +1048,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     } catch (e) {
       if (e instanceof PlaceError && e.code === "sold_out") setLiveTick((n) => n + 1);   // story #619: read the menu again, the Bill then names the dish
       if (e instanceof PriceChanged) offers.replace(e.quote);   // the Bill shows the new To pay; nothing is ordered until the customer taps again
+      if (e instanceof PlaceError && e.code === "point_required") {   // story 1528: the server found no point on this order. The place must be set on the map again: the Bill says so and shows "Confirm on the map"
+        if (whereNow.current) setPlace({ ...whereNow.current, confirmed: false });
+        return;
+      }
       pushTrail(`error: ${e instanceof Error ? e.message : "place failed"}`);
       setError(e instanceof PlaceError || e instanceof Error ? e.message : "Something went wrong. Please try again.");
     } finally {
@@ -1154,7 +1158,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <NoKitchen address={farPick.address} ask={areaAsk} error={areaAskError} offerPaise={areaOffer} onTell={() => undefined}
       onChange={() => { const at = farPick.at; setFarPick(null); setAreaAsk("idle"); setPinMap({ center: at }); }} />
   ) : settingUp && !areaError && !(pin && area?.kind === "none") ? (   // a failed read or no kitchen here: the screens for those show at once
-    <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={() => undefined} onMap={() => undefined} onSearch={() => undefined}
+    <AreaScreen area={area} busy={looking} error={areaError} onRetry={() => undefined} onMap={() => undefined} onSearch={() => undefined}
       finding={{ leaving: !needArea, onLeft: () => setSettingUp(false) }} />
   ) : step === "deliver" || noPlace ? deliverTo : waitingForAddresses ? (
     <div className="ui-pad"><Skeleton lines={3} /></div>
@@ -1164,7 +1168,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <NoKitchen address={address} ask={areaAsk} error={areaAskError} offerPaise={areaOffer} onTell={() => void tellMeWhenWeCome()} onSaved={saved?.length ? () => setStep("deliver") : undefined}
       onChange={() => { const at = from; changeArea(); if (at) setPinMap({ center: at }); else openAtStart(); }} />
   ) : needArea ? (
-    <AreaScreen pin={pin} address={address} area={area} busy={looking} error={areaError} onPlace={(pl) => choosePlace({ address: pl.address, pin: pl.pin, lat: null, lng: null, house: "", landmark: "", confirmed: false, id: null })}
+    <AreaScreen area={area} busy={looking} error={areaError} onRetry={() => setMenuTry((n) => n + 1)}   // story 1528: no typed place; a kitchen that could not be read is read again
       onMap={(at) => setPinMap({ center: at })} onSearch={() => { setFocusSearch(true); setPinMap({ center: mapStart(), follow: true, recent: { typed: "", hit: null } }); }} />
   ) : (
     <>

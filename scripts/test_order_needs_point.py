@@ -46,7 +46,9 @@ class OrderNeedsPoint(unittest.TestCase):
 
     def test_s6_the_switch_holds_only_true_or_false(self):
         for v in ("1", '"yes"', "null"):
-            self.assertIn("violates", str(go(f"update settings set value = '{v}'::jsonb where name = 'order_needs_point'")), v)
+            with self.assertRaises(AssertionError) as refused:   # the helper raises on a database error
+                go(f"update settings set value = '{v}'::jsonb where name = 'order_needs_point'")
+            self.assertIn("settings_order_needs_point_rule", str(refused.exception), v)
 
     def test_s7_the_migration_is_safe_to_run_twice_and_keeps_a_switch_that_is_on(self):
         mig = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "supabase", "migrations", FILE)).read()
