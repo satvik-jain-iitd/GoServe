@@ -35,13 +35,13 @@ test("S2 no promise on the stored row means no promise in the letter", async ({ 
   await expect(slip(page)).toContainText("Pahle banda, phir dhanda.");
 });
 
-test("S3 Share this note opens the phone share sheet with the letter's words and the link", async ({ page, context }) => {
+test("S3 Share this note opens the phone share sheet with the letter's words and the link (story 1563: the link is the text's last line)", async ({ page, context }) => {
   await page.addInitScript(() => { (window as any).__shared = null; (navigator as any).share = async (d: unknown) => { (window as any).__shared = d; }; });
   await setup(context, page, [], { pin: null });
   await toNote(page);
   await page.getByRole("button", { name: "Share this note" }).click();
   const d = await page.evaluate(() => (window as any).__shared);
-  expect(d.url).toBe("https://letsdwelo.in/");
+  expect(d.text.endsWith("\n\nhttps://letsdwelo.in/")).toBe(true);
   expect(d.text).toContain("Pahle banda, phir dhanda");
 });
 
