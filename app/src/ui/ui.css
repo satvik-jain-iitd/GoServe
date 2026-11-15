@@ -64,6 +64,7 @@ body { margin: 0; background: var(--md-background); color: var(--md-on-backgroun
 .ui-slip-rule { border-top: 1px dashed var(--md-outline-variant); }
 .ui-slip-lines { display: grid; gap: var(--gs-space-2); font-family: var(--gs-font-mono); font-size: var(--gs-mono-base); }
 .ui-slip-lines div { display: flex; justify-content: space-between; gap: 12px; }
+.ui-slip-lines .was { margin-right: var(--gs-space-2); color: var(--gs-text-muted); }   /* story 1540: the price at the kitchen before, struck, left of the new price */
 .ui-slip-total { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .ui-slip-total b { font-family: var(--gs-font-display); font-weight: 800; font-size: var(--gs-text-base); letter-spacing: 0.04em; }
 .ui-slip-total span { font-family: var(--gs-font-mono); font-weight: 500; font-size: var(--gs-mono-xl); }

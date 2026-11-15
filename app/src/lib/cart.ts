@@ -11,7 +11,7 @@ export const changeQty = (cart: Cart, id: string, delta: number): Cart => {
 };
 export const addDish = (cart: Cart, id: string): Cart => changeQty(cart, id, +1);
 
-export type Line = { dish: Dish; qty: number; line_paise: number };
+export type Line = { dish: Dish; qty: number; line_paise: number; was_paise?: number; gone?: true };   // story 1540: was_paise = what the line cost at the kitchen before; gone = the kitchen of the place now does not make it
 export const cartLines = (cart: Cart, menu: Dish[]): Line[] =>
   menu.filter((d) => cart[d.id] > 0).map((dish) => ({ dish, qty: cart[dish.id], line_paise: dish.price_paise * cart[dish.id] }));
 export const cartTotal = (lines: Line[]): number => lines.reduce((sum, l) => sum + l.line_paise, 0);
@@ -29,3 +29,22 @@ export const reorderCart = (items: { menu_item_id: string; name: string; qty: nu
   }
   return { cart, left };
 };
+// Story 1540: the delivery place changed and another kitchen serves it. The cart moves to that kitchen's own dishes: the same id, else the same name (each kitchen has its
+// own rows, so the ids differ). `was` keeps the old unit price of each dish whose price differs (by the new id); `gone` are the dishes the new kitchen does not make.
+export type Held = { id: string; name: string; qty: number; price_paise: number };
+const nameKey = (name: string) => name.trim().toLowerCase();
+export function moveCart(held: Held[], menu: Dish[]): { cart: Cart; was: Record<string, number>; gone: Held[] } {
+  const cart: Cart = {}, was: Record<string, number> = {}, gone: Held[] = [];
+  for (const h of held) {
+    const dish = menu.find((d) => d.id === h.id) ?? menu.find((d) => nameKey(d.name) === nameKey(h.name));
+    if (!dish) { gone.push(h); continue; }
+    cart[dish.id] = Math.min(MAX_QTY, (cart[dish.id] ?? 0) + h.qty);
+    if (dish.price_paise !== h.price_paise) was[dish.id] = h.price_paise;
+  }
+  return { cart, was, gone };
+}
+// The lines the customer reads. The menu also names the dishes that left the bill there; on the Bill each one is a row with "Take it out".
+export const kitchenChangedLine = (gone: string[] = []): string =>
+  `The kitchen changed for this place. Prices are from the new kitchen.${gone.length ? ` It does not make ${gone.join(", ")}.` : ""}`;
+export const notMadeLine = (name: string): string => `${name} is not made by this kitchen.`;
+export const BILL_CLEARED_LINE = "Your delivery place changed, so your bill was cleared. Add dishes from this menu.";
