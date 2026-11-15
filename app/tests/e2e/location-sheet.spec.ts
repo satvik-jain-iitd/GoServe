@@ -20,10 +20,11 @@ async function open(page: Page, context: Parameters<typeof setup>[0], loc: Loc) 
   return net;
 }
 
-test("The phone's location is off: I tap the main button, I do not see the word blocked, and a second tap asks again", async ({ page, context }) => {
+test("The phone's location is off: I tap Try location again, I do not see the word blocked, and a second tap asks again", async ({ page, context }) => {
   await open(page, context, { perm: "granted", pos: 2 });
   await expect(sheet(page)).toBeVisible();
   expect(await asked(page)).toBe(1);   // the one find the app makes by itself
+  const main = (p: Page) => sheet(p).getByRole("button", { name: "Try location again" });   // story 1530: after a find that failed the retry is the outline button; search is the filled one
   await main(page).click();
   await expect(sheet(page).getByRole("status")).toHaveText("Your phone's location is off. Pick a place.");
   await expect(sheet(page)).not.toContainText(/blocked/i);
@@ -68,7 +69,7 @@ test("A tap always shows something: the button says Finding you… until the pho
 test("Finding the phone takes too long: the line says so, and never says blocked", async ({ page, context }) => {
   await open(page, context, { perm: "granted", pos: 3 });
   await expect(sheet(page).getByRole("status")).toHaveText("Finding you is taking too long. Pick a place.");
-  await expect(main(page)).toBeEnabled();
+  await expect(sheet(page).getByRole("button", { name: "Try location again" })).toBeEnabled();   // story 1530: the retry is the outline button after a find that failed
 });
 
 test("The sheet: the picked address carries a tick, two rows show, and View all opens Deliver to", async ({ page, context }) => {

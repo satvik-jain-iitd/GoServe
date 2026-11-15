@@ -107,12 +107,14 @@ describe("the nearest pin when the reverse lookup has none (story 987)", () => {
 
 // Bug 1526: every failure was called "blocked". The browser's error code says which of the three it is; the line is true for that cause.
 describe("locWhy and its words (bug 1526)", () => {
-  it("reads the error code: 1 blocked, 2 the phone's location is off, 3 too slow; no code is the phone's location", () => {
+  it("reads the error code: 1 blocked, 2 the phone's location is off, 3 too slow; no code is a line true for any cause", () => {
     expect(locWhy({ code: 1 })).toBe("denied");
     expect(locWhy({ code: 2 })).toBe("off");
     expect(locWhy({ code: 3 })).toBe("slow");
-    expect(locWhy(new Error("no_geolocation"))).toBe("off");
-    expect(locWhy(null)).toBe("off");
+    expect(locWhy(new Error("no_geolocation"))).toBe("none");   // story 1530: an error with no code is not called "off"
+    expect(locWhy(null)).toBe("none");
+    expect(locLine("none" as never, "search above")).toBe("We could not find where you are. Try again, or search above.");
+    expect(locLine("none" as never, "search above")).not.toMatch(/off|blocked/i);
   });
   it("blocked again after a tap says so, so the second tap shows something new", () => {
     expect(locWhy({ code: 1 }, "denied")).toBe("still");
