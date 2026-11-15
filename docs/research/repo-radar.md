@@ -520,3 +520,33 @@ READMEs read: yes, the top three (reg-suit, loki, lost-pixel). Use what exists: 
 **Reused:** the browser's own `animationend` event and `Element.getAnimations()` (for "is there a motion at all" and for the fallback's length), and our own `ui-fade-in` keyframes.
 
 **Built from scratch:** one hook, `app/src/lib/afterMotion.ts` (21 lines), and two CSS classes.
+
+### Radar run 2026-11-15 | need: ask where to deliver when the phone is far from every saved address (story 1548) | by: coder
+
+**Run:**
+- `python3 ~/Documents/AGI/plugins/radar/scripts/scout.py --need "ask delivery address when phone location is far from saved addresses"` printed `no repos found`.
+- `gh search repos "delivery address location confirmation prompt"` gave no result.
+
+**Top 3 READMEs read:** none; there was nothing to read.
+
+**Reused:** our own code, as the story lists: `findPhone`, `nearSaved`, `distanceM`, `fetchKitchens`, `chooseKitchen`, `cartFits`, the add-new-address flow, Deliver to, the Bill's `PlaceRow`, and the sheet shell with its guard of story 1560.
+
+**Built from scratch:** the rule of when the box shows and its memory on the phone. It is a product rule, not a component.
+
+### Radar run 2026-11-15 | need: turn one DOM node into a PNG in the browser (story 1563) | by: coder
+
+**Run:**
+- `python3 ~/Documents/AGI/plugins/radar/scripts/scout.py --need "dom to image png browser"`: three repos, all scored 0 and "ignore" (`sharonchoong/svg-exportJS`, `hiteshsuthar01/OK-`, `mhowerton91/history`). The scout missed the known libraries.
+- The three candidates the story names were read by hand: the GitHub API for stars, licence, last push and last release; the README; the npm registry for the version, the dependencies and the size.
+
+| Repo | Stars | Licence | Last release | npm, unpacked | Dependencies | What its README says | Catch |
+|---|---|---|---|---|---|---|---|
+| `qq15725/modern-screenshot` | 2,093 | MIT | v4.7.0, 2026-04-16 | 186 kB | none | `domToPng`, `domToBlob`, a reusable context | README warns that partial embedding fails with CORS |
+| `zumerlab/snapdom` | 8,245 | MIT | v3.7.5, 2026-11-13 | 718 kB | none | `toBlob`, `exclude`, `embedFonts`, `scale`, `dpr`; 3 open issues | The newest release is two days old; a new release every few days |
+| `bubkoo/html-to-image` | 7,275 | MIT | v1.11.13, 2025-02-14 | 315 kB | none | `toPng`, `toBlob`, font embedding options | No npm release for 21 months: it fails the "maintained" rule (a release in the last 12 months) |
+
+Tier A for what each repo and the registry say of themselves. Not checked by reading: how each one does on iOS Safari. All three draw through an SVG `foreignObject`, where WebKit can miss web fonts and images on the first render.
+
+**Verdict (hypothesis, confidence 0.6, the test decides):** try `modern-screenshot` 4.7.0 first: the smallest, a release inside 12 months, not brand new. Adopt it only if the picture laid over a screenshot of the letter passes the look test on Chromium and WebKit, with the brand font and the photo in it. If it fails on WebKit, try `@zumer/snapdom` pinned to 3.7.2 or older (never a release younger than a week). `html-to-image` is out. The measured numbers and the choice go in the story's PR and in the next row here.
+
+**Built from scratch:** nothing yet.
