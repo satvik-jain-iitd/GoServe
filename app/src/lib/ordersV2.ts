@@ -2,47 +2,58 @@
 // Story #940: this is the only way to place an order. The v1 webhook place route is gone, so the order is always placed as the signed-in user.
 // The body carries the price the customer saw. If the server's price is different it answers 409 price_changed with the new quote: nothing is ordered until the customer taps again.
 import { DEFAULT_CFG, type ConfirmCfg } from "./confirm";
-import { customerLine, NO_INTERNET } from "./errorLines";
+import { customerLine, NO_INTERNET, PRICE_CHANGED_LINE } from "./errorLines";
 import { PlaceError, type PlacedOrder } from "./orders";
 import { ensureSession, getClient } from "./supabase";
 import type { Quote } from "./quote";
 
-export const PRICE_CHANGED_LINE = "The price changed. Check the new total, then tap Place order.";
+export { PRICE_CHANGED_LINE };
 export class PriceChanged extends Error {
   constructor(public quote: Quote) { super(PRICE_CHANGED_LINE); }
 }
 
-export type V2Deps = { fetchFn: typeof fetch; token: (fresh?: boolean) => Promise<string>;   // story 1580: fresh = refresh the sign-in first (after a 401)
-   url: string; anon: string };
-// Story 1580: always a signed-in user's token, never the anon key (a bearer that is no user is a 401 on every order until the app is reopened).
-export async function userToken(fresh = false): Promise<string> {
-  const c = getClient();
-  if (fresh) {   // a refused refresh (the session was ended on the server) keeps the dead session in storage: drop it here so ensureSession makes a new one. A dead network is not a refusal.
-    const { error } = await c.auth.refreshSession();
-    if (error && error.name !== "AuthRetryableFetchError") await c.auth.signOut({ scope: "local" });
-  }
-  await ensureSession();   // signs in anonymously when the phone lost its session
-  const t = (await c.auth.getSession()).data.session?.access_token;
+// renew: after a 401 the caller renews the sign-in (true = a session is there to try again). It belongs to the caller because a new guest needs saveProfile again first.
+export type V2Deps = { fetchFn: typeof fetch; token: () => Promise<string>; url: string; anon: string; renew?: () => Promise<boolean> };
+// Story 1580: the Place order token. It signs in first when the phone has no session, so a request never carries the anon key.
+export async function userToken(): Promise<string> {
+  await ensureSession();
+  const t = (await getClient().auth.getSession()).data.session?.access_token;
   if (!t) throw new Error("Could not connect. Check your internet and try again.");
   return t;
 }
+// Story 1580: renew the sign-in after a 401. "same" = the refresh kept the same user (retry). "guest" = the guest's session was ended and a new guest was made
+// (the caller must save the profile under the new id before the retry). "gone" = nothing to retry with: a phone user's ended session is never turned into a guest,
+// and a dead network is not a refusal.
+export async function renewSession(): Promise<"same" | "guest" | "gone"> {
+  const c = getClient();
+  const old = (await c.auth.getSession()).data.session;
+  const { data, error } = await c.auth.refreshSession();
+  if (!error && data.session && data.session.user.id === old?.user.id) return "same";
+  if (error?.name === "AuthRetryableFetchError" || !old?.user.is_anonymous) return "gone";
+  await c.auth.signOut({ scope: "local" });   // a refused refresh leaves the dead guest session in storage
+  await ensureSession();
+  return "guest";
+}
+// The shared deps (search, map, geocode) read the session and never make one: a search must not create a guest. Old behaviour, the anon key when there is none.
 export const v2Deps = (): V2Deps => ({
   fetchFn: fetch.bind(window), url: import.meta.env.VITE_SUPABASE_URL, anon: import.meta.env.VITE_SUPABASE_ANON_KEY,
-  token: userToken,
+  token: async () => (await getClient().auth.getSession()).data.session?.access_token ?? import.meta.env.VITE_SUPABASE_ANON_KEY,
 });
+// Place order only: signs in first, and on a 401 renews through `renew`.
+export const placeDeps = (renew: () => Promise<boolean>): V2Deps => ({ ...v2Deps(), token: userToken, renew });
 
 export type PlaceV2Input = { kitchenId: string; pin: string; items: { menu_item_id: string; qty: number; swap?: boolean }[]; address: string; key: string; expectedPaise: number; code: string | null; none: boolean; drop: { lat: number; lng: number }; instructions?: string };   // story 1528: the point is not optional; story 935: one optional note for the kitchen
 
 export async function placeOrderV2(input: PlaceV2Input, deps: V2Deps): Promise<{ order: PlacedOrder; created: boolean; confirm: ConfirmCfg }> {
   let res: Response;
-  const send = async (fresh: boolean) => deps.fetchFn(`${deps.url}/functions/v1/orders`, {
-      method: "POST", headers: { "content-type": "application/json", apikey: deps.anon, authorization: `Bearer ${await deps.token(fresh)}` },
+  const send = async () => deps.fetchFn(`${deps.url}/functions/v1/orders`, {
+      method: "POST", headers: { "content-type": "application/json", apikey: deps.anon, authorization: `Bearer ${await deps.token()}` },
       body: JSON.stringify({ kitchen_id: input.kitchenId, lines: input.items.map((i) => ({ ...i, option_ids: [] })), address: { pin_code: input.pin, text: input.address.trim(), lat: input.drop.lat, lng: input.drop.lng },   // story 1528: every order carries the exact point
         ...(input.code ? { coupon_code: input.code } : {}), ...(input.none ? { no_coupon: true } : {}), idempotency_key: input.key, expected_to_pay_paise: input.expectedPaise, ...(input.instructions?.trim() ? { instructions: input.instructions.trim() } : {}) }),
     });
   try {
-    res = await send(false);
-    if (res.status === 401) res = await send(true);   // story 1580: refresh once and retry once; the same idempotency key makes it one order
+    res = await send();
+    if (res.status === 401 && deps.renew && await deps.renew()) res = await send();   // story 1580: renew once and retry once; the same idempotency key makes it one order
   } catch {
     throw new PlaceError(NO_INTERNET, "network");
   }

@@ -229,7 +229,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-pin-input { box-sizing: border-box; width: 100%; height: var(--gs-tap-big); padding: 0 14px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font-family: var(--gs-font-mono); font-size: var(--gs-mono-xl); font-weight: 500; letter-spacing: 0.12em; }
 .ui-pin-input[aria-invalid="true"] { border: 1.5px solid var(--md-error); }
 .ui-pin-input:focus-visible { outline: none; border: 2px solid var(--md-primary); padding: 0 13px; }   /* story 1397: a tapped field shows its border, no ring */
-.ui-field-error { margin: 0; font-size: var(--gs-text-sm); font-weight: 600; color: var(--md-error); }
+.ui-field-error { scroll-margin-bottom: calc(var(--gs-tap-big) + var(--gs-space-5)); margin: 0; font-size: var(--gs-text-sm); font-weight: 600; color: var(--md-error); }
 .ui-note { margin: 0; font-size: var(--gs-text-xs); color: var(--gs-text-muted); }
 .ui-scroll { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
 .ui-list { display: flex; flex-direction: column; padding: 0 var(--gs-gutter); }

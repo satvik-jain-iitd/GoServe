@@ -89,13 +89,13 @@ describe("customerLine at Place order (story 1580)", () => {
     ["option_unavailable", 422, "Something in the bill did not go through. Check it and try again."],
     ["invalid_request", 400, "Something in the bill did not go through. Check it and try again."],
     ["coupon_invalid", 422, "That code is not valid. Remove it or pick another."],
-    ["price_changed", 409, "The price changed. Check the bill again, then tap Place order."],
-    ["unauthorized", 401, "Your sign-in ended. Close the app, open it again and place the order."],
+    ["price_changed", 409, "The price changed. Check the new total, then tap Place order."],
+    ["unauthorized", 401, "Your sign-in ended. Sign in again to place your order."],
     ["order_unavailable", 502, TRY_LATER],
     ["quote_unavailable", 502, TRY_LATER],
     ["internal_error", 500, TRY_LATER],
     ["unknown", 503, TRY_LATER],
-    ["unknown", 401, "Your sign-in ended. Close the app, open it again and place the order."],
+    ["unknown", 401, "Your sign-in ended. Sign in again to place your order."],
     ["brand_new_code", 422, NOT_PLACED],
   ])("%s (%i) -> its own line", (code, status, line) => {
     const got = customerLine("place", code, "server text", null, status);

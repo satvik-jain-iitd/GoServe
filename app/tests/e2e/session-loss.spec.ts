@@ -8,8 +8,9 @@ const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
 const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString("base64url");
 const jwt = (exp: number) => `${b64({ alg: "HS256", typ: "JWT" })}.${b64({ sub: SESSION, role: "authenticated", is_anonymous: true, exp })}.sig`;
 
-async function atBill(context: BrowserContext, page: Page) {
+async function atBill(context: BrowserContext, page: Page, guest = false) {
   const net = await setup(context, page, [], { pin: null });
+  net.state.anonymous = guest;   // a guest is an anonymous user; the default stand-in user is a signed-in one
   net.state.addresses = [HOME];
   net.state.geocode = { status: 200, body: { ok: true, address: "Green Park, New Delhi, Delhi", pin: "110016", locality: "Green Park", town: "New Delhi" } };
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
@@ -79,22 +80,60 @@ test("P5 the refresh token fails inside supabase-js (an expired stored session, 
   expect(net.calls.signups).toBeGreaterThan(0);
 });
 
-test("P6 the server has revoked this phone's session (another sign-out ended it everywhere) but the stored token still looks valid: the first order call is a 401, the app refreshes, signs in again and the same key places one order", async ({ page, context }) => {
-  const net = await atBill(context, page);
+// P6: the server ended this phone's session (another sign-out ended it everywhere) but the stored token still looks valid.
+async function revoked(context: BrowserContext, page: Page, net: Awaited<ReturnType<typeof atBill>>) {
   const stale = await page.evaluate(() => JSON.parse(localStorage.getItem("sb-test-auth-token") ?? "{}").access_token as string);
-  await context.route("https://test.supabase.co/auth/v1/token**", (r) => r.fulfill({ status: 400, headers: { "access-control-allow-origin": "*", "content-type": "application/json" }, body: JSON.stringify({ code: 400, error_code: "refresh_token_not_found", msg: "Invalid Refresh Token" }) }));
+  const json = { "access-control-allow-origin": "*", "content-type": "application/json" };
+  await context.route("https://test.supabase.co/auth/v1/token**", (r) => r.fulfill({ status: 400, headers: json, body: JSON.stringify({ code: 400, error_code: "refresh_token_not_found", msg: "Invalid Refresh Token" }) }));
   const fresh = jwt(Math.floor(Date.now() / 1000) + 7200);
-  await context.route("https://test.supabase.co/auth/v1/signup", (r) => r.fulfill({ status: 200, headers: { "access-control-allow-origin": "*", "content-type": "application/json" }, body: JSON.stringify({ access_token: fresh, token_type: "bearer", expires_in: 7200, expires_at: Math.floor(Date.now() / 1000) + 7200, refresh_token: "r2", user: { id: SESSION, aud: "authenticated", role: "authenticated", is_anonymous: true, app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() } }) }));
-  const seen: string[] = [];
+  await context.route("https://test.supabase.co/auth/v1/signup", (r) => { net.calls.signups++; return r.fulfill({ status: 200, headers: json, body: JSON.stringify({ access_token: fresh, token_type: "bearer", expires_in: 7200, expires_at: Math.floor(Date.now() / 1000) + 7200, refresh_token: "r2", user: { id: "7e57ab1e-0000-4000-8000-0000000000b2", aud: "authenticated", role: "authenticated", is_anonymous: true, app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() } }) }); });
+  const events: string[] = [];
+  const profiles: { user_id: string; phone: string }[] = [];
+  await context.route("https://test.supabase.co/rest/v1/customers**", (r) => {
+    if (r.request().method() === "POST") { events.push("profile"); profiles.push(JSON.parse(r.request().postData() ?? "{}")); }
+    return r.fallback();
+  });
   await context.route("https://test.supabase.co/functions/v1/orders", (r) => {
     if (r.request().method() === "OPTIONS") return r.fallback();
     const bearer = r.request().headers().authorization ?? "";
-    seen.push(bearer);
-    if (bearer === `Bearer ${stale}`) return r.fulfill({ status: 401, headers: { "access-control-allow-origin": "*", "content-type": "application/json" }, body: JSON.stringify({ ok: false, error: "unauthorized" }) });
+    events.push(bearer === `Bearer ${stale}` ? "order:stale" : "order:fresh");
+    if (bearer === `Bearer ${stale}`) return r.fulfill({ status: 401, headers: json, body: JSON.stringify({ ok: false, error: "unauthorized" }) });
     return r.fallback();
   });
+  return { events, profiles };
+}
+
+test("P6a a PHONE user whose session the server ended: no new guest, no order, the line offers Sign in, and the bar keeps its box", async ({ page, context }) => {
+  const net = await setup(context, page, [], { pin: null });
+  net.state.anonymous = false;   // a signed-in phone user
+  net.state.addresses = [HOME];
+  net.state.geocode = { status: 200, body: { ok: true, address: "Green Park, New Delhi, Delhi", pin: "110016", locality: "Green Park", town: "New Delhi" } };
+  await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
+  await phoneAt(context, HOME);
+  await page.goto("/customer/");
+  await openBill(page);
+  const rec = await revoked(context, page, net);
+  const signupsBefore = net.calls.signups;
+  const bar = () => page.locator(".ui-sticky .ui-btn").evaluate((el) => { const b = el.getBoundingClientRect(); return [b.x, b.y, b.width, b.height].map((n) => Math.round(n * 10) / 10); });
+  const before = await bar();
+  await page.getByRole("button", { name: /Place order/ }).click();
+  await expect(page.getByRole("alert")).toHaveText("Your sign-in ended. Sign in again to place your order.");
+  expect(rec.events).toEqual(["profile", "order:stale"]);   // the profile is the one saved before the order; no second order, no second profile
+  expect(net.calls.signups).toBe(signupsBefore);   // no new anonymous user
+  expect(net.calls.place).toHaveLength(0);
+  expect(await bar()).toEqual(before);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();   // the way out is on the line: the sign-in screen opens
+  await expect(page.getByRole("img", { name: "GoServe" })).toBeVisible();
+});
+
+// Gap named: the customer app shows the sign-in wall to an anonymous user (App.tsx customerView, wall && signedIn === false), so a guest never reaches the Bill and this case cannot run through the UI.
+// The pieces are proven apart: renewSession makes the new guest (tests/unit/ordersV2.test.ts) and the App callback saves the profile under the new id before the retry (App.tsx, placeDeps).
+test.fixme("P6b a GUEST whose session the server ended: a new guest is made, the phone typed on the Bill is saved under the new id BEFORE the one retry, one order", async ({ page, context }) => {
+  const net = await atBill(context, page, true);
+  const rec = await revoked(context, page, net);
   await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
-  expect(net.calls.place).toHaveLength(1);   // only the retried call reached the order stand-in: one order
-  expect(seen).toEqual([`Bearer ${stale}`, `Bearer ${fresh}`]);
+  expect(rec.events).toEqual(["profile", "order:stale", "profile", "order:fresh"]);
+  expect(rec.profiles[1]).toMatchObject({ user_id: "7e57ab1e-0000-4000-8000-0000000000b2", phone: "9876543210" });
+  expect(net.calls.place).toHaveLength(1);
 });

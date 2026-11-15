@@ -6,7 +6,8 @@ const GENERIC = "Something went wrong. Please try again.";
 const BILL = "Something in the bill did not go through. Check it and try again.";
 const NOT_PLACED = "Something went wrong. Your order was not placed and nothing was charged. Please try again.";   // story 1580: only for a fault we cannot name
 const TRY_LATER = "We could not place your order. Nothing was charged. Try again in a minute.";
-const SIGN_IN = "Your sign-in ended. Close the app, open it again and place the order.";
+export const SIGN_IN_LINE = "Your sign-in ended. Sign in again to place your order.";
+export const PRICE_CHANGED_LINE = "The price changed. Check the new total, then tap Place order.";   // with a quote the Bill shows the new total; without one the line still tells the way
 // story 1580: every refusal the orders function and place_order_v2 can answer, each with its way out
 const PLACE_LINES: Record<string, string> = {
   not_served: "We do not deliver to this place yet. Choose another address.",
@@ -15,8 +16,8 @@ const PLACE_LINES: Record<string, string> = {
   empty_order: "Your bag is empty. Add a dish, then place the order.",
   sold_out: BILL, dish_sold_out: BILL, unknown_dish: BILL, invalid_quantity: BILL, unknown_option: BILL, option_group_max: BILL, option_group_min: BILL, option_unavailable: BILL, invalid_request: BILL,
   coupon_invalid: "That code is not valid. Remove it or pick another.",
-  price_changed: "The price changed. Check the bill again, then tap Place order.",
-  unauthorized: SIGN_IN,
+  price_changed: PRICE_CHANGED_LINE,
+  unauthorized: SIGN_IN_LINE,
   order_unavailable: TRY_LATER, quote_unavailable: TRY_LATER, internal_error: TRY_LATER,
 };
 const DELIVERED = "Could not mark it delivered. Try again in a minute.";
@@ -31,7 +32,7 @@ export function customerLine(action: CustomerAction, code: string, message: stri
   if (code === "zone_closed") return "We are very busy right now. Please try again in a few minutes.";
   if (code === "instructions_too_long") return "Keep the note to 200 characters.";   // story #935
   if (code === "session_order_cap") return "That is the most orders one phone can place today.";
-  if (action === "place") return PLACE_LINES[code] ?? (status === 401 ? SIGN_IN : status !== undefined && status >= 500 ? TRY_LATER : message === "The order is not valid." || message === "The order is missing something." ? BILL : NOT_PLACED);
+  if (action === "place") return PLACE_LINES[code] ?? (status === 401 ? SIGN_IN_LINE : status !== undefined && status >= 500 ? TRY_LATER : message === "The order is not valid." || message === "The order is missing something." ? BILL : NOT_PLACED);
   if (action === "feedback") return "Could not send the note. Try again.";
   if (code === "sold_out" || code === "dish_sold_out") return BILL;   // story #619: a dish went sold out; the Bill says which and offers the way out
   if (message === "The order is not valid." || message === "The order is missing something.") return BILL;
