@@ -39,7 +39,7 @@ test("Location is blocked for the app: no button on the sheet does nothing when 
   await expect(sheet(page).getByRole("status")).toHaveText("Location is off or blocked. Pick a place.");
   await expect(main(page)).toHaveCount(0);   // asking a blocked phone is not the main way
   await sheet(page).getByRole("button", { name: "Try location again" }).click();
-  await expect(sheet(page).getByRole("status")).toContainText("Still blocked. In your phone: Settings");   // the tap says something new
+  await expect(sheet(page).getByRole("status")).toContainText("Still off or blocked. Turn on location in your phone's settings, or pick a place.");   // the tap says something new
   await sheet(page).getByRole("button", { name: /Work/ }).click();   // a saved address picks it
   await expect(sheet(page)).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^Work\b/ }).first()).toBeVisible();

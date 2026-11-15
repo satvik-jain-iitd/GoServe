@@ -127,7 +127,7 @@ describe("locWhy and its words (bug 1526)", () => {
     expect(locLine("denied", "search above")).toBe("Location is off or blocked. Turn on location in your phone settings, or search above.");
     expect(locLine("off", "search for your address")).toBe("Your phone's location is off. Turn it on, or search for your address.");
     expect(locLine("slow", "search above")).toBe("Finding you is taking too long. Try again, or search above.");
-    expect(locWords("still", "search above")).toEqual({ title: "Still blocked", sub: "In your phone: Settings, Apps, GoServe, Permissions, Location." });
+    expect(locWords("still", "search above")).toEqual({ title: "Still off or blocked", sub: "Turn on location in your phone's settings, or pick a place." });
     expect(locWords("ask", "search above")).toEqual({ title: "We can't see where you are right now", sub: "Tap Use current location, or search above." });
   });
 });

@@ -182,7 +182,7 @@ test("Location is blocked on the first open: I see a true line, and no button do
   const line = page.getByRole("group", { name: "Your address" }).getByRole("status");
   await expect(line).toContainText("Location is off or blocked");
   await page.getByRole("button", { name: "Try location again" }).click();
-  await expect(line).toContainText("Still blocked");   // the second tap says something new
+  await expect(line).toContainText("Still off or blocked");   // the second tap says something new
   expect(await asked(page)).toBe(2);
   await page.getByRole("button", { name: "Search for my address" }).click();
   await expect(page.getByRole("searchbox", { name: "Search an area or address" })).toBeFocused();   // story 1530: the one search
