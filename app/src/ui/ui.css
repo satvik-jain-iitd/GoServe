@@ -674,6 +674,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-two-cards { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
 .ui-card-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; box-sizing: border-box; padding: 14px; border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); font: inherit; font-size: 16px; font-weight: 600; text-align: left; cursor: pointer; }
 .ui-card-btn svg { width: 22px; height: 22px; color: var(--md-primary); }
+.ui-card-btn span { min-height: 2.9em; min-height: 2lh; }   /* story 1530, no layout shift: the label keeps two lines, so "Finding you…" (one line) and "Use current location" (two on a narrow phone) make the same card */
 .ui-saved-head { margin: 0 0 8px; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; color: var(--gs-text-muted); }
 .ui-saved-list { margin: 0; padding: 0; list-style: none; }
 .ui-saved-row { display: grid; grid-template-columns: 56px minmax(0, 1fr) 32px; gap: 12px; align-items: start; padding: 14px 0; border-bottom: 1px solid var(--md-outline-variant); }
