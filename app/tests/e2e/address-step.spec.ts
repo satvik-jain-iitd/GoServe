@@ -40,7 +40,7 @@ test("S4 location not given: a true line says why (bug 1526), and Search for my 
   await setup(context, page, [], { pin: null });
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Use my current location" }).click();   // not allowed in this context
-  await expect(page.getByRole("group", { name: "Your address" }).getByRole("status")).toContainText("Location is blocked for GoServe");
+  await expect(page.getByRole("group", { name: "Your address" }).getByRole("status")).toContainText("Location is off or blocked");
   await page.getByRole("button", { name: "Search for my address" }).click();
   await expect(page.getByRole("searchbox", { name: "Search an area or address" })).toBeVisible();
 });

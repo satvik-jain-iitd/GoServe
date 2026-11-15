@@ -105,7 +105,7 @@ test("S6 Use my current location with the location denied says so (bug 1526); Se
   await page.addInitScript(() => { navigator.geolocation.getCurrentPosition = (_ok, err) => err?.({ code: 1, message: "denied" } as GeolocationPositionError); });
   await page.reload();
   await page.getByRole("button", { name: "Use my current location" }).click();
-  await expect(page.getByRole("group", { name: "Your address" }).getByRole("status")).toContainText("Location is blocked for GoServe");
+  await expect(page.getByRole("group", { name: "Your address" }).getByRole("status")).toContainText("Location is off or blocked");
   await page.getByRole("button", { name: "Search for my address" }).click();
   await expect(page.getByRole("searchbox", { name: "Search an area or address" })).toBeFocused();
 });

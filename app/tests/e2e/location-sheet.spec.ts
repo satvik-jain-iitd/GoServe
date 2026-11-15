@@ -36,7 +36,7 @@ test("The phone's location is off: I tap Try location again, I do not see the wo
 
 test("Location is blocked for the app: no button on the sheet does nothing when tapped", async ({ page, context }) => {
   await open(page, context, { perm: "denied", pos: 1 });
-  await expect(sheet(page).getByRole("status")).toHaveText("Location is blocked for GoServe. Pick a place.");
+  await expect(sheet(page).getByRole("status")).toHaveText("Location is off or blocked. Pick a place.");
   await expect(main(page)).toHaveCount(0);   // asking a blocked phone is not the main way
   await sheet(page).getByRole("button", { name: "Try location again" }).click();
   await expect(sheet(page).getByRole("status")).toContainText("Still blocked. In your phone: Settings");   // the tap says something new

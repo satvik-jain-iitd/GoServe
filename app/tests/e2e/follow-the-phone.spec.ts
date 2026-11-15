@@ -104,7 +104,7 @@ test("I delete my last address: I stay on Deliver to, and I do not see Where doe
   await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
   await expect(firstScreen(page)).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Back" })).toHaveCount(0);   // no place, so no menu to go back to
-  await expect(box(page)).toContainText("Location is blocked for GoServe");
+  await expect(box(page)).toContainText("Location is off or blocked");
   expect(net.calls.customerWrites.some((w) => typeof w.body.place_confirmed_at === "string")).toBe(true);   // the mark was set while Home was there
   net.state.customer = { name: "", phone: "", address: "", place_confirmed_at: "2026-11-01T10:00:00Z" };   // so the server holds it
   await page.reload();   // the next open: still not the first-open screen
@@ -180,7 +180,7 @@ test("Location is blocked on the first open: I see a true line, and no button do
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Use my current location" }).click();
   const line = page.getByRole("group", { name: "Your address" }).getByRole("status");
-  await expect(line).toContainText("Location is blocked for GoServe");
+  await expect(line).toContainText("Location is off or blocked");
   await page.getByRole("button", { name: "Try location again" }).click();
   await expect(line).toContainText("Still blocked");   // the second tap says something new
   expect(await asked(page)).toBe(2);
