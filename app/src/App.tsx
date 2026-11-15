@@ -513,7 +513,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     }
     setPlace(next);
   }
-  // Story #976, changed by 1529: the saved addresses. On open the place follows the phone: the saved address it is at, else "Where you are now"; not found, the place stays and the sheet asks.
+  // Story 976, changed by 1529: the saved addresses. On open the place follows the phone: the saved address it is at, else "Where you are now"; not found, the place stays; the sheet asks only when this phone held no place (story 1547).
   const [saved, setSaved] = useState<SavedAddress[] | null>(null);
   const [addrTried, setAddrTried] = useState(false);   // story #1112: the open is over (the addresses answered or failed, the phone was looked for): until then a signed-in phone with no pin is loading, not new
   const [here, setHere] = useState<Place | null>(null);
@@ -633,12 +633,13 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       else if (mark || whereNow.current) setKnown(true);
       if (!mark && rows.length === 0 && !whereNow.current) return;   // a new customer: the first-open screen, and the phone is asked on the tap
       // Story 1530: the screen does not wait for the find (up to 5 s). What is known shows now: the place on this phone, else the address used last (a row with no pin is skipped).
-      const row = whereNow.current || held() ? null : lastUsed(rows.filter(hasPoint));
+      const chosen = !!whereNow.current;   // story 1547: this phone holds a place at the open. Then the sheet never opens by itself: the place stays and nothing is shown
+      const row = chosen || held() ? null : lastUsed(rows.filter(hasPoint));
       if (row) useSaved(row, false);
       setAddrTried(true);
       const at = await find(false);   // one find by itself per app open; found, the place follows the phone
       if (at) return await follow(at);
-      if (!held() && rows.length > 0) setSheet(true);
+      if (!held() && rows.length > 0 && !chosen) setSheet(true);   // only a phone with no place (a new phone: the address used last is offered, the customer says where)
     })().catch(() => undefined).finally(() => setAddrTried(true));
   }, [signedIn]);   // eslint-disable-line react-hooks/exhaustive-deps
   async function saveNew(pl: { pin: string; address: string; label?: string; from?: Place; house?: string; landmark?: string }) {

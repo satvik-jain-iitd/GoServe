@@ -17,12 +17,11 @@ async function toBill(page: import("@playwright/test").Page, context: import("@p
     orders.push(JSON.parse(r.request().postData() ?? "{}"));
     return r.fulfill({ status: 201, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(placed) });
   });
-  // Story 1529: this address is the place on this phone. With its pin the phone is at it; an old row with no pin is never picked by the app, so the phone holds it and the sheet is closed.
+  // Story 1529: this address is the place on this phone. With its pin the phone is at it; an old row with no pin is never picked by the app, so the phone holds it (story 1547: a phone that holds a place gets no sheet).
   const row = saved as { id: string; address: string; pin_code: string; lat: number | null; lng: number | null };
   if (row.lat !== null && row.lng !== null) await phoneAt(context, { lat: row.lat, lng: row.lng });
   else await context.addInitScript((r) => { window.localStorage.setItem("gs-place", JSON.stringify({ address: r.address, pin: r.pin_code, lat: null, lng: null, house: "", landmark: "", confirmed: false, id: r.id })); window.localStorage.setItem("gs-pin", r.pin_code); }, row);
   await page.goto("/customer/");
-  if (row.lat === null) { await expect(page.getByRole("dialog", { name: "Where to bring your food?" })).toBeVisible(); await page.keyboard.press("Escape"); }
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Phone").fill("9876543210");

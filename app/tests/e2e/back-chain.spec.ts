@@ -31,7 +31,7 @@ test("S12 address menu Edit, then the map: Back closes the map, Back shows the m
 });
 
 test("S13 location-off sheet View all opens Deliver to: Back shows the menu, the next Back leaves the app", async ({ page, context }) => {
-  const net = await setup(context, page, [], { pin: "110016" });
+  const net = await setup(context, page, [], { pin: null });   // story 1547: the sheet opens by itself only on a phone that holds no place
   net.state.addresses = [HOME, WORK];
   await page.addInitScript(() => {
     Object.defineProperty(navigator, "permissions", { value: { query: async () => ({ state: "denied" }) }, configurable: true });
