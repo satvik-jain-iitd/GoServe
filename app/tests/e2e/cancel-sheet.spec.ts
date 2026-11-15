@@ -1,4 +1,4 @@
-// Story #1227 (board CX1-CancelSheet, owner 11 Nov 2026): Cancel order asks first. One tap opens a sheet; only the red button cancels; Keep my order, Close, Escape and the backdrop keep the order.
+// Story 1227 (board CX1-CancelSheet, owner 11 Nov 2026): Cancel order asks first. One tap opens a sheet; only the red button cancels; Keep my order, Escape and the backdrop keep the order (story 1565 took the close control out of the head).
 import { test, expect, type Page } from "@playwright/test";
 import { ID, order, setup } from "./helpers";
 
@@ -38,12 +38,9 @@ test("C3 Yes, cancel the order asks the database once and the order shows Cancel
   await expect(sheet(page)).toHaveCount(0);
 });
 
-test("C4 Keep my order, Close, Escape and a tap outside each close the sheet and keep the order", async ({ page, context }) => {
+test("C4 Keep my order, Escape and a tap outside each close the sheet and keep the order", async ({ page, context }) => {
   const net = await open(page, context);
   await sheet(page).getByRole("button", { name: "Keep my order" }).click();
-  await expect(sheet(page)).toHaveCount(0);
-  await page.getByRole("button", { name: "Cancel order" }).click();
-  await sheet(page).getByRole("button", { name: "Close" }).click();
   await expect(sheet(page)).toHaveCount(0);
   await page.getByRole("button", { name: "Cancel order" }).click();
   await page.keyboard.press("Escape");
