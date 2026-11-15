@@ -3,16 +3,19 @@
 import { describe, expect, it } from "vitest";
 import { bindSheetFit } from "../../src/ui/sheetFit";
 
-const rig = (inner = 800) => {
+// Story 1560: the keyboard is up only while a field inside the overlay has the focus. `typing` says if one has it.
+const rig = (inner = 800, typing = true) => {
+  const field = { matches: () => true };
+  const doc = { activeElement: (typing ? field : null) as typeof field | null };
   const vv = Object.assign(new EventTarget(), { height: inner, offsetTop: 0 });
   const frames: (() => void)[] = []; const timers: { at: number; f: () => void }[] = []; let now = 0;
   const win = Object.assign(new EventTarget(), { innerHeight: inner, requestAnimationFrame: (f: () => void) => { frames.push(f); return frames.length; }, setTimeout: (f: () => void, ms: number) => { timers.push({ at: now + ms, f }); return timers.length; } });
-  const el = Object.assign(new EventTarget(), { style: { height: "", top: "", bottom: "" } as Record<string, string> });
+  const el = Object.assign(new EventTarget(), { style: { height: "", top: "", bottom: "" } as Record<string, string>, ownerDocument: doc, contains: (n: unknown) => n === field });
   const off = bindSheetFit(el as unknown as HTMLElement, vv as unknown as VisualViewport, win as unknown as Window);
   const resizeTo = (h: number, top = 0) => { vv.height = h; vv.offsetTop = top; vv.dispatchEvent(new Event("resize")); };
   const flushFrames = () => { while (frames.length) frames.shift()!(); };
   const advance = (ms: number) => { now += ms; for (const t of timers.splice(0)) (t.at <= now ? t.f : () => timers.push(t))(); };
-  return { vv, win, el, off, resizeTo, flushFrames, advance };
+  return { vv, win, el, off, resizeTo, flushFrames, advance, doc, field };
 };
 
 describe("bindSheetFit", () => {
@@ -61,6 +64,18 @@ describe("bindSheetFit", () => {
     expect(r.el.style.height).toBe("");
     r.resizeTo(780, 0);
     expect(r.el.style.height).toBe("780px");
+  });
+
+  it("story 1560: the viewport is shorter than the window and no field has the focus (no keyboard): no inline height or top", () => {
+    const r = rig(844, false);
+    r.resizeTo(810, 0);                 // a call or hotspot bar on an iPhone, the app opened from the home screen
+    expect(r.el.style).toMatchObject({ height: "", top: "", bottom: "" });
+    r.doc.activeElement = r.field;      // a field takes the focus and the keyboard comes up
+    r.resizeTo(500, 0);
+    expect(r.el.style.height).toBe("500px");
+    r.doc.activeElement = null;         // the field loses the focus; the viewport stays short of the window
+    r.resizeTo(810, 0);
+    expect(r.el.style).toMatchObject({ height: "", top: "", bottom: "" });
   });
 
   it("stopping removes every listener: no later event touches the overlay", () => {

@@ -11,6 +11,7 @@ const emulate = async (page: Page) => page.addInitScript(() => {
 });
 
 const fits = async (page: Page, h: number, top: number) => {
+  await page.locator(".ui-sheet-back").locator("input:not([type=file]):not([type=checkbox]), textarea").first().focus();   // story 1560: the keyboard is up only while a field in the sheet has the focus
   await page.evaluate(([a, b]) => (window as unknown as { __vv: (h: number, t: number) => void }).__vv(a, b), [h, top]);
   const back = page.locator(".ui-sheet-back");
   await expect.poll(async () => Math.round((await back.boundingBox())!.height)).toBe(h);
