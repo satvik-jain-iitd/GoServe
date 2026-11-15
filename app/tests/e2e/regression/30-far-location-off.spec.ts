@@ -1,39 +1,36 @@
-// Regression, screen 30: SW2 Far from Home and SW3 Location off. Cases: .claude/handoff/qa/screens/30-SW.md (epic #1196). Reached with the shared steps STEPS["menu-far"] and STEPS["location-off"].
-// TC 30.5 (Use my current location: the phone asks, then the menu or the far strip) is owner only: a real phone's location prompt cannot be answered here.
+// Regression, screen 30: SW2 Far from Home and SW3 Location off. Cases: .claude/handoff/qa/screens/30-SW.md (epic 1196). Reached with the shared steps STEPS["menu-far"] and STEPS["location-off"].
+// Story 1548: far from Home the lime strip is gone. The place stays and the box "Where should we deliver?" asks (TC 30.1, 30.2).
+// TC 30.5 (Use my current location: the phone asks, then the menu or the box) is owner only: a real phone's location prompt cannot be answered here.
 import { test, expect, type Page } from "@playwright/test";
 import { STEPS } from "../screensSteps";
+import { whereBox } from "../helpers";
 
 test.use({ viewport: { width: 390, height: 844 } });
 
-const strip = (page: Page) => page.getByRole("status").filter({ hasText: /You are \d+ km from/ });
 const sheet = (page: Page) => page.getByRole("dialog", { name: "Where to bring your food?" });
 const header = (page: Page) => page.getByRole("button", { name: /^Home\b/ }).first();
 
-test("TC 30.1 Look: the app 6 km from Home keeps Home in the header, the lime strip says so with Deliver here", async ({ page, context }) => {
+test("TC 30.1 Look: the app 6 km from Home keeps Home in the header, and the box Where should we deliver? asks, with Use another address above and Use current location last (story 1548)", async ({ page, context }) => {
   await STEPS["menu-far"](context, page, "/customer/");
-  await expect(strip(page)).toBeVisible();   // proves the strip shows before its words are checked
-  await expect(strip(page)).toContainText("You are 6 km from Home");
-  await expect(strip(page).getByRole("button", { name: "Deliver here" })).toBeVisible();
+  await expect(whereBox(page)).toBeVisible();   // proves the box shows before its parts are checked
+  await expect(whereBox(page).getByRole("heading", { name: "Where should we deliver?" })).toBeVisible();
+  await expect(whereBox(page).getByRole("button")).toHaveText(["Use another address", "Use current location"]);
   await expect(header(page)).toBeVisible();
   await expect(header(page)).toContainText("Sample Garden Colony");   // Home stays in the header, with its address
-  await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();   // the menu is there behind the strip
-  const bg = await strip(page).evaluate((e) => getComputedStyle(e).backgroundColor);
-  const [r, g, b] = (bg.match(/\d+(\.\d+)?/g) ?? []).map(Number);
-  expect(g, `strip colour ${bg}`).toBeGreaterThan(r);   // lime: green is the strongest of the three
-  expect(g, `strip colour ${bg}`).toBeGreaterThan(b);
+  await expect(page.getByRole("searchbox", { name: "Search dishes" })).toBeVisible();   // the menu is there behind the box
+  await expect(page.getByText(/You are \d+ km from/)).toHaveCount(0);   // the lime strip is gone
 });
 
-test("TC 30.2 Tap Deliver here: the pin map opens centred on my spot", async ({ page, context }) => {
-  const looked: string[] = [];
-  page.on("request", (r) => { if (r.url().includes("/functions/v1/geocode")) looked.push(r.url()); });   // the map asks for the words at its centre once it settles
+test("TC 30.2 Tap Use current location: the pin map opens centred on my spot", async ({ page, context }) => {
+  const asked: string[] = [];
+  page.on("request", (r) => { if (r.url().includes("/functions/v1/serviceability")) asked.push(r.url()); });   // the map asks if we serve its centre once it rests
   await STEPS["menu-far"](context, page, "/customer/");
-  await expect(strip(page)).toBeVisible();   // proves the strip shows before the tap
-  await strip(page).getByRole("button", { name: "Deliver here" }).click();
+  await whereBox(page).getByRole("button", { name: "Use current location" }).click();
   await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeVisible();
-  // The phone is at 28.6139, 77.209: the map's centre words must come from there, not from Home (28.5677, 77.2432).
-  await expect.poll(() => looked.length).toBeGreaterThan(0);
-  const at = new URL(looked.at(-1)!).searchParams;
+  // The phone is at 28.6139, 77.209: the map's centre must be there, not at Home (28.5677, 77.2432).
+  await expect.poll(() => asked.length).toBeGreaterThan(0);
+  const at = new URL(asked.at(-1)!).searchParams;
   expect(Math.abs(Number(at.get("lat")) - 28.6139)).toBeLessThanOrEqual(0.01);
   expect(Math.abs(Number(at.get("lng")) - 77.209)).toBeLessThanOrEqual(0.01);
 });

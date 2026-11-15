@@ -2,13 +2,17 @@
 // "Recently searched" under the saved list, and nothing moves between the states of the screen.
 // A recent is made only by "Confirm & proceed" on a place picked from search. It holds the confirmed point and the customer's own words, never an answer of Ola.
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
-import { phoneLoc, setLoc, setup } from "./helpers";
+import { phoneLoc, setLoc, setup, whereBox } from "./helpers";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
 const HOME = { id: "h1", label: "Home", address: "Z-900, Sample Garden Colony, Sampletown", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
 const WORK = { id: "w1", label: "Work", address: "Tower B, Sector 62, Noida", pin_code: "110016", lat: 28.6208, lng: 77.3639, last_used_at: "2026-11-01T10:00:00Z" };
 const AT_HOME = { latitude: 28.5690, longitude: 77.2440 };   // about 150 m from Home
 const AWAY = { latitude: 28.6139, longitude: 77.209 };   // about 6 km from Home
+// Story 1548: the place is "Where you are now" only when the phone already holds it (the last address was deleted there). Far from every saved address the box asks, and Deliver to opens from it.
+const hereAway = (context: BrowserContext) => context.addInitScript((p) => { window.localStorage.setItem("gs-place", JSON.stringify(p)); window.localStorage.setItem("gs-pin", p.pin); },
+  { address: "Where you are now", pin: "110016", lat: AWAY.latitude, lng: AWAY.longitude, house: "", landmark: "", confirmed: false, id: null });
+const anotherAddress = (page: Page) => whereBox(page).getByRole("button", { name: "Use another address" }).click();
 const recent = (n: number, over: object = {}) => ({ id: `r${n}`, name: `Road ${n}`, address: `Flat ${n}, Road ${n}`, pin_code: "110016", lat: 28.57 + n / 100, lng: 77.24, house: `Flat ${n}`, landmark: null, used_at: `2026-11-1${n}T10:00:00Z`, ...over });
 const FIVE = [1, 2, 3, 4, 5].map((n) => recent(n));
 // The stand-in for Ola: a search row and a reverse lookup. Their words must never reach our table.
@@ -24,9 +28,10 @@ async function open(page: Page, context: BrowserContext, over: { recents?: objec
   net.state.places = { status: 200, body: { ok: true, results: over.hits ?? [OLA_HIT] } };
   net.state.geocode = OLA_WORDS;
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
+  if (over.pos) await hereAway(context);
   await phoneLoc(page, { perm: "granted", pos: over.pos ?? AT_HOME });
   await page.goto("/customer/");
-  await page.getByTitle("Change the delivery address").click();
+  if (over.pos) await anotherAddress(page); else await page.getByTitle("Change the delivery address").click();
   await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
   return net;
 }
@@ -251,9 +256,11 @@ async function state(page: Page, context: BrowserContext, kind: "home" | "away" 
   const net = await setup(context, page, [], { pin: null });
   net.state.addresses = [HOME, WORK, ...SIX];
   net.state.recents = withRecents ? FIVE : [];
+  if (kind === "away") await hereAway(context);
   await phoneLoc(page, kind === "blocked" ? { perm: "denied", pos: 1 } : { perm: "granted", pos: kind === "home" ? AT_HOME : AWAY });
   await page.goto("/customer/");
   if (kind === "blocked") await page.getByRole("dialog", { name: "Where to bring your food?" }).getByRole("button", { name: "View all" }).click();
+  else if (kind === "away") await anotherAddress(page);
   else await page.getByTitle("Change the delivery address").click();
   await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Saved addresses" }).getByRole("listitem")).toHaveCount(3);

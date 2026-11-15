@@ -1,7 +1,7 @@
 // Story #1102 follow-up (found by the live spec, 9 Nov): the pin map's served strip must not wait for the address lookup. A slow or hanging lookup (Ola, then OpenStreetMap)
 // left the card with no strip and no way on. The strip is asked at once with the place; when the lookup brings a pin it is asked again with that pin, and the last answer shows.
 import { test, expect } from "@playwright/test";
-import { setup } from "./helpers";
+import { answeredAt, setup } from "./helpers";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
 const HOME = { id: "h1", label: "Home", address: "Z-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
@@ -14,7 +14,7 @@ async function open(page: import("@playwright/test").Page, context: Parameters<t
   net.state.geocode = { status: 200, body: GREEN_PARK };
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
   if (hang) await context.route("https://test.supabase.co/functions/v1/geocode**", () => new Promise(() => undefined));   // the lookup never answers
-  await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.56, longitude: 77.2 });
+  await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.56, longitude: 77.2 }); await answeredAt(context, { latitude: 28.56, longitude: 77.2 });   // story 1548: the box is not this spec's subject
   await page.goto("/customer/");
   await page.getByTitle("Change the delivery address").click();   // story 1529: the place follows the phone, so the header is not always Home
   await page.getByRole("button", { name: "Add new address" }).click();

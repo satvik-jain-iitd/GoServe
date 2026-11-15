@@ -1,7 +1,7 @@
-// Story #1056 (board SW2), changed by story 1529: on open the place follows the phone, so the strip is for the one case where it does not: a cart in progress whose kitchen does not
-// serve the place the phone is at. The header keeps the chosen address, and a strip says how far and offers "Deliver here". Within 2 km, or with location not allowed, nothing shows.
+// Story 1548 (owner, 15 Nov 2026): the far strip of story 1056 (board SW2), "You are n km from Home · Deliver here", is gone from the menu. Its job is done by the box
+// "Where should we deliver?" and by the Bill's line. With it goes its push: the menu's parts are in the same place for a phone far from Home and a phone at Home.
 import { test, expect, type Page } from "@playwright/test";
-import { setup } from "./helpers";
+import { setup, whereBox } from "./helpers";
 
 const NOW = Date.now();
 const HOME = { id: "h1", label: "Home", address: "Z-900, Sample Garden Colony, Sampletown", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: new Date(NOW - 3 * 86_400_000).toISOString() };
@@ -27,15 +27,35 @@ async function open(page: Page, context: Parameters<typeof setup>[0], phone: { l
   return net;
 }
 
-test("S1 more than 2 km from Home, with a cart in progress: the strip says how far; Deliver here opens the pin map at the phone, then the details sheet", async ({ page, context }) => {
+// The menu's parts, by measure in the browser.
+const parts = (page: Page) => page.evaluate(() => [".ui-top", ".ui-search-box", ".ui-scroll", ".ui-greet", ".ui-section", ".ui-tile-body"].map((sel) => {
+  const el = document.querySelector(sel);
+  if (!el) return `${sel} is not on the screen`;
+  const r = el.getBoundingClientRect();
+  return `${sel} ${Math.round(r.width)}x${Math.round(r.height)} at ${Math.round(r.x)},${Math.round(r.y)}`;
+}));
+
+test("S1 more than 2 km from Home, with a cart in progress: no strip shows behind the box or after I answer with Home, and nothing on the menu is pushed down", async ({ page, context, browser }) => {
   const net = await open(page, context, FAR_PHONE);
-  await expect(strip(page)).toContainText("You are 6 km from Home");
+  await expect(whereBox(page)).toBeVisible();
+  await expect(strip(page)).toHaveCount(0);   // not behind the box
+  await expect(page.getByRole("button", { name: "Deliver here" })).toHaveCount(0);
+  await whereBox(page).getByRole("button", { name: "Use another address" }).click();   // Home is my answer
+  await page.getByRole("button", { name: "Deliver to Home" }).click();
   await expect(page.getByRole("button", { name: /^Home\b/ })).toBeVisible();   // the header keeps Home
-  expect(net.calls.geocode).toHaveLength(0);   // the check made no map or geocode call
-  await strip(page).getByRole("button", { name: "Deliver here" }).click();
-  await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
-  await page.getByRole("button", { name: "Confirm & proceed" }).click();
-  await expect(page.getByRole("dialog", { name: "Address details" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /View bill/ })).toBeVisible();   // the cart is still there
+  await page.waitForTimeout(300);
+  await expect(strip(page)).toHaveCount(0);   // and not on the menu
+  await expect(page.getByRole("button", { name: "Deliver here" })).toHaveCount(0);
+  expect(net.calls.geocode).toHaveLength(0);   // no map or geocode call
+  const far = await parts(page);
+  const near = await browser.newContext({ viewport: page.viewportSize()! });   // the same menu for a phone at Home
+  const page2 = await near.newPage();
+  await open(page2, near, NEAR_PHONE);
+  await expect(page2.getByRole("button", { name: /View bill/ })).toBeVisible();
+  expect(far).toEqual(await parts(page2));   // rule 23: the strip's 51 px push is gone
+  expect(far.join(" ")).not.toContain("is not on the screen");
+  await near.close();
 });
 
 test("S2 within 2 km of Home: no strip", async ({ page, context }) => {

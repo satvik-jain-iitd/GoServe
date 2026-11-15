@@ -8,7 +8,7 @@ import { SignIn } from "./SignIn";
 import { PlaceRow } from "./BillScreen";
 
 type Props = {
-  name: string; phone: string; address: string; pin: string | null; photo: string | null; email: string | null;
+  name: string; phone: string; address: string; farKm: number | null; pin: string | null; photo: string | null; email: string | null;
   onName: (v: string) => void; onPhone: (v: string) => void;
   alerts: "ask" | "on" | "off" | "none"; onAlerts: () => void; alertsError?: string | null;
   live: { label: string; no: string; onOpen: () => void } | null;
@@ -20,7 +20,7 @@ type Props = {
 
 const store = (): Storage | null => { try { return window.localStorage; } catch { return null; } };
 
-export function AccountScreen({ name, phone, address, pin, photo, email, onName, onPhone, alerts, onAlerts, alertsError, live, onGivenName, onForget, onDeleteAccount, onMenu, onAddresses, onOrders }: Props) {
+export function AccountScreen({ name, phone, address, farKm, pin, photo, email, onName, onPhone, alerts, onAlerts, alertsError, live, onGivenName, onForget, onDeleteAccount, onMenu, onAddresses, onOrders }: Props) {
   const sheetRef = useSheetFit();   // story #975: the profile sheet follows the visual viewport too
   const [photoBad, setPhotoBad] = useState(false);
   const fit = useSheetFit();   // story #954: the overlay follows the visual viewport
@@ -57,7 +57,7 @@ export function AccountScreen({ name, phone, address, pin, photo, email, onName,
               <div className="ui-edit-actions"><button type="button" className="ui-btn small" onClick={() => { onName(draft.name); onPhone(draft.phone); setEditing(false); }}>Save</button><button type="button" className="ui-btn ghost small" onClick={() => setEditing(false)}>Cancel</button></div>
             </div>
           )}
-          <PlaceRow words={address} onChange={onAddresses} />   {/* story 1532: the place's words; Change opens Deliver to */}
+          <PlaceRow words={address} onChange={onAddresses} farKm={farKm} />   {/* story 1532: the place's words; Change opens Deliver to */}
         </section>
         <div className="ui-google"><SignIn returnTo="account" onGivenName={onGivenName} /></div>
         <div className="ui-you-card">

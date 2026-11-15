@@ -1,6 +1,6 @@
 // Story #1500 (way B): the pin costs no Ola call while it moves or rests. The address is looked up once, on Confirm & proceed.
 import { test, expect, type Page } from "@playwright/test";
-import { setup } from "./helpers";
+import { answeredAt, setup } from "./helpers";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
 const HOME = { id: "h1", label: "Home", address: "Z-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
@@ -13,7 +13,7 @@ async function toMap(page: Page, context: Parameters<typeof setup>[0], over: { g
   net.state.geocode = over.geocode ?? { status: 200, body: GREEN_PARK };
   if (over.serve) net.state.serve = over.serve;
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
-  await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.56, longitude: 77.2 });
+  await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.56, longitude: 77.2 }); await answeredAt(context, { latitude: 28.56, longitude: 77.2 });   // story 1548: the box is not this spec's subject
   await page.goto("/customer/");
   await page.getByTitle("Change the delivery address").click();   // story 1529: the place follows the phone, so the header is not always Home
   await page.getByRole("button", { name: "Add new address" }).click();

@@ -2,7 +2,7 @@
 import { expect, type BrowserContext, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { order, setup, typePlace, toDeliverTo } from "./helpers";
+import { answeredAt, order, setup, typePlace, toDeliverTo, whereBox } from "./helpers";
 
 export type Screen = { name: string; path: string; width: number; height: number; step: string };
 export const screens: Screen[] = readFileSync(resolve(import.meta.dirname, "../../../docs/screens.txt"), "utf8")
@@ -40,6 +40,10 @@ async function deliverFrom(context: BrowserContext, page: Page, path: string, ro
   if (o.serve === false) net.state.serve = { status: 200, body: { ok: true, serviceable: false, kitchens: [] } };
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+vg+AAVYAqhyXHCrAAAAAElFTkSuQmCC", "base64") }));
   if (o.locate !== false) { await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.5677, longitude: 77.2432 }); }   // locate: false = the phone's location is off
+  if (o.locate !== false && rows === 0) {   // story 1548, board C11: the last address was deleted here, so the place is where the phone is; the box "Where should we deliver?" is not this board
+    await context.addInitScript(() => { window.localStorage.setItem("gs-place", JSON.stringify({ address: "Where you are now", pin: "110016", lat: 28.5677, lng: 77.2432, house: "", landmark: "", confirmed: false, id: null })); window.localStorage.setItem("gs-pin", "110016"); });
+    await answeredAt(context, { latitude: 28.5677, longitude: 77.2432 });
+  }
   await page.goto(path);
   if (o.locate === false && rows > 0) await viaSheet(page); else await toDeliverTo(page);   // story 1529: the place follows the phone; not found, the sheet is over the menu
   await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();
@@ -54,6 +58,14 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await page.getByRole("button", { name: "Add Butter Chicken" }).click();
     await page.getByRole("button", { name: /View bill/ }).click();
     await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
+  },
+  "bill-far": async (context, page, path) => {   // story 1548, rule 11: the phone is 6 km from the delivery place; the Deliver to row says so, and nothing else on the Bill moves
+    const net = await setup(context, page, [], { pin: null });
+    const home = { id: "h1", label: "Home", address: "Z-900, Sample Garden Colony, Sample Road, Sampletown", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
+    net.state.addresses = [home];
+    await context.addInitScript((h) => { window.localStorage.setItem("gs-place", JSON.stringify({ address: h.address, pin: h.pin_code, lat: h.lat, lng: h.lng, house: "", landmark: "", confirmed: true, id: h.id })); window.localStorage.setItem("gs-pin", h.pin_code); window.localStorage.setItem("gs-draft", JSON.stringify({ step: "bill", cart: { d1: 1 }, address: h.address, name: "", phone: "9876543210" })); }, home);
+    await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.6139, longitude: 77.209 });
+    await page.goto(path); await expect(page.getByText("6 km from your current location")).toBeVisible();
   },
   // Story 1540 (review of PR 1546, note 16): the Bill after the place moved to another kitchen. The header line, one struck old price, one "is not made by this kitchen." row with "Take it out".
   "bill-kitchen-changed": async (context, page, path) => {
@@ -124,14 +136,23 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     const net = await setup(context, page, [order("preparing", "2020-01-01T10:02:00Z")]);
     net.state.tracking = { rider_lat: null, rider_lng: null, eta_lo_min: null, eta_hi_min: null, eta_late: false, updated_at: NINE.toISOString() };
     await page.goto(path); await expect(page.getByText("Working out the time")).toBeVisible(); },
-  "menu-far": async (context, page, path) => {   // story #1056, board SW2: the menu with Home kept in the header and the strip "You are 6 km from Home · Deliver here"
+  "menu-far": async (context, page, path) => {   // story 1548 (was story 1056, board SW2): 6 km from Home, the menu keeps Home in the header and the box "Where should we deliver?" is over it
     const net = await setup(context, page, [], { pin: null });
     const home = { id: "h1", label: "Home", address: "Z-900, Sample Garden Colony, Sample Road, Sampletown", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
     net.state.addresses = [home];
-    net.state.nearPin = "110099";   // story 1529: the strip is for a cart in progress whose kitchen does not serve the place the phone is at
     await context.addInitScript((h) => { window.localStorage.setItem("gs-place", JSON.stringify({ address: h.address, pin: h.pin_code, lat: h.lat, lng: h.lng, house: "", landmark: "", confirmed: true, id: h.id })); window.localStorage.setItem("gs-pin", h.pin_code); window.localStorage.setItem("gs-draft", JSON.stringify({ step: "menu", cart: { d1: 1 }, address: h.address, name: "", phone: "" })); }, home);
     await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.6139, longitude: 77.209 });
-    await page.goto(path); await expect(page.getByText("You are 6 km from Home")).toBeVisible(); },
+    await page.goto(path); await expect(whereBox(page).getByRole("button", { name: "Use current location" })).toBeEnabled();
+    await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined)))); },   // the box has come up
+  "menu-far-not-served": async (context, page, path) => {   // story 1548: the same box where no kitchen of ours serves the phone's place: the filled button is greyed, with the line under it
+    const net = await setup(context, page, [], { pin: null });
+    const home = { id: "h1", label: "Home", address: "Z-900, Sample Garden Colony, Sample Road, Sampletown", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
+    net.state.addresses = [home];
+    net.state.nearPin = "110099";   // no kitchen serves the place the phone is at
+    await context.addInitScript((h) => { window.localStorage.setItem("gs-place", JSON.stringify({ address: h.address, pin: h.pin_code, lat: h.lat, lng: h.lng, house: "", landmark: "", confirmed: true, id: h.id })); window.localStorage.setItem("gs-pin", h.pin_code); }, home);
+    await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.6139, longitude: 77.209 });
+    await page.goto(path); await expect(whereBox(page).getByText("We do not deliver here yet")).toBeVisible();
+    await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined)))); },
   // Story #1049: the first-open boards. The first-open screen is the location ask (A1, with step 3 of 4); Use my location opens the pin map at the phone (A1p).
   "first-open-ask": async (context, page, path) => {   // board A1
     await setup(context, page, [], { pin: null }); await page.goto(path); await expect(page.getByRole("button", { name: "Use my current location" })).toBeVisible(); },

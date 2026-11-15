@@ -14,6 +14,8 @@ import { clearPlace, HERE, herePlace, isHere, loadPlace, pointOf, savePlace, typ
 import { AreaScreen } from "./screens/AreaScreen";
 import { AlertsAsk } from "./screens/AlertsAsk";
 import { LocationOffSheet } from "./screens/LocationOffSheet";
+import { WhereToDeliver } from "./screens/WhereToDeliver";
+import { answered, loadSpots, MOVING_MPS, ROUGH_M, saveSpots, withSpot } from "./lib/asked";
 import { NoKitchen } from "./screens/NoKitchen";
 import { OrdersScreen } from "./screens/OrdersScreen";
 import { AdminGate } from "./screens/AdminGate";
@@ -42,7 +44,7 @@ import { placeSearch } from "./lib/placeSearch";
 import { PinMapScreen, type Saved } from "./screens/PinMapScreen";
 import { keepRecent, listRecents, recentAt, recentWords, RECENTS_MAX, touchRecent, type Recent, type Searched } from "./lib/recents";
 import { distanceM, FAR_M, addAddress, editAddress, hasPoint, listAddresses, lastUsed, nearM, nearSaved, removeAddress, touchAddress, type SavedAddress } from "./lib/addresses";
-import { findPhone, nearestPin, type LocWhy, type Place } from "./lib/locate";
+import { findPhone, nearestPin, readNearestPin, type LocWhy, type Phone, type Place } from "./lib/locate";
 import { currentSession, scopeFor } from "./lib/session";
 import { MenuScreen } from "./screens/MenuScreen";
 import { BillScreen, CONFIRM_PLACE_LINE } from "./screens/BillScreen";
@@ -511,12 +513,17 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       setMenuError(null);
       ensureSession().then((uid) => getClient().from("customers").upsert({ user_id: uid, pin_code: next.pin, updated_at: new Date().toISOString() }, { onConflict: "user_id" })).catch(() => {});
     }
+    const q = askNow.current;
+    if (q) {   // story 1548: a place was chosen or confirmed, so the box is answered. A place away from this spot: the spot is remembered for the day (a place at it is a known place by itself)
+      if (next.lat === null || next.lng === null || distanceM(q.at, { lat: next.lat, lng: next.lng }) > q.near) saveSpots(withSpot(loadSpots(), q.at, q.moving, new Date()));
+      endAsk();
+    }
     setPlace(next);
   }
   // Story 976, changed by 1529: the saved addresses. On open the place follows the phone: the saved address it is at, else "Where you are now"; not found, the place stays; the sheet asks only when this phone held no place (story 1547).
   const [saved, setSaved] = useState<SavedAddress[] | null>(null);
   const [addrTried, setAddrTried] = useState(false);   // story #1112: the open is over (the addresses answered or failed, the phone was looked for): until then a signed-in phone with no pin is loading, not new
-  const [here, setHere] = useState<Place | null>(null);
+  const [here, setHere] = useState<Phone | null>(null);
   const [why, setWhy] = useState<LocWhy | null>(null);   // bug 1526: why the phone was not found; null when it was found or not looked for yet
   const [finding, setFinding] = useState(false);   // a tap's find is running: the tapped button says so
   const [sheet, setSheet] = useState(false);   // story #1056, board LO-V1: the sheet "Where to bring your food?", once per app open
@@ -528,6 +535,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const hereNow = useRef(here); hereNow.current = here;
   const whyNow = useRef(why); whyNow.current = why;
   const cartNow = useRef(cart); cartNow.current = cart;
+  // Story 1548: the box "Where should we deliver?". Set while the phone is far from every saved address and every place confirmed before, until a place is chosen.
+  // at: the phone's place it asks about. served: a kitchen of ours serves it. moving: the fix said the phone moves fast. near: the near distance used.
+  const [ask, setAsk] = useState<null | { at: Place; served: boolean; moving: boolean; near: number }>(null);
+  const askNow = useRef(ask); askNow.current = ask;
+  const endAsk = () => { askNow.current = null; setAsk(null); };
+  const nearGot = useRef<Promise<number> | null>(null);   // the setting address_near_m, read once per app open
   // Story #1162 (owner, 9 Nov): the kitchen closes (live, or by the clock) under a customer who has items but has NOT placed the order: the app goes to the closed menu, the bill is cleared, and a line says so.
   // A placed order is never moved (the step is "placed" or "orders"), and an order being sent is let finish first.
   const [closedNote, setClosedNote] = useState<string | null>(null);
@@ -580,7 +593,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     ensureSession().then((uid) => markPlace(getClient(), uid)).catch(() => {});
   }
   // Stories 1529 and 1526: look for the phone. By itself the app uses only a permission given before; a tap asks. Not found: the cause is kept, for the true line.
-  async function find(tap: boolean): Promise<Place | null> {
+  async function find(tap: boolean): Promise<Phone | null> {
     if (tap) setFinding(true);
     const r = await findPhone(tap, whyNow.current);
     if (tap) setFinding(false);
@@ -588,22 +601,40 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setHere(r); setWhy(null); setSheet(false);
     return r;
   }
-  // Story 1529: the place follows the phone. Inside the near distance of a saved address: that address. Away from all: "Where you are now", with the postal code from our own
-  // table (no Ola call), not confirmed and not saved, so the order waits for the map. A cart in progress never moves to another kitchen by itself; the far strip offers it.
-  async function follow(at: Place) {
+  // Story 1529, changed by 1548: the place follows the phone only to a saved address. Inside the near distance of one: that address, with no word. A cart in progress
+  // never moves to another kitchen by itself. Away from every known place the place stays and the box asks (story 1548): it never becomes "Where you are now" by itself.
+  // pick false (a return to the app after a find that worked): the place is not moved, only the box is looked at.
+  // tap (the customer tapped "Use my current location" on the sheet): he has chosen, so far from every known place the pin map opens at once, never the box (no second ask).
+  async function follow(at: Phone, pick = true, tap = false) {
     if (held()) return;
     const c = getClient();
-    const near = await nearM(c), was = whereNow.current;
+    const near = await (nearGot.current ??= nearM(c)), was = whereNow.current;
     const row = nearSaved(savedNow.current ?? [], at, near);
-    // Story 1530: no saved address here, but the phone is at the confirmed place this phone holds (its save failed, or it is a recent): that place stays, never "Where you are now".
-    if (!row && was && was.confirmed && !was.id && was.lat !== null && was.lng !== null && distanceM(at, { lat: was.lat, lng: was.lng }) <= near) return;
-    const pin = row ? row.pin : await nearestPin(at, undefined);
-    if (!pin) return;   // no postal code for this point (no network, the sea): the place stays
-    const next: StoredPlace = row ? { address: row.address, pin, lat: row.lat, lng: row.lng, house: row.house ?? "", landmark: row.landmark ?? "", confirmed: true, id: row.id } : herePlace(at, pin);
-    const cur = whereNow.current;
-    if (cur && row && cur.id === row.id) return;
-    if (cur && !(await cartFits(cur, next))) return;
-    if (!held()) choosePlace(next);
+    if (row) {
+      endAsk();   // the phone is at a saved address: nothing to ask
+      const next: StoredPlace = { address: row.address, pin: row.pin, lat: row.lat, lng: row.lng, house: row.house ?? "", landmark: row.landmark ?? "", confirmed: true, id: row.id };
+      if (!pick || was?.id === row.id || (was && !(await cartFits(was, next)))) return;
+      if (!held()) choosePlace(next);
+      return;
+    }
+    if (!was) {   // this phone holds no place (the last address was deleted, a new phone): where the phone is, as before, so there is a menu. Not confirmed and not saved: the order waits for the map
+      const pin = pick ? await nearestPin(at, undefined) : "";
+      if (pin && !held() && !whereNow.current) choosePlace(herePlace(at, pin));
+      return;
+    }
+    // Story 1548. A rough fix raises no box, and a known place the fix could be at counts as near: a saved address, a recent, or the confirmed place this phone holds (story 1530).
+    const slack = at.accuracy ?? 0;
+    const close = (p: { lat: number | null; lng: number | null }) => p.lat !== null && p.lng !== null && distanceM(at, { lat: p.lat, lng: p.lng }) - slack <= near;
+    const known = !!nearSaved(savedNow.current ?? [], at, near, slack) || recentsNow.current.some(close) || (was.confirmed && close(was));   // the held place counts with or without an id: the saved rows may not have been read (a bad network)
+    if (tap && !known) { endAsk(); return void setPinMap({ center: { lat: at.lat, lng: at.lng } }); }
+    if (slack > ROUGH_M) return;   // a rough read raises no box and ends none
+    if (known || answered(loadSpots(), at, near, new Date(), slack)) return endAsk();
+    if (askNow.current && distanceM(askNow.current.at, at) <= near) return;   // the box is already up for this spot: nothing is read again
+    // Do we deliver there? Our own postal code table and our own kitchens: no map service. A read that fails (a bad network), of the kitchens or of the postal code,
+    // counts as served: the button is greyed only on a true "no"; the pin map then says what is true.
+    const [pin, all] = await Promise.all([readNearestPin(at, undefined), fetchKitchens(c).catch(() => null)]);
+    const served = !all || pin === null || chooseKitchen(all, pin, at).kind !== "none";
+    if (!held() && whereNow.current === was) setAsk({ at: { lat: at.lat, lng: at.lng }, served, moving: (at.speed ?? 0) >= MOVING_MPS, near });
   }
   // A cart belongs to one kitchen. True when there is no cart, or both places are served by the same kitchen. A lookup that fails is "no".
   async function cartFits(cur: StoredPlace, next: StoredPlace): Promise<boolean> {
@@ -613,8 +644,13 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     return !!all && kitchenOf(cur) === kitchenOf(next);
   }
   const lookAgain = useRef(() => {});
-  lookAgain.current = () => { if (document.visibilityState === "visible" && whyNow.current && !finding) void find(false).then((at) => at && follow(at)); };
-  useEffect(() => {   // back from the phone's settings: a find that failed is made again, with no tap. A find that worked is not.
+  lookAgain.current = () => {
+    if (document.visibilityState !== "visible" || finding || !opened.current || !addrTried) return;
+    if (whyNow.current) return void find(false).then((at) => at && follow(at));
+    // Story 1548: a find that worked is made again too, with no ask: the customer may be somewhere new. The place is not moved; a read that fails keeps the last known place.
+    void findPhone(false).then((at) => { if (typeof at !== "string") { setHere(at); void follow(at, false); } });
+  };
+  useEffect(() => {   // back in the app (from the phone's settings, from another app): the phone is looked for again, with no tap and no ask.
     if (lock !== "customer") return;
     const back = () => lookAgain.current();
     document.addEventListener("visibilitychange", back);
@@ -625,7 +661,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     opened.current = true;
     (async () => {
       const c = getClient();
-      const [list, mark] = await Promise.all([listAddresses(c), placeMark(c).catch(() => false), listRecents(c).then(setRecents, () => undefined)]);
+      const [list, mark] = await Promise.all([listAddresses(c), placeMark(c).catch(() => false), listRecents(c).then((r) => { recentsNow.current = r; setRecents(r); }, () => undefined)]);   // the ref at once (story 1548): the find below looks at the recents before the next render
       const rows = list ?? [];
       if (list) { setSaved(list); savedNow.current = list; }
       marked.current = mark;
@@ -1128,11 +1164,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} onDecline={decline} onHandover={handover} gate={gate} />
   );
   const kitchenView = lock === "kitchen" ? <KitchenGate>{kitchenScreen}</KitchenGate> : kitchenScreen(null);
-  // Story #1056 (board SW2): the header keeps the chosen address; past 2 km from it the phone is far, and a strip offers "Deliver here" (the map at the phone, then the details).
-  // Only the phone's place when location is already allowed and the saved lat and lng: no map call, no geocode, nothing asked.
-  const chosen = (saved ?? []).find((r) => r.id === selectedId);
-  const farM = here && chosen && chosen.lat !== null && chosen.lng !== null ? distanceM(here, { lat: chosen.lat, lng: chosen.lng }) : null;
-  const far = farM !== null && farM > FAR_M && chosen ? { km: Math.round(farM / 1000), label: chosen.label, onHere: () => setPinMap({ center: here! }) } : null;
+  // How far the phone's last known place is from the delivery place. Only the phone's place when location is already allowed and the place's own point: no map call,
+  // no geocode, nothing asked. It goes with an order (story 1056, rule 10), and past the far distance the Bill says it (story 1548, rule 11).
+  const farM = here && from ? distanceM(here, from) : null;
+  const farKm = farM !== null && farM > FAR_M ? Math.round(farM / 1000) : null;   // story 1548: the Bill and the You page say it
   // Story #1112 (TC 1.6): signed in, no pin yet and the saved addresses not answered: the first screen waits (a returning customer never sees N0). The wait ends when they answer or fail.
   const waitingForAddresses = lock === "customer" && signedIn === true && step !== "placed" && step !== "orders" && ((!pin && !addrTried) || (!!pin && area === null && !areaError));   // or the pin is known and the kitchen of that pin is still being found
   const needArea = lock === "customer" && step !== "placed" && step !== "orders" && !(pin && (area?.kind === "ok" || area?.kind === "closed"));
@@ -1181,17 +1216,17 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             closed={shown?.kind === "closed" ? closedCopy(shown.opens_at, shown.paused === true) : null} closedNote={closedNote === BILL_CLEARED_LINE ? null : closedNote} greetNote={closedNote === BILL_CLEARED_LINE ? closedNote : moved && !moved.seen ? KITCHEN_CHANGED_MENU : null}
             tellMe={tellMe} tellMeError={tellMeError} onTellMe={tellMeWhenOpen}
             onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
-            onChangePin={() => setStep("deliver")} onOrders={() => setStep("orders")} address={isHere(where) ? "" : address} label={isHere(where) ? HERE : saved?.find((r) => r.id === selectedId)?.label ?? "Deliver to"} photo={photo} onProfile={() => setStep("account")} far={far} />
+            onChangePin={() => setStep("deliver")} onOrders={() => setStep("orders")} address={isHere(where) ? "" : address} label={isHere(where) ? HERE : saved?.find((r) => r.id === selectedId)?.label ?? "Deliver to"} photo={photo} onProfile={() => setStep("account")} />
         )}
         {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} onAgain={orderAgain} againLine={againLine} />}
         {step === "account" && (
-          <AccountScreen photo={photo} email={email} onGivenName={(n) => setName((v) => v || n)} name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone}
+          <AccountScreen farKm={farKm} photo={photo} email={email} onGivenName={(n) => setName((v) => v || n)} name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone}
             alerts={reminder} onAlerts={toggleAlerts} alertsError={alertsError} live={openLive} onForget={forgetMe} onDeleteAccount={deleteAccount}
             onMenu={() => setStep("menu")} onAddresses={() => setStep("deliver")} onOrders={() => setStep("orders")} />
         )}
         {menu && step === "bill" && (
           <BillScreen notice={againLine} under={moved ? kitchenChangedBill(billLines.some((l) => l.was_paise !== undefined)) : null} note={note} onNote={setNote} lines={billLines} total={total} soldOut={dead && step === "bill" ? { id: dead.dish.id, name: dead.dish.name, alt: offers.alt, canSwap, onSwap: () => setSwapped((s) => [...s, dead.dish.id]), onRemove: () => takeOut(dead.dish.id) }
-            : notMade ? { id: notMade.id, name: notMade.name, line: notMadeLine(notMade.name), alt: null, canSwap: false, onSwap: () => undefined, onRemove: () => setMoved((m) => m && { ...m, gone: m.gone.filter((g) => g.id !== notMade.id) }) } : undefined} offers={OFFERS_ON && offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove } : undefined} kitchenName={kitchenName} pin={pin} address={address} confirmed={!!pointOf(where)} onChangePlace={() => setStep("deliver")} onConfirmPlace={confirmOnMap}
+            : notMade ? { id: notMade.id, name: notMade.name, line: notMadeLine(notMade.name), alt: null, canSwap: false, onSwap: () => undefined, onRemove: () => setMoved((m) => m && { ...m, gone: m.gone.filter((g) => g.id !== notMade.id) }) } : undefined} offers={OFFERS_ON && offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove } : undefined} kitchenName={kitchenName} pin={pin} address={address} farKm={farKm} confirmed={!!pointOf(where)} onChangePlace={() => setStep("deliver")} onConfirmPlace={confirmOnMap}
             details={lock === "customer" ? { phone, onPhone: setPhone, saved: savedPhone } : undefined}
             door={lock === "customer" ? { methods: doorMethods ?? [], value: doorValue, onChange: setDoorPick } : undefined} sending={sending} error={error}
             onBack={() => setStep("menu")} onPlace={place} />
@@ -1211,11 +1246,13 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     </>
   );
 
+  // Story 1548: the box shows over the menu only, never with an order on its way, and waits until the open has looked for an order in progress.
+  const boxOn = ask && lock === "customer" && resumed && !openOrderNow && step === "menu" && !pinMap && !needArea && !farPick && !settingUp;
   const framed = (lock === "customer" && role === "customer") || (lock === "rider" && role === "rider") || (lock === "kitchen" && role === "kitchen") || (lock === "admin" && role === "admin");   // the Ink boards fill the phone; the chrome goes below
   const Shell = framed ? "div" : "main";
   return (
     <>
-    {framed && <main className="frame">{role === "rider" ? riderView : role === "kitchen" ? kitchenView : role === "admin" ? <AdminScreen /> : customerView}</main>}
+    {framed && <main className="frame" inert={!!boxOn}>{role === "rider" ? riderView : role === "kitchen" ? kitchenView : role === "admin" ? <AdminScreen /> : customerView}</main>}
     <Shell className={framed ? "shell below" : role === "split" ? "shell split" : "shell"}>
       {!demo && !framed && <SignIn mode={lock && lock !== "customer" ? "signin" : "link"} />}   {/* story #224: a customer never signs in; the staff gates carry their own Google button */}
       {!lock && <nav className="roles" aria-label="Screen">
@@ -1227,9 +1264,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       </nav>}
       {sheet && step === "menu" && !pinMap && !needArea && (
         <LocationOffSheet list={saved ?? []} selectedId={selectedId} why={why ?? "ask"} busy={finding} onClose={() => setSheet(false)}
-          onFind={() => { void find(true).then((at) => at && follow(at)); }}
+          onFind={() => { void find(true).then((at) => at && follow(at, true, true)); }}
           onPick={pickRow} onViewAll={() => { setSheet(false); setStep("deliver"); }} onSearch={() => { setSheet(false); setStep("deliver"); }} />
       )}
+      {boxOn && <WhereToDeliver served={ask.served} onOther={() => setStep("deliver")} onCurrent={() => setPinMap({ center: ask.at })} />}
       {toast && <p role="status" className="otp-toast">{toast}</p>}
       {demo && <p role="status" className="notice"><strong>Offline demo</strong></p>}
       {!lock && <DemoBar autoOn={auto || demo} autoNote={autoNote} onAuto={toggleAuto} />}

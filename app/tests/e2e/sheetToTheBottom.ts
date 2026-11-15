@@ -60,10 +60,19 @@ const locationSheet = async (page: Page, context: BrowserContext) => {
   await page.goto("/customer/");
   await expect(page.getByRole("dialog", { name: "Where to bring your food?" })).toBeVisible();
 };
+const whereBox = async (page: Page, context: BrowserContext) => {   // story 1548: the phone is far from every saved address, so the box that must be answered is up
+  const net = await setup(context, page, [], { pin: null });
+  net.state.addresses = [HOME];
+  await context.addInitScript((h) => { window.localStorage.setItem("gs-place", JSON.stringify({ address: h.address, pin: h.pin_code, lat: h.lat, lng: h.lng, house: "", landmark: "", confirmed: true, id: h.id })); window.localStorage.setItem("gs-pin", h.pin_code); }, HOME);
+  await phoneLoc(page, { perm: "granted", pos: { latitude: 28.6139, longitude: 77.209 } });
+  await page.goto("/customer/");
+  await expect(page.getByRole("dialog", { name: "Where should we deliver?" })).toBeVisible();
+};
 
 // [the sheet, how to open it, the dialog's name, the layer when it is not the grey cover]
 const SHEETS: [string, Open, string | RegExp, string?][] = [
   ["Where to bring your food? (customer menu)", locationSheet, "Where to bring your food?"],
+  ["Where should we deliver? (customer menu, story 1548)", whereBox, "Where should we deliver?"],
   ["a dish (customer menu)", async (p, c) => { await customer(p, c); await p.getByRole("button", { name: "Butter Chicken details" }).first().click(); }, "Butter Chicken"],
   ["edit or remove an address (Deliver to)", async (p, c) => { await customer(p, c); await toDeliverTo(p); await p.getByRole("button", { name: "Edit or remove Home" }).click(); }, "Home, edit or remove"],
   ["the You page (customer)", async (p, c) => { await customer(p, c); await p.getByRole("button", { name: /^You/ }).click(); }, "You", ".ui-you-page"],

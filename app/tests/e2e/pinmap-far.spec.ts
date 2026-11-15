@@ -1,7 +1,7 @@
 // Story #1128 (board C6b, owner yes 9 Nov): a pin outside every kitchen area. Confirm & proceed goes straight to NK-A (We don't reach here yet) and C7 never opens.
 // The serve check still loading: Confirm waits (no NK-A flash on a served pin). Offline or no answer: the old way on to C7.
 import { test, expect, type Page } from "@playwright/test";
-import { setup } from "./helpers";
+import { answeredAt, setup } from "./helpers";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
 const HOME = { id: "h1", label: "Home", address: "Z-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
@@ -14,7 +14,7 @@ async function toMap(page: Page, context: Parameters<typeof setup>[0], serve: { 
   net.state.geocode = { status: 200, body: GREEN_PARK };
   if (serve) net.state.serve = serve;
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
-  await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.56, longitude: 77.2 });
+  await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.56, longitude: 77.2 }); await answeredAt(context, { latitude: 28.56, longitude: 77.2 });   // story 1548: the box is not this spec's subject
   await page.goto("/customer/");
   await page.getByTitle("Change the delivery address").click();   // story 1529: the place follows the phone, so the header is not always Home
   await page.getByRole("button", { name: "Add new address" }).click();
