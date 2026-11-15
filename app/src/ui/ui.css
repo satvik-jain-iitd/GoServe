@@ -144,6 +144,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-switch:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
 /* A floating cart bar above the tab bar: no shadow line between them, the bar sits on the page colour */
 .ui-sticky.float { position: static; padding: var(--gs-space-2) var(--gs-gutter); background: transparent; box-shadow: none; }
+.ui-sticky.float.bill-foot { padding-bottom: max(var(--gs-space-5), env(safe-area-inset-bottom)); }   /* story 1572: the Bill's bar ends 24 px above the edge plus the safe area; the Menu's bar keeps its 8 px */
 
 /* One header for every screen: 52 px above, 12 below, a hairline, the title at display-l, one mono slot on the right.
    A pushed screen adds the 44 px chevron on the left; a home screen has none. */
@@ -904,8 +905,6 @@ a.ui-locrow { text-decoration: none; }   /* story 1498: the rider row is a link 
 .ui-btn:disabled:not(.danger-fill) { opacity: 1; background: var(--gs-disabled-bg); color: var(--gs-disabled-text); border: 0; box-shadow: none; cursor: not-allowed; }   /* pointer-events stay none (story 953): a touch does nothing, so the cursor shows only where a mouse can reach it elsewhere */
 .ui-btn:disabled:not(.danger-fill) .mono, .ui-btn:disabled:not(.danger-fill) .verb { color: inherit; }
 .ui-reason { margin: 0 0 12px; text-align: center; font-size: var(--gs-text-sm); color: var(--gs-text-muted); }
-.ui-sticky.float:has(.ui-reason) { flex-direction: column; align-items: center; }
-.ui-sticky.float:has(.ui-reason) .ui-btn { width: 100%; }
 
 /* story 1262, board R7: the QR card on Collect payment: the picture the admin uploaded */
 .ui-qr { display: flex; flex-direction: column; align-items: center; gap: var(--gs-space-2); padding: var(--gs-space-4) 0; }
@@ -1032,9 +1031,6 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
 .ui-roll .ui-timeline { margin: 0; border: 0; border-radius: 0; transition: transform 300ms cubic-bezier(.2, .7, .2, 1); }
 .ui-roll .ui-timeline li { box-sizing: border-box; height: var(--gs-roll-row); white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) { .ui-roll .ui-timeline { transition: none; } }
-/* story 1324 (board PL4): two outline buttons share one line; a filled main button stays full width and last, under them (story 1434) */
-.ui-bottom.ui-pair:has(> .ui-btn.ghost:nth-child(2):last-child):not(:has(> .ui-btn:not(.ghost))) { flex-direction: row; gap: 12px; }
-.ui-bottom.ui-pair:not(:has(> .ui-btn:not(.ghost))) > .ui-btn.big { flex: 1; min-width: 0; padding: 0 8px; white-space: nowrap; }
 
 /* Story 1324 (boards PL3, PL4; owner rule 11): the bill and the order slip are torn at the top in whole teeth; the tear sits on the slip's top edge, which drops its straight hairline. */
 .ui-slip:has(> .ui-torn-top) { margin-top: 18px; }
