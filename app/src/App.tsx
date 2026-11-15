@@ -36,7 +36,7 @@ import { pushTrail } from "./lib/trail";
 import { trace } from "./lib/trace";
 import { cancelLine, NO_INTERNET } from "./lib/errorLines";
 import { FeedbackSheet } from "./screens/FeedbackSheet";
-import { ensureSession, fetchMenuRows, fetchRiderCard, getClient, type RiderCard } from "./lib/supabase";
+import { ensureSession, fetchMenuRows, fetchRiderCard, getClient, signOutHere, type RiderCard } from "./lib/supabase";
 import { openTill } from "./lib/browse";
 import { AccountScreen } from "./screens/AccountScreen";
 import { DeliverToScreen } from "./screens/DeliverToScreen";
@@ -946,7 +946,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const openLive = openOrderNow ? { label: statusLabel(openOrderNow.status), no: shortId(openOrderNow.id), onOpen: () => openOrder(openOrderNow) } : null;
   // "Forget me on this phone": what this phone remembers is wiped and the session ends.
   async function forgetMe() {
-    try { await getClient().auth.signOut(); } catch { /* offline: the local wipe still runs */ }
+    try { await signOutHere(); } catch { /* offline: the local wipe still runs */ }
     try { window.localStorage.clear(); } catch { /* blocked storage: nothing to wipe */ }
     window.location.reload();
   }

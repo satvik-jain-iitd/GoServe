@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { cachedSignedInName, friendlyAuth, givenNameOf, linkGoogle, markTried, rememberReturn, signedInName, takeTried, type ReturnScreen } from "../lib/auth";
-import { ensureSession, getClient } from "../lib/supabase";
+import { ensureSession, getClient, signOutHere } from "../lib/supabase";
 import { Button } from "../ui";
 
 // One line under the title: "Continue with Google", or "Signed in as <name>". No password, no email form.
@@ -23,7 +23,7 @@ export function SignIn({ mode = "link", returnTo = "menu", big, filled, mark, on
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   if (name) return (
     <p className="notice"><span data-testid="signed-in">Signed in as {name}</span>{" "}
-      <Button variant="ghost" onClick={async () => { await getClient().auth.signOut(); window.location.reload(); }}>Sign out</Button>
+      <Button variant="ghost" onClick={async () => { await signOutHere(); window.location.reload(); }}>Sign out</Button>
     </p>
   );
   return (
