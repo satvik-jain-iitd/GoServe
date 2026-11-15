@@ -36,6 +36,7 @@ async function letterPicture(node: HTMLElement) {
 
 function FounderNote({ place, offerPaise, onChange }: { place: string; offerPaise: number | null; onChange: () => void }) {
   const [copied, setCopied] = useState(false);
+  const [again, setAgain] = useState(false);   // the phone refused the file and the text: say so, the next tap tries again
   const [busy, setBusy] = useState(false);
   const letter = useRef<HTMLDivElement>(null);
   const making = useRef<Promise<File | null> | null>(null);   // the picture while it is made
@@ -52,6 +53,7 @@ function FounderNote({ place, offerPaise, onChange }: { place: string; offerPais
 
   const { off, paras } = letterParas(place, offerPaise);
   async function share() {
+    setAgain(false);
     const text = letterText(place, offerPaise);
     try {
       if (typeof navigator.share !== "function") { await navigator.clipboard.writeText(text); setCopied(true); return; }
@@ -65,7 +67,7 @@ function FounderNote({ place, offerPaise, onChange }: { place: string; offerPais
         catch (e) { if (e instanceof Error && e.name === "AbortError") return; }   // any other refusal of the file: the text goes
       }
       await navigator.share({ title: "A note from GoServe", text });   // the site's address is the text's last line
-    } catch { /* a closed share sheet is not an error */ }
+    } catch (e) { if (!(e instanceof Error && e.name === "AbortError")) setAgain(true); }   // a closed share sheet is not an error
     finally { setBusy(false); }
   }
   return (
@@ -92,7 +94,7 @@ function FounderNote({ place, offerPaise, onChange }: { place: string; offerPais
             <p className="ui-founder-links"><a href={LINKEDIN} target="_blank" rel="noreferrer">LinkedIn</a> · <a href={SITE} target="_blank" rel="noreferrer">letsdwelo.in</a></p>
           </div>
           <p className="ui-founder-foot" hidden>letsdwelo.in</p>   {/* story 1563: printed on the shared picture only */}
-          <button type="button" className="ui-btn big ui-founder-share" disabled={busy} onClick={() => void share()}>{busy ? "Preparing…" : "Share this note"}</button>
+          <button type="button" className="ui-btn big ui-founder-share" disabled={busy} aria-live="polite" onClick={() => void share()}>{busy ? "Preparing…" : again ? "Tap again to share" : "Share this note"}</button>
           {copied && <p role="status" className="ui-note">Copied. Paste it anywhere.</p>}
           <button type="button" className="ui-btn ghost big" onClick={onChange}>Change location</button>
         </div>

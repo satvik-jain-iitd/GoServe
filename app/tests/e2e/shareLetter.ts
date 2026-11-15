@@ -7,7 +7,7 @@ import { setup, typePlace } from "./helpers";
 
 const SCALE = 2;          // the picture is made at 2x
 const LOOK_LIMIT = 0.01;  // the look test: at most 1 percent of the pixels may differ (pixelmatch threshold 0.2). Measured: Chromium 0.000, WebKit 0.301 percent; a fallback font 4.8 percent
-type Mode = { files: boolean; abort?: boolean; canvas?: "hang" | "throw" };
+type Mode = { files: boolean; abort?: boolean; refuse?: boolean; canvas?: "hang" | "throw" };
 type Shared = { title?: string; text?: string; url?: string; files: { name: string; type: string; size: number; data: string }[] };
 type Img = { width: number; height: number; data: Buffer };
 type Box = { x: number; y: number; width: number; height: number };
@@ -20,8 +20,9 @@ const { utils } = lib("playwright-core/lib/coreBundle") as { utils: { getCompara
 // The stand-in for the phone: navigator.share and navigator.canShare record what was passed. `canvas` makes the picture hang or fail.
 async function phone(page: Page, mode: Mode) {
   await page.addInitScript((m) => {
-    const w = window as unknown as { __shares: unknown[] };
+    const w = window as unknown as { __shares: unknown[]; __refuse: boolean };
     w.__shares = [];
+    w.__refuse = !!m.refuse;   // a test turns it off to let the next share through
     Object.defineProperty(navigator, "canShare", { configurable: true, value: (d?: ShareData) => m.files && !!d?.files?.length });
     Object.defineProperty(navigator, "share", { configurable: true, value: async (d: ShareData) => {
       const files = await Promise.all((d.files ?? []).map((f) => new Promise((done) => {
@@ -31,6 +32,7 @@ async function phone(page: Page, mode: Mode) {
       })));
       w.__shares.push({ title: d.title, text: d.text, url: d.url, files });
       if (m.abort) throw new DOMException("The share sheet was closed", "AbortError");
+      if (w.__refuse) throw new DOMException("The tap is too old", "NotAllowedError");   // what an iPhone does when the tap's permission is gone
     } });
     if (m.canvas === "hang") HTMLCanvasElement.prototype.toBlob = () => { /* never answers */ };
     if (m.canvas === "throw") HTMLCanvasElement.prototype.toBlob = HTMLCanvasElement.prototype.toDataURL = () => { throw new DOMException("Tainted canvases may not be exported.", "SecurityError"); };   // what a tainted canvas does
@@ -272,5 +274,24 @@ export function shareLetter(engine: string) {
     await shareButton(page).click();
     const again = await shared(page, 2);
     expect(again[1].files.length).toBe(1);
+  });
+
+  test("The phone refuses the file and the text: the button says Tap again to share and works, the second tap shares the picture", async ({ page, context }) => {
+    await phone(page, { files: true, refuse: true });
+    await setup(context, page, [], { pin: null });
+    await toNote(page);
+    await page.waitForTimeout(500);   // the picture is ready
+    const before = await page.locator(".ui-founder-text, .ui-founder-share").evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; }));
+    await shareButton(page).click();
+    const first = await shared(page, 2);
+    expect([first[0].files.length, first[1].files.length], "the file is tried, then the text").toEqual([1, 0]);
+    await expect(shareButton(page)).toHaveText("Tap again to share");
+    await expect(shareButton(page)).toBeEnabled();
+    expect(await page.locator(".ui-founder-text, .ui-founder-share").evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; })), "the letter and the button do not move or change size").toEqual(before);
+    await page.evaluate(() => { (window as unknown as { __refuse: boolean }).__refuse = false; });
+    await shareButton(page).click();
+    const all = await shared(page, 3);
+    expect(all[2].files.length, "the second tap shares the picture at once").toBe(1);
+    await expect(shareButton(page)).toHaveText("Share this note");
   });
 }
