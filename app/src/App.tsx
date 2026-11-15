@@ -43,7 +43,7 @@ import { DeliverToScreen } from "./screens/DeliverToScreen";
 import { placeSearch } from "./lib/placeSearch";
 import { PinMapScreen, type Saved } from "./screens/PinMapScreen";
 import { keepRecent, listRecents, recentAt, recentWords, RECENTS_MAX, touchRecent, type Recent, type Searched } from "./lib/recents";
-import { distanceM, FAR_M, addAddress, editAddress, hasPoint, listAddresses, lastUsed, nearM, nearSaved, removeAddress, touchAddress, type SavedAddress } from "./lib/addresses";
+import { distanceM, addAddress, editAddress, hasPoint, listAddresses, lastUsed, nearM, nearSaved, removeAddress, touchAddress, type SavedAddress } from "./lib/addresses";
 import { findPhone, nearestPin, type LocWhy, type Phone, type Place } from "./lib/locate";
 import { currentSession, scopeFor } from "./lib/session";
 import { MenuScreen } from "./screens/MenuScreen";
@@ -1159,11 +1159,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} onDecline={decline} onHandover={handover} gate={gate} />
   );
   const kitchenView = lock === "kitchen" ? <KitchenGate>{kitchenScreen}</KitchenGate> : kitchenScreen(null);
-  // Story #1056 (board SW2): the header keeps the chosen address; past 2 km from it the phone is far, and a strip offers "Deliver here" (the map at the phone, then the details).
-  // Only the phone's place when location is already allowed and the saved lat and lng: no map call, no geocode, nothing asked.
+  // How far the phone is from the chosen saved address, for the order's own count (story 1056, rule 10). Only the phone's place when location is already allowed and the saved lat and lng:
+  // no map call, no geocode, nothing asked. Story 1548: the strip "You are n km from Home" that used it is gone; the box "Where should we deliver?" asks.
   const chosen = (saved ?? []).find((r) => r.id === selectedId);
   const farM = here && chosen && chosen.lat !== null && chosen.lng !== null ? distanceM(here, { lat: chosen.lat, lng: chosen.lng }) : null;
-  const far = farM !== null && farM > FAR_M && chosen ? { km: Math.round(farM / 1000), label: chosen.label, onHere: () => setPinMap({ center: here! }) } : null;
   // Story #1112 (TC 1.6): signed in, no pin yet and the saved addresses not answered: the first screen waits (a returning customer never sees N0). The wait ends when they answer or fail.
   const waitingForAddresses = lock === "customer" && signedIn === true && step !== "placed" && step !== "orders" && ((!pin && !addrTried) || (!!pin && area === null && !areaError));   // or the pin is known and the kitchen of that pin is still being found
   const needArea = lock === "customer" && step !== "placed" && step !== "orders" && !(pin && (area?.kind === "ok" || area?.kind === "closed"));
@@ -1212,7 +1211,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             closed={shown?.kind === "closed" ? closedCopy(shown.opens_at, shown.paused === true) : null} closedNote={closedNote === BILL_CLEARED_LINE ? null : closedNote} greetNote={closedNote === BILL_CLEARED_LINE ? closedNote : moved && !moved.seen ? KITCHEN_CHANGED_MENU : null}
             tellMe={tellMe} tellMeError={tellMeError} onTellMe={tellMeWhenOpen}
             onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
-            onChangePin={() => setStep("deliver")} onOrders={() => setStep("orders")} address={isHere(where) ? "" : address} label={isHere(where) ? HERE : saved?.find((r) => r.id === selectedId)?.label ?? "Deliver to"} photo={photo} onProfile={() => setStep("account")} far={far} />
+            onChangePin={() => setStep("deliver")} onOrders={() => setStep("orders")} address={isHere(where) ? "" : address} label={isHere(where) ? HERE : saved?.find((r) => r.id === selectedId)?.label ?? "Deliver to"} photo={photo} onProfile={() => setStep("account")} />
         )}
         {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} onAgain={orderAgain} againLine={againLine} />}
         {step === "account" && (

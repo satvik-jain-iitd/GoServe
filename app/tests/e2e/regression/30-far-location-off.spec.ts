@@ -1,5 +1,5 @@
 // Regression, screen 30: SW2 Far from Home and SW3 Location off. Cases: .claude/handoff/qa/screens/30-SW.md (epic 1196). Reached with the shared steps STEPS["menu-far"] and STEPS["location-off"].
-// Story 1548: far from Home the place stays and the box "Where should we deliver?" asks (TC 30.1, 30.2).
+// Story 1548: far from Home the lime strip is gone. The place stays and the box "Where should we deliver?" asks (TC 30.1, 30.2).
 // TC 30.5 (Use my current location: the phone asks, then the menu or the box) is owner only: a real phone's location prompt cannot be answered here.
 import { test, expect, type Page } from "@playwright/test";
 import { STEPS } from "../screensSteps";
@@ -18,6 +18,7 @@ test("TC 30.1 Look: the app 6 km from Home keeps Home in the header, and the box
   await expect(header(page)).toBeVisible();
   await expect(header(page)).toContainText("Sample Garden Colony");   // Home stays in the header, with its address
   await expect(page.getByRole("searchbox", { name: "Search dishes" })).toBeVisible();   // the menu is there behind the box
+  await expect(page.getByText(/You are \d+ km from/)).toHaveCount(0);   // the lime strip is gone
 });
 
 test("TC 30.2 Tap Use current location: the pin map opens centred on my spot", async ({ page, context }) => {

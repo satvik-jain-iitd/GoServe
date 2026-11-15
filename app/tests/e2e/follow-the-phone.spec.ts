@@ -52,14 +52,15 @@ test("I open the app somewhere else: my place stays, Where you are now is never 
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("gs-place")!))).toMatchObject({ id: "h1", confirmed: true });
 });
 
-test("A cart in progress: the place does not move by itself to another kitchen, and the far strip stays", async ({ page, context }) => {
+test("A cart in progress: the place does not move by itself to another kitchen, the box asks, and no far strip shows (story 1548)", async ({ page, context }) => {
   const net = await setup(context, page, [], { pin: null });
   net.state.addresses = [HOME];
   net.state.nearPin = "110099";   // no kitchen serves the place the phone is at
   await stored(context, placeOf(HOME), { step: "menu", cart: { d1: 1 }, address: HOME.address, name: "", phone: "" });
   await phoneLoc(page, { perm: "granted", pos: AWAY });
   await page.goto("/customer/");
-  await expect(page.getByRole("status").filter({ hasText: /You are \d+ km from Home/ })).toBeVisible();
+  await expect(whereBox(page).getByRole("button", { name: "Use current location" })).toBeDisabled();   // no kitchen of ours serves where the phone is
+  await expect(page.getByText(/You are \d+ km from Home/)).toHaveCount(0);
   await expect(header(page, /^Home\b/)).toBeVisible();
   await expect(page.getByRole("button", { name: /View bill/ })).toBeVisible();   // the cart is still there
 });
