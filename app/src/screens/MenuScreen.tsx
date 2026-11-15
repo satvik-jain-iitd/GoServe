@@ -16,7 +16,6 @@ type Props = {
   onAdd: (id: string) => void; onChange: (id: string, delta: number) => void; onOpenCart: () => void;
   onChangePin: () => void; onOrders: () => void;
   address: string; label: string; photo: string | null; onProfile: () => void;   // story #975: the top area and the circle
-  far?: { km: number; label: string; onHere: () => void } | null;   // story #1056 (board SW2): the phone is far from the chosen address; one tap sends the food where the phone is
 };
 
 const FunnelIcon = () => <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 5h18l-7 8v6l-4-2v-4z" /></svg>;
@@ -103,7 +102,6 @@ export function MenuScreen(p: Props) {
           <label htmlFor="veg-top" className="ui-veg-top"><span className="mono">Veg</span><input id="veg-top" className="ui-switch small" type="checkbox" role="switch" aria-label="Veg only, whole menu" checked={vegOnly} onChange={(e) => setVegOnly(e.target.checked)} /></label>
         </div>
       </header>
-      {p.far && <div className="ui-farstrip" role="status"><span>You are {p.far.km} km from {p.far.label}</span><button type="button" onClick={p.far.onHere}>Deliver here</button></div>}
       <div className="ui-scroll" aria-busy={!view.ready && !p.error ? true : undefined} aria-label={!view.ready && !p.error ? "Loading the menu" : undefined}>
         <div className="ui-greet">
           {p.greetNote ? <h2 role="status" className="ui-greet-line">{p.greetNote}</h2>

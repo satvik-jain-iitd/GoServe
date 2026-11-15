@@ -1,6 +1,6 @@
 // Story #1038 (board C7-PinDetails): after the pin, a sheet over the same map asks for the words the rider needs, and saves the address with the pin's exact place.
 import { test, expect, type Page } from "@playwright/test";
-import { setup } from "./helpers";
+import { answeredAt, setup } from "./helpers";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
 const NOW = Date.now();
@@ -12,7 +12,7 @@ async function toDetails(page: Page, context: Parameters<typeof setup>[0], geoco
   net.state.addresses = [HOME];
   net.state.geocode = geocode;
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
-  await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.56, longitude: 77.2 });
+  await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.56, longitude: 77.2 }); await answeredAt(context, { latitude: 28.56, longitude: 77.2 });   // story 1548: the box is not this spec's subject
   await page.goto("/customer/");
   await page.getByTitle("Change the delivery address").click();   // story 1529: the place follows the phone, so the header is not always Home
   await page.getByRole("button", { name: "Add new address" }).click();

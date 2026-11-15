@@ -1,4 +1,4 @@
-// Story #1227, board CX1-CancelSheet (owner, 11 Nov 2026): Cancel order asks first. Only the red button cancels. Keep my order, Close, Escape and a tap outside keep the order.
+// Story 1227, board CX1-CancelSheet (owner, 11 Nov 2026): Cancel order asks first. Only the red button cancels. Keep my order, Back, Escape and a tap outside keep the order.
 import { useEffect, useRef } from "react";
 import { useBackCloses } from "../lib/back";
 
@@ -17,12 +17,7 @@ export function CancelSheet({ lines, kitchenName, paidOnline, onKeep, onYes }: P
   return (
     <div className="ui-sheet-back" onClick={onKeep}>
       <section className="ui-sheet" role="dialog" aria-modal="true" aria-label="Cancel this order?" onClick={(e) => e.stopPropagation()}>
-        <div className="ui-sheet-head">
-          <h2>Cancel this order?</h2>
-          <button type="button" className="ui-btn ghost icon" aria-label="Close" onClick={onKeep}>
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
-          </button>
-        </div>
+        <div className="ui-sheet-head"><h2>Cancel this order?</h2></div>   {/* story 1565 (owner): no close control in the head; Keep my order, Back, Escape and a tap outside close it */}
         <p className="ui-sheet-lead">The kitchen has not started cooking. You can still cancel.</p>
         <dl className="ui-cancel-rows">
           <div><dt className="mono">Stops</dt><dd>{dishes} from {kitchenName}. No rider comes.</dd></div>

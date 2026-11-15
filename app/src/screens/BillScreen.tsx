@@ -9,6 +9,7 @@ import { TornTop } from "../ui";
 
 type Props = {
   lines: Line[]; total: number; kitchenName: string; pin: string | null;
+  farKm?: number | null;   // story 1548: the km from the phone's last known place to the delivery place, when it is past the far distance; else null
   address: string; confirmed: boolean; onChangePlace: () => void; onConfirmPlace: () => void;   // story 1532: the words of the stored place, never a text box; confirmed = it has a point the customer set
   note: string; onNote: (v: string) => void;   // story #935: one optional line for the kitchen, up to 200 characters
   details?: { phone: string; onPhone: (v: string) => void; saved: string | null };   // story 1417 (boards BF1, BF2, BC1): the phone once, never the name; saved = the phone kept on the account
@@ -23,8 +24,10 @@ type Props = {
 export const NOTE_MAX = 200;
 export const CONFIRM_PLACE_LINE = "Confirm your place on the map to place the order.";
 // Story 1532: where the food goes, as words with Change (the Bill and You). The same row as the saved phone (board BF2).
-export const PlaceRow = ({ words, onChange }: { words: string; onChange: () => void }) => (
-  <div className="ui-phone-row" role="group" aria-label="Deliver to"><span><small className="mono">Deliver to</small><span>{words.trim() || "Not set yet"}</span></span><button type="button" className="ui-pinmap-change" aria-label="Change address" onClick={onChange}>Change</button></div>
+// Story 1548, rule 11: far from the phone, the row says how far, in the place of the small "Deliver to" label (the reviewer's call): no line is added, so the row has
+// one height either way (owner's rule 23). The row's own name stays "Deliver to". farKm null or not given: not far, or the phone's place is not known.
+export const PlaceRow = ({ words, onChange, farKm }: { words: string; onChange: () => void; farKm?: number | null }) => (
+  <div className="ui-phone-row" role="group" aria-label="Deliver to"><span><small className="mono">{farKm == null ? "Deliver to" : `${farKm} km from your current location`}</small><span>{words.trim() || "Not set yet"}</span></span><button type="button" className="ui-pinmap-change" aria-label="Change address" onClick={onChange}>Change</button></div>
 );
 const plain = (paise: number) => formatRupees(paise).replace("₹", "");
 export const BackChevron = ({ label, onClick }: { label: string; onClick: () => void }) => (
@@ -33,7 +36,7 @@ export const BackChevron = ({ label, onClick }: { label: string; onClick: () => 
   </button>
 );
 
-export function BillScreen({ lines, total, kitchenName, pin, address, confirmed, onChangePlace, onConfirmPlace, note, onNote, details, offers, soldOut, door, sending, error, notice, under, onBack, onPlace }: Props) {
+export function BillScreen({ lines, total, kitchenName, pin, address, farKm = null, confirmed, onChangePlace, onConfirmPlace, note, onNote, details, offers, soldOut, door, sending, error, notice, under, onBack, onPlace }: Props) {
   const [typed, setTyped] = useState("");
   const q = offers?.quote;
   const empty = lines.length === 0;
@@ -132,7 +135,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, confirmed,
             {details && (savedRow
               ? <div className="ui-phone-row"><span><small className="mono">The rider calls you on</small><span className="mono">{details.phone}</span></span><button type="button" className="ui-pinmap-change" onClick={() => setChanging(true)}>Change</button></div>   /* board BF2: ten digits together */
               : <div className="ui-field"><label htmlFor="phone">Phone number · the rider calls you on it</label><input ref={phoneRef} id="phone" className="mono-input ui-eg" type="tel" placeholder="10 digit number" value={details.phone} inputMode="numeric" maxLength={10} autoComplete="tel-national" onChange={(e) => details.onPhone(e.target.value.replace(/\D/g, ""))} /></div>)}
-            <PlaceRow words={address} onChange={onChangePlace} />
+            <PlaceRow words={address} onChange={onChangePlace} farKm={farKm} />
             {!confirmed && <button type="button" className="ui-btn ghost" onClick={onConfirmPlace}>Confirm on the map</button>}
             <div className="ui-field"><label htmlFor="note">Note for the kitchen (optional)</label><textarea id="note" className="ui-eg" rows={2} value={note} maxLength={NOTE_MAX} placeholder="e.g. less spicy, no onion" onChange={(e) => onNote(e.target.value)} /><p className="mono ui-note-count"><span>{note.length} / {NOTE_MAX}</span></p></div>
             {door && (
