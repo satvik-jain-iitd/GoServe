@@ -26,7 +26,7 @@ async function toEdit(page: Page, context: Parameters<typeof setup>[0], saved: o
 test("O1 the first box is House, street, colony, ward with the board's example, and there is no second box", async ({ page, context }) => {
   await STEPS["first-open-pin"](context, page, "/customer/");
   await page.getByRole("button", { name: "Confirm & proceed" }).click();
-  await expect(sheet(page).getByLabel(BOX)).toHaveAttribute("placeholder", "e.g. C-128, Gali 3, Radio Colony");
+  await expect(sheet(page).getByLabel(BOX)).toHaveAttribute("placeholder", "e.g. Flat 4, Green Park");
   await expect(sheet(page).getByLabel("House, flat, floor")).toHaveCount(0);
   await expect(sheet(page).getByLabel(/^Street, colony/)).toHaveCount(0);
   await expect(sheet(page).getByLabel("Landmark (optional)")).toBeVisible();
