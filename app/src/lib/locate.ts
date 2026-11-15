@@ -34,7 +34,8 @@ export function addressFrom(r: Reply): Found | null {
 // is "no pin": the field stays empty and says so. The state check (story 827) still applies to the answer.
 const NEAR_WAIT_MS = 4_000;
 type PinDeps = { fetchFn: typeof fetch; url: string; anon: string; token: () => Promise<string> };
-export async function nearestPin(at: Place, state: string | undefined, deps?: PinDeps): Promise<string> {
+// Story 1548: null means the read failed (a server fault, no network, the 4 second wait); an empty string means our table has no pin near this point.
+export async function readNearestPin(at: Place, state: string | undefined, deps?: PinDeps): Promise<string | null> {
   const stop = new AbortController();
   const timer = setTimeout(() => stop.abort(), NEAR_WAIT_MS);
   try {
@@ -44,15 +45,17 @@ export async function nearestPin(at: Place, state: string | undefined, deps?: Pi
       headers: { apikey: d.anon, authorization: `Bearer ${await d.token()}`, "content-type": "application/json" },
       body: JSON.stringify({ p_lat: at.lat, p_lng: at.lng }),
     });
-    if (!res.ok) return "";
+    if (!res.ok) return null;
     const pin = await res.json();
     return typeof pin === "string" && /^\d{6}$/.test(pin) && pinFits(pin, state) ? pin : "";
   } catch {
-    return "";
+    return null;
   } finally {
     clearTimeout(timer);
   }
 }
+
+export const nearestPin = async (at: Place, state: string | undefined, deps?: PinDeps): Promise<string> => (await readNearestPin(at, state, deps)) ?? "";
 
 export async function reverseAddress(lat: number, lng: number, fetchFn: typeof fetch = fetch, pinDeps?: PinDeps): Promise<Found | null> {
   try {

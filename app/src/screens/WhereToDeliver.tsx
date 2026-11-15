@@ -1,6 +1,7 @@
 // Story 1548 (owner, 15 Nov 2026): the phone is far from every saved address and every place this customer confirmed before. One box over the menu asks where the food goes.
 // It must be answered: no close button, no tap outside, no Escape, no Back step of its own. The same box for every customer: it names no address.
 // The outline button is above and the filled one is last. The line under it keeps its space, so the box has one height when we deliver there and when we do not.
+import { useEffect, useRef } from "react";
 import { LOCATE } from "./DeliverToScreen";
 import { useSheetFit } from "../ui";
 
@@ -8,10 +9,12 @@ const LIST = <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" 
 
 export function WhereToDeliver({ served, onOther, onCurrent }: { served: boolean; onOther: () => void; onCurrent: () => void }) {
   const fit = useSheetFit();
+  const title = useRef<HTMLHeadingElement>(null);
+  useEffect(() => { title.current?.focus(); }, []);   // the page behind is inert: the focus goes into the box, so a screen reader is told it opened
   return (
     <div ref={fit} className="ui-sheet-back">
       <section className="ui-sheet ui-locoff" role="dialog" aria-modal="true" aria-label="Where should we deliver?">
-        <h2>Where should we deliver?</h2>
+        <h2 ref={title} tabIndex={-1}>Where should we deliver?</h2>
         <button type="button" className="ui-btn ghost big" onClick={onOther}>{LIST}Use another address</button>
         <button type="button" className="ui-btn big" disabled={!served} aria-describedby="where-not" onClick={onCurrent}>{LOCATE}Use current location</button>
         <p id="where-not" className="ui-where-not" role="status">{served ? "" : "We do not deliver here yet"}</p>

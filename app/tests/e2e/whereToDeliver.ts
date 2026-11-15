@@ -320,6 +320,113 @@ export function whereToDeliver() {
     await expect(box(page)).toBeVisible();
   });
 
+  test("I tap Use my current location on the sheet, far from every saved address: the pin map opens at once on where I am, and the box does not ask a second time", async ({ page, context }) => {
+    const net = await setup(context, page, [], { pin: null });   // a phone that holds no place, never asked for its location
+    net.state.addresses = [HOME];
+    await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
+    await phoneLoc(page, { perm: "prompt", pos: AWAY });
+    await page.goto("/customer/");
+    const sheet = page.getByRole("dialog", { name: "Where to bring your food?" });
+    await sheet.getByRole("button", { name: "Use my current location" }).click();   // he has chosen: the phone asks, and finds him 6 km from Home
+    await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
+    await expect(page.getByRole("dialog")).toHaveCount(0);   // no box, no sheet
+    await expect.poll(() => net.calls.serve.at(-1) ?? "").toContain(`lat=${AWAY.latitude}`);   // the pin is on the phone's place
+    await page.getByRole("button", { name: "Back", exact: true }).click();
+    await menuOfHome(page);   // the address used last stays
+    await quiet(page);
+  });
+
+  test("I tap Use current location on Deliver to, far from every saved address: the pin map opens at once, with no box", async ({ page, context }) => {
+    await open(context, page, { perm: "granted", pos: AWAY });
+    await other(page).click();
+    await page.getByRole("button", { name: "Use current location" }).click();
+    await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+  });
+
+  test("The postal code of where I am cannot be read (a bad network): Use current location stays open, with no line", async ({ page, context }) => {
+    await page.route("**/rest/v1/rpc/nearest_pin", (r) => r.fulfill({ status: 500, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: "{}" }));   // a page route wins over the helper's
+    await open(context, page, { perm: "granted", pos: AWAY });
+    await expect(box(page)).toBeVisible();
+    await expect(current(page)).toBeEnabled();
+    await expect(box(page).getByText(NOT_YET)).toHaveCount(0);
+  });
+
+  test("A cart that meets another kitchen (story 1540): I use my current location with a dish on the bill, another kitchen serves that place, and the menu says the kitchen changed", async ({ page, context }) => {
+    await open(context, page, { perm: "granted", pos: AWAY }, {
+      draft: { step: "menu", cart: { d1: 1 }, address: HOME.address, name: "", phone: "" },
+      before: (n) => {
+        n.state.nearPin = "110017";
+        n.state.geocode = { status: 200, body: { ok: true, address: "Sample Nagar, Sampletown, Sample State", pin: "110017", locality: "Sample Nagar", town: "Sampletown" } };
+        const kitchens = n.state.kitchens as { id: string; name: string; pin_codes: string[] }[];
+        kitchens.push({ ...kitchens[0], id: "k-2", name: "Sample Nagar Kitchen", pin_codes: ["110017"] });   // it makes the same dish: the cart moves to it, with a word
+        n.state.serve = { status: 200, body: { ok: true, serviceable: true, request_here: false, kitchens: [{ kitchen_id: "k-2", name: "Sample Nagar Kitchen", distance_m: 900, eta_min: 25, open: true }] } };
+      },
+    });
+    await expect(current(page)).toBeEnabled();   // a kitchen of ours serves where I am
+    await current(page).click();
+    await page.getByRole("button", { name: "Confirm & proceed" }).click();
+    await page.getByLabel("House, street, colony, ward").fill("Z-1, ground floor");
+    await page.getByRole("button", { name: "Save address" }).click();
+    await expect(page.locator(".ui-greet-line[role=status]")).toHaveText("The kitchen changed. See your bill.");
+    await expect(page.getByRole("button", { name: /View bill/ })).toBeVisible();   // the bill was not lost
+    await expect(box(page)).toHaveCount(0);
+  });
+
+  test("A rough read on coming back (right to 1500 m only): the box I have not answered stays", async ({ page, context }) => {
+    await open(context, page, { perm: "granted", pos: AWAY });
+    await expect(box(page)).toBeVisible();
+    await setLoc(page, { perm: "granted", pos: { ...AWAY, accuracy: 1500 } });   // indoors, after another app
+    await comeBack(page);
+    await page.waitForTimeout(700);
+    await expect(box(page)).toBeVisible();
+    await expect(current(page)).toBeEnabled();
+  });
+
+  test("At Home with a bad network: my saved addresses and my recent places cannot be read, and no box stops me at my own place", async ({ page, context }) => {
+    for (const path of ["**/rest/v1/addresses*", "**/rest/v1/recent_places*"]) await page.route(path, (r) => r.fulfill({ status: 500, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: "{}" }));   // a page route wins over the helper's
+    await open(context, page, { perm: "granted", pos: { latitude: HOME.lat, longitude: HOME.lng } });
+    await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();   // the menu of the place this phone holds
+    await quiet(page, 1200);
+    await comeBack(page);
+    await quiet(page);
+    await expect(page.getByText(HOME.address).first()).toBeVisible();   // and the place did not change
+  });
+
+  test("A rough read at a spot I answered for: I come back 300 m away, right to 400 m only, and the box does not show again", async ({ page, context }) => {
+    await open(context, page, { perm: "granted", pos: AWAY });
+    await expect(box(page)).toBeVisible();
+    await pickHome(page);
+    await setLoc(page, { perm: "granted", pos: { latitude: AWAY.latitude + 0.0027, longitude: AWAY.longitude, accuracy: 400 } });   // the same house, a coarse fix
+    await comeBack(page);
+    await quiet(page);
+    await setLoc(page, { perm: "granted", pos: { latitude: AWAY.latitude + 0.0027, longitude: AWAY.longitude, accuracy: 20 } });   // a good fix 300 m away is another spot
+    await comeBack(page);
+    await expect(box(page)).toBeVisible();
+  });
+
+  test("A screen reader is told: when the box comes up the focus is on its title, and it stays in the box", async ({ page, context }) => {
+    await open(context, page, { perm: "granted", pos: AWAY });
+    await expect(box(page).getByRole("heading", { name: TITLE })).toBeFocused();
+    expect(await box(page).getByRole("heading", { name: TITLE }).evaluate((el) => getComputedStyle(el).outlineStyle)).toBe("none");   // a title shows no ring
+    await page.keyboard.press("Tab");   // WebKit does not tab to buttons by default, so only "not out of the box" is asked here
+    expect(await page.evaluate(() => { const el = document.activeElement; return !el || el === document.body || !!el.closest("[role=dialog]"); })).toBe(true);
+  });
+
+  test("The box is up and I come back at the same spot: our postal code table and our kitchens are not read again", async ({ page, context }) => {
+    let reads = 0;
+    page.on("request", (r) => { if (/rpc\/nearest_pin|rest\/v1\/kitchens/.test(r.url())) reads++; });
+    await open(context, page, { perm: "granted", pos: AWAY });
+    await expect(box(page)).toBeVisible();
+    await page.waitForTimeout(500);
+    const before = reads;
+    expect(before).toBeGreaterThan(0);
+    await comeBack(page);
+    await page.waitForTimeout(700);
+    expect(reads).toBe(before);
+    await expect(box(page)).toBeVisible();
+  });
+
   test("Story 1547 holds: with no place on this phone and the phone not found, the sheet Where to bring your food? shows, not the box", async ({ page, context }) => {
     const net = await setup(context, page, [], { pin: null });
     net.state.addresses = [HOME];

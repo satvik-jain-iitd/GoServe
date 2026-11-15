@@ -44,7 +44,7 @@ import { placeSearch } from "./lib/placeSearch";
 import { PinMapScreen, type Saved } from "./screens/PinMapScreen";
 import { keepRecent, listRecents, recentAt, recentWords, RECENTS_MAX, touchRecent, type Recent, type Searched } from "./lib/recents";
 import { distanceM, addAddress, editAddress, hasPoint, listAddresses, lastUsed, nearM, nearSaved, removeAddress, touchAddress, type SavedAddress } from "./lib/addresses";
-import { findPhone, nearestPin, type LocWhy, type Phone, type Place } from "./lib/locate";
+import { findPhone, nearestPin, readNearestPin, type LocWhy, type Phone, type Place } from "./lib/locate";
 import { currentSession, scopeFor } from "./lib/session";
 import { MenuScreen } from "./screens/MenuScreen";
 import { BillScreen, CONFIRM_PLACE_LINE } from "./screens/BillScreen";
@@ -604,7 +604,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // Story 1529, changed by 1548: the place follows the phone only to a saved address. Inside the near distance of one: that address, with no word. A cart in progress
   // never moves to another kitchen by itself. Away from every known place the place stays and the box asks (story 1548): it never becomes "Where you are now" by itself.
   // pick false (a return to the app after a find that worked): the place is not moved, only the box is looked at.
-  async function follow(at: Phone, pick = true) {
+  // tap (the customer tapped "Use my current location" on the sheet): he has chosen, so far from every known place the pin map opens at once, never the box (no second ask).
+  async function follow(at: Phone, pick = true, tap = false) {
     if (held()) return;
     const c = getClient();
     const near = await (nearGot.current ??= nearM(c)), was = whereNow.current;
@@ -624,11 +625,15 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     // Story 1548. A rough fix raises no box, and a known place the fix could be at counts as near: a saved address, a recent, or the confirmed place this phone holds (story 1530).
     const slack = at.accuracy ?? 0;
     const close = (p: { lat: number | null; lng: number | null }) => p.lat !== null && p.lng !== null && distanceM(at, { lat: p.lat, lng: p.lng }) - slack <= near;
-    const known = !!nearSaved(savedNow.current ?? [], at, near, slack) || recentsNow.current.some(close) || (was.confirmed && !was.id && close(was));
-    if (slack > ROUGH_M || known || answered(loadSpots(), at, near, new Date())) return endAsk();
-    // Do we deliver there? Our own postal code table and our own kitchens: no map service. Kitchens that cannot be read (a bad network) count as served; the pin map then says what is true.
-    const [pin, all] = await Promise.all([nearestPin(at, undefined), fetchKitchens(c).catch(() => null)]);
-    const served = !all || chooseKitchen(all, pin, at).kind !== "none";
+    const known = !!nearSaved(savedNow.current ?? [], at, near, slack) || recentsNow.current.some(close) || (was.confirmed && close(was));   // the held place counts with or without an id: the saved rows may not have been read (a bad network)
+    if (tap && !known) { endAsk(); return void setPinMap({ center: { lat: at.lat, lng: at.lng } }); }
+    if (slack > ROUGH_M) return;   // a rough read raises no box and ends none
+    if (known || answered(loadSpots(), at, near, new Date(), slack)) return endAsk();
+    if (askNow.current && distanceM(askNow.current.at, at) <= near) return;   // the box is already up for this spot: nothing is read again
+    // Do we deliver there? Our own postal code table and our own kitchens: no map service. A read that fails (a bad network), of the kitchens or of the postal code,
+    // counts as served: the button is greyed only on a true "no"; the pin map then says what is true.
+    const [pin, all] = await Promise.all([readNearestPin(at, undefined), fetchKitchens(c).catch(() => null)]);
+    const served = !all || pin === null || chooseKitchen(all, pin, at).kind !== "none";
     if (!held() && whereNow.current === was) setAsk({ at: { lat: at.lat, lng: at.lng }, served, moving: (at.speed ?? 0) >= MOVING_MPS, near });
   }
   // A cart belongs to one kitchen. True when there is no cart, or both places are served by the same kitchen. A lookup that fails is "no".
@@ -1259,7 +1264,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       </nav>}
       {sheet && step === "menu" && !pinMap && !needArea && (
         <LocationOffSheet list={saved ?? []} selectedId={selectedId} why={why ?? "ask"} busy={finding} onClose={() => setSheet(false)}
-          onFind={() => { void find(true).then((at) => at && follow(at)); }}
+          onFind={() => { void find(true).then((at) => at && follow(at, true, true)); }}
           onPick={pickRow} onViewAll={() => { setSheet(false); setStep("deliver"); }} onSearch={() => { setSheet(false); setStep("deliver"); }} />
       )}
       {boxOn && <WhereToDeliver served={ask.served} onOther={() => setStep("deliver")} onCurrent={() => setPinMap({ center: ask.at })} />}

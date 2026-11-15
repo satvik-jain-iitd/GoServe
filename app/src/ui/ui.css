@@ -784,7 +784,6 @@ a.ui-locrow { text-decoration: none; }   /* story 1498: the rider row is a link 
 .ui-eta-by { margin-top: 4px; color: var(--gs-text-muted); }
 .ui-eta-late { color: var(--gs-nonveg); }
 
-/* Story 1056, board SW2: the strip under the header when the phone is far from the chosen address. */
 /* Story 1049 part 2, board N0: the bell in a soft lime circle. */
 .ui-bellbadge { width: 96px; height: 96px; border-radius: var(--gs-radius-pill); background: var(--gs-lime-soft); display: flex; align-items: center; justify-content: center; color: var(--md-primary); margin: 8px auto; }
 
@@ -794,6 +793,7 @@ a.ui-locrow { text-decoration: none; }   /* story 1498: the rider row is a link 
 .ui-locoff-how { margin: 0; font-size: 14px; color: var(--gs-text-muted); }
 .ui-locoff-how { min-height: 2.9em; min-height: 2lh; }   /* rule 23, no layout shift: the line keeps two lines, so the sheet has one height for every cause (a second refusal is two lines on a phone) */
 .ui-where-not { margin: 0; min-height: 1.45em; min-height: 1lh; text-align: center; font-size: 14px; color: var(--gs-text-muted); }   /* story 1548, rule 23: the line keeps its space, so the box has one height when we deliver there and when we do not */
+.ui-locoff h2:focus { outline: none; }   /* story 1548: the box's title takes the focus for a screen reader; a title shows no ring */
 .ui-locoff-rows { border-top: 1px solid var(--md-outline-variant); }
 .ui-locoff-all { align-self: flex-end; border: 0; background: transparent; padding: 8px 0; min-height: 44px; color: var(--md-primary); font: inherit; font-weight: 700; font-size: 14px; }
 .ui-locoff-row { display: grid; grid-template-columns: 28px 1fr 16px; gap: 12px; align-items: center; width: 100%; min-height: 56px; padding: 8px 0; border: 0; border-bottom: 1px solid var(--md-outline-variant); background: transparent; color: var(--md-on-surface); font: inherit; text-align: left; }

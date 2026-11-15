@@ -47,4 +47,15 @@ describe("the spots the customer answered for (story 1548)", () => {
     expect(loadSpots(s)).toEqual([]);
     expect(loadSpots({ getItem: () => { throw new Error("blocked"); } } as unknown as Storage)).toEqual([]);
   });
+  it("storage that cannot even be reached (reading window.localStorage throws) is an empty list, and saving does not throw", () => {
+    expect(loadSpots()).toEqual([]);   // this test runs with no window at all: the read of the store itself throws
+    expect(() => saveSpots([])).not.toThrow();
+  });
+  it("a rough fix counts as the answered spot when it could be inside the near distance (the distance less the fix's accuracy)", () => {
+    const list = withSpot([], SPOT, false, noon);
+    const off = { lat: SPOT.lat + 0.0027, lng: SPOT.lng };   // about 300 m away
+    expect(answered(list, off, 200, noon)).toBe(false);
+    expect(answered(list, off, 200, noon, 400)).toBe(true);
+    expect(answered(list, off, 200, noon, 50)).toBe(false);
+  });
 });
