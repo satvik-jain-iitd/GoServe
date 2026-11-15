@@ -7,6 +7,7 @@ welcome       | /customer/ | 412x915 | welcome
 welcome-phone | /customer/ | 412x915 | welcome-phone
 menu    | /customer/ | 412x915 | menu
 bill    | /customer/ | 412x915 | bill
+bill-kitchen-changed | /customer/ | 412x915 | bill-kitchen-changed
 account | /customer/ | 412x915 | account
 orders  | /customer/ | 412x915 | orders
 cancelled | /customer/ | 412x915 | cancelled
