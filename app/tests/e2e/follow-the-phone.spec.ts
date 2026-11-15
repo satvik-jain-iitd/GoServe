@@ -178,6 +178,35 @@ test("A new customer sees the first-open screen, and Confirm & proceed sets the 
   await expect.poll(() => net.calls.customerWrites.some((w) => typeof w.body.place_confirmed_at === "string")).toBe(true);
 });
 
+// Rule 23 (review of PR 1550): on the first-open screen the line's box is the same for every cause, so no button moves when the cause changes.
+for (const width of [360, 412]) {
+  test(`The first open: the line keeps one box for every cause, and the buttons stay (${width} px)`, async ({ page, context }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await setup(context, page, [], { pin: null });
+    await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
+    await phoneLoc(page, { perm: "granted", pos: 2 });
+    await page.goto("/customer/");
+    await page.getByRole("button", { name: "Use my current location" }).click();
+    const line = page.getByRole("group", { name: "Your address" }).getByRole("status");
+    const again = page.getByRole("button", { name: "Try location again" });
+    const search = page.getByRole("button", { name: "Search for my address" });
+    const seen: Record<string, string> = {};
+    const measure = async (name: string, words: string) => {
+      await expect(line).toContainText(words);
+      const [l, a, s] = [await line.boundingBox(), await again.boundingBox(), await search.boundingBox()].map((b) => `${Math.round(b!.width)}x${Math.round(b!.height)} at ${Math.round(b!.y)}`);
+      seen[name] = `line ${l}, again ${a}, search ${s}`;
+    };
+    await measure("the phone's location is off", "Your phone's location is off");
+    await setLoc(page, { perm: "granted", pos: 3 }); await again.click();
+    await measure("too slow", "Finding you is taking too long");
+    await setLoc(page, { perm: "denied", pos: 1 }); await again.click();
+    await measure("refused", "Location is off or blocked");
+    await again.click();
+    await measure("refused again", "Still off or blocked");
+    expect(new Set(Object.values(seen)).size, JSON.stringify(seen, null, 1)).toBe(1);
+  });
+}
+
 test("Location is blocked on the first open: I see a true line, and no button does nothing when tapped", async ({ page, context }) => {
   await setup(context, page, [], { pin: null });
   await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
