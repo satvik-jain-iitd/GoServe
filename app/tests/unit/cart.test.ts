@@ -76,4 +76,17 @@ describe("moveCart: a cart moves to another kitchen's menu", () => {
   it("two held dishes that land on one dish add up, within the limit", () => {
     expect(moveCart([{ ...held[0], qty: 15 }, { id: "c", name: "butter chicken", qty: 15, price_paise: 32000 }], [dish("x", "Butter Chicken", 32000)]).cart).toEqual({ x: MAX_QTY });
   });
+  // The reviewer's guards on the name match (15 Nov 2026): a name is a guess, so it must point at one dish only, of the same kind.
+  it("guard a: a name that two or more dishes of the new kitchen carry is not a match; the dish is not made there", () => {
+    expect(moveCart([held[0]], [dish("x", "Butter Chicken", 32000), dish("y", "butter chicken", 18000)])).toEqual({ cart: {}, was: {}, gone: [held[0]] });
+  });
+  it("guard b: the veg mark must be the same on both dishes, else it is not a match", () => {
+    const paneer = { id: "p", name: "Paneer Roll", qty: 1, price_paise: 12000, veg: true };
+    expect(moveCart([paneer], [{ ...dish("x", "Paneer Roll", 12000), veg: false }])).toEqual({ cart: {}, was: {}, gone: [paneer] });
+    expect(moveCart([paneer], [{ ...dish("x", "Paneer Roll", 12000), veg: true }])).toEqual({ cart: { x: 1 }, was: {}, gone: [] });
+    expect(moveCart([paneer], [dish("x", "Paneer Roll", 12000)]).gone).toEqual([paneer]);   // no mark on one side: not the same mark
+  });
+  it("guard c: a match that is sold out in the new kitchen goes in the cart, so the Bill's sold-out pattern takes it; it is never 'not made'", () => {
+    expect(moveCart([held[0]], [{ ...dish("x", "Butter Chicken", 32000), available: false }])).toEqual({ cart: { x: 2 }, was: {}, gone: [] });
+  });
 });

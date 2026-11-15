@@ -148,6 +148,9 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 /* One header for every screen: 52 px above, 12 below, a hairline, the title at display-l, one mono slot on the right.
    A pushed screen adds the 44 px chevron on the left; a home screen has none. */
 .ui-head { display: flex; align-items: center; gap: var(--gs-space-2); padding: max(env(safe-area-inset-top), var(--gs-space-3)) var(--gs-gutter) var(--gs-space-3); border-bottom: 1px solid var(--md-outline-variant); }
+/* Story 1540: one short line under the title, in the free band of the header (it is out of the flow, so the header keeps its size and nothing under it moves). */
+.ui-head:has(.ui-head-under) { position: relative; }
+.ui-head-under { position: absolute; left: calc(var(--gs-gutter) + var(--gs-tap) + var(--gs-space-2)); right: var(--gs-gutter); bottom: var(--gs-space-1); margin: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: var(--gs-text-xs); line-height: 16px; color: var(--gs-text-muted); }
 .ui-head-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .ui-head h1 { margin: 0; flex: 1; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
 .ui-head-text h1 { flex: none; }

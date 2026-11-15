@@ -5,7 +5,8 @@ import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { phoneLoc, setup, toDeliverTo } from "./helpers";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
-const CHANGED = "The kitchen changed for this place. Prices are from the new kitchen.";
+const CHANGED = "The kitchen changed for this place. Prices are from the new kitchen.";   // the menu's line
+const ON_BILL = "The kitchen changed. Prices are new.";   // the Bill's line: one short line under the title, in the header that is always there
 const HOME = { id: "h1", label: "Home", address: "C-128, Green Avenue Colony, Chhatarpur", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
 const SAKET = { id: "s1", label: "Office", address: "B-12, Saket", pin_code: "110017", lat: 28.5245, lng: 77.2066, last_used_at: "2026-11-01T10:00:00Z" };
 const AT_HOME = { latitude: 28.5690, longitude: 77.2440 };
@@ -22,7 +23,9 @@ async function twoKitchens(net: Net, page: Page, menuB: object[]) {
 }
 const row = (page: Page, dish: string) => page.locator(".ui-slip-lines > div").filter({ hasText: dish });
 const total = (page: Page) => page.getByTestId("bill-total");
-const top = async (page: Page, sel: string) => Math.round((await page.locator(sel).first().boundingBox())!.y);
+// Owner's rule 23, no layout shift: where every part of the Bill sits. The Bill with the line is laid over the Bill without it: only the header may differ, and it keeps its size.
+const PARTS = [".ui-head", ".ui-head h1", ".ui-back", ".ui-slip", ".ui-slip-head", ".ui-slip-lines > div >> nth=0", ".ui-slip-lines > div >> nth=1", ".ui-slip-total", ".ui-add-more", "#phone", "[aria-label='Deliver to']", "#note", ".ui-pay", ".ui-sticky", ".ui-sticky .ui-btn"];
+const boxes = async (page: Page) => ({ ...Object.fromEntries(await Promise.all(PARTS.map(async (sel) => [sel, await page.locator(sel).boundingBox()]))), long: await page.locator(".ui-scroll").evaluate((el) => el.scrollHeight) }) as Record<string, { x: number; y: number; width: number; height: number } | null>;
 
 // On the Bill with both dishes, then "Confirm on the map" in the other kitchen's postal code: the customer stays on the Bill.
 async function billThenSaket(page: Page, context: BrowserContext, menuB: object[]) {
@@ -39,13 +42,12 @@ async function billThenSaket(page: Page, context: BrowserContext, menuB: object[
   await page.getByRole("button", { name: /View bill/ }).click();
   await expect(page.getByText("Hauz Khas Kitchen · 110016")).toBeVisible();
   await expect(total(page)).toHaveText("₹540");
-  const before = { head: await top(page, ".ui-head"), bar: await top(page, ".ui-sticky"), slip: await top(page, ".ui-slip") };
   await page.getByRole("button", { name: "Confirm on the map" }).click();
   await page.getByRole("button", { name: "Confirm & proceed" }).click();
   await page.getByLabel("House, street, colony, ward").fill("B-12");
   await page.getByRole("button", { name: "Save address" }).click();
   await expect(page.getByText("Saket Kitchen · 110017")).toBeVisible();
-  return { net, before };
+  return { net };
 }
 // On the menu at Home with both dishes in the cart; Office is in the other kitchen's postal code.
 async function menuWithCart(page: Page, context: BrowserContext, menuB: object[], other: object = SAKET) {
@@ -62,25 +64,48 @@ async function menuWithCart(page: Page, context: BrowserContext, menuB: object[]
 const cartIds = (page: Page) => page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem("gs-draft") ?? "{}").cart ?? {}).sort());
 
 test("The kitchen changes on the Bill: the Bill says the kitchen changed, each changed price is marked on its row, and the total is the sum of the rows I see", async ({ page, context }) => {
-  const { before } = await billThenSaket(page, context, BOTH);
-  await expect(page.getByRole("status").filter({ hasText: CHANGED })).toBeVisible();
+  await billThenSaket(page, context, BOTH);
+  await expect(page.getByRole("status").filter({ hasText: ON_BILL })).toBeVisible();
   await expect(row(page, "1 × Butter Chicken")).toContainText("350");
   await expect(row(page, "1 × Butter Chicken").locator("s")).toHaveText("320");   // the old price, struck, on the same row
   await expect(row(page, "1 × Dal Makhani")).toContainText("220");
   await expect(row(page, "1 × Dal Makhani").locator("s")).toHaveCount(0);   // the same price: no mark
   await expect(total(page)).toHaveText("₹570");   // 350 + 220
-  // The layout: the header and the Place order bar stay where they were. The notice line is the one new box; the slip sits lower by exactly its height and its top margin.
-  expect(await top(page, ".ui-head")).toBe(before.head);
-  expect(await top(page, ".ui-sticky")).toBe(before.bar);
-  const line = (await page.locator(".ui-again-line").boundingBox())!;
-  expect(line.height).toBeLessThanOrEqual(40);   // two lines of small text at most on the test phone
-  expect(Math.abs((await top(page, ".ui-slip")) - before.slip - Math.round(line.height) - 12)).toBeLessThanOrEqual(1);
-  await expect(page.getByRole("button", { name: /Place order/ })).toBeInViewport();
+});
+
+test("Nothing moves when the Bill says the kitchen changed: only the header carries the line, and every part keeps its place and its size", async ({ page, context }) => {
+  // The same Bill twice, after the place is confirmed in Saket: once as the new kitchen's own bill (after a reload the line is gone), once with the line.
+  await billThenSaket(page, context, BOTH);
+  await expect(page.getByRole("status").filter({ hasText: ON_BILL })).toBeVisible();
+  await page.getByLabel("Phone").fill("9876543210");
+  await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
+  const withLine = await boxes(page);
+  const line = (await page.getByRole("status").filter({ hasText: ON_BILL }).boundingBox())!;
+  const head = withLine[".ui-head"]!, title = withLine[".ui-head h1"]!;
+  expect(line.y).toBeGreaterThanOrEqual(title.y + title.height);   // under the title, never on it
+  expect(line.y + line.height).toBeLessThanOrEqual(head.y + head.height - 1);   // inside the header, above its rule
+  expect(line.x).toBeGreaterThanOrEqual(title.x - 1);
+  expect(line.height).toBeLessThanOrEqual(18);   // one line
+  expect(await page.getByRole("status").filter({ hasText: ON_BILL }).evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);   // the whole line shows, none of it is cut
+  await page.reload();
+  await expect(page.getByText("Saket Kitchen · 110017")).toBeVisible();
+  await expect(page.getByText(ON_BILL)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
+  const without = await boxes(page);
+  for (const sel of PARTS) expect(without[sel], sel).not.toBeNull();
+  expect(without).toEqual(withLine);   // laid over each other, nothing differs but the line itself; "long" is the length of the Bill: what fit still fits
+});
+
+test("A dish that is sold out in the new kitchen uses the sold-out words, never 'not made'", async ({ page, context }) => {
+  await billThenSaket(page, context, [{ ...BOTH[0], available: false }, BOTH[1]]);
+  await expect(page.getByRole("alert").filter({ hasText: "Butter Chicken is sold out." })).toBeVisible();
+  await expect(page.getByText("is not made by this kitchen")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Fix the bill first/ })).toBeDisabled();
 });
 
 test("A dish the new kitchen does not sell: it shows as not available with the way out next to it, and it is not in the total", async ({ page, context }) => {
   await billThenSaket(page, context, ONE);
-  await expect(page.getByRole("status").filter({ hasText: CHANGED })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: ON_BILL })).toBeVisible();
   await expect(page.getByRole("alert").filter({ hasText: "Dal Makhani is not made by this kitchen." })).toBeVisible();
   await expect(row(page, "1 × Dal Makhani")).toHaveCSS("text-decoration-line", "line-through");
   await expect(total(page)).toHaveText("₹350");   // only the dish this kitchen makes
@@ -113,7 +138,7 @@ test("I pick a saved address of another kitchen with a cart: the menu says the k
   await expect(page.getByRole("button", { name: /View bill/ })).toContainText("₹350");
   expect(await cartIds(page)).toEqual(["b1"]);   // the cart holds the new kitchen's dish
   await page.getByRole("button", { name: /View bill/ }).click();
-  await expect(page.getByRole("status").filter({ hasText: CHANGED })).toBeVisible();   // the Bill still says it
+  await expect(page.getByRole("status").filter({ hasText: ON_BILL })).toBeVisible();   // the Bill still says it
   await expect(row(page, "1 × Butter Chicken").locator("s")).toHaveText("320");
   await expect(page.getByRole("alert")).toHaveCount(0);   // the dish it does not make was named on the menu; the Bill has nothing to fix
   await expect(total(page)).toHaveText("₹350");
