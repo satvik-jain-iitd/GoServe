@@ -70,8 +70,7 @@ test("S6 Your orders lists past orders by what was ordered, with the short order
   await page.getByRole("button", { name: "History" }).click();
   await expect(page.getByRole("heading", { name: "History", exact: true })).toBeVisible();
   await expect(page.getByText("2 × Butter Chicken")).toBeVisible();
-  await expect(page.getByText("Delivered")).toBeVisible();
-  await expect(page.getByText(/No\. 0f0f0f0f/)).toBeVisible();   // the short number, never the whole id
+  await expect(page.getByText("Delivered")).toHaveCount(0);   // story 1589: a delivered order has no word on its row, and the number is on the slip only
   await page.getByRole("button", { name: "Delivery", exact: true }).click();
   await expect(page.getByRole("button", { name: "Add Butter Chicken" })).toBeVisible();
 });

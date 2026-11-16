@@ -19,16 +19,28 @@ export const cartTotal = (lines: Line[]): number => lines.reduce((sum, l) => sum
 // What the server receives: ids and quantities only.
 export const toOrderItems = (cart: Cart) => Object.entries(cart).map(([menu_item_id, qty]) => ({ menu_item_id, qty }));
 // Story #977: Order again. Dishes that are on today's menu and not sold out go back in the cart (quantity kept within the limit); the others are named, so the customer knows.
-export const reorderCart = (items: { menu_item_id: string; name: string; qty: number }[], menu: Dish[]): { cart: Cart; left: string[] } => {
+// Story 1589: an order from another kitchen has dish ids that today's menu does not hold. Such a dish is matched by the story 1540 rule (`sameDish`: exactly one dish of that name, the same veg
+// mark). `marks` is the veg mark of each old dish, read from menu_items; an old dish with no mark has no match and is named as left out. `moved` says a dish came by name from another kitchen.
+export const reorderCart = (items: { menu_item_id: string; name: string; qty: number }[], menu: Dish[], marks: Record<string, boolean> = {}): { cart: Cart; left: string[]; moved: boolean } => {
   const cart: Cart = {};
   const left: string[] = [];
+  let moved = false;
   for (const i of items) {
-    const dish = menu.find((d) => d.id === i.menu_item_id);
+    let dish = menu.find((d) => d.id === i.menu_item_id);
+    if (!dish && typeof marks[i.menu_item_id] === "boolean") { dish = sameDish({ id: i.menu_item_id, name: i.name, qty: i.qty, price_paise: 0, veg: marks[i.menu_item_id] }, menu); moved ||= !!dish; }
     if (!dish || dish.available === false) left.push(i.name);
     else cart[dish.id] = Math.min(MAX_QTY, (cart[dish.id] ?? 0) + i.qty);
   }
-  return { cart, left };
+  return { cart, left, moved };
 };
+// Story 1589: one row per dish of an old order for the "Order it again" block: made today (at today's price for its quantity) or not. `marks` as in reorderCart.
+export type AgainRow = { name: string; made: boolean; paise: number };
+export const againRows = (items: { menu_item_id: string; name: string; qty: number }[], menu: Dish[], marks: Record<string, boolean> = {}): AgainRow[] =>
+  items.map((i) => {
+    const [id] = Object.keys(reorderCart([i], menu, marks).cart);
+    const d = id ? menu.find((x) => x.id === id) : undefined;
+    return { name: i.name, made: !!d, paise: d ? d.price_paise * Math.min(MAX_QTY, i.qty) : 0 };
+  });
 // Story 1540: the delivery place changed and another kitchen serves it. The cart moves to that kitchen's own dishes: the same id, else the same name (each kitchen has its
 // own rows, so the ids differ). `was` keeps the old unit price of each dish whose price differs (by the new id); `gone` are the dishes the new kitchen does not make.
 // A match that is sold out there goes in the cart like any other, so the Bill's sold-out pattern takes it.

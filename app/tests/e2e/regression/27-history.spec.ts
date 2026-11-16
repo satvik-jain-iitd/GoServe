@@ -51,24 +51,22 @@ async function openHistory(context: BrowserContext, page: Page, orders: object[]
   await expect(page.getByRole("heading", { name: "History", exact: true })).toBeVisible();
 }
 
-test("TC 27.1 Look: History with 4 orders, newest first, No. and time, dishes, kitchen and price, status chip, Order again on the delivered row", async ({ page, context }) => {
+test("TC 27.1 Look: History with 4 orders, newest first, dishes, time and price, only an exception is a word, no button on a row (story 1589)", async ({ page, context }) => {
   await openHistory(context, page, FOUR);
-  const rows = page.getByRole("button", { name: /^No\. / });
+  const rows = page.locator(".ui-order-row");
   await expect(rows).toHaveCount(4);   // the list is live before its rows are checked
-  await expect(rows.nth(0)).toContainText(`No. ${num(1)} · `);
-  await expect(rows.nth(1)).toContainText(`No. ${num(2)} · `);
-  await expect(rows.nth(2)).toContainText(`No. ${num(3)} · `);
-  await expect(rows.nth(3)).toContainText(`No. ${num(4)} · `);
-  await expect(rows.nth(0)).toContainText(/· (today|yesterday|\d{1,2} [A-Za-z]{3}) \d{1,2}:\d{2} (am|pm)/);
   await expect(rows.nth(0)).toContainText("2 × Butter Chicken");
-  await expect(rows.nth(1)).toContainText("1 × Veg Thali, 2 × Roti");
-  await expect(rows.nth(0)).toContainText("Hauz Khas Kitchen · ₹640");
-  await expect(rows.nth(1)).toContainText("Hauz Khas Kitchen · ₹230");
-  await expect(rows.nth(2)).toContainText("Hauz Khas Kitchen · ₹0");   // cancelled: nothing owed
-  await expect(page.getByText(/^(Placed|On the way|Delivered|Cancelled)$/)).toHaveText(["On the way", "Delivered", "Cancelled", "Placed"]);
-  const again = page.getByRole("button", { name: /^Order again, No\./ });
-  await expect(again).toHaveCount(1);   // only the delivered row has it
-  await expect(again).toHaveAccessibleName(`Order again, No. ${num(2)}`);
+  await expect(rows.nth(1)).toContainText("Veg Thali, 2 × Roti");
+  await expect(rows.nth(0)).toContainText(/(today|yesterday|\d{1,2} [A-Za-z]{3})/);
+  await expect(rows.nth(0)).toContainText("On the way");   // a live state is a word, in ink
+  await expect(rows.nth(0)).toContainText("₹640");
+  await expect(rows.nth(1)).toContainText("₹230");
+  await expect(rows.nth(1)).not.toContainText("Delivered");   // a delivered order has no word
+  await expect(rows.nth(2)).toContainText("Cancelled");
+  await expect(rows.nth(2)).not.toContainText("₹");   // cancelled: nothing owed
+  await expect(rows.nth(3)).toContainText("Placed");
+  await expect(page.locator(".ui-tag")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^Order again/ })).toHaveCount(0);   // the button is inside the opened order
   await expect(page.getByText("Newest first")).toBeVisible();
 });
 
@@ -83,9 +81,9 @@ test("TC 27.2 No orders: No orders yet, Your orders will show here., See the men
 
 test("TC 27.3 Tap a row: that order opens (the delivered slip)", async ({ page, context }) => {
   await openHistory(context, page, FOUR);
-  const rows = page.getByRole("button", { name: /^No\. / });
+  const rows = page.locator(".ui-order-row");
   await expect(rows).toHaveCount(4);   // the list is live before a row is tapped
-  await rows.nth(1).click();   // No. a0000002, the delivered order
+  await rows.nth(1).click();   // the delivered order
   await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();
   await expect(page.locator(".ui-slip-lines")).toContainText("Veg Thali");
   await expect(page.locator(".ui-slip-lines")).toContainText("Roti");
@@ -95,7 +93,8 @@ test("TC 27.3 Tap a row: that order opens (the delivered slip)", async ({ page, 
 test("TC 27.4 Order again: the Bill opens with those dishes at today's prices", async ({ page, context }) => {
   // Only the delivered order on the list: no open order, so the reload does not send the app to a tracker.
   await openHistory(context, page, [DELIVERED], MENU);
-  const again = page.getByRole("button", { name: `Order again, No. ${num(2)}` });
+  await page.locator(".ui-order-row").click();   // story 1589: the button is inside the opened order
+  const again = page.getByRole("button", { name: /Order again ›/ });
   await expect(again).toBeVisible();   // proves the button shows before the tap
   await again.click();
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
@@ -109,15 +108,13 @@ test("TC 27.4 Order again: the Bill opens with those dishes at today's prices", 
 test("TC 27.5 50 orders: the list scrolls down to the last order, nothing jumps, nothing is lost", async ({ page, context }) => {
   const MANY = Array.from({ length: 50 }, (_, i) => past(i + 1, "delivered", i + 1, [line("m-thali", "Veg Thali", 1, 18000)], 18000));
   await openHistory(context, page, MANY);
-  const rows = page.getByRole("button", { name: /^No\. / });
+  const rows = page.locator(".ui-order-row");
   await expect(rows).toHaveCount(50);   // all 50 are in the list
-  await expect(rows.nth(0)).toContainText(`No. ${num(1)} · `);
-  await expect(rows.nth(49)).toContainText(`No. ${num(50)} · `);
+  await expect(rows.nth(0)).toContainText("Veg Thali");
   await expect(rows.nth(49)).not.toBeInViewport();   // the oldest is off the screen at first, so the list must scroll
   await rows.nth(49).scrollIntoViewIfNeeded();
   await expect(rows.nth(49)).toBeInViewport();
   await expect(page.getByText("Newest first")).toBeInViewport();   // the footer at the very end of the list
   await expect(rows).toHaveCount(50);   // no row added or lost on the way down
-  await expect(rows.nth(0)).toContainText(`No. ${num(1)} · `);   // the top row is still the newest
-  await expect(page.getByRole("button", { name: /^Order again, No\./ })).toHaveCount(50);
+  await expect(page.getByRole("button", { name: /^Order again/ })).toHaveCount(0);   // story 1589: no button on a row
 });
