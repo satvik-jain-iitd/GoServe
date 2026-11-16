@@ -5,6 +5,7 @@ import { isPhone } from "../lib/profile";
 import { DOOR_METHODS, type DoorMethod } from "../lib/doorMethods";
 import type { Alternative, Quote } from "../lib/quote";
 import { useEffect, useRef, useState } from "react";
+import { SIGN_IN_LINE } from "../lib/errorLines";
 import { TornTop } from "../ui";
 
 type Props = {
@@ -16,7 +17,8 @@ type Props = {
   offers?: { quote: Quote; codeError: string | null; onApply: (code: string) => void; onRemove: () => void };   // story #588: the quote's bill and the Offers block (boards C1, C2)
   soldOut?: { id: string; name: string; line?: string; alt: Alternative | null | undefined; canSwap: boolean; onSwap: () => void; onRemove: () => void };   // story 619, board L3: the first dish in the bill that is sold out; line (story 1540): other words for a dish the kitchen does not make
   door?: { methods: DoorMethod[]; value: DoorMethod | null; onChange: (v: DoorMethod) => void };   // story #1261, board P6: how you pay at the door, only the methods that are on (the customer app only)
-  sending: boolean; error: string | null; notice?: string | null;   // story #977: what the History button could not put back
+  sending: boolean; error: string | null; onSignIn?: () => void;   // story 1580: the sign-in line carries its own way out
+   notice?: string | null;   // story #977: what the History button could not put back
   under?: string | null;   // story 1540: one short line under the title, inside the header, so nothing on the Bill moves (the kitchen changed)
   onBack: () => void; onPlace: () => void;
 };
@@ -36,13 +38,18 @@ export const BackChevron = ({ label, onClick }: { label: string; onClick: () => 
   </button>
 );
 
-export function BillScreen({ lines, total, kitchenName, pin, address, farKm = null, confirmed, onChangePlace, onConfirmPlace, note, onNote, details, offers, soldOut, door, sending, error, notice, under, onBack, onPlace }: Props) {
+export function BillScreen({ lines, total, kitchenName, pin, address, farKm = null, confirmed, onChangePlace, onConfirmPlace, note, onNote, details, offers, soldOut, door, sending, error, onSignIn, notice, under, onBack, onPlace }: Props) {
   const [typed, setTyped] = useState("");
   const q = offers?.quote;
   const empty = lines.length === 0;
-  const ready = !empty && !soldOut && confirmed && (!details || isPhone(details.phone));
+  const phoneOk = !details || isPhone(details.phone);
+  const ready = !empty && !soldOut && confirmed && phoneOk;
+  const needPhone = !empty && !soldOut && !phoneOk;   // story 1574: the bar itself says what is missing and takes the customer there: phone first, then the map, then Place order
+  const needMap = !empty && !soldOut && phoneOk && !confirmed;
   const [changing, setChanging] = useState(false);   // board BC1: Change turns the saved row into the field, in place
   const phoneRef = useRef<HTMLInputElement>(null);
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => { if (error) errorRef.current?.scrollIntoView?.({ block: "nearest" }); }, [error]);   // story 1580: a refusal below the fold, behind the floating bar, is not told to anyone
   useEffect(() => { if (changing) phoneRef.current?.focus(); }, [changing]);
   const savedRow = !!details?.saved && isPhone(details.saved) && details.phone === details.saved && !changing;
   const head = [kitchenName, pin].filter(Boolean).join(" · ");
@@ -136,7 +143,6 @@ export function BillScreen({ lines, total, kitchenName, pin, address, farKm = nu
               ? <div className="ui-phone-row"><span><small className="mono">The rider calls you on</small><span className="mono">{details.phone}</span></span><button type="button" className="ui-pinmap-change" onClick={() => setChanging(true)}>Change</button></div>   /* board BF2: ten digits together */
               : <div className="ui-field"><label htmlFor="phone">Phone number · the rider calls you on it</label><input ref={phoneRef} id="phone" className="mono-input ui-eg" type="tel" placeholder="10 digit number" value={details.phone} inputMode="numeric" maxLength={10} autoComplete="tel-national" onChange={(e) => details.onPhone(e.target.value.replace(/\D/g, ""))} /></div>)}
             <PlaceRow words={address} onChange={onChangePlace} farKm={farKm} />
-            {!confirmed && <button type="button" className="ui-btn ghost" onClick={onConfirmPlace}>Confirm on the map</button>}
             <div className="ui-field"><label htmlFor="note">Note for the kitchen (optional)</label><textarea id="note" className="ui-eg" rows={2} value={note} maxLength={NOTE_MAX} placeholder="e.g. less spicy, no onion" onChange={(e) => onNote(e.target.value)} /><p className="mono ui-note-count"><span>{note.length} / {NOTE_MAX}</span></p></div>
             {door && (
               <fieldset className="ui-pay" role="radiogroup">
@@ -147,15 +153,15 @@ export function BillScreen({ lines, total, kitchenName, pin, address, farKm = nu
                 {door.methods.length === 0 && <p className="ui-pay-sub">You pay at the door.</p>}
               </fieldset>
             )}
-            {error && <p role="alert" className="ui-field-error">{error}</p>}
+            {error && <p ref={errorRef} role="alert" className="ui-field-error" >{error}</p>}
+            {error === SIGN_IN_LINE && onSignIn && <button type="button" className="ui-btn ghost" onClick={onSignIn}>Sign in</button>}
           </form>
         )}
       </div>
       {!empty && (
-        <div className="ui-sticky float">
-          {!ready && !sending && !soldOut && <p role="status" className="ui-reason">{!confirmed ? CONFIRM_PLACE_LINE : details && details.phone.length === 10 ? "The phone must be ten digits and start with 6, 7, 8 or 9." : "Add your 10 digit phone number."}</p>}   {/* story #1170: why the button is off */}
-          <button type="button" className="ui-btn bar" disabled={!ready || sending} onClick={onPlace}>
-            <span className="mono">{door?.value === "upi_door" ? "UPI" : door?.value === "cash" ? "Cash" : "At door"} · {formatRupees(total)}</span><span className="verb">{sending ? "Placing…" : soldOut ? "Fix the bill first" : "Place order ›"}</span>
+        <div className="ui-sticky float bill-foot">
+          <button type="button" className="ui-btn bar" disabled={!(ready || needMap || needPhone) || sending} onClick={needPhone ? () => phoneRef.current?.focus() : needMap ? onConfirmPlace : onPlace}>
+            <span className="mono">{door?.value === "upi_door" ? "UPI" : door?.value === "cash" ? "Cash" : "At door"} · {formatRupees(total)}</span><span className="verb">{sending ? "Placing…" : soldOut ? "Fix the bill first" : needPhone ? (details?.phone.trim() ? "Check your phone number ›" : "Add your phone number ›") : needMap ? "Confirm on the map ›" : "Place order ›"}</span>
           </button>
         </div>
       )}

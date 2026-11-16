@@ -24,7 +24,7 @@ test("S2 while name, phone or address is missing one line says so above the grey
   await toBill(page);
   const line = page.getByText("Add your name, phone and address to place the order.");
   await expect(line).toHaveCount(0);   // story #1044: no line says why the button is grey
-  await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /Add your phone number/ })).toBeEnabled();   // story 1574: the bar asks for the phone
   await fill(page);
   await expect(line).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
@@ -47,7 +47,7 @@ for (const [name, reply, line] of [
   ["a kitchen that just closed", { status: 409, body: { ok: false, error: "kitchen_closed", message: "The kitchen is closed right now. Please try again later." } }, "The kitchen closed just now. Check back later."],
   ["the session cap", { status: 429, body: { ok: false, error: "session_order_cap", message: "Too many orders in this demo session." } }, "That is the most orders one phone can place today."],
   ["a bad order", { status: 400, body: { ok: false, error: "invalid_request", message: "The order is not valid." } }, "Something in the bill did not go through. Check it and try again."],
-  ["an unknown action", { status: 400, body: { ok: false, error: "unknown", message: "Unknown action." } }, "Something went wrong. Please try again."],
+  ["an unknown action", { status: 400, body: { ok: false, error: "unknown", message: "Unknown action." } }, "Something went wrong. Your order was not placed and nothing was charged. Please try again."],
 ] as const) {
   test(`S4 ${name}: the customer sees our line, never the server's`, async ({ page, context }) => {
     const net = await setup(context, page);

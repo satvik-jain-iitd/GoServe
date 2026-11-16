@@ -51,8 +51,8 @@ test("A raw fix is not enough: Place order waits and I see Confirm on the map; a
   await toBill(page);
   await expect(page.getByText("Where you are now")).toBeVisible();
   await expect(page.getByRole("button", { name: "Confirm on the map" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
-  await expect(page.getByRole("status").filter({ hasText: "Confirm your place on the map to place the order." })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Place order/ })).toHaveCount(0);   // story 1574: the bar reads Confirm on the map; there is no grey line
+  await expect(page.getByText("Confirm your place on the map to place the order.")).toHaveCount(0);
   await page.getByRole("button", { name: "Confirm on the map" }).click();
   await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
   await page.getByRole("button", { name: "Confirm & proceed" }).click();
@@ -153,5 +153,5 @@ test("No Home row with no point: an old typed place makes no saved row, and it m
   await toBill(page);
   await expect(page.getByRole("group", { name: "Deliver to" })).toContainText("Flat 4, Green Park");
   await expect(page.getByRole("button", { name: "Confirm on the map" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /Place order/ })).toHaveCount(0);
 });

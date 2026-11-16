@@ -43,6 +43,7 @@ async function billThenSaket(page: Page, context: BrowserContext, menuB: object[
   await page.getByRole("button", { name: /View bill/ }).click();
   await expect(page.getByText("Hauz Khas Kitchen · 110016")).toBeVisible();
   await expect(total(page)).toHaveText("₹540");
+  await page.getByLabel("Phone").fill("9876543210");
   await page.getByRole("button", { name: "Confirm on the map" }).click();
   await page.getByRole("button", { name: "Confirm & proceed" }).click();
   await page.getByLabel("House, street, colony, ward").fill("B-12");

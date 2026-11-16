@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { claimInvites } from "../lib/admin";
 import { getRider, sendLocation, setOnline, shouldSendLocation, type RiderGateState, type RiderRow } from "../lib/rider";
-import { ensureSession, getClient } from "../lib/supabase";
+import { ensureSession, getClient, signOutHere } from "../lib/supabase";
 import { SignIn } from "./SignIn";
 import { Skeleton, StaffLanding } from "../ui";
 
@@ -48,7 +48,7 @@ export function RiderGate({ children }: { children: (gate: RiderGateState) => Re
     return () => navigator.geolocation.clearWatch(watch);
   }, [online, uid, front]);
 
-  const signOut = async () => { try { await getClient().auth.signOut(); } catch { /* offline */ } window.location.reload(); };
+  const signOut = async () => { try { await signOutHere(); } catch { /* offline */ } window.location.reload(); };
   if (rider === undefined) return <><header className="ui-head"><h1>Deliveries</h1></header><div className="ui-pad"><Skeleton lines={3} /></div></>;
   if (!rider) return (   // R1 when there is no Google sign-in yet, R2 when the account is not on the rider list
     <StaffLanding kicker="Rider app · one delivery at a time" app="Rider" right={anonymous ? "Google" : "Signed in"} label={anonymous ? "Sign in" : "Not a rider"} error={error}>

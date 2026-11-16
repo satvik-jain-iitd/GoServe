@@ -9,22 +9,22 @@ const toBill = async (page: Page) => {
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
-  await expect(page.getByRole("button", { name: /Place order/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
 };
 const SAVED = { name: null, phone: "9876543210", address: "Z-900, Green Park, New Delhi" };
 
-test("P1 (BF1) a first order: one phone field with its reason, no name field, Place order off until ten digits", async ({ page, context }) => {
+test("P1 (BF1) a first order: one phone field with its reason, no name field, the bar asks for the phone until ten digits", async ({ page, context }) => {
   await setup(context, page);
   await toBill(page);
   await expect(page.getByLabel("Your name")).toHaveCount(0);
   const field = page.getByLabel(LABEL);
   await expect(field).toBeVisible();
-  await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
-  await expect(page.getByText("Add your 10 digit phone number.")).toBeVisible();
-  await field.fill("98765");
-  await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
-  await field.fill("9876543210");
+  await expect(page.getByRole("button", { name: /Add your phone number/ })).toBeEnabled();   // story 1574: the bar asks for the phone, no grey line
   await expect(page.getByText("Add your 10 digit phone number.")).toHaveCount(0);
+  await field.fill("98765");
+  await expect(page.getByRole("button", { name: /Check your phone number/ })).toBeEnabled();
+  await field.fill("9876543210");
+  await expect(page.getByRole("button", { name: /Add your phone number/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
 });
 
@@ -91,16 +91,16 @@ test("P6 with the phone code switch on, checkout from the Bill opens no number s
   expect(net.calls.customerWrites.at(-1)!.body).toMatchObject({ phone: "9876543210", name: null });
 });
 
-test("P7 (BF1) ten digits that are not a mobile say why; under ten keeps the add line; the field shows the example", async ({ page, context }) => {
+test("P7 (BF1) ten digits that are not a mobile say why; the bar keeps asking; the field shows the example", async ({ page, context }) => {
   await setup(context, page);
   await toBill(page);
   const field = page.getByLabel(LABEL);
   await expect(field).toHaveAttribute("placeholder", "10 digit number");
   await field.fill("1234567890");
-  await expect(page.getByRole("status").filter({ hasText: "The phone must be ten digits and start with 6, 7, 8 or 9." })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /Check your phone number/ })).toBeEnabled();   // story 1574: the bar asks again; no grey line
+  await expect(page.getByRole("status")).toHaveCount(0);
   await field.fill("98765");
-  await expect(page.getByRole("status").filter({ hasText: "Add your 10 digit phone number." })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Check your phone number/ })).toBeEnabled();
 });
 
 test("P8 (BF2) the saved ten digits are in the regular mono weight at 16 px, not bold", async ({ page, context }) => {

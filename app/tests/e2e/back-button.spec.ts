@@ -58,7 +58,7 @@ test("S6 Back on the bill shows the menu, with the cart as it was", async ({ pag
   await open(page, context);
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
-  await expect(page.getByRole("button", { name: /Place order/ })).toBeVisible();
+  await expect(page.locator(".ui-sticky .ui-btn")).toBeVisible();
   await page.goBack();
   await onMenu(page);
   await expect(page.getByRole("button", { name: /View bill/ })).toContainText("1 item");

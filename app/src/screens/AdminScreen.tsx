@@ -1,7 +1,7 @@
 // The founder's app on the Ink v3 boards A1 to A4 and A8 (story H12, #195; story A2): the gate, Orders, City (the kitchen, staff and menu tools until the A5 to A7 layer), Numbers, Simulator (H7, #190).
 import { useCallback, useEffect, useState } from "react";
 import { claimInvites, isAdmin, listInvites, listKitchens, listPeople, listRiders, type Invite, type KitchenRow, type Person, type RiderListRow } from "../lib/admin";
-import { ensureSession, getClient } from "../lib/supabase";
+import { ensureSession, getClient, signOutHere } from "../lib/supabase";
 import { AdminCity } from "./AdminCity";
 import { AdminDecisions } from "./AdminDecisions";
 import { AdminNumbers } from "./AdminNumbers";
@@ -66,7 +66,7 @@ export function AdminScreen() {
             <>
               <h2 className="ui-slip-title">Not an admin account</h2>
               <p role="status">This Google account is not on the admin list. Sign in with the admin account, or ask an admin to add this one.</p>
-              <button type="button" className="ui-btn big" onClick={async () => { try { await getClient().auth.signOut(); } catch { /* offline */ } window.location.reload(); }}>Sign out</button>
+              <button type="button" className="ui-btn big" onClick={async () => { try { await signOutHere(); } catch { /* offline */ } window.location.reload(); }}>Sign out</button>
             </>
           )}
     </StaffLanding>

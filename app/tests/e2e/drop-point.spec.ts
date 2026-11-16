@@ -49,6 +49,6 @@ test("S2 (story 1532) a typed address with no point cannot be ordered to: Place 
   await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Phone").fill("9876543210");
   await expect(page.getByRole("button", { name: "Confirm on the map" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Place order/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /Place order/ })).toHaveCount(0);   // story 1574: the bar reads Confirm on the map, not Place order
   expect(orders).toHaveLength(0);
 });
