@@ -27,9 +27,9 @@ test("S1 Order again opens the Bill with the same dishes at today's prices, with
   await expect(page.getByLabel(/Note for the kitchen/)).toHaveValue("");
 });
 
-test("S2 a sold-out dish is left out: its row says not made today, the Bill has the rest", async ({ page, context }) => {
+test("S2 a sold-out dish is left out: its row says sold out today, the Bill has the rest", async ({ page, context }) => {
   await history(page, context, [dish("d1", "Veg Thali", 18000), dish("d2", "Roti", 2500, { available: false })], [past(THALI_ROTI)]);
-  await expect(page.locator(".ui-again-dish").nth(1)).toContainText("not made today");
+  await expect(page.locator(".ui-again-dish").nth(1)).toContainText("sold out today");
   await page.getByRole("button", { name: /Order again ›/ }).click();
   await expect(page.getByText("Veg Thali")).toBeVisible();
   await expect(page.getByText("Roti ×")).toHaveCount(0);

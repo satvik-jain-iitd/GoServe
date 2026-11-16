@@ -20,7 +20,7 @@ export function AgainBlock({ a }: { a: Again }) {
             <li key={i} className={`ui-again-dish${known && !r.made ? " no" : ""}`}>
               <span className="ui-again-mk" aria-hidden="true">{known ? (r.made ? "✓" : "✕") : ""}</span>
               <span className="nm">{r.name}</span>
-              <span className="r">{known ? (r.made ? formatRupees(r.paise) : "not made today") : ""}</span>
+              <span className="r">{known ? (r.made ? formatRupees(r.paise) : r.soldOut ? "sold out today" : "not made today") : ""}</span>
             </li>
           );
         })}

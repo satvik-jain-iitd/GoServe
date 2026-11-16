@@ -1,6 +1,6 @@
 // Story #977: Order again builds a cart from an old order, at today's menu.
 import { describe, it, expect } from "vitest";
-import { reorderCart } from "../../src/lib/cart";
+import { againRows, reorderCart } from "../../src/lib/cart";
 import type { Dish } from "../../src/lib/menu";
 
 const d = (id: string, name: string, over: Partial<Dish> = {}): Dish => ({ id, name, price_paise: 10000, image_url: null, image_credit: null, ...over });
@@ -30,10 +30,9 @@ describe("reorderCart", () => {
 // Story 1589: an order of another kitchen has dish ids that today's menu does not hold; the match is the story 1540 rule (name, same veg mark), the marks are read once.
 describe("reorderCart across kitchens", () => {
   const old = (id: string, name: string, qty = 1) => ({ menu_item_id: id, name, qty, price_paise: 5000 });
-  it("matches an unknown id by name and veg mark, and says it moved", () => {
+  it("matches an unknown id by name and veg mark", () => {
     const r = reorderCart([old("x1", "Veg Thali", 2)], [d("a", "Veg Thali", { veg: true })], { x1: true });
     expect(r.cart).toEqual({ a: 2 });
-    expect(r.moved).toBe(true);
   });
   it("does not match a dish of the same name with another veg mark", () => {
     const r = reorderCart([old("x1", "Veg Thali")], [d("a", "Veg Thali", { veg: false })], { x1: true });
@@ -46,7 +45,8 @@ describe("reorderCart across kitchens", () => {
   it("two dishes of one name today: no match, never a guess", () => {
     expect(reorderCart([old("x1", "Roti")], [d("a", "Roti", { veg: true }), d("b", "Roti", { veg: true })], { x1: true }).left).toEqual(["Roti"]);
   });
-  it("a same-id dish is not moved", () => {
-    expect(reorderCart([old("a", "Roti")], [d("a", "Roti")]).moved).toBe(false);
+  it("a dish that is on the menu but sold out is a row marked soldOut, not a plain gap", () => {
+    expect(againRows([old("a", "Roti"), old("z", "Ghost")], [d("a", "Roti", { available: false })])).toEqual([
+      { name: "Roti", made: false, soldOut: true, paise: 0 }, { name: "Ghost", made: false, soldOut: false, paise: 0 }]);
   });
 });
