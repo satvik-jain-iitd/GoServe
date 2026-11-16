@@ -26,3 +26,27 @@ describe("reorderCart", () => {
     expect(reorderCart([line("a", "Roti", 99)], [d("a", "Roti")]).cart).toEqual({ a: 20 });
   });
 });
+
+// Story 1589: an order of another kitchen has dish ids that today's menu does not hold; the match is the story 1540 rule (name, same veg mark), the marks are read once.
+describe("reorderCart across kitchens", () => {
+  const old = (id: string, name: string, qty = 1) => ({ menu_item_id: id, name, qty, price_paise: 5000 });
+  it("matches an unknown id by name and veg mark, and says it moved", () => {
+    const r = reorderCart([old("x1", "Veg Thali", 2)], [d("a", "Veg Thali", { veg: true })], { x1: true });
+    expect(r.cart).toEqual({ a: 2 });
+    expect(r.moved).toBe(true);
+  });
+  it("does not match a dish of the same name with another veg mark", () => {
+    const r = reorderCart([old("x1", "Veg Thali")], [d("a", "Veg Thali", { veg: false })], { x1: true });
+    expect(r.cart).toEqual({});
+    expect(r.left).toEqual(["Veg Thali"]);
+  });
+  it("an old dish with no mark read has no match", () => {
+    expect(reorderCart([old("x1", "Veg Thali")], [d("a", "Veg Thali")], {}).left).toEqual(["Veg Thali"]);
+  });
+  it("two dishes of one name today: no match, never a guess", () => {
+    expect(reorderCart([old("x1", "Roti")], [d("a", "Roti", { veg: true }), d("b", "Roti", { veg: true })], { x1: true }).left).toEqual(["Roti"]);
+  });
+  it("a same-id dish is not moved", () => {
+    expect(reorderCart([old("a", "Roti")], [d("a", "Roti")]).moved).toBe(false);
+  });
+});
