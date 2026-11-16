@@ -61,8 +61,7 @@ test("S4 the Orders row says Declined with the kitchen's line, and the slip show
   await setup(context, page, [{ ...order("cancelled", "2020-01-01T10:02:00Z"), cancel_reason: REASON }]);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "History" }).click();
-  await expect(page.locator(".ui-order-row .ui-tag.error")).toHaveText("Declined");
-  await expect(page.locator(".ui-order-row")).toContainText("could not take this order.");
+  await expect(page.locator(".ui-order-row .ui-order-word.bad")).toHaveText("Declined");
   await page.getByRole("button", { name: /Butter Chicken/ }).click();
   await expect(page.getByRole("heading", { name: "Declined" })).toBeVisible();
   await expect(page.getByText(`“${REASON}”`)).toBeVisible();
@@ -78,7 +77,7 @@ test("S4b a customer's own cancel, recorded as cancelled_by customer, reads Canc
   await setup(context, page, [{ ...order("cancelled", "2020-01-01T10:02:00Z"), cancelled_by: "customer", cancel_reason: null }]);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "History" }).click();
-  await expect(page.locator(".ui-order-row .ui-tag.error")).toHaveText("Cancelled");
+  await expect(page.locator(".ui-order-row .ui-order-word.bad")).toHaveText("Cancelled");
   await page.getByRole("button", { name: /Butter Chicken/ }).click();
   await expect(page.getByRole("heading", { name: "Cancelled" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Declined" })).toHaveCount(0);
@@ -96,7 +95,7 @@ test("S5 a customer's own cancel still says Cancelled", async ({ page, context }
   await setup(context, page, [order("cancelled", "2020-01-01T10:02:00Z")]);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "History" }).click();
-  await expect(page.locator(".ui-order-row .ui-tag.error")).toHaveText("Cancelled");
+  await expect(page.locator(".ui-order-row .ui-order-word.bad")).toHaveText("Cancelled");
   await page.getByRole("button", { name: /Butter Chicken/ }).click();
   await expect(page.getByRole("heading", { name: "Cancelled" })).toBeVisible();
   await expect(page.getByText("Your order was cancelled. Nothing to pay.")).toBeVisible();

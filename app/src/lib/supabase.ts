@@ -22,6 +22,12 @@ export const signOutHere = (c: SupabaseClient = getClient()) => { markLeaving();
 
 // Retries are off and the wait is short: with a bad network the saved menu should show in seconds, not after the library's retries.
 const MENU_TIMEOUT_MS = 4000;
+// Story 1589: the veg mark of the dishes of an old order (another kitchen's rows are readable by every customer: policy menu_read). A row that is gone is not in the answer.
+export async function fetchDishVeg(ids: string[]): Promise<Record<string, boolean>> {
+  const { data, error } = await getClient().from("menu_items").select("id, veg").in("id", ids);
+  if (error) throw error;
+  return Object.fromEntries((data ?? []).filter((r) => typeof r.veg === "boolean").map((r) => [r.id as string, r.veg as boolean]));
+}
 export async function fetchMenuRows(kitchenId?: string): Promise<Dish[]> {
   if (navigator.onLine === false) throw new Error("offline");
   let q = getClient().from("menu_items").select("id, name, price_paise, image_url, image_credit, veg, category, available, description");   // story #619: a sold-out dish comes too, with its flag
