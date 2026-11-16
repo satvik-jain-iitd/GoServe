@@ -1,6 +1,7 @@
 // The Supabase side of the phone: an anonymous session (its id is the session id, ADR-010) and the menu read.
 // The client is made on first use, so a missing key shows a message instead of a blank page.
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { wasSignedIn } from "./deviceOwner";
 import type { Dish } from "./menu";
 
 let client: SupabaseClient | null = null;
@@ -39,6 +40,18 @@ export function ensureSession(): Promise<string> {
     return res.data.user.id;
   })().finally(() => { starting = null; });
   return starting;
+}
+
+// Story 1586: the customer's sign-in ended (lost, refused, or the phone's login is only a guest). The customer app shows the wall; nothing is ordered as a guest.
+export class SessionEnded extends Error {
+  constructor() { super("The sign-in ended."); }
+}
+// The customer app's session: a real user, or SessionEnded. A phone that never had a real user still gets a first login as before.
+export async function ensureCustomerSession(): Promise<string> {
+  const u = (await getClient().auth.getSession()).data.session?.user;
+  if (u && !u.is_anonymous) return u.id;
+  if (u || wasSignedIn()) throw new SessionEnded();   // a guest in the customer app, or a real user whose login is gone
+  return ensureSession();
 }
 
 // The rider on a customer's order, once there is one (story D2). The database answers only for the caller's own order.
