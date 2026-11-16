@@ -144,7 +144,7 @@ export function noSilentGuest() {
     await page.getByRole("button", { name: /^You: / }).click();
     await page.getByRole("button", { name: "Sign out of this phone" }).click();
     await page.evaluate(() => sessionStorage.removeItem("__sg"));   // count only the calls made from here on, not the page's own first open
-    await page.getByRole("button", { name: "Yes, forget" }).click();
+    await page.getByRole("dialog", { name: "Sign out of this phone?" }).getByRole("button", { name: "Sign out", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Where does the food go?" })).toBeVisible();
     const log: string[] = await page.evaluate(() => JSON.parse(sessionStorage.getItem("__sg") ?? "[]"));
     expect(log.filter((d) => d === first)).toHaveLength(0);   // none by the page that was signing out
