@@ -1,28 +1,36 @@
-// "Your orders" of the Ink v3 boards 08 and 08e (story H10d, #193; stories B3, D2): the slips of this phone, newest first. A tap opens the slip.
+// "History" of the Ink v3 boards 08 and 08e (story H10d, #193), as the owner picked in story 1589 (frame history-1): the orders grouped by kitchen, a row with the dishes,
+// the time and the price, a chevron, no tag and no button. Only an exception is a word. A tap opens the order; Order it again lives there.
 import { clock12 } from "../lib/clock";
 import { formatRupees } from "../lib/money";
-import { cancelKind, shortId, statusLabel, type Order } from "../lib/kitchen";
-import { orderSummary } from "../lib/profile";
+import { cancelKind, statusLabel, type Order } from "../lib/kitchen";
 import { Skeleton, TabBar } from "../ui";
 
-const TAG: Record<string, string> = { placed: "placed", accepted: "placed", preparing: "", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "error" };
 const when = (iso: string, now = new Date()) => {
   const d = new Date(iso);
   const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
   if (d.toDateString() === now.toDateString()) return `today ${clock12(d)}`;
   if (d.toDateString() === yesterday.toDateString()) return `yesterday ${clock12(d)}`;   // a 23:50 order seen at 00:10
-  return `${d.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${clock12(d)}`;
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 };
+const dishes = (o: Order) => o.items.map((i) => (i.qty > 1 ? `${i.qty} × ${i.name}` : i.name)).join(", ");
+const CHEVRON = <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 5l7 7-7 7" /></svg>;
 
-type Props = { orders: Order[]; loading: boolean; kitchenName: string; onOpen: (o: Order) => void; onMenu: () => void; onAgain: (o: Order) => void; againLine: string | null };
+// The kitchen that cooks for the place now comes first; the others follow, the one with the newest order first; orders with no kitchen sit last under "Older orders".
+function groups(orders: Order[], now: string | null) {
+  const by = new Map<string, Order[]>();
+  for (const o of [...orders].sort((a, b) => b.created_at.localeCompare(a.created_at))) by.set(o.kitchen_id ?? "", [...(by.get(o.kitchen_id ?? "") ?? []), o]);
+  const rank = (id: string) => (id === now ? 0 : id === "" ? 2 : 1);
+  return [...by.entries()].sort((a, b) => rank(a[0]) - rank(b[0]));   // a stable sort keeps the newest-first order among the others
+}
 
-export function OrdersScreen({ orders, loading, kitchenName, onOpen, onMenu, onAgain, againLine }: Props) {
+type Props = { orders: Order[]; loading: boolean; kitchenName: string; kitchenId: string | null; kitchenNames: Record<string, string>; onOpen: (o: Order) => void; onMenu: () => void };
+
+export function OrdersScreen({ orders, loading, kitchenName, kitchenId, kitchenNames, onOpen, onMenu }: Props) {
   const empty = !loading && orders.length === 0;
   return (
     <>
       <header className="ui-head">
         <h1>History</h1>
-        <span className="meta">Order again · today&apos;s prices</span>
       </header>
       <div className={empty ? "ui-scroll ui-center" : "ui-scroll ui-orders"}>
         {loading && orders.length === 0 && <div className="ui-pad"><Skeleton lines={3} /></div>}
@@ -33,20 +41,26 @@ export function OrdersScreen({ orders, loading, kitchenName, onOpen, onMenu, onA
             <button type="button" className="ui-btn" onClick={onMenu}>See the menu</button>
           </div>
         )}
-        {againLine && <p role="status" className="ui-note ui-again-line">{againLine}</p>}
-        {orders.map((o) => (
-          <div key={o.id} className="ui-order-row ui-order-row-wrap">
-            <button type="button" className="ui-order-main ui-order-open" onClick={() => onOpen(o)}>
-              <span className="mono ui-order-no">No. {shortId(o.id)} · {when(o.created_at)}</span>
-              <span className="ui-order-items">{orderSummary(o)}</span>
-              <span className="ui-order-sub">{kitchenName ? `${kitchenName} · ` : ""}<span className="mono">{formatRupees(o.status === "cancelled" ? 0 : o.total_paise)}</span></span>   {/* story #1172: a cancelled or declined order owes nothing */}
-              {cancelKind(o) === "declined" && <span className="ui-order-sub">{kitchenName || "The kitchen"} could not take this order.</span>}
-            </button>
-            <span className="ui-order-side">
-              <span className={`ui-tag ${TAG[o.status] ?? ""}`}>{cancelKind(o) === "declined" ? "Declined" : statusLabel(o.status)}</span>
-              {o.status === "delivered" && <button type="button" className="ui-btn ghost small" aria-label={`Order again, No. ${shortId(o.id)}`} onClick={() => onAgain(o)}>Order again</button>}
-            </span>
-          </div>
+        {groups(orders, kitchenId).map(([id, list]) => (
+          <section key={id} aria-label={id ? kitchenNames[id] ?? (id === kitchenId ? kitchenName : "Another kitchen") : "Older orders"}>
+            <h2 className="ui-order-group">
+              <b>{id ? kitchenNames[id] ?? (id === kitchenId ? kitchenName : "Another kitchen") : "Older orders"}</b>
+              {id && <span>{id === kitchenId ? "cooks for you now" : "your older orders"}</span>}
+            </h2>
+            {list.map((o) => {
+              const bad = o.status === "cancelled";
+              const word = bad ? (cancelKind(o) === "declined" ? "Declined" : "Cancelled") : o.status === "delivered" ? "" : statusLabel(o.status);   // story #1172: a cancelled or declined order owes nothing, so no price
+              return (
+                <button key={o.id} type="button" className="ui-order-row" onClick={() => onOpen(o)}>
+                  <span className="ui-order-main">
+                    <span className="ui-order-items">{dishes(o)}</span>
+                    <span className="ui-order-sub">{when(o.created_at)}{word && <> · <span className={`ui-order-word${bad ? " bad" : ""}`}>{word}</span></>}{!bad && <> · <span className="mono">{formatRupees(o.total_paise)}</span></>}</span>
+                  </span>
+                  {CHEVRON}
+                </button>
+              );
+            })}
+          </section>
         ))}
         {orders.length > 0 && <p className="mono ui-foot">Newest first</p>}
       </div>

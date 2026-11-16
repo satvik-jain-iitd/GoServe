@@ -1,4 +1,4 @@
-// Story #977, board H1-History: a delivered order has Order again under its tag; it fills the cart at today's prices and opens the Bill.
+// Story #977, board H1-History; story 1589 moved the button into the opened delivered order (frame history-1): it fills the cart at today's prices and opens the Bill.
 import { test, expect, type Page } from "@playwright/test";
 import { order, setup } from "./helpers";
 
@@ -12,12 +12,14 @@ const history = async (page: Page, context: Parameters<typeof setup>[0], menu: o
   tune?.(net.state);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "History" }).click();
+  await page.getByRole("button", { name: /Veg Thali/ }).click();   // story 1589: the button is in the opened order
+  await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();
   return net;
 };
 
 test("S1 Order again opens the Bill with the same dishes at today's prices, with no note carried over", async ({ page, context }) => {
   await history(page, context, [dish("d1", "Veg Thali", 18000), dish("d2", "Roti", 2500)], [past(THALI_ROTI)]);
-  await page.getByRole("button", { name: /^Order again, No\./ }).click();
+  await page.getByRole("button", { name: /Order again ›/ }).click();
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
   await expect(page.getByText("Veg Thali")).toBeVisible();
   await expect(page.getByText("Roti")).toBeVisible();
@@ -25,23 +27,25 @@ test("S1 Order again opens the Bill with the same dishes at today's prices, with
   await expect(page.getByLabel(/Note for the kitchen/)).toHaveValue("");
 });
 
-test("S2 a sold-out dish is left out and the line names it", async ({ page, context }) => {
+test("S2 a sold-out dish is left out: its row says sold out today, the Bill has the rest", async ({ page, context }) => {
   await history(page, context, [dish("d1", "Veg Thali", 18000), dish("d2", "Roti", 2500, { available: false })], [past(THALI_ROTI)]);
-  await page.getByRole("button", { name: /^Order again, No\./ }).click();
+  await expect(page.locator(".ui-again-dish").nth(1)).toContainText("sold out today");
+  await page.getByRole("button", { name: /Order again ›/ }).click();
   await expect(page.getByText("Veg Thali")).toBeVisible();
-  await expect(page.getByRole("status").filter({ hasText: "Roti is not on the menu today." })).toBeVisible();
   await expect(page.getByText("Roti ×")).toHaveCount(0);
 });
 
-test("S3 a closed kitchen adds nothing and the line says so", async ({ page, context }) => {
+test("S3 a closed kitchen adds nothing: the button is greyed and the line says so", async ({ page, context }) => {
   await history(page, context, [dish("d1", "Veg Thali", 18000), dish("d2", "Roti", 2500)], [past(THALI_ROTI)], (s) => { s.kitchens = [{ ...s.kitchens[0], open: false }]; });
-  await page.getByRole("button", { name: /^Order again, No\./ }).click();
+  await expect(page.getByRole("button", { name: /Order again ›/ })).toBeDisabled();
   await expect(page.getByRole("status").filter({ hasText: /closed now/ })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Your bill" })).toHaveCount(0);
 });
 
-test("S4 only a delivered slip has the button; the head says History", async ({ page, context }) => {
-  await history(page, context, [dish("d1", "Veg Thali", 18000), dish("d2", "Roti", 2500)], [order("cancelled")]);
+test("S4 only a delivered order has the block; the head says History", async ({ page, context }) => {
+  const net = await setup(context, page, [order("cancelled")]);
+  net.state.menu = [dish("d1", "Veg Thali", 18000)];
+  await page.goto("/customer/");
+  await page.getByRole("button", { name: "History" }).click();
   await expect(page.getByRole("heading", { name: "History", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: /^Order again/ })).toHaveCount(0);
 });

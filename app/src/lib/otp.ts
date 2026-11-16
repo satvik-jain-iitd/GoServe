@@ -2,7 +2,7 @@
 // (phone_in_use) can sign in with Supabase's own phone sign-in, and /otp/claim then moves the guest's orders to that account (story #558).
 // The words of a refusal are the server's (the contract's). A server fault with an error word but no message gets our line for that word (story #786); only a lost network, or an answer that is not JSON, gets the network line.
 import { getClient } from "./supabase";
-import { GUEST_KEY } from "./deviceOwner";
+import { claimDevice, GUEST_KEY } from "./deviceOwner";
 
 export type OtpResult = { ok: true; phone?: string } | { ok: false; error: string; message: string };
 const NETWORK: OtpResult = { ok: false, error: "network", message: "Could not reach GoServe. Try again." };
@@ -28,7 +28,13 @@ async function call(route: "send" | "verify" | "claim", body: object, token?: st
 }
 
 export const sendCode = (phone: string) => call("send", { phone });
-export const verifyCode = (phone: string, code: string) => call("verify", { phone, code });
+// Story 1586: /otp/verify links the number to the guest's own user on the server and the server then answers is_anonymous false (proved on dev, 16 Nov 2026). The user object kept in the phone's
+// storage still says true until the session is read again, so it is read again at once, and the phone's owner mark says a real user holds the phone. A failed read changes nothing.
+export async function verifyCode(phone: string, code: string): Promise<OtpResult> {
+  const r = await call("verify", { phone, code });
+  if (r.ok) { try { await getClient().auth.refreshSession(); claimDevice(window.localStorage, true); } catch { /* the next open reads it */ } }
+  return r;
+}
 
 // The returning customer: Supabase sends and checks its own code, the session becomes the old account's, then the guest's orders move.
 export async function sendSignInCode(phone: string): Promise<OtpResult> {
