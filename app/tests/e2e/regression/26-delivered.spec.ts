@@ -36,8 +36,8 @@ async function reach(context: BrowserContext, page: Page, delivered: Omit<typeof
   await context.route(isPath("/rest/v1/kitchens"), (r) => answer(r, [KITCHEN]));
   await page.reload();
   await page.getByRole("button", { name: "History" }).click();
-  await expect(page.getByRole("button", { name: /^No\. 0f0f0f0f/ })).toBeVisible();   // proves the delivered row shows before it is tapped
-  await page.getByRole("button", { name: /^No\. 0f0f0f0f/ }).click();
+  await expect(page.locator(".ui-order-row")).toBeVisible();   // proves the delivered row shows before it is tapped
+  await page.locator(".ui-order-row").click();
 }
 
 test("TC 26.1 Look: the Delivered stamp, At your door 4:53 pm, the lines, Cash paid, the thank-you line and two buttons", async ({ page, context }) => {
@@ -52,7 +52,7 @@ test("TC 26.1 Look: the Delivered stamp, At your door 4:53 pm, the lines, Cash p
   await expect(slip.getByText("Cash paid", { exact: true })).toBeVisible();
   await expect(slip.getByText("₹830", { exact: true })).toBeVisible();
   await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();
-  await expect(page.locator(".ui-bottom").getByRole("button", { name: "Back to menu" })).toBeVisible();   // story 1434: was See the menu
+  await expect(page.locator(".ui-bottom").getByRole("button", { name: /Order again ›|See the menu/ })).toBeVisible();   // story 1589: the one filled button (story 1434 had Back to menu)
   await expect(page.getByRole("link", { name: "Call the kitchen" })).toHaveAttribute("href", "tel:9876543210");
 });
 

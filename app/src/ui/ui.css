@@ -7,7 +7,7 @@ body { margin: 0; background: var(--md-background); color: var(--md-on-backgroun
 .display { font-family: var(--gs-font-display); font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
 
 /* Actions */
-.ui-btn { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--gs-tap); min-width: var(--gs-tap); padding: 0 var(--gs-space-5); border: 0; border-radius: var(--gs-radius-pill); background: var(--md-primary); color: var(--md-on-primary); font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; transition: transform 120ms ease, opacity 120ms ease; }
+.ui-btn { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--gs-tap); min-width: var(--gs-tap); padding: 0 var(--gs-space-5); border: 0; border-radius: var(--gs-radius-s); background: var(--md-primary); color: var(--md-on-primary); font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; transition: transform 120ms ease, opacity 120ms ease; }
 .ui-btn:not(:disabled):active { transform: scale(0.97); }   /* story 953: a disabled control gives no feedback of any kind */
 .ui-btn.ghost { background: transparent; color: var(--md-primary); border: 1px solid var(--md-outline); }
 .ui-btn.big { min-height: var(--gs-tap-big); width: 100%; font-size: var(--gs-display-m); }
@@ -169,6 +169,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-pin { flex: 1; display: inline-flex; align-items: center; gap: var(--gs-space-2); min-height: var(--gs-tap); min-width: 0; text-decoration: none; color: var(--md-on-background); font-family: var(--gs-font-mono); font-size: 14px; }
 .ui-pin img { display: block; height: 22px; width: auto; }
 .ui-btn.icon { width: var(--gs-tap); min-width: var(--gs-tap); padding: 0; flex: none; }
+.ui-btn.icon { border-radius: var(--gs-radius-pill); }   /* story 1592: text buttons have the 6 px corner; the round icon buttons stay round until the owner picks their shape */
 .ui-btn.icon svg { width: 22px; height: 22px; }
 /* Home screen: greeting, the Tonight hero, the veg toggle */
 .ui-greet { display: grid; gap: 4px; padding: var(--gs-space-4) var(--gs-gutter) 0; }
@@ -667,12 +668,28 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-profile .ui-btn { width: auto; margin-top: 0; }   /* the sheet rule makes every button full width; the You rows keep their own sizes */
 .ui-profile .ui-btn.icon { flex: none; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; border-radius: 999px; }
 
-/* Story 977, board H1-History: the state tag with its second button under it; the row's two parts are siblings, never a button in a button. */
-.ui-order-row-wrap { align-items: start; }
-.ui-order-open { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-.ui-order-side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
-.ui-order-side .ui-btn.small { min-height: 36px; padding: 0 14px; font-size: 14px; width: auto; margin: 0; }
-.ui-again-line { margin: var(--gs-space-3) var(--gs-gutter) 0; }
+/* Story 1589, frame history-1: the kitchen heading, the plain row, the exception word; then the "Order it again" block and its foot button. */
+.ui-order-group { display: flex; justify-content: space-between; gap: var(--gs-space-2); margin: var(--gs-space-5) 0 var(--gs-space-1); font: 400 var(--gs-mono-sm) var(--gs-font-mono); letter-spacing: 0.04em; color: var(--gs-text-muted); }
+.ui-order-group b { font-weight: 500; color: var(--md-on-background); }
+.ui-order-row { min-height: 64px; }
+.ui-order-row svg { color: var(--gs-text-muted); }
+.ui-order-word.bad { color: var(--md-error); font-weight: 700; }
+.ui-again { margin: var(--gs-space-2) var(--gs-gutter) 0; }
+.ui-again h2 { margin: 0; font: 800 var(--gs-text-lg) var(--gs-font-display); }
+.ui-again-line { margin: 0 0 var(--gs-space-1); min-height: 2.6em; font-size: var(--gs-text-sm); line-height: 1.3; color: var(--gs-text-muted); }   /* two lines always kept: the longest line wraps at 360 px (rule 23) */
+.ui-again-list { margin: 0; padding: 0; list-style: none; }
+.ui-again-dish { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: var(--gs-space-2); min-height: 44px; border-top: 1px solid var(--md-outline-variant); font-size: var(--gs-text-lg); font-weight: 600; }
+.ui-again-dish:last-child { border-bottom: 1px solid var(--md-outline-variant); }
+.ui-again-mk { width: 24px; height: 24px; box-sizing: border-box; display: grid; place-items: center; border-radius: 4px; background: var(--md-primary); color: var(--md-on-primary); font-size: 15px; }
+.ui-again-dish .r { font: 400 var(--gs-mono-base) var(--gs-font-mono); }
+.ui-again-dish.no { color: var(--gs-text-muted); }
+.ui-again-dish.no .nm { text-decoration: line-through; }
+.ui-again-dish.no .ui-again-mk { background: transparent; border: 1.5px solid var(--gs-text-muted); color: var(--gs-text-muted); }
+.ui-again-dish .ui-again-mk:empty { background: transparent; }
+.ui-bottom .ui-btn.bar { justify-content: space-between; padding: 0 var(--gs-space-5); }
+.ui-bottom .ui-btn.bar .mono { font-size: var(--gs-mono-base); font-weight: 400; }
+.ui-bottom .ui-btn.bar .verb { font-size: var(--gs-display-m); font-weight: 600; }
+.ui-again-note { margin: 0; min-height: 1.3em; font-size: var(--gs-text-sm); line-height: 1.3; color: var(--md-on-background); }   /* the room under the button is always kept (rule 23); full ink, not grey (rule 28) */
 
 /* Story 998, board A2-AddressOla: the credit line Ola's terms ask for (clauses 15.2, 15.3), under the address form. */
 .ui-credit { margin: var(--gs-space-3) 0 0; text-align: center; font-size: 11px; letter-spacing: 0.04em; color: var(--gs-text-muted); }
@@ -708,7 +725,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-undo-bar { position: fixed; left: 16px; right: 16px; bottom: 24px; z-index: 30; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 0 8px 0 16px; box-sizing: border-box; border-radius: 12px; background: var(--md-on-background); color: var(--md-background); box-shadow: 0 8px 24px rgba(38, 53, 40, 0.2); }
 .ui-undo-bar > span:first-child { flex: 1; font-size: 15px; }
 .ui-undo-bar .mono { font-size: 11px; opacity: 0.8; }
-.ui-undo-bar button { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; color: var(--gs-lime); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+.ui-undo-bar button { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 0; border-radius: var(--gs-radius-s); background: transparent; color: var(--gs-lime); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
 .ui-deliver-to > * { flex: none; }   /* a child of the column keeps its own height; the search box has flex: 1 from the home row (found in the review of story 976) */
 
 /* Story 1037 (board C6-PinMap): the one full-screen map. The pin is a plain element at the centre of the map box (primary green), the card floats 16 px from the edges. */

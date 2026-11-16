@@ -137,8 +137,8 @@ test("TC 31.6 Sign out of this phone: confirm first, then the phone's data is wi
   await STEPS["account"](context, page, PATH);
   await recordWipe(page);
   await page.getByRole("button", { name: "Sign out of this phone" }).click();
-  await expect(page.getByText("Forget your details on this phone?")).toBeVisible();   // the confirm shows before anything goes
-  await page.getByRole("button", { name: "Yes, forget" }).click();
+  await expect(page.getByRole("dialog", { name: "Sign out of this phone?" })).toBeVisible();   // the confirm shows before anything goes
+  await page.getByRole("dialog", { name: "Sign out of this phone?" }).getByRole("button", { name: "Sign out", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "You" })).toHaveCount(0);   // the page reloads: the You screen is gone
   await expect.poll(() => wiped(page)).not.toBeNull();   // the app cleared this phone's storage
   expect(JSON.parse((await wiped(page)) ?? "[]")).toContain("gs-pin");

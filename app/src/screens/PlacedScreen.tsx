@@ -5,7 +5,7 @@ import { shortId, statusLabel, trackerSteps } from "../lib/kitchen";
 import { etaView, type Eta } from "../lib/eta";
 import type { OrderBill, PlacedOrder } from "../lib/orders";
 import type { RiderCard } from "../lib/supabase";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { PAY_WINDOW_S, PAY_METHODS, type PayMethod } from "../lib/payments";
 import { devHelperOn } from "../lib/payGateway";
 import { Timeline, TornTop } from "../ui";
@@ -26,6 +26,7 @@ type Props = {
   placedAt: string;             // when the order was made (ISO)
   lines: { name: string; qty: number; paise: number }[];
   kitchenName: string;
+  headWait?: boolean;   // the kitchen's name is not known yet: the header line stays empty
   pin: string | null;
   kitchenPhone: string | null;
   address: string;
@@ -46,6 +47,7 @@ type Props = {
   track?: Track;                // story #691: On the way, with the rider's place known
   eta?: Eta | null;             // story #1015: the server's delivery time
   declined?: { reason: string; at: string } | null;   // story #934: the kitchen said no, in its own words
+  again?: { block: ReactNode; bar: ReactNode };   // story 1589: a delivered order from History: the block under the slip and the one filled button, in place of Back to menu
 };
 export type Track = { you: LatLng | null; rider: Point; name: string; phone: string | null };   // story 1497: `you` is the order's own drop point; null when the order has none
 export type Pay = {
@@ -87,7 +89,7 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "At your door" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
-export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, onYes, onNotYet, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta }: Props) {
+export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, placedAt, lines, kitchenName, headWait, pin, kitchenPhone, address, asking, busy, error, onYes, onNotYet, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta, again }: Props) {
   const [askCancel, setAskCancel] = useState(false);   // story #1227: the cancel sheet
   const steps = trackerSteps(status);
   const { now, online } = useNowOnline();
@@ -96,7 +98,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, 
   const delivered = status === "delivered";
   const cancelled = status === "cancelled";
   const title = status === "placed" ? "Order placed" : cancelled ? (declined ? "Declined" : "Cancelled") : "Your order";
-  const head = [kitchenName, pin].filter(Boolean).join(" · ");
+  const head = headWait ? "" : [kitchenName, pin].filter(Boolean).join(" · ");
   return (
     <>
       <header className="ui-head">
@@ -152,6 +154,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, 
             <div className="ui-slip-total"><b>{declined || cancelled ? "Nothing to pay" : pay?.state === "paid" ? "Paid online" : pay ? "To pay online" : delivered && paidBy === "cash" ? "Cash paid" : delivered && paidBy === "upi_door" ? "Paid by UPI at the door" : delivered ? "Paid at the door" : "To pay at door"}</b><span>{declined || cancelled ? formatRupees(0) : formatRupees(order.total_paise)}</span></div>
           </div>
         </section>
+        {again?.block}
         <div className="ui-after">
           {track && status === "out_for_delivery" && <RiderRow t={track} />}   {/* board T4: the row sits under the slip, above the timeline */}
           {!cancelled && <Timeline rows={3} steps={steps.map((x) => (atDoor && x.status === "out_for_delivery" ? "Rider at your door" : STEP_WORDS[x.status] ?? x.label))} current={steps.findIndex((x) => x.state === "current")} label="Order progress"
@@ -191,7 +194,8 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, 
         {track?.phone && status === "out_for_delivery" && <a href={`tel:${track.phone}`} className="ui-btn ghost big" onClick={onCall}>Call the rider</a>}
         {kitchenPhone && status !== "out_for_delivery" && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
         {declined && <button type="button" className="ui-btn big" onClick={onMenu}>Order something else</button>}   {/* story 1458 (board T2b): the main button last, as on every end slip */}
-        {(delivered || cancelled) && !declined && <button type="button" className="ui-btn big" onClick={onMenu}>Back to menu</button>}   {/* story 1434 (boards T1b, Delivered b): one name on both end slips, the main button last; the same dishes again only from History */}
+        {again?.bar}
+        {(cancelled || (delivered && !again)) && !declined && <button type="button" className="ui-btn big" onClick={onMenu}>Back to menu</button>}   {/* story 1434 (boards T1b, Delivered b): one name on both end slips, the main button last; the same dishes again only from History */}
       </div>
     </>
   );

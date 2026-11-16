@@ -4,16 +4,19 @@
 import os, sys, unittest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from test_schema import TOKEN, sql
-from test_order_actions import ADMIN, CUST, KITCHEN, O, SETUP, who
+from test_order_actions import ADMIN, CUST, K, KITCHEN, O, SETUP, who
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 MIG = "" if os.environ.get("SKIP_MIG") else open(os.path.join(HERE, "..", "supabase", "migrations", "20261108120000_cancelled_by.sql")).read()
+NEW = "" if os.environ.get("SKIP_MIG") else open(os.path.join(HERE, "..", "supabase", "migrations", "20261116100000_decline_is_not_cancel.sql")).read()   # story #1602
 SHOW = "select cancelled_by, cancel_reason, status from orders where id = '" + O + "'"
+STAFF_CUST = f"insert into kitchen_staff (kitchen_id, user_id) values ('{K}', '{CUST}')"   # the person who ordered is also staff of that kitchen (story #1602)
+ADMIN_CUST = f"insert into admins (user_id) values ('{CUST}')"
 
 
-def run(*steps, before_mig=()):
+def run(*steps, before_mig=(), show=SHOW):
     flat = [s for st in steps for s in (st if isinstance(st, list) else [st])]
-    r = sql("begin; " + "; ".join(SETUP + list(before_mig)) + "; " + MIG + "; " + "; ".join(flat + ["reset role", SHOW]) + "; rollback;")
+    r = sql("begin; " + "; ".join(SETUP + list(before_mig)) + "; " + MIG + "; " + NEW + "; " + "; ".join(flat + ["reset role", show]) + "; rollback;")
     assert isinstance(r, list), r
     return r[-1][0] if isinstance(r[-1], list) else r[-1]
 
@@ -56,6 +59,32 @@ class CancelledBy(unittest.TestCase):
     def test_s7_a_value_outside_the_four_is_refused(self):
         r = str(sql("begin; " + "; ".join(SETUP) + "; " + MIG + f"; update orders set cancelled_by = 'bot' where id = '{O}'; rollback;"))
         self.assertIn("orders_cancelled_by_values", r)
+
+    # Story #1602: what the caller does decides the actor, not who the caller is. A reason from staff or an admin is a decline, even on their own order.
+    def test_s8_staff_who_placed_the_order_declines_with_a_reason_and_is_kitchen(self):
+        r = run(cancel(CUST, "We are out of paneer tonight."), before_mig=[STAFF_CUST])
+        self.assertEqual((r["cancelled_by"], r["cancel_reason"]), ("kitchen", "We are out of paneer tonight."))
+
+    def test_s9_an_admin_who_placed_the_order_declines_with_a_reason_and_is_admin(self):
+        r = run(cancel(CUST, "Closed today."), before_mig=[ADMIN_CUST])
+        self.assertEqual((r["cancelled_by"], r["cancel_reason"]), ("admin", "Closed today."))
+
+    def test_s10_staff_who_placed_the_order_cancels_with_no_reason_and_is_customer(self):
+        r = run(cancel(CUST), before_mig=[STAFF_CUST])
+        self.assertEqual((r["cancelled_by"], r["cancel_reason"], r["status"]), ("customer", None, "cancelled"))
+
+    def test_s11_an_old_customer_row_with_a_reason_becomes_kitchen_and_one_without_stays_customer(self):
+        up = lambda why: f"update orders set status = 'cancelled', cancelled_by = 'customer', cancel_reason = {why} where id = '{O}'"
+        r = run(before_mig=[up("'Out of paneer.'")])
+        self.assertEqual((r["cancelled_by"], r["cancel_reason"]), ("kitchen", "Out of paneer."))
+        r = run(before_mig=[up("null")])
+        self.assertEqual((r["cancelled_by"], r["cancel_reason"]), ("customer", None))
+
+    def test_s12_the_customer_gets_the_decline_alert_in_case_s8(self):
+        sub = f"insert into push_subscriptions (session_id, endpoint, p256dh, auth) values ('{CUST}', 'https://web.push.apple.com/abc', 'k', 'a')"
+        r = run(cancel(CUST, "We are out of paneer tonight."), before_mig=[STAFF_CUST, sub],
+                show=f"select count(*)::int as n from push_outbox where order_id = '{O}' and status = 'cancelled'")
+        self.assertEqual(r["n"], 1)
 
 
 if __name__ == "__main__":
