@@ -426,3 +426,16 @@ export const answeredAt = (context: BrowserContext, at: { latitude: number; long
   try { window.localStorage.setItem("gs-asked-spots", JSON.stringify([{ lat: p.latitude, lng: p.longitude, day: `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`, at: d.getTime(), moving: false }])); } catch { /* blocked */ }
 }, at);
 export const whereBox = (page: Page) => page.getByRole("dialog", { name: "Where should we deliver?" });
+
+// Story 1594: alerts are on for this phone. The browser's push subscription is a stand-in that counts unsubscribe calls in sessionStorage (it survives the sign-out reload, localStorage does not); failUnsubscribe makes it throw.
+export async function stubPushOn(context: BrowserContext, { failUnsubscribe = false } = {}) {
+  await context.addInitScript((fail) => {
+    if (typeof Notification === "undefined") (window as unknown as { Notification: unknown }).Notification = function () {};   // Playwright WebKit has none
+    Object.defineProperty(Notification, "permission", { get: () => "granted", configurable: true });
+    const sub = { endpoint: "https://push.example/abc", unsubscribe: async () => { sessionStorage.setItem("unsub", String(Number(sessionStorage.getItem("unsub") ?? 0) + 1)); if (fail) throw new Error("push service down"); return true; }, toJSON: () => ({ endpoint: "https://push.example/abc", keys: { p256dh: "PKEY", auth: "AKEY" } }) };
+    const fake = { pushManager: { getSubscription: async () => sub, subscribe: async () => sub } };
+    if (navigator.serviceWorker) Object.defineProperty(navigator.serviceWorker, "ready", { get: () => Promise.resolve(fake), configurable: true });
+    else Object.defineProperty(navigator, "serviceWorker", { value: { ready: Promise.resolve(fake), register: async () => fake, addEventListener: () => {} }, configurable: true });   // WebKit here blocks service workers, so there is none to patch
+    (window as unknown as { PushManager: unknown }).PushManager = function () {};
+  }, failUnsubscribe);
+}

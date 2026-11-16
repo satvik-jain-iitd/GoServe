@@ -934,7 +934,18 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const openOrderNow = orders.find((o) => !["delivered", "cancelled"].includes(o.status));
   const openLive = openOrderNow ? { label: statusLabel(openOrderNow.status), no: shortId(openOrderNow.id), onOpen: () => openOrder(openOrderNow) } : null;
   // "Forget me on this phone": what this phone remembers is wiped and the session ends.
+  // Story 1594: this phone's push row and browser subscription end before the sign-out (the row delete needs the login). A failure here never blocks the sign-out (story 1583); no service worker is waited for more than 2 seconds.
+  async function endPush() {
+    try {
+      const ready = await Promise.race([navigator.serviceWorker.ready, new Promise<null>((r) => setTimeout(() => r(null), 2000))]);
+      const sub = await ready?.pushManager.getSubscription();
+      if (!sub) return;
+      try { await getClient().from("push_subscriptions").delete().eq("endpoint", sub.endpoint); } catch { /* offline: the browser still stops below */ }
+      await sub.unsubscribe();
+    } catch { /* no push on this phone, or the push service is down */ }
+  }
   async function forgetMe() {
+    await endPush();
     try { await signOutHere(); } catch { /* offline: the local wipe still runs */ }
     try { window.localStorage.clear(); } catch { /* blocked storage: nothing to wipe */ }
     window.location.reload();
@@ -946,6 +957,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     const { data, error: failed } = await getClient().rpc("delete_my_account");
     if (failed) return "Could not delete the account. Check your connection and try again.";
     if (data && data.ok === false) return String(data.message ?? "Could not delete the account.");
+    await endPush();   // the rows are gone with the account; the browser stops receiving too
     markLeaving();   // story 1586: the page reloads next; the SIGNED_OUT listener makes no guest
     try { await getClient().auth.signOut(); } catch { /* the login is already gone on the server */ }
     try { window.localStorage.clear(); window.sessionStorage.setItem("gs-account-deleted", "1"); } catch { /* blocked storage: nothing to wipe */ }
