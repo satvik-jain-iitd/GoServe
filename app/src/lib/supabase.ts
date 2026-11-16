@@ -46,12 +46,13 @@ export function ensureSession(): Promise<string> {
 export class SessionEnded extends Error {
   constructor() { super("The sign-in ended."); }
 }
-// The customer app's session: a real user, or SessionEnded. A phone that never had a real user still gets a first login as before.
+// The customer app's session: a real user, or SessionEnded when the phone's real owner lost the login. A guest login with no real owner on the phone (a first visit, or a phone-code
+// customer, whose user stays anonymous with the phone attached) is left as before. A phone that never had a real user still gets a first login.
 export async function ensureCustomerSession(): Promise<string> {
   const u = (await getClient().auth.getSession()).data.session?.user;
   if (u && !u.is_anonymous) return u.id;
-  if (u || wasSignedIn()) throw new SessionEnded();   // a guest in the customer app, or a real user whose login is gone
-  return ensureSession();
+  if (wasSignedIn()) throw new SessionEnded();   // a real user whose login is gone: the wall, not a guest
+  return u ? u.id : ensureSession();
 }
 
 // The rider on a customer's order, once there is one (story D2). The database answers only for the caller's own order.
