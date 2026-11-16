@@ -36,7 +36,7 @@ import { pushTrail } from "./lib/trail";
 import { trace } from "./lib/trace";
 import { cancelLine, NO_INTERNET } from "./lib/errorLines";
 import { FeedbackSheet } from "./screens/FeedbackSheet";
-import { ensureCustomerSession, ensureSession, fetchMenuRows, fetchRiderCard, getClient, SessionEnded, signOutHere, type RiderCard } from "./lib/supabase";
+import { ensureCustomerSession, ensureSession, fetchMenuRows, fetchRiderCard, getClient, isLeaving, markLeaving, SessionEnded, signOutHere, type RiderCard } from "./lib/supabase";
 import { wasSignedIn } from "./lib/deviceOwner";
 import { openTill } from "./lib/browse";
 import { AccountScreen } from "./screens/AccountScreen";
@@ -958,6 +958,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     const { data, error: failed } = await getClient().rpc("delete_my_account");
     if (failed) return "Could not delete the account. Check your connection and try again.";
     if (data && data.ok === false) return String(data.message ?? "Could not delete the account.");
+    markLeaving();   // story 1586: the page reloads next; the SIGNED_OUT listener makes no guest
     try { await getClient().auth.signOut(); } catch { /* the login is already gone on the server */ }
     try { window.localStorage.clear(); window.sessionStorage.setItem("gs-account-deleted", "1"); } catch { /* blocked storage: nothing to wipe */ }
     window.location.reload();
@@ -1044,7 +1045,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   function sessionEnded() { setSignedIn(false); void ensureSession().catch(() => {}); }
   useEffect(() => {   // coming back, or another tab's Sign out that emptied the shared login
     if (lock !== "customer") return;
-    const { data } = getClient().auth.onAuthStateChange((event) => { if (event === "SIGNED_OUT" && wasSignedIn()) sessionEnded(); });
+    const { data } = getClient().auth.onAuthStateChange((event) => { if (event === "SIGNED_OUT" && wasSignedIn() && !isLeaving()) sessionEnded(); });
     return () => data.subscription.unsubscribe();
   }, [lock]);
 

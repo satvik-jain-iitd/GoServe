@@ -14,7 +14,11 @@ export const getClient = (): SupabaseClient => {
 
 // Every Sign out button ends this phone's login only. The default scope is global and ends the same person's logins on every phone and app (story 1583).
 // Only deleting the account signs out global: the account is gone everywhere.
-export const signOutHere = (c: SupabaseClient = getClient()) => c.auth.signOut({ scope: "local" });
+// Story 1586: this tab is signing out on purpose (the page reloads right after). The customer app's SIGNED_OUT listener stays quiet then; it is for a login that was lost, not one that was ended here.
+let leaving = false;
+export const markLeaving = () => { leaving = true; };
+export const isLeaving = () => leaving;
+export const signOutHere = (c: SupabaseClient = getClient()) => { markLeaving(); return c.auth.signOut({ scope: "local" }); };
 
 // Retries are off and the wait is short: with a bad network the saved menu should show in seconds, not after the library's retries.
 const MENU_TIMEOUT_MS = 4000;
