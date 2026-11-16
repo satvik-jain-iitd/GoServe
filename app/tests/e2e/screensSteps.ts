@@ -82,6 +82,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await page.goto(path);
     await page.getByRole("button", { name: "Add Butter Chicken" }).click(); await page.getByRole("button", { name: "Add Dal Makhani" }).click();
     await page.getByRole("button", { name: /View bill/ }).click();
+    await page.getByLabel("Phone").fill("9876543210");
     await page.getByRole("button", { name: "Confirm on the map" }).click(); await page.getByRole("button", { name: "Confirm & proceed" }).click();
     await page.getByLabel("House, street, colony, ward").fill("Flat 4"); await page.getByRole("button", { name: "Save address" }).click();
     await expect(page.getByText("Saket Kitchen · 110017")).toBeVisible();

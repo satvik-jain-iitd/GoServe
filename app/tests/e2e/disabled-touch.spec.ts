@@ -7,7 +7,8 @@ test("S1 a disabled .ui-btn ignores touch: pointer-events none, no tap highlight
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
-  const place = page.getByRole("button", { name: /Place order/ });
+  const place = page.getByRole("button", { name: /Add your phone number/ });
+  await place.evaluate((e) => { (e as HTMLButtonElement).disabled = true; });   // story 1574: the Bill's bar is off only while it sends or a dish is sold out
   await expect(place).toBeDisabled();
   const css = await place.evaluate((e) => { const s = getComputedStyle(e); return { pe: s.pointerEvents, hl: getComputedStyle(e).getPropertyValue("-webkit-tap-highlight-color") }; });
   expect(css.pe).toBe("none");

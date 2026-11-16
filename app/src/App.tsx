@@ -36,7 +36,7 @@ import { pushTrail } from "./lib/trail";
 import { trace } from "./lib/trace";
 import { cancelLine, NO_INTERNET } from "./lib/errorLines";
 import { FeedbackSheet } from "./screens/FeedbackSheet";
-import { ensureSession, fetchMenuRows, fetchRiderCard, getClient, type RiderCard } from "./lib/supabase";
+import { ensureSession, fetchMenuRows, fetchRiderCard, getClient, signOutHere, type RiderCard } from "./lib/supabase";
 import { openTill } from "./lib/browse";
 import { AccountScreen } from "./screens/AccountScreen";
 import { DeliverToScreen } from "./screens/DeliverToScreen";
@@ -50,7 +50,7 @@ import { MenuScreen } from "./screens/MenuScreen";
 import { BillScreen, CONFIRM_PLACE_LINE } from "./screens/BillScreen";
 import { OFFERS_ON } from "./lib/quote";
 import { watchMenu } from "./lib/liveMenu";
-import { placeOrderV2, PriceChanged, v2Deps } from "./lib/ordersV2";
+import { placeDeps, placeOrderV2, PriceChanged, renewSession } from "./lib/ordersV2";
 import { useOffers } from "./lib/useOffers";
 import { openOrderToResume } from "./lib/resume";
 import { SignIn } from "./screens/SignIn";
@@ -79,6 +79,7 @@ type Step = "menu" | "bill" | "placed" | "orders" | "account" | "deliver";
 type Role = "customer" | "kitchen" | "rider" | "split" | "ops" | "admin";
 
 const api = orderDeps;
+const CITY_CENTRE: Place = { lat: 28.6139, lng: 77.209 };   // story 1573: where the map opens when nothing else says; a guess, so the address search never uses it as its centre
 
 // `lock` makes this one of the role apps (story #83): that role only, no role tabs, no demo tools. Without it, this is the demo console.
 export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
@@ -568,7 +569,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const mapStart = (): Place => {   // where the map opens when nothing says otherwise: the phone, else the picked address, else the kitchen whose menu shows (story 1502), else the city centre
     const row = (saved ?? []).find((r) => r.id === selectedId);
     const k = area?.kind === "ok" ? area.kitchen : null;
-    return here ?? (row && row.lat !== null && row.lng !== null ? { lat: row.lat, lng: row.lng } : k && typeof k.lat === "number" && typeof k.lng === "number" ? { lat: k.lat, lng: k.lng } : { lat: 28.6139, lng: 77.209 });
+    return here ?? (row && row.lat !== null && row.lng !== null ? { lat: row.lat, lng: row.lng } : k && typeof k.lat === "number" && typeof k.lng === "number" ? { lat: k.lat, lng: k.lng } : CITY_CENTRE);
   };
   const openAtStart = (edit?: SavedAddress) => setPinMap({ center: mapStart(), edit, follow: true });   // story 1502: an open the person did not aim follows the phone's place once
   const confirmOnMap = () => {   // story 1532: the Bill's "Confirm on the map". An old saved row with no pin gets its pin; any other place opens the map at its point
@@ -945,7 +946,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const openLive = openOrderNow ? { label: statusLabel(openOrderNow.status), no: shortId(openOrderNow.id), onOpen: () => openOrder(openOrderNow) } : null;
   // "Forget me on this phone": what this phone remembers is wiped and the session ends.
   async function forgetMe() {
-    try { await getClient().auth.signOut(); } catch { /* offline: the local wipe still runs */ }
+    try { await signOutHere(); } catch { /* offline: the local wipe still runs */ }
     try { window.localStorage.clear(); } catch { /* blocked storage: nothing to wipe */ }
     window.location.reload();
   }
@@ -1064,7 +1065,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       if (lock === "customer") setSavedPhone(phone);   // story 1417: the next bill shows this phone on one line
       const kitchenId = areaKitchenId ?? (lock ? null : await demoKitchenId());   // the demo console has no area step: it orders from the first open kitchen
       if (!kitchenId) throw new Error("Choose where the food goes first.");   // story #940: the order is placed for a kitchen by POST /orders, as the signed-in user
-      const { order, confirm } = await placeOrderV2({ kitchenId, pin: pin ?? where?.pin ?? "", items, address: address.trim(), key: keyRef.current.key, expectedPaise: total, code: offers.code, none: offers.none, drop, instructions: note }, v2Deps());
+      const { order, confirm } = await placeOrderV2({ kitchenId, pin: pin ?? where?.pin ?? "", items, address: address.trim(), key: keyRef.current.key, expectedPaise: total, code: offers.code, none: offers.none, drop, instructions: note }, placeDeps(async () => {   // story 1580: after a 401 the sign-in is renewed once. A new guest has no profile row: save the phone and name again under the new id before the retry
+        const r = await renewSession();
+        return r === "same" || (r === "guest" && lock === "customer" && await saveProfile(getClient(), await ensureSession(), { name: name.trim() || signInName, phone, address, pin }));
+      }));
       setPlaced(order);
       capture("order_placed", { items_count: lines.length, phone_to_address_m: farM === null ? null : Math.round(farM) });   // story #1056, rule 10: how often the phone is far from the chosen address at an order
       setPlacedLines(lines.map((l) => ({ name: l.dish.name, qty: l.qty, paise: l.line_paise })));
@@ -1173,7 +1177,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const needArea = lock === "customer" && step !== "placed" && step !== "orders" && !(pin && (area?.kind === "ok" || area?.kind === "closed"));
   const noPlace = known && needArea && !pin && !waitingForAddresses;   // story 1529: a customer who confirmed a place before and has none now (the last address deleted, a new phone, not found): Deliver to, never the first-open screen
   const deliverTo = (
-    <DeliverToScreen focusSearch={focusSearch} forMap={pinMap?.center} list={saved ?? []} selectedId={selectedId} here={here} search={placeSearch}
+    <DeliverToScreen focusSearch={focusSearch} forMap={pinMap?.center} list={saved ?? []} selectedId={selectedId} here={here} search={(q, at) => placeSearch(q, at && at.lat === CITY_CENTRE.lat && at.lng === CITY_CENTRE.lng ? undefined : at)}   // story 1573: the fixed city centre is where the map opens, never where the search looks
       recents={recents} recentId={recentAt(recents, where)} onRecent={pickRecent}
       // Story 1530: a pick from search opens the map at the place's own point. Under a map that was not opened from search (Add new address, an edit) the pick only moves the pin.
       onPlace={(h, typed) => { setFocusSearch(false); setPinMap({ ...pinMap, center: { lat: h.lat, lng: h.lng }, follow: false, recent: !pinMap || pinMap.recent ? { typed, hit: h } : undefined }); }}
@@ -1228,7 +1232,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
           <BillScreen notice={againLine} under={moved ? kitchenChangedBill(billLines.some((l) => l.was_paise !== undefined)) : null} note={note} onNote={setNote} lines={billLines} total={total} soldOut={dead && step === "bill" ? { id: dead.dish.id, name: dead.dish.name, alt: offers.alt, canSwap, onSwap: () => setSwapped((s) => [...s, dead.dish.id]), onRemove: () => takeOut(dead.dish.id) }
             : notMade ? { id: notMade.id, name: notMade.name, line: notMadeLine(notMade.name), alt: null, canSwap: false, onSwap: () => undefined, onRemove: () => setMoved((m) => m && { ...m, gone: m.gone.filter((g) => g.id !== notMade.id) }) } : undefined} offers={OFFERS_ON && offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove } : undefined} kitchenName={kitchenName} pin={pin} address={address} farKm={farKm} confirmed={!!pointOf(where)} onChangePlace={() => setStep("deliver")} onConfirmPlace={confirmOnMap}
             details={lock === "customer" ? { phone, onPhone: setPhone, saved: savedPhone } : undefined}
-            door={lock === "customer" ? { methods: doorMethods ?? [], value: doorValue, onChange: setDoorPick } : undefined} sending={sending} error={error}
+            door={lock === "customer" ? { methods: doorMethods ?? [], value: doorValue, onChange: setDoorPick } : undefined} sending={sending} error={error} onSignIn={() => { setError(null); setSignedIn(false); }}
             onBack={() => setStep("menu")} onPlace={place} />
         )}
         {step === "placed" && placed && (

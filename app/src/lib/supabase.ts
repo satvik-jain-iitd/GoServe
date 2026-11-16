@@ -11,6 +11,10 @@ export const getClient = (): SupabaseClient => {
   return (client ??= createClient(url, key));
 };
 
+// Every Sign out button ends this phone's login only. The default scope is global and ends the same person's logins on every phone and app (story 1583).
+// Only deleting the account signs out global: the account is gone everywhere.
+export const signOutHere = (c: SupabaseClient = getClient()) => c.auth.signOut({ scope: "local" });
+
 // Retries are off and the wait is short: with a bad network the saved menu should show in seconds, not after the library's retries.
 const MENU_TIMEOUT_MS = 4000;
 export async function fetchMenuRows(kitchenId?: string): Promise<Dish[]> {

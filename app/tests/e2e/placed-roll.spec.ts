@@ -12,6 +12,7 @@ const KITCHEN = [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: "
 async function openAt(context: Parameters<typeof setup>[0], page: Page, status: string) {
   const net = await setup(context, page, [order(status === "delivered" ? "out_for_delivery" : status)]);
   net.state.kitchens = KITCHEN;
+  if (status === "out_for_delivery") { net.state.riderCard = { name: "Ravi", phone: "9876500000" }; net.state.tracking = { rider_lat: 28.58, rider_lng: 77.25, updated_at: new Date().toISOString() }; }   // story 1572: on the way, the one button is Call the rider, which needs a rider with a phone
   await page.goto("/customer/");
   if (status === "delivered") { await expect(now(page)).toHaveText("On the wayNow"); net.push("UPDATE", order("delivered", "2020-01-01T10:09:00Z")); await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible(); }
   return net;
@@ -90,23 +91,25 @@ for (const status of ["placed", "preparing", "delivered"]) {
 
 // Review of PR 1466: at 360 by 640, just placed, the buttons cut the status box. The boards have no "kitchen has your order" line, so it goes and the rows get its room.
 for (const status of ["placed", "preparing", "out_for_delivery"]) {
-  test(`R10 at 360 by 640, ${status}: the status box ends above the buttons, with no scroll first`, async ({ page, context }) => {
+  test(`R10 at 360 by 640, ${status}: the status box ends above the buttons, with the pane at its end`, async ({ page, context }) => {
     await page.setViewportSize({ width: 360, height: 640 });
     await openAt(context, page, status);
     await expect(rows(page)).toHaveCount(3);
     await page.waitForTimeout(300);
+    await page.locator(".ui-scroll").evaluate((e) => { e.scrollTop = e.scrollHeight; });   // story 1572: the buttons stack, so the inner pane may scroll; at its end the box is clear of the buttons
     const roll = (await page.locator(".ui-roll").boundingBox())!;
     const bar = (await page.locator(".ui-bottom .ui-btn").first().boundingBox())!;   // the first button's top, as the review measured
     expect(roll.y + roll.height).toBeLessThanOrEqual(bar.y);
   });
 }
 
-test("R8 two outline buttons share one line, Cancel on the left (board PL4); a main button stays last and full width (story 1434)", async ({ page, context }) => {
+test("R8 the two outline buttons stack, Cancel above Call the kitchen, same left and width (story 1572, owner pick B)", async ({ page, context }) => {
   await openAt(context, page, "accepted");
   const cancel = (await page.getByRole("button", { name: "Cancel order" }).boundingBox())!;
   const call = (await page.getByRole("link", { name: "Call the kitchen" }).boundingBox())!;
-  expect(Math.abs(cancel.y - call.y)).toBeLessThanOrEqual(1);
-  expect(cancel.x).toBeLessThan(call.x);
+  expect(cancel.y + cancel.height).toBeLessThanOrEqual(call.y);
+  expect(Math.abs(cancel.x - call.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(cancel.width - call.width)).toBeLessThanOrEqual(1);
 });
 
 test("R8b delivered: Back to menu stays full width under Call the kitchen (story 1434)", async ({ page, context }) => {
