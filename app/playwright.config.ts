@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { SCREEN_MAX_DIFF_PIXELS, SCREEN_THRESHOLD } from "./tests/e2e/gate";
 
 // E2E runs against the production build served by `vite preview`: the real artifact, service worker included.
 // It has its own port (4180) so a preview you started by hand with real keys is never reused by mistake.
@@ -10,7 +11,7 @@ export default defineConfig({
   // Story 821: the accepted screen pictures sit in one folder with no operating system in the name (they are made on the CI machine). 10 pixels
   // may differ: enough for a stray anti-aliased edge, far below a changed letter, a padding or a colour (a ratio such as 0.1 percent let a typo through).
   snapshotPathTemplate: "{testDir}/screens-baseline/{arg}{ext}",
-  expect: { toHaveScreenshot: { maxDiffPixels: 10, animations: "disabled" } },
+  expect: { toHaveScreenshot: { maxDiffPixels: SCREEN_MAX_DIFF_PIXELS, threshold: SCREEN_THRESHOLD, animations: "disabled" } },   // story 1598: both in tests/e2e/gate.ts
   use: { baseURL: "http://localhost:4180" },
   projects: [
     { name: "chromium", use: { ...devices["Pixel 7"] }, testIgnore: process.env.BOARD_MATCH ? /\.webkit\.spec\.ts$/ : process.env.REGRESSION ? /\.webkit\.spec\.ts$|board-match\.spec\.ts$/ : /\.webkit\.spec\.ts$|board-match\.spec\.ts$|regression\// },   // story #1168: the board-match spec runs only in its own job (BOARD_MATCH=1), not in the merge gate
