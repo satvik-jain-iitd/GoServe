@@ -1,9 +1,9 @@
 -- Story #1602: what the caller does decides the actor, not who the caller is. Before, cancel_order (story #904) named the customer first, so staff or an admin who
 -- placed the order and then declined it with a reason was recorded as the customer: the slip said Cancelled, the reason was never shown, and no alert was sent.
 -- Now a caller who is admin or staff of the order's kitchen AND gives a reason is declining (admin or kitchen). The caller's own order with no reason stays customer (story #904).
--- The first object of this file is new (cancel_actor) so the prod plan reads the file as not yet applied.
+-- The first object of this file is new (cancel_actor) so the prod plan reads the file as not yet applied; create or replace lets the tests run the text again on dev, where it is applied.
 
-create function cancel_actor(p_session text, p_kitchen uuid, p_reason text) returns text
+create or replace function cancel_actor(p_session text, p_kitchen uuid, p_reason text) returns text
 language sql stable security definer set search_path = public as $$
   select case
     when p_reason is not null and is_admin() then 'admin'
