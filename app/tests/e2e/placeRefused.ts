@@ -29,8 +29,8 @@ export function placeRefused() {
     expect(lineBottom).toBeLessThanOrEqual(before[1] + 0.5);
   });
 
-  // Story 1580: the stored sign-in is gone (cleared, or lost to the admin app on the same address). Place order signs in again and the order is placed.
-  test("The stored sign-in is gone: Place order makes a new sign-in and places the order, never an error and never the anon key as bearer", async ({ page, context }) => {
+  // Story 1580, changed by 1586: the stored sign-in is gone (cleared, or lost to the admin app on the same address). A signed-in customer is never made a guest: Place order shows the sign-in wall and sends no order.
+  test("The stored sign-in is gone: Place order shows the sign-in wall and sends no order (story 1586)", async ({ page, context }) => {
     const net = await setup(context, page, [], { pin: null });
     net.state.addresses = [HOME];
     net.state.geocode = { status: 200, body: { ok: true, address: "Green Park, New Delhi, Delhi", pin: "110016", locality: "Green Park", town: "New Delhi" } };
@@ -41,14 +41,15 @@ export function placeRefused() {
     await page.getByRole("button", { name: /View bill/ }).click();
     await page.getByLabel("Phone").fill("9876543210");
     await page.evaluate(() => { for (const k of Object.keys(localStorage)) if (k.startsWith("sb-")) localStorage.removeItem(k); });
+    net.state.anonymous = true;   // whoever asks the server now is a guest
     await page.getByRole("button", { name: /Place order/ }).click();
-    await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
-    expect(net.calls.place[0].headers.authorization).not.toBe("Bearer anon-test");
+    await expect(page.getByRole("button", { name: "Continue with Google" })).toBeVisible();
+    expect(net.calls.place).toHaveLength(0);
   });
 
-  // Story 1580 (reviewer): losing the sign-in must never make two orders. One tap is one POST /orders that ends in one order.
+  // Story 1580 (reviewer), changed by 1586: losing the sign-in must never make an order as a guest. One tap shows the wall and sends no POST /orders.
   for (const [name, viaAdmin] of [["the stored sign-in dropped on the Bill", false], ["the admin app opened on the same origin in between, then the Bill", true]] as const) {
-    test(`Place order after ${name}: exactly one order request, answered 201 once`, async ({ page, context }) => {
+    test(`Place order after ${name}: the sign-in wall, no order request`, async ({ page, context }) => {
       const net = await setup(context, page, [], { pin: null });
       net.state.addresses = [HOME];
       net.state.geocode = { status: 200, body: { ok: true, address: "Green Park, New Delhi, Delhi", pin: "110016", locality: "Green Park", town: "New Delhi" } };
@@ -65,10 +66,10 @@ export function placeRefused() {
         await admin.close();
       }
       await page.evaluate(() => { for (const k of Object.keys(localStorage)) if (k.startsWith("sb-")) localStorage.removeItem(k); });
+      net.state.anonymous = true;   // whoever asks the server now is a guest
       await page.getByRole("button", { name: /Place order/ }).click();
-      await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
-      expect(net.calls.place).toHaveLength(1);   // the stand-in answers every POST /orders with 201: one POST is one order
-      expect(net.calls.place[0].headers.authorization).not.toBe("Bearer anon-test");
+      await expect(page.getByRole("button", { name: "Continue with Google" })).toBeVisible();
+      expect(net.calls.place).toHaveLength(0);
     });
   }
 }

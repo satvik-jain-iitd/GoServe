@@ -1,6 +1,7 @@
 // The Supabase side of the phone: an anonymous session (its id is the session id, ADR-010) and the menu read.
 // The client is made on first use, so a missing key shows a message instead of a blank page.
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { wasSignedIn } from "./deviceOwner";
 import type { Dish } from "./menu";
 
 let client: SupabaseClient | null = null;
@@ -13,7 +14,11 @@ export const getClient = (): SupabaseClient => {
 
 // Every Sign out button ends this phone's login only. The default scope is global and ends the same person's logins on every phone and app (story 1583).
 // Only deleting the account signs out global: the account is gone everywhere.
-export const signOutHere = (c: SupabaseClient = getClient()) => c.auth.signOut({ scope: "local" });
+// Story 1586: this tab is signing out on purpose (the page reloads right after). The customer app's SIGNED_OUT listener stays quiet then; it is for a login that was lost, not one that was ended here.
+let leaving = false;
+export const markLeaving = () => { leaving = true; };
+export const isLeaving = () => leaving;
+export const signOutHere = (c: SupabaseClient = getClient()) => { markLeaving(); return c.auth.signOut({ scope: "local" }); };
 
 // Retries are off and the wait is short: with a bad network the saved menu should show in seconds, not after the library's retries.
 const MENU_TIMEOUT_MS = 4000;
@@ -39,6 +44,19 @@ export function ensureSession(): Promise<string> {
     return res.data.user.id;
   })().finally(() => { starting = null; });
   return starting;
+}
+
+// Story 1586: the customer's sign-in ended (lost, refused, or the phone's login is only a guest). The customer app shows the wall; nothing is ordered as a guest.
+export class SessionEnded extends Error {
+  constructor() { super("The sign-in ended."); }
+}
+// The customer app's session: a real user, or SessionEnded when the phone's real owner lost the login. A guest login with no real owner on the phone (a first visit, or a phone-code
+// customer, whose user stays anonymous with the phone attached) is left as before. A phone that never had a real user still gets a first login.
+export async function ensureCustomerSession(): Promise<string> {
+  const u = (await getClient().auth.getSession()).data.session?.user;
+  if (u && !u.is_anonymous) return u.id;
+  if (wasSignedIn()) throw new SessionEnded();   // a real user whose login is gone: the wall, not a guest
+  return u ? u.id : ensureSession();
 }
 
 // The rider on a customer's order, once there is one (story D2). The database answers only for the caller's own order.

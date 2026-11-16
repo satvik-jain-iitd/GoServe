@@ -1,7 +1,7 @@
 // Story #1115 (TC 1.15): the area, address draft and alerts choice are kept per device; a different account on the same phone must not see another account's.
 // claimDevice runs before the app reads any of it: when the signed-in user is not the one who saved the device state, the personal keys are cleared.
 import { describe, expect, it } from "vitest";
-import { claimDevice, OWNER_KEY } from "../../src/lib/deviceOwner";
+import { claimDevice, GUEST_KEY, OWNER_KEY, wasSignedIn } from "../../src/lib/deviceOwner";
 
 const mem = (init: Record<string, string> = {}) => { const m = { ...init }; return { getItem: (k: string) => m[k] ?? null, setItem: (k: string, v: string) => { m[k] = v; }, removeItem: (k: string) => { delete m[k]; }, key: (i: number) => Object.keys(m)[i] ?? null, get length() { return Object.keys(m).length; }, dump: () => m }; };
 const session = (id: string | null): Record<string, string> => (id ? { "sb-abc-auth-token": JSON.stringify({ user: { id } }) } : {});
@@ -48,5 +48,19 @@ describe("claimDevice", () => {
     s.setItem("sb-abc-auth-token", JSON.stringify({ user: { id: "C" } }));   // a real account, then another one: that clears
     expect(claimDevice(s, true)).toBe(true);
     expect(s.getItem("gs-pin")).toBeNull();
+  });
+  it("wasSignedIn: a real owner holds the phone (story 1586)", () => {
+    expect(wasSignedIn(mem({ [OWNER_KEY]: "A" }))).toBe(true);
+    expect(wasSignedIn(mem({ [OWNER_KEY]: "A", [GUEST_KEY]: "1" }))).toBe(false);   // a guest holds it
+    expect(wasSignedIn(mem())).toBe(false);   // nobody yet
+  });
+  it("a guest session over a real owner keeps the draft and the keys; a real user with another id still clears (story 1586)", () => {
+    const guest = { "sb-abc-auth-token": JSON.stringify({ user: { id: "G", is_anonymous: true } }) };
+    const s = mem({ ...guest, ...MINE, [OWNER_KEY]: "A" });
+    expect(claimDevice(s)).toBe(false);
+    expect(s.dump()).toEqual({ ...guest, ...MINE, [OWNER_KEY]: "A" });
+    const t = mem({ ...session("B"), ...MINE, [OWNER_KEY]: "A" });
+    expect(claimDevice(t)).toBe(true);
+    expect(t.dump()["gs-draft"]).toBeUndefined();
   });
 });

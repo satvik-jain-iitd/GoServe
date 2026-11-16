@@ -1,5 +1,5 @@
 // Story 1580, root cause study: every path that can take the customer's sign-in away, run with real in-page actions against the stand-in server.
-// Each case ends on the Bill: Place order must make exactly one order, never with the anon key as the bearer. Notes on each path: docs in the PR (rca1580).
+// Each case ends on the Bill: Place order must make exactly one order, never with the anon key as the bearer. Story 1586 changed P2, P3 and P6a (a signed-in customer whose login is gone meets the wall, never a guest order) and removed P6b (a guest never reaches the Bill: the wall stops it and place() throws SessionEnded for a guest, so the case cannot run). Notes on each path: docs in the PR (rca1580).
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { setup, phoneAt, SESSION } from "./helpers";
 
@@ -41,14 +41,20 @@ test("P1 the phone's storage is lost (iOS eviction, cleared site data), the app 
   expect(net.calls.signups).toBeGreaterThan(before);   // the reopen signed in again, anonymously
 });
 
-test("P2 the stored sign-in is lost while the Bill is open (no reload): Place order signs in again first", async ({ page, context }) => {
+const wall = (page: Page) => expect(page.getByRole("button", { name: "Continue with Google" })).toBeVisible();   // story 1586: the sign-in wall
+
+test("P2 the stored sign-in is lost while the Bill is open (no reload): Place order shows the sign-in wall, no order (story 1586)", async ({ page, context }) => {
   const net = await atBill(context, page);
-  await page.evaluate(() => { for (const k of Object.keys(localStorage)) if (k.startsWith("sb-")) localStorage.removeItem(k); });
-  await placeOnce(page, net);
+  net.state.anonymous = true;   // whoever asks the server now is a guest
+  await page.evaluate(() => { localStorage.setItem("gs-device-user", "owner"); for (const k of Object.keys(localStorage)) if (k.startsWith("sb-")) localStorage.removeItem(k); });
+  await page.getByRole("button", { name: /Place order/ }).click();
+  await wall(page);
+  expect(net.calls.place).toHaveLength(0);
 });
 
-test("P3 the admin app's Sign out (real button, a second tab, same origin) while the Bill is open: the Bill still places one order", async ({ page, context }) => {
+test("P3 the admin app's Sign out (real button, a second tab, same origin) while the Bill is open: the customer tab shows the sign-in wall, no order (story 1586)", async ({ page, context }) => {
   const net = await atBill(context, page);
+  await page.evaluate(() => localStorage.setItem("gs-device-user", "owner"));   // a real owner holds the phone
   const admin = await context.newPage();
   net.state.admin = true;
   net.state.userEmail = "satvik.jain@example.com";
@@ -58,7 +64,8 @@ test("P3 the admin app's Sign out (real button, a second tab, same origin) while
   await admin.getByRole("region", { name: "You" }).getByRole("button", { name: /Sign out/ }).click();
   await expect(admin.getByRole("heading", { name: "Sign in to run the city" })).toBeVisible();
   await admin.close();
-  await placeOnce(page, net);
+  await wall(page);
+  expect(net.calls.place).toHaveLength(0);
 });
 
 
@@ -103,7 +110,7 @@ async function revoked(context: BrowserContext, page: Page, net: Awaited<ReturnT
   return { events, profiles };
 }
 
-test("P6a a PHONE user whose session the server ended: no new guest, no order, the line offers Sign in, and the bar keeps its box", async ({ page, context }) => {
+test("P6a a PHONE user whose session the server ended: no order, the sign-in wall shows (story 1586)", async ({ page, context }) => {
   const net = await setup(context, page, [], { pin: null });
   net.state.anonymous = false;   // a signed-in phone user
   net.state.addresses = [HOME];
@@ -113,27 +120,9 @@ test("P6a a PHONE user whose session the server ended: no new guest, no order, t
   await page.goto("/customer/");
   await openBill(page);
   const rec = await revoked(context, page, net);
-  const signupsBefore = net.calls.signups;
-  const bar = () => page.locator(".ui-sticky .ui-btn").evaluate((el) => { const b = el.getBoundingClientRect(); return [b.x, b.y, b.width, b.height].map((n) => Math.round(n * 10) / 10); });
-  const before = await bar();
+  net.state.anonymous = true;   // the server's new session is a guest
   await page.getByRole("button", { name: /Place order/ }).click();
-  await expect(page.getByRole("alert")).toHaveText("Your sign-in ended. Sign in again to place your order.");
+  await wall(page);
   expect(rec.events).toEqual(["profile", "order:stale"]);   // the profile is the one saved before the order; no second order, no second profile
-  expect(net.calls.signups).toBe(signupsBefore);   // no new anonymous user
   expect(net.calls.place).toHaveLength(0);
-  expect(await bar()).toEqual(before);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();   // the way out is on the line: the sign-in screen opens
-  await expect(page.getByRole("img", { name: "GoServe" })).toBeVisible();
-});
-
-// Gap named: the customer app shows the sign-in wall to an anonymous user (App.tsx customerView, wall && signedIn === false), so a guest never reaches the Bill and this case cannot run through the UI.
-// The pieces are proven apart: renewSession makes the new guest (tests/unit/ordersV2.test.ts) and the App callback saves the profile under the new id before the retry (App.tsx, placeDeps).
-test.fixme("P6b a GUEST whose session the server ended: a new guest is made, the phone typed on the Bill is saved under the new id BEFORE the one retry, one order", async ({ page, context }) => {
-  const net = await atBill(context, page, true);
-  const rec = await revoked(context, page, net);
-  await page.getByRole("button", { name: /Place order/ }).click();
-  await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
-  expect(rec.events).toEqual(["profile", "order:stale", "profile", "order:fresh"]);
-  expect(rec.profiles[1]).toMatchObject({ user_id: "7e57ab1e-0000-4000-8000-0000000000b2", phone: "9876543210" });
-  expect(net.calls.place).toHaveLength(1);
 });

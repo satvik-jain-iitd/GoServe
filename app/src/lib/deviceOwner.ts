@@ -16,6 +16,9 @@ const signedIn = (s: Store, keys: string[]): { id: string; guest: boolean } | nu
 };
 export const GUEST_KEY = "gs-device-guest";   // "1" when the account that holds the phone is a guest (an anonymous login)
 
+/** Story 1586: the holder of the phone was a real user (an owner is recorded and it is not a guest). A guest login that shows up later must not take the phone from them. */
+export const wasSignedIn = (s: Store = window.localStorage): boolean => { try { return !!s.getItem(OWNER_KEY) && s.getItem(GUEST_KEY) !== "1"; } catch { return false; } };
+
 /** Answers true when it cleared another account's state (the caller may then reload, because the screens already hold the old state in memory). */
 export function claimDevice(s: Store = window.localStorage, live = false): boolean {
   try {
@@ -23,6 +26,7 @@ export function claimDevice(s: Store = window.localStorage, live = false): boole
     if (!who) return false;
     const me = who.id;
     const owner = s.getItem(OWNER_KEY);
+    if (who.guest && wasSignedIn(s)) return false;   // story 1586: a guest login over a real owner is a lost login, not a new person: the bag and the keys wait for the owner to sign in again
     // Live (a sign-in in this same tab): a guest who signs in to an account is the same person finishing their own order, so their area and draft go with them.
     const other = !!owner && owner !== me && !(live && s.getItem(GUEST_KEY) === "1");
     if (other) for (const k of PERSONAL) s.removeItem(k);

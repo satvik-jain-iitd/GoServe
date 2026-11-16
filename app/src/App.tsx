@@ -36,7 +36,8 @@ import { pushTrail } from "./lib/trail";
 import { trace } from "./lib/trace";
 import { cancelLine, NO_INTERNET } from "./lib/errorLines";
 import { FeedbackSheet } from "./screens/FeedbackSheet";
-import { ensureSession, fetchMenuRows, fetchRiderCard, getClient, signOutHere, type RiderCard } from "./lib/supabase";
+import { ensureCustomerSession, ensureSession, fetchMenuRows, fetchRiderCard, getClient, isLeaving, markLeaving, SessionEnded, signOutHere, type RiderCard } from "./lib/supabase";
+import { wasSignedIn } from "./lib/deviceOwner";
 import { openTill } from "./lib/browse";
 import { AccountScreen } from "./screens/AccountScreen";
 import { DeliverToScreen } from "./screens/DeliverToScreen";
@@ -957,6 +958,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     const { data, error: failed } = await getClient().rpc("delete_my_account");
     if (failed) return "Could not delete the account. Check your connection and try again.";
     if (data && data.ok === false) return String(data.message ?? "Could not delete the account.");
+    markLeaving();   // story 1586: the page reloads next; the SIGNED_OUT listener makes no guest
     try { await getClient().auth.signOut(); } catch { /* the login is already gone on the server */ }
     try { window.localStorage.clear(); window.sessionStorage.setItem("gs-account-deleted", "1"); } catch { /* blocked storage: nothing to wipe */ }
     window.location.reload();
@@ -1039,6 +1041,14 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     return () => { alive = false; };
   }, [gate, wall]);
 
+  // Story 1586: the customer's login ended. The wall shows; a guest session is made behind it only so the wall can link Google to it.
+  function sessionEnded() { setSignedIn(false); void ensureSession().catch(() => {}); }
+  useEffect(() => {   // coming back, or another tab's Sign out that emptied the shared login
+    if (lock !== "customer") return;
+    const { data } = getClient().auth.onAuthStateChange((event) => { if (event === "SIGNED_OUT" && wasSignedIn() && !isLeaving()) sessionEnded(); });
+    return () => data.subscription.unsubscribe();
+  }, [lock]);
+
   async function demoKitchenId(): Promise<string | null> {
     const { data } = await getClient().from("kitchens").select("id").eq("active", true).eq("open", true).limit(1);
     return (data?.[0] as { id?: string } | undefined)?.id ?? null;
@@ -1057,8 +1067,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       const items = orderItems;
       const fingerprint = JSON.stringify([items, address.trim()]);
       if (keyRef.current?.fingerprint !== fingerprint) keyRef.current = { fingerprint, key: crypto.randomUUID() };
-      await currentSession();   // the sign-in must exist before the order is sent
-      if (lock === "customer" && !(await saveProfile(getClient(), await ensureSession(), { name: name.trim() || signInName, phone, address, pin }))) {   // the kitchen and the rider need the name and phone; place_order copies them
+      const uid = lock === "customer" ? await ensureCustomerSession() : await currentSession();   // the sign-in must exist before the order is sent; story 1586: in the customer app it must be a real one
+      if (lock === "customer" && !(await saveProfile(getClient(), uid, { name: name.trim() || signInName, phone, address, pin }))) {   // the kitchen and the rider need the name and phone; place_order copies them
         setError("Could not save your details. Try again.");
         return;
       }
@@ -1066,9 +1076,9 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       const kitchenId = areaKitchenId ?? (lock ? null : await demoKitchenId());   // the demo console has no area step: it orders from the first open kitchen
       if (!kitchenId) throw new Error("Choose where the food goes first.");   // story #940: the order is placed for a kitchen by POST /orders, as the signed-in user
       const { order, confirm } = await placeOrderV2({ kitchenId, pin: pin ?? where?.pin ?? "", items, address: address.trim(), key: keyRef.current.key, expectedPaise: total, code: offers.code, none: offers.none, drop, instructions: note }, placeDeps(async () => {   // story 1580: after a 401 the sign-in is renewed once. A new guest has no profile row: save the phone and name again under the new id before the retry
-        const r = await renewSession();
-        return r === "same" || (r === "guest" && lock === "customer" && await saveProfile(getClient(), await ensureSession(), { name: name.trim() || signInName, phone, address, pin }));
-      }));
+        const r = await renewSession(lock === "customer");
+        return r === "same" || (r === "guest" && lock === "customer" && await saveProfile(getClient(), await ensureCustomerSession(), { name: name.trim() || signInName, phone, address, pin }));
+      }, lock === "customer"));
       setPlaced(order);
       capture("order_placed", { items_count: lines.length, phone_to_address_m: farM === null ? null : Math.round(farM) });   // story #1056, rule 10: how often the phone is far from the chosen address at an order
       setPlacedLines(lines.map((l) => ({ name: l.dish.name, qty: l.qty, paise: l.line_paise })));
@@ -1087,6 +1097,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       setNote("");
       keyRef.current = null;
     } catch (e) {
+      if (e instanceof SessionEnded) return void sessionEnded();   // story 1586: the wall shows; no error line, the bag and the draft stay
       if (e instanceof PlaceError && e.code === "sold_out") setLiveTick((n) => n + 1);   // story #619: read the menu again, the Bill then names the dish
       if (e instanceof PriceChanged) offers.replace(e.quote);   // the Bill shows the new To pay; nothing is ordered until the customer taps again
       if (e instanceof PlaceError && e.code === "point_required") {   // story 1528: the server found no point on this order. The place must be set on the map again: the Bill says so and shows "Confirm on the map"
