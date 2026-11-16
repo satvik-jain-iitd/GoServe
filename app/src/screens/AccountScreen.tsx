@@ -29,7 +29,7 @@ export function AccountScreen({ name, phone, address, farKm, pin, photo, email, 
   const [look, setLook] = useState<Theme>(() => readPin(store()) ?? DEFAULT_THEME);
   const [signingOut, setSigningOut] = useState(false);   // story 1593: Sign out of this phone asks in a sheet
   const [deleting, setDeleting] = useState<null | { busy: boolean; error: string | null }>(null);   // story #771: the confirm sheet
-  useBackCloses(deleting !== null, () => setDeleting(null));
+  useBackCloses(deleting !== null, () => setDeleting(null));   // story 1415: Back keeps the account
   useBackCloses(signingOut, () => setSigningOut(false));   // Back stays signed in
   const stay = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -38,7 +38,7 @@ export function AccountScreen({ name, phone, address, farKm, pin, photo, email, 
     const k = (e: KeyboardEvent) => { if (e.key === "Escape") setSigningOut(false); };
     document.addEventListener("keydown", k);
     return () => document.removeEventListener("keydown", k);
-  }, [signingOut]);   // story 1415: Back keeps the account
+  }, [signingOut]);
   const pick = (t: Theme) => { pinTheme(store(), document, t === DEFAULT_THEME ? null : t); setLook(t); };   // Day is the default, not a pin (#225)
   const row = (label: string, value: string, mono = false) => (<><dt className="mono">{label}</dt><dd className={mono ? "mono" : undefined}>{value || "Not saved yet"}</dd></>);
   const arrow = <span className="go" aria-hidden="true">›</span>;
