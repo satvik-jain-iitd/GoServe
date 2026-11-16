@@ -12,12 +12,14 @@ const past = (n: number, status: string, created: string, lines: [string, string
 });
 const THALI_ROTI: [string, string, number][] = [["d1", "Veg Thali", 1], ["d2", "Butter Roti", 1]];
 
-async function history(page: Page, context: Ctx, orders: object[], tune?: (s: any) => void) {
+async function history(page: Page, context: Ctx, orders: object[], tune?: (s: any) => void, afterStart?: (s: any) => void) {
   const net = await setup(context, page, orders);
   net.state.menu = [dish("d1", "Veg Thali", 18000), dish("d2", "Butter Roti", 4000)];
   net.state.kitchens = [...(net.state.kitchens as object[]), K2];
   tune?.(net.state);
   await page.goto("/customer/");
+  await expect(page.getByRole("button", { name: "History" })).toBeVisible();
+  afterStart?.(net.state);   // a switch that must not touch the app's own start (it reads the kitchens too)
   await page.getByRole("button", { name: "History" }).click();
   await expect(page.getByRole("heading", { name: "History", exact: true })).toBeVisible();
   return net;
@@ -176,7 +178,7 @@ export function historyOrderAgain() {
     expect(await headBox(page)).toEqual(before);
   });
   test("the kitchens read fails: the header shows the pin alone, never the present kitchen's name", async ({ page, context }) => {
-    await history(page, context, [other()], (s) => { s.kitchensDown = true; });
+    await history(page, context, [other()], undefined, (s) => { s.kitchensDown = true; });
     await page.getByRole("button", { name: /Veg Thali/ }).click();
     await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();
     await expect(page.locator(".ui-slip-head span").first()).toHaveText(/^\d{6}$/);
