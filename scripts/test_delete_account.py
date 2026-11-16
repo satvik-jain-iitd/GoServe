@@ -6,7 +6,10 @@
 import os, sys, unittest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from test_schema import TOKEN, sql
-from test_payments import K, O, CUST, KITCHEN, OTHER, run, who, q
+from test_payments import K, O, CUST, KITCHEN, OTHER, SETUP, run, who, q
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+MIG = "" if os.environ.get("SKIP_MIG") else open(os.path.join(HERE, "..", "supabase", "migrations", "20261116110000_delete_clears_requests_codes.sql")).read()   # story #1594
 
 O3 = "00000000-0000-0000-0000-0000000000f3"
 PERSONAL = [
@@ -48,6 +51,18 @@ class DeleteAccount(unittest.TestCase):
     def test_a_caller_with_no_login_cannot_run_it(self):
         r = sql("begin; set local role anon; select delete_my_account(); rollback;")
         self.assertIn("permission denied", str(r), r)
+
+    def test_s6_the_area_request_and_the_login_codes_go_too_and_another_persons_stay(self):   # story #1594
+        rows = [f"insert into customers (user_id, name, phone, address, pin_code) values ('{CUST}', 'Asha', '9876543210', 'Flat 4', '110016'), ('{OTHER}', 'Ravi', '9876500000', 'Flat 9', '110016')",
+                f"insert into area_requests (user_id, pin, phone) values ('{CUST}', '110016', '9876543210'), ('{OTHER}', '110016', '9876500000')",
+                "insert into otp_codes (phone, code_hash, expires_at) values ('919876543210', 'h', now() + interval '5 minutes'), ('919876500000', 'h', now() + interval '5 minutes')",
+                f"update orders set status = 'cancelled' where id = '{O}'"]
+        flat = rows + delete(CUST)
+        final = "(select count(*) from area_requests where user_id = '%s') as ar_1, (select count(*) from area_requests where user_id = '%s') as ar_3, (select count(*) from otp_codes where phone like '%%9876543210') as otp_1, (select count(*) from otp_codes where phone like '%%9876500000') as otp_3" % (CUST, OTHER)
+        r = sql("begin; " + "; ".join(SETUP) + "; " + MIG + "; " + "; ".join(flat + ["reset role", "select (select jsonb_agg(r order by i) from res) as rs, " + final]) + "; rollback;")
+        r = r[-1]
+        self.assertEqual(r["rs"][0]["ok"], True, r)
+        self.assertEqual((r["ar_1"], r["otp_1"], r["ar_3"], r["otp_3"]), (0, 0, 1, 1), r)
 
 
 if __name__ == "__main__":
