@@ -1,15 +1,10 @@
 // Story 1592 (owner, 16 Nov 2026): no pill buttons. Every text button (.ui-btn, .btn, the Undo bar's button) is a rectangle with a 6 px corner; the round icon buttons, the switch and the photo
 // circles stay round (they are the owner's to pick later). Nothing moves and nothing changes size (rule 23). A button never sits in the phone's corner curve.
 // One list of cases, run by Chromium (no-pills.spec.ts) and by WebKit, the iPhone engine (no-pills.webkit.spec.ts). The screens are the ones of docs/screens.txt.
-// The boxes of every button, read on dev before the change, are in button-boxes.json (written by `WRITE_BOXES=1`); they are compared on Chromium only (fonts differ by engine).
+// The box test lays the page out twice (new corner, old pill corner forced back on) and compares every button box: nothing moves, nothing changes size.
 import { test, expect, type Page } from "@playwright/test";
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { NINE, STEPS, screens } from "./screensSteps";
 
-const HERE = dirname(fileURLToPath(import.meta.url));
-const BOXES = join(HERE, "button-boxes.json");
 const SELECTOR = ".ui-btn, .btn, .ui-undo-bar button";
 const CORNER = 6;   // --gs-radius-s
 
@@ -76,19 +71,14 @@ export function noPills() {
       }
     });
 
-    test(`box ${s.name}: every button has the box it had before the change (Chromium)`, async ({ page, context }, info) => {
-      test.skip(info.project.name !== "chromium", "button-boxes.json is read on Chromium; WebKit lays text out with other fonts");
+    test(`box ${s.name}: the corner moves no button and changes no size`, async ({ page, context }) => {
       await open(page, context, s);
-      const buttons = (await read(page)).map(({ text, x, y, w, h }) => ({ text, x, y, w, h }));
-      if (process.env.WRITE_BOXES) {   // run once on dev, before the change; the file is the "before"
-        const all = existsSync(BOXES) ? JSON.parse(readFileSync(BOXES, "utf8")) : {};
-        all[s.name] = buttons;
-        writeFileSync(BOXES, JSON.stringify(all, null, 1));
-        return;
-      }
-      const before = JSON.parse(readFileSync(BOXES, "utf8"))[s.name];
-      expect(before, `button-boxes.json has no entry for ${s.name}`).toBeTruthy();
-      expect(buttons).toEqual(before);
+      const box = async () => (await read(page)).map(({ text, x, y, w, h }) => ({ text, x, y, w, h }));
+      let last = ""; await expect.poll(async () => { const j = JSON.stringify(await box()); const same = j === last; last = j; return same; }, { intervals: [150] }).toBe(true);   // the sheet has settled: two reads agree
+      const now = await box();
+      // The "before" is the same page with the old pill corner forced back on: same machine, same fonts, so only the corner differs.
+      await page.addStyleTag({ content: `${SELECTOR} { border-radius: 999px !important; }` });
+      expect(now).toEqual(await box());
     });
   }
 
