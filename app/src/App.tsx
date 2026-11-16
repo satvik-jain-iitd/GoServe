@@ -960,14 +960,16 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const kitchenName = area?.kind === "ok" ? area.kitchen.name : area?.kind === "closed" ? area.name : "";
   // Story 1589: each order shows the kitchen it was made at (one read of the kitchens the app already makes), and an opened delivered order shows "Order it again" (frame history-1).
   const [kitchenNames, setKitchenNames] = useState<Record<string, string>>({});
+  const [namesDone, setNamesDone] = useState(false);   // the read has answered (a name, or none); until then another kitchen's name is not known yet
   useEffect(() => {
     if (step !== "orders" && step !== "placed") return;
     let alive = true;
-    fetchKitchens(getClient()).then((all) => { if (alive) setKitchenNames(Object.fromEntries(all.map((k) => [k.id, k.name]))); }, () => undefined);
+    fetchKitchens(getClient()).then((all) => { if (alive) { setKitchenNames(Object.fromEntries(all.map((k) => [k.id, k.name]))); setNamesDone(true); } }, () => alive && setNamesDone(true));
     return () => { alive = false; };
   }, [step]);
   const kitchenId = area?.kind === "ok" ? area.kitchen.id : area?.kind === "closed" ? area.id : null;
   const nameOf = (o?: Order) => (!o?.kitchen_id || o.kitchen_id === kitchenId ? kitchenName : kitchenNames[o.kitchen_id] ?? "");
+  const nameWait = (o?: Order) => !!o?.kitchen_id && o.kitchen_id !== kitchenId && !namesDone;   // story 1589: the slip's header line stays empty (same box) until another kitchen's name is known; a failed read or a gone kitchen shows the pin alone
   const placedOrder = placed ? orders.find((o) => o.id === placed.id) : undefined;
   // The veg marks of the dishes of the opened order that today's menu does not hold by id, read once when the slip opens (story 1540's rule needs them). A failed read: no marks.
   const [marks, setMarks] = useState<{ id: string; v: Record<string, boolean> | null } | null>(null);
@@ -1266,7 +1268,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         )}
         {step === "placed" && placed && (
           <PlacedScreen order={placed} status={tracked?.status ?? placed.status} paidBy={tracked?.paid_by ?? null} bill={tracked && "bill" in tracked ? tracked.bill : placed.bill}
-            placedAt={tracked?.created_at ?? placedAt} kitchenName={nameOf(placedOrder)} pin={pin} kitchenPhone={area?.kind === "ok" ? area.kitchen.phone ?? null : null}
+            placedAt={tracked?.created_at ?? placedAt} kitchenName={nameOf(placedOrder)} headWait={nameWait(placedOrder)} pin={pin} kitchenPhone={area?.kind === "ok" ? area.kitchen.phone ?? null : null}
             lines={tracked && "items" in tracked ? tracked.items.map((i) => ({ name: i.name, qty: i.qty, paise: i.price_paise * i.qty })) : placedLines}
             address={tracked && "address" in tracked ? tracked.address : address.trim()}
             confirmedAt={tracked && tracked.status === "delivered" ? deliveredAt(tracked) : null} early={tracked && tracked.status === "delivered" ? earlyMin(tracked as Order) : null}

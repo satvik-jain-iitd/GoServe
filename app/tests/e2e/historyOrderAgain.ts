@@ -162,4 +162,28 @@ export function historyOrderAgain() {
       await expect(page.locator(".ui-again")).toHaveCount(0);
     });
   });
+
+  // Story 1589 (reviewer, 16 Nov 2026): the slip's header names the order's own kitchen. Until another kitchen's name is known the line is empty and keeps its box; a failed read shows the pin alone.
+  const other = () => past(2, "delivered", "2020-11-12T14:00:00Z", THALI_ROTI, { kitchen_id: "k-2" });
+  const headBox = (page: Page) => page.locator(".ui-slip-head span").first().evaluate((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.y), Math.round(r.height)]; });
+  test("another kitchen's name comes late: the header line is empty, then filled, in the same box", async ({ page, context }) => {
+    await history(page, context, [other()], (s) => { s.kitchensDelay = 1500; });
+    await page.getByRole("button", { name: /Veg Thali/ }).click();
+    await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();
+    await expect(page.locator(".ui-slip-head span").first()).toHaveText("");
+    const before = await headBox(page);
+    await expect(page.locator(".ui-slip-head span").first()).toContainText("Saket Kitchen", { timeout: 5000 });
+    expect(await headBox(page)).toEqual(before);
+  });
+  test("the kitchens read fails: the header shows the pin alone, never the present kitchen's name", async ({ page, context }) => {
+    await history(page, context, [other()], (s) => { s.kitchensDown = true; });
+    await page.getByRole("button", { name: /Veg Thali/ }).click();
+    await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();
+    await expect(page.locator(".ui-slip-head span").first()).toHaveText(/^\d{6}$/);
+  });
+  test("an order from the kitchen that cooks now shows its name at once", async ({ page, context }) => {
+    await history(page, context, [past(3, "delivered", "2020-11-12T14:00:00Z", THALI_ROTI)], (s) => { s.kitchensDelay = 3000; });
+    await page.getByRole("button", { name: /Veg Thali/ }).click();
+    await expect(page.locator(".ui-slip-head span").first()).toContainText("Hauz Khas Kitchen", { timeout: 1500 });
+  });
 }

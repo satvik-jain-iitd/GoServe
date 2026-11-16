@@ -26,6 +26,7 @@ type Props = {
   placedAt: string;             // when the order was made (ISO)
   lines: { name: string; qty: number; paise: number }[];
   kitchenName: string;
+  headWait?: boolean;   // the kitchen's name is not known yet: the header line stays empty
   pin: string | null;
   kitchenPhone: string | null;
   address: string;
@@ -88,7 +89,7 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "At your door" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
-export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, placedAt, lines, kitchenName, pin, kitchenPhone, address, asking, busy, error, onYes, onNotYet, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta, again }: Props) {
+export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, placedAt, lines, kitchenName, headWait, pin, kitchenPhone, address, asking, busy, error, onYes, onNotYet, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta, again }: Props) {
   const [askCancel, setAskCancel] = useState(false);   // story #1227: the cancel sheet
   const steps = trackerSteps(status);
   const { now, online } = useNowOnline();
@@ -97,7 +98,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, 
   const delivered = status === "delivered";
   const cancelled = status === "cancelled";
   const title = status === "placed" ? "Order placed" : cancelled ? (declined ? "Declined" : "Cancelled") : "Your order";
-  const head = [kitchenName, pin].filter(Boolean).join(" · ");
+  const head = headWait ? "" : [kitchenName, pin].filter(Boolean).join(" · ");
   return (
     <>
       <header className="ui-head">
