@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { claimInvites } from "../lib/admin";
 import { hhmmOf } from "../lib/kitchen";
 import { myKitchen } from "../lib/session";
-import { ensureSession, getClient } from "../lib/supabase";
+import { ensureSession, getClient, signOutHere } from "../lib/supabase";
 import { SignIn } from "./SignIn";
 import { Skeleton, StaffLanding } from "../ui";
 
@@ -31,7 +31,7 @@ export function KitchenGate({ children }: { children: (gate: KitchenGateState) =
       setKitchenId(k);
     }, () => setKitchenId(null)).catch(() => { setError("Could not load your kitchen. Check your connection."); setKitchenId(null); });
   }, [tries]);
-  const signOut = async () => { try { await getClient().auth.signOut(); } catch { /* offline */ } window.location.reload(); };
+  const signOut = async () => { try { await signOutHere(); } catch { /* offline */ } window.location.reload(); };
   if (kitchenId === undefined) return <><header className="ui-head"><h1>Your kitchen</h1><span className="meta">Loading…</span></header><div className="ui-pad"><Skeleton lines={3} /></div></>;
   if (!kitchenId || !row) return (   // K1 when there is no Google sign-in yet, K2 when the account is not on the staff list
     <StaffLanding kicker="Kitchen app · tickets in, food out" app="Kitchen" right={anonymous ? "Google" : "Signed in"} label={anonymous ? "Sign in" : "Not kitchen staff"} error={error}>

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { DangerSheet, useSheetFit } from "../ui";
 import { addKitchen, addPerson, cancelInvite, inviteLink, isOwner, parsePins, offInfoOf, removeKitchen, removePerson, turnKitchenOn, locOf, setKitchenLocation, setKitchenDetails, type Invite, type OffInfo, type KitchenRow, type Loc, type Person, type PersonKind, type RiderListRow } from "../lib/admin";
 import { kitchenProblem } from "../lib/validate";
-import { getClient } from "../lib/supabase";
+import { getClient, signOutHere } from "../lib/supabase";
 import { AdminMenu } from "./AdminMenu";
 import { KitchenLocation } from "./KitchenLocation";
 
@@ -97,7 +97,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
     onError(failed);
     if (!failed) await reload();
   };
-  const signOut = async () => { try { await getClient().auth.signOut(); } catch { /* offline */ } window.location.reload(); };
+  const signOut = async () => { try { await signOutHere(); } catch { /* offline */ } window.location.reload(); };
   const removeButton = (p: Person) => <button type="button" className="ui-btn ghost icon ui-trash" aria-label={`Remove ${p.email ?? p.user_id}`} title="Remove" onClick={() => void remove(p)}>{TRASH}</button>;
 
   if (view.kind === "add") return (   // A7
