@@ -62,17 +62,17 @@ test("S5 Send feedback opens the Feedback sheet", async ({ page, context }) => {
   await expect(page.getByRole("dialog", { name: "Feedback" })).toBeVisible();
 });
 
-test("S6 Forget me asks first, then wipes what the phone remembers", async ({ page, context }) => {
+test("S6 Sign out of this phone asks in a sheet first, then wipes what the phone remembers", async ({ page, context }) => {
   await setup(context, page, [], { pin: null });   // seed the pin once by hand, so the reload after the wipe shows what the phone really kept
   await page.goto("/customer/");
   await page.evaluate(() => localStorage.setItem("gs-pin", "110016"));
   await page.reload();
   await you(page).click();
   await page.getByRole("button", { name: "Sign out of this phone" }).click();
-  await page.getByRole("button", { name: "No", exact: true }).click();
+  await page.getByRole("button", { name: "Stay signed in" }).click();
   expect(await page.evaluate(() => localStorage.getItem("gs-pin"))).toBe("110016");
   await page.getByRole("button", { name: "Sign out of this phone" }).click();
-  await page.getByRole("button", { name: "Yes, forget" }).click();
+  await page.getByRole("dialog", { name: "Sign out of this phone?" }).getByRole("button", { name: "Sign out", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Where does the food go?" })).toBeVisible();   // after the reload the phone asks for the pin again
   expect(await page.evaluate(() => localStorage.getItem("gs-pin"))).toBeNull();
 });

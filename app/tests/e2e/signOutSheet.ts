@@ -8,15 +8,17 @@ const row = (page: Page) => page.getByRole("button", { name: "Sign out of this p
 const sheet = (page: Page) => page.getByRole("dialog", { name: "Sign out of this phone?" });
 const rect = (loc: ReturnType<Page["locator"]>) => loc.evaluate((e) => { const r = e.getBoundingClientRect(); return { x: Math.round(r.x * 2) / 2, y: Math.round(r.y * 2) / 2, w: Math.round(r.width * 2) / 2, h: Math.round(r.height * 2) / 2 }; });
 
-async function open(page: Page, context: Parameters<typeof setup>[0], width = 390, height = 844) {
+async function open(page: Page, context: Parameters<typeof setup>[0], width = 390, height = 844, tap = true) {
   await setup(context, page, [], { pin: null });
   await page.setViewportSize({ width, height });
   await page.goto("/customer/");
   await page.evaluate(() => localStorage.setItem("gs-pin", "110016"));
   await page.reload();
   await you(page).click();
-  await row(page).click();
+  if (tap) await row(page).click();
 }
+const settle = (page: Page) => page.evaluate(async () => { await Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => undefined))); });   // the sheet has stopped sliding
+const rowBox = (page: Page) => rect(page.locator("button.ui-row", { hasText: "Sign out of this phone" }));   // by class: behind a modal the row has no role
 const stillSignedIn = async (page: Page) => { await expect(sheet(page)).toHaveCount(0); expect(await page.evaluate(() => localStorage.getItem("gs-pin"))).toBe("110016"); };
 
 export function signOutSheet() {
@@ -32,6 +34,7 @@ export function signOutSheet() {
     test(`the two buttons are one above the other, same left and width, as wide as the sheet's content, Stay signed in first (${w}x${h})`, async ({ page, context }) => {
       await open(page, context, w, h);
       const stay = sheet(page).getByRole("button", { name: "Stay signed in" }), out = sheet(page).getByRole("button", { name: "Sign out", exact: true });
+      await settle(page);
       const [a, b, s] = [await rect(stay), await rect(out), await rect(sheet(page))];
       expect(a.x).toBe(b.x);
       expect(a.w).toBe(b.w);
@@ -41,13 +44,12 @@ export function signOutSheet() {
   }
 
   test("the row and the screen behind do not move when the sheet opens", async ({ page, context }) => {
-    await setup(context, page, [], { pin: null });
-    await page.goto("/customer/");
-    await you(page).click();
-    const before = await rect(row(page));
+    await open(page, context, 390, 844, false);
+    const before = await rowBox(page);
     await row(page).click();
     await expect(sheet(page)).toBeVisible();
-    expect(await rect(row(page))).toEqual(before);
+    await settle(page);
+    expect(await rowBox(page)).toEqual(before);
   });
 
   test("Stay signed in, Escape, Back and a tap outside close the sheet and sign nobody out", async ({ page, context }) => {

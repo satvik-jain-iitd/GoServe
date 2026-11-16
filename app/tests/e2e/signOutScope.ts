@@ -80,7 +80,7 @@ export function signOutScope() {
     await page.goto("/customer/");
     await page.getByRole("button", { name: /^You/ }).click();
     await page.getByRole("button", { name: "Sign out of this phone" }).click();
-    await page.getByRole("button", { name: "Yes, forget" }).click();
+    await page.getByRole("dialog", { name: "Sign out of this phone?" }).getByRole("button", { name: "Sign out", exact: true }).click();
     await expect.poll(() => scopes).toEqual(["local"]);
   });
 }

@@ -1,5 +1,5 @@
 // "You" of the Ink v3 board 09 (story H10d, #193; story D2): the details this phone remembers, order alerts, Day and Night, another phone, forget me, feedback.
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useBackCloses } from "../lib/back";
 import { DEFAULT_THEME, readPin, pinTheme, type Theme } from "../lib/theme";
 import { buildLabel } from "../lib/updates";
@@ -27,9 +27,18 @@ export function AccountScreen({ name, phone, address, farKm, pin, photo, email, 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({ name, phone });   // story 640: Edit opens a draft; Save applies it, Cancel drops it
   const [look, setLook] = useState<Theme>(() => readPin(store()) ?? DEFAULT_THEME);
-  const [sure, setSure] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);   // story 1593: Sign out of this phone asks in a sheet
   const [deleting, setDeleting] = useState<null | { busy: boolean; error: string | null }>(null);   // story #771: the confirm sheet
-  useBackCloses(deleting !== null, () => setDeleting(null));   // story 1415: Back keeps the account
+  useBackCloses(deleting !== null, () => setDeleting(null));
+  useBackCloses(signingOut, () => setSigningOut(false));   // Back stays signed in
+  const stay = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!signingOut) return;
+    stay.current?.focus();   // the safe answer has the focus
+    const k = (e: KeyboardEvent) => { if (e.key === "Escape") setSigningOut(false); };
+    document.addEventListener("keydown", k);
+    return () => document.removeEventListener("keydown", k);
+  }, [signingOut]);   // story 1415: Back keeps the account
   const pick = (t: Theme) => { pinTheme(store(), document, t === DEFAULT_THEME ? null : t); setLook(t); };   // Day is the default, not a pin (#225)
   const row = (label: string, value: string, mono = false) => (<><dt className="mono">{label}</dt><dd className={mono ? "mono" : undefined}>{value || "Not saved yet"}</dd></>);
   const arrow = <span className="go" aria-hidden="true">›</span>;
@@ -82,17 +91,25 @@ export function AccountScreen({ name, phone, address, farKm, pin, photo, email, 
           <button type="button" className="ui-row" onClick={() => { onMenu(); window.dispatchEvent(new Event("gs-feedback")); }}><span className="ui-row-label"><span>Send feedback</span><span className="ui-row-sub">Two lines and a screenshot. We read every note.</span></span>{arrow}</button>
         </div>
         <div className="ui-you-card risky">
-          {sure ? (
-            <div className="ui-row ui-row-static"><span>Forget your details on this phone?</span><span className="ui-ask-act"><button type="button" className="ui-btn" onClick={onForget}>Yes, forget</button><button type="button" className="ui-btn ghost" onClick={() => setSure(false)}>No</button></span></div>
-          ) : (
-            <button type="button" className="ui-row" onClick={() => setSure(true)}><span>Sign out of this phone</span></button>
-          )}
+          <button type="button" className="ui-row" onClick={() => setSigningOut(true)}><span>Sign out of this phone</span></button>
           <button type="button" className="ui-row" onClick={() => setDeleting({ busy: false, error: null })}><span>Delete my account</span></button>
         </div>
         <p className="mono ui-legal"><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
         <p className="mono ui-legal">{buildLabel(import.meta.env.VITE_BUILD)}</p>
       </div>
     </section>
+      {signingOut && (
+        <div ref={fit} className="ui-sheet-back" onClick={() => setSigningOut(false)}>
+          <div role="dialog" aria-modal="true" aria-label="Sign out of this phone?" className="ui-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="ui-sheet-head"><h2>Sign out of this phone?</h2></div>
+            <p>This phone forgets your details. Your orders stay in your account.</p>
+            <div className="ui-sheet-acts">
+              <button ref={stay} type="button" className="ui-btn ghost big" onClick={() => setSigningOut(false)}>Stay signed in</button>
+              <button type="button" className="ui-btn big" onClick={onForget}>Sign out</button>
+            </div>
+          </div>
+        </div>
+      )}
       {deleting && (
         <div ref={fit} className="ui-sheet-back">
           <div role="dialog" aria-modal="true" aria-label="Delete your account?" className="ui-sheet">
