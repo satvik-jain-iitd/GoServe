@@ -46,7 +46,7 @@ import { placeSearch } from "./lib/placeSearch";
 import { PinMapScreen, type Saved } from "./screens/PinMapScreen";
 import { keepRecent, listRecents, recentAt, recentWords, RECENTS_MAX, touchRecent, type Recent, type Searched } from "./lib/recents";
 import { distanceM, FAR_M, addAddress, editAddress, hasPoint, listAddresses, lastUsed, nearM, nearSaved, removeAddress, touchAddress, type SavedAddress } from "./lib/addresses";
-import { findPhone, nearestPin, readNearestPin, type LocWhy, type Phone, type Place } from "./lib/locate";
+import { boxWhy, findPhone, nearestPin, readNearestPin, type LocWhy, type Phone, type Place } from "./lib/locate";
 import { currentSession, scopeFor } from "./lib/session";
 import { MenuScreen } from "./screens/MenuScreen";
 import { BillScreen, CONFIRM_PLACE_LINE } from "./screens/BillScreen";
@@ -537,6 +537,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const recentsNow = useRef(recents); recentsNow.current = recents;
   const hereNow = useRef(here); hereNow.current = here;
   const whyNow = useRef(why); whyNow.current = why;
+  const [whyTap, setWhyTap] = useState(false);   // story 1610: the cause came from a tap. Too slow, or no cause, shows a box on Deliver to only then
   const cartNow = useRef(cart); cartNow.current = cart;
   // Story 1548: the box "Where should we deliver?". Set while the phone is far from every saved address and every place confirmed before, until a place is chosen.
   // at: the phone's place it asks about. served: a kitchen of ours serves it. moving: the fix said the phone moves fast. near: the near distance used.
@@ -600,7 +601,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     if (tap) setFinding(true);
     const r = await findPhone(tap, whyNow.current);
     if (tap) setFinding(false);
-    if (typeof r === "string") { setHere(null); setWhy(r); return null; }
+    if (typeof r === "string") { setHere(null); setWhy(r); setWhyTap(tap); return null; }
     setHere(r); setWhy(null); setSheet(false);
     return r;
   }
@@ -1224,7 +1225,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       recents={recents} recentId={recentAt(recents, where)} onRecent={pickRecent}
       // Story 1530: a pick from search opens the map at the place's own point. Under a map that was not opened from search (Add new address, an edit) the pick only moves the pin.
       onPlace={(h, typed) => { setFocusSearch(false); setPinMap({ ...pinMap, center: { lat: h.lat, lng: h.lng }, follow: false, recent: !pinMap || pinMap.recent ? { typed, hit: h } : undefined }); }}
-      onBack={pinMap ? () => setFocusSearch(false) : noPlace ? undefined : () => { setFocusSearch(false); setStep("menu"); }} current={where && isHere(where) ? `Pin code ${where.pin}` : null} why={why} finding={finding}
+      onBack={pinMap ? () => setFocusSearch(false) : noPlace ? undefined : () => { setFocusSearch(false); setStep("menu"); }} current={where && isHere(where) ? `Pin code ${where.pin}` : null} why={boxWhy(why, whyTap)} finding={finding}
       onSelect={(id) => { const r = (saved ?? []).find((x) => x.id === id); if (r) { setFocusSearch(false); setPinMap(null); pickRow(r); } }}
       onUseLocation={() => { void find(true).then((at) => { if (at) { setFocusSearch(false); setPinMap({ center: at }); } }); }} onAddNew={() => { setFocusSearch(false); openAtStart(); }}
       onEditOnMap={(a) => { setFocusSearch(false); if (a.lat !== null && a.lng !== null) setPinMap({ center: { lat: a.lat, lng: a.lng }, edit: a }); else openAtStart(a); }} onRemove={dropSaved} />
