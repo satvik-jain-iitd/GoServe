@@ -250,7 +250,7 @@ export function whereToDeliver() {
     await expect(box(page).getByText(NOT_YET)).toHaveCount(0);
   });
 
-  for (const [name, pos] of [["rougher than 1000 m", { ...AWAY, accuracy: 1500 }], ["500 m from Home, and rough by 400 m: treated as near Home", { ...HALF_KM, accuracy: 400 }]] as const) {
+  for (const [name, pos] of [["rougher than 1000 m", { ...AWAY, accuracy: 1500 }], ["500 m from Home, and rough by 450 m: treated as near Home", { ...HALF_KM, accuracy: 450 }]   /* story 1608: near is 100 m (it was 200), so 400 m of roughness no longer reaches Home */] as const) {
     test(`A rough place (${name}): no box shows, and my place stays`, async ({ page, context }) => {
       await open(context, page, { perm: "granted", pos });
       await menuOfHome(page);

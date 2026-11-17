@@ -30,7 +30,7 @@ test("S1 story 1529 (this reverses story 1035): phone at Home, Home is picked on
   await expect(page.getByRole("listitem").filter({ hasText: "Office" })).toContainText("8 km");
 });
 
-test("S2 story 1548 (was 1529): phone far from every saved address, the page does not open by itself, the place stays and the box asks, and the radius is read once (200 m when it cannot be)", async ({ page, context }) => {
+test("S2 story 1548 (was 1529): phone far from every saved address, the page does not open by itself, the place stays and the box asks, and the radius is read once (100 m when it cannot be)", async ({ page, context }) => {
   let reads = 0;
   await page.route("**/rest/v1/rpc/address_near_m", (r) => { reads++; return r.abort(); });   // a page route wins over the helper's
   await open(page, context, { latitude: 28.5, longitude: 77.3 });

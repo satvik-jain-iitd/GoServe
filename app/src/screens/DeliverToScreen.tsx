@@ -1,7 +1,7 @@
 // Story #976, board C2-AddressSheet, search by story #1036 (board C8-SearchResults): the Deliver to page. The saved addresses with their distance from the phone, a search, two ways to add one, and a small sheet to edit or remove.
 import { useEffect, useRef, useState } from "react";
 import { useBackCloses } from "../lib/back";
-import { distanceM, distanceWord, lastUsed, NEAR_M, type Place, type SavedAddress } from "../lib/addresses";
+import { distanceM, distanceWord, hasPoint, hereRow, lastUsed, type Place, type SavedAddress, type Spot } from "../lib/addresses";
 import type { Recent } from "../lib/recents";
 import { locWords, type LocWhy } from "../lib/locate";
 import { fromOla, splitMatch, usePlaces, type PlaceHit, type Search } from "../lib/placeSearch";
@@ -9,7 +9,7 @@ import { ClearCross, useSheetFit } from "../ui";
 
 type Props = {
   focusSearch?: boolean;   // story #1133: the cursor starts in the search
-  list: SavedAddress[]; selectedId: string | null; here: Place | null;
+  list: SavedAddress[]; selectedId: string | null; here: Spot | null; near: number;   // story 1608: near = the setting address_near_m, the same one the pick on open uses
   recents: Recent[]; recentId: string | null; onRecent: (r: Recent) => void;   // story 1530 (board LF4b): "Recently searched", the one that is the place now, and a tap on one
   forMap?: Place;   // story 1530 (board LF13): the search was opened from the pin map's bar, with the pin at this point. Places are asked near it; Back (the arrow and the phone's) shows the map again
   search: Search; onPlace: (hit: PlaceHit, typed: string) => void;
@@ -30,14 +30,14 @@ const CLOCK = I(<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>);
 export const LOCATE = I(<><circle cx="12" cy="12" r="7" /><circle cx="12" cy="12" r="2.5" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></>);   // story 1548: the same icon on the box "Where should we deliver?"
 const DOWN = <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>;
 const UNDO_S = 6;
-const SHORT = 3;
+const SHORT = 2;   // story 1608: two rows, then View all
 const iconFor = (label: string, near: boolean) => (near ? SEND : /home|ghar|nani|house/i.test(label) ? HOME : /office|work|shop/i.test(label) ? BRIEFCASE : PIN);
 
-export function DeliverToScreen({ focusSearch, forMap, list, recents, recentId, onRecent, selectedId, here, current, why, finding, search, onPlace, onBack, onSelect, onUseLocation, onAddNew, onEditOnMap, onRemove }: Props) {
+export function DeliverToScreen({ focusSearch, forMap, list, recents, recentId, onRecent, selectedId, here, near, current, why, finding, search, onPlace, onBack, onSelect, onUseLocation, onAddNew, onEditOnMap, onRemove }: Props) {
   const [query, setQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const [menuFor, setMenuFor] = useState<SavedAddress | null>(null);
-  const [all, setAll] = useState(false);   // board C12 and C13: three rows, then View all
+  const [all, setAll] = useState(false);   // board C12 and C13: two rows (story 1608), then View all
   const [allRecent, setAllRecent] = useState(false);
   useBackCloses(!!forMap, () => onBack?.());
   // Story #1051 (board C10): a removed row leaves the list at once; the delete itself waits UNDO_S seconds so Undo can bring it back. Leaving the page does not lose it.
@@ -54,7 +54,15 @@ export function DeliverToScreen({ focusSearch, forMap, list, recents, recentId, 
   useEffect(() => { if (gone && gone.left <= 0) { void removeRef.current(gone.a.id); setGone(null); } }, [gone]);
   useEffect(() => () => { if (goneRef.current) void removeRef.current(goneRef.current.a.id); }, []);
   const take = (a: SavedAddress) => { if (goneRef.current) void removeRef.current(goneRef.current.a.id); setGone({ a, left: UNDO_S }); };
-  const rows = gone ? list.filter((a) => a.id !== gone.a.id) : list;
+  const left = gone ? list.filter((a) => a.id !== gone.a.id) : list;
+  // Story 1608: one row is "here" (the mark follows the phone). That row is first, then last used, as the list comes. The order is set when the screen opens and
+  // when a tap on "Use current location" has found the phone; it does not jump while the list is open (owner's rule 23).
+  const hereId = here ? hereRow(left, here, near)?.id ?? null : null;
+  const [first, setFirst] = useState(hereId);
+  const [wasFinding, setWasFinding] = useState(finding);
+  if (wasFinding !== finding) { setWasFinding(finding); if (!finding) setFirst(hereId); }
+  if (first === null && hereId !== null) setFirst(hereId);   // the here row is never hidden: found after the screen opened, nothing was here before, so nothing jumps away
+  const rows = [...left.filter((a) => a.id === first), ...left.filter((a) => a.id !== first)];
   const picked = gone && gone.a.id === selectedId ? lastUsed(rows)?.id ?? null : selectedId;   // board C10: the row that takes over carries Selected while Undo is open
   const q = query.trim().toLowerCase();
   const matches = q ? rows.filter((a) => `${a.label} ${a.address}`.toLowerCase().includes(q)) : rows;
@@ -99,12 +107,11 @@ export function DeliverToScreen({ focusSearch, forMap, list, recents, recentId, 
           <div className="ui-saved-card">
           <ul className="ui-saved-list">
             {shown.map((a) => {
-              const m = here && a.lat !== null && a.lng !== null ? distanceM(here, { lat: a.lat, lng: a.lng }) : null;
-              const near = m !== null && m <= NEAR_M;
-              const pinned = a.lat !== null && a.lng !== null;   // board LF11: an old row with no pin cannot be picked; the tap sets its pin
+              const isHere = a.id === hereId;
+              const pinned = hasPoint(a);   // board LF11: an old row with no pin cannot be picked; the tap sets its pin
               return (
                 <li key={a.id} className={pinned ? "ui-saved-row" : "ui-saved-row unpinned"}>
-                  <span className="ui-chip-box" aria-hidden="true">{iconFor(a.label, near)}<span className="mono">{m === null ? "" : distanceWord(m, NEAR_M)}</span></span>
+                  <span className="ui-chip-box" aria-hidden="true">{iconFor(a.label, isHere)}<span className="mono">{isHere ? "here" : here && hasPoint(a) ? distanceWord(distanceM(here, a)) : ""}</span></span>
                   <button type="button" className="ui-saved-main" aria-label={pinned ? `Deliver to ${a.label}` : `${a.label} has no pin. Set the pin`} onClick={() => onSelect(a.id)}>
                     <span className="ui-saved-label"><span>{bold(a.label)}</span>{a.id === picked && !going?.here && <span className="ui-tag ready">Selected</span>}</span>
                     <span className="ui-saved-addr">{pinned ? bold(a.address) : "Set the pin"}</span>
@@ -125,7 +132,7 @@ export function DeliverToScreen({ focusSearch, forMap, list, recents, recentId, 
               <ul className="ui-saved-list">
                 {recentShown.map((r) => (
                   <li key={r.id} className="ui-saved-row">
-                    <span className="ui-chip-box" aria-hidden="true">{CLOCK}<span className="mono">{here ? distanceWord(distanceM(here, r), NEAR_M) : ""}</span></span>
+                    <span className="ui-chip-box" aria-hidden="true">{CLOCK}<span className="mono">{here ? distanceWord(distanceM(here, r)) : ""}</span></span>
                     <button type="button" className="ui-saved-main" aria-label={`Deliver to ${r.name}`} onClick={() => onRecent(r)}>
                       <span className="ui-saved-label"><span>{bold(r.name)}</span>{r.id === recentId && !going?.here && <span className="ui-tag ready">Selected</span>}</span>
                       <span className="ui-saved-addr">{bold(r.address)}</span>

@@ -29,11 +29,11 @@ test("TC 29.1 Look: Back, Deliver to, 2 saved, search, Use current location, Add
   await expect(page.getByRole("button", { name: "Edit or remove Office" })).toBeVisible();
 });
 
-test("TC 29.2 Load: 5 saved shows 3 rows and View all; tapping View all shows all 5", async ({ page, context }) => {
+test("TC 29.2 Load: 5 saved shows 2 rows (story 1608) and View all; tapping View all shows all 5", async ({ page, context }) => {
   await STEPS["deliver-five"](context, page, PATH);
   const rows = page.getByRole("listitem");
   await expect(page.getByText("5 saved", { exact: true })).toBeVisible();   // proves the page shows with all five saved
-  await expect(rows).toHaveCount(3);
+  await expect(rows).toHaveCount(2);
   await expect(page.getByRole("button", { name: "View all" })).toBeVisible();
   await page.getByRole("button", { name: "View all" }).click();
   await expect(rows).toHaveCount(5);

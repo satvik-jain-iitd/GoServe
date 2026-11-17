@@ -1,4 +1,4 @@
-# Story #976: saved addresses. A customer reads and writes only their own rows; a row has a label, words, a six-digit pin; at most 20 each; address_near_m answers 200 unless the admin changed it.
+# Story #976: saved addresses. A customer reads and writes only their own rows; a row has a label, words, a six-digit pin; at most 20 each; address_near_m answers what the admin set (its start value: test_address_near_100.py).
 # Every check ends in ROLLBACK (dev stays clean). The migration runs inside each transaction first; SKIP_MIG=1 runs against the database as it is (the red run before the migration).
 # Run: set -a; . ~/Desktop/Secrets/02_databases.env; set +a; python3 -m unittest scripts/test_addresses.py
 import os, sys, unittest
@@ -56,9 +56,7 @@ class Addresses(unittest.TestCase):
         r = str(run(user(A), add(A), "set local role anon; select count(*) from addresses"))
         self.assertIn("permission denied", r)
 
-    def test_s7_address_near_m_is_200_by_default_and_follows_the_setting(self):
-        r = run(as_user(A, "select address_near_m() as m"))
-        self.assertIn("'m': 200", str(r))
+    def test_s7_address_near_m_follows_the_setting(self):   # the start value (100 since story #1608) is checked in test_address_near_100.py
         r = run("update settings set value = '350'::jsonb where name = 'address_near_m'", user(A), as_user(A, "select address_near_m() as m"))
         self.assertIn("'m': 350", str(r))
 
