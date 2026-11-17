@@ -37,11 +37,29 @@ function fake() {   // the two calls keepRecent makes on recent_places, written 
   }) } as unknown as Parameters<typeof keepRecent>[0];
   return { calls, client };
 }
-const OLD: Recent = { id: "r1", name: "Sample Nagar", address: "Flat 1, Sample Nagar", pin: "110016", lat: 28.57, lng: 77.24, house: "Flat 1", landmark: "", used_at: "2026-11-10T10:00:00Z" };
+const OLD: Recent = { id: "r1", name: "Sample Nagar", address: "Flat 1, Sample Nagar", pin: "110016", lat: 28.57, lng: 77.24, house: "Flat 1", landmark: "", used_at: "2026-11-10T10:00:00Z", confirmed: true };
 const place = (over: Partial<Recent> = {}) => ({ name: OLD.name, address: "Flat 2, Sample Nagar", pin: "110016", lat: OLD.lat, lng: OLD.lng, house: "Flat 2", landmark: "", ...over });
 const M = 1 / 111_195;   // one metre of latitude, in degrees
 
 describe("keepRecent", () => {
+  // Story 1609 (owner, 17 Nov 2026): a tapped search result is kept at once, marked not confirmed; Confirm on the map updates that same row.
+  it("a tap with no Confirm: one insert marked not confirmed", async () => {
+    const { calls, client } = fake();
+    await keepRecent(client, [], place(), false);
+    expect(calls.map((c) => [c.op, c.row.confirmed])).toEqual([["insert", false]]);
+  });
+  it("Confirm on the same place after a tap: one update on that row, now confirmed, no second insert", async () => {
+    const { calls, client } = fake();
+    const tapped = { ...OLD, id: "t1", confirmed: false };
+    const row = await keepRecent(client, [tapped], place({ lat: OLD.lat + 40 * M }), true);
+    expect(calls.map((c) => [c.op, c.id, c.row.confirmed])).toEqual([["update", "t1", true]]);
+    expect(row).toMatchObject({ id: "t1", confirmed: true });
+  });
+  it("a tap on a row that is already confirmed keeps it confirmed", async () => {
+    const { calls, client } = fake();
+    await keepRecent(client, [OLD], place(), false);
+    expect(calls[0].row.confirmed).toBe(true);
+  });
   it("the same name within 50 m of an older recent uses that row again: one update on its id, no insert", async () => {
     const { calls, client } = fake();
     const row = await keepRecent(client, [OLD], place({ lat: OLD.lat + 40 * M }));

@@ -42,10 +42,10 @@ import { wasSignedIn } from "./lib/deviceOwner";
 import { openTill } from "./lib/browse";
 import { AccountScreen } from "./screens/AccountScreen";
 import { DeliverToScreen } from "./screens/DeliverToScreen";
-import { placeSearch } from "./lib/placeSearch";
+import { placeSearch, type PlaceHit } from "./lib/placeSearch";
 import { PinMapScreen, type Saved } from "./screens/PinMapScreen";
 import { keepRecent, listRecents, recentAt, recentWords, RECENTS_MAX, touchRecent, type Recent, type Searched } from "./lib/recents";
-import { distanceM, FAR_M, addAddress, editAddress, hasPoint, listAddresses, lastUsed, nearM, nearSaved, removeAddress, touchAddress, type SavedAddress } from "./lib/addresses";
+import { distanceM, FAR_M, NEAR_M, addAddress, editAddress, hasPoint, hereRow, listAddresses, lastUsed, nearM, nearSaved, removeAddress, touchAddress, type SavedAddress } from "./lib/addresses";
 import { boxWhy, findPhone, nearestPin, readNearestPin, type LocWhy, type Phone, type Place } from "./lib/locate";
 import { currentSession, scopeFor } from "./lib/session";
 import { MenuScreen } from "./screens/MenuScreen";
@@ -535,6 +535,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const savedNow = useRef(saved); savedNow.current = saved;
   const [recents, setRecents] = useState<Recent[]>([]);   // story 1530: "Recently searched", the customer's own rows
   const recentsNow = useRef(recents); recentsNow.current = recents;
+  const tapWrite = useRef<Promise<Recent | null>>(Promise.resolve(null));   // story 1609: the write of the last tap in search
   const hereNow = useRef(here); hereNow.current = here;
   const whyNow = useRef(why); whyNow.current = why;
   const [whyTap, setWhyTap] = useState(false);   // story 1610: the cause came from a tap. Too slow, or no cause, shows a box on Deliver to only then
@@ -545,6 +546,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const askNow = useRef(ask); askNow.current = ask;
   const endAsk = () => { askNow.current = null; setAsk(null); };
   const nearGot = useRef<Promise<number> | null>(null);   // the setting address_near_m, read once per app open
+  const [near, setNear] = useState(NEAR_M);   // story 1608: the same value for the Deliver to list (its one "here" row)
+  const readNear = () => (nearGot.current ??= nearM(getClient()).then((n) => { setNear(n); return n; }));
   // Story #1162 (owner, 9 Nov): the kitchen closes (live, or by the clock) under a customer who has items but has NOT placed the order: the app goes to the closed menu, the bill is cleared, and a line says so.
   // A placed order is never moved (the step is "placed" or "orders"), and an order being sent is let finish first.
   const [closedNote, setClosedNote] = useState<string | null>(null);
@@ -602,7 +605,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     const r = await findPhone(tap, whyNow.current);
     if (tap) setFinding(false);
     if (typeof r === "string") { setHere(null); setWhy(r); setWhyTap(tap); return null; }
-    setHere(r); setWhy(null); setSheet(false);
+    setHere(r); setWhy(null); setSheet(false); void readNear();
     return r;
   }
   // Story 1529, changed by 1548: the place follows the phone only to a saved address. Inside the near distance of one: that address, with no word. A cart in progress
@@ -612,8 +615,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   async function follow(at: Phone, pick = true, tap = false) {
     if (held()) return;
     const c = getClient();
-    const near = await (nearGot.current ??= nearM(c)), was = whereNow.current;
-    const row = nearSaved(savedNow.current ?? [], at, near);
+    const near = await readNear(), was = whereNow.current;
+    const row = hereRow(savedNow.current ?? [], at, near);   // story 1608: the same row the Deliver to list calls "here"
     if (row) {
       endAsk();   // the phone is at a saved address: nothing to ask
       const next: StoredPlace = { address: row.address, pin: row.pin, lat: row.lat, lng: row.lng, house: row.house ?? "", landmark: row.landmark ?? "", confirmed: true, id: row.id };
@@ -696,12 +699,29 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     choosePlace({ address: a.address, pin: a.pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark, confirmed: true, id: null });
     setStep((st) => (st === "bill" ? "bill" : "menu"));
     void (async () => {
+      const tapped = await tapWrite.current;   // the tap's row, if the customer tapped this place in search first
+      const list = tapped ? [tapped, ...recentsNow.current.filter((r) => r.id !== tapped.id)] : recentsNow.current;
       const pin = (await nearestPin(a.from, undefined)) || (a.pinTyped ? a.pin : "");
-      const row = await keepRecent(getClient(), recentsNow.current, { ...recentWords(s.typed, s.hit, a), pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark });
+      const row = await keepRecent(getClient(), list, { ...recentWords(s.typed, s.hit, a), pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark });
       if (row) setRecents((cur) => [row, ...cur.filter((r) => r.id !== row.id)].slice(0, RECENTS_MAX));
     })().catch(() => undefined);
   }
+  // Story 1609 (owner, 17 Nov 2026): a tap on a search result is kept as the customer's own recent at once, marked not confirmed; Confirm on the map updates that row.
+  // The tap's write is kept in tapWrite: a Confirm made fast waits for it, so Confirm updates the tapped row and never adds a second one (reviewer, #1615).
+  function tapRecent(h: PlaceHit, typed: string) {
+    tapWrite.current = (async () => {
+      const pin = (await nearestPin(h, undefined)) || "";
+      const row = await keepRecent(getClient(), recentsNow.current, { ...recentWords(typed, h, { house: "", landmark: "", area: "" }), pin, lat: h.lat, lng: h.lng, house: "", landmark: "" }, false);
+      if (row) setRecents((cur) => [row, ...cur.filter((r) => r.id !== row.id)].slice(0, RECENTS_MAX));
+      return row;
+    })().catch(() => null);
+  }
   function pickRecent(r: Recent) {   // a recent is a confirmed place with its point; the tap makes it the newest
+    if (!r.confirmed) {   // story 1609 (reviewer, #1615): a recent only tapped in search opens the pin map at its point; the place changes only on Confirm, which updates this row
+      setFocusSearch(false); setSheet(false);
+      setPinMap({ center: { lat: r.lat, lng: r.lng }, follow: false, recent: { typed: r.name, hit: null } });
+      return;
+    }
     const used_at = new Date().toISOString();
     choosePlace({ address: r.address, pin: r.pin, lat: r.lat, lng: r.lng, house: r.house, landmark: r.landmark, confirmed: true, id: null });
     setRecents((cur) => [{ ...r, used_at }, ...cur.filter((x) => x.id !== r.id)]);
@@ -1221,10 +1241,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const needArea = lock === "customer" && step !== "placed" && step !== "orders" && !(pin && (area?.kind === "ok" || area?.kind === "closed"));
   const noPlace = known && needArea && !pin && !waitingForAddresses;   // story 1529: a customer who confirmed a place before and has none now (the last address deleted, a new phone, not found): Deliver to, never the first-open screen
   const deliverTo = (
-    <DeliverToScreen focusSearch={focusSearch} forMap={pinMap?.center} list={saved ?? []} selectedId={selectedId} here={here} search={(q, at) => placeSearch(q, at && at.lat === CITY_CENTRE.lat && at.lng === CITY_CENTRE.lng ? undefined : at)}   // story 1573: the fixed city centre is where the map opens, never where the search looks
+    <DeliverToScreen focusSearch={focusSearch} forMap={pinMap?.center} list={saved ?? []} selectedId={selectedId} here={here} near={near} search={(q, at) => placeSearch(q, at && at.lat === CITY_CENTRE.lat && at.lng === CITY_CENTRE.lng ? undefined : at)}   // story 1573: the fixed city centre is where the map opens, never where the search looks
       recents={recents} recentId={recentAt(recents, where)} onRecent={pickRecent}
       // Story 1530: a pick from search opens the map at the place's own point. Under a map that was not opened from search (Add new address, an edit) the pick only moves the pin.
-      onPlace={(h, typed) => { setFocusSearch(false); setPinMap({ ...pinMap, center: { lat: h.lat, lng: h.lng }, follow: false, recent: !pinMap || pinMap.recent ? { typed, hit: h } : undefined }); }}
+      onPlace={(h, typed) => { setFocusSearch(false); setPinMap({ ...pinMap, center: { lat: h.lat, lng: h.lng }, follow: false, recent: !pinMap || pinMap.recent ? { typed, hit: h } : undefined }); if (!pinMap || pinMap.recent) tapRecent(h, typed); }}
       onBack={pinMap ? () => setFocusSearch(false) : noPlace ? undefined : () => { setFocusSearch(false); setStep("menu"); }} current={where && isHere(where) ? `Pin code ${where.pin}` : null} why={boxWhy(why, whyTap)} finding={finding}
       onSelect={(id) => { const r = (saved ?? []).find((x) => x.id === id); if (r) { setFocusSearch(false); setPinMap(null); pickRow(r); } }}
       onUseLocation={() => { void find(true).then((at) => { if (at) { setFocusSearch(false); setPinMap({ center: at }); } }); }} onAddNew={() => { setFocusSearch(false); openAtStart(); }}

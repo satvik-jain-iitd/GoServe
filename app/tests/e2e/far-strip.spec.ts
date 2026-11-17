@@ -6,7 +6,7 @@ import { setup, whereBox } from "./helpers";
 const NOW = Date.now();
 const HOME = { id: "h1", label: "Home", address: "Z-900, Sample Garden Colony, Sampletown", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: new Date(NOW - 3 * 86_400_000).toISOString() };
 const FAR_PHONE = { latitude: 28.6139, longitude: 77.209 };   // about 6 km from Home
-const NEAR_PHONE = { latitude: 28.5690, longitude: 77.2440 };   // about 150 m
+const NEAR_PHONE = { latitude: 28.5683, longitude: 77.2436 };   // about 80 m (near is 100 m, story 1608)
 const GREEN_PARK = { ok: true, address: "Green Park, New Delhi, Delhi", pin: "110016", locality: "Green Park", town: "New Delhi" };
 const strip = (page: Page) => page.getByRole("status").filter({ hasText: /You are \d+ km from/ });
 

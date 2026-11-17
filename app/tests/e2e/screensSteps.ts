@@ -218,7 +218,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await page.goto(path); await viaSheet(page); await page.getByRole("button", { name: "Add new address" }).click();
     await expect(page.getByText("We deliver here · the kitchen is 1.2 km from the pin")).toBeVisible(); },
   // Story 1051: the boards of batch B. The data is the boards' own (a phone in the sample town, the rows of C12), so the picture and the board can be laid side by side.
-  "deliver-five": async (context, page, path) => {   // boards C12 (this, three rows and View all)
+  "deliver-five": async (context, page, path) => {   // boards C12 (this; two rows and View all since story 1608)
     await deliverFrom(context, page, path, 5);
     await expect(page.getByRole("button", { name: "View all" })).toBeVisible(); },
   "deliver-all": async (context, page, path) => {   // board C13: View all opened

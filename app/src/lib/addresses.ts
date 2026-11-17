@@ -12,8 +12,9 @@ export const distanceM = (a: Place, b: Place): number => {   // haversine: right
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
 };
 export const FAR_M = 2000;   // past this the phone is far from the delivery place: the Bill says how far (story 1548, rule 11; first story 1056)
-export const NEAR_M = 200;   // the "here" word on a row, and the start value of the setting address_near_m (story 1529: on open the saved address the phone is at is picked)
-export const distanceWord = (m: number, nearM: number): string => (m <= nearM ? "here" : `${Math.max(1, Math.round(m / 1000))} km`);
+export const NEAR_M = 100;   // the start value of the setting address_near_m (story 1608: 100, it was 200): how near the phone must be to a saved address for it to be "here"
+// Story 1608: metres to the nearest 10 under 1 km ("150 m"), then whole km. The word "here" is not said here: one row only has it (hereRow).
+export const distanceWord = (m: number): string => (m < 995 ? `${Math.max(10, Math.round(m / 10) * 10)} m` : `${Math.max(1, Math.round(m / 1000))} km`);
 
 const byUsed = (a: SavedAddress, b: SavedAddress) => b.last_used_at.localeCompare(a.last_used_at);
 
@@ -22,6 +23,16 @@ export const hasPoint = (a: SavedAddress): a is SavedAddress & Place => a.lat !=
 // Story 1548: slack is how rough the phone's fix is (metres). A saved address is near when the fix could be inside the near distance of it.
 export const nearSaved = (list: SavedAddress[], at: Place, nearM: number, slack = 0): SavedAddress | null =>
   list.filter(hasPoint).map((a) => ({ a, m: distanceM(at, a) })).filter((x) => x.m - slack <= nearM).sort((x, y) => x.m - y.m)[0]?.a ?? null;
+// Story 1608 (owner, 17 Nov 2026): the one "here" row, for the Deliver to list and for the pick on open. Rows with a point where distance - min(accuracy, near) <= near
+// (no accuracy counts as 0), the nearest. Rows within TIE_M of the nearest are as near as each other: the one used last wins, then the id.
+export type Spot = Place & { accuracy?: number | null };
+const TIE_M = 5;
+export const hereRow = (list: SavedAddress[], at: Spot, near: number): SavedAddress | null => {
+  const slack = Math.min(at.accuracy ?? 0, near);
+  const inside = list.filter(hasPoint).map((a) => ({ a, m: distanceM(at, a) })).filter((x) => x.m - slack <= near);
+  const least = Math.min(...inside.map((x) => x.m));
+  return inside.filter((x) => x.m - least <= TIE_M).sort((x, y) => byUsed(x.a, y.a) || x.a.id.localeCompare(y.a.id))[0]?.a ?? null;
+};
 /** The setting address_near_m (metres); the start value when it cannot be read. */
 export async function nearM(c: Pick<SupabaseClient, "rpc">): Promise<number> {
   try { const { data } = await c.rpc("address_near_m"); return typeof data === "number" && data > 0 ? data : NEAR_M; } catch { return NEAR_M; }
