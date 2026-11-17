@@ -12,7 +12,7 @@ async function open(page: Page, context: Parameters<typeof setup>[0], perm: "den
   net.state.addresses = [HOME, WORK];
   await page.addInitScript(([p, w]) => {
     Object.defineProperty(navigator, "permissions", { value: { query: async () => ({ state: p }) }, configurable: true });
-    Object.defineProperty(navigator, "geolocation", { value: { getCurrentPosition: (ok: (x: unknown) => void, bad: (x: unknown) => void) => { (window as unknown as { __asked?: number }).__asked = ((window as unknown as { __asked?: number }).__asked ?? 0) + 1; if (w === "ok") ok({ coords: { latitude: 28.5690, longitude: 77.2440 } }); else if (p === "denied") bad({ code: 1 }); } }, configurable: true });
+    Object.defineProperty(navigator, "geolocation", { value: { getCurrentPosition: (ok: (x: unknown) => void, bad: (x: unknown) => void) => { (window as unknown as { __asked?: number }).__asked = ((window as unknown as { __asked?: number }).__asked ?? 0) + 1; if (w === "ok") ok({ coords: { latitude: 28.5683, longitude: 77.2436 } }); else if (p === "denied") bad({ code: 1 }); } }, configurable: true });
   }, [perm, pos] as const);
   await page.clock.install();
   await page.goto("/customer/");

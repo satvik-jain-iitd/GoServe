@@ -10,7 +10,7 @@ const greet = (page: Page) => page.locator(".ui-greet-line");
 const ON_BILL = "The kitchen changed. Prices are new.";   // the Bill's line: one short line under the title, in the header that is always there
 const HOME = { id: "h1", label: "Home", address: "Z-900, Sample Garden Colony, Sampletown", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
 const SAKET = { id: "s1", label: "Office", address: "B-12, Saket", pin_code: "110017", lat: 28.5245, lng: 77.2066, last_used_at: "2026-11-01T10:00:00Z" };
-const AT_HOME = { latitude: 28.5690, longitude: 77.2440 };
+const AT_HOME = { latitude: 28.5683, longitude: 77.2436 };
 const MENU_A = [{ id: "d1", name: "Butter Chicken", price_paise: 32000, image_url: null, image_credit: null }, { id: "d2", name: "Dal Makhani", price_paise: 22000, image_url: null, image_credit: null }];
 const BOTH = [{ id: "b1", name: "Butter Chicken", price_paise: 35000 }, { id: "b2", name: "Dal Makhani", price_paise: 22000 }];   // the other kitchen: its own ids, one price differs
 const ONE = [BOTH[0]];   // the other kitchen does not make Dal Makhani
