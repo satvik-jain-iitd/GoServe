@@ -81,7 +81,9 @@ test("A search becomes a recent: I pick a place from search and confirm the pin,
   await details(page).getByLabel("Landmark (optional)").fill("park gate");
   await details(page).getByRole("button", { name: "Deliver here" }).click();
   await expect(page.getByRole("searchbox", { name: "Search dishes" })).toBeVisible();   // the menu, for the confirmed place
-  await expect.poll(() => net.state.recents.length).toBe(2);
+  // Story 1609: the tap already kept the row; Confirm updates that same row, so wait for the update, then check there is still one row for it.
+  await expect.poll(() => net.state.recents.at(-1)?.address).toBe("12B, near park gate, green park");
+  expect(net.state.recents).toHaveLength(2);
   const row = net.state.recents.at(-1)!;
   expect(row).toMatchObject({ name: "green park", address: "12B, near park gate, green park", pin_code: "110017", house: "12B", landmark: "park gate" });
   expect(row.lat).toBeCloseTo(OLA_HIT.lat, 3);
@@ -101,17 +103,20 @@ test("A row of our own postal code table is kept as it is", async ({ page, conte
   const net = await open(page, context, { hits: [OWN_HIT] });
   await pick(page, "sample");
   await confirm(page, "7A");
-  await expect.poll(() => net.state.recents.length).toBe(1);
+  await expect.poll(() => net.state.recents[0]?.address).toBe("7A, Sample Nagar, Delhi, 110049");   // story 1609: the tap kept the row first; Confirm updates it
+  expect(net.state.recents).toHaveLength(1);
   expect(net.state.recents[0]).toMatchObject({ name: "Sample Nagar", address: "7A, Sample Nagar, Delhi, 110049" });
 });
 
-test("A search that was not confirmed never shows in Recently searched", async ({ page, context }) => {
+// Story 1609 (owner, 17 Nov 2026): this replaces the story 1530 rule "a search that was not confirmed never shows". A tapped result is the customer's own recent at once, marked not confirmed.
+test("A search tapped but not confirmed shows in Recently searched at once, marked not confirmed (story 1609)", async ({ page, context }) => {
   const net = await open(page, context);
   await pick(page, "green park");
   await pinMap(page).getByRole("button", { name: "Back" }).click();
   await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
-  await expect(recents(page)).toHaveCount(0);
-  expect(net.calls.recentWrites).toHaveLength(0);
+  await expect(recents(page)).toHaveCount(1);
+  await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "POST").length).toBe(1);
+  expect(net.calls.recentWrites.find((w) => w.method === "POST")!.body).toMatchObject({ name: "green park", confirmed: false });
 });
 
 test("Add new address still saves a named address, not a recent", async ({ page, context }) => {
