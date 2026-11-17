@@ -1,6 +1,6 @@
 // Story #668 (boards A1 to A3): the customer's own address from the phone's location, through OpenStreetMap's reverse lookup (no key). Any failure means "type it by hand".
 import { describe, expect, it, vi } from "vitest";
-import { addressFrom, currentPlace, locLine, locWhy, locWords, readNearestPin, reverseAddress } from "../../src/lib/locate";
+import { addressFrom, boxWhy, currentPlace, findPhone, locLine, locWhy, locWords, readNearestPin, reverseAddress } from "../../src/lib/locate";
 
 const NOMINATIM = { display_name: "B-12, Lajpat Nagar II, Lajpat Nagar, South Delhi, New Delhi, Delhi, 110024, India", address: { house_number: "B-12", road: "Lajpat Nagar II", suburb: "Lajpat Nagar", city: "New Delhi", state: "Delhi", postcode: "110024", country: "India" } };
 
@@ -159,5 +159,62 @@ describe("the read of the nearest pin says when it failed (story 1548)", () => {
   it("gives null when the read failed: a server fault, or no network", async () => {
     expect(await readNearestPin(at, undefined, deps(async () => new Response("{}", { status: 500 })))).toBeNull();
     expect(await readNearestPin(at, undefined, deps(async () => { throw new Error("offline"); }))).toBeNull();
+  });
+});
+
+// Story 1610: Safari on iPhone says "prompt" after a grant, so the phone keeps its own mark (gs-loc-ok) and the app reads by itself when the mark is set.
+describe("findPhone with no tap and the mark gs-loc-ok (story 1610)", () => {
+  const phone = (perm: string | null, answer: { coords: object } | { code: number }) => {
+    const kept = new Map<string, string>();
+    const read = vi.fn((ok: (p: unknown) => void, bad: (e: unknown) => void) => ("coords" in answer ? ok(answer) : bad(answer)));
+    vi.stubGlobal("window", { localStorage: { getItem: (k: string) => kept.get(k) ?? null, setItem: (k: string, v: string) => void kept.set(k, v), removeItem: (k: string) => void kept.delete(k) } });
+    vi.stubGlobal("navigator", { geolocation: { getCurrentPosition: read }, permissions: perm === null ? undefined : { query: async () => ({ state: perm }) } });
+    return { kept, read };
+  };
+  const HERE = { coords: { latitude: 28.5, longitude: 77.2, accuracy: 20, speed: null } };
+
+  it("prompt or no permissions.query, no mark: the phone is not read", async () => {
+    for (const perm of ["prompt", null]) {
+      const { read } = phone(perm, HERE);
+      expect(await findPhone(false)).toBe("ask");
+      expect(read).not.toHaveBeenCalled();
+    }
+  });
+  it("prompt or no permissions.query, the mark set: the phone is read and found", async () => {
+    for (const perm of ["prompt", null]) {
+      const { kept, read } = phone(perm, HERE);
+      kept.set("gs-loc-ok", "1");
+      expect(await findPhone(false)).toMatchObject({ lat: 28.5, lng: 77.2 });
+      expect(read).toHaveBeenCalledTimes(1);
+    }
+  });
+  it("denied never reads, even with the mark set", async () => {
+    const { kept, read } = phone("denied", HERE);
+    kept.set("gs-loc-ok", "1");
+    expect(await findPhone(false)).toBe("denied");
+    expect(read).not.toHaveBeenCalled();
+  });
+  it("any find that worked sets the mark: a tap, and a find with no tap", async () => {
+    for (const tap of [true, false]) {
+      const { kept } = phone(tap ? "prompt" : "granted", HERE);
+      await findPhone(tap);
+      expect(kept.get("gs-loc-ok")).toBe("1");
+    }
+  });
+  it("code 1 clears the mark; too slow and off keep it", async () => {
+    for (const [code, left] of [[1, undefined], [2, "1"], [3, "1"]] as const) {
+      const { kept } = phone("prompt", { code });
+      kept.set("gs-loc-ok", "1");
+      await findPhone(false);
+      expect(kept.get("gs-loc-ok")).toBe(left);
+    }
+  });
+  it("the box on Deliver to: never for ask; slow and none only after a tap; blocked and off always", () => {
+    expect(boxWhy("ask", false)).toBeNull();
+    expect(boxWhy("ask", true)).toBeNull();
+    expect([boxWhy("slow", false), boxWhy("none", false)]).toEqual([null, null]);
+    expect([boxWhy("slow", true), boxWhy("none", true)]).toEqual(["slow", "none"]);
+    expect([boxWhy("denied", false), boxWhy("still", false), boxWhy("off", false)]).toEqual(["denied", "still", "off"]);
+    expect(boxWhy(null, true)).toBeNull();
   });
 });

@@ -30,11 +30,12 @@ test("S2 Keep it closes the sheet and deletes nothing", async ({ page, context }
 test("S3 Delete calls delete_my_account once, clears this phone and lands on the first screen with Account deleted", async ({ page, context }) => {
   const net = await setup(context, page);
   const sheet = await openSheet(page);
-  await page.evaluate(() => localStorage.setItem("gs-test-keep", "x"));
+  await page.evaluate(() => { localStorage.setItem("gs-test-keep", "x"); localStorage.setItem("gs-loc-ok", "1"); });   // story 1610: the mark "a find worked on this phone" goes too
   await sheet.getByRole("button", { name: "Delete", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "Account deleted" })).toBeVisible();
   expect(net.calls.rpc.filter((r) => r.name === "delete_my_account")).toHaveLength(1);
   expect(await page.evaluate(() => localStorage.getItem("gs-test-keep"))).toBeNull();
+  expect(await page.evaluate(() => localStorage.getItem("gs-loc-ok"))).toBeNull();
 });
 
 test("S4 a refusal (an order on its way) is shown in the sheet and the account stays", async ({ page, context }) => {
