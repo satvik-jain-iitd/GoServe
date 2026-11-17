@@ -7,7 +7,7 @@ import { phoneLoc, setLoc, setup, whereBox } from "./helpers";
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
 const HOME = { id: "h1", label: "Home", address: "Z-900, Sample Garden Colony, Sampletown", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
 const WORK = { id: "w1", label: "Work", address: "Tower B, Sector 62, Noida", pin_code: "110016", lat: 28.6208, lng: 77.3639, last_used_at: "2026-11-01T10:00:00Z" };
-const AT_HOME = { latitude: 28.5690, longitude: 77.2440 };   // about 150 m from Home
+const AT_HOME = { latitude: 28.5683, longitude: 77.2436 };   // about 80 m from Home (near is 100 m, story 1608)
 const AWAY = { latitude: 28.6139, longitude: 77.209 };   // about 6 km from Home
 // Story 1548: the place is "Where you are now" only when the phone already holds it (the last address was deleted there). Far from every saved address the box asks, and Deliver to opens from it.
 const hereAway = (context: BrowserContext) => context.addInitScript((p) => { window.localStorage.setItem("gs-place", JSON.stringify(p)); window.localStorage.setItem("gs-pin", p.pin); },
@@ -125,12 +125,12 @@ test("Add new address still saves a named address, not a recent", async ({ page,
   expect(net.calls.recentWrites).toHaveLength(0);
 });
 
-test("Three and View all: with 5 recents I see 3, and View all shows the other 2", async ({ page, context }) => {
+test("Two and View all (story 1608): with 5 recents I see 2, and View all shows the other 3", async ({ page, context }) => {
   await open(page, context, { recents: FIVE });
   await expect(page.getByText("2 saved")).toBeVisible();
   await expect(recents(page).getByRole("heading", { name: "Recently searched" })).toBeVisible();
   const rows = recents(page).getByRole("listitem");
-  await expect(rows).toHaveCount(3);
+  await expect(rows).toHaveCount(2);
   await expect(rows.first()).toContainText("Road 5");   // the newest first
   await expect(rows.first()).toContainText("Flat 5, Road 5");
   await expect(rows.first().locator(".ui-chip-box")).toContainText("km");   // the clock chip carries the distance from the phone
@@ -145,6 +145,7 @@ test("Three and View all: with 5 recents I see 3, and View all shows the other 2
 
 test("A recent row looks as a saved row: the same card, chip, and row box", async ({ page, context }) => {
   await open(page, context, { recents: FIVE, addresses: [HOME, WORK, { ...WORK, id: "w2", label: "Shop" }] });
+  await page.getByRole("button", { name: "View all", exact: true }).click();   // story 1608: two rows show; all three, so that there is a row in the middle
   const look = (el: Element) => { const s = getComputedStyle(el), r = el.getBoundingClientRect(); return { w: r.width, h: r.height, bg: s.backgroundColor, radius: s.borderRadius, pad: s.padding }; };
   const savedCard = page.getByRole("region", { name: "Saved addresses" }).locator(".ui-saved-card"), recentCard = recents(page).locator(".ui-saved-card");
   const a = await savedCard.evaluate(look), b = await recentCard.evaluate(look);
@@ -210,6 +211,7 @@ for (const how of ["the Back arrow", "the phone's Back button"]) {
     const b = (await page.locator(".ui-pinmap-map").boundingBox())!;
     await page.mouse.move(b.x + b.width / 2, b.y + 200); await page.mouse.down(); await page.mouse.move(b.x + b.width / 2 + 120, b.y + 200, { steps: 6 }); await page.mouse.up();
     await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeEnabled();
+    await expect.poll(() => new URL(net.calls.serve.at(-1)!).searchParams.get("lng")).not.toBe(String(AT_HOME.longitude));   // the drag's serve call lands before the read (race, not the code)
     const at = new URL(net.calls.serve.at(-1)!).searchParams.get("lat")!;
     const lng = new URL(net.calls.serve.at(-1)!).searchParams.get("lng")!;
     await pinMap(page).getByRole("button", { name: "Search an area or address" }).click();
@@ -263,8 +265,8 @@ async function state(page: Page, context: BrowserContext, kind: "home" | "away" 
   else if (kind === "away") await anotherAddress(page);
   else await page.getByTitle("Change the delivery address").click();
   await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Saved addresses" }).getByRole("listitem")).toHaveCount(3);
-  if (withRecents) await expect(recents(page).getByRole("listitem")).toHaveCount(3);
+  await expect(page.getByRole("region", { name: "Saved addresses" }).getByRole("listitem")).toHaveCount(2);   // story 1608: two rows, then View all
+  if (withRecents) await expect(recents(page).getByRole("listitem")).toHaveCount(2);
 }
 
 test("Nothing moves: when the location is found or not found only the Delivering to box changes", async ({ browser }) => {
@@ -310,7 +312,8 @@ test("Nothing moves: when the location is found or not found only the Delivering
   for (const kind of ["home", "away", "blocked"]) {
     const withR = shot[kind], without = shot[`${kind} no recents`];
     expect(Object.keys(without).some((k) => k.startsWith("recent"))).toBe(false);
-    expect(withR["recent row 2"]).toBeDefined();
+    expect(withR["recent row 1"]).toBeDefined();   // two rows show, then View all (rule 5; was "recent row 2" before 1608)
+    expect(withR["recent view all"]).toBeDefined();
     expect(Object.fromEntries(Object.entries(withR).filter(([k]) => !k.startsWith("recent")))).toEqual(without);
   }
 });
@@ -326,7 +329,7 @@ test("A confirmed place that is not a saved address is kept when my phone is at 
   const net = await setup(context, page, [], { pin: null });
   net.state.addresses = [];   // the save failed, so the place is only on this phone
   await stored(context, { address: "12B, Sample Garden Colony", pin: "110016", lat: HOME.lat, lng: HOME.lng, house: "12B", landmark: "", confirmed: true, id: null });
-  await phoneLoc(page, { perm: "granted", pos: AT_HOME });   // about 150 m from it
+  await phoneLoc(page, { perm: "granted", pos: AT_HOME });   // about 80 m from it
   await page.goto("/customer/");
   await expect(page.getByRole("searchbox", { name: "Search dishes" })).toBeVisible();
   await expect.poll(() => net.calls.rpc.filter((r: { name?: string } | string) => JSON.stringify(r).includes("address_near_m")).length).toBeGreaterThan(0);   // the open-time find has run
