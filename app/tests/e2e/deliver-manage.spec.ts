@@ -1,4 +1,4 @@
-// Story #1051 (boards C9 to C13, C6b): Deliver to. Edit opens the same map screen, Remove leaves an Undo bar for 6 seconds, an empty list says so, more than three rows hide behind View all.
+// Story #1051 (boards C9 to C13, C6b): Deliver to. Edit opens the same map screen, Remove leaves an Undo bar for 6 seconds, an empty list says so, more than two rows hide behind View all (story 1608; it was three).
 import { test, expect, type Page } from "@playwright/test";
 import { answeredAt, setup, phoneAt, toDeliverTo } from "./helpers";
 
@@ -58,7 +58,7 @@ test("S2 (C10) Remove: the row leaves at once, the Undo bar counts 6 sec, Undo p
   await expect(bar).toContainText("4 sec");
   await bar.getByRole("button", { name: "Undo" }).click();
   await expect(bar).toHaveCount(0);
-  await expect(page.getByRole("listitem").nth(0)).toContainText("Office");   // the same place: it was used last, so it is on top again
+  await expect(page.getByRole("listitem").nth(1)).toContainText("Office");   // the same place: under Home, the here row, which is first (story 1608)
   await page.clock.runFor(10_000);
   expect(net.state.addresses.map((r: any) => r.id).sort()).toEqual(["h1", "o1"]);
 });
@@ -83,17 +83,17 @@ test("S4 (C11) no saved address: the empty line shows, 0 saved, both doors stay"
   await expect(page.getByText("Saved addresses")).toHaveCount(0);
 });
 
-test("S5 (C12, C13) five saved: three rows and View all; View all shows all five and goes away", async ({ page, context }) => {
+test("S5 (C12, C13) five saved: two rows (story 1608) and View all; View all shows all five and goes away", async ({ page, context }) => {
   await open(page, context, [HOME, OFFICE, ...MORE]);
   await expect(page.getByText("5 saved")).toBeVisible();
-  await expect(page.getByRole("listitem")).toHaveCount(3);
+  await expect(page.getByRole("listitem")).toHaveCount(2);
   await page.getByRole("button", { name: "View all" }).click();
   await expect(page.getByRole("listitem")).toHaveCount(5);
   await expect(page.getByRole("button", { name: "View all" })).toHaveCount(0);
 });
 
-test("S6 three saved: no View all", async ({ page, context }) => {
-  await open(page, context, [HOME, OFFICE, MORE[0]]);
-  await expect(page.getByRole("listitem")).toHaveCount(3);
+test("S6 two saved: no View all", async ({ page, context }) => {
+  await open(page, context, [HOME, OFFICE]);
+  await expect(page.getByRole("listitem")).toHaveCount(2);
   await expect(page.getByRole("button", { name: "View all" })).toHaveCount(0);
 });

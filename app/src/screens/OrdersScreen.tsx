@@ -42,7 +42,7 @@ export function OrdersScreen({ orders, loading, kitchenName, kitchenId, kitchenN
           </div>
         )}
         {groups(orders, kitchenId).map(([id, list]) => (
-          <section key={id} aria-label={id ? kitchenNames[id] ?? (id === kitchenId ? kitchenName : "Another kitchen") : "Older orders"}>
+          <section key={id} className="ui-saved-card ui-order-card" aria-label={id ? kitchenNames[id] ?? (id === kitchenId ? kitchenName : "Another kitchen") : "Older orders"}>
             <h2 className="ui-order-group">
               <b>{id ? kitchenNames[id] ?? (id === kitchenId ? kitchenName : "Another kitchen") : "Older orders"}</b>
               {id && <span>{id === kitchenId ? "cooks for you now" : "your older orders"}</span>}

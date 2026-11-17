@@ -9,7 +9,7 @@ import { firstOpenToMenu } from "./firstOpen";
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
 const HOME = { id: "h1", label: "Home", address: "Z-900, Sample Garden Colony, Sampletown", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-01T10:00:00Z" };
 const WORK = { id: "w1", label: "Work", address: "Tower B, Sector 62, Noida", pin_code: "110016", lat: 28.6208, lng: 77.3639, last_used_at: "2026-11-05T10:00:00Z" };   // used last
-const AT_HOME = { latitude: 28.5690, longitude: 77.2440 };   // about 150 m from Home
+const AT_HOME = { latitude: 28.5683, longitude: 77.2436 };   // about 80 m from Home (near is 100 m, story 1608)
 const AWAY = { latitude: 28.6139, longitude: 77.209 };   // about 6 km from Home, far from Work too
 const placeOf = (row: typeof HOME) => ({ address: row.address, pin: row.pin_code, lat: row.lat, lng: row.lng, house: "", landmark: "", confirmed: true, id: row.id });
 const stored = (context: BrowserContext, place: object, draft?: object) => context.addInitScript(([p, d]) => {
