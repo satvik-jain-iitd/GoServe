@@ -99,20 +99,37 @@ export const locWhy = (e: unknown, before?: LocWhy | null): LocWhy => {
 export const locWords = (why: LocWhy, out: string): { title: string; sub: string } => ({ title: WORDS[why][0], sub: `${WORDS[why][1]}, or ${out}.` });   // the way out is the screen's own: "pick a place" only where there is a list
 export const locLine = (why: LocWhy, out: string): string => { const w = locWords(why, out); return `${w.title}. ${w.sub}`; };
 
-// Stories 1529 and 1526: the phone's place, or why not. By itself (no tap) the app never makes the browser ask: it uses only a permission given before, and waits waitMs.
-// A browser with no permissions.query (an older iPhone) is treated as never asked. A tap always asks.
+// Stories 1529 and 1526: the phone's place, or why not. By itself (no tap) the app never makes the browser ask for the first time. A tap always asks.
+// Story 1610: Safari on iPhone answers "prompt" to permissions.query even after the customer allowed location (WebKit bug 258726), and an older iPhone has no
+// permissions.query. So this phone keeps its own mark, set after any find that worked. With no tap: "denied" never reads; "granted" or the mark reads the place
+// (waitMs); else nothing is read. A read the phone refuses (code 1) clears the mark. Sign out and Delete my account clear it with the rest of localStorage.
+const LOC_OK = "gs-loc-ok";
+const locOk = (set?: boolean): boolean => {
+  try {
+    if (set === undefined) return window.localStorage.getItem(LOC_OK) === "1";
+    if (set) window.localStorage.setItem(LOC_OK, "1"); else window.localStorage.removeItem(LOC_OK);
+  } catch { /* blocked storage: no mark, so the app does not read by itself */ }
+  return !!set;
+};
 export async function findPhone(tap: boolean, before: LocWhy | null = null, waitMs = 5000): Promise<Phone | LocWhy> {
   if (!tap) {
     let state: string | undefined;
     try { state = (await navigator.permissions?.query({ name: "geolocation" as PermissionName }))?.state; } catch { /* never asked */ }
-    if (state !== "granted") return state === "denied" ? "denied" : "ask";
+    if (state === "denied") return "denied";
+    if (state !== "granted" && !locOk()) return "ask";
   }
   try {
-    return await (tap ? currentPlace() : Promise.race([currentPlace(), new Promise<never>((_, no) => setTimeout(() => no({ code: 3 }), waitMs))]));
+    const at = await (tap ? currentPlace() : Promise.race([currentPlace(), new Promise<never>((_, no) => setTimeout(() => no({ code: 3 }), waitMs))]));
+    locOk(true);
+    return at;
   } catch (e) {
-    return locWhy(e, before);
+    const why = locWhy(e, before);
+    if (why === "denied" || why === "still") locOk(false);   // code 1: the phone said no
+    return why;
   }
 }
+/** Story 1610: the cause Deliver to shows a box for. Never asked: no box. Too slow, or no cause: a box only after a tap. Blocked and off keep their true box. */
+export const boxWhy = (why: LocWhy | null, tap: boolean): LocWhy | null => (why === "ask" || (!tap && (why === "slow" || why === "none")) ? null : why);
 
 // Story #905: the admin stands at the kitchen, so this asks for the best fix and keeps its accuracy in metres.
 export type Fix = Place & { accuracy: number | null };
