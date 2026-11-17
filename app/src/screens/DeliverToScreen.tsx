@@ -61,6 +61,7 @@ export function DeliverToScreen({ focusSearch, forMap, list, recents, recentId, 
   const [first, setFirst] = useState(hereId);
   const [wasFinding, setWasFinding] = useState(finding);
   if (wasFinding !== finding) { setWasFinding(finding); if (!finding) setFirst(hereId); }
+  if (first === null && hereId !== null) setFirst(hereId);   // the here row is never hidden: found after the screen opened, nothing was here before, so nothing jumps away
   const rows = [...left.filter((a) => a.id === first), ...left.filter((a) => a.id !== first)];
   const picked = gone && gone.a.id === selectedId ? lastUsed(rows)?.id ?? null : selectedId;   // board C10: the row that takes over carries Selected while Undo is open
   const q = query.trim().toLowerCase();
