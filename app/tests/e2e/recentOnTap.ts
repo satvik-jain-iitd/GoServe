@@ -55,4 +55,46 @@ export function recentOnTap() {
     expect(net.calls.recentWrites.filter((w) => w.method === "PATCH").at(-1)!.body).toMatchObject({ confirmed: true });
     expect(net.state.recents).toHaveLength(1);
   });
+
+  // Gap 1 (reviewer, #1615): a recent that was only tapped (not confirmed) opens the pin map at its point; no place is chosen until Confirm, which updates the same row.
+  test("a tapped-only recent opens the pin map at its point and chooses nothing until Confirm", async ({ page, context }) => {
+    const net = await open(page, context);
+    await search(page).fill("green park");
+    await places(page).getByRole("button").first().click();
+    await expect(pinMap(page)).toBeVisible();
+    await pinMap(page).getByRole("button", { name: "Back" }).click();
+    await expect(recents(page)).toHaveCount(1);
+    const before = await page.evaluate(() => window.localStorage.getItem("gs-place"));
+    await recents(page).first().click();
+    await expect(pinMap(page)).toBeVisible();
+    expect(await page.evaluate(() => window.localStorage.getItem("gs-place"))).toBe(before);   // no place is chosen until Confirm
+    await page.getByRole("button", { name: "Confirm & proceed" }).click();
+    const details = page.getByRole("dialog", { name: "Address details" });
+    await details.getByLabel("House, street, colony, ward").fill("12B");
+    await details.getByRole("button", { name: "Deliver here" }).click();
+    await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "PATCH").at(-1)?.body?.confirmed).toBe(true);
+    expect(net.state.recents).toHaveLength(1);   // the same row, confirmed
+  });
+
+  // Gap 2 (reviewer, #1615): the tap's insert is held back; a fast Confirm waits for it and updates that row. No second row.
+  test("a fast Confirm after a held-back tap updates the tapped row: one row, not two", async ({ page, context }) => {
+    const net = await open(page, context);
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    await context.route("**/rest/v1/recent_places**", async (route, req) => {
+      if (req.method() === "POST") await gate;   // the tap's insert waits here
+      await route.fallback();
+    });
+    await search(page).fill("green park");
+    await places(page).getByRole("button").first().click();
+    await expect(pinMap(page)).toBeVisible();
+    await page.getByRole("button", { name: "Confirm & proceed" }).click();
+    const details = page.getByRole("dialog", { name: "Address details" });
+    await details.getByLabel("House, street, colony, ward").fill("12B");
+    await details.getByRole("button", { name: "Deliver here" }).click();
+    release();
+    await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "PATCH").length).toBeGreaterThanOrEqual(1);
+    expect(net.calls.recentWrites.filter((w) => w.method === "POST")).toHaveLength(1);
+    expect(net.state.recents).toHaveLength(1);
+  });
 }

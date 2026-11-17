@@ -535,6 +535,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const savedNow = useRef(saved); savedNow.current = saved;
   const [recents, setRecents] = useState<Recent[]>([]);   // story 1530: "Recently searched", the customer's own rows
   const recentsNow = useRef(recents); recentsNow.current = recents;
+  const tapWrite = useRef<Promise<Recent | null>>(Promise.resolve(null));   // story 1609: the write of the last tap in search
   const hereNow = useRef(here); hereNow.current = here;
   const whyNow = useRef(why); whyNow.current = why;
   const [whyTap, setWhyTap] = useState(false);   // story 1610: the cause came from a tap. Too slow, or no cause, shows a box on Deliver to only then
@@ -698,20 +699,29 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     choosePlace({ address: a.address, pin: a.pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark, confirmed: true, id: null });
     setStep((st) => (st === "bill" ? "bill" : "menu"));
     void (async () => {
+      const tapped = await tapWrite.current;   // the tap's row, if the customer tapped this place in search first
+      const list = tapped ? [tapped, ...recentsNow.current.filter((r) => r.id !== tapped.id)] : recentsNow.current;
       const pin = (await nearestPin(a.from, undefined)) || (a.pinTyped ? a.pin : "");
-      const row = await keepRecent(getClient(), recentsNow.current, { ...recentWords(s.typed, s.hit, a), pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark });
+      const row = await keepRecent(getClient(), list, { ...recentWords(s.typed, s.hit, a), pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark });
       if (row) setRecents((cur) => [row, ...cur.filter((r) => r.id !== row.id)].slice(0, RECENTS_MAX));
     })().catch(() => undefined);
   }
   // Story 1609 (owner, 17 Nov 2026): a tap on a search result is kept as the customer's own recent at once, marked not confirmed; Confirm on the map updates that row.
+  // The tap's write is kept in tapWrite: a Confirm made fast waits for it, so Confirm updates the tapped row and never adds a second one (reviewer, #1615).
   function tapRecent(h: PlaceHit, typed: string) {
-    void (async () => {
+    tapWrite.current = (async () => {
       const pin = (await nearestPin(h, undefined)) || "";
       const row = await keepRecent(getClient(), recentsNow.current, { ...recentWords(typed, h, { house: "", landmark: "", area: "" }), pin, lat: h.lat, lng: h.lng, house: "", landmark: "" }, false);
       if (row) setRecents((cur) => [row, ...cur.filter((r) => r.id !== row.id)].slice(0, RECENTS_MAX));
-    })().catch(() => undefined);
+      return row;
+    })().catch(() => null);
   }
   function pickRecent(r: Recent) {   // a recent is a confirmed place with its point; the tap makes it the newest
+    if (!r.confirmed) {   // story 1609 (reviewer, #1615): a recent only tapped in search opens the pin map at its point; the place changes only on Confirm, which updates this row
+      setFocusSearch(false); setSheet(false);
+      setPinMap({ center: { lat: r.lat, lng: r.lng }, follow: false, recent: { typed: r.name, hit: null } });
+      return;
+    }
     const used_at = new Date().toISOString();
     choosePlace({ address: r.address, pin: r.pin, lat: r.lat, lng: r.lng, house: r.house, landmark: r.landmark, confirmed: true, id: null });
     setRecents((cur) => [{ ...r, used_at }, ...cur.filter((x) => x.id !== r.id)]);
