@@ -629,10 +629,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       if (pin && !held() && !whereNow.current) choosePlace(herePlace(at, pin));
       return;
     }
-    // Story 1548. A rough fix raises no box, and a known place the fix could be at counts as near: a saved address, a recent, or the confirmed place this phone holds (story 1530).
+    // Story 1548. A rough fix raises no box, and a known place the fix could be at counts as near: a saved address, a confirmed recent, or the confirmed place this phone holds (story 1530).
     const slack = at.accuracy ?? 0;
     const close = (p: { lat: number | null; lng: number | null }) => p.lat !== null && p.lng !== null && distanceM(at, { lat: p.lat, lng: p.lng }) - slack <= near;
-    const known = !!nearSaved(savedNow.current ?? [], at, near, slack) || recentsNow.current.some(close) || (was.confirmed && close(was));   // the held place counts with or without an id: the saved rows may not have been read (a bad network)
+    const known = !!nearSaved(savedNow.current ?? [], at, near, slack) || recentsNow.current.filter((r) => r.confirmed).some(close) || (was.confirmed && close(was));   // the held place counts with or without an id: the saved rows may not have been read (a bad network)
     if (tap && !known) { endAsk(); return void setPinMap({ center: { lat: at.lat, lng: at.lng } }); }
     if (slack > ROUGH_M) return;   // a rough read raises no box and ends none
     if (known || answered(loadSpots(), at, near, new Date(), slack)) return endAsk();
