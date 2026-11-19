@@ -243,7 +243,7 @@ function RemoveSheet({ kitchen, onClose, onRemoved }: { kitchen: KitchenRow; onC
     <DangerSheet id="remove-word" title={`Remove ${kitchen.name}?`}
       sentence="The kitchen leaves GoServe today. Customers stop seeing it at once. Nothing is deleted."
       facts={[["Stops", "New orders, the menu, and every staff sign-in to this kitchen."], ["Finishes", "Orders already placed, and today's slips and cash."], ["Stays", "Past orders, bills and numbers. The kitchen stays in the city list, marked Off."]]}
-      word="REMOVE" value={word} onValue={setWord} confirmLabel="Remove this kitchen" leaveLabel="Keep it open" after="Open orders must finish first."
+      word="REMOVE" value={word} onValue={setWord} confirmLabel="Remove" leaveLabel="Keep it open" after="Open orders must finish first."
       busy={busy} error={error} onConfirm={() => void go()} onClose={onClose} />
   );
 }

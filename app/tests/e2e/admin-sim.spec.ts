@@ -169,7 +169,7 @@ test("S10 (#848) Clear everything asks for the word CLEAR, then calls the databa
   await expect(sheet).toContainText("This empties the dev city. Seed the kitchens brings it back.");
   await expect(sheet).toContainText("Dev only · cannot be undone");
   await expect(sheet).toContainText("Run log, decision log, and every account.");
-  const go = sheet.getByRole("button", { name: "Clear everything" });
+  const go = sheet.getByRole("button", { name: "Clear", exact: true });
   await expect(go).toBeDisabled();
   await sheet.getByLabel("Type CLEAR to go on").fill("CLE");
   await expect(go).toBeDisabled();
@@ -210,7 +210,7 @@ test("S13 (#848) a refusal from the database shows its line and the city stays",
   await open(page);
   await page.getByRole("button", { name: "Clear everything" }).click();
   await page.getByLabel("Type CLEAR to go on").fill("CLEAR");
-  await page.getByRole("dialog").getByRole("button", { name: "Clear everything" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Clear", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("Clear everything is switched off on this database.");
   await expect(page.getByTestId("sim-counts")).toHaveText("10 kitchens · 40 riders (29 online) · 137 dishes");
 });
@@ -246,7 +246,7 @@ test("S15 (#873) Clear everything calls the function again until it says done, w
   await open(page);
   await page.getByRole("button", { name: "Clear everything" }).click();
   await page.getByLabel("Type CLEAR to go on").fill("CLEAR");
-  await page.getByRole("dialog").getByRole("button", { name: "Clear everything" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Clear", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("Cleared: 16 kitchens, 42 riders, 137 dishes, 41 orders.");   // 20 + 20 + 1 orders
   const calls = net.calls.rpc.filter((r) => r.name === "sim_clear_all");
   expect(calls).toHaveLength(3);

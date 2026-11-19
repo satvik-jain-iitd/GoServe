@@ -114,7 +114,7 @@ function DishSheet({ dish, kitchenId, kitchenName, onError, onClose, onDone }: {
     return (
       <DangerSheet id="delete-word" title={`Delete ${dish.name}?`} kicker="Asks once · the dish, not the orders" sentence="The dish leaves the menu now. Past orders keep its name and price."
         facts={[["Goes", "The dish, its photo and its place on the menu."], ["Stays", "Past orders and bills that name it."]]}
-        word="DELETE" value={word} onValue={setWord} confirmLabel="Delete this dish" leaveLabel="Keep the dish" after="Sold out keeps a dish; delete does not."
+        word="DELETE" value={word} onValue={setWord} confirmLabel="Delete" leaveLabel="Keep the dish" after="Sold out keeps a dish; delete does not."
         busy={busy} onConfirm={() => void remove()} onClose={() => { setDeleting(false); setWord(""); }} />
     );
   }

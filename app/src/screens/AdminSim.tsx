@@ -117,7 +117,7 @@ export function AdminSim() {
       {clearing && (
         <DangerSheet id="clear-word" title="Clear everything?" kicker="Dev only · cannot be undone" sentence="This empties the dev city. Seed the kitchens brings it back."
           facts={[["Goes", "Every kitchen and dish, every rider, orders, order events, ratings, payments, tracking."], ["Stays", "Run log, decision log, and every account."]]}
-          word={CLEAR_WORD} value={word} onValue={setWord} confirmLabel="Clear everything" leaveLabel="Keep the city"
+          word={CLEAR_WORD} value={word} onValue={setWord} confirmLabel="Clear" leaveLabel="Keep the city"
           busy={busy} onConfirm={() => void clear()} onClose={() => { setClearing(false); setWord(""); }} />
       )}
     </div>

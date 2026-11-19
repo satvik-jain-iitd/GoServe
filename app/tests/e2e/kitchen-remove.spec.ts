@@ -27,7 +27,7 @@ test("S1 the kitchen page has a red Remove row under Leaving GoServe; the sheet'
   await expect(sheet).toContainText("New orders, the menu, and every staff sign-in to this kitchen.");
   await expect(sheet).toContainText("Orders already placed, and today's slips and cash.");
   await expect(sheet).toContainText("Past orders, bills and numbers. The kitchen stays in the city list, marked Off.");
-  const go = sheet.getByRole("button", { name: "Remove this kitchen" });
+  const go = sheet.getByRole("button", { name: "Remove", exact: true });
   await expect(go).toBeDisabled();
   await sheet.getByLabel("Type REMOVE to go on").fill("remove");
   await expect(go).toBeDisabled();
@@ -41,7 +41,7 @@ test("S2 the section carries its caption; Keep it open closes the sheet and noth
   const net = await admin(page, context);
   const sheet = await open(page);
   await sheet.getByLabel("Type REMOVE to go on").fill("REMOVE");
-  await sheet.getByRole("button", { name: "Keep it open" }).click();
+  await sheet.getByRole("button", { name: "Keep it open", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(removes(net)).toEqual([]);
   const section = page.getByRole("region", { name: "Leaving GoServe" });
@@ -56,7 +56,7 @@ test("S3 with open orders the database refuses and the sheet says so in the admi
   net.state.removeReply = { ok: false, error: "orders_open", message: "Finish the orders on your tickets first, then remove the kitchen." };
   const sheet = await open(page);
   await sheet.getByLabel("Type REMOVE to go on").fill("REMOVE");
-  await sheet.getByRole("button", { name: "Remove this kitchen" }).click();
+  await sheet.getByRole("button", { name: "Remove", exact: true }).click();
   await expect(sheet.getByRole("alert")).toHaveText(/^This kitchen has (\d+ )?open orders?\. Finish or cancel them first\.$/);
   expect(removes(net)).toHaveLength(1);
   await expect(sheet).toBeVisible();
@@ -66,7 +66,7 @@ test("S4 with no open orders the kitchen is removed: the sheet closes and the ci
   const net = await admin(page, context);
   const sheet = await open(page);
   await sheet.getByLabel("Type REMOVE to go on").fill("REMOVE");
-  await sheet.getByRole("button", { name: "Remove this kitchen" }).click();
+  await sheet.getByRole("button", { name: "Remove", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(removes(net)).toEqual([{ name: "kitchen_remove_v2", body: { p_kitchen: "k-1" } }]);
   await page.getByRole("button", { name: "Back to city" }).click();
@@ -104,6 +104,6 @@ test("S7 a missing database function shows a true line, not 'try again'", async 
     body: JSON.stringify({ code: "PGRST202", message: "Could not find the function public.kitchen_remove_v2(p_kitchen) in the schema cache" }) }));
   const sheet = await open(page);
   await sheet.getByLabel("Type REMOVE to go on").fill("REMOVE");
-  await sheet.getByRole("button", { name: "Remove this kitchen" }).click();
+  await sheet.getByRole("button", { name: "Remove", exact: true }).click();
   await expect(sheet.getByRole("alert")).toHaveText("Could not reach GoServe. Check your connection and try again.");
 });
