@@ -129,7 +129,7 @@ export function historyCards() {
     for (let i = 0; i < await cards.count(); i++) await cards.nth(i).locator(".ui-view-all").click();
   };
 
-  test("H1a kitchen with 6 orders at 390 by 844: every order row sits inside its own card, each card's scrollHeight equals its clientHeight, and the last order of the second kitchen can be scrolled into view and tapped", async ({ page, context }) => {
+  test("H1 a kitchen with 6 orders at 390 by 844: every order row sits inside its own card, each card's scrollHeight equals its clientHeight, and the last order of the second kitchen can be scrolled into view and tapped", async ({ page, context }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await history(page, context, [...Array.from({ length: 6 }, (_, i) => past(i + 1, "k-1", day(i))), ...Array.from({ length: 6 }, (_, i) => past(i + 7, "k-2", day(i)))]);
     const cards = page.locator(".ui-saved-card");
