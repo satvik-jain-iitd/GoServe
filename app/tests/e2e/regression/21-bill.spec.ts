@@ -22,7 +22,7 @@ const place = (page: Page) => page.getByRole("button", { name: /Place order/ });
 const phoneBox = (page: Page) => page.getByLabel("Phone number · the rider calls you on it");   // BillScreen.tsx: the Bill asks only the phone (story 1574); name and address are gone
 const noteBox = (page: Page) => page.getByRole("textbox", { name: "Note for the kitchen (optional)", exact: true });
 async function fillDetails(page: Page) {   // as bill.spec S4: the phone is the one field; the place comes from the Deliver to row
-  await phoneBox(page).fill("9876543210");
+  await phoneBox(page).fill("9000000000");
 }
 // The row of the slip with this label: its last span holds the amount.
 const slipAmount = (page: Page, label: string) => page.getByText(label, { exact: true }).locator("..").locator("span").last();
@@ -48,7 +48,7 @@ test("TC 21.1 Look: the kitchen and pin, the one line, Delivery, To pay at door,
   await expect(pay.getByText("Cash at the door", { exact: true })).toBeVisible();   // story #1261 (board P6): the door methods that are on; no Card, no online UPI
   await expect(pay.getByText("UPI at the door", { exact: true })).toBeVisible();
   await expect(pay.getByText("Card", { exact: true })).toHaveCount(0);
-  await phoneBox(page).fill("9876543210");   // BillScreen.tsx: the bar says "Place order ›" once the phone is in
+  await phoneBox(page).fill("9000000000");   // BillScreen.tsx: the bar says "Place order ›" once the phone is in
   await expect(place(page)).toContainText("Cash · ₹320");
   await expect(place(page)).toContainText("Place order ›");
 });
@@ -125,7 +125,7 @@ test("TC 21.7 No network on Place order: our own line shows, and the order is no
   await place(page).click();
   await expect(page.getByRole("alert").filter({ hasText: "No internet. Check your internet and try again." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();   // still on the bill, nothing lost
-  await expect(page.getByText("9876543210", { exact: true })).toBeVisible();   // nothing lost: the phone shows as the saved row "The rider calls you on" (BillScreen.tsx savedRow)
+  await expect(page.getByText("9000000000", { exact: true })).toBeVisible();   // nothing lost: the phone shows as the saved row "The rider calls you on" (BillScreen.tsx savedRow)
   down = false;
   await place(page).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
