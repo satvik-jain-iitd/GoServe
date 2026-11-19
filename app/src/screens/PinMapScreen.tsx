@@ -72,6 +72,10 @@ export function PinMapScreen({ center, zoom = 17, follow, kicker, confirmLabel, 
   const looked = useRef<{ at: Place; words: Looked | null; serve: Serve | null } | null>(null);   // story 1500: what the one lookup at this place gave
   const [finding, setFinding] = useState(false);
   const quiet = useRef(false);
+  const movedBusy = useRef(false);   // story 1640: movestart turned busy on while it was off (a hand move); only that busy is cleared by a move that ends with no lookup
+  // story 1640: a hand move's busy is released only by the move's own early returns, and only when movestart set it.
+  const settling = useRef(false);   // story 1640: a settle timer is out; its own end owns busy, so a move's release must not clear it
+  const releaseMoved = () => { if (movedBusy.current) { movedBusy.current = false; if (!settling.current) setBusy(false); } };
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fns = useRef({ lookup, serve });
   fns.current = { lookup, serve };
@@ -86,14 +90,16 @@ export function PinMapScreen({ center, zoom = 17, follow, kicker, confirmLabel, 
   // (story 1393: the server decides by pin code, so a place-only no can be false). The address is looked up once, on Confirm (confirm below).
   const settle = (p: Place) => {
     // Story 1393: a screen size change moves the map but not the place under the pin. Same place (under a metre): nothing is asked again, so no flash.
-    if (settled.current && metres(settled.current.lat, settled.current.lng, p.lat, p.lng) < 1) return;
+    if (settled.current && metres(settled.current.lat, settled.current.lng, p.lat, p.lng) < 1) { releaseMoved(); return; }
     settled.current = p;
     const mine = ++ask.current;   // a newer rest takes over, also from a lookup that is still out
     looked.current = null;
     setPoint(p);
     setWords(null); setFailed(false); setServed(null); setFinding(false);   // story 1462: never the old place's name
+    movedBusy.current = false;   // story 1640: the settle timer owns busy from here
     setBusy(true);
     if (timer.current) clearTimeout(timer.current);
+    settling.current = true;
     timer.current = setTimeout(async () => {
       const s0 = await limit(fns.current.serve(p, null)).catch(() => null);
       if (mine !== ask.current) return;
@@ -101,6 +107,7 @@ export function PinMapScreen({ center, zoom = 17, follow, kicker, confirmLabel, 
       if (s0?.serviceable) setServed(s0);
       setNoAnswer(!s0 && !kitchen);
       if (!s0) settled.current = null;   // story 1426 (board PE1): no answer at all: Try again instead of Confirm. A no stays neutral until the lookup
+      settling.current = false;
       setBusy(false);
     }, SETTLE_MS);
   };
@@ -158,11 +165,12 @@ export function PinMapScreen({ center, zoom = 17, follow, kicker, confirmLabel, 
       if (gone || !box.current) return;
       const map = L.map(box.current, { zoomControl: false, attributionControl: false, scrollWheelZoom: false, boxZoom: false, keyboard: false }).setView([center.lat, center.lng], zoom, { animate: false });
       if (TILES) L.tileLayer(TILES, { maxZoom: 19 }).addTo(map);
+      map.on("movestart", () => { if (!quiet.current && root.current?.dataset.step !== "details") { movedBusy.current = true; setBusy(true); } });   // story 1640: a hand move disables Confirm until it rests
       map.on("moveend", () => {
-        if (quiet.current || root.current?.dataset.step === "details") return;   // story 1500: the map is still behind the sheet; its re-centring is not a new place
+        if (quiet.current || root.current?.dataset.step === "details") { releaseMoved(); return; }   // story 1500: the map is still behind the sheet; its re-centring is not a new place
         const c = pinAt(map), was = looked.current?.at;
         // Story 1500: when the sheet closes the confirmed place is put back under the pin, a pixel or two off. That is the same place: no new ask, no second lookup.
-        if (was && map.latLngToContainerPoint([was.lat, was.lng]).distanceTo(map.latLngToContainerPoint(c)) < 3) return;
+        if (was && map.latLngToContainerPoint([was.lat, was.lng]).distanceTo(map.latLngToContainerPoint(c)) < 3) { releaseMoved(); return; }
         settleRef.current({ lat: c.lat, lng: c.lng });
       });
       map.on("dragstart dblclick", byHand);   // story 1389: a drag or a double tap by the person
