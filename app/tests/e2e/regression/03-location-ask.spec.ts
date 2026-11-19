@@ -42,28 +42,29 @@ test("TC 3.2 Search for my address is above, Use my current location is last, th
 });
 
 test("TC 3.3 Use my current location, allow: the pin map opens centred on my spot", async ({ page, context }) => {
-  const looked: string[] = [];
-  page.on("request", (r) => { if (r.url().includes("/functions/v1/geocode")) looked.push(r.url()); });   // the map asks for the words at its centre once it settles
   await STEPS["first-open-pin"](context, page, PATH);   // the shared step gives the phone 28.5377, 77.2532 and taps the button
   await expect(map(page)).toBeVisible();
   await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeVisible();
-  await expect.poll(() => looked.at(-1) ?? "").toContain("lat=28.53");   // centred where the phone is (a map in the wrong place asks for another spot)
-  expect(looked.at(-1)).toContain("lng=77.25");
+  await expect(page.locator(".gs-here-dot")).toBeVisible();
+  const mb = (await page.locator(".ui-pinmap-map").boundingBox())!, dot = (await page.locator(".gs-here-dot").boundingBox())!;   // the same check as openedOnPhone in 06-pinmap-plate (the address is looked up on Confirm only, story 1500)
+  expect(Math.abs(mb.x + mb.width / 2 - (dot.x + dot.width / 2))).toBeLessThanOrEqual(3);
+  expect(Math.abs(mb.y + mb.height / 2 - (dot.y + dot.height / 2))).toBeLessThanOrEqual(3);
 });
 
-test("TC 3.4 Use my current location, block: the map opens with search ready, no dead end", async ({ page, context }) => {
+test("TC 3.4 Use my current location, block: a true line, Try location again and Search for my address, no dead end (story 1529)", async ({ page, context }) => {
   await phone(context, "blocked");
   await STEPS["first-open-ask"](context, page, PATH);
   await page.getByRole("button", { name: "Use my current location" }).click();
-  await expect(map(page)).toBeVisible();
-  await expect(page.getByRole("searchbox", { name: "Search an area or address" })).toBeFocused();
+  await expect(page.getByText("Location is off or blocked. Turn on location in your phone settings, or search for your address.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Try location again" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Search for my address" })).toBeVisible();
 });
 
-test("TC 3.5 Search for my address: the pin map opens with the search box, no separate typing screen (story 1126)", async ({ page, context }) => {
+test("TC 3.5 Search for my address opens the one search with the box focused, no Pin code field (story 1530)", async ({ page, context }) => {
   await STEPS["first-open-ask"](context, page, PATH);
   await page.getByRole("button", { name: "Search for my address" }).click();
-  await expect(map(page)).toBeVisible();
   await expect(page.getByRole("searchbox", { name: "Search an area or address" })).toBeFocused();
+  await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
   await expect(page.getByLabel("Pin code")).toHaveCount(0);
 });
 
