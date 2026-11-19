@@ -9,12 +9,12 @@ const lockVersion = (dir: string): string => JSON.parse(readFileSync(new URL(`..
 
 describe("ci.yml (story #895)", () => {
   it("has the board-match job (story 1168), the regression job (story 1178) and the browser shards (story 1641)", () => expect(Object.keys(jobs).sort()).toEqual(["app", "boards", "browser", "gate", "guard", "regression", "site"]));
-  it("the browser e2e tests run in four parallel shards, and the App job keeps only the unit and screen checks (story 1641)", () => {
+  it("the browser e2e tests run in parallel shards, and the App job keeps only the unit and screen checks (story 1641)", () => {
     expect(jobs.browser).toMatch(/^ {6}fail-fast: false$/m);
-    expect(jobs.browser).toMatch(/^ {8}shard: \[1, 2, 3, 4\]$/m);
+    const shards = (jobs.browser.match(/^ {8}shard: \[([^\]]+)\]$/m)?.[1] ?? "").split(",").map((n) => Number(n.trim()));
+    expect(shards.length, "a shard list of 2 or more").toBeGreaterThanOrEqual(2);
+    expect(shards, "the list is 1 to N in order").toEqual(shards.map((_, i) => i + 1));
     expect(jobs.browser).toContain("--shard=${{ matrix.shard }}/${{ strategy.job-total }}");
-    expect(jobs.browser).toContain("image: mcr.microsoft.com/playwright:v1.64.0-noble");
-    expect(jobs.app).toContain("image: mcr.microsoft.com/playwright:v1.64.0-noble");
     expect(jobs.app).not.toContain("test:e2e");
     expect(jobs.app).toContain("screens.sh --check");
   });
@@ -41,7 +41,7 @@ describe("ci.yml (story #895)", () => {
     expect(jobs.guard).toMatch(/timeout-minutes: 10$/m);
   });
   it("runs Site and App in the Playwright image of the version in their package-lock, and no job installs browsers with apt", () => {
-    for (const [name, dir] of [["site", "site"], ["app", "app"]] as const) expect(jobs[name], name).toContain(`image: mcr.microsoft.com/playwright:v${lockVersion(dir)}-noble`);
+    for (const [name, dir] of [["site", "site"], ["app", "app"], ["browser", "app"]] as const) expect(jobs[name], name).toContain(`image: mcr.microsoft.com/playwright:v${lockVersion(dir)}-noble`);
     expect(text).not.toContain("playwright install");
   });
 });

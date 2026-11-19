@@ -158,7 +158,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  # Story #1641: the browser e2e tests (all but the screen spec) run in four parallel shards. Each shard builds the app itself (CI has no reused server). A shard list of 4 means 4 machines; change the list, not the shard count.
+  # Story #1641: the browser e2e tests (all but the screen spec) run in parallel shards. Each shard builds the app itself (CI has no reused server). The shard list is the only place the number of machines lives: 1 to N, in order.
   browser:
     name: E2E (shard ${{ matrix.shard }})
     runs-on: ubuntu-latest
@@ -166,7 +166,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5, 6]
     container:
       image: mcr.microsoft.com/playwright:v1.64.0-noble   # browsers and their system libraries are in the image; no apt on the runner (story #895)
       options: --ipc=host
