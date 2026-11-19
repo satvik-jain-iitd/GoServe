@@ -104,8 +104,10 @@ export function AccountScreen({ name, phone, address, farKm, pin, photo, email, 
             <div className="ui-sheet-head"><h2>Sign out of this phone?</h2></div>
             <p>This phone forgets your details. Your orders stay in your account.</p>
             <div className="ui-sheet-acts">
-              <button ref={stay} type="button" className="ui-btn ghost big" onClick={() => setSigningOut(false)}>Stay signed in</button>
-              <button type="button" className="ui-btn big" onClick={onForget}>Sign out</button>
+              <div className="ui-row-pair">
+                <button ref={stay} type="button" className="ui-btn ghost big" onClick={() => setSigningOut(false)}>Stay signed in</button>
+                <button type="button" className="ui-btn big" onClick={onForget}>Sign out</button>
+              </div>
             </div>
           </div>
         </div>

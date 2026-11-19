@@ -298,7 +298,6 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-ask { display: flex; flex-direction: column; align-items: stretch; margin: 0; }
 .ui-ask h3 { margin: 0; font-size: var(--gs-text-lg); }
 .ui-bottom .ui-ask { margin-top: var(--gs-space-2); }   /* story 1691: with the foot's 8 px gap, 16 px above the card */
-.ui-ask .ui-row-pair > .ui-btn { flex-basis: calc(50% - var(--gs-space-3) / 2); }   /* story 1691: the outline button's border made the two unequal by 2 px; the same basis for both */
 .ui-bottom { display: flex; flex-direction: column; gap: var(--gs-space-2); padding: var(--gs-space-3) var(--gs-gutter) max(var(--gs-space-5), env(safe-area-inset-bottom)); }
 .ui-bottom .ui-btn.big { width: 100%; }
 /* Orders and You (story H10d). Boards 08, 08e and 09. */
@@ -519,7 +518,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-btn.danger { color: var(--md-error); border-color: var(--md-error); }
 .ui-btn.danger-fill { background: var(--md-error); color: var(--md-on-error); }
 .ui-row-pair { display: flex; gap: var(--gs-space-3); }
-.ui-row-pair > .ui-btn { flex: 1; }
+.ui-row-pair > .ui-btn { flex: 1 1 calc(50% - var(--gs-space-3) / 2); padding-inline: var(--gs-space-3); }   /* story 1692: the same basis for both, so an outline button's border never makes the halves unequal */
 /* Story 848: a scenario row that opens (board A-Sim-Groups): name and one line of numbers, a chevron on the right. */
 .ui-details > summary { display: flex; flex-direction: column; gap: 2px; padding: var(--gs-space-3) var(--gs-space-6) var(--gs-space-3) 0; border-bottom: 1px solid var(--md-outline-variant); cursor: pointer; position: relative; list-style: none; font-weight: 600; min-height: var(--gs-tap); justify-content: center; }
 .ui-details > summary::-webkit-details-marker { display: none; }
