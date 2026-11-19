@@ -298,7 +298,8 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-ask { display: flex; flex-direction: column; align-items: stretch; margin: 0; }
 .ui-ask h3 { margin: 0; font-size: var(--gs-text-lg); }
 .ui-bottom .ui-ask { margin-top: var(--gs-space-2); }   /* story 1691: with the foot's 8 px gap, 16 px above the card */
-.ui-bottom { display: flex; flex-direction: column; gap: var(--gs-space-2); padding: var(--gs-space-3) var(--gs-gutter) max(var(--gs-space-5), env(safe-area-inset-bottom)); }
+.ui-bottom { display: flex; flex-direction: column; gap: var(--gs-space-2); padding: var(--gs-space-3) var(--gs-gutter) max(var(--gs-space-5), env(safe-area-inset-bottom)); border-top: 1px solid var(--md-outline-variant); background: var(--md-background); }   /* story 1697: a flat line above the foot, the tab bar's line, the page's own background */
+.ui-bottom:not(:has(*)) { border-top: 0; }   /* story 1697: a foot with no button has no line; :empty fails because the JSX leaves blank text in it */
 .ui-bottom .ui-btn.big { width: 100%; }
 /* Orders and You (story H10d). Boards 08, 08e and 09. */
 .ui-center { justify-content: center; }
