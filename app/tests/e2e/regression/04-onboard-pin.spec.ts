@@ -54,7 +54,7 @@ async function dragMap(page: Page, px = 300, west = false) {   // west: the cent
   await page.mouse.up();
 }
 
-test("TC 4.1 map opens: Back and search on top, pin centred, the sheet, Confirm, Ola credit", async ({ page, context }) => {
+test("TC 4.1 map opens: Back and search on top, pin centred, the sheet, Confirm", async ({ page, context }) => {
   await STEPS["first-open-pin"](context, page, PATH);
   await mapAnswers(context);
   await expect(mapBox(page)).toBeVisible();
