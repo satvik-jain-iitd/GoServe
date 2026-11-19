@@ -34,9 +34,9 @@ const SAMPLE = { name: "Sample Junction", address: "Sample Junction, Sample Road
 const SAMPLE_PIN = { ...SAMPLE, address: "Sample Junction, Sample Road, Sampletown 110016", pin: "110016" };
 const SAMPLE_OWN = { ...SAMPLE, from: "own", pin: "110016" };
 
-async function openTap(page: Page, context: BrowserContext, hit: object, { nearPin = null, guest = false }: { nearPin?: string | null; guest?: boolean } = {}) {
-  const net = await setup(context, page, [], { pin: null, guest });
-  net.state.addresses = guest ? [] : [HOME];
+async function openTap(page: Page, context: BrowserContext, hit: object, { nearPin = null }: { nearPin?: string | null } = {}) {
+  const net = await setup(context, page, [], { pin: null });
+  net.state.addresses = [HOME];
   net.state.recents = [];
   net.state.nearPin = nearPin;
   net.state.places = { status: 200, body: { ok: true, results: [hit] } };
