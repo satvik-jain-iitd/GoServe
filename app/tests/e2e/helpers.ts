@@ -17,7 +17,7 @@ export const decisionOf = (over: object = {}) => ({
   use_case: "D1", rule_pick: "r2", chosen_pick: "r2", chosen_by: "rule", jev_status: "ok", jev: { pick: "r2", confidence: 0.81, agrees: true, ms: 310 }, ...over,
 });
 
-type Calls = { place: { headers: Record<string, string>; body: any }[]; riderWrites: { method: string; body: any }[]; customerWrites: { method: string; body: any }[]; menuReads: string[]; menuWrites: { method: string; url: string; body: any }[]; uploads: string[]; uploadMeta: { headers: Record<string, string>; body: Buffer | null }[]; kitchenWrites: { method: string; url: string; body: any }[]; signups: number; status: any[]; decide: any[]; health: any[]; feedback: any[]; confirm: any[]; rpc: { name: string; body: any }[]; orderReads: string[]; staffReads: string[]; riderReads: string[]; sim: { headers: Record<string, string>; body: any }[]; geocode: string[]; places: string[]; serve: string[]; recentWrites: { method: string; body: any }[]; addressWrites: { method: string; body: any }[]; engine: { headers: Record<string, string>; body: any }[] };
+type Calls = { place: { headers: Record<string, string>; body: any }[]; riderWrites: { method: string; body: any }[]; customerWrites: { method: string; body: any }[]; menuReads: string[]; menuWrites: { method: string; url: string; body: any }[]; uploads: string[]; uploadMeta: { headers: Record<string, string>; body: Buffer | null }[]; kitchenWrites: { method: string; url: string; body: any }[]; signups: number; status: any[]; decide: any[]; health: any[]; feedback: any[]; confirm: any[]; rpc: { name: string; body: any }[]; orderReads: string[]; staffReads: string[]; riderReads: string[]; sim: { headers: Record<string, string>; body: any }[]; geocode: string[]; places: string[]; serve: string[]; recentWrites: { method: string; body: any; url: string }[]; addressWrites: { method: string; body: any }[]; engine: { headers: Record<string, string>; body: any }[] };
 // `pin` is the pin code this device already knows (story B2); pass null for a first visit. The test kitchen k-1 serves 110016.
 // The shared kitchen is open all day (00:00 to 23:59 India) so that a run at any hour meets an open kitchen (story #321: hours are obeyed). Specs that test the hours set their own clock and hours.
 // Story 829: the customer app shows a login wall to a signed-out customer, so a customer on the menu is signed in. `guest: true` is the signed-out one (the wall specs).
@@ -168,7 +168,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
     if (req.url().includes("/rest/v1/recent_places")) {   // story 1530: the customer's recent searches (his own rows; a place he confirmed on the pin map)
       const id = new URL(req.url()).searchParams.get("id")?.replace("eq.", "");
       const body = req.postData() ? JSON.parse(req.postData()!) : null;
-      if (req.method() !== "GET") calls.recentWrites.push({ method: req.method(), body });
+      if (req.method() !== "GET") calls.recentWrites.push({ method: req.method(), body, url: req.url() });
       if (req.method() === "GET") return json(route, 200, [...state.recents].sort((a, b) => b.used_at.localeCompare(a.used_at)));
       if (req.method() === "POST") {
         const row = { id: `r${state.recents.length + 1}`, used_at: new Date().toISOString(), ...body };

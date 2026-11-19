@@ -175,11 +175,13 @@ export function recentOnTap() {
   };
 
   // T8 (RED before the change): tap a result, move the pin, Confirm: one PATCH on the tapped row, no POST, source kept.
-  test("T8: tap, move the pin, Confirm: the tapped row is updated, not doubled, and keeps source ola", async ({ page, context }) => {
+  test("T8: tap, move the pin, Confirm: the tapped row is updated, not doubled, and keeps source ola", async ({ page, context, browserName }) => {
     const net = await openTap(page, context, SAMPLE_PIN);
     await search(page).fill("samp");
     await places(page).getByRole("button").first().click();
     await expect(pinMap(page)).toBeVisible();
+    await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "POST").length).toBe(1);
+    const tappedId = net.state.recents[0]?.id as string;   // the id the tap's POST made, read before Confirm
     const map = (await page.locator(".ui-pinmap-map").boundingBox())!;
     await page.mouse.move(map.x + map.width / 2, map.y + 200);
     await page.mouse.down();
@@ -191,8 +193,18 @@ export function recentOnTap() {
     await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "PATCH").length).toBeGreaterThanOrEqual(1);
     expect(net.calls.recentWrites.filter((w) => w.method === "POST")).toHaveLength(1);
     const patch = net.calls.recentWrites.filter((w) => w.method === "PATCH").at(-1)!;
+    expect(net.calls.recentWrites.filter((w) => w.method === "PATCH")).toHaveLength(1);   // exactly one PATCH for this Confirm
+    expect(new URL(patch.url).searchParams.get("id")).toBe(`eq.${tappedId}`);   // the PATCH goes to the row the tap made
     expect(patch.body).toMatchObject({ confirmed: true, name: "Sample Junction", source: "ola" });
-    expect(patch.body.pin_code ?? patch.body.pin).toMatch(/^\d{6}$/);
+    expect(patch.body.pin_code).toMatch(/^\d{6}$/);
+    // the far case: the Confirm point is more than 50 m from the tapped point, so the same-name rule alone would not have matched.
+    // WebKit: the mouse drag does not move the map in this harness (0 m measured, 19 Nov 2026), so this line runs on chromium only.
+    if (browserName === "chromium") {
+      const R = 6371000, r = Math.PI / 180;
+      const dLat = (patch.body.lat - SAMPLE.lat) * r, dLng = (patch.body.lng - SAMPLE.lng) * r;
+      const h = Math.sin(dLat / 2) ** 2 + Math.cos(SAMPLE.lat * r) * Math.cos(patch.body.lat * r) * Math.sin(dLng / 2) ** 2;
+      expect(2 * R * Math.asin(Math.sqrt(h))).toBeGreaterThan(50);
+    }
     expect(net.state.recents).toHaveLength(1);
   });
 
@@ -226,17 +238,20 @@ export function recentOnTap() {
     await search(page).fill("samp");
     await places(page).getByRole("button").first().click();
     await pinMap(page).getByRole("button", { name: "Back" }).click();
+    await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "POST").length).toBe(1);
+    const tappedId = net.state.recents[0]?.id as string;   // read right after the tap, before the row is tapped again
     await recents(page).first().click();
     await expect(pinMap(page)).toBeVisible();
     await page.getByRole("button", { name: "Confirm & proceed" }).click();
     await page.getByRole("dialog", { name: "Address details" }).getByLabel("House, street, colony, ward").fill("12B");
     await page.getByRole("dialog", { name: "Address details" }).getByRole("button", { name: "Deliver here" }).click();
     await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "PATCH").length).toBeGreaterThanOrEqual(1);
-    const postId = net.state.recents[0]?.id;
     expect(net.calls.recentWrites.filter((w) => w.method === "POST")).toHaveLength(1);
-    expect(net.calls.recentWrites.filter((w) => w.method === "PATCH").at(-1)!.body).toMatchObject({ confirmed: true });
+    const patch = net.calls.recentWrites.filter((w) => w.method === "PATCH").at(-1)!;
+    expect(patch.body).toMatchObject({ confirmed: true });
+    expect(new URL(patch.url).searchParams.get("id")).toBe(`eq.${tappedId}`);   // the PATCH goes to the tapped row's id
     expect(net.state.recents).toHaveLength(1);
-    expect(net.state.recents[0].id).toBe(postId);
+    expect(net.state.recents[0].id).toBe(tappedId);
   });
 
   // T9 (GUARD, green before): no postal code anywhere: Deliver here stays off and no recent is updated with a point.
