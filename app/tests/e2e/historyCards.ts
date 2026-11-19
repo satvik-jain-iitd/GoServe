@@ -7,7 +7,7 @@ import { order, phoneLoc, setup } from "./helpers";
 type Ctx = Parameters<typeof setup>[0];
 // The one small line under the kitchen name, inside the card's head.
 const cardLine = (card: Locator) => card.locator(".ui-order-group span").first();
-const uid = (n: number) => `0000000${n}-0000-4000-8000-000000000000`;
+const uid = (n: number) => `${String(n).padStart(8, "0")}-0000-4000-8000-000000000000`;
 const K2 = { id: "k-2", name: "Saket Kitchen", address: null, phone: null, pin_codes: ["110016"], open: true, active: true, opens_at: "00:00:00", closes_at: "23:59:00" };
 const LONG = "Ramesh Sharma Family Dhaba and Tiffin Co";   // 40 characters, one name, no spaces to break it
 const K3 = { ...K2, id: "k-3", name: LONG };
@@ -110,6 +110,61 @@ export function historyCards() {
     await history(page, context, TWO, [K2, K3]);
     const widths = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
     expect(widths.scroll).toBeLessThanOrEqual(widths.client);
+  });
+
+  // Story 1621: a card keeps its own height, so no order row is cut and the card scrolls with the page.
+  const day = (i: number) => `2026-11-${String(i + 1).padStart(2, "0")}T14:00:00Z`;
+  const sitsInside = async (cards: Locator) => {
+    for (let i = 0; i < await cards.count(); i++) {
+      const card = await box(cards.nth(i));
+      expect(await cards.nth(i).evaluate((e) => e.scrollHeight === e.clientHeight)).toBe(true);
+      for (const row of await cards.nth(i).locator(".ui-order-row").all()) {
+        const r = await box(row);
+        expect(r.x >= card.x && r.right <= card.right && r.y >= card.y && r.bottom <= card.bottom).toBe(true);
+      }
+    }
+  };
+
+  test("H1 a kitchen with 6 orders at 390 by 844: every order row sits inside its own card, each card's scrollHeight equals its clientHeight, and the last order of the second kitchen can be scrolled into view and tapped", async ({ page, context }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await history(page, context, [...Array.from({ length: 6 }, (_, i) => past(i + 1, "k-1", day(i))), ...Array.from({ length: 6 }, (_, i) => past(i + 7, "k-2", day(i)))]);
+    const cards = page.locator(".ui-saved-card");
+    await expect(cards).toHaveCount(2);
+    await sitsInside(cards);
+    const last = cards.nth(1).locator(".ui-order-row").last();
+    await last.scrollIntoViewIfNeeded();
+    await last.click({ trial: true });
+  });
+
+  test("H2 one kitchen with 12 orders at 390 by 844: the same checks", async ({ page, context }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await history(page, context, Array.from({ length: 12 }, (_, i) => past(i + 1, "k-1", day(i))));
+    const cards = page.locator(".ui-saved-card");
+    await expect(cards).toHaveCount(1);
+    await sitsInside(cards);
+    const last = cards.nth(0).locator(".ui-order-row").last();
+    await last.scrollIntoViewIfNeeded();
+    await last.click({ trial: true });
+  });
+
+  test("H3 H1 at 360 by 640: the same checks", async ({ page, context }) => {
+    await page.setViewportSize({ width: 360, height: 640 });
+    await history(page, context, [...Array.from({ length: 6 }, (_, i) => past(i + 1, "k-1", day(i))), ...Array.from({ length: 6 }, (_, i) => past(i + 7, "k-2", day(i)))]);
+    const cards = page.locator(".ui-saved-card");
+    await expect(cards).toHaveCount(2);
+    await sitsInside(cards);
+    const last = cards.nth(1).locator(".ui-order-row").last();
+    await last.scrollIntoViewIfNeeded();
+    await last.click({ trial: true });
+  });
+
+  test("H4 Newest first is under the last card and its box does not meet a card's box", async ({ page, context }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await history(page, context, [...Array.from({ length: 6 }, (_, i) => past(i + 1, "k-1", day(i))), ...Array.from({ length: 6 }, (_, i) => past(i + 7, "k-2", day(i)))]);
+    const cards = page.locator(".ui-saved-card");
+    const lastCard = await box(cards.nth((await cards.count()) - 1));
+    const note = await box(page.getByText("Newest first", { exact: true }));
+    expect(note.y).toBeGreaterThanOrEqual(lastCard.bottom);
   });
 }
 
