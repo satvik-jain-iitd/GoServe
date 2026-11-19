@@ -73,7 +73,6 @@ export function OrdersScreen({ orders, loading, kitchenName, kitchenId, kitchenN
           </section>
           );
         })}
-        {orders.length > 0 && <p className="mono ui-foot">Newest first</p>}
       </div>
       <TabBar current="orders" onMenu={onMenu} onOrders={() => undefined} />
     </>
