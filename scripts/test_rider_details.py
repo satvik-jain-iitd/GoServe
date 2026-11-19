@@ -73,7 +73,7 @@ class RiderDetails(unittest.TestCase):
     def test_a_name_of_60_with_a_dot_an_apostrophe_and_a_hyphen_is_accepted(self):
         for nm in ("A" * 60, "D'Souza-Rao Jr.", "राज कुमार"):
             r = run(*SETUP, add("amit@example.com", name=nm, phone="9000000000"), "select (select v from r) v, (select rider_name from staff_invites) rn")
-            self.assertEqual((r[-1]["v"], r[-1]["rn"]), ({"ok": True, "invited": True}, nm), (nm, r))
+            self.assertEqual((r[-1]["v"], r[-1]["rn"]), ({"invited": True}, nm), (nm, r))
 
     def test_a_kitchen_person_and_an_admin_are_added_as_today(self):
         r = run(*SETUP, add("cook@example.com", "kitchen", kitchen=K1, into="a"), add("boss2@example.com", "admin", into="b"),

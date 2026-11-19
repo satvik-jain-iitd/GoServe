@@ -8,12 +8,13 @@ from test_schema import TOKEN, sql
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 MIG = "" if os.environ.get("SKIP_MIG") else open(os.path.join(HERE, "..", "supabase", "migrations", "20261105100000_staff_invites.sql")).read()
+RIDER = open(os.path.join(HERE, "..", "supabase", "migrations", "20261119140000_rider_details.sql")).read()   # story 1654: a rider is added with a name and a mobile; applied inside each test's own transaction
 K1, K2 = "00000000-0000-0000-0000-0000000000e1", "00000000-0000-0000-0000-0000000000e2"
 ADMIN, NOBODY, EXISTING, NEWBIE = ("00000000-0000-0000-0000-0000000000d%d" % i for i in (1, 2, 3, 4))
 
 
 def run(*stmts):
-    return sql("begin; " + MIG + "; " + "; ".join(stmts) + "; rollback;")
+    return sql("begin; " + MIG + "; " + RIDER + "; " + "; ".join(stmts) + "; rollback;")
 
 
 def user(uid, email, confirmed=True):
@@ -34,7 +35,8 @@ def as_user(uid, body):
 
 def add(email, kind="kitchen", kitchen=K1, who=ADMIN):
     k = f"'{kitchen}'" if kitchen else "null"
-    return as_user(who, f"select admin_add_person({email!r}, '{kind}', {k})")
+    rider = ", 'Amit Kumar', '9000000000'" if kind == "rider" else ""   # story 1654: a rider needs a name and a mobile
+    return as_user(who, f"select admin_add_person({email!r}, '{kind}', {k}{rider})")
 
 
 COUNTS = "select (select count(*) from staff_invites where claimed_at is null) open, (select count(*) from staff_invites where claimed_at is not null) claimed, (select count(*) from kitchen_staff where kitchen_id = '%s') staff, (select count(*) from riders) riders"

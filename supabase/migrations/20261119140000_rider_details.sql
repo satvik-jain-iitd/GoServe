@@ -36,7 +36,7 @@ begin
     insert into staff_invites (email, kind, kitchen_id, created_by, rider_name, rider_phone)
     values (v_email, p_kind, case when p_kind = 'kitchen' then p_kitchen end, auth.uid(),
             case when p_kind = 'rider' then v_name end, case when p_kind = 'rider' then v_phone end) on conflict do nothing;
-    return jsonb_build_object('ok', true, 'invited', true);
+    return jsonb_build_object('invited', true);
   end if;
   if p_kind = 'admin' then
     insert into admins (user_id) values (v_user) on conflict do nothing;
@@ -50,7 +50,7 @@ begin
     end if;
     insert into kitchen_staff (kitchen_id, user_id) values (p_kitchen, v_user) on conflict do nothing;
   end if;
-  return jsonb_build_object('ok', true, 'invited', false);
+  return jsonb_build_object('invited', false);
 end $$;
 revoke execute on function admin_add_person(text, text, uuid, text, text) from public, anon;
 grant execute on function admin_add_person(text, text, uuid, text, text) to authenticated;
