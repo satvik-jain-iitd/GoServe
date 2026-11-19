@@ -53,7 +53,7 @@ const read = (page: Page) => page.evaluate(() => {
   const probe = document.createElement("i"); probe.style.borderTopColor = "var(--md-outline-variant)"; probe.style.borderTopStyle = "solid"; document.body.append(probe);
   const line = getComputedStyle(probe).borderTopColor; probe.remove();
   let up: HTMLElement | null = foot.parentElement, behind = "";
-  while (up && !behind) { const c = getComputedStyle(up).backgroundColor; if (c !== "rgba(0, 0, 0, 0)" && c !== "transparent") behind = c; up = up.parentElement; }
+  while (up && !behind) { const c = getComputedStyle(up).backgroundColor; if (c !== "transparent" && !/,\s*0\)$/.test(c)) behind = c; up = up.parentElement; }
   return {
     width: s.borderTopWidth, style: s.borderTopStyle, color: s.borderTopColor, line, bg: s.backgroundColor, behind,
     x: r.x, w: r.width, vw: document.documentElement.clientWidth,
@@ -72,7 +72,7 @@ for (const size of SIZES) {
       expect(m.color).toBe(m.line);
       expect(m.x).toBe(0);
       expect(m.w).toBe(size.width);
-      expect(m.bg).not.toBe("rgba(0, 0, 0, 0)");
+      expect(m.bg).not.toMatch(/,\s*0\)$|^transparent$/);   // not see-through
       expect(m.bg).toMatch(/^rgb\(/);   // alpha 1
       expect(m.bg).toBe(m.behind);
       const before = BEFORE[`${app} ${size.width}`];
