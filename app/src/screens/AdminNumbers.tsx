@@ -10,6 +10,7 @@ import type { DoorMethod } from "../lib/doorMethods";
 import { amountProblem, readEarlyFriend, saveEarlyFriend, type EarlyFriendSetting } from "../lib/earlyFriend";
 import { MAX_DAYS, MIN_DAYS, readPastDaysAdmin, savePastDays, type PastDaysSetting } from "../lib/pastDays";
 import { MAX_RUPEES as INC_MAX, MIN_RUPEES as INC_MIN, STEP_RUPEES, readIncentive, saveIncentive, type IncentiveSetting } from "../lib/incentive";
+import { readSupportPhoneAdmin, saveSupportPhone, showPhone, supportPhoneProblem, type SupportPhoneSetting } from "../lib/supportPhone";
 import { readSwapSetting, saveSwapSetting, swapPctProblem, type SwapSetting } from "../lib/swapSetting";
 
 // Board A9: the admin-only Settings row for the sold-out swap discount.
@@ -205,6 +206,34 @@ function RiderAppSettings() {
   );
 }
 
+// Story #1659 layer 2: the admin-only support phone customers call. Empty Save clears it.
+function SupportSettings() {
+  const [now, setNow] = useState<SupportPhoneSetting | null>(null);
+  const [text, setText] = useState("");
+  const [line, setLine] = useState<string | null>(null);
+  const saved = useRef(false);   // a Save beats a slower first read
+  useEffect(() => { readSupportPhoneAdmin(getClient()).then((s) => { if (saved.current) return; setNow(s); setText((typed) => (typed === "" ? s.phone ?? "" : typed)); }, () => { if (!saved.current) setLine("Could not load the setting. Try again."); }); }, []);
+  async function save() {
+    const problem = supportPhoneProblem(text);
+    if (problem) return void setLine(problem);
+    const failed = await saveSupportPhone(getClient(), text);
+    setLine(failed);
+    if (!failed) { saved.current = true; const phone = text.replace(/ /g, "") || null; setNow({ phone, updated_by: "you", updated_at: new Date().toISOString() }); }
+  }
+  return (
+    <section className="ui-group" aria-label="Support">
+      <h2>Support</h2>
+      <div className="ui-row ui-row-static">
+        <span className="ui-row-label"><b>Support phone</b><span className="ui-row-sub">Customers call this number. 10 digits.</span></span>
+      </div>
+      <div className="ui-field"><input type="tel" inputMode="numeric" value={text} aria-label="Support phone" className="mono-input" onChange={(e) => { setText(e.target.value); setLine(null); }} /></div>
+      <button type="button" className="ui-btn big" onClick={() => void save()}>Save</button>
+      {now && <p className="mono ui-foot">{now.phone ? `Now ${showPhone(now.phone)} · set by ${now.updated_by ?? "the system"}${now.updated_at ? `, ${when(now.updated_at)}` : ""}` : "Not set yet."}</p>}
+      {line && <p role="alert" className="ui-note error">{line}</p>}
+    </section>
+  );
+}
+
 // Story 829: the phone code login switch. Off until an SMS provider is live; flipping it reaches an open customer app in seconds.
 function PhoneCodeSetting() {
   const [on, setOn] = useState<boolean | null>(null);
@@ -259,6 +288,7 @@ export function AdminNumbers({ live, kitchens, settings }: { live?: number; kitc
       {settings && <RiderAppSettings />}
       {settings && <SwapSettings />}
       {settings && <PhoneCodeSetting />}
+      {settings && <SupportSettings />}
       <button type="button" className="ui-row" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}><span>Send feedback</span><span className="go" aria-hidden="true">›</span></button>
     </div>
   );

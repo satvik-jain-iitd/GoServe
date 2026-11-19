@@ -54,6 +54,8 @@ export async function setup(context: BrowserContext, page: Page, initial: object
         if (state.swapDelayMs) await new Promise((r) => setTimeout(r, state.swapDelayMs));   // a slow load
         return json(route, 200, { pct, updated_by: "owner@goserve.test", updated_at: "2026-10-29T14:10:00Z" });   // #619 layer d, board A9
       }
+      if (name === "support_phone_get_v2") return json(route, 200, { phone: "9000000000", updated_by: "owner@goserve.test", updated_at: "2026-11-19T03:40:00Z" });   // #1659 layer 2
+      if (name === "support_phone_set_v2") return json(route, 200, { ok: true });
       if (name === "otp_login_get_v2") return json(route, 200, { on: state.otpLogin === true, updated_by: "owner@goserve.test", updated_at: "2026-11-03T10:00:00Z" });   // story 829: the phone code switch
       if (name === "otp_login_set_v2") { state.otpLogin = JSON.parse(req.postData() ?? "{}").p_on === true; return json(route, 200, { ok: true }); }
       if (name === "swap_discount_set_v2") {
