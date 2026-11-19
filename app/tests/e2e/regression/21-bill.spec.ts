@@ -104,7 +104,7 @@ test("TC 21.6 A dish sells out on the bill: the line is struck through, Swap it 
   // The menu now says the dish is sold out; the bill reads it when the page starts again with the same cart.
   await context.route(isPath("/rest/v1/menu_items"), (r) => answer(r, [dish("d1", "Butter Chicken", 32000, false)]));
   await page.reload();
-  await expect(page.getByRole("alert").filter({ hasText: "Butter Chicken is sold out." })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Butter Chicken is sold out" })).toBeVisible();
   await expect(page.getByText("1 × Butter Chicken", { exact: true }).locator("..")).toHaveCSS("text-decoration-line", /line-through/);
   await expect(page.getByRole("button", { name: "Swap it in" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Take it out" })).toBeVisible();
