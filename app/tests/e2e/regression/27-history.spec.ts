@@ -118,7 +118,7 @@ test("TC 27.5 50 orders: the list scrolls down to the last order, nothing jumps,
   await rows.nth(49).scrollIntoViewIfNeeded();
   await expect(rows.nth(49)).toBeInViewport();
   await expect(rows).toHaveCount(50);   // no row added or lost on the way down
+  await expect(page.getByRole("button", { name: /^Order again/ })).toHaveCount(0);   // story 1589: no button on a row
   await rows.nth(49).click();   // the last order can be tapped (story 1638)
   await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();
-  await expect(rows.getByRole("button", { name: /^Order again/ })).toHaveCount(0);   // story 1589: no button on a row (the sheet's button is not a row's)
 });
