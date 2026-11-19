@@ -182,6 +182,7 @@ export function recentOnTap() {
     await expect(pinMap(page)).toBeVisible();
     await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "POST").length).toBe(1);
     const tappedId = net.state.recents[0]?.id as string;   // the id the tap's POST made, read before Confirm
+    await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeEnabled();   // #1617: Leaflet loads async; the map must exist before the drag
     const map = (await page.locator(".ui-pinmap-map").boundingBox())!;
     await page.mouse.move(map.x + map.width / 2, map.y + 200);
     await page.mouse.down();
