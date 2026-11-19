@@ -27,4 +27,19 @@ describe.skipIf(!isDev || !anon || !service)("recent on tap on goserve-dev", () 
     await client.from("recent_places").delete().eq("id", rows[0].id);
     expect(await listRecents(client)).toHaveLength(0);
   });
+
+  it("T17 (story 1627): Confirm on a tapped row updates the same row and keeps its source ola", async () => {
+    const client = createClient(url!, anon!, { auth: { persistSession: false } });
+    const { data } = await client.auth.signInAnonymously();
+    users.push(data.user!.id);
+    const tap = await keepRecent(client, [], { name: "Integration Tap T17", address: "Integration Tap T17, Test Town", pin: "", lat: 24.9164, lng: 79.5812, house: "", landmark: "", source: "ola" }, false);
+    expect(tap).not.toBeNull();
+    const row = await keepRecent(client, [tap!], { name: "Integration Tap T17", address: "12B, Integration Tap T17, Test Town", pin: "110016", lat: 24.9164, lng: 79.5812, house: "12B", landmark: "", source: "ola" }, true, tap!.id);
+    expect(row?.id).toBe(tap!.id);
+    const rows = await listRecents(client);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ id: tap!.id, confirmed: true, source: "ola", pin: "110016" });
+    await client.from("recent_places").delete().eq("id", rows[0].id);
+    expect(await listRecents(client)).toHaveLength(0);
+  });
 });

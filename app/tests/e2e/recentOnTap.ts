@@ -160,4 +160,141 @@ export function recentOnTap() {
     await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "POST").length).toBe(1);
     expect(net.calls.recentWrites.filter((w) => w.method === "POST")[0].body).toMatchObject({ name: "Sample Junction", source: "own", pin_code: "110016" });
   });
+
+  // Story 1627 (owner, 19 Nov 2026): Confirm after a tap updates the tapped row, never a second one, and keeps its source.
+  const NO_PIN = { status: 200, body: { ok: true, address: "Olastreet 9, Olatown, New Delhi", pin: "", locality: "Olatown", town: "New Delhi" } };
+  const tapAndConfirm = async (page: Page, pinOnSheet?: string) => {
+    await search(page).fill("samp");
+    await places(page).getByRole("button").first().click();
+    await expect(pinMap(page)).toBeVisible();
+    await page.getByRole("button", { name: "Confirm & proceed" }).click();
+    const details = page.getByRole("dialog", { name: "Address details" });
+    await details.getByLabel("House, street, colony, ward").fill("12B");
+    if (pinOnSheet) await details.getByLabel("Pin code", { exact: true }).fill(pinOnSheet);
+    return details;
+  };
+
+  // T8 (RED before the change): tap a result, move the pin, Confirm: one PATCH on the tapped row, no POST, source kept.
+  test("T8: tap, move the pin, Confirm: the tapped row is updated, not doubled, and keeps source ola", async ({ page, context, browserName }) => {
+    const net = await openTap(page, context, SAMPLE_PIN);
+    await search(page).fill("samp");
+    await places(page).getByRole("button").first().click();
+    await expect(pinMap(page)).toBeVisible();
+    await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "POST").length).toBe(1);
+    const tappedId = net.state.recents[0]?.id as string;   // the id the tap's POST made, read before Confirm
+    const map = (await page.locator(".ui-pinmap-map").boundingBox())!;
+    await page.mouse.move(map.x + map.width / 2, map.y + 200);
+    await page.mouse.down();
+    await page.mouse.move(map.x + map.width / 2 + 90, map.y + 200, { steps: 6 });
+    await page.mouse.up();
+    await page.getByRole("button", { name: "Confirm & proceed" }).click();
+    await page.getByRole("dialog", { name: "Address details" }).getByLabel("House, street, colony, ward").fill("12B");
+    await page.getByRole("dialog", { name: "Address details" }).getByRole("button", { name: "Deliver here" }).click();
+    await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "PATCH").length).toBeGreaterThanOrEqual(1);
+    expect(net.calls.recentWrites.filter((w) => w.method === "POST")).toHaveLength(1);
+    const patch = net.calls.recentWrites.filter((w) => w.method === "PATCH").at(-1)!;
+    expect(net.calls.recentWrites.filter((w) => w.method === "PATCH")).toHaveLength(1);   // exactly one PATCH for this Confirm
+    expect(new URL(patch.url).searchParams.get("id")).toBe(`eq.${tappedId}`);   // the PATCH goes to the row the tap made
+    expect(patch.body).toMatchObject({ confirmed: true, name: "Sample Junction", source: "ola" });
+    expect(patch.body.pin_code).toMatch(/^\d{6}$/);
+    // the far case: the Confirm point is more than 50 m from the tapped point, so the same-name rule alone would not have matched.
+    // WebKit: the mouse drag does not move the map in this harness (0 m measured, 19 Nov 2026), so this line runs on chromium only.
+    if (browserName === "chromium") {
+      const R = 6371000, r = Math.PI / 180;
+      const dLat = (patch.body.lat - SAMPLE.lat) * r, dLng = (patch.body.lng - SAMPLE.lng) * r;
+      const h = Math.sin(dLat / 2) ** 2 + Math.cos(SAMPLE.lat * r) * Math.cos(patch.body.lat * r) * Math.sin(dLng / 2) ** 2;
+      expect(2 * R * Math.asin(Math.sqrt(h))).toBeGreaterThan(50);
+    }
+    expect(net.state.recents).toHaveLength(1);
+  });
+
+  // T12 (RED before the change): after T8, Deliver to shows one row, and its address has the house.
+  test("T12: after Confirm, Deliver to shows one recent row whose address has the house", async ({ page, context }) => {
+    const net = await openTap(page, context, SAMPLE_PIN);
+    await tapAndConfirm(page);
+    await page.getByRole("dialog", { name: "Address details" }).getByRole("button", { name: "Deliver here" }).click();
+    await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "PATCH").length).toBeGreaterThanOrEqual(1);
+    await page.getByTitle("Change the delivery address").click();
+    await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
+    await expect(recents(page)).toHaveCount(1);
+    await expect(recents(page).first()).toContainText("12B");
+  });
+
+  // T11 (GUARD, green before): a tapped-only recent opens the pin map at its point; no place is chosen (gs-place unchanged).
+  test("T11: a tapped-only recent opens the pin map and gs-place does not change", async ({ page, context }) => {
+    await openTap(page, context, SAMPLE_PIN);
+    await search(page).fill("samp");
+    await places(page).getByRole("button").first().click();
+    await pinMap(page).getByRole("button", { name: "Back" }).click();
+    const before = await page.evaluate(() => window.localStorage.getItem("gs-place"));
+    await recents(page).first().click();
+    await expect(pinMap(page)).toBeVisible();
+    expect(await page.evaluate(() => window.localStorage.getItem("gs-place"))).toBe(before);
+  });
+
+  // T11b (RED before the change): then Confirm updates the same row id; the table still holds one row.
+  test("T11b: a tapped-only recent, then Confirm: the same row id is updated, one row in the table", async ({ page, context }) => {
+    const net = await openTap(page, context, SAMPLE_PIN);
+    await search(page).fill("samp");
+    await places(page).getByRole("button").first().click();
+    await pinMap(page).getByRole("button", { name: "Back" }).click();
+    await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "POST").length).toBe(1);
+    const tappedId = net.state.recents[0]?.id as string;   // read right after the tap, before the row is tapped again
+    await recents(page).first().click();
+    await expect(pinMap(page)).toBeVisible();
+    await page.getByRole("button", { name: "Confirm & proceed" }).click();
+    await page.getByRole("dialog", { name: "Address details" }).getByLabel("House, street, colony, ward").fill("12B");
+    await page.getByRole("dialog", { name: "Address details" }).getByRole("button", { name: "Deliver here" }).click();
+    await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "PATCH").length).toBeGreaterThanOrEqual(1);
+    expect(net.calls.recentWrites.filter((w) => w.method === "POST")).toHaveLength(1);
+    const patch = net.calls.recentWrites.filter((w) => w.method === "PATCH").at(-1)!;
+    expect(patch.body).toMatchObject({ confirmed: true });
+    expect(new URL(patch.url).searchParams.get("id")).toBe(`eq.${tappedId}`);   // the PATCH goes to the tapped row's id
+    expect(net.state.recents).toHaveLength(1);
+    expect(net.state.recents[0].id).toBe(tappedId);
+  });
+
+  // T9 (GUARD, green before): no postal code anywhere: Deliver here stays off and no recent is updated with a point.
+  test("T9: no postal code anywhere: Deliver here stays off and the recent is not updated", async ({ page, context }) => {
+    const net = await openTap(page, context, SAMPLE, { nearPin: null });
+    net.state.geocode = NO_PIN;
+    await tapAndConfirm(page);
+    await expect(page.getByRole("dialog", { name: "Address details" }).getByRole("button", { name: "Deliver here" })).toBeDisabled();
+    expect(net.calls.recentWrites.filter((w) => w.method === "PATCH")).toHaveLength(0);
+  });
+
+  // TYPED-PIN (GUARD, green before): the customer typed a six-digit pin and nearest_pin answers none: the typed pin is the row's pin.
+  test("TYPED-PIN: a typed pin with no nearest_pin answer is the row's pin_code", async ({ page, context }) => {
+    const net = await openTap(page, context, SAMPLE, { nearPin: null });
+    net.state.geocode = NO_PIN;
+    await tapAndConfirm(page, "123456");
+    await page.getByRole("dialog", { name: "Address details" }).getByRole("button", { name: "Deliver here" }).click();
+    await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "PATCH").length).toBeGreaterThanOrEqual(1);
+    expect(net.calls.recentWrites.filter((w) => w.method === "PATCH").at(-1)!.body).toMatchObject({ pin_code: "123456", confirmed: true });
+  });
+
+  // TYPED-PIN-WINS (RED before the change): the typed pin beats our table's answer for the point.
+  test("TYPED-PIN-WINS: the typed six-digit pin is the row's pin_code, not nearest_pin's", async ({ page, context }) => {
+    const net = await openTap(page, context, SAMPLE, { nearPin: "110017" });
+    net.state.geocode = NO_PIN;
+    await tapAndConfirm(page, "123456");
+    await page.getByRole("dialog", { name: "Address details" }).getByRole("button", { name: "Deliver here" }).click();
+    await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "PATCH").length).toBeGreaterThanOrEqual(1);
+    expect(net.calls.recentWrites.filter((w) => w.method === "PATCH").at(-1)!.body).toMatchObject({ pin_code: "123456" });
+  });
+
+  // G1 (story 1627, pin order step 3): nearest_pin has none, nothing typed: Confirm saves the geocode pin of the point. RED before the change.
+  test("G1: no nearest_pin answer and nothing typed: Confirm saves the geocode pin of the point", async ({ page, context }) => {
+    const net = await openTap(page, context, SAMPLE, { nearPin: null });
+    await search(page).fill("samp");
+    await places(page).getByRole("button").first().click();
+    await expect(pinMap(page)).toBeVisible();
+    await page.getByRole("button", { name: "Confirm & proceed" }).click();
+    const details = page.getByRole("dialog", { name: "Address details" });
+    await details.getByLabel("House, street, colony, ward").fill("12B");
+    await details.getByRole("button", { name: "Deliver here" }).click();
+    await expect.poll(() => net.state.recents[0]?.confirmed).toBe(true);
+    expect(net.state.recents).toHaveLength(1);
+    expect(net.state.recents[0].pin_code).toBe("110016");
+  });
 }
