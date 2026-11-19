@@ -702,7 +702,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       const tapped = await tapWrite.current;   // the tap's row, if the customer tapped this place in search first
       const list = tapped ? [tapped, ...recentsNow.current.filter((r) => r.id !== tapped.id)] : recentsNow.current;
       const pin = (await nearestPin(a.from, undefined)) || (a.pinTyped ? a.pin : "");
-      const row = await keepRecent(getClient(), list, { ...recentWords(s.typed, s.hit, a), pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark });
+      const row = await keepRecent(getClient(), list, { ...recentWords(s.typed, s.hit, a), pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark, source: null });
       if (row) setRecents((cur) => [row, ...cur.filter((r) => r.id !== row.id)].slice(0, RECENTS_MAX));
     })().catch(() => undefined);
   }
@@ -711,7 +711,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   function tapRecent(h: PlaceHit, typed: string) {
     tapWrite.current = (async () => {
       const pin = (await nearestPin(h, undefined)) || "";
-      const row = await keepRecent(getClient(), recentsNow.current, { ...recentWords(typed, h, { house: "", landmark: "", area: "" }), pin, lat: h.lat, lng: h.lng, house: "", landmark: "" }, false);
+      const row = await keepRecent(getClient(), recentsNow.current, { ...recentWords(typed, h, { house: "", landmark: "", area: "" }), pin, lat: h.lat, lng: h.lng, house: "", landmark: "", source: null }, false);
       if (row) setRecents((cur) => [row, ...cur.filter((r) => r.id !== row.id)].slice(0, RECENTS_MAX));
       return row;
     })().catch(() => null);

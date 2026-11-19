@@ -1,6 +1,6 @@
 // Story 1530 (boards LF4b, LF5, LF6, LF13, LF14): the Deliver to screen. The search box has no arrow, one search for the whole app (the pin map's bar opens it),
 // "Recently searched" under the saved list, and nothing moves between the states of the screen.
-// A recent is made only by "Confirm & proceed" on a place picked from search. It holds the confirmed point and the customer's own words, never an answer of Ola.
+// A recent is made by a tap on a place picked from search (kept as not confirmed) and updated by "Confirm & proceed". It holds the point, and the tapped result's own name and address (owner, 17 Nov 2026; loan: undo recent_drop_ola()).
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { phoneLoc, setLoc, setup, whereBox } from "./helpers";
 
@@ -82,18 +82,18 @@ test("A search becomes a recent: I pick a place from search and confirm the pin,
   await details(page).getByRole("button", { name: "Deliver here" }).click();
   await expect(page.getByRole("searchbox", { name: "Search dishes" })).toBeVisible();   // the menu, for the confirmed place
   // Story 1609: the tap already kept the row; Confirm updates that same row, so wait for the update, then check there is still one row for it.
-  await expect.poll(() => net.state.recents.at(-1)?.address).toBe("12B, near park gate, green park");
+  await expect.poll(() => net.state.recents.at(-1)?.address).toBe("12B, near park gate, Olaname Market, Olatown, New Delhi");
   expect(net.state.recents).toHaveLength(2);
   const row = net.state.recents.at(-1)!;
-  expect(row).toMatchObject({ name: "green park", address: "12B, near park gate, green park", pin_code: "110017", house: "12B", landmark: "park gate" });
+  expect(row).toMatchObject({ name: "Olaname Market", address: "12B, near park gate, Olaname Market, Olatown, New Delhi", pin_code: "110017", house: "12B", landmark: "park gate" });
   expect(row.lat).toBeCloseTo(OLA_HIT.lat, 3);
-  expect(JSON.stringify(net.calls.recentWrites)).not.toMatch(/ola/i);   // no word of Ola's search row or lookup is stored
+  expect(JSON.stringify(net.calls.recentWrites)).toMatch(/Olaname Market/);   // owner, 17 Nov 2026: the tapped result's own name and address are kept (loan: undo recent_drop_ola())
   expect(net.state.addresses).toHaveLength(2);   // not a saved address
   const place = await page.evaluate(() => JSON.parse(localStorage.getItem("gs-place")!));
   expect(place).toMatchObject({ confirmed: true, id: null });
   await page.getByTitle("Change the delivery address").click();
   await expect(page.getByText("2 saved")).toBeVisible();   // recents are not counted
-  await expect(recents(page).getByRole("listitem").first()).toContainText("green park");
+  await expect(recents(page).getByRole("listitem").first()).toContainText("Olaname Market");
   await expect(recents(page).getByRole("listitem").first()).toContainText("12B, near park gate");
   await expect(recents(page).getByRole("listitem").first()).toContainText("Selected");
   await expect(recents(page).getByRole("listitem")).toHaveCount(2);
@@ -116,7 +116,7 @@ test("A search tapped but not confirmed shows in Recently searched at once, mark
   await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
   await expect(recents(page)).toHaveCount(1);
   await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "POST").length).toBe(1);
-  expect(net.calls.recentWrites.find((w) => w.method === "POST")!.body).toMatchObject({ name: "green park", confirmed: false });
+  expect(net.calls.recentWrites.find((w) => w.method === "POST")!.body).toMatchObject({ name: "Olaname Market", confirmed: false });
 });
 
 test("Add new address still saves a named address, not a recent", async ({ page, context }) => {
