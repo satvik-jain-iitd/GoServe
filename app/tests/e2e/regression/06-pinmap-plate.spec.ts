@@ -1,4 +1,4 @@
-// Regression, screen 6: C6e Pin map with the GoServe kitchen plate. Cases: .claude/handoff/qa/screens/06-C6e.md (epic #1196, story #1197). Reached with the shared step STEPS["pin-map"].
+// Regression, screen 6: C6e Pin map with the GoServe kitchen plate. Cases: .claude/handoff/qa/screens/06-C6e.md (epic #1196, story #1197). Cases 6.1, 6.2, 6.4, 6.5 and 6.7 are reached with STEPS["first-open-pin"] (the phone is found at HERE); 6.3 still uses STEPS["pin-map"] (no phone).
 import { test, expect, type BrowserContext, type Locator, type Page } from "@playwright/test";
 import { STEPS } from "../screensSteps";
 
@@ -38,9 +38,9 @@ async function kitchens(context: BrowserContext, list: K[]) {
   }, list);
 }
 
-async function phoneAtHere(context: BrowserContext) {
-  await context.grantPermissions(["geolocation"]);
-  await context.setGeolocation({ latitude: HERE.lat, longitude: HERE.lng });
+// The phone is found at HERE and the map opens on it: the shared step grants HERE, taps "Use my current location" and waits for the map's "We deliver here" line.
+async function openPinMapOnPhone(context: BrowserContext, page: Page) {
+  await STEPS["first-open-pin"](context, page, PATH);
 }
 
 const map = (page: Page) => page.getByRole("region", { name: "Pin map" });
@@ -64,8 +64,7 @@ async function openedOnPhone(page: Page) {
 
 test("TC 6.1 open the map near a kitchen: the plate with the tag GoServe Kitchen sits at the kitchen", async ({ page, context }) => {
   await kitchens(context, [{ id: "k-1", ...from(60) }]);   // 60 px east of the pin: clear of the pin, the tag fits the screen
-  await phoneAtHere(context);
-  await STEPS["pin-map"](context, page, PATH);
+  await openPinMapOnPhone(context, page);
   await openedOnPhone(page);
   await expect(plate(page)).toBeVisible();
   await expect(tag(page)).toBeVisible();
@@ -76,8 +75,7 @@ test("TC 6.1 open the map near a kitchen: the plate with the tag GoServe Kitchen
 
 test("TC 6.2 move the pin onto the kitchen: the plate hides where it would touch the pin", async ({ page, context }) => {
   await kitchens(context, [{ id: "k-1", ...from(60) }]);
-  await phoneAtHere(context);
-  await STEPS["pin-map"](context, page, PATH);
+  await openPinMapOnPhone(context, page);
   await openedOnPhone(page);
   await expect(plate(page)).toBeVisible();   // proves the plate is drawn before the map moves
   // drag the map 60 px to the left: the kitchen comes under the pin
@@ -95,8 +93,7 @@ test("TC 6.3 Confirm & proceed: Address details opens (the auto half)", async ({
 
 test("TC 6.4 tap the plate: nothing happens, the pin screen stays and the plate does not move", async ({ page, context }) => {
   await kitchens(context, [{ id: "k-1", ...from(60) }]);
-  await phoneAtHere(context);
-  await STEPS["pin-map"](context, page, PATH);
+  await openPinMapOnPhone(context, page);
   await openedOnPhone(page);
   const art = plate(page);
   await expect(art).toBeVisible();
@@ -112,8 +109,7 @@ test("TC 6.4 tap the plate: nothing happens, the pin screen stays and the plate 
 
 test("TC 6.5 two kitchens in view: two plates, the two tags do not overlap", async ({ page, context }) => {
   await kitchens(context, [{ id: "k-1", ...from(60) }, { id: "k-2", ...from(60, -150) }]);   // one east of the pin, one 150 px north of it
-  await phoneAtHere(context);
-  await STEPS["pin-map"](context, page, PATH);
+  await openPinMapOnPhone(context, page);
   await openedOnPhone(page);
   await expect(plate(page)).toHaveCount(2);
   await expect(tag(page)).toHaveCount(2);
@@ -123,8 +119,7 @@ test("TC 6.5 two kitchens in view: two plates, the two tags do not overlap", asy
 
 test("TC 6.7 the pin 110 m from the kitchen: the tag never sits under the pin, its halo or the my-location dot", async ({ page, context }) => {
   await kitchens(context, [{ id: "k-1", ...from(-pxFor(110)) }]);   // 110 m west: the tag would run out to the pin's side
-  await phoneAtHere(context);
-  await STEPS["pin-map"](context, page, PATH);
+  await openPinMapOnPhone(context, page);
   await openedOnPhone(page);
   await expect(plate(page)).toBeVisible();   // the plate is drawn (its art is clear of the pin), so the tag check below is about a live plate
   const obstacles = {
