@@ -59,8 +59,8 @@ test("TC 22.3 Last dish sold out and removed on the bill: this empty bill stays,
   });
   await context.route(isPath("/rest/v1/menu_items"), (r) => answer(r, [SOLD_OUT_DISH]));
   await page.reload();
-  const alert = page.getByRole("alert").filter({ hasText: "is sold out." });
-  await expect(alert.getByText("Butter Chicken is sold out.")).toBeVisible();   // proves the sold-out bill shows before the removal
+  const alert = page.getByRole("dialog", { name: "Butter Chicken is sold out" });   // story 1706: the offer is a sheet
+  await expect(alert.getByRole("heading", { name: "Butter Chicken is sold out" })).toBeVisible();   // proves the sold-out bill shows before the removal
   await alert.getByRole("button", { name: "Take it out" }).click();
   await expect(alert).toHaveCount(0);
   await expect(emptyBill(page)).toBeVisible();
