@@ -43,7 +43,7 @@ jobs:
   app:
     name: App (typecheck, unit, e2e, build)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     container:
       image: mcr.microsoft.com/playwright:v1.64.0-noble   # browsers and their system libraries are in the image; no apt on the runner (story #895)
       options: --ipc=host
