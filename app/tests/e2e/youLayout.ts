@@ -1,4 +1,4 @@
-// Story #640 (row T3), boards Y1 and Y2: on You the Google row sits under the details card with 16 px of air, never over it; the card has no fixed height; Edit opens the fields inside the card with Save and Cancel.
+// Story #640 (row T3), boards Y1 and Y2: on You the Google row sits under the details card with 16 px of air, never over it; the card has no fixed height; Edit opens the fields inside the card; Save and Cancel sit in the bottom bar (story 1693).
 // One body for two projects: Chromium (Pixel 7) in you-layout.spec.ts and WebKit (iPhone 13) in you-layout.webkit.spec.ts.
 import { expect, type BrowserContext, type Page } from "@playwright/test";
 import { setup } from "./helpers";
@@ -23,13 +23,15 @@ export async function youLayout(page: Page, context: BrowserContext, theme: "day
   expect(rest.air).toBeGreaterThanOrEqual(16);
   await expect(page.getByText("Keeps your orders on every phone.")).toHaveCount(0);   // story #1044: no line under the Google row
   await page.getByRole("button", { name: "Edit delivery details" }).click();
-  // The fields open inside the card, with Save and Cancel; the Google row moves down by their height and still has its air.
+  // The fields open inside the card; Save and Cancel are in the bar at the bottom of the page, not in the card (story 1693); the Google row moves down by their height and still has its air.
   const c = (await card.boundingBox())!;
-  for (const b of [page.locator("[id=acc-name]"), page.locator("[id=acc-phone]"), page.getByRole("button", { name: "Save", exact: true }), page.getByRole("button", { name: "Cancel" })]) {
+  for (const b of [page.locator("[id=acc-name]"), page.locator("[id=acc-phone]")]) {
     const r = (await b.boundingBox())!;
     expect(r.y).toBeGreaterThanOrEqual(c.y);
     expect(r.y + r.height).toBeLessThanOrEqual(c.y + c.height);
   }
+  await expect(card.getByRole("button", { name: "Save", exact: true })).toHaveCount(0);
+  await expect(page.locator(".ui-edit-bar").getByRole("button", { name: "Save", exact: true })).toBeVisible();
   const editing = await gap();
   expect(editing.overlap).toBe(false);
   expect(editing.air).toBeGreaterThanOrEqual(16);

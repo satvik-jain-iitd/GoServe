@@ -326,6 +326,10 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-google-stack { display: flex; flex-direction: column; gap: var(--gs-space-4); }
 .ui-google-help { margin: 0; font-size: 13px; color: var(--gs-text-muted); }
 .ui-edit-actions { display: flex; gap: 8px; padding-top: 4px; }
+/* story 1693: the You page's edit bar. Sticky at the page's bottom edge (the page itself follows the keyboard, so the bar rides on it), the page's own background, 24 px or the safe area under the pair; it cancels the page's bottom padding so it ends at the screen's edge. */
+.ui-you-page .ui-edit-bar { position: sticky; bottom: calc(-24px - env(safe-area-inset-bottom, 0px)); z-index: 1; margin: 12px -16px calc(-24px - env(safe-area-inset-bottom, 0px)); padding: 12px 16px max(24px, env(safe-area-inset-bottom, 0px)); background: var(--gs-you-page); }
+.ui-you-page { box-sizing: border-box; }   /* the keyboard fit sets an inline height: it must count the page's padding, else the bottom 36 px sit under the keyboard */
+.ui-you-page:has(.ui-edit-bar) { scroll-padding-bottom: calc(var(--gs-space-3) * 2 + var(--gs-tap-big) + var(--gs-space-5)); }   /* a focused field scrolls to above the bar */
 .ui-row-label { display: flex; flex-direction: column; gap: 2px; padding: var(--gs-space-2) 0; }
 .ui-today .ui-row-label { overflow-wrap: anywhere; }   /* story 1557: a long address in a Today row breaks inside the row */
 .ui-row-label > span:first-child { font-weight: 600; }
