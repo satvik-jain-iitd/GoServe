@@ -75,7 +75,7 @@ class OrderTracking(unittest.TestCase):
         r = run(make_order("ready"), f"update orders set rider_id = '{RIDER}' where id = '{O}'", final=ROW)
         self.assertEqual((r["row"]["status"], r["row"]["eta_min"]), ("ready", 5), r)   # the rider is at the kitchen: 0 m + 1.1 km
         far = run(make_order("ready"), f"update orders set rider_id = '{RIDER}' where id = '{O}'", ping(28.58), final=ROW)
-        self.assertEqual(far["row"]["eta_min"], 10, far)   # 1.1 km to the kitchen + 1.1 km on = 2.2 km, x1.3 at 300 m a minute (story 1015)
+        self.assertEqual(far["row"]["eta_min"], 9, far)   # 1.1 km to the kitchen + 1.1 km on = 2.2 km, x1.3 at 333.33 m a minute (story 1689; 10 at 300)
 
     def test_a_delivered_or_cancelled_order_has_no_eta(self):
         self.assertEqual(run(make_order("delivered"), final=ROW)["row"]["eta_min"], None)
