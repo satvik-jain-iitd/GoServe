@@ -165,13 +165,33 @@ export function historyCards() {
     await last.click({ trial: true });
   });
 
-  test("H4 Newest first is under the last card and its box does not meet a card's box", async ({ page, context }) => {
+  // Story 1638: History has no "Newest first" line; the list ends with the last card and its own padding, and the last order can be reached and tapped.
+  test("N1 History with orders: the text Newest first is not on the screen", async ({ page, context }) => {
+    await history(page, context, TWO);
+    await expect(page.locator(".ui-order-row")).toHaveCount(3);
+    await expect(page.getByText("Newest first")).toHaveCount(0);
+  });
+
+  test("N2 History with 50 orders: the last order can be scrolled to and tapped, and the space under the last card is the list's own padding", async ({ page, context }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await history(page, context, [...Array.from({ length: 6 }, (_, i) => past(i + 1, "k-1", day(i))), ...Array.from({ length: 6 }, (_, i) => past(i + 7, "k-2", day(i)))]);
+    const ago = (i: number) => new Date(Date.parse("2026-11-19T14:00:00Z") - i * 3_600_000).toISOString();
+    await history(page, context, Array.from({ length: 50 }, (_, i) => past(i + 1, "k-1", ago(i))));
     const cards = page.locator(".ui-saved-card");
-    const lastCard = await box(cards.nth((await cards.count()) - 1));
-    const note = await box(page.getByText("Newest first", { exact: true }));
-    expect(note.y).toBeGreaterThanOrEqual(lastCard.bottom);
+    await expect(cards).toHaveCount(1);
+    await viewAllEach(cards);
+    const rows = cards.nth(0).locator(".ui-order-row");
+    await expect(rows).toHaveCount(50);
+    const list = page.locator(".ui-orders");   // the scroll container is the orders column itself
+    await list.evaluate((e) => { e.scrollTop = e.scrollHeight; });
+    const container = await box(list);
+    const card = await box(cards.nth(0));
+    const padBottom = parseFloat(await list.evaluate((e) => getComputedStyle(e).paddingBottom));
+    expect(Math.round(container.bottom - card.bottom)).toBe(Math.round(padBottom));
+    const last = rows.last();
+    await expect(last).toBeInViewport();
+    expect((await box(last)).bottom).toBeLessThan(container.bottom);
+    await last.click();
+    await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();
   });
 
   // Story 1637: a card shows its three newest orders, then one "View all" button; a tap shows every order of that kitchen in the same card.

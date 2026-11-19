@@ -67,7 +67,7 @@ test("TC 27.1 Look: History with 4 orders, newest first, dishes, time and price,
   await expect(rows.nth(3)).toContainText("Placed");
   await expect(page.locator(".ui-tag")).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^Order again/ })).toHaveCount(0);   // the button is inside the opened order
-  await expect(page.getByText("Newest first")).toBeVisible();
+  await expect(rows.nth(0)).toBeVisible();   // the list is drawn
 });
 
 test("TC 27.2 No orders: No orders yet, Your orders will show here., See the menu", async ({ page, context }) => {
@@ -114,7 +114,8 @@ test("TC 27.5 50 orders: the list scrolls down to the last order, nothing jumps,
   await expect(rows.nth(49)).not.toBeInViewport();   // the oldest is off the screen at first, so the list must scroll
   await rows.nth(49).scrollIntoViewIfNeeded();
   await expect(rows.nth(49)).toBeInViewport();
-  await expect(page.getByText("Newest first")).toBeInViewport();   // the footer at the very end of the list
+  await rows.nth(49).click();   // the last order can be tapped (story 1638)
+  await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();
   await expect(rows).toHaveCount(50);   // no row added or lost on the way down
-  await expect(page.getByRole("button", { name: /^Order again/ })).toHaveCount(0);   // story 1589: no button on a row
+  await expect(rows.getByRole("button", { name: /^Order again/ })).toHaveCount(0);   // story 1589: no button on a row (the sheet's button is not a row's)
 });
