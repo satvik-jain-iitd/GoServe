@@ -72,7 +72,7 @@ export function PinMapScreen({ center, zoom = 17, follow, kicker, confirmLabel, 
   const looked = useRef<{ at: Place; words: Looked | null; serve: Serve | null } | null>(null);   // story 1500: what the one lookup at this place gave
   const [finding, setFinding] = useState(false);
   const quiet = useRef(false);
-  const movedBusy = useRef(false);   // story 1640: movestart turned busy on while it was off (a hand move); only that busy is cleared by a move that ends with no lookup
+  const movedBusy = useRef(false);   // story 1640: set on every hand movestart (it sets busy); releaseMoved clears busy only when this is set, so a settle's own busy is never cleared by a move
   // story 1640: a hand move's busy is released only by the move's own early returns, and only when movestart set it.
   const settling = useRef(false);   // story 1640: a settle timer is out; its own end owns busy, so a move's release must not clear it
   const releaseMoved = () => { if (movedBusy.current) { movedBusy.current = false; if (!settling.current) setBusy(false); } };
