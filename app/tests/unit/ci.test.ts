@@ -22,7 +22,7 @@ describe("ci.yml (story #895)", () => {
   });
   it("uses the agreed limits: Site 15, App 20, Guard 10", () => {
     expect(jobs.site).toMatch(/timeout-minutes: 15$/m);
-    expect(jobs.app).toMatch(/timeout-minutes: 20$/m);
+    expect(jobs.app).toMatch(/timeout-minutes: 30$/m);   // story 1634: was 20; the App job was cancelled by the old limit (run 44450204797)
     expect(jobs.guard).toMatch(/timeout-minutes: 10$/m);
   });
   it("runs Site and App in the Playwright image of the version in their package-lock, and no job installs browsers with apt", () => {
