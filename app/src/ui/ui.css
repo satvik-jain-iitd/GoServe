@@ -601,7 +601,6 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-sheet-lead { margin: 0 0 12px; font-size: 15px; }
 .ui-sheet-text { box-sizing: border-box; width: 100%; padding: 10px 12px; border: 1px solid var(--md-outline); border-radius: 6px; background: var(--md-surface); color: var(--md-on-surface); font: inherit; font-size: 16px; resize: none; }
 .ui-sheet-count { margin: 6px 0 0; display: flex; justify-content: space-between; font-size: 12px; color: var(--gs-text-muted); }
-.ui-sheet-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; }
 .ui-order-sheet .ui-btn.danger-fill:disabled { opacity: 0.4; }
 .ui-declined { margin: 0; padding: 12px 14px; border-left: 4px solid var(--md-error); background: var(--md-surface); border-radius: 0 6px 6px 0; }
 .ui-declined p { margin: 0; font-size: 16px; }

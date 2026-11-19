@@ -22,21 +22,20 @@ test("S1 the New row has no Accept; a tap opens the order sheet with Accept and 
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
-test("S2 Decline needs 20 characters; a chip fills a full sentence the cook can edit; the reason is sent", async ({ page, context }) => {
+test("S2 Decline needs 20 characters, there is no ready-made reason, the typed reason is sent (story 1703)", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
   net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
   await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
   await page.getByRole("dialog", { name: "Order 0f0f0f0f" }).getByRole("button", { name: "Decline 0f0f0f0f" }).click();
   const sheet = page.getByRole("dialog", { name: "Decline order 0f0f0f0f" });
-  const red = sheet.getByRole("button", { name: "Decline this order" });
+  const red = sheet.getByRole("button", { name: "Decline", exact: true });
   await expect(red).toHaveAttribute("aria-disabled", "true");
   await sheet.getByLabel("Reason").fill("too busy now");
   await expect(sheet.getByText("12 characters")).toBeVisible();
   await red.click({ force: true });
   expect(net.calls.status).toHaveLength(0);   // asleep: a touch does nothing
-  await sheet.getByRole("button", { name: "Out of an ingredient" }).click();
-  await expect(sheet.getByLabel("Reason")).toHaveValue("We are out of an ingredient tonight, so this dish cannot be made.");
+  for (const t of ["Out of an ingredient", "Too many orders right now", "Closing early today"]) await expect(sheet.getByRole("button", { name: t })).toHaveCount(0);   // story 1703: no ready-made reasons
   await sheet.getByLabel("Reason").fill(REASON);
   await expect(red).not.toHaveAttribute("aria-disabled", "true");
   await red.click();
@@ -52,7 +51,7 @@ test("S3 Back to the order returns to the order sheet and sends nothing", async 
   await page.goto("/kitchen/");
   await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
   await page.getByRole("button", { name: "Decline 0f0f0f0f" }).click();
-  await page.getByRole("button", { name: "Back to the order" }).click();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Order 0f0f0f0f" })).toBeVisible();
   expect(net.calls.status).toHaveLength(0);
 });

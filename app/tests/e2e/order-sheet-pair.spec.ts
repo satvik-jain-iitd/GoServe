@@ -51,7 +51,38 @@ test("a tap on Decline still opens the reason sheet, and Accept still accepts", 
   const { sheet, net } = await open(page, context, 390, 844);
   await sheet.getByRole("button", { name: "Decline 0f0f0f0f" }).click();
   await expect(page.getByRole("dialog", { name: "Decline order 0f0f0f0f" })).toBeVisible();
-  await page.getByRole("button", { name: "Back to the order" }).click();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
   await page.getByRole("dialog", { name: "Order 0f0f0f0f" }).getByRole("button", { name: "Accept 0f0f0f0f" }).click();
   await expect.poll(() => net.calls.status.length).toBe(1);
 });
+
+// Story 1703 (owner, 20 Nov 2026): the reason sheet has no ready-made reasons; red Decline left, Back right, one half and half pair.
+for (const [w, h] of [[360, 640], [390, 844], [412, 915]]) {
+  test(`reason sheet: no ready-made reason, Decline (red, asleep) left and Back right as a pair, then it wakes at 20 characters (${w}x${h})`, async ({ page, context }) => {
+    const { sheet, net } = await open(page, context, w, h);
+    await sheet.getByRole("button", { name: "Decline 0f0f0f0f" }).click();
+    const d = page.getByRole("dialog", { name: "Decline order 0f0f0f0f" });
+    await expect(d).toBeVisible();
+    await page.evaluate(async () => { await Promise.all(document.getAnimations().filter((x) => x.effect?.getComputedTiming().iterations !== Infinity).map((x) => x.finished.catch(() => undefined))); });
+    await expect(d.locator(".ui-sheet-chips, .ui-chip")).toHaveCount(0);
+    await expect(d.getByRole("button")).toHaveCount(2);   // only Decline and Back
+    const decline = d.getByRole("button", { name: "Decline", exact: true }), back = d.getByRole("button", { name: "Back", exact: true });
+    await expect(d.locator(".ui-row-pair")).toHaveCount(1);
+    await expect(decline).toHaveAttribute("aria-disabled", "true");
+    const [a, b, s] = [await rect(decline), await rect(back), await rect(d)];
+    const pad = await d.evaluate((e) => { const c = getComputedStyle(e); return { l: parseFloat(c.paddingLeft) + parseFloat(c.borderLeftWidth), r: parseFloat(c.paddingRight) + parseFloat(c.borderRightWidth) }; });
+    expect(a.x).toBeLessThan(b.x);
+    expect(Math.abs(a.w - b.w)).toBeLessThanOrEqual(1);
+    expect(Math.abs(a.y - b.y)).toBeLessThanOrEqual(1);
+    expect(Math.abs(a.x - (s.x + pad.l))).toBeLessThanOrEqual(1);
+    expect(Math.abs(b.x + b.w - (s.x + s.w - pad.r))).toBeLessThanOrEqual(1);
+    for (const l of [await lines(decline), await lines(back)]) expect(l.text).toBeLessThan(1.5 * l.line);
+    expect(a.h).toBeGreaterThanOrEqual(44);
+    expect(h - (b.y + b.h)).toBeGreaterThanOrEqual(24);
+    await d.getByLabel("Reason").fill("We are too busy to take this one.");
+    await expect(decline).not.toHaveAttribute("aria-disabled", "true");
+    await decline.click();
+    await expect.poll(() => net.calls.status.length).toBe(1);
+    expect(net.calls.status[0].body).toMatchObject({ action: "cancel", reason: "We are too busy to take this one." });
+  });
+}
