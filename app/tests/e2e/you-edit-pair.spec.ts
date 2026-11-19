@@ -54,13 +54,13 @@ for (const [w, h] of SIZES) {
   test(`with the keyboard open the bar rides on top of it and the focused field is not covered (${w}x${h})`, async ({ page, context }) => {
     await open(page, context, w, h, true);
     await edit(page);
-    await page.locator("#acc-phone").focus();
+    await page.locator('[id="acc-phone"]').focus();
     const kb = Math.round(h * 0.55);   // the visible height with the keyboard up
     await page.evaluate((v) => (window as unknown as { __vv: (h: number) => void }).__vv(v), kb);
     await expect.poll(async () => Math.round((await rect(page.locator(".ui-you-page"))).h)).toBe(kb);
     await expect.poll(async () => Math.round((await rect(bar(page))).y + (await rect(bar(page))).h)).toBe(kb);   // the bar's bottom is the keyboard's top
     await page.waitForTimeout(450);   // the page scrolls the focused field into view after the keyboard comes up
-    const [f, br] = [await rect(page.locator("#acc-phone")), await rect(bar(page))];
+    const [f, br] = [await rect(page.locator('[id="acc-phone"]')), await rect(bar(page))];
     expect(f.y + f.h).toBeLessThanOrEqual(br.y + 0.5);   // the field is above the bar
     expect(f.y).toBeGreaterThanOrEqual(0);
   });
