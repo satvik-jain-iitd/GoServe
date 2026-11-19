@@ -297,7 +297,8 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-live-dot { width: 8px; height: 8px; border-radius: var(--gs-radius-pill); background: var(--md-primary); }
 .ui-ask { display: flex; flex-direction: column; align-items: stretch; margin: 0; }
 .ui-ask h3 { margin: 0; font-size: var(--gs-text-lg); }
-.ui-ask-act { display: flex; gap: var(--gs-space-2); }
+.ui-bottom .ui-ask { margin-top: var(--gs-space-2); }   /* story 1691: with the foot's 8 px gap, 16 px above the card */
+.ui-ask .ui-row-pair > .ui-btn { flex-basis: calc(50% - var(--gs-space-3) / 2); }   /* story 1691: the outline button's border made the two unequal by 2 px; the same basis for both */
 .ui-bottom { display: flex; flex-direction: column; gap: var(--gs-space-2); padding: var(--gs-space-3) var(--gs-gutter) max(var(--gs-space-5), env(safe-area-inset-bottom)); }
 .ui-bottom .ui-btn.big { width: 100%; }
 /* Orders and You (story H10d). Boards 08, 08e and 09. */

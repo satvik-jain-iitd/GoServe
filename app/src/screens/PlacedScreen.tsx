@@ -176,15 +176,6 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, 
               <p className="ui-meta">{pay ? "Your money is not taken. If you paid online, it comes back in 5 to 7 days." : "Nothing was charged."}</p>   {/* story #1261: a pay-at-door order never talks about paying online */}
             </>
           ) : cancelled && <p role="status"><strong>Your order was cancelled. Nothing to pay.</strong></p>}
-          {asking && (
-            <div role="group" aria-label="Delivery check" className="ui-closed ui-ask">
-              <h3>Was your order delivered?</h3>
-              <div className="ui-ask-act">
-                <button type="button" className="ui-btn" disabled={busy} onClick={onYes}>Yes, I have it</button>
-                <button type="button" className="ui-btn ghost" disabled={busy} onClick={onNotYet}>Not yet</button>
-              </div>
-            </div>
-          )}
           {error && <p role="alert" className="ui-field-error">{error}</p>}
         </div>
       </div>
@@ -196,6 +187,15 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, 
         {declined && <button type="button" className="ui-btn big" onClick={onMenu}>Order something else</button>}   {/* story 1458 (board T2b): the main button last, as on every end slip */}
         {again?.bar}
         {(cancelled || (delivered && !again)) && !declined && <button type="button" className="ui-btn big" onClick={onMenu}>Back to menu</button>}   {/* story 1434 (boards T1b, Delivered b): one name on both end slips, the main button last; the same dishes again only from History */}
+        {asking && (
+          <div role="group" aria-label="Delivery check" className="ui-closed ui-ask">   {/* story 1691: the question is the last thing in the foot, two equal buttons, Yes on the right */}
+            <h3>Was your order delivered?</h3>
+            <div className="ui-row-pair">
+              <button type="button" className="ui-btn ghost" disabled={busy} onClick={onNotYet}>Not yet</button>
+              <button type="button" className="ui-btn" disabled={busy} onClick={onYes}>Yes, I have it</button>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
