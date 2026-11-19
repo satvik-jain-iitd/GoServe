@@ -74,3 +74,22 @@ test("Save keeps the new name and closes the bar; the phone's Back button closes
   await expect(page.getByTestId("account")).toContainText("Asha Rao");
   await expect(bar(page)).toHaveCount(0);
 });
+
+// Story 1693 (reviewer, 20 Nov 2026, rule 34): the bar is cut off from the page above by one flat line across the full width, the same line as above the bottom tabs.
+for (const [w, h] of [[360, 640], [390, 844]]) {
+  test(`the bar has a flat 1 px line on top, in the outline colour, edge to edge (${w}x${h})`, async ({ page, context }) => {
+    await open(page, context, w, h);
+    await edit(page);
+    const m = await bar(page).evaluate((e) => {
+      const c = getComputedStyle(e), r = e.getBoundingClientRect();
+      const probe = document.createElement("i"); probe.style.color = "var(--md-outline-variant)"; document.body.appendChild(probe);
+      const token = getComputedStyle(probe).color; probe.remove();
+      return { width: c.borderTopWidth, style: c.borderTopStyle, color: c.borderTopColor, token, left: r.left, right: r.right };
+    });
+    expect(m.width).toBe("1px");
+    expect(m.style).toBe("solid");
+    expect(m.color).toBe(m.token);
+    expect(Math.abs(m.left)).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(m.right - w)).toBeLessThanOrEqual(0.5);
+  });
+}
