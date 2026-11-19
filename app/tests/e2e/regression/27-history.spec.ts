@@ -53,6 +53,7 @@ async function openHistory(context: BrowserContext, page: Page, orders: object[]
 
 test("TC 27.1 Look: History with 4 orders, newest first, dishes, time and price, only an exception is a word, no button on a row (story 1589)", async ({ page, context }) => {
   await openHistory(context, page, FOUR);
+  await page.getByRole("button", { name: /^View all/ }).click();   // story 1637: the card shows three orders; View all shows every order of the kitchen
   const rows = page.locator(".ui-order-row");
   await expect(rows).toHaveCount(4);   // the list is live before its rows are checked
   await expect(rows.nth(0)).toContainText("2 × Butter Chicken");
@@ -81,6 +82,7 @@ test("TC 27.2 No orders: No orders yet, Your orders will show here., See the men
 
 test("TC 27.3 Tap a row: that order opens (the delivered slip)", async ({ page, context }) => {
   await openHistory(context, page, FOUR);
+  await page.getByRole("button", { name: /^View all/ }).click();   // story 1637: the card shows three orders; View all shows every order of the kitchen
   const rows = page.locator(".ui-order-row");
   await expect(rows).toHaveCount(4);   // the list is live before a row is tapped
   await rows.nth(1).click();   // the delivered order
@@ -108,14 +110,15 @@ test("TC 27.4 Order again: the Bill opens with those dishes at today's prices", 
 test("TC 27.5 50 orders: the list scrolls down to the last order, nothing jumps, nothing is lost", async ({ page, context }) => {
   const MANY = Array.from({ length: 50 }, (_, i) => past(i + 1, "delivered", i + 1, [line("m-thali", "Veg Thali", 1, 18000)], 18000));
   await openHistory(context, page, MANY);
+  await page.getByRole("button", { name: /^View all/ }).click();   // story 1637: the card shows three orders; View all shows every order of the kitchen
   const rows = page.locator(".ui-order-row");
   await expect(rows).toHaveCount(50);   // all 50 are in the list
   await expect(rows.nth(0)).toContainText("Veg Thali");
   await expect(rows.nth(49)).not.toBeInViewport();   // the oldest is off the screen at first, so the list must scroll
   await rows.nth(49).scrollIntoViewIfNeeded();
   await expect(rows.nth(49)).toBeInViewport();
+  await expect(rows).toHaveCount(50);   // no row added or lost on the way down
   await rows.nth(49).click();   // the last order can be tapped (story 1638)
   await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();
-  await expect(rows).toHaveCount(50);   // no row added or lost on the way down
   await expect(rows.getByRole("button", { name: /^Order again/ })).toHaveCount(0);   // story 1589: no button on a row (the sheet's button is not a row's)
 });
