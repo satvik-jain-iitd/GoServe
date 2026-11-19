@@ -12,7 +12,7 @@ import { Timeline, TornTop } from "../ui";
 import { AdjustLines } from "../ui/AdjustLines";
 import { BackChevron } from "./BillScreen";
 import { CancelSheet } from "./CancelSheet";
-import { agoText, distanceText, lastSeenText, riderLink, type Point } from "../lib/riderMap";
+import { agoText, awayText, lastSeenText, metres, riderLink, type Point } from "../lib/riderMap";
 import { useNowOnline } from "../lib/useNowOnline";
 import type { LatLng } from "../lib/riderTrack";
 
@@ -69,7 +69,7 @@ function RiderRow({ t }: { t: Track }) {
     <a className="ui-locrow ui-riderrow" aria-label="See the rider on Google Maps" href={riderLink(t.rider, t.you)} target="_blank" rel="noopener noreferrer">
       <span className="ui-locrow-icon">{MAP_ICON}</span>
       <span className="ui-locrow-words">
-        <span className="ui-locrow-title"><b>{t.name}</b> is {t.you ? `${distanceText(t.rider.lat, t.rider.lng, t.you.lat, t.you.lng)} away` : "on the way"}</span>
+        <span className="ui-locrow-title"><b>{t.name}</b> is {(t.you && awayText(metres(t.rider.lat, t.rider.lng, t.you.lat, t.you.lng))) || "on the way"}</span>
         <span className="ui-locrow-sub mono">{online ? `On the map · updated ${agoText(t.rider.at, now)}` : `No connection · ${lastSeenText(t.rider.at, now)}`}</span>
       </span>
       <span className="ui-locrow-go">{GO}</span>

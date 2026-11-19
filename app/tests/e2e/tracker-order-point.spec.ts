@@ -17,10 +17,10 @@ async function onTheWay(page: Page, context: BrowserContext, tracking: object) {
   return net;
 }
 
-test("T1 given the order's door is 2 km from the rider and its postal code's point is 1.5 km away, the row says 2.0 km: the distance is to the door", async ({ page, context }) => {
+test("T1 given the order's door is 2 km from the rider and its postal code's point is 1.5 km away, the row says 8 min away · 2.0 km: the distance is to the door", async ({ page, context }) => {
   await onTheWay(page, context, { drop_lat: 28.598, drop_lng: 77.25 });   // the mock's postal code point stays at 28.59, 77.26
   await page.goto("/customer/");
-  await expect(row(page)).toContainText("Ravi is 2.0 km away");
+  await expect(row(page)).toContainText("Ravi is 8 min away · 2.0 km");
 });
 
 test("T2 given the postal code has no point and the kitchen has no saved location, the row still shows: both come from the order", async ({ page, context }) => {
@@ -28,7 +28,7 @@ test("T2 given the postal code has no point and the kitchen has no saved locatio
   net.state.pinPoint = null;
   Object.assign(net.state.kitchens[0], { lat: null, lng: null });
   await page.goto("/customer/");
-  await expect(row(page)).toContainText("Ravi is 2.0 km away");
+  await expect(row(page)).toContainText("Ravi is 8 min away · 2.0 km");
 });
 
 test("T3 given the order has no drop point, the row shows the rider with no distance, and its link has no route", async ({ page, context }) => {
