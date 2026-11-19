@@ -18,7 +18,7 @@ test("P1 the Support group shows after Login with the phone now", async ({ page,
   await expect(page.getByRole("heading", { name: "Support", exact: true })).toBeVisible();
   await expect(page.getByText("Support phone", { exact: true })).toBeVisible();
   await expect(page.getByText("Customers call this number. 10 digits.")).toBeVisible();
-  await expect(page.getByLabel("Support phone")).toHaveValue("9000000000");
+  await expect(page.getByLabel("Support phone")).toHaveValue("90000 00000");
   await expect(page.getByText(/^Now 90000 00000 · set by owner@goserve.test, /)).toBeVisible();
 });
 
@@ -65,3 +65,19 @@ test("P6 at 360x640 the field and Save fill the group, with no sideways scroll",
   expect(field!.width).toBeGreaterThan(mine!.width - 40);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
+
+for (const [w, h] of [[360, 640], [390, 844]]) {
+  test(`P7 at ${w}x${h} no two boxes meet: heading, label, field, Save keep 8 px apart`, async ({ page, context }) => {
+    await page.setViewportSize({ width: w, height: h });
+    await toSettings(page, context);
+    const group = page.getByRole("region", { name: "Support" });
+    const head = await group.getByRole("heading", { name: "Support", exact: true }).boundingBox();
+    const label = await group.locator("label[for=support-phone]").boundingBox();
+    const field = await page.getByLabel("Support phone").boundingBox();
+    const save = await group.getByRole("button", { name: "Save" }).boundingBox();
+    expect(head && label && field && save).toBeTruthy();
+    expect(label!.y - (head!.y + head!.height)).toBeGreaterThanOrEqual(8);   // line above (heading) to the label that opens the field
+    expect(field!.y - (label!.y + label!.height)).toBeGreaterThanOrEqual(0);  // label sits on its field (ui-field gap)
+    expect(save!.y - (field!.y + field!.height)).toBeGreaterThanOrEqual(8);   // field to Save
+  });
+}

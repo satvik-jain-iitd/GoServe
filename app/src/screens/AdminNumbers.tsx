@@ -212,7 +212,7 @@ function SupportSettings() {
   const [text, setText] = useState("");
   const [line, setLine] = useState<string | null>(null);
   const saved = useRef(false);   // a Save beats a slower first read
-  useEffect(() => { readSupportPhoneAdmin(getClient()).then((s) => { if (saved.current) return; setNow(s); setText((typed) => (typed === "" ? s.phone ?? "" : typed)); }, () => { if (!saved.current) setLine("Could not load the setting. Try again."); }); }, []);
+  useEffect(() => { readSupportPhoneAdmin(getClient()).then((s) => { if (saved.current) return; setNow(s); setText((typed) => (typed === "" ? (s.phone ? showPhone(s.phone) : "") : typed)); }, () => { if (!saved.current) setLine("Could not load the setting. Try again."); }); }, []);
   async function save() {
     const problem = supportPhoneProblem(text);
     if (problem) return void setLine(problem);
@@ -223,11 +223,14 @@ function SupportSettings() {
   return (
     <section className="ui-group" aria-label="Support">
       <h2>Support</h2>
-      <div className="ui-row ui-row-static">
-        <span className="ui-row-label"><b>Support phone</b><span className="ui-row-sub">Customers call this number. 10 digits.</span></span>
+      <div className="ui-form ui-form-flush">
+        <div className="ui-field">
+          <label htmlFor="support-phone">Support phone</label>
+          <input id="support-phone" type="tel" inputMode="numeric" value={text} className="mono-input" onChange={(e) => { setText(e.target.value); setLine(null); }} />
+          <p className="ui-note">Customers call this number. 10 digits.</p>
+        </div>
+        <div className="ui-form-acts"><button type="button" className="ui-btn big" onClick={() => void save()}>Save</button></div>
       </div>
-      <div className="ui-field"><input type="tel" inputMode="numeric" value={text} aria-label="Support phone" className="mono-input" onChange={(e) => { setText(e.target.value); setLine(null); }} /></div>
-      <button type="button" className="ui-btn big" onClick={() => void save()}>Save</button>
       {now && <p className="mono ui-foot">{now.phone ? `Now ${showPhone(now.phone)} · set by ${now.updated_by ?? "the system"}${now.updated_at ? `, ${when(now.updated_at)}` : ""}` : "Not set yet."}</p>}
       {line && <p role="alert" className="ui-note error">{line}</p>}
     </section>
