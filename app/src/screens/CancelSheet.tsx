@@ -1,4 +1,4 @@
-// Story 1227, board CX1-CancelSheet (owner, 11 Nov 2026): Cancel order asks first. Only the red button cancels. Keep my order, Back, Escape and a tap outside keep the order.
+// Story 1227, board CX1-CancelSheet (owner, 11 Nov 2026): Cancel order asks first. Only the red button cancels. Keep order, Back, Escape and a tap outside keep the order.
 import { useEffect, useRef } from "react";
 import { useBackCloses } from "../lib/back";
 
@@ -17,7 +17,7 @@ export function CancelSheet({ lines, kitchenName, paidOnline, onKeep, onYes }: P
   return (
     <div className="ui-sheet-back" onClick={onKeep}>
       <section className="ui-sheet" role="dialog" aria-modal="true" aria-label="Cancel this order?" onClick={(e) => e.stopPropagation()}>
-        <div className="ui-sheet-head"><h2>Cancel this order?</h2></div>   {/* story 1565 (owner): no close control in the head; Keep my order, Back, Escape and a tap outside close it */}
+        <div className="ui-sheet-head"><h2>Cancel this order?</h2></div>   {/* story 1565 (owner): no close control in the head; Keep order, Back, Escape and a tap outside close it */}
         <p className="ui-sheet-lead">The kitchen has not started cooking. You can still cancel.</p>
         <dl className="ui-cancel-rows">
           <div><dt className="mono">Stops</dt><dd>{dishes} from {kitchenName}. No rider comes.</dd></div>
@@ -25,8 +25,10 @@ export function CancelSheet({ lines, kitchenName, paidOnline, onKeep, onYes }: P
           <div><dt className="mono">After</dt><dd>To eat, you place a new order. The time starts again.</dd></div>
         </dl>
         <div className="ui-sheet-acts">
-          <button type="button" className="ui-btn big danger-fill" onClick={onYes}>Yes, cancel the order</button>
-          <button ref={keep} type="button" className="ui-btn ghost big" onClick={onKeep}>Keep my order</button>
+          <div className="ui-row-pair">   {/* story 1702: the red answer on the left, the safe one last on the right, equal halves */}
+            <button type="button" className="ui-btn big danger-fill" onClick={onYes}>Yes, cancel</button>
+            <button ref={keep} type="button" className="ui-btn ghost big" onClick={onKeep}>Keep order</button>
+          </div>
         </div>
       </section>
     </div>
