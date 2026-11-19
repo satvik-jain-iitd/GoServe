@@ -30,16 +30,17 @@ test("TC 5.1 type green park: Saved · 1 match with the bold match, Places with 
 
 test("TC 5.2 tap We deliver here: the pin map opens on that place, search stays on the map", async ({ page, context }) => {
   const looked: string[] = [];
-  page.on("request", (r) => { if (r.url().includes("/functions/v1/geocode")) looked.push(r.url()); });   // the map asks for the words at the place it rests on
+  page.on("request", (r) => { if (r.url().includes("/functions/v1/geocode")) looked.push(r.url()); });   // story 1500: the address is looked up on Confirm only
   await STEPS["deliver-to-search"](context, page, PATH);
   await expect(page.getByRole("heading", { name: "Places · 2 found" })).toBeVisible();
   await page.getByRole("listitem").filter({ hasText: "We deliver here" }).getByRole("button").click();
   await expect(pinMap(page)).toBeVisible();
   await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeVisible();
-  await expect.poll(() => looked.at(-1) ?? "").toContain("lat=28.55");   // the place's point (28.5599, 77.2065), not the phone's
-  expect(looked.at(-1)).toContain("lng=77.20");
   await expect(deliverHeading(page)).toHaveCount(0);
   await expect(pinMap(page).getByRole("button", { name: "Search an area or address" })).toBeVisible();   // search is on the map
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();
+  await expect.poll(() => looked.at(-1) ?? "").toContain("lat=28.55");   // the place's point (28.5599, 77.2065), not the phone's
+  expect(looked.at(-1)).toContain("lng=77.20");
 });
 
 test("TC 5.3 tap the saved row: that address is chosen and the menu opens for it", async ({ page, context }) => {
@@ -58,25 +59,27 @@ test("TC 5.4 tap a Not yet place: the pin map opens on it with Invite the founde
   await expect(page.getByRole("heading", { name: "Places · 2 found" })).toBeVisible();
   await page.getByRole("listitem").filter({ hasText: "Not yet" }).getByRole("button").click();
   await expect(pinMap(page)).toBeVisible();
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();   // the address is looked up on Confirm
   await expect(page.getByRole("button", { name: "Invite the founders here" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Confirm & proceed" })).toHaveCount(0);
 });
 
-test("TC 5.5 a word with no match: No place found in our words, Use current location still there", async ({ page, context }) => {
+test("TC 5.5 a word with no match: No place found in our words, Use current location hides while words are in the box", async ({ page, context }) => {
   await STEPS["deliver-to-search"](context, page, PATH);
   await answer(context, PLACES, 200, { ok: true, results: [] });
   await search(page).fill("zzqxv");
   await search(page).press("Enter");
   await expect(page.getByRole("heading", { name: "Places · 0 found" })).toBeVisible();   // the results section shows, so the next line can fail
   await expect(page.getByText("No place found. Try the start of a colony name or a pin code.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Use current location" })).toHaveCount(0);   // hidden while there are words in the box
+  await page.getByRole("button", { name: "Clear search" }).click();
   await expect(page.getByRole("button", { name: "Use current location" })).toBeVisible();
 });
 
-test("TC 5.6 tap clear (x) (Chromium only, #1248): the box empties, the results go, the keyboard stays", async ({ page, context }) => {
+test("TC 5.6 tap clear (x): the box empties, the results go, the keyboard stays", async ({ page, context }) => {
   await STEPS["deliver-to-search"](context, page, PATH);
   await expect(page.getByRole("heading", { name: "Places · 2 found" })).toBeVisible();   // results shown before the clear
-  const box = (await search(page).boundingBox())!;
-  await search(page).click({ position: { x: box.width - 9, y: box.height / 2 } });   // the clear (x) sits at the right end of the box
+  await page.getByRole("button", { name: "Clear search" }).click();
   await expect(search(page)).toHaveValue("");
   await expect(page.getByRole("heading", { name: "Saved addresses" })).toBeVisible();   // the list is back, so the results have gone
   await expect(page.getByRole("heading", { name: /^Places ·/ })).toHaveCount(0);
