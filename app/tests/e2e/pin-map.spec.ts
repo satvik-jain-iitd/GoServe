@@ -31,6 +31,15 @@ async function drag(page: Page, dx: number, dy = 0) {
   const x = b.x + b.width / 2, y = b.y + b.height / 2 - 100;
   await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x + dx, y + dy, { steps: 6 }); await page.mouse.up();
 }
+// Story 1640: out 40 px, back to the start, hold 300 ms. Leaflet starts a drag only after 3 px, so this is a real movestart
+// and a real moveend with the map back on its start point (under 3 px and under 1 m from the last settle).
+async function dragBack(page: Page) {
+  const b = (await mapBox(page).boundingBox())!;
+  const x = b.x + b.width / 2, y = b.y + b.height / 2 - 100;
+  await page.mouse.move(x, y); await page.mouse.down();
+  await page.mouse.move(x + 40, y, { steps: 6 }); await page.mouse.move(x, y, { steps: 6 });
+  await page.waitForTimeout(300); await page.mouse.up();
+}
 
 test("S1 Add new address opens the full-screen map: back, search, a DOM pin at the centre, Current Location, the card, no zoom control, no tooltip", async ({ page, context }) => {
   await open(page, context);
@@ -159,4 +168,69 @@ test("S10 Confirm & proceed opens the details step over the same map (story #103
   const saved = net.state.addresses.at(-1)!;
   expect(saved).toMatchObject({ label: "Home", address: "12B, Green Park, New Delhi, Delhi", pin_code: "110016" });
   expect(saved.lat).toBeCloseTo(28.56, 3);
+});
+
+// Story 1640: while the map moves by hand, Confirm is disabled (busy), so it never takes the old place.
+// The WebKit mouse drag does not move the map in this harness, so C1, C2, C5 and C6 run on chromium only (see the project filter in the report).
+const lngLat = (u: string) => { const s = new URL(u).searchParams; return { lat: Number(s.get("lat")), lng: Number(s.get("lng")) }; };
+const metresApart = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => {
+  const dy = (a.lat - b.lat) * 111_320, dx = (a.lng - b.lng) * 111_320 * Math.cos((a.lat * Math.PI) / 180);
+  return Math.hypot(dx, dy);
+};
+
+test("C1 a 90 px drag then Confirm at once sends the place the map rests on, not the start point (story 1640)", async ({ page, context }) => {
+  test.skip(test.info().project.name !== "chromium", "WebKit mouse drag does not move the map in this harness");
+  const net = await open(page, context);
+  await page.getByRole("button", { name: "Add new address" }).click();
+  await expect(screen(page).getByText(/We deliver here/)).toBeVisible();
+  const start = lngLat(net.calls.serve.at(-1)!);
+  const before = net.calls.geocode.length;
+  await drag(page, 90);
+  await page.getByRole("button", { name: "Confirm & proceed" }).click();
+  await expect.poll(() => net.calls.geocode.length, { timeout: 8000 }).toBe(before + 1);
+  const sent = lngLat(net.calls.geocode.at(-1)!);
+  expect(metresApart(sent, start)).toBeGreaterThan(50);
+});
+
+test("C2 while the map is dragged Confirm is disabled, and enabled again after the lookup ends (story 1640)", async ({ page, context }) => {
+  test.skip(test.info().project.name !== "chromium", "WebKit mouse drag does not move the map in this harness");
+  await open(page, context);
+  await page.getByRole("button", { name: "Add new address" }).click();
+  await expect(screen(page).getByText(/We deliver here/)).toBeVisible();
+  const b = (await mapBox(page).boundingBox())!;
+  const x = b.x + b.width / 2, y = b.y + b.height / 2 - 100;
+  await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x + 90, y, { steps: 6 });
+  await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeDisabled();
+  await page.mouse.up();
+  await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeEnabled({ timeout: 5000 });
+});
+
+test("C5 a move out and back, then rest: Confirm is disabled mid-move and enabled again within 2 s (story 1640, settle path)", async ({ page, context }) => {
+  test.skip(test.info().project.name !== "chromium", "WebKit mouse drag does not move the map in this harness");
+  await open(page, context);
+  await page.getByRole("button", { name: "Add new address" }).click();
+  await expect(screen(page).getByText(/We deliver here/)).toBeVisible();
+  const b = (await mapBox(page).boundingBox())!;
+  const x = b.x + b.width / 2, y = b.y + b.height / 2 - 100;
+  await page.mouse.move(x, y); await page.mouse.down();
+  await page.mouse.move(x + 40, y, { steps: 6 });
+  await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeDisabled();
+  await page.mouse.move(x, y, { steps: 6 }); await page.waitForTimeout(300); await page.mouse.up();
+  await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeEnabled({ timeout: 2000 });
+});
+
+test("C6 a move out and back while a slow serve answer is still out: Confirm stays disabled until that answer comes (story 1640, settle path)", async ({ page, context }) => {
+  test.skip(test.info().project.name !== "chromium", "WebKit mouse drag does not move the map in this harness");
+  await open(page, context);
+  // Hold every serve call from here on; a later route wins, and fallback() hands the held call to the helper's answer.
+  let release!: () => void;
+  const gate = new Promise<void>((ok) => { release = ok; });
+  await context.route("https://test.supabase.co/functions/v1/serviceability**", async (route) => { await gate; await route.fallback(); });
+  await page.getByRole("button", { name: "Add new address" }).click();
+  await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeDisabled();
+  await dragBack(page);
+  await page.waitForTimeout(1000);
+  await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeDisabled();
+  release();
+  await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeEnabled({ timeout: 5000 });
 });
