@@ -33,8 +33,10 @@ export function OrderSheet({ order, busy, error, onAccept, onDecline, onClose }:
           {order.instructions?.trim() && <><div className="ui-slip-rule" /><NoteBand text={order.instructions.trim()} /></>}
           {error && <p role="alert" className="ui-note error">{error}</p>}
           <div className="ui-sheet-acts">
-            <button type="button" className="ui-btn big" aria-label={`Accept ${no}`} disabled={busy} onClick={onAccept}>Accept</button>
-            <button type="button" className="ui-btn ghost big ui-decline" onClick={() => setDeciding(true)}>Decline, with a reason</button>
+            <div className="ui-row-pair">   {/* story 1695: Decline left, Accept last (right), equal halves; the name keeps its meaning for a screen reader */}
+              <button type="button" className="ui-btn ghost big ui-decline" aria-label={`Decline ${no}`} onClick={() => setDeciding(true)}>Decline</button>
+              <button type="button" className="ui-btn big" aria-label={`Accept ${no}`} disabled={busy} onClick={onAccept}>Accept</button>
+            </div>
           </div>
         </section>
       ) : (

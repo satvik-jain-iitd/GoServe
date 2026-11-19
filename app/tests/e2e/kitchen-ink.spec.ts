@@ -86,7 +86,7 @@ for (const theme of ["day", "night"] as const) {
     await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
     await expect(page.getByRole("dialog", { name: "Order 0f0f0f0f" })).toBeVisible();
     await scan();   // K3 order sheet (story 934)
-    await page.getByRole("button", { name: "Decline, with a reason" }).click();
+    await page.getByRole("button", { name: "Decline 0f0f0f0f" }).click();
     await expect(page.getByRole("dialog", { name: "Decline order 0f0f0f0f" })).toBeVisible();
     await scan();   // K3 decline sheet
     await page.keyboard.press("Escape");

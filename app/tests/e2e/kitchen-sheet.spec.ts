@@ -23,7 +23,7 @@ test("KO1a given the order sheet of a New ticket, it shows no address, no custom
   await nothingExtra(sheet);
   await expect(sheet.getByText(/^Placed \d\d:\d\d$/)).toBeVisible();
   await expect(sheet.getByRole("button", { name: "Accept 0f0f0f0f" })).toBeVisible();
-  await expect(sheet.getByRole("button", { name: "Decline, with a reason" })).toBeVisible();
+  await expect(sheet.getByRole("button", { name: "Decline 0f0f0f0f" })).toBeVisible();
 });
 
 test("KK1a given the Ticket screen, it shows no address, no price, no Rider collects, and one button at the bottom", async ({ page, context }) => {
@@ -55,7 +55,7 @@ test("KO1c given the New tab, the line accept within 2 min does not show", async
 
 test("KO1d given the decline sheet, it shows no amount and no customer name: the head says Placed and the lead says Tell the customer why", async ({ page, context }) => {
   await open(page, context, "placed");
-  await page.getByRole("button", { name: "Decline, with a reason" }).click();
+  await page.getByRole("button", { name: "Decline 0f0f0f0f" }).click();
   const sheet = page.getByRole("dialog", { name: "Decline order 0f0f0f0f" });
   for (const t of ["Rahul", "₹"]) await expect(sheet.getByText(t)).toHaveCount(0);
   await expect(sheet.getByText(/^Placed \d\d:\d\d$/)).toBeVisible();

@@ -27,7 +27,7 @@ test("S2 Decline needs 20 characters; a chip fills a full sentence the cook can 
   net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
   await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
-  await page.getByRole("dialog", { name: "Order 0f0f0f0f" }).getByRole("button", { name: "Decline, with a reason" }).click();
+  await page.getByRole("dialog", { name: "Order 0f0f0f0f" }).getByRole("button", { name: "Decline 0f0f0f0f" }).click();
   const sheet = page.getByRole("dialog", { name: "Decline order 0f0f0f0f" });
   const red = sheet.getByRole("button", { name: "Decline this order" });
   await expect(red).toHaveAttribute("aria-disabled", "true");
@@ -51,7 +51,7 @@ test("S3 Back to the order returns to the order sheet and sends nothing", async 
   net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
   await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click();
-  await page.getByRole("button", { name: "Decline, with a reason" }).click();
+  await page.getByRole("button", { name: "Decline 0f0f0f0f" }).click();
   await page.getByRole("button", { name: "Back to the order" }).click();
   await expect(page.getByRole("dialog", { name: "Order 0f0f0f0f" })).toBeVisible();
   expect(net.calls.status).toHaveLength(0);
