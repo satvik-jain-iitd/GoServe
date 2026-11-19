@@ -1,20 +1,65 @@
-// Story #1161 (QA screen 19, design rule 8): in the dish sheet the outline Close sits above and the filled "Add to bill" is LAST, at the bottom. The stepper buttons are 44 px or more wide (Apple HIG).
-import { test, expect } from "@playwright/test";
+// Story #1161 (QA screen 19, design rule 8): the filled button of the dish sheet is LAST. Story 1694 (owner, 20 Nov 2026, epic 1690): Close (outline) and Add (filled) are a half and half pair on one line,
+// Close left; the label is "Add", no price; the price in the sheet's head is price x count. The stepper buttons are 44 px or more wide (Apple HIG).
+import { test, expect, type Locator, type Page } from "@playwright/test";
 import { setup } from "./helpers";
 
-test("S1 Close is above Add to bill, and the stepper buttons are 44 px wide or more", async ({ page, context }) => {
+const SIZES = [[360, 640], [390, 844], [412, 915]];
+const rect = (loc: Locator) => loc.evaluate((e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+const lines = (loc: Locator) => loc.evaluate((e) => { const r = document.createRange(); r.selectNodeContents(e); return { text: r.getBoundingClientRect().height, line: parseFloat(getComputedStyle(e).lineHeight) || parseFloat(getComputedStyle(e).fontSize) * 1.2 }; });
+async function open(page: Page, context: Parameters<typeof setup>[0], w = 390, h = 844) {
   await setup(context, page);
+  await page.setViewportSize({ width: w, height: h });
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Butter Chicken details" }).first().click();
   const sheet = page.getByRole("dialog", { name: "Butter Chicken" });
-  const [close, add] = [(await sheet.getByRole("button", { name: "Close" }).boundingBox())!, (await sheet.getByRole("button", { name: /Add to bill/ }).boundingBox())!];
-  expect(add.y).toBeGreaterThan(close.y);   // Add is last
-  expect(add.y).toBeGreaterThan(close.y + close.height - 1);   // under it, not beside it
-  for (const name of [/Less|Remove|−|decrease/i, /More|Add one|\+|increase/i]) {
-    const b = sheet.getByRole("button", { name }).first();
-    if (await b.count()) expect((await b.boundingBox())!.width).toBeGreaterThanOrEqual(44);
-  }
+  await expect(sheet).toBeVisible();
+  await page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => undefined))));
+  return sheet;
+}
+
+test("S1 the stepper buttons are 44 px wide or more", async ({ page, context }) => {
+  const sheet = await open(page, context);
   const steps = await sheet.locator(".ui-step button").evaluateAll((els) => els.map((e) => e.getBoundingClientRect().width));
   expect(steps.length).toBe(2);
   for (const w of steps) expect(w).toBeGreaterThanOrEqual(44);
+});
+
+for (const [w, h] of SIZES) {
+  test(`S1b Close and Add are a half and half pair, Close left, equal, one line each, together as wide as the actions' content (${w}x${h})`, async ({ page, context }) => {
+    const sheet = await open(page, context, w, h);
+    const close = sheet.getByRole("button", { name: "Close", exact: true }), add = sheet.getByRole("button", { name: "Add", exact: true });
+    const [a, b, act] = [await rect(close), await rect(add), await rect(sheet.locator(".ui-dish-act"))];
+    const pad = await sheet.locator(".ui-dish-act").evaluate((e) => { const c = getComputedStyle(e); return { l: parseFloat(c.paddingLeft), r: parseFloat(c.paddingRight) }; });
+    expect(a.x).toBeLessThan(b.x);
+    expect(Math.abs(a.w - b.w)).toBeLessThanOrEqual(1);
+    expect(Math.abs(a.y - b.y)).toBeLessThanOrEqual(1);
+    expect(Math.abs(a.x - (act.x + pad.l))).toBeLessThanOrEqual(1);
+    expect(Math.abs(b.x + b.w - (act.x + act.w - pad.r))).toBeLessThanOrEqual(1);
+    for (const l of [await lines(close), await lines(add)]) expect(l.text).toBeLessThan(1.5 * l.line);
+    await expect(add).toHaveText("Add");   // no price on the button
+    expect(await add.evaluate((e) => e.classList.contains("ghost"))).toBe(false);
+    expect(await close.evaluate((e) => e.classList.contains("ghost"))).toBe(true);
+  });
+}
+
+test("S2 the head shows price x count: one plate Rs 320, two Rs 640; the name and the price box keep their place; the button still says Add", async ({ page, context }) => {
+  const sheet = await open(page, context);
+  const price = sheet.locator(".ui-dish-price"), name = sheet.locator(".ui-dish-head h2");
+  await expect(price).toHaveText("₹320");
+  const [n0, p0] = [await rect(name), await rect(price)];
+  await sheet.getByRole("button", { name: "More Butter Chicken" }).click();
+  await expect(price).toHaveText("₹640");
+  const [n1, p1] = [await rect(name), await rect(price)];
+  expect(n1).toEqual(n0);   // the dish name does not move
+  expect(Math.abs(p1.y - p0.y)).toBeLessThanOrEqual(0.5);
+  expect(Math.abs(p1.x + p1.w - (p0.x + p0.w))).toBeLessThanOrEqual(0.5);   // the price box keeps its right edge
+  await expect(sheet.getByRole("button", { name: "Add", exact: true })).toHaveText("Add");
+});
+
+test("S3 Add puts the chosen count in the bill and closes the sheet", async ({ page, context }) => {
+  const sheet = await open(page, context);
+  await sheet.getByRole("button", { name: "More Butter Chicken" }).click();
+  await sheet.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(sheet).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /View bill \(2\)/ })).toContainText("₹640");
 });

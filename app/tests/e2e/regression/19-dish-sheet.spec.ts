@@ -34,7 +34,7 @@ async function openSheet(page: Page) {
 const box = async (loc: Locator) => (await loc.boundingBox())!;
 const opacity = (loc: Locator) => loc.evaluate((e) => getComputedStyle(e).opacity);
 
-test("TC 19.1 look: photo or placeholder, name, price, veg mark, description, How many stepper 44 px wide, Close above, Add to bill last", async ({ page, context }) => {
+test("TC 19.1 look: photo or placeholder, name, price, veg mark, description, How many stepper 44 px wide, Close left, Add right", async ({ page, context }) => {
   await reach(context, page);
   const sheet = await openSheet(page);
   await expect(sheet.locator(".ui-dish-photo")).toBeVisible();   // a photo or the placeholder (image_url is null here, so the placeholder)
@@ -50,25 +50,27 @@ test("TC 19.1 look: photo or placeholder, name, price, veg mark, description, Ho
   const close = sheet.getByRole("button", { name: "Close", exact: true });
   const add = sheet.locator(".ui-dish-act button").last();
   await expect(sheet.locator(".ui-dish-act button").first()).toHaveText("Close");
-  await expect(add).toHaveText("Add to bill · ₹320");   // last, at the bottom, and the price is on it
-  expect((await box(add)).y).toBeGreaterThan((await box(close)).y + (await box(close)).height - 1);   // under Close, not beside it
+  await expect(add).toHaveText("Add");   // story 1694: last, right, no price on it; the price is in the head
+  await expect(sheet.locator(".ui-dish-price")).toHaveText("₹320");
+  expect((await box(add)).x).toBeGreaterThan((await box(close)).x + (await box(close)).width - 1);   // right of Close, on the same line
+  expect(Math.abs((await box(add)).y - (await box(close)).y)).toBeLessThanOrEqual(1);
 });
 
-test("TC 19.2 happy: stepper to 3, Add to bill, the sheet closes and the bar shows 3 items", async ({ page, context }) => {
+test("TC 19.2 happy: stepper to 3, Add, the sheet closes and the bar shows 3 items", async ({ page, context }) => {
   await reach(context, page);
   const sheet = await openSheet(page);
   await sheet.getByRole("button", { name: "More Butter Chicken" }).click();
   await sheet.getByRole("button", { name: "More Butter Chicken" }).click();
   await expect(sheet.getByRole("status", { name: "Quantity of Butter Chicken" })).toHaveText("3");
-  await expect(sheet.getByRole("button", { name: "Add to bill · ₹960", exact: true })).toBeVisible();   // the price follows the stepper
-  await sheet.getByRole("button", { name: "Add to bill · ₹960", exact: true }).click();
+  await expect(sheet.locator(".ui-dish-price")).toHaveText("₹960");   // story 1694: the head price follows the stepper
+  await sheet.getByRole("button", { name: "Add", exact: true }).click();
   await expect(sheet).toBeHidden();
   const bar = page.getByRole("button", { name: "View bill (3) · ₹960", exact: true });
   await expect(bar).toBeVisible();
   await expect(bar).toContainText("3 items · ₹960");
 });
 
-test("TC 19.3 sad: kitchen closed, the sheet has no Add to bill at all, and it comes back when the kitchen opens", async ({ page, context }) => {
+test("TC 19.3 sad: kitchen closed, the sheet has no Add at all, and it comes back when the kitchen opens", async ({ page, context }) => {
   const net = await setup(context, page);
   (net.state.kitchens[0] as { open?: boolean }).open = false;
   await page.goto(PATH);
@@ -76,11 +78,11 @@ test("TC 19.3 sad: kitchen closed, the sheet has no Add to bill at all, and it c
   const sheet = await openSheet(page);
   await expect(sheet.getByRole("button", { name: "Close", exact: true })).toBeVisible();   // the sheet is up
   await expect(sheet.getByText("How many", { exact: true })).toHaveCount(0);
-  await expect(sheet.getByRole("button", { name: /Add to bill/ })).toHaveCount(0);
-  // The absence is live: open the kitchen and the same sheet gets its stepper and Add to bill back.
+  await expect(sheet.getByRole("button", { name: "Add", exact: true })).toHaveCount(0);
+  // The absence is live: open the kitchen and the same sheet gets its stepper and Add back.
   (net.state.kitchens[0] as { open?: boolean }).open = true;
   net.push("UPDATE", net.state.kitchens[0], "kitchens");
-  await expect(sheet.getByRole("button", { name: "Add to bill · ₹320", exact: true })).toBeVisible({ timeout: 5000 });
+  await expect(sheet.getByRole("button", { name: "Add", exact: true })).toBeVisible({ timeout: 5000 });
   await expect(sheet.getByText("How many", { exact: true })).toBeVisible();
 });
 
@@ -105,7 +107,7 @@ test("TC 19.5 edge: Close leaves the bill unchanged, even after the stepper move
   const sheet = await openSheet(page);
   await sheet.getByRole("button", { name: "More Butter Chicken" }).click();
   await sheet.getByRole("button", { name: "More Butter Chicken" }).click();
-  await expect(sheet.getByRole("button", { name: "Add to bill · ₹960", exact: true })).toBeVisible();   // the stepper really moved (3)
+  await expect(sheet.locator(".ui-dish-price")).toHaveText("₹960");   // the stepper really moved (3)
   await sheet.getByRole("button", { name: "Close", exact: true }).click();
   await expect(sheet).toBeHidden();
   await expect(bar).toBeVisible();   // still 1 item, still Rs 320
@@ -113,4 +115,4 @@ test("TC 19.5 edge: Close leaves the bill unchanged, even after the stepper move
   await expect(page.getByRole("status", { name: "Quantity of Butter Chicken" })).toHaveText("1");
 });
 
-// TC 19.6 (board: Close above Add to bill) is parked by the case file: n/a, not automated.
+// TC 19.6 (board: Close left, Add right, story 1694) is parked by the case file: n/a, not automated.
