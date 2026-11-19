@@ -52,14 +52,14 @@ test("T5 given a place with no ping time, the row does not show; the rider card 
   await expect(row(page)).toHaveCount(0);
 });
 
-test("T6 story 1686 given no realtime event, the rider's new place shows within 10 seconds: the row's distance text changes", async ({ page, context }) => {
+test("T6 story 1686 given no realtime event, the rider's new place shows within 10 seconds: the row's minutes and distance change", async ({ page, context }) => {
   await page.clock.install({ time: SEEN });
   const net = await onTheWay(page, context, { drop_lat: 28.598, drop_lng: 77.25 });
   await page.goto("/customer/");
-  await expect(row(page)).toContainText("Ravi is 2.0 km away");
-  net.state.tracking = { ...net.state.tracking!, rider_lat: 28.59, rider_lng: 77.25 };   // 890 m from the door; no push, only a read can see it
+  await expect(row(page)).toContainText("Ravi is 8 min away · 2.0 km");
+  net.state.tracking = { ...net.state.tracking!, rider_lat: 28.59, rider_lng: 77.25 };   // 890 m from the door (awayText says "4 min away · 890 m"); no push, only a read can see it
   await page.clock.runFor(10_000);
-  await expect(row(page)).toContainText("Ravi is 890 m away");
+  await expect(row(page)).toContainText("Ravi is 4 min away · 890 m");
 });
 
 test("R1 given the rider is online and his phone refuses the location, the rider app says so; with the location allowed it does not", async ({ page, context }) => {
