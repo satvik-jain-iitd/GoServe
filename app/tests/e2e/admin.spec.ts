@@ -121,7 +121,7 @@ test("S7 a dish can be marked sold out, get a new price, and be deleted (story #
   await page.getByRole("button", { name: "Edit Butter Chicken" }).click();
   await page.getByRole("dialog", { name: "Edit Butter Chicken" }).getByRole("button", { name: "Delete this dish" }).click();
   await page.getByLabel("Type DELETE to go on").fill("DELETE");
-  await page.getByRole("dialog", { name: "Delete Butter Chicken?" }).getByRole("button", { name: "Delete this dish" }).click();
+  await page.getByRole("dialog", { name: "Delete Butter Chicken?" }).getByRole("button", { name: "Delete", exact: true }).click();
   await expect.poll(() => net.calls.menuWrites.length).toBe(3);
   expect(net.calls.menuWrites[2].method).toBe("DELETE");
 });
