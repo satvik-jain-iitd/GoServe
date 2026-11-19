@@ -61,5 +61,5 @@ test("TC A10.4 The rider sees the QR the admin uploaded on Collect payment, and 
   await page.getByRole("button", { name: /^Collect ₹/ }).click();   // story 1182, board RY3
   await expect(page.getByRole("img")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Paid by UPI ₹640" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Took cash ₹640" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Took cash", exact: true })).toBeVisible();
 });
