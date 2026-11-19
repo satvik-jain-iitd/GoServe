@@ -44,6 +44,29 @@ test("S4 while online the rider's location is sent, first at once", async ({ pag
   expect(net.calls.riderWrites.filter((w) => w.body.lat !== undefined)).toHaveLength(0);
 });
 
+test("S4b story 1686 while online with no new position, the last place is sent again every 10 seconds; offline, it stops", async ({ page, context }) => {
+  await page.clock.install({ time: new Date("2026-11-19T06:30:00Z") });
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 28.5494, longitude: 77.2001 });   // one position, and none after it
+  const net = await setup(context, page);
+  const pings = () => net.calls.rpc.filter((c) => c.name === "rider_ping");
+  await page.goto("/rider/");
+  await expect(page.getByRole("heading", { name: "Waiting for a delivery" })).toBeVisible();
+  await expect.poll(() => pings().length).toBe(1);
+  await page.clock.runFor(9_999);
+  expect(pings()).toHaveLength(1);
+  await page.clock.runFor(1_001);   // the 1 s check keeps the gap within a second of 10 s
+  await expect.poll(() => pings().length).toBe(2);
+  await page.clock.runFor(10_000);
+  await expect.poll(() => pings().length).toBe(3);
+  for (const c of pings()) expect(c.body).toEqual({ p_lat: 28.5494, p_lng: 77.2001 });
+  await page.getByRole("button", { name: "Go offline" }).click();
+  await expect(page.getByRole("heading", { name: "You are offline" })).toBeVisible();
+  const n = pings().length;
+  await page.clock.runFor(30_000);
+  expect(pings()).toHaveLength(n);
+});
+
 test("S5 an offline rider sends no location", async ({ page, context }) => {
   await context.grantPermissions(["geolocation"]);
   await context.setGeolocation({ latitude: 28.5, longitude: 77.2 });

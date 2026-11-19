@@ -4,11 +4,11 @@ import { LOCATION_EVERY_MS, shouldSendLocation } from "../../src/lib/rider";
 import { riderScope } from "../../src/lib/session";
 
 describe("shouldSendLocation", () => {
-  it("sends the first position at once, then at most every 30 seconds", () => {
-    expect(LOCATION_EVERY_MS).toBe(30_000);
+  it("sends the first position at once, then at most every 10 seconds", () => {
+    expect(LOCATION_EVERY_MS).toBe(10_000);
     expect(shouldSendLocation(null, 1000)).toBe(true);
-    expect(shouldSendLocation(1000, 1000 + 29_999)).toBe(false);
-    expect(shouldSendLocation(1000, 1000 + 30_000)).toBe(true);
+    expect(shouldSendLocation(1000, 1000 + 9_999)).toBe(false);
+    expect(shouldSendLocation(1000, 1000 + 10_000)).toBe(true);
   });
 });
 

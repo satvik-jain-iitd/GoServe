@@ -23,7 +23,7 @@ import { AdminGate } from "./screens/AdminGate";
 import { RiderGate } from "./screens/RiderGate";
 import { readRates, type Rates } from "./lib/incentive";
 import { readPastDays } from "./lib/pastDays";
-import { fetchKitchen, fetchOnlyKitchen, riderChangePaid, type KitchenCard, type RiderGateState } from "./lib/rider";
+import { fetchKitchen, fetchOnlyKitchen, LOCATION_EVERY_MS, riderChangePaid, type KitchenCard, type RiderGateState } from "./lib/rider";
 import { KitchenGate, type KitchenGateState } from "./screens/KitchenGate";
 import { enablePush, watchSession } from "./lib/push";
 import { takeReturn } from "./lib/auth";
@@ -896,7 +896,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     return () => { alive = false; };
   }, [placed?.id, riderStatus, demo]);
 
-  // Story #691 (boards T2, T3): On the way, the rider's place comes from the order_tracking row (read now, again on every realtime event and every 30 s, the ping rhythm).
+  // Story #691 (boards T2, T3): On the way, the rider's place comes from the order_tracking row (read now, again on every realtime event and every 10 s, the rider's ping rhythm).
   const [riderPoint, setRiderPoint] = useState<Tracked | null>(null);   // story 1497: the rider's place and the order's own drop point, both from the order's row
   const onTheWay = !!placed && !demo && riderStatus === "out_for_delivery";
   useEffect(() => {
@@ -906,7 +906,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     const read = () => void readRider(c, placed.id).then((p) => { if (alive && p) setRiderPoint(p); }).catch(() => undefined);   // a failed read keeps the last place
     read();
     const stop = watchRider(c, placed.id, read);
-    const tick = setInterval(read, 30_000);
+    const tick = setInterval(read, LOCATION_EVERY_MS);
     return () => { alive = false; stop(); clearInterval(tick); };
   }, [placed?.id, onTheWay]);
   // Story #1015 (board E2a): the delivery time is the server's. Read now, again on every realtime event of the tracking row and every 30 s; a failed read keeps the last answer.
