@@ -124,12 +124,17 @@ export function historyCards() {
       }
     }
   };
+  // Story 1637: a card shows its three newest orders; "View all" shows the rest. H1 to H3 tap it first, so every row is on screen.
+  const viewAllEach = async (cards: Locator) => {
+    for (let i = 0; i < await cards.count(); i++) await cards.nth(i).locator(".ui-view-all").click();
+  };
 
   test("H1 a kitchen with 6 orders at 390 by 844: every order row sits inside its own card, each card's scrollHeight equals its clientHeight, and the last order of the second kitchen can be scrolled into view and tapped", async ({ page, context }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await history(page, context, [...Array.from({ length: 6 }, (_, i) => past(i + 1, "k-1", day(i))), ...Array.from({ length: 6 }, (_, i) => past(i + 7, "k-2", day(i)))]);
     const cards = page.locator(".ui-saved-card");
     await expect(cards).toHaveCount(2);
+    await viewAllEach(cards);
     await sitsInside(cards);
     const last = cards.nth(1).locator(".ui-order-row").last();
     await last.scrollIntoViewIfNeeded();
@@ -141,6 +146,7 @@ export function historyCards() {
     await history(page, context, Array.from({ length: 12 }, (_, i) => past(i + 1, "k-1", day(i))));
     const cards = page.locator(".ui-saved-card");
     await expect(cards).toHaveCount(1);
+    await viewAllEach(cards);
     await sitsInside(cards);
     const last = cards.nth(0).locator(".ui-order-row").last();
     await last.scrollIntoViewIfNeeded();
@@ -152,6 +158,7 @@ export function historyCards() {
     await history(page, context, [...Array.from({ length: 6 }, (_, i) => past(i + 1, "k-1", day(i))), ...Array.from({ length: 6 }, (_, i) => past(i + 7, "k-2", day(i)))]);
     const cards = page.locator(".ui-saved-card");
     await expect(cards).toHaveCount(2);
+    await viewAllEach(cards);
     await sitsInside(cards);
     const last = cards.nth(1).locator(".ui-order-row").last();
     await last.scrollIntoViewIfNeeded();
@@ -165,6 +172,90 @@ export function historyCards() {
     const lastCard = await box(cards.nth((await cards.count()) - 1));
     const note = await box(page.getByText("Newest first", { exact: true }));
     expect(note.y).toBeGreaterThanOrEqual(lastCard.bottom);
+  });
+
+  // Story 1637: a card shows its three newest orders, then one "View all" button; a tap shows every order of that kitchen in the same card.
+  const twoKitchens = () => [...Array.from({ length: 6 }, (_, i) => past(i + 1, "k-1", day(i))), ...Array.from({ length: 6 }, (_, i) => past(i + 7, "k-2", day(i + 6)))];
+  const viewAll = (card: Locator) => card.locator(".ui-view-all");
+  const V1_V2 = async (page: Page, context: Ctx, size: { width: number; height: number }, tap: boolean) => {
+    await page.setViewportSize(size);
+    await history(page, context, twoKitchens());
+    const cards = page.locator(".ui-saved-card");
+    await expect(cards).toHaveCount(2);
+    if (!tap) {
+      for (const c of [0, 1]) {
+        await expect(cards.nth(c).locator(".ui-order-row")).toHaveCount(3);
+        await expect(viewAll(cards.nth(c))).toHaveCount(1);
+        await expect(viewAll(cards.nth(c))).toHaveText("View all");
+      }
+      await expect(cards.nth(0).locator(".ui-order-sub").first()).toContainText("6 Nov");
+      await expect(cards.nth(0).locator(".ui-order-sub").last()).toContainText("4 Nov");
+      await expect(cards.nth(1).locator(".ui-order-sub").first()).toContainText("12 Nov");
+      await expect(cards.nth(1).locator(".ui-order-sub").last()).toContainText("10 Nov");
+      return;
+    }
+    await viewAll(cards.nth(0)).click();
+    await expect(cards.nth(0).locator(".ui-order-row")).toHaveCount(6);
+    await expect(viewAll(cards.nth(0))).toHaveCount(0);
+    await expect(cards.nth(1).locator(".ui-order-row")).toHaveCount(3);
+    await expect(viewAll(cards.nth(1))).toHaveCount(1);
+  };
+
+  test("V1 two kitchens, 6 orders each, at 390 by 844: each card shows its 3 newest orders and one View all button", async ({ page, context }) => {
+    await V1_V2(page, context, { width: 390, height: 844 }, false);
+  });
+
+  test("V2 the same, tap the first card's View all: 6 rows, no button; the second card still 3 rows and its button", async ({ page, context }) => {
+    await V1_V2(page, context, { width: 390, height: 844 }, true);
+  });
+
+  test("V7 V1 at 360 by 640: each card shows its 3 newest orders and one View all button", async ({ page, context }) => {
+    await V1_V2(page, context, { width: 360, height: 640 }, false);
+  });
+
+  test("V7 V2 at 360 by 640: the tap shows 6 rows in the first card; the second stays at 3 with its button", async ({ page, context }) => {
+    await V1_V2(page, context, { width: 360, height: 640 }, true);
+  });
+
+  test("V3 one kitchen with exactly 3 orders: 3 rows and no View all button", async ({ page, context }) => {
+    await history(page, context, Array.from({ length: 3 }, (_, i) => past(i + 1, "k-1", day(i))));
+    const card = page.locator(".ui-saved-card").first();
+    await expect(card.locator(".ui-order-row")).toHaveCount(3);
+    await expect(viewAll(card)).toHaveCount(0);
+  });
+
+  test("V4 one kitchen with 4 orders: 3 rows and the button; after the tap, 4 rows", async ({ page, context }) => {
+    await history(page, context, Array.from({ length: 4 }, (_, i) => past(i + 1, "k-1", day(i))));
+    const card = page.locator(".ui-saved-card").first();
+    await expect(card.locator(".ui-order-row")).toHaveCount(3);
+    await expect(viewAll(card)).toHaveCount(1);
+    await viewAll(card).click();
+    await expect(card.locator(".ui-order-row")).toHaveCount(4);
+  });
+
+  test("V5 before and after the tap, the card head and the first 3 rows keep the same box", async ({ page, context }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await history(page, context, twoKitchens());
+    const card = page.locator(".ui-saved-card").nth(0);
+    const pick = async () => ({
+      head: await box(card.locator(".ui-order-group")),
+      rows: [await box(card.locator(".ui-order-row").nth(0)), await box(card.locator(".ui-order-row").nth(1)), await box(card.locator(".ui-order-row").nth(2))],
+    });
+    const before = await pick();
+    await viewAll(card).click();
+    await expect(card.locator(".ui-order-row")).toHaveCount(6);
+    expect(await pick()).toEqual(before);
+  });
+
+  test("V6 the button is 44 px or taller; the third row keeps its bottom line and the button adds no top line", async ({ page, context }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await history(page, context, twoKitchens());
+    const card = page.locator(".ui-saved-card").nth(0);
+    const button = viewAll(card);
+    expect((await box(button)).h).toBeGreaterThanOrEqual(44);
+    const third = card.locator(".ui-order-row").nth(2);
+    expect(await third.evaluate((e) => getComputedStyle(e).borderBottomWidth)).toBe("1px");
+    expect(await button.evaluate((e) => getComputedStyle(e).borderTopWidth)).toBe("0px");
   });
 }
 
