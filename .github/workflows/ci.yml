@@ -41,7 +41,7 @@ jobs:
         run: npm run build
 
   app:
-    name: App (typecheck, unit, e2e, build)
+    name: App (typecheck, unit, screens)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     container:
@@ -68,12 +68,7 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
-      # Story #1369: the screen spec is left out here by file name, and runs once in the next step (screens.sh --check), with the same baselines.
-      - name: End-to-end tests (build included)
-        run: npm run test:e2e -- --grep-invert 'screens\.spec\.ts'
-        env:
-          SCREENS_OUT: ${{ github.workspace }}/app/screens-out
-
+      # Story #1369: the screen spec runs once, in the Screens step (screens.sh --check), with the same baselines. The other browser tests run in the browser shards (story #1641).
       - name: Screens (the render gate, once)
         working-directory: ${{ github.workspace }}   # the App job defaults to app/; the script is at the repo root (run 43341870197)
         run: bash scripts/screens.sh --check
@@ -163,6 +158,47 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  # Story #1641: the browser e2e tests (all but the screen spec) run in four parallel shards. Each shard builds the app itself (CI has no reused server). A shard list of 4 means 4 machines; change the list, not the shard count.
+  browser:
+    name: E2E (shard ${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble   # browsers and their system libraries are in the image; no apt on the runner (story #895)
+      options: --ipc=host
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: End-to-end tests (build included)
+        run: npm run test:e2e -- --grep-invert 'screens\.spec\.ts' --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+        env:
+          SCREENS_OUT: ${{ github.workspace }}/app/screens-out
+
+      - name: Upload the failing shard's report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-${{ matrix.shard }}
+          path: app/test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
   guard:
     name: Guard (secrets, size, markers, commit messages, PR size)
     runs-on: ubuntu-latest
@@ -216,11 +252,11 @@ jobs:
   gate:
     name: gate
     if: always()
-    needs: [site, app, guard]
+    needs: [site, app, browser, guard]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Every check passed
         run: |
           echo '${{ toJSON(needs) }}'
-          [ "${{ needs.site.result }}${{ needs.app.result }}${{ needs.guard.result }}" = successsuccesssuccess ]
+          [ "${{ needs.site.result }}${{ needs.app.result }}${{ needs.browser.result }}${{ needs.guard.result }}" = successsuccesssuccesssuccess ]
