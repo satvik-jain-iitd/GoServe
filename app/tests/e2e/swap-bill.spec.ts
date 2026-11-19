@@ -17,7 +17,7 @@ const quoteOf = (lines: object[], itemTotal: number, swapDiscount = 0) => ({
 const line = (d: typeof PANEER, qty: number) => ({ menu_item_id: d.id, name: d.name, qty, unit_paise: d.price_paise, extras_paise: 0, line_paise: d.price_paise * qty, options: [] });
 const placed = { ok: true, created: true, order: { id: "0f0f0f0f-1111-4222-8333-444444444444", kitchen_id: "k-1", status: "placed", total_paise: 24000, address: "Flat 4", items: [], bill: {}, created_at: new Date().toISOString() } };
 
-async function start(context: BrowserContext, page: Page, alt: object | null) {
+async function start(context: BrowserContext, page: Page, alt: object | null, deadIds: string[] = ["d1"]) {
   const net = await setup(context, page);
   net.state.menu = [PANEER, DAL, ROTI];
   const seen = { quotes: [] as any[], orders: [] as any[] };
@@ -26,12 +26,14 @@ async function start(context: BrowserContext, page: Page, alt: object | null) {
     const b = JSON.parse(route.request().postData() ?? "{}");
     seen.quotes.push(b);
     const lines: { menu_item_id: string; qty: number; swap?: boolean }[] = b.lines;
-    const dead = lines.find((l) => l.menu_item_id === "d1");
+    const NAMES: Record<string, string> = { d1: "Paneer Butter Masala", d3: "Tandoori Roti" };
+    const dead = lines.find((l) => deadIds.includes(l.menu_item_id) && !l.swap);
+    const swappedDead = lines.filter((l) => deadIds.includes(l.menu_item_id) && l.swap);
     const answer = (status: number, body: unknown) => route.fulfill({ status, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(body) });
-    if (dead && !dead.swap) return answer(422, { ok: false, error: "dish_sold_out", message: "Paneer Butter Masala is sold out.", alternative: alt });
-    const out = lines.flatMap((l) => (l.menu_item_id === "d1" ? [line(DAL, l.qty)] : [line(l.menu_item_id === "d2" ? DAL : ROTI, l.qty)]));
+    if (dead) return answer(422, { ok: false, error: "dish_sold_out", message: `${NAMES[dead.menu_item_id]} is sold out.`, alternative: alt });
+    const out = lines.flatMap((l) => (deadIds.includes(l.menu_item_id) ? [line(DAL, l.qty)] : [line(l.menu_item_id === "d2" ? DAL : ROTI, l.qty)]));
     const total = out.reduce((n, l: any) => n + l.line_paise, 0);
-    return answer(200, quoteOf(out, total, dead ? 2200 * dead.qty : 0));
+    return answer(200, quoteOf(out, total, swappedDead.reduce((n, l) => n + 2200 * l.qty, 0)));
   });
   await context.route("https://test.supabase.co/functions/v1/orders", async (route) => {
     if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: CORS });
@@ -121,8 +123,8 @@ for (const [w, h] of [[360, 640], [390, 844]]) {
     expect(Math.abs(t.w - sw.w)).toBeLessThanOrEqual(1);
     expect(Math.abs(t.x - (s.x + pad.l))).toBeLessThanOrEqual(1);   // full width of the sheet's content
     expect(Math.abs(t.x + t.w - (s.x + s.w - pad.r))).toBeLessThanOrEqual(1);
-    expect(t.h).toBeGreaterThanOrEqual(44);
-    expect(sw.h).toBeGreaterThanOrEqual(44);
+    expect(Math.abs(t.h - 56)).toBeLessThanOrEqual(1);   // the owner's frame: 56 tall (the shared big button)
+    expect(Math.abs(sw.h - 56)).toBeLessThanOrEqual(1);
     for (const l of [await lines(take), await lines(swap)]) expect(l.text).toBeLessThan(1.5 * l.line);   // one line each
     expect(pad.b).toBeGreaterThanOrEqual(24);
     expect(Math.abs(s.bottom - sw.bottom - pad.b)).toBeLessThanOrEqual(1);   // the bottom gap as on the other sheets
@@ -158,4 +160,26 @@ test("S7 Back leaves the Bill for the menu and adds no step for the sheet; the B
   await page.getByRole("button", { name: /View bill/ }).click();
   await expect(sheetOf(page)).toBeVisible();   // the dish is still sold out
   await expect(page.getByRole("button", { name: /Fix the bill first/ })).toBeDisabled();
+});
+
+test("S8 two dishes sold out: one sheet after the other, the first dish, then the second, then no sheet", async ({ page, context }) => {
+  const { net } = await start(context, page, ALT, ["d1", "d3"]);
+  await page.goto("/customer/");
+  await page.getByRole("button", { name: "Add Paneer Butter Masala" }).click();
+  await page.getByRole("button", { name: "Add Tandoori Roti" }).click();
+  net.state.menu = [{ ...PANEER, available: false }, DAL, { ...ROTI, available: false }];
+  net.push("UPDATE", { ...PANEER, available: false }, "menu_items");
+  net.push("UPDATE", { ...ROTI, available: false }, "menu_items");
+  await expect(page.locator("article").filter({ hasText: "Tandoori Roti" }).getByText("Sold out", { exact: true })).toBeVisible({ timeout: 5000 });
+  await page.getByRole("button", { name: /View bill/ }).click();
+  const first = page.getByRole("dialog", { name: "Paneer Butter Masala is sold out" });
+  await expect(first).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+  await first.getByRole("button", { name: "Swap it in" }).click();
+  const second = page.getByRole("dialog", { name: "Tandoori Roti is sold out" });
+  await expect(second).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+  await second.getByRole("button", { name: "Take it out" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Items" }).getByText("1 × Dal Makhani")).toBeVisible();
 });

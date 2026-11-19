@@ -55,8 +55,8 @@ function SwapSheet({ soldOut, alt }: { soldOut: NonNullable<Props["soldOut"]>; a
         <p className="ui-swap-try">Try {alt.name} instead</p>
         <p className="ui-swap-price"><span className="mono">{formatRupees(alt.price_paise - alt.discount_paise)}</span> <span className="mono was">{formatRupees(alt.price_paise)}</span> · {Math.round((100 * alt.discount_paise) / Math.max(1, alt.price_paise))}% off from us, sorry for the trouble</p>
         <div className="ui-sheet-acts">
-          <button type="button" className="ui-btn ghost" onClick={soldOut.onRemove}>Take it out</button>
-          <button type="button" className="ui-btn" onClick={soldOut.onSwap}>Swap it in</button>
+          <button type="button" className="ui-btn ghost big" onClick={soldOut.onRemove}>Take it out</button>
+          <button type="button" className="ui-btn big" onClick={soldOut.onSwap}>Swap it in</button>
         </div>
       </div>
     </div>
