@@ -2,7 +2,7 @@
 // The status list always shows three rows: the first step on top at the start (PL6), the step now in the middle (PL4), the step now at the bottom at the end (PL7).
 // When the status changes the rows slide up one row (about 300 ms); the box never changes height, so the buttons never move and nothing scrolls at 360 by 640.
 import { test, expect, type Page } from "@playwright/test";
-import { setup, order } from "./helpers";
+import { setup, order, ID } from "./helpers";
 
 const list = (page: Page) => page.getByRole("list", { name: "Order progress" });
 const rows = (page: Page) => list(page).getByRole("listitem");
@@ -34,7 +34,7 @@ test("R2 cooking: three rows, the middle one is the step now (PL4)", async ({ pa
 
 test("R3 delivered: three rows, the last is the step now (PL7)", async ({ page, context }) => {
   await openAt(context, page, "delivered");
-  await expect(rows(page)).toHaveText(["Ready, rider picks up", "On the way", "At your door"]);
+  await expect(rows(page)).toHaveText(["Ready, rider picks up", "On the way", "Delivered"]);
   await expect(rows(page).last()).toHaveAttribute("aria-current", "step");
   const buttons = page.locator(".ui-bottom .ui-btn");
   await expect(buttons.last()).toHaveText(/Order again ›/);   // story 1434: the main button is last (story 1589: Order again on a delivered slip)
@@ -119,6 +119,16 @@ test("R8b delivered: Order again (story 1589; before: Back to menu) stays full w
   const main = (await page.locator(".ui-bottom .ui-btn").last().boundingBox())!;
   expect(call.y + call.height).toBeLessThanOrEqual(main.y);
   expect(Math.abs(call.width - main.width)).toBeLessThanOrEqual(1);
+});
+
+// Story 1650: the rider is at the door, so the second row says "Rider at your door"; the last row says "Delivered", never "At your door" again.
+test("R11 rider at the door: the rows read Ready, Rider at your door, Delivered and no row says At your door", async ({ page, context }) => {
+  const net = await openAt(context, page, "out_for_delivery");
+  const arriving = { id: "e1", order_id: ID, event: "order.arriving" };
+  net.state.events = [arriving];
+  net.push("INSERT", arriving, "order_events");
+  await expect(rows(page)).toHaveText(["Ready, rider picks up", "Rider at your doorNow", "Delivered"]);
+  await expect(list(page).getByText("At your door", { exact: true })).toHaveCount(0);
 });
 
 test("R7 no step count and no Ping me button", async ({ page, context }) => {

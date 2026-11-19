@@ -85,8 +85,8 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
   return <p className="ui-wait">Waiting for payment · {mmss(Math.max(0, PAY_WINDOW_S - Math.floor((now - new Date(startedAt).getTime()) / 1000)))}</p>;
 }
 
-// The customer says it in his words: the kitchen's "Ready" is "Ready, rider picks up", the last step is "At your door".
-const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "At your door" };
+// The customer says it in his words: the kitchen's "Ready" is "Ready, rider picks up", the last step is "Delivered".
+const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "Delivered" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
 export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, placedAt, lines, kitchenName, headWait, pin, kitchenPhone, address, asking, busy, error, onYes, onNotYet, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta, again }: Props) {
