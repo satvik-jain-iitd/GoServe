@@ -108,7 +108,7 @@ export function AdminSim() {
       </section>
       <section className="ui-group" aria-label="Start over">
         <h2>Start over</h2>
-        <div className="ui-pad-y ui-row-pair">
+        <div className="ui-pad-y ui-form-acts">
           <button type="button" className="ui-btn ghost" disabled={busy} onClick={reset}>Reset the city</button>
           {clearShown(import.meta.env.VITE_SIM_CLEAR, allowed) && <button type="button" className="ui-btn ghost danger" disabled={busy || allowed === null} aria-disabled={busy || allowed === null} onClick={() => setClearing(true)}>Clear everything</button>}
         </div>

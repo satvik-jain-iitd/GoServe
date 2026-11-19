@@ -277,26 +277,30 @@ test("S17 (#941) a database that does not allow Clear removes the button once it
   await expect(page.getByRole("button", { name: "Clear everything" })).toHaveCount(0);
 });
 
-test("S17 (story 1692) Reset the city and Clear everything stay side by side, equal widths, same top, no sideways scroll (360x640, 390x844)", async ({ page, context }) => {
+test("S17 (story 1708) Reset the city above Clear everything, each full width of the group, one line of text each, no sideways scroll (360x640, 390x844)", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.admin = true;
   for (const [w, h] of [[360, 640], [390, 844]]) {
     await page.setViewportSize({ width: w, height: h });
     await open(page);
     const group = page.getByRole("region", { name: "Start over" });
-    const reset = group.getByRole("button", { name: "Reset the city" }), clear = group.getByRole("button", { name: "Clear everything" });
-    await expect(clear).toBeVisible();
+    await expect(group.getByRole("button", { name: "Clear everything" })).toBeVisible();
+    await expect(group.getByRole("button", { name: "Reset the city" })).toBeVisible();
     const m = await page.evaluate(() => {
       const g = document.querySelector('section[aria-label="Start over"]')!;
-      const [a, b] = [...g.querySelectorAll(".ui-row-pair > .ui-btn")].map((e) => { const r = e.getBoundingClientRect(); const t = document.createRange(); t.selectNodeContents(e); return { x: r.x, y: r.y, w: r.width, right: r.right, text: t.getBoundingClientRect().height, line: parseFloat(getComputedStyle(e).lineHeight) || parseFloat(getComputedStyle(e).fontSize) * 1.2 }; });
-      return { a, b, gr: g.getBoundingClientRect().right, sw: document.documentElement.scrollWidth, iw: window.innerWidth };
+      const [a, b] = [...g.querySelectorAll(".ui-form-acts > .ui-btn")].map((e) => { const r = e.getBoundingClientRect(); const t = document.createRange(); t.selectNodeContents(e); return { x: r.x, y: r.y, w: r.width, h: r.height, text: t.getBoundingClientRect().height, line: parseFloat(getComputedStyle(e).lineHeight) || parseFloat(getComputedStyle(e).fontSize) * 1.2, name: e.textContent }; });
+      const acts = g.querySelector(".ui-form-acts")!.getBoundingClientRect();
+      return { a, b, acts: { x: acts.x, w: acts.width }, sw: document.documentElement.scrollWidth, iw: window.innerWidth };
     });
-    await expect(reset).toBeVisible();
-    expect(Math.abs(m.a.w - m.b.w)).toBeLessThanOrEqual(1);
-    expect(m.a.x).toBeLessThan(m.b.x);
-    expect(Math.abs(m.a.y - m.b.y)).toBeLessThanOrEqual(1);
-    expect(m.b.right).toBeLessThanOrEqual(m.gr + 1);
-    expect(m.b.right).toBeLessThanOrEqual(m.iw);
+    console.log("S17 raw", w, JSON.stringify(m));
+    expect([m.a?.name, m.b?.name]).toEqual(["Reset the city", "Clear everything"]);
+    expect(m.a.y + m.a.h).toBeLessThanOrEqual(m.b.y);   // Reset above Clear
+    for (const x of [m.a, m.b]) {
+      expect(Math.abs(x.x - m.acts.x)).toBeLessThanOrEqual(1);   // as wide as the group
+      expect(Math.abs(x.w - m.acts.w)).toBeLessThanOrEqual(1);
+      expect(x.text).toBeLessThan(1.5 * x.line);   // one line of text
+      expect(x.h).toBeGreaterThanOrEqual(44);
+    }
     expect(m.sw).toBeLessThanOrEqual(m.iw);
   }
 });
