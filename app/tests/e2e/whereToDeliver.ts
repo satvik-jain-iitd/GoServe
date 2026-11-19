@@ -213,10 +213,18 @@ export function whereToDeliver() {
     await quiet(page);
   });
 
-  test("A place confirmed here before, from search (a recent): no box shows and my place stays", async ({ page, context }) => {
-    await open(context, page, { perm: "granted", pos: AWAY }, { before: (n) => { n.state.recents = [{ id: "r1", name: "Sample Mall", address: "Sample Mall, Sampletown", pin_code: "110016", lat: AWAY.latitude, lng: AWAY.longitude, house: null, landmark: null, used_at: "2026-11-10T10:00:00Z" }]; } });
+  test("T14: A place confirmed here before, from search (a recent, confirmed true): no box shows and my place stays", async ({ page, context }) => {
+    await open(context, page, { perm: "granted", pos: AWAY }, { before: (n) => { n.state.recents = [{ id: "r1", name: "Sample Mall", address: "Sample Mall, Sampletown", pin_code: "110016", lat: AWAY.latitude, lng: AWAY.longitude, house: null, landmark: null, used_at: "2026-11-10T10:00:00Z", confirmed: true }]; } });
     await menuOfHome(page);
     await quiet(page);
+  });
+
+  test("T13: A place only tapped in search (a recent, confirmed false) is not a known place: the box shows and my place stays", async ({ page, context }) => {
+    await open(context, page, { perm: "granted", pos: AWAY }, { before: (n) => { n.state.recents = [{ id: "r1", name: "Sample Mall", address: "Sample Mall, Sampletown", pin_code: "110016", lat: AWAY.latitude, lng: AWAY.longitude, house: null, landmark: null, used_at: "2026-11-10T10:00:00Z", confirmed: false }]; } });
+    await expect(box(page)).toBeVisible();
+    await expect(box(page).getByRole("heading", { name: TITLE })).toBeVisible();
+    await settled(page);
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem("gs-place")!).id)).toBe("h1");
   });
 
   test("We do not deliver here: Use current location is greyed with the line under it, Use another address works, and the box has the same height as when we do deliver", async ({ page, context }) => {
