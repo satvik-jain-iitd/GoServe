@@ -40,8 +40,9 @@ jobs:
       - name: Build
         run: npm run build
 
+  # The name below is pinned by the repo ruleset "protect dev and main" (required check). Change it only together with the ruleset.
   app:
-    name: App (typecheck, unit, screens)
+    name: App (typecheck, unit, e2e, build)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     container:

@@ -9,6 +9,7 @@ const lockVersion = (dir: string): string => JSON.parse(readFileSync(new URL(`..
 
 describe("ci.yml (story #895)", () => {
   it("has the board-match job (story 1168), the regression job (story 1178) and the browser shards (story 1641)", () => expect(Object.keys(jobs).sort()).toEqual(["app", "boards", "browser", "gate", "guard", "regression", "site"]));
+  it("jobs.app keeps the name the repo ruleset requires (App (typecheck, unit, e2e, build))", () => expect(jobs.app).toMatch(/^    name: App \(typecheck, unit, e2e, build\)$/m));
   it("the browser e2e tests run in parallel shards, and the App job keeps only the unit and screen checks (story 1641)", () => {
     expect(jobs.browser).toMatch(/^ {6}fail-fast: false$/m);
     const shards = (jobs.browser.match(/^ {8}shard: \[([^\]]+)\]$/m)?.[1] ?? "").split(",").map((n) => Number(n.trim()));
