@@ -29,6 +29,26 @@ async function open(page: Page, context: BrowserContext) {
   return net;
 }
 
+// Story 1626: a tapped result keeps its own name, its postal code (the result's, else ours) and its source.
+const SAMPLE = { name: "Sample Junction", address: "Sample Junction, Sample Road, Sampletown", lat: 28.5599, lng: 77.2065, pin: "", served: true, from: "ola" };
+const SAMPLE_PIN = { ...SAMPLE, address: "Sample Junction, Sample Road, Sampletown 110016", pin: "110016" };
+const SAMPLE_OWN = { ...SAMPLE, from: "own", pin: "110016" };
+
+async function openTap(page: Page, context: BrowserContext, hit: object, { nearPin = null, guest = false }: { nearPin?: string | null; guest?: boolean } = {}) {
+  const net = await setup(context, page, [], { pin: null, guest });
+  net.state.addresses = guest ? [] : [HOME];
+  net.state.recents = [];
+  net.state.nearPin = nearPin;
+  net.state.places = { status: 200, body: { ok: true, results: [hit] } };
+  net.state.geocode = OLA_WORDS;
+  await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
+  await phoneLoc(page, { perm: "granted", pos: AT_HOME });
+  await page.goto("/customer/");
+  await page.getByTitle("Change the delivery address").click();
+  await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
+  return net;
+}
+
 export function recentOnTap() {
   test("a tapped result is a recent at once: one insert, marked not confirmed, and it shows under Recently searched", async ({ page, context }) => {
     const net = await open(page, context);
@@ -96,5 +116,48 @@ export function recentOnTap() {
     await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "PATCH").length).toBeGreaterThanOrEqual(1);
     expect(net.calls.recentWrites.filter((w) => w.method === "POST")).toHaveLength(1);
     expect(net.state.recents).toHaveLength(1);
+  });
+
+  // T10 (story 1626): the name comes from the tapped result. Green before the change; kept as a guard.
+  test("T10: a tapped Ola result is one recent row named after the result", async ({ page, context }) => {
+    await openTap(page, context, SAMPLE);
+    await search(page).fill("samp");
+    await places(page).getByRole("button").first().click();
+    await pinMap(page).getByRole("button", { name: "Back" }).click();
+    await expect(recents(page)).toHaveCount(1);
+    await expect(recents(page).first()).toContainText("Sample Junction");
+  });
+
+  // T6 (story 1626): the row keeps the result's name, its address, no postal code (none known), source ola, not confirmed.
+  test("T6: a tapped Ola result is saved with its address, source ola and not confirmed", async ({ page, context }) => {
+    const net = await openTap(page, context, SAMPLE);
+    await search(page).fill("samp");
+    await places(page).getByRole("button").first().click();
+    await pinMap(page).getByRole("button", { name: "Back" }).click();
+    await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "POST").length).toBe(1);
+    expect(net.calls.recentWrites.filter((w) => w.method === "POST")[0].body).toMatchObject({ name: "Sample Junction", address: SAMPLE.address, pin_code: null, source: "ola", confirmed: false });
+  });
+
+  // T7 (story 1626): the result's own six-digit postal code is the pin; nearest_pin is not asked.
+  test("T7: a tapped result with a postal code keeps it and does not ask nearest_pin", async ({ page, context }) => {
+    const net = await openTap(page, context, SAMPLE_PIN);
+    let nearCalls = 0;
+    await context.route("**/rest/v1/rpc/nearest_pin**", async (r) => { nearCalls++; await r.fallback(); });
+    await search(page).fill("samp");
+    await places(page).getByRole("button").first().click();
+    await pinMap(page).getByRole("button", { name: "Back" }).click();
+    await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "POST").length).toBe(1);
+    expect(net.calls.recentWrites.filter((w) => w.method === "POST")[0].body).toMatchObject({ pin_code: "110016", source: "ola" });
+    expect(nearCalls).toBe(0);
+  });
+
+  // T7b (story 1626): a result from our own table is source own.
+  test("T7b: a tapped result from our own table is saved with source own", async ({ page, context }) => {
+    const net = await openTap(page, context, SAMPLE_OWN);
+    await search(page).fill("samp");
+    await places(page).getByRole("button").first().click();
+    await pinMap(page).getByRole("button", { name: "Back" }).click();
+    await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "POST").length).toBe(1);
+    expect(net.calls.recentWrites.filter((w) => w.method === "POST")[0].body).toMatchObject({ name: "Sample Junction", source: "own", pin_code: "110016" });
   });
 }
