@@ -676,6 +676,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-order-group b { min-width: 0; overflow-wrap: anywhere; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; color: var(--md-on-background); }
 .ui-saved-card.ui-order-card .ui-order-row { padding: var(--gs-space-4); }
 .ui-saved-card.ui-order-card .ui-order-row:last-child { border-bottom: 0; }
+.ui-order-card .ui-view-all { border-top: 0; }   /* story 1637: the third row's own bottom border is the one line above the button; the button adds no second line */
 .ui-order-row { min-height: 64px; }
 .ui-order-row svg { color: var(--gs-text-muted); }
 .ui-order-word.bad { color: var(--md-error); font-weight: 700; }
