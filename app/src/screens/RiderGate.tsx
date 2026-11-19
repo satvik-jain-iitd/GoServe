@@ -45,7 +45,7 @@ export function RiderGate({ children }: { children: (gate: RiderGateState) => Re
       setNoLocation(false);
       lastPos.current = { lat: p.coords.latitude, lng: p.coords.longitude };
       send();
-    }, (e) => { if (e.code === e.PERMISSION_DENIED) { setNoLocation(true); lastPos.current = null; } }, { enableHighAccuracy: true, maximumAge: 10_000 });   // a weak signal or a timeout is not a refusal: no word for those
+    }, (e) => { lastPos.current = null; if (e.code === e.PERMISSION_DENIED) setNoLocation(true); }, { enableHighAccuracy: true, maximumAge: 10_000 });   // any error clears the place (a place sent again must be true); a weak signal or a timeout is not a refusal: no word for those
     const again = setInterval(send, 1_000);   // a 1 s check keeps the gap within a second of 10 s
     return () => { navigator.geolocation.clearWatch(watch); clearInterval(again); };
   }, [online, uid, front]);
