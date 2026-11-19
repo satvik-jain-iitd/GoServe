@@ -54,28 +54,27 @@ async function dragMap(page: Page, px = 300, west = false) {   // west: the cent
   await page.mouse.up();
 }
 
-test("TC 4.1 map opens: Back and search on top, pin in the middle, Current Location above the sheet, the sheet with the place, We deliver here, Confirm, Ola credit", async ({ page, context }) => {
+test("TC 4.1 map opens: Back and search on top, pin centred, the sheet, Confirm, Ola credit", async ({ page, context }) => {
   await STEPS["first-open-pin"](context, page, PATH);
   await mapAnswers(context);
   await expect(mapBox(page)).toBeVisible();
   const back = await box(page.getByRole("button", { name: "Back" }));
   const search = await box(page.getByRole("button", { name: "Search an area or address" }));
   const here = await box(page.getByRole("button", { name: "Current Location" }));
-  const name = page.getByText("Sample Garden Colony", { exact: true });
-  await expect(name).toBeVisible();
-  const nameBox = await box(name);
+  const title = page.getByText("Pin on the map", { exact: true });
+  await expect(title).toBeVisible();
+  const titleBox = await box(title);
   const pin = await box(pinSpan(page));
   const map = await box(mapBox(page));
   expect(back.y).toBeLessThan(pin.y);   // on top
   expect(search.y).toBeLessThan(pin.y);
   expect(Math.abs(pin.x + pin.width / 2 - (map.x + map.width / 2))).toBeLessThanOrEqual(4);   // pin in the middle
   expect(Math.abs(pin.y + pin.height / 2 - (map.y + map.height / 2))).toBeLessThanOrEqual(24);
-  expect(here.y).toBeGreaterThan(pin.y);   // Current Location chip is in the sheet, above the place name
-  expect(here.y).toBeLessThan(nameBox.y);
-  await expect(page.getByText("Sample Road, Sampletown, Sample State 900001", { exact: true })).toBeVisible();   // full address
+  expect(here.y).toBeGreaterThan(pin.y);   // Current Location chip is in the sheet, above the title
+  expect(here.y).toBeLessThan(titleBox.y);
   await expect(page.getByText("We deliver here · the kitchen is 1.2 km from the pin")).toBeVisible();
   await expect(confirm(page)).toBeEnabled();   // filled, live
-  await expect(page.getByRole("link", { name: "Ola Maps" })).toBeVisible();
+  // The Ola Maps link shows only when the words come from Ola (PinMapScreen.tsx line ~302, words?.from === "ola"). Words exist only after Confirm's lookup (story 1500), so it is not checked here.
   await expect(page.getByRole("link", { name: "© OpenStreetMap contributors" })).toBeVisible();
 });
 
@@ -91,22 +90,26 @@ test("TC 4.2 Confirm & proceed: Address details, no step count, with the same pl
   await expect(page.getByRole("button", { name: "Confirm & proceed" })).toHaveCount(0);   // the map step is gone
 });
 
-test("TC 4.3 drag the map about 1 km: the pin stays centred, the place and the distance update once the map stops", async ({ page, context }) => {
+test("TC 4.3 drag the map about 1 km: the pin stays centred, the distance updates, Confirm finds the place", async ({ page, context }) => {
   await STEPS["first-open-pin"](context, page, PATH);
   const { lookups } = await mapAnswers(context);
-  await expect(page.getByText("Sample Garden Colony", { exact: true })).toBeVisible();   // the first place shows before the drag
+  await expect(page.getByText("We deliver here · the kitchen is 1.2 km from the pin")).toBeVisible();   // the first spot's distance shows before the drag
   for (let i = 0; i < 5; i++) await dragMap(page, 300, true);   // five drags of 300 px, roughly 1 km at this zoom (3 drags gave about 650 m)
-  await expect(page.getByText("Example Nagar", { exact: true })).toBeVisible();   // the place follows the map once it stops
-  await expect(page.getByText("Sample Garden Colony", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("We deliver here · the kitchen is 1.2 km from the pin")).toHaveCount(0);   // the distance moved on from the first spot's 1.2 km
   await expect(page.getByText(/the kitchen is [\d.]+ (km|m) from the pin/)).toBeVisible();   // a distance line shows for the new spot
-  await expect(page.getByText("the kitchen is 1.2 km from the pin")).toHaveCount(0);   // and it moved on from the first spot's 1.2 km
-  const last = lookups.at(-1)!;
-  expect(metres(last, START)).toBeGreaterThan(700);   // it really moved about a kilometre
-  expect(metres(last, START)).toBeLessThan(1600);
   const pin = await box(pinSpan(page));
   const map = await box(mapBox(page));
   expect(Math.abs(pin.x + pin.width / 2 - (map.x + map.width / 2))).toBeLessThanOrEqual(4);   // still centred
   await expect(confirm(page)).toBeEnabled();
+  await confirm(page).click();
+  const details = page.getByRole("dialog", { name: "Address details" });
+  await expect(details).toBeVisible();
+  await expect(details.getByText("Example Nagar", { exact: true })).toBeVisible();   // the sheet shows the place the moved pin reached
+  expect(lookups).toHaveLength(1);   // the one geocode lookup, made by Confirm
+  const last = lookups[0];
+  expect(metres(last, START)).toBeGreaterThan(700);   // it really moved about a kilometre
+  // 5 drags x 300 px = 1500 px; one px at zoom 17 here is about 1.05 m, so about 1570 m plus the map's glide
+  expect(metres(last, START)).toBeLessThan(2000);
 });
 
 test("TC 4.4 Current Location: the map flies back to my spot", async ({ page, context }) => {
@@ -114,10 +117,12 @@ test("TC 4.4 Current Location: the map flies back to my spot", async ({ page, co
   const { lookups } = await mapAnswers(context);
   await dragMap(page);
   await dragMap(page);
-  await expect(page.getByText("Example Nagar", { exact: true })).toBeVisible();   // moved away from the phone
+  await expect(page.getByText("We deliver here · the kitchen is 1.2 km from the pin")).toHaveCount(0);   // moved away from the phone's spot
   await page.getByRole("button", { name: "Current Location" }).click();
-  await expect(page.getByText("Sample Garden Colony", { exact: true })).toBeVisible();   // back on the phone's place
-  await expect.poll(() => metres(lookups.at(-1) ?? { lat: 0, lng: 0 }, START)).toBeLessThan(5);   // the last lookup is at my spot
+  await expect(page.getByText("We deliver here · the kitchen is 1.2 km from the pin")).toBeVisible();   // back on the phone's spot
+  await confirm(page).click();
+  await expect(page.getByRole("dialog", { name: "Address details" })).toBeVisible();
+  await expect.poll(() => metres(lookups.at(-1) ?? { lat: 0, lng: 0 }, START)).toBeLessThan(5);   // the Confirm lookup is at my spot
 });
 
 test("TC 4.5 drag to a place no kitchen serves: the sheet becomes the far one, no Confirm", async ({ page, context }) => {
@@ -125,9 +130,11 @@ test("TC 4.5 drag to a place no kitchen serves: the sheet becomes the far one, n
   const { lookups } = await mapAnswers(context);
   await expect(confirm(page)).toBeEnabled();   // a served pin shows Confirm first, so its absence below is real
   for (let i = 0; i < 7; i++) await dragMap(page);   // about 2.3 km east, past the kitchen's reach
+  await expect(page.getByText(/km from where you are now/)).toBeVisible();   // the yellow distance line from the phone
+  await expect(confirm(page)).toBeVisible();
+  await confirm(page).click();
   await expect(page.getByRole("button", { name: "Invite the founders here" })).toBeVisible();
   await expect(page.getByText("Not in our area yet")).toBeVisible();
-  await expect(page.getByText(/km from where you are now/)).toBeVisible();   // the yellow distance line from the phone
   await expect(confirm(page)).toHaveCount(0);
   expect(lookups.at(-1)!.lng).toBeGreaterThanOrEqual(FAR_LNG);
 });
@@ -160,12 +167,10 @@ test("TC 4.8 bad network, the place name is slow: Confirm waits for it", async (
   await STEPS["first-open-pin"](context, page, PATH);
   const { lookups, release } = await mapAnswers(context, { holdLookup: true });   // the words stay in flight until released
   await dragMap(page);
-  await expect.poll(() => lookups.length).toBeGreaterThan(0);   // the slow lookup is really in flight
-  await expect(confirm(page)).toBeDisabled();   // Confirm waits for the place
-  test.fail(true, "#1200: the pin screen shows no 'finding the place' line while the place is looked up; Confirm is only greyed out");
-  await expect(page.getByText(/finding the place/i)).toBeVisible();
-  release();
   await expect(confirm(page)).toBeEnabled();
   await confirm(page).click();
+  await expect.poll(() => lookups.length).toBeGreaterThan(0);   // the slow lookup is really in flight
+  await expect(page.getByRole("button", { name: "Finding the address…" })).toBeDisabled();   // Confirm waits for the place
+  release();
   await expect(page.getByRole("dialog", { name: "Address details" })).toBeVisible();
 });
