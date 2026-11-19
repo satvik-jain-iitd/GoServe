@@ -693,7 +693,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setStep((s) => (s === "bill" ? "bill" : "menu"));   // "Confirm on the map" from the Bill comes back to the Bill
   }
   // Story 1530 (owner, 15 Nov 2026): a place picked from search and confirmed on the pin map is the place now and becomes a recent, never a saved address.
-  // The recent holds the confirmed point, the customer's own words and a postal code that is ours (nearest_pin) or his (typed on the sheet): nothing of Ola's answer.
+  // The recent holds the tapped result's own name and address, the confirmed point and a postal code (the result's, ours from nearest_pin, or the one typed on the sheet). Owner, 17 Nov 2026; loan: undo recent_drop_ola().
   function useSearched(a: Saved, s: Searched) {
     markOnce();
     choosePlace({ address: a.address, pin: a.pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark, confirmed: true, id: null });
@@ -710,8 +710,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // The tap's write is kept in tapWrite: a Confirm made fast waits for it, so Confirm updates the tapped row and never adds a second one (reviewer, #1615).
   function tapRecent(h: PlaceHit, typed: string) {
     tapWrite.current = (async () => {
-      const pin = (await nearestPin(h, undefined)) || "";
-      const row = await keepRecent(getClient(), recentsNow.current, { ...recentWords(typed, h, { house: "", landmark: "", area: "" }), pin, lat: h.lat, lng: h.lng, house: "", landmark: "", source: null }, false);
+      const pin = h.pin || (await nearestPin(h, undefined)) || "";
+      const row = await keepRecent(getClient(), recentsNow.current, { ...recentWords(typed, h, { house: "", landmark: "", area: "" }), pin, lat: h.lat, lng: h.lng, house: "", landmark: "", source: h.from === "own" ? "own" : "ola" }, false);
       if (row) setRecents((cur) => [row, ...cur.filter((r) => r.id !== row.id)].slice(0, RECENTS_MAX));
       return row;
     })().catch(() => null);
