@@ -39,7 +39,7 @@ test("S4 a delivered order shows the Delivered stamp, Cash paid and a way to cal
   net.push("UPDATE", { ...order("delivered", new Date().toISOString()), paid_by: "cash" });
   await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible({ timeout: 6000 });
   await expect(page.getByText("Cash paid")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Call the kitchen" })).toHaveAttribute("href", "tel:9876543210");
+  await expect(page.getByRole("link", { name: "Call the kitchen" })).toHaveCount(0);   // story 1656: a delivered order has no kitchen call
   await expect(page.locator(".ui-bottom").getByRole("button", { name: /Order again ›|See the menu/ })).toBeVisible();   // story 1589: the delivered slip's one filled button (was Back to menu, story 1434)
 });
 

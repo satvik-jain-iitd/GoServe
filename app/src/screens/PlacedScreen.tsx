@@ -89,6 +89,8 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "Delivered" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
+const KITCHEN_HOLDS = ["placed", "accepted", "preparing", "ready"];   // story 1656: the kitchen can be called only while it holds the order
+
 export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, placedAt, lines, kitchenName, headWait, pin, kitchenPhone, address, asking, busy, error, onYes, onNotYet, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta, again }: Props) {
   const [askCancel, setAskCancel] = useState(false);   // story #1227: the cancel sheet
   const steps = trackerSteps(status);
@@ -192,7 +194,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, 
       <div className="ui-bottom">   {/* story 1572: one button per line, full width, never side by side */}
         {(status === "placed" || status === "accepted") && <button type="button" className="ui-btn ghost big" disabled={cancelling} onClick={() => setAskCancel(true)}>Cancel order</button>}
         {track?.phone && status === "out_for_delivery" && <a href={`tel:${track.phone}`} className="ui-btn ghost big" onClick={onCall}>Call the rider</a>}
-        {kitchenPhone && status !== "out_for_delivery" && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
+        {kitchenPhone && KITCHEN_HOLDS.includes(status) && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
         {declined && <button type="button" className="ui-btn big" onClick={onMenu}>Order something else</button>}   {/* story 1458 (board T2b): the main button last, as on every end slip */}
         {again?.bar}
         {(cancelled || (delivered && !again)) && !declined && <button type="button" className="ui-btn big" onClick={onMenu}>Back to menu</button>}   {/* story 1434 (boards T1b, Delivered b): one name on both end slips, the main button last; the same dishes again only from History */}

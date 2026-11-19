@@ -1,5 +1,5 @@
 // Story 1508 (board DL1, canvas 3 row 2ck; owner 14 Nov 2026): the delivered screen. The title is "Your order". The time stays small ("At your door 8:08 pm").
-// A small line "4 min early" shows only when the food came before the promised time (orders.promised_at). No address. Call the kitchen above Back to menu.
+// A small line "4 min early" shows only when the food came before the promised time (orders.promised_at). No address. No Call the kitchen on a delivered order (story 1656).
 import { test, expect, type Page } from "@playwright/test";
 import { ID, SESSION, order, setup } from "./helpers";
 
@@ -51,13 +51,13 @@ test("D4 No promised time is known: no early line, never a guessed number", asyn
   await expect(page.getByText(/early/i)).toHaveCount(0);
 });
 
-test("D5 Buttons: Call the kitchen above Order again (story 1589; before: Back to menu), Order again filled and last, both in view at 360 by 640 with no scroll", async ({ page, context }) => {
+test("D5 Buttons: Order again (story 1589; before: Back to menu) is filled, the only button, in view at 360 by 640 with no scroll, no Call the kitchen (story 1656)", async ({ page, context }) => {
   await page.setViewportSize({ width: 360, height: 640 });
   await delivered(context, page, { delivered_at: at(20, 8), promised_at: at(20, 12) });
-  const call = page.getByRole("link", { name: "Call the kitchen" }), back = page.locator(".ui-bottom .ui-btn").last();
-  await expect(call).toBeInViewport({ ratio: 1 });
+  const back = page.locator(".ui-bottom .ui-btn").last();
+  await expect(page.getByRole("link", { name: "Call the kitchen" })).toHaveCount(0);
+  await expect(page.locator(".ui-bottom > .ui-btn")).toHaveCount(1);
   await expect(back).toBeInViewport({ ratio: 1 });
-  expect((await call.boundingBox())!.y + (await call.boundingBox())!.height).toBeLessThanOrEqual((await back.boundingBox())!.y);
   await expect(back).not.toHaveClass(/ghost/);
   await expect(back).toHaveText(/Order again ›/);
   expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight)).toBe(true);

@@ -7,9 +7,9 @@ const STATES: [string, string, (string | RegExp)[]][] = [   // story 1589: a del
   ["placed", "placed", ["Cancel order", "Call the kitchen"]],
   ["accepted", "accepted", ["Cancel order", "Call the kitchen"]],
   ["out_for_delivery", "out for delivery", ["Call the rider"]],
-  ["delivered", "delivered", ["Call the kitchen", /Order again ›/]],
-  ["cancelled", "cancelled", ["Call the kitchen", "Back to menu"]],
-  ["declined", "declined", ["Call the kitchen", "Order something else"]],
+  ["delivered", "delivered", [/Order again ›/]],
+  ["cancelled", "cancelled", ["Back to menu"]],
+  ["declined", "declined", ["Order something else"]],
 ];
 
 async function open(context: Parameters<typeof setup>[0], page: Page, key: string) {

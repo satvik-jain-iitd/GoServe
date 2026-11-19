@@ -57,9 +57,9 @@ const declinedWith = async (context: BrowserContext, page: Page, phone: string |
 };
 const bottomButtons = async (page: Page) => (await page.locator(".ui-bottom .ui-btn").allTextContents()).map((s) => s.trim());
 
-test("TC 25.9 Given a declined order with a kitchen phone, then Order something else is the last button and Call the kitchen is right above it", async ({ page, context }) => {
+test("TC 25.9 Given a declined order with a kitchen phone, then Order something else is the only button and there is no Call the kitchen (story 1656)", async ({ page, context }) => {
   await declinedWith(context, page, "9876500011");
-  expect(await bottomButtons(page)).toEqual(["Call the kitchen", "Order something else"]);
+  expect(await bottomButtons(page)).toEqual(["Order something else"]);
 });
 
 test("TC 25.10 Given a declined order with no kitchen phone, then Order something else is the only button", async ({ page, context }) => {

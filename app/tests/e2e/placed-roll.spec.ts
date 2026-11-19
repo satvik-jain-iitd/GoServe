@@ -112,13 +112,46 @@ test("R8 the two outline buttons stack, Cancel above Call the kitchen, same left
   expect(Math.abs(cancel.width - call.width)).toBeLessThanOrEqual(1);
 });
 
-test("R8b delivered: Order again (story 1589; before: Back to menu) stays full width under Call the kitchen", async ({ page, context }) => {
+test("R8b delivered: Order again (story 1589; before: Back to menu) is the one button, full width, with no Call the kitchen (story 1656)", async ({ page, context }) => {
   await openAt(context, page, "delivered");
-  await expect(page.locator(".ui-bottom > .ui-btn")).toHaveCount(2);
-  const call = (await page.getByRole("link", { name: "Call the kitchen" }).boundingBox())!;
+  await expect(page.locator(".ui-bottom > .ui-btn")).toHaveCount(1);
+  const col = (await page.locator(".ui-bottom").boundingBox())!;
   const main = (await page.locator(".ui-bottom .ui-btn").last().boundingBox())!;
-  expect(call.y + call.height).toBeLessThanOrEqual(main.y);
-  expect(Math.abs(call.width - main.width)).toBeLessThanOrEqual(1);
+  expect(main.width).toBeGreaterThan(col.width - 48);
+});
+
+// Story 1656: Call the kitchen shows only while the kitchen holds the order (placed, accepted, preparing, ready).
+const callKitchen = (page: Page) => page.getByRole("link", { name: "Call the kitchen" });
+for (const [id, status, label] of [["K1", "placed", "just placed"], ["K2c", "accepted", "accepted"], ["K2b", "preparing", "cooking"], ["K2", "ready", "ready"]]) {
+  test(`${id} Given an order that is ${label}, then Call the kitchen is shown`, async ({ page, context }) => {
+    await openAt(context, page, status);
+    await expect(callKitchen(page)).toHaveAttribute("href", "tel:9876543210");
+  });
+}
+test("K3 Given an order out for delivery, then Call the kitchen is not shown", async ({ page, context }) => {
+  await openAt(context, page, "out_for_delivery");
+  await expect(page.getByRole("link", { name: "Call the rider" })).toBeVisible();
+  await expect(callKitchen(page)).toHaveCount(0);
+});
+test("K4 Given a delivered order, then Call the kitchen is not shown", async ({ page, context }) => {
+  await openAt(context, page, "delivered");
+  await expect(callKitchen(page)).toHaveCount(0);
+});
+test("K5 Given a cancelled order, then Call the kitchen is not shown", async ({ page, context }) => {
+  const net = await openAt(context, page, "placed");
+  await expect(callKitchen(page)).toBeVisible();
+  net.push("UPDATE", order("cancelled", "2020-01-01T10:01:00Z"));
+  await expect(page.getByText("Your order was cancelled")).toBeVisible();
+  await expect(callKitchen(page)).toHaveCount(0);
+});
+test("K5b Given a declined order, then Call the kitchen is not shown", async ({ page, context }) => {
+  const net = await setup(context, page, [{ ...order("cancelled", "2020-01-01T10:02:00Z"), cancel_reason: "We are out of butter chicken tonight, so this order cannot be made." }]);
+  net.state.kitchens = KITCHEN;
+  await page.goto("/customer/");
+  await page.getByRole("button", { name: "History" }).click();
+  await page.getByRole("button", { name: /Butter Chicken/ }).click();
+  await expect(page.getByRole("heading", { name: "Declined" })).toBeVisible();
+  await expect(callKitchen(page)).toHaveCount(0);
 });
 
 // Story 1650: the rider is at the door, so the second row says "Rider at your door"; the last row says "Delivered", never "At your door" again.

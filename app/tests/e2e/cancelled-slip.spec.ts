@@ -21,18 +21,17 @@ test("S2 the History row of a cancelled order shows no price (story 1589: it owe
   await expect(row).not.toContainText("₹");
 });
 
-// Story 1434 (boards T1b and Delivered b, owner 13 Nov 2026): both end slips have one main button, "Back to menu", filled and last; "Call the kitchen" is the outline button above it.
+// Story 1434 (boards T1b and Delivered b, owner 13 Nov 2026): both end slips have one main button, "Back to menu", filled and last; story 1656: there is no "Call the kitchen" on an end slip.
 // It opens the menu with an empty cart. "Order again" stays only on History (story #977). This reverses #1229.
 const main = (page: Page) => page.locator(".ui-bottom").getByRole("button", { name: "Back to menu" });
 async function lastIsMain(page: Page) {
   const kids = page.locator(".ui-bottom > *");
   await expect(kids.last()).toHaveText("Back to menu");
   await expect(kids.last()).not.toHaveClass(/ghost/);
-  await expect(page.locator(".ui-bottom").getByRole("link", { name: "Call the kitchen" })).toHaveClass(/ghost/);
-  expect((await page.locator(".ui-bottom").getByRole("link", { name: "Call the kitchen" }).boundingBox())!.y).toBeLessThan((await main(page).boundingBox())!.y);
+  await expect(page.locator(".ui-bottom").getByRole("link", { name: "Call the kitchen" })).toHaveCount(0);
 }
 
-test("S3 a cancelled slip: Back to menu is the main button, last, under Call the kitchen; no Order again", async ({ page, context }) => {
+test("S3 a cancelled slip: Back to menu is the main button and the only one, no Call the kitchen; no Order again", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
   Object.assign(net.state.kitchens[0], { phone: "9876543210" });
   await page.goto("/customer/");
@@ -51,7 +50,7 @@ test("S4 Back to menu on a cancelled slip opens the menu with an empty cart, no 
   await expect(page.getByRole("button", { name: /View bill/ })).toHaveCount(0);   // nothing from the cancelled order went in the cart
 });
 
-test("S5 a delivered slip: Order again (story 1589; before: Back to menu) is the main button, last, under Call the kitchen; it opens the Bill", async ({ page, context }) => {
+test("S5 a delivered slip: Order again (story 1589; before: Back to menu) is the main button and the only one, no Call the kitchen; it opens the Bill", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
   Object.assign(net.state.kitchens[0], { phone: "9876543210" });
   await page.goto("/customer/");
@@ -62,7 +61,7 @@ test("S5 a delivered slip: Order again (story 1589; before: Back to menu) is the
   const again = page.locator(".ui-bottom .ui-btn").last();
   await expect(again).toHaveText(/Order again ›/);
   await expect(again).not.toHaveClass(/ghost/);
-  expect((await page.getByRole("link", { name: "Call the kitchen" }).boundingBox())!.y).toBeLessThan((await again.boundingBox())!.y);
+  await expect(page.getByRole("link", { name: "Call the kitchen" })).toHaveCount(0);
   await again.click();
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
 });

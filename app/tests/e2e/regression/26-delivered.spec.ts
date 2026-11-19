@@ -53,7 +53,7 @@ test("TC 26.1 Look: the Delivered stamp, At your door 4:53 pm, the lines, Cash p
   await expect(slip.getByText("₹830", { exact: true })).toBeVisible();
   await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();
   await expect(page.locator(".ui-bottom").getByRole("button", { name: /Order again ›|See the menu/ })).toBeVisible();   // story 1589: the one filled button (story 1434 had Back to menu)
-  await expect(page.getByRole("link", { name: "Call the kitchen" })).toHaveAttribute("href", "tel:9876543210");
+  await expect(page.getByRole("link", { name: "Call the kitchen" })).toHaveCount(0);   // story 1656: a delivered order has no kitchen call
 });
 
 test("TC 26.2 Total equals the lines, free delivery: the lines plus Delivery Free add up to the Cash paid amount", async ({ page, context }) => {
