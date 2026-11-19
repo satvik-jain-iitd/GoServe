@@ -63,3 +63,24 @@ test("S3 Add puts the chosen count in the bill and closes the sheet", async ({ p
   await expect(sheet).toHaveCount(0);
   await expect(page.getByRole("button", { name: /View bill \(2\)/ })).toContainText("₹640");
 });
+
+// Story 1694: a big total and a long name keep the head apart: the name and the price do not touch, and the price is on one line.
+for (const [w, h] of [[360, 640], [390, 844]]) {
+  test(`S4 a five-digit total and a long name: the head keeps 8 px or more between them, the price on one line (${w}x${h})`, async ({ page, context }) => {
+    const net = await setup(context, page);
+    net.state.menu = [{ id: "d1", name: "Butter Chicken Special Thali with Extra Gravy", price_paise: 9990000, image_url: null, image_credit: null }];   // Rs 99,900 each
+    await page.setViewportSize({ width: w, height: h });
+    await page.goto("/customer/");
+    await page.getByRole("button", { name: /details$/ }).first().click();
+    const sheet = page.getByRole("dialog", { name: /Butter Chicken Special/ });
+    await expect(sheet).toBeVisible();
+    await sheet.getByRole("button", { name: /^More / }).click();   // two plates
+    const m = await sheet.locator(".ui-dish-head").evaluate((e) => {
+      const n = e.querySelector("h2")!.getBoundingClientRect(), p = e.querySelector(".ui-dish-price")!, pr = p.getBoundingClientRect();
+      const r = document.createRange(); r.selectNodeContents(p);
+      return { text: p.textContent, nameRight: n.right, priceLeft: pr.left, gap: pr.left - n.right, priceH: r.getBoundingClientRect().height, line: parseFloat(getComputedStyle(p).lineHeight) || parseFloat(getComputedStyle(p).fontSize) * 1.2, nameH: n.height };
+    });
+    expect(m.gap).toBeGreaterThanOrEqual(8);
+    expect(m.priceH).toBeLessThan(1.5 * m.line);
+  });
+}
