@@ -38,7 +38,7 @@ export function recentOnTap() {
     await pinMap(page).getByRole("button", { name: "Back" }).click();
     await expect(recents(page)).toHaveCount(1);
     await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "POST").length).toBe(1);
-    expect(net.calls.recentWrites.filter((w) => w.method === "POST")[0].body).toMatchObject({ name: "green park", confirmed: false });
+    expect(net.calls.recentWrites.filter((w) => w.method === "POST")[0].body).toMatchObject({ name: "Olaname Market", confirmed: false });
   });
 
   test("tap, then Confirm on the map: one row, not two (the Confirm updates the tapped row and clears the mark)", async ({ page, context }) => {
