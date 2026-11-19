@@ -9,7 +9,7 @@ import { clientPlatform } from "./lib/platform";
 import { riderRefused, savePlatform, tapCall } from "./lib/signals";
 import { useLiveOrders } from "./lib/useLiveOrders";
 import { loadMenu, MENU_KEY, type Dish } from "./lib/menu";
-import { chooseKitchen, fetchKitchens, loadArea, closedCopy, clearedLine, openingText, resolveArea, shownArea, type Area } from "./lib/area";
+import { chooseKitchen, fetchKitchens, loadArea, closedCopy, clearedLine, openingText, resolveArea, shownArea, isPin, type Area } from "./lib/area";
 import { clearPlace, HERE, herePlace, isHere, loadPlace, pointOf, savePlace, type StoredPlace } from "./lib/place";
 import { AreaScreen } from "./screens/AreaScreen";
 import { AlertsAsk } from "./screens/AlertsAsk";
@@ -699,10 +699,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     choosePlace({ address: a.address, pin: a.pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark, confirmed: true, id: null });
     setStep((st) => (st === "bill" ? "bill" : "menu"));
     void (async () => {
-      const tapped = await tapWrite.current;   // the tap's row, if the customer tapped this place in search first
+      const tapped = s.row ?? (await tapWrite.current);   // the row he tapped: from the recent list, or the search tap just made
       const list = tapped ? [tapped, ...recentsNow.current.filter((r) => r.id !== tapped.id)] : recentsNow.current;
-      const pin = (await nearestPin(a.from, undefined)) || (a.pinTyped ? a.pin : "");
-      const row = await keepRecent(getClient(), list, { ...recentWords(s.typed, s.hit, a), pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark, source: null });
+      const pin = a.pinTyped && isPin(a.pin) ? a.pin : ((await nearestPin(a.from, undefined)) || (isPin(a.pin) ? a.pin : ""));   // the pin the customer typed wins; else our table's; else the geocode's pin for the point (the place's own pin)
+      const row = await keepRecent(getClient(), list, { ...recentWords(s.typed, s.hit, a, tapped ?? undefined), pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark, source: tapped?.source ?? (s.hit ? (s.hit.from === "own" ? "own" : "ola") : null) }, true, tapped?.id);
       if (row) setRecents((cur) => [row, ...cur.filter((r) => r.id !== row.id)].slice(0, RECENTS_MAX));
     })().catch(() => undefined);
   }
@@ -719,7 +719,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   function pickRecent(r: Recent) {   // a recent is a confirmed place with its point; the tap makes it the newest
     if (!r.confirmed) {   // story 1609 (reviewer, #1615): a recent only tapped in search opens the pin map at its point; the place changes only on Confirm, which updates this row
       setFocusSearch(false); setSheet(false);
-      setPinMap({ center: { lat: r.lat, lng: r.lng }, follow: false, recent: { typed: r.name, hit: null } });
+      setPinMap({ center: { lat: r.lat, lng: r.lng }, follow: false, recent: { typed: r.name, hit: null, row: r } });
       return;
     }
     const used_at = new Date().toISOString();

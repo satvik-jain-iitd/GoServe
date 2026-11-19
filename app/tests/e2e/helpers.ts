@@ -176,6 +176,7 @@ export async function setup(context: BrowserContext, page: Page, initial: object
         return json(route, 201, (req.headers().accept ?? "").includes("pgrst.object") ? row : [row]);
       }
       state.recents = state.recents.map((r) => (r.id === id ? { ...r, ...body } : r));
+      if ((req.headers().accept ?? "").includes("pgrst.object")) return json(route, 200, state.recents.find((r) => r.id === id));   // story 1627: a .select().single() update gets its row back, as the server does
       return route.fulfill({ status: 204, headers: CORS, body: "" });
     }
     if (req.url().includes("/rest/v1/addresses")) {   // story #976: the customer's saved addresses (row level security shows only their own rows)
