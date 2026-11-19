@@ -125,9 +125,11 @@ export function AccountScreen({ name, phone, address, farKm, pin, photo, email, 
             <div className="ui-sheet-head"><h2>Delete your account?</h2></div>
             <p>Your orders, saved details and Google link are deleted. This cannot be undone.</p>
             {deleting.error && <p role="alert" className="ui-field-error">{deleting.error}</p>}
-            <div className="ui-edit-actions">
-              <button type="button" className="ui-btn danger" disabled={deleting.busy} onClick={async () => { setDeleting({ busy: true, error: null }); const err = await onDeleteAccount(); if (err) setDeleting({ busy: false, error: err }); }}>{deleting.busy ? "Deleting…" : "Delete"}</button>
-              <button type="button" className="ui-btn ghost" disabled={deleting.busy} onClick={() => setDeleting(null)}>Keep it</button>
+            <div className="ui-sheet-acts">   {/* story 1705: the same pair as the sign-out sheet: equal halves, 56 px, red Delete left, Keep it last on the right */}
+              <div className="ui-row-pair">
+                <button type="button" className="ui-btn danger big" disabled={deleting.busy} onClick={async () => { setDeleting({ busy: true, error: null }); const err = await onDeleteAccount(); if (err) setDeleting({ busy: false, error: err }); }}>{deleting.busy ? "Deleting…" : "Delete"}</button>
+                <button type="button" className="ui-btn ghost big" disabled={deleting.busy} onClick={() => setDeleting(null)}>Keep it</button>
+              </div>
             </div>
           </div>
         </div>
