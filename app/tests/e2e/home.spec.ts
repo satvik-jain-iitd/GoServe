@@ -35,7 +35,7 @@ test("S2 a menu with no thali has no hero", async ({ page, context }) => {
   await expect(page.getByRole("region", { name: "Today's thali" })).toHaveCount(0);
 });
 
-test("S3 tapping a dish photo opens the Dish sheet; Add to bill puts the chosen number in the cart", async ({ page, context }) => {
+test("S3 tapping a dish photo opens the Dish sheet; Add puts the chosen number in the cart", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.menu = MENU;
   await page.goto("/customer/");
@@ -43,8 +43,8 @@ test("S3 tapping a dish photo opens the Dish sheet; Add to bill puts the chosen 
   const sheet = page.getByRole("dialog", { name: "Butter Chicken" });
   await expect(sheet).toBeVisible();
   await sheet.getByRole("button", { name: "More Butter Chicken" }).click();
-  await expect(sheet.getByRole("button", { name: /Add to bill · ₹640/ })).toBeVisible();
-  await sheet.getByRole("button", { name: /Add to bill/ }).click();
+  await expect(sheet.locator(".ui-dish-price")).toHaveText("₹640");   // story 1694: the head carries price x count
+  await sheet.getByRole("button", { name: "Add", exact: true }).click();
   await expect(sheet).toHaveCount(0);
   await expect(page.getByRole("button", { name: /View bill \(2\)/ })).toContainText("₹640");
 });

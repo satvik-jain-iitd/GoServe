@@ -34,7 +34,9 @@ test("S2 closed: there is no Add button anywhere, and the dish sheet keeps only 
   await page.getByRole("button", { name: "Butter Chicken details" }).first().click();
   const sheet = page.getByRole("dialog", { name: "Butter Chicken" });
   await expect(sheet.getByRole("button", { name: "Close" })).toBeVisible();
-  await expect(sheet.getByRole("button", { name: /Add to bill/ })).toHaveCount(0);
+  await expect(sheet.getByRole("button", { name: "Add", exact: true })).toHaveCount(0);   // story 1694: the label is "Add"
+  const [cb, act] = [(await sheet.getByRole("button", { name: "Close" }).boundingBox())!, (await sheet.locator(".ui-dish-act").boundingBox())!];
+  expect(Math.abs(cb.width - (act.width - 2 * 20))).toBeLessThanOrEqual(1);   // story 1694: Close alone is full width (the actions have a 20 px gutter each side)
   await expect(sheet.getByRole("status", { name: /Quantity/ })).toHaveCount(0);
 });
 

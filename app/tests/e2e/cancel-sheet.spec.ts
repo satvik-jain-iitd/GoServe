@@ -1,4 +1,4 @@
-// Story 1227 (board CX1-CancelSheet, owner 11 Nov 2026): Cancel order asks first. One tap opens a sheet; only the red button cancels; Keep my order, Escape and the backdrop keep the order (story 1565 took the close control out of the head).
+// Story 1227 (board CX1-CancelSheet, owner 11 Nov 2026): Cancel order asks first. One tap opens a sheet; only the red button cancels; Keep order, Escape and the backdrop keep the order (story 1565 took the close control out of the head).
 import { test, expect, type Page } from "@playwright/test";
 import { ID, order, setup } from "./helpers";
 
@@ -30,17 +30,17 @@ test("C2 the sheet says what stops, what you pay and what comes after, in the bo
   await expect(s.getByText("To eat, you place a new order. The time starts again.")).toBeVisible();
 });
 
-test("C3 Yes, cancel the order asks the database once and the order shows Cancelled", async ({ page, context }) => {
+test("C3 Yes, cancel asks the database once and the order shows Cancelled", async ({ page, context }) => {
   const net = await open(page, context);
-  await sheet(page).getByRole("button", { name: "Yes, cancel the order" }).click();
+  await sheet(page).getByRole("button", { name: "Yes, cancel" }).click();
   await expect.poll(() => calls(net).length).toBe(1);
   expect(calls(net)[0].body).toEqual({ p_order: ID, p_reason: null });
   await expect(sheet(page)).toHaveCount(0);
 });
 
-test("C4 Keep my order, Escape and a tap outside each close the sheet and keep the order", async ({ page, context }) => {
+test("C4 Keep order, Escape and a tap outside each close the sheet and keep the order", async ({ page, context }) => {
   const net = await open(page, context);
-  await sheet(page).getByRole("button", { name: "Keep my order" }).click();
+  await sheet(page).getByRole("button", { name: "Keep order" }).click();
   await expect(sheet(page)).toHaveCount(0);
   await page.getByRole("button", { name: "Cancel order" }).click();
   await page.keyboard.press("Escape");
@@ -54,7 +54,7 @@ test("C4 Keep my order, Escape and a tap outside each close the sheet and keep t
 
 test("C5 two quick taps on the red button ask the database once", async ({ page, context }) => {
   const net = await open(page, context);
-  const yes = sheet(page).getByRole("button", { name: "Yes, cancel the order" });
+  const yes = sheet(page).getByRole("button", { name: "Yes, cancel" });
   await yes.dblclick().catch(() => undefined);   // the second tap lands on a sheet that is already closing
   await page.waitForTimeout(500);
   expect(calls(net)).toHaveLength(1);
@@ -63,7 +63,7 @@ test("C5 two quick taps on the red button ask the database once", async ({ page,
 test("C6 the call cannot reach the server: a true line shows and the order can be cancelled again", async ({ page, context }) => {
   const net = await open(page, context);
   net.state.rpcError = { name: "cancel_order", message: "Failed to fetch" };
-  await sheet(page).getByRole("button", { name: "Yes, cancel the order" }).click();
+  await sheet(page).getByRole("button", { name: "Yes, cancel" }).click();
   await expect(page.getByText("Could not reach GoServe. Check your connection and try again.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Cancel order" })).toBeEnabled();
 });
@@ -71,7 +71,7 @@ test("C6 the call cannot reach the server: a true line shows and the order can b
 test("C7 the order was already cancelled on another phone: the line says that, not that cooking started", async ({ page, context }) => {
   const net = await open(page, context);
   net.state.rpcError = { name: "cancel_order", message: "cannot_cancel: cancelled" };
-  await sheet(page).getByRole("button", { name: "Yes, cancel the order" }).click();
+  await sheet(page).getByRole("button", { name: "Yes, cancel" }).click();
   await expect(page.getByText("This order is already cancelled.")).toBeVisible();
   await expect(page.getByText(/started cooking/)).toHaveCount(0);
 });
@@ -79,7 +79,7 @@ test("C7 the order was already cancelled on another phone: the line says that, n
 test("C8 the kitchen started cooking while the sheet was open: the cooking line shows", async ({ page, context }) => {
   const net = await open(page, context);
   net.state.rpcError = { name: "cancel_order", message: "cannot_cancel: preparing" };
-  await sheet(page).getByRole("button", { name: "Yes, cancel the order" }).click();
+  await sheet(page).getByRole("button", { name: "Yes, cancel" }).click();
   await expect(page.getByText("The kitchen has started cooking, so this order cannot be cancelled now. Call the kitchen if you need to.")).toBeVisible();
 });
 
@@ -91,3 +91,32 @@ test("C9 an order paid online: the You pay row says what happens to the money, n
   await expect(s.getByText("If you paid online, it comes back in 5 to 7 days.")).toBeVisible();
   await expect(s.getByText(/pay at the door/)).toHaveCount(0);
 });
+
+// Story 1702 (owner, 20 Nov 2026, epic 1690): the two answers are an equal half and half pair, the red "Yes, cancel" on the left, the safe "Keep order" on the right.
+const rect = (loc: ReturnType<Page["locator"]>) => loc.evaluate((e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+const lines = (loc: ReturnType<Page["locator"]>) => loc.evaluate((e) => { const r = document.createRange(); r.selectNodeContents(e); return { text: r.getBoundingClientRect().height, line: parseFloat(getComputedStyle(e).lineHeight) || parseFloat(getComputedStyle(e).fontSize) * 1.2 }; });
+const settle = (page: Page) => page.evaluate(async () => { await Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => undefined))); });
+for (const [w, h] of [[360, 640], [390, 844]]) {
+  test(`C10 the answers are an equal pair: red Yes, cancel left, Keep order right, same top, together as wide as the sheet's content, one line each, focus on Keep order (${w}x${h})`, async ({ page, context }) => {
+    await page.setViewportSize({ width: w, height: h });
+    await open(page, context);
+    await settle(page);
+    const yes = sheet(page).getByRole("button", { name: "Yes, cancel", exact: true }), keep = sheet(page).getByRole("button", { name: "Keep order", exact: true });
+    const [a, b, s] = [await rect(yes), await rect(keep), await rect(sheet(page))];
+    const pad = await sheet(page).evaluate((e) => { const c = getComputedStyle(e); return { l: parseFloat(c.paddingLeft) + parseFloat(c.borderLeftWidth), r: parseFloat(c.paddingRight) + parseFloat(c.borderRightWidth) }; });
+    expect(a.x).toBeLessThan(b.x);
+    expect(Math.abs(a.w - b.w)).toBeLessThanOrEqual(1);
+    expect(Math.abs(a.y - b.y)).toBeLessThanOrEqual(1);
+    expect(Math.abs(a.h - b.h)).toBeLessThanOrEqual(1);
+    expect(Math.abs(a.x - (s.x + pad.l))).toBeLessThanOrEqual(1);
+    expect(Math.abs(b.x + b.w - (s.x + s.w - pad.r))).toBeLessThanOrEqual(1);
+    for (const l of [await lines(yes), await lines(keep)]) expect(l.text).toBeLessThan(1.5 * l.line);
+    await expect(keep).toBeFocused();
+    expect(await yes.evaluate((e) => e.classList.contains("danger-fill"))).toBe(true);
+    const ratio = await yes.evaluate((e) => {   // the red button's contrast, by measure
+      const lum = (css: string) => { const [r, g, bl] = (css.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number).map((v) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * bl; };
+      const c = getComputedStyle(e); const [x, y] = [lum(c.color), lum(c.backgroundColor)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05);
+    });
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
+  });
+}

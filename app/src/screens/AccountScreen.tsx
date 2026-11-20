@@ -63,7 +63,6 @@ export function AccountScreen({ name, phone, address, farKm, pin, photo, email, 
             <div className="ui-form ui-form-flush">
               <div className="ui-field"><label htmlFor="acc-name">Your name</label><input id="acc-name" type="text" value={draft.name} maxLength={80} onChange={(e) => setDraft({ ...draft, name: e.target.value })} /></div>
               <div className="ui-field"><label htmlFor="acc-phone">Phone</label><input id="acc-phone" className="mono-input" type="tel" inputMode="numeric" maxLength={10} value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value.replace(/\D/g, "") })} /></div>
-              <div className="ui-edit-actions"><button type="button" className="ui-btn small" onClick={() => { onName(draft.name); onPhone(draft.phone); setEditing(false); }}>Save</button><button type="button" className="ui-btn ghost small" onClick={() => setEditing(false)}>Cancel</button></div>
             </div>
           )}
           <PlaceRow words={address} onChange={onAddresses} farKm={farKm} />   {/* story 1532: the place's words; Change opens Deliver to */}
@@ -97,6 +96,14 @@ export function AccountScreen({ name, phone, address, farKm, pin, photo, email, 
         <p className="mono ui-legal"><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
         <p className="mono ui-legal">{buildLabel(import.meta.env.VITE_BUILD)}</p>
       </div>
+      {editing && (   /* story 1693: the answers sit in a bar at the bottom of the page, Cancel left and Save last, right */
+        <div className="ui-edit-bar">
+          <div className="ui-row-pair">
+            <button type="button" className="ui-btn ghost big" onClick={() => setEditing(false)}>Cancel</button>
+            <button type="button" className="ui-btn big" onClick={() => { onName(draft.name); onPhone(draft.phone); setEditing(false); }}>Save</button>
+          </div>
+        </div>
+      )}
     </section>
       {signingOut && (
         <div ref={fit} className="ui-sheet-back" onClick={() => setSigningOut(false)}>
@@ -118,9 +125,11 @@ export function AccountScreen({ name, phone, address, farKm, pin, photo, email, 
             <div className="ui-sheet-head"><h2>Delete your account?</h2></div>
             <p>Your orders, saved details and Google link are deleted. This cannot be undone.</p>
             {deleting.error && <p role="alert" className="ui-field-error">{deleting.error}</p>}
-            <div className="ui-edit-actions">
-              <button type="button" className="ui-btn danger" disabled={deleting.busy} onClick={async () => { setDeleting({ busy: true, error: null }); const err = await onDeleteAccount(); if (err) setDeleting({ busy: false, error: err }); }}>{deleting.busy ? "Deleting…" : "Delete"}</button>
-              <button type="button" className="ui-btn ghost" disabled={deleting.busy} onClick={() => setDeleting(null)}>Keep it</button>
+            <div className="ui-sheet-acts">   {/* story 1705: the same pair as the sign-out sheet: equal halves, 56 px, red Delete left, Keep it last on the right */}
+              <div className="ui-row-pair">
+                <button type="button" className="ui-btn danger big" disabled={deleting.busy} onClick={async () => { setDeleting({ busy: true, error: null }); const err = await onDeleteAccount(); if (err) setDeleting({ busy: false, error: err }); }}>{deleting.busy ? "Deleting…" : "Delete"}</button>
+                <button type="button" className="ui-btn ghost big" disabled={deleting.busy} onClick={() => setDeleting(null)}>Keep it</button>
+              </div>
             </div>
           </div>
         </div>

@@ -311,15 +311,17 @@ function DishSheet({ dish, closed, qty, onAdd, onClose }: { dish: Dish; closed: 
     <Modal label={dish.name} onClose={onClose}>
       <Photo src={dish.image_url} cls="ui-dish-photo" />
       <div className="ui-dish-body">
-        <div className="ui-dish-head"><h2>{dish.veg !== undefined && <VegMark veg={dish.veg} size={14} />}{dish.name}</h2><span className="ui-dish-price">{formatRupees(dish.price_paise)}</span></div>
+        <div className="ui-dish-head"><h2>{dish.veg !== undefined && <VegMark veg={dish.veg} size={14} />}{dish.name}</h2><span className="ui-dish-price">{formatRupees(dish.price_paise * n)}</span></div>
         <p className="ui-kicker">{dish.veg === undefined ? "" : dish.veg ? "Veg" : "Non-veg"}{dish.category ? ` · ${dish.category}` : ""}</p>
         {dish.description && <p className="ui-meta">{dish.description}</p>}
         {dish.image_credit && <CreditLine credit={dish.image_credit} />}
         {!closed && <div className="ui-dish-count"><span className="ui-kicker">How many</span><Stepper label={dish.name} value={n} min={1} onChange={setN} /></div>}
       </div>
       <div className="ui-dish-act">
-        <button type="button" className="ui-btn ghost big" onClick={onClose}>Close</button>
-        {!closed && <button type="button" className="ui-btn big" onClick={() => onAdd(n)}>Add to bill · {formatRupees(dish.price_paise * n)}</button>}   {/* story #1161: the filled button is last, at the bottom */}
+        <div className="ui-row-pair">   {/* story 1694: a half and half pair, Close left, Add last on the right; closed, Close alone fills the row */}
+          <button type="button" className="ui-btn ghost big" onClick={onClose}>Close</button>
+          {!closed && <button type="button" className="ui-btn big" onClick={() => onAdd(n)}>Add</button>}
+        </div>
       </div>
     </Modal>
   );

@@ -1,5 +1,5 @@
 // Story 1565: the head of a sheet. Shared by the Chromium and the WebKit spec. The cancel sheet's title sits on one line and the sheet has no close control in its head (owner's pick B);
-// "Keep my order", Back, Escape and a tap outside close it. No close control in the head of any sheet is stretched. Measured in a real browser (rule 19).
+// "Keep order", Back, Escape and a tap outside close it. No close control in the head of any sheet is stretched. Measured in a real browser (rule 19).
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { order, setup } from "./helpers";
 
@@ -42,11 +42,11 @@ export function sheetHead() {
     });
   }
 
-  test("the cancel sheet has no close control in its head; Keep my order has the focus", async ({ page, context }) => {
+  test("the cancel sheet has no close control in its head; Keep order has the focus", async ({ page, context }) => {
     const sheet = await cancelSheet(page, context);
     await expect(sheet.locator(".ui-sheet-head button")).toHaveCount(0);
     await expect(sheet.getByRole("button", { name: "Close" })).toHaveCount(0);
-    await expect(sheet.getByRole("button", { name: "Keep my order" })).toBeFocused();
+    await expect(sheet.getByRole("button", { name: "Keep order" })).toBeFocused();
   });
 
   // [the sheet, how to open it, the dialog's name]: every sheet whose head holds a close control
