@@ -30,11 +30,7 @@ type Props = {
   pin: string | null;
   kitchenPhone: string | null;
   address: string;
-  asking: boolean;              // show "Was your order delivered?"
-  busy: boolean;
-  error: string | null;
-  onYes: () => void;
-  onNotYet: () => void;
+  error: string | null;         // the cancel line
   onMenu: () => void;           // Back to menu, with an empty cart (a delivered or cancelled order; story 1434)
   onBack: () => void;           // the chevron: back to the menu
   onCancel: () => void;         // story B3, #904: allowed while the order is placed or accepted
@@ -89,7 +85,7 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "Delivered" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
-export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, placedAt, lines, kitchenName, headWait, pin, kitchenPhone, address, asking, busy, error, onYes, onNotYet, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta, again }: Props) {
+export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, placedAt, lines, kitchenName, headWait, pin, kitchenPhone, address, error, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta, again }: Props) {
   const [askCancel, setAskCancel] = useState(false);   // story #1227: the cancel sheet
   const steps = trackerSteps(status);
   const { now, online } = useNowOnline();
@@ -187,15 +183,6 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, 
         {declined && <button type="button" className="ui-btn big" onClick={onMenu}>Order something else</button>}   {/* story 1458 (board T2b): the main button last, as on every end slip */}
         {again?.bar}
         {(cancelled || (delivered && !again)) && !declined && <button type="button" className="ui-btn big" onClick={onMenu}>Back to menu</button>}   {/* story 1434 (boards T1b, Delivered b): one name on both end slips, the main button last; the same dishes again only from History */}
-        {asking && (
-          <div role="group" aria-label="Delivery check" className="ui-closed ui-ask">   {/* story 1691: the question is the last thing in the foot, two equal buttons, Yes on the right */}
-            <h3>Was your order delivered?</h3>
-            <div className="ui-row-pair">
-              <button type="button" className="ui-btn ghost" disabled={busy} onClick={onNotYet}>Not yet</button>
-              <button type="button" className="ui-btn" disabled={busy} onClick={onYes}>Yes, I have it</button>
-            </div>
-          </div>
-        )}
       </div>
     </>
   );

@@ -118,7 +118,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await expect(page.locator(".ui-locrow")).toContainText("Sample Garden Colony, Sample Road"); await page.getByRole("heading", { name: "Add a kitchen" }).click(); },   // a click on the title takes the focus off Closes at: no ring in the picture
   // Story 1053: the boards T4 and T5 with their own words (Rahul, 1.2 km, 20 sec ago). The clock is fixed at NINE, so the door time is the test's, not the board's 8:12 pm.
   "tracker-rider-row": async (context, page, path) => {   // board T4: On the way with the rider row, no map in the page
-    const net = await setup(context, page, [order("out_for_delivery", new Date(NINE.getTime() - 60_000).toISOString())]);   // changed a minute ago: the "Was your order delivered?" box has not come yet
+    const net = await setup(context, page, [order("out_for_delivery", new Date(NINE.getTime() - 60_000).toISOString())]);   //
     net.state.riderCard = { name: "Rahul", phone: "9876543210" };
     Object.assign(net.state.kitchens[0], { lat: 28.57, lng: 77.24 });
     net.state.tracking = { rider_lat: 28.5792, rider_lng: 77.26, eta_lo_min: 8, eta_hi_min: 18, eta_late: false, updated_at: new Date(NINE.getTime() - 20_000).toISOString() };

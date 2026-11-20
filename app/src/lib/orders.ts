@@ -72,16 +72,6 @@ async function act(orderId: string, action: string, deps: ActDeps, mine: Custome
   throw new PlaceError("Something went wrong. Please try again.", "unknown");
 }
 
-// The customer's Yes: the order closes as delivered and paid by cash. A second Yes is not an error (alreadyDone).
-export async function confirmDelivery(input: { orderId: string }, deps: ActDeps): Promise<{ order: PlacedOrder | null; alreadyDone: boolean }> {
-  try {
-    return await act(input.orderId, "confirm", deps, "confirm");
-  } catch (e) {
-    if (e instanceof PlaceError && e.code === "already_done") return { order: null, alreadyDone: true };   // an earlier Yes went through: the order is delivered, no line
-    throw e;
-  }
-}
-
 const STEP: Record<string, string> = { accepted: "accept", preparing: "prepare", ready: "ready", out_for_delivery: "pickup", delivered: "deliver" };
 export type StatusInput = { orderId: string; to: string; method?: string };   // method: only for delivered, how the customer paid at the door (story 1262)
 export async function changeStatus(input: StatusInput, deps: ActDeps): Promise<{ order: PlacedOrder }> {
