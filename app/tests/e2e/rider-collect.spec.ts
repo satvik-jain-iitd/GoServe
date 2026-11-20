@@ -1,4 +1,4 @@
-// Story #1262 (epic #1259, board R7-CollectQR): "Delivered" opens Collect payment (story 1182: the button is now "Collect ₹<amount>", after Arriving). The rider says how it was paid at the door, and that marks the order delivered.
+// Story #1262 (epic #1259, board R7-CollectQR): "Delivered" opens Collect payment (story 1182: the button says only "Collect" since story 1715, after Arriving). The rider says how it was paid at the door, and that marks the order delivered.
 import { test, expect, type Page } from "@playwright/test";
 import { ID, SESSION, order, setup } from "./helpers";
 
@@ -12,7 +12,7 @@ const open = async (context: Parameters<typeof setup>[0], page: Page, state: Rec
   Object.assign(net.state, state);
   await page.goto("/rider/");
   await page.getByRole("button", { name: "Arriving 0f0f0f0f" }).click();
-  await page.getByRole("button", { name: /^Collect ₹/ }).click();   // story 1182, board RY3: Collect opens Collect payment
+  await page.getByRole("button", { name: "Collect", exact: true }).click();   // story 1182, board RY3: Collect opens Collect payment
   return net;
 };
 const deliverCalls = (net: Awaited<ReturnType<typeof setup>>) => net.calls.status.filter((c) => c.body.action === "deliver").map((c) => c.body);
@@ -130,7 +130,7 @@ test("C10 UPI is turned off while the rider is on the screen: method_off reads t
 test("C9 Back leaves Collect payment without saving", async ({ page, context }) => {
   const net = await open(context, page);
   await page.getByRole("button", { name: "Back" }).click();
-  await expect(page.getByRole("button", { name: /^Collect ₹/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Collect", exact: true })).toBeVisible();
   expect(deliverCalls(net)).toEqual([]);
 });
 

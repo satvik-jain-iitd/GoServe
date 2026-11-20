@@ -16,7 +16,7 @@ test("S1 rider steps: pick up, arriving, delivered each send their step as the r
   await expect(page.getByText("On the way", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Arriving 0f0f0f0f" }).click();
   await expect(page.getByRole("button", { name: "Arriving 0f0f0f0f" })).toHaveCount(0);   // done once; story 1182: step 3 has no Arriving button
-  await page.getByRole("button", { name: /^Collect ₹/ }).click();   // story 1182, board RY3: Collect opens Collect payment
+  await page.getByRole("button", { name: "Collect", exact: true }).click();   // story 1182, board RY3: Collect opens Collect payment
   await page.getByRole("button", { name: /^Took cash/ }).click();   // story 1262: Delivered opens Collect payment first
   await page.getByRole("button", { name: "Done", exact: true }).click();   // H11: the delivered slip stays until the rider lets it go
   await expect(page.getByText("No. 0f0f0f0f")).toHaveCount(0);   // delivered orders leave the Job tab

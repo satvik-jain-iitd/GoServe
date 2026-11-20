@@ -10,7 +10,7 @@ test("TC R1.1 a wrong cash tap is put right on a small phone: the slip and Done 
   net.state.qrObject = "qr-0a1b2c3d-0000-4000-8000-0123456789ab.png";
   await page.goto("/rider/");
   await page.getByRole("button", { name: `Arriving ${ID.slice(0, 8)}` }).click();
-  await page.getByRole("button", { name: /^Collect ₹/ }).click();
+  await page.getByRole("button", { name: "Collect", exact: true }).click();
   await page.getByRole("button", { name: "Took cash", exact: true }).click();
   await expect(page.getByText("Cash aapke paas ₹640", { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.scrollingElement!.scrollHeight)).toBeLessThanOrEqual(640);
