@@ -26,3 +26,10 @@ export async function saveSupportPhone(c: Pick<SupabaseClient, "rpc">, text: str
   if (error) return "Could not save. Try again.";
   return data?.ok === true ? null : typeof data?.message === "string" ? data.message : "Could not save. Try again.";
 }
+
+/** Story 1718: any signed-in user (a rider) reads the number the admin set; null when none is set. The number is never in code. */
+export async function readSupportPhone(c: Pick<SupabaseClient, "rpc">): Promise<string | null> {
+  const { data, error } = await c.rpc("support_phone");
+  if (error) throw error;
+  return typeof data === "string" && /^[6-9]\d{9}$/.test(data) ? data : null;
+}
