@@ -73,7 +73,7 @@ export function DeliverToScreen({ focusSearch, forMap, list, recents, recentId, 
   const { found, ask: submit } = usePlaces(query, search, forMap ?? here);
   // Story 1529 (owner's pick, Way 2): no box when the place is a saved address (its row says Selected). The box shows the place that is not a saved one, or why the phone was not found.
   const fault = why ? locWords(why, "search above") : null;
-  const going = fault ? { ...fault, here: false } : current ? { title: "Where you are now", sub: current, here: true } : null;
+  const going = fault ? { ...fault, sub: why === "denied" || why === "still" ? "Turn it on in settings, or search above." : fault.sub, here: false } : current ? { title: "Where you are now", sub: current, here: true } : null;   // story 1734: the short line for the two blocked messages, on this card only (the sheet keeps its own words)
   const bold = (text: string) => { const [a, m, b] = splitMatch(text, query.trim()); return m ? <>{a}<b>{m}</b>{b}</> : text; };
   return (
     <>
@@ -94,8 +94,7 @@ export function DeliverToScreen({ focusSearch, forMap, list, recents, recentId, 
         </div>}   {/* board LF13: while the customer types only the results show */}
         {going && !q && (
           <section aria-label="Serving at" className={going.here ? "ui-going here" : "ui-going"}>
-            <h2 className="mono ui-saved-head">Serving at</h2>
-            <div>{going.here ? PIN : OFF}<span className="ui-going-words"><span className="ui-going-title">{going.title}{going.here && <span className="ui-tag ready">Selected</span>}</span><span className="ui-going-sub">{going.sub}</span></span></div>
+            <div>{going.here ? PIN : OFF}<span className="ui-going-words"><span className="ui-going-title"><span className="ui-going-t">{going.title}</span>{going.here && <span className="ui-tag ready">Selected</span>}</span><span className="ui-going-sub">{going.sub}</span></span></div>
           </section>
         )}
         {rows.length === 0 && !q ? (
