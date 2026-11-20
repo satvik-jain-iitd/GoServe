@@ -25,7 +25,7 @@ async function twoKitchens(net: Net, page: Page, menuB: object[]) {
 const row = (page: Page, dish: string) => page.locator(".ui-slip-lines > div").filter({ hasText: dish });
 const total = (page: Page) => page.getByTestId("bill-total");
 // Owner's rule 23, no layout shift: where every part of the Bill sits. The Bill with the line is laid over the Bill without it: only the header may differ, and it keeps its size.
-const PARTS = [".ui-head", ".ui-head h1", ".ui-back", ".ui-slip", ".ui-slip-head", ".ui-slip-lines > div >> nth=0", ".ui-slip-lines > div >> nth=1", ".ui-slip-total", ".ui-add-more", "#phone", "[aria-label='Deliver to']", "#note", ".ui-pay", ".ui-sticky", ".ui-sticky .ui-btn"];
+const PARTS = [".ui-head", ".ui-head h1", ".ui-back", ".ui-slip", ".ui-slip-head", ".ui-slip-lines > div >> nth=0", ".ui-slip-lines > div >> nth=1", ".ui-slip-total", ".ui-add-more", "#phone", "[aria-label='Serving at']", "#note", ".ui-pay", ".ui-sticky", ".ui-sticky .ui-btn"];
 const boxes = async (page: Page) => ({ ...Object.fromEntries(await Promise.all(PARTS.map(async (sel) => [sel, await page.locator(sel).boundingBox()]))), long: await page.locator(".ui-scroll").evaluate((el) => el.scrollHeight) }) as Record<string, { x: number; y: number; width: number; height: number } | null>;
 
 // On the Bill with both dishes, then "Confirm on the map" in the other kitchen's postal code: the customer stays on the Bill.
@@ -153,7 +153,7 @@ test("The order: it goes to kitchen B at the prices on the Bill, for the dishes 
 test("I pick a saved address of another kitchen with a cart: the menu says the kitchen changed, and the Bill marks the price and shows the dish it does not make", async ({ page, context }) => {
   await menuWithCart(page, context, ONE);
   await toDeliverTo(page);
-  await page.getByRole("button", { name: "Deliver to Office" }).click();
+  await page.getByRole("button", { name: "Serve at Office" }).click();
   await saysItChanged(page);
   await page.getByRole("button", { name: "Take it out" }).click();
   await page.getByRole("button", { name: "Back to menu" }).click();
@@ -180,7 +180,7 @@ async function saysItChanged(page: Page) {   // the same as for a saved address
 test("I tap a recent of another kitchen with a cart: the menu says the kitchen changed, and the Bill marks the price and shows the dish it does not make", async ({ page, context }) => {
   await menuWithCart(page, context, ONE, SAKET, [RECENT]);
   await toDeliverTo(page);
-  await page.getByRole("region", { name: "Recently searched" }).getByRole("button", { name: "Deliver to Sample Nagar" }).click();
+  await page.getByRole("region", { name: "Recently searched" }).getByRole("button", { name: "Serve at Sample Nagar" }).click();
   await saysItChanged(page);
 });
 
@@ -202,7 +202,7 @@ test("I search a place of another kitchen and confirm it on the pin map with a c
 test("I pick a saved address the same kitchen serves: no line, no mark, the cart as it was", async ({ page, context }) => {
   await menuWithCart(page, context, BOTH, { ...SAKET, pin_code: "110016" });
   await toDeliverTo(page);
-  await page.getByRole("button", { name: "Deliver to Office" }).click();
+  await page.getByRole("button", { name: "Serve at Office" }).click();
   await expect(page.getByRole("button", { name: /View bill/ })).toContainText("₹540");
   await expect(greet(page)).toHaveText(/^Open till/);
   await page.getByRole("button", { name: /View bill/ }).click();
@@ -213,11 +213,11 @@ test("I pick a saved address the same kitchen serves: no line, no mark, the cart
 test("No kitchen serves the new place: the no-kitchen screen shows and the cart is kept", async ({ page, context }) => {
   await menuWithCart(page, context, BOTH, { ...SAKET, pin_code: "110099" });
   await toDeliverTo(page);
-  await page.getByRole("button", { name: "Deliver to Office" }).click();
+  await page.getByRole("button", { name: "Serve at Office" }).click();
   await expect(page.getByRole("heading", { name: "We don't reach here yet" })).toBeVisible();
   expect(await cartIds(page)).toEqual(["d1", "d2"]);
   await page.getByRole("button", { name: "Deliver to a saved address" }).click();
-  await page.getByRole("button", { name: "Deliver to Home" }).click();
+  await page.getByRole("button", { name: "Serve at Home" }).click();
   await expect(page.getByRole("button", { name: /View bill/ })).toContainText("₹540");   // back at the first kitchen: the same cart, the same prices
   await expect(page.getByText(CHANGED)).toHaveCount(0);
 });
@@ -227,7 +227,7 @@ test("The kitchens cannot be read after the place changes: the cart is kept, and
   let down = true;
   await page.route("**/rest/v1/kitchens*", (r) => (down ? r.abort() : r.fallback()));
   await toDeliverTo(page);
-  await page.getByRole("button", { name: "Deliver to Office" }).click();
+  await page.getByRole("button", { name: "Serve at Office" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "No internet. Check your internet and try again." })).toBeVisible({ timeout: 15_000 });   // the read is tried again before it gives up
   expect(await cartIds(page)).toEqual(["d1", "d2"]);
   down = false;
@@ -240,7 +240,7 @@ test("The kitchens cannot be read after the place changes: the cart is kept, and
 test("I empty the cart on the menu after the kitchen changed: the greeting is back, there is no bill to see", async ({ page, context }) => {
   await menuWithCart(page, context, ONE);
   await toDeliverTo(page);
-  await page.getByRole("button", { name: "Deliver to Office" }).click();
+  await page.getByRole("button", { name: "Serve at Office" }).click();
   await expect(greet(page)).toHaveText(CHANGED);
   await page.getByRole("button", { name: "Less Butter Chicken" }).click();
   await expect(page.getByRole("button", { name: /View bill/ })).toHaveCount(0);
@@ -250,7 +250,7 @@ test("I empty the cart on the menu after the kitchen changed: the greeting is ba
 test("No dish of my cart is made by the new kitchen: the menu says the bill was cleared, in the greeting box", async ({ page, context }) => {
   await menuWithCart(page, context, [{ id: "b9", name: "Veg Thali", price_paise: 19900 }]);
   await toDeliverTo(page);
-  await page.getByRole("button", { name: "Deliver to Office" }).click();
+  await page.getByRole("button", { name: "Serve at Office" }).click();
   await expect(greet(page)).toHaveText("Place changed. Your bill was cleared.");
   await expect(page.getByRole("button", { name: /View bill/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Add Veg Thali" }).click();   // the next tap on the menu uses the line up
@@ -267,7 +267,7 @@ for (const width of [360, 412]) {
     await page.setViewportSize({ width, height: 800 });
     await menuWithCart(page, context, BOTH);
     await toDeliverTo(page);
-    await page.getByRole("button", { name: "Deliver to Office" }).click();
+    await page.getByRole("button", { name: "Serve at Office" }).click();
     await expect(greet(page)).toHaveText(CHANGED);
     await expect(page.getByRole("button", { name: /View bill/ })).toContainText("₹570");
     const withLine = await menuBoxes(page);

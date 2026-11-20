@@ -28,7 +28,7 @@ export const CONFIRM_PLACE_LINE = "Confirm your place on the map to place the or
 // Story 1548, rule 11: far from the phone, the row says how far, in the place of the small "Deliver to" label (the reviewer's call): no line is added, so the row has
 // one height either way (owner's rule 23). The row's own name stays "Deliver to". farKm null or not given: not far, or the phone's place is not known.
 export const PlaceRow = ({ words, onChange, farKm }: { words: string; onChange: () => void; farKm?: number | null }) => (
-  <div className="ui-phone-row" role="group" aria-label="Deliver to"><span><small className="mono">{farKm == null ? "Deliver to" : `${farKm} km from your current location`}</small><span>{words.trim() || "Not set yet"}</span></span><button type="button" className="ui-pinmap-change" aria-label="Change address" onClick={onChange}>Change</button></div>
+  <div className="ui-phone-row" role="group" aria-label="Serving at"><span><small className="mono">{farKm == null ? "Serving at" : `${farKm} km from your current location`}</small><span>{words.trim() || "Not set yet"}</span></span><button type="button" className="ui-pinmap-change" aria-label="Change address" onClick={onChange}>Change</button></div>
 );
 const plain = (paise: number) => formatRupees(paise).replace("₹", "");
 export const BackChevron = ({ label, onClick }: { label: string; onClick: () => void }) => (

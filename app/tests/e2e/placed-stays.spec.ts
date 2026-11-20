@@ -45,7 +45,7 @@ test("S2 a slow phone location that answers after the order is placed does not p
   await placeOne(page);
   await page.waitForTimeout(6000);
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toHaveCount(0);
 });
 
 test("S3 a slow phone location that answers while the customer is on the Bill leaves the Bill and its place alone", async ({ page, context }) => {
@@ -62,5 +62,5 @@ test("S3 a slow phone location that answers while the customer is on the Bill le
   await page.getByRole("button", { name: /View bill/ }).click();
   await page.waitForTimeout(5000);
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
-  await expect(page.getByRole("group", { name: "Deliver to" })).toContainText(PLACE_WORDS);   // story 1529: the place that was on this phone stays; the Bill is never pulled to Home
+  await expect(page.getByRole("group", { name: "Serving at" })).toContainText(PLACE_WORDS);   // story 1529: the place that was on this phone stays; the Bill is never pulled to Home
 });

@@ -10,7 +10,7 @@ const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers
 test.use({ viewport: { width: 390, height: 844 } });
 
 const search = (page: Page) => page.getByRole("searchbox", { name: "Search an area or address" });
-const deliverHeading = (page: Page) => page.getByRole("heading", { name: "Deliver to", exact: true });
+const deliverHeading = (page: Page) => page.getByRole("heading", { name: "Serving at", exact: true, level: 1 });
 const pinMap = (page: Page) => page.getByRole("region", { name: "Pin map" });
 
 // Later routes win over the shared step's answers. Each one answers the browser's preflight too.
@@ -21,7 +21,7 @@ async function answer(context: import("@playwright/test").BrowserContext, url: s
 test("TC 5.1 type green park: Saved · 1 match with the bold match, Places with a chip on each place", async ({ page, context }) => {
   await STEPS["deliver-to-search"](context, page, PATH);
   await expect(page.getByRole("heading", { name: "Saved · 1 match" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Deliver to Home" }).locator("b")).toHaveText("Green Park");   // the saved row's match in bold
+  await expect(page.getByRole("button", { name: "Serve at Home" }).locator("b")).toHaveText("Green Park");   // the saved row's match in bold
   await expect(page.getByRole("heading", { name: "Places · 2 found" })).toBeVisible();
   await expect(page.locator(".ui-place-row b").first()).toHaveText("Green Park");
   await expect(page.locator(".ui-tag.ready", { hasText: "We deliver here" })).toHaveCount(1);   // lime chip on the served place
@@ -44,8 +44,8 @@ test("TC 5.2 tap We deliver here: the pin map opens on that place, search stays 
 
 test("TC 5.3 tap the saved row: that address is chosen and the menu opens for it", async ({ page, context }) => {
   await STEPS["deliver-to-search"](context, page, PATH);
-  await expect(page.getByRole("button", { name: "Deliver to Home" })).toBeVisible();
-  await page.getByRole("button", { name: "Deliver to Home" }).click();
+  await expect(page.getByRole("button", { name: "Serve at Home" })).toBeVisible();
+  await page.getByRole("button", { name: "Serve at Home" }).click();
   await expect(deliverHeading(page)).toHaveCount(0);
   await expect(page.getByText("Butter Chicken").first()).toBeVisible();   // the menu is on screen
   await expect(page.getByRole("button", { name: /^Home\b/ })).toBeVisible();   // and it carries the chosen address
@@ -101,7 +101,7 @@ test("TC 5.8 no network while typing: a line that search needs the internet, sav
   await context.route(PLACES, (r) => (r.request().method() === "OPTIONS" ? r.fulfill({ status: 204, headers: CORS }) : r.abort("internetdisconnected")));   // the phone has no network
   await search(page).fill("green park");
   await expect(page.getByRole("heading", { name: "Saved · 1 match" })).toBeVisible();   // saved rows match without the network
-  await expect(page.getByRole("button", { name: "Deliver to Home" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Serve at Home" })).toBeVisible();
   await search(page).press("Enter");
   test.fail(true, "#1201: app shows 'Could not search places. Try again.' when offline, not a line that search needs the internet");
   await expect(page.getByText(/internet/i)).toBeVisible();

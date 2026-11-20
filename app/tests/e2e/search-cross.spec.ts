@@ -22,7 +22,7 @@ async function map(page: Page, context: Parameters<typeof setup>[0]) {
 async function deliver(page: Page, context: Parameters<typeof setup>[0]) {
   await setup(context, page);
   await page.goto("/customer/");
-  await page.getByRole("button", { name: /^(Home|Deliver to)\b/ }).first().click();
+  await page.getByRole("button", { name: /^(Home|Serving at)\b/ }).first().click();
   return page.getByRole("searchbox", { name: "Search an area or address" });
 }
 const browserCross = (input: Locator) => input.evaluate(() => [...document.styleSheets].flatMap((sh) => [...sh.cssRules]).some((r) => r instanceof CSSStyleRule && r.selectorText.includes("::-webkit-search-cancel-button") && r.style.display === "none") ? "none" : "shown");

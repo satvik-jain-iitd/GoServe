@@ -81,7 +81,7 @@ test("S5 Type it by hand is gone; Search for my address opens the search, focuse
   const search = page.getByRole("searchbox", { name: "Search an area or address" });
   await expect(search).toBeVisible();
   await expect(search).toBeFocused();
-  await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();   // story 1530: one search, the Deliver to search; a pick lands on the pin map
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();   // story 1530: one search, the Deliver to search; a pick lands on the pin map
 });
 
 const PLACES = { status: 200, body: { ok: true, results: [{ name: "Green Park", address: "Green Park, Delhi, 110016", lat: 28.5599, lng: 77.2065, pin: "110016", served: true }] } };

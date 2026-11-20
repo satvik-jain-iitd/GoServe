@@ -29,7 +29,7 @@ test("S2 next time the details are filled in already: the phone on one line (boa
   await toCart(page);
   await expect(page.getByLabel("Your name")).toHaveCount(0);
   await expect(page.getByText("9876543210", { exact: true })).toBeVisible();
-  await expect(page.getByRole("group", { name: "Deliver to" })).toContainText("Flat 4, Green Park");
+  await expect(page.getByRole("group", { name: "Serving at" })).toContainText("Flat 4, Green Park");
   await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
 });
 

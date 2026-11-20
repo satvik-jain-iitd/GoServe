@@ -42,7 +42,7 @@ for (const width of WIDTHS) for (const a of LONG) {
     await expectNoSideScroll(page, `menu ${at}`);   // the home top shows the same words on one line
     await page.getByRole("button", { name: "Add Butter Chicken" }).click();
     await page.getByRole("button", { name: /View bill/ }).click();
-    const row = page.getByRole("group", { name: "Deliver to" });
+    const row = page.getByRole("group", { name: "Serving at" });
     await expect(row).toContainText(a.text);
     await expectNoSideScroll(page, `Bill ${at}`);
     const change = (await row.getByRole("button", { name: "Change address" }).boundingBox())!;

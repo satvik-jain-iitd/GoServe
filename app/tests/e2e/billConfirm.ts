@@ -11,7 +11,7 @@ const bar = (page: Page) => page.locator(".ui-sticky .ui-btn");
 // The bar and what could move with it, by measure in the browser.
 const boxes = (page: Page) => page.evaluate(() => {
   const r = (el: Element | null) => { const b = el!.getBoundingClientRect(); return `${Math.round(b.width * 10) / 10}x${Math.round(b.height * 10) / 10} at ${Math.round(b.x * 10) / 10},${Math.round(b.y * 10) / 10}`; };
-  return { sticky: r(document.querySelector(".ui-sticky")), bar: r(document.querySelector(".ui-sticky .ui-btn")), placeH: document.querySelector("[role=group][aria-label='Deliver to']")!.getBoundingClientRect().height, scroll: document.querySelector(".ui-scroll")!.scrollHeight, page: document.documentElement.scrollHeight };
+  return { sticky: r(document.querySelector(".ui-sticky")), bar: r(document.querySelector(".ui-sticky .ui-btn")), placeH: document.querySelector("[role=group][aria-label='Serving at']")!.getBoundingClientRect().height, scroll: document.querySelector(".ui-scroll")!.scrollHeight, page: document.documentElement.scrollHeight };
 });
 
 export function billConfirm() {

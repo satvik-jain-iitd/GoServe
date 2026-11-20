@@ -19,7 +19,7 @@ async function open(page: Page, context: Parameters<typeof setup>[0], list: obje
   await answeredAt(context, { latitude: 28.5677, longitude: 77.2432 });   // story 1548: with no saved address the phone is far from the place it holds; the box is not this spec's subject
   await page.goto("/customer/");
   await toDeliverTo(page);
-  await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
   return net;
 }
 

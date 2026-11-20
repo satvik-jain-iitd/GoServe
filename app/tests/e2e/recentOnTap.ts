@@ -25,7 +25,7 @@ async function open(page: Page, context: BrowserContext) {
   await phoneLoc(page, { perm: "granted", pos: AT_HOME });
   await page.goto("/customer/");
   await page.getByTitle("Change the delivery address").click();
-  await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
   return net;
 }
 
@@ -45,7 +45,7 @@ async function openTap(page: Page, context: BrowserContext, hit: object, { nearP
   await phoneLoc(page, { perm: "granted", pos: AT_HOME });
   await page.goto("/customer/");
   await page.getByTitle("Change the delivery address").click();
-  await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
   return net;
 }
 
@@ -216,7 +216,7 @@ export function recentOnTap() {
     await page.getByRole("dialog", { name: "Address details" }).getByRole("button", { name: "Deliver here" }).click();
     await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "PATCH").length).toBeGreaterThanOrEqual(1);
     await page.getByTitle("Change the delivery address").click();
-    await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
     await expect(recents(page)).toHaveCount(1);
     await expect(recents(page).first()).toContainText("12B");
   });

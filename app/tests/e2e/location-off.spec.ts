@@ -41,7 +41,7 @@ test("S2 allowed but no position in 5 s: the sheet shows; Search your area opens
   await expect(page.getByRole("button", { name: /^Home\b/ }).first()).toBeVisible();   // Home stays behind the sheet
   await sheet(page).getByRole("button", { name: "Search your area" }).click();
   await expect(sheet(page)).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: /Deliver to/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Serving at/ })).toBeVisible();
 });
 
 test("S3 allowed and a position came: no sheet", async ({ page, context }) => {

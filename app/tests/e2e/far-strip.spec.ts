@@ -41,7 +41,7 @@ test("S1 more than 2 km from Home, with a cart in progress: no strip shows behin
   await expect(strip(page)).toHaveCount(0);   // not behind the box
   await expect(page.getByRole("button", { name: "Deliver here" })).toHaveCount(0);
   await whereBox(page).getByRole("button", { name: "Use another address" }).click();   // Home is my answer
-  await page.getByRole("button", { name: "Deliver to Home" }).click();
+  await page.getByRole("button", { name: "Serve at Home" }).click();
   await expect(page.getByRole("button", { name: /^Home\b/ })).toBeVisible();   // the header keeps Home
   await expect(page.getByRole("button", { name: /View bill/ })).toBeVisible();   // the cart is still there
   await page.waitForTimeout(300);

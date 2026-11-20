@@ -55,7 +55,7 @@ const measure = (page: Page) => page.evaluate(() => [".ui-sheet-back .ui-sheet",
   return `${s} ${Math.round(r.width)}x${Math.round(r.height)} at ${Math.round(r.x)},${Math.round(r.y)}`;
 }));
 const settled = (page: Page) => page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));   // the box has come up
-const pickHome = async (page: Page) => { await other(page).click(); await page.getByRole("button", { name: "Deliver to Home" }).click(); await menuOfHome(page); };
+const pickHome = async (page: Page) => { await other(page).click(); await page.getByRole("button", { name: "Serve at Home" }).click(); await menuOfHome(page); };
 
 export function whereToDeliver() {
   test("Not near any saved address: I open the app, I see the box with its two answers, I cannot reach the menu, and no map service was called", async ({ page, context }) => {
@@ -148,12 +148,12 @@ export function whereToDeliver() {
     await page.getByRole("button", { name: "Back", exact: true }).click();   // before Confirm
     await expect(box(page)).toBeVisible();
     await other(page).click();
-    await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
     await expect(box(page)).toHaveCount(0);
     await page.getByRole("button", { name: "Back", exact: true }).click();   // nothing chosen
     await expect(box(page)).toBeVisible();
     await other(page).click();
-    await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
     await page.goBack();   // the phone's Back button, nothing chosen
     await expect(box(page)).toBeVisible();
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem("gs-place")!).id)).toBe("h1");   // the place stayed

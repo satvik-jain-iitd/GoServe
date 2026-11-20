@@ -74,18 +74,18 @@ test("No free text for the address: the Bill and the You screen show the words, 
   await toBill(page);
   await expect(page.locator("#address")).toHaveCount(0);
   await expect(page.getByRole("textbox", { name: "Address" })).toHaveCount(0);
-  await expect(page.getByRole("group", { name: "Deliver to" })).toContainText(HOME.address);
+  await expect(page.getByRole("group", { name: "Serving at" })).toContainText(HOME.address);
   await page.getByRole("button", { name: "Change address" }).click();
-  await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
   await page.getByRole("button", { name: "Back", exact: true }).click();
   await page.getByRole("button", { name: "Account" }).click();
-  await expect(page.getByRole("group", { name: "Deliver to" })).toContainText(HOME.address);
+  await expect(page.getByRole("group", { name: "Serving at" })).toContainText(HOME.address);
   await page.getByRole("button", { name: "Edit delivery details" }).click();
   await expect(page.locator("[id=acc-name]")).toBeVisible();
   await expect(page.locator("[id=acc-address]")).toHaveCount(0);
   await expect(page.getByRole("textbox", { name: "Address" })).toHaveCount(0);
   await page.getByRole("button", { name: "Change address" }).click();
-  await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
 });
 
 test("An app open on an open order keeps the point: the next order from the menu carries it", async ({ page, context }) => {
@@ -151,7 +151,7 @@ test("No Home row with no point: an old typed place makes no saved row, and it m
   await page.waitForLoadState("networkidle");
   expect(net.calls.addressWrites.filter((w) => w.method === "POST")).toHaveLength(0);
   await toBill(page);
-  await expect(page.getByRole("group", { name: "Deliver to" })).toContainText("Flat 4, Green Park");
+  await expect(page.getByRole("group", { name: "Serving at" })).toContainText("Flat 4, Green Park");
   await expect(page.getByRole("button", { name: "Confirm on the map" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Place order/ })).toHaveCount(0);
 });
