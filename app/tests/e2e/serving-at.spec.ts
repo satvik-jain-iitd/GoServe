@@ -131,8 +131,8 @@ for (const size of SIZES) {
     await page.getByTitle("Change the delivery address").click();
     await page.getByRole("button", { name: "Use current location" }).click();
     await expect(page.locator(".ui-going")).toBeVisible();
-    const sels = [".ui-head", ".ui-head h1", ".ui-head .meta", ".ui-search-box", ".ui-two-cards", ".ui-going", ".ui-going .ui-saved-head", ".ui-saved-row", ".ui-saved-main"];
-    await same(page, sels, [".ui-head h1", ".ui-going .ui-saved-head"], async () => { await putText(page, ".ui-head h1", "Serving at", "Deliver to"); await putText(page, ".ui-going .ui-saved-head", "Serving at", "Delivering to"); }, `address ${at}`);
+    const sels = [".ui-head", ".ui-head h1", ".ui-head .meta", ".ui-search-box", ".ui-two-cards", ".ui-going", ".ui-saved-row", ".ui-saved-main"];   // story 1734: the card has no label of its own any more, so only the heading holds the words
+    await same(page, sels, [".ui-head h1"], async () => { await putText(page, ".ui-head h1", "Serving at", "Deliver to"); }, `address ${at}`);
   });
 
   test(`Nothing moves with the new words, ${at}: the Bill's address row`, async ({ page, context }) => {
