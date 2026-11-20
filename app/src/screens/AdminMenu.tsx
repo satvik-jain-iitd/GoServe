@@ -54,7 +54,7 @@ export function AdminMenu({ kitchenId, kitchenName, onError }: { kitchenId: stri
           <div className="ui-field"><label htmlFor="dish-line">Short line (optional)</label><input id="dish-line" type="text" value={form.description} placeholder="Slow cooked overnight, butter on top" onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
           <div className="ui-row ui-row-static"><label htmlFor="dish-veg" className="ui-row-label"><span>Veg</span></label><input id="dish-veg" className="ui-switch" type="checkbox" role="switch" checked={form.veg} onChange={(e) => setForm({ ...form, veg: e.target.checked })} /></div>
           <div className="ui-field"><label htmlFor="dish-photo">Photo</label><input id="dish-photo" key={fileKey} type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} /></div>
-          <div className="ui-form-acts" ref={dishActs}><button type="button" className="ui-btn ghost big" onClick={() => setAdding(false)}>Not now</button><button type="button" className="ui-btn big" onClick={() => void submit()}>Add dish</button></div>   {/* story 1476 (rule 8, as #1457): the main button last, both in view when the form opens */}
+          <div className="ui-form-acts" ref={dishActs}><div className="ui-row-pair"><button type="button" className="ui-btn ghost big" onClick={() => setAdding(false)}>Not now</button><button type="button" className="ui-btn big" onClick={() => void submit()}>Add dish</button></div></div>   {/* story 1476 (rule 8, as #1457): the main button last, both in view when the form opens */}
         </div>
       )}
       {editing && <DishSheet dish={editing} kitchenId={kitchenId} kitchenName={kitchenName} onError={onError} onClose={() => setEditing(null)} onDone={async () => { setEditing(null); await load(); }} />}
@@ -114,7 +114,7 @@ function DishSheet({ dish, kitchenId, kitchenName, onError, onClose, onDone }: {
     return (
       <DangerSheet id="delete-word" title={`Delete ${dish.name}?`} kicker="Asks once · the dish, not the orders" sentence="The dish leaves the menu now. Past orders keep its name and price."
         facts={[["Goes", "The dish, its photo and its place on the menu."], ["Stays", "Past orders and bills that name it."]]}
-        word="DELETE" value={word} onValue={setWord} confirmLabel="Delete this dish" leaveLabel="Keep the dish" after="Sold out keeps a dish; delete does not."
+        word="DELETE" value={word} onValue={setWord} confirmLabel="Delete" leaveLabel="Keep the dish" after="Sold out keeps a dish; delete does not."
         busy={busy} onConfirm={() => void remove()} onClose={() => { setDeleting(false); setWord(""); }} />
     );
   }

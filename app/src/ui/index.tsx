@@ -143,8 +143,10 @@ export function DangerSheet(p: DangerProps) {
         <input id={id} className="ui-danger-input" type="text" autoCapitalize="characters" autoComplete="off" placeholder={p.word} aria-label={`Type ${p.word} to go on`} value={p.value} onChange={(e) => p.onValue(e.target.value)} />
         {p.error && <p role="alert" className="ui-note error">{p.error}</p>}
         <div className="ui-danger-acts">
-          <button type="button" className="ui-btn big danger-fill" disabled={p.value !== p.word || p.busy} aria-disabled={p.value !== p.word || p.busy} onClick={p.onConfirm}>{p.confirmLabel}</button>
-          <button type="button" className="ui-btn ghost big" onClick={p.onClose}>{p.leaveLabel}</button>
+          <div className="ui-row-pair">
+            <button type="button" className="ui-btn big danger-fill" disabled={p.value !== p.word || p.busy} aria-disabled={p.value !== p.word || p.busy} onClick={p.onConfirm}>{p.confirmLabel}</button>
+            <button type="button" className="ui-btn ghost big" onClick={p.onClose}>{p.leaveLabel}</button>
+          </div>
         </div>
         {p.after && <p className="mono ui-danger-after">{p.after}</p>}
       </section>

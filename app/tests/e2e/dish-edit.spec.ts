@@ -2,6 +2,7 @@
 // and Delete is the danger sheet of #955. The invite row's Cancel is a trash icon.
 import { test, expect, type Page } from "@playwright/test";
 import { setup } from "./helpers";
+import { expectDangerPair } from "./dangerPair";
 
 const open = async (page: Page, context: Parameters<typeof setup>[0]) => {
   const net = await setup(context, page);
@@ -75,7 +76,7 @@ test("S5 Delete this dish opens the danger sheet, not window.confirm; the word D
   await page.getByRole("dialog", { name: "Edit Butter Chicken" }).getByRole("button", { name: "Delete this dish" }).click();
   const danger = page.getByRole("dialog", { name: "Delete Butter Chicken?" });
   await expect(danger).toHaveClass(/\bui-danger\b/);
-  const red = danger.getByRole("button", { name: "Delete this dish" });
+  const red = danger.getByRole("button", { name: "Delete", exact: true });
   await expect(red).toBeDisabled();
   await danger.getByLabel("Type DELETE to go on").fill("DELETE");
   await expect(red).toBeEnabled();
@@ -84,6 +85,16 @@ test("S5 Delete this dish opens the danger sheet, not window.confirm; the word D
   expect(net.calls.menuWrites[0].method).toBe("DELETE");
   expect(native).toBe(0);
 });
+
+for (const [w, h] of [[360, 640], [390, 844]]) {
+  test(`S5b (story 1704) the Delete sheet's answers are an equal pair, Delete red on the left, Keep the dish on the right, one line each (${w}x${h})`, async ({ page, context }) => {
+    await page.setViewportSize({ width: w, height: h });
+    await open(page, context);
+    await page.getByRole("button", { name: "Edit Butter Chicken" }).click();
+    await page.getByRole("dialog", { name: "Edit Butter Chicken" }).getByRole("button", { name: "Delete this dish" }).click();
+    console.log("PAIR dish", w, JSON.stringify(await expectDangerPair(page.getByRole("dialog", { name: "Delete Butter Chicken?" }), "Delete", "Keep the dish")));
+  });
+}
 
 test("S6 a new photo is uploaded and its address is saved on the dish", async ({ page, context }) => {
   const net = await open(page, context);

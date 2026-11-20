@@ -111,9 +111,9 @@ export function FeedbackSheet({ role, screen, order, getSession, send, preset, b
                 <span className="ui-note">Take one with your phone buttons first, then pick it here.</span>
               </div>
               {error && <p role="alert" className="ui-field-error">{error}</p>}
-              <div className="ui-edit-actions">
-                <button type="button" className="ui-btn" disabled={busy} onClick={submit}>{busy ? "Sending…" : "Send"}</button>
+              <div className="ui-row-pair">   {/* story 1701: Close left, Send last (right), equal halves */}
                 <button type="button" className="ui-btn ghost" onClick={() => setOpen(false)}>Close</button>
+                <button type="button" className="ui-btn" disabled={busy} onClick={submit}>{busy ? "Sending…" : "Send"}</button>
               </div>
             </div>
           </div>

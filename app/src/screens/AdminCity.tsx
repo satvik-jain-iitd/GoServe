@@ -199,7 +199,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
             <div className="ui-field"><label htmlFor="p-email">Email</label><input id="p-email" type="email" value={who.email} onChange={(e) => setWho({ ...who, email: e.target.value })} /></div>
             <div className="ui-field"><label htmlFor="p-role">Role</label><select id="p-role" value={who.kind} onChange={(e) => setWho({ ...who, kind: e.target.value as PersonKind })}><option value="kitchen">Kitchen staff</option><option value="rider">Rider</option><option value="admin">Admin</option></select></div>
             {who.kind === "kitchen" && <div className="ui-field"><label htmlFor="p-kitchen">Kitchen</label><select id="p-kitchen" value={who.kitchen} onChange={(e) => setWho({ ...who, kitchen: e.target.value })}><option value="">Pick a kitchen</option>{kitchens.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></div>}
-            <div className="ui-form-acts" ref={personActs}><button type="button" className="ui-btn ghost big" onClick={() => { setAddingPerson(false); setInvited(null); setAddError(null); }}>Not now</button><button type="button" className="ui-btn big" onClick={() => void submitPerson()}>Add person</button></div>   {/* story 1457 (board AP1): the main button last, both in view when the form opens */}
+            <div className="ui-form-acts" ref={personActs}><div className="ui-row-pair"><button type="button" className="ui-btn ghost big" onClick={() => { setAddingPerson(false); setInvited(null); setAddError(null); }}>Not now</button><button type="button" className="ui-btn big" onClick={() => void submitPerson()}>Add person</button></div></div>   {/* story 1457 (board AP1): the main button last, both in view when the form opens */}
             {addError && <p role="alert" className="ui-note error">{addError}</p>}
             {invited && (   // board A-AddPerson-Invite
               <div role="status" className="ui-invite">
@@ -243,7 +243,7 @@ function RemoveSheet({ kitchen, onClose, onRemoved }: { kitchen: KitchenRow; onC
     <DangerSheet id="remove-word" title={`Remove ${kitchen.name}?`}
       sentence="The kitchen leaves GoServe today. Customers stop seeing it at once. Nothing is deleted."
       facts={[["Stops", "New orders, the menu, and every staff sign-in to this kitchen."], ["Finishes", "Orders already placed, and today's slips and cash."], ["Stays", "Past orders, bills and numbers. The kitchen stays in the city list, marked Off."]]}
-      word="REMOVE" value={word} onValue={setWord} confirmLabel="Remove this kitchen" leaveLabel="Keep it open" after="Open orders must finish first."
+      word="REMOVE" value={word} onValue={setWord} confirmLabel="Remove" leaveLabel="Keep it open" after="Open orders must finish first."
       busy={busy} error={error} onConfirm={() => void go()} onClose={onClose} />
   );
 }
