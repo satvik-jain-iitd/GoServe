@@ -70,15 +70,30 @@ class Guard(unittest.TestCase):
         self.assertEqual(set(types), set(guard.MESSAGE.pattern.split("(")[1].split(")")[0].split("|")))
 
     def test_pr_size(self):
-        self.assertIsNone(guard.check_count(50))
-        self.assertIsNotNone(guard.check_count(51))
+        code = lambda n: [f"app/src/f{i}.tsx" for i in range(n)]
+        self.assertIsNone(guard.check_count(code(100)))
+        self.assertIsNotNone(guard.check_count(code(101)))
+
+    def test_test_files_are_not_counted_story_1727(self):
+        tests = [f"app/tests/e2e/t{i}.spec.ts" for i in range(60)] + ["scripts/test_guard.py", "spec/a.feature", "app/tests/e2e/screens-baseline/x.png", "ios/App/screens-baseline/y.png"]
+        code = [f"app/src/f{i}.tsx" for i in range(9)]
+        self.assertIsNone(guard.check_count(code + tests))   # 9 code files and 64 test files pass
+        self.assertIsNotNone(guard.check_count([f"app/src/f{i}.tsx" for i in range(101)] + tests))
+        self.assertIsNotNone(guard.check_count(["scripts/guard.py"] * 101))   # a script that is not a test counts
+
+    def test_the_message_names_both_numbers(self):
+        msg = guard.check_count([f"app/src/f{i}.tsx" for i in range(101)] + ["app/tests/e2e/a.spec.ts"] * 3)
+        self.assertIn("101 code files", msg)
+        self.assertIn("3 test files", msg)
+        self.assertIn("max 100 code files", msg)
 
     def test_a_sync_from_main_skips_the_file_cap(self):
         # Code that main already holds was reviewed there; the title starts with chore(sync).
-        self.assertIsNone(guard.check_count(88, "chore(sync): main into staging (#621)"))
-        self.assertIsNotNone(guard.check_count(88, "chore: merge main into staging (#621)"))
-        self.assertIsNotNone(guard.check_count(88, "feat: something chore(sync)"))   # the prefix, not any mention
-        self.assertIsNotNone(guard.check_count(88, ""))
+        many = [f"app/src/f{i}.tsx" for i in range(200)]
+        self.assertIsNone(guard.check_count(many, "chore(sync): main into staging (#621)"))
+        self.assertIsNotNone(guard.check_count(many, "chore: merge main into staging (#621)"))
+        self.assertIsNotNone(guard.check_count(many, "feat: something chore(sync)"))   # the prefix, not any mention
+        self.assertIsNotNone(guard.check_count(many, ""))
 
 
 if __name__ == "__main__":
