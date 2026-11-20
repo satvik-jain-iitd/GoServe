@@ -62,5 +62,5 @@ test("S3 a slow phone location that answers while the customer is on the Bill le
   await page.getByRole("button", { name: /View bill/ }).click();
   await page.waitForTimeout(5000);
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
-  await expect(page.getByRole("group", { name: "Deliver to" })).toContainText(PLACE_WORDS);   // story 1529: the place that was on this phone stays; the Bill is never pulled to Home
+  await expect(page.getByRole("group", { name: "Serving at" })).toContainText(PLACE_WORDS);   // story 1529: the place that was on this phone stays; the Bill is never pulled to Home
 });

@@ -19,7 +19,7 @@ const stored = (context: BrowserContext, place: object, draft?: object) => conte
 }, [place, draft ?? null] as const);
 const header = (page: Page, name: RegExp) => page.getByRole("button", { name }).first();
 const sheet = (page: Page) => page.getByRole("dialog", { name: "Where to bring your food?" });
-const box = (page: Page) => page.getByRole("region", { name: "Delivering to" });
+const box = (page: Page) => page.getByRole("region", { name: "Serving at" });
 const firstScreen = (page: Page) => page.getByRole("heading", { name: "Where does the food go?" });
 const HERE_AWAY = { address: "Where you are now", pin: "110016", lat: AWAY.latitude, lng: AWAY.longitude, house: "", landmark: "", confirmed: false, id: null };   // the place a phone holds after its last address was deleted there
 const anotherAddress = (page: Page) => whereBox(page).getByRole("button", { name: "Use another address" }).click();   // story 1548: far from every saved address, Deliver to opens from the box
@@ -73,7 +73,7 @@ test("On the Bill I am never pulled: the place I chose stays", async ({ page, co
   await page.goto("/customer/");
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
   await expect.poll(() => asked(page)).toBe(1);   // the phone was found
-  await expect(page.getByRole("group", { name: "Deliver to" })).toContainText(WORK.address);
+  await expect(page.getByRole("group", { name: "Serving at" })).toContainText(WORK.address);
   await expect(sheet(page)).toHaveCount(0);
 });
 
@@ -262,7 +262,7 @@ test("Deliver to: at home there is no Delivering to box and Home keeps Selected;
 test("Nothing moves: when the location is found or not found, only the Delivering to box changes", async ({ page, context }) => {
   const net = await setup(context, page, [], { pin: null });
   net.state.addresses = [HOME, WORK];
-  const rects = () => page.evaluate(() => [".ui-head", ".ui-search-box", ".ui-two-cards", "[aria-label='Delivering to']", "[aria-label='Saved addresses']", ".ui-saved-row:nth-child(1)", ".ui-saved-row:nth-child(2)"]
+  const rects = () => page.evaluate(() => [".ui-head", ".ui-search-box", ".ui-two-cards", "[aria-label='Serving at']", "[aria-label='Saved addresses']", ".ui-saved-row:nth-child(1)", ".ui-saved-row:nth-child(2)"]
     .map((s) => { const r = document.querySelector(s)!.getBoundingClientRect(); return [s, Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)]; }));
   await stored(context, HERE_AWAY);   // story 1548: the place is "Where you are now" only when the phone already holds it (the last address was deleted there)
   await phoneLoc(page, { perm: "granted", pos: AWAY });

@@ -76,7 +76,7 @@ test("S5 Remove: after the Undo bar runs out Home is still Selected; with none l
   await page.getByRole("button", { name: "Edit or remove Home" }).click();
   await page.getByRole("button", { name: "Remove", exact: true }).click();
   await page.clock.runFor(6_500);
-  await expect(page.getByRole("region", { name: "Delivering to" })).toContainText("Where you are now");
+  await expect(page.getByRole("region", { name: "Serving at" })).toContainText("Where you are now");
   await expect(dialog(page)).toBeVisible();
   await expect(page.getByRole("button", { name: "Use my current location" })).toHaveCount(0);   // never the first-open screen
 });

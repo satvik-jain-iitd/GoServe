@@ -25,7 +25,7 @@ async function twoKitchens(net: Net, page: Page, menuB: object[]) {
 const row = (page: Page, dish: string) => page.locator(".ui-slip-lines > div").filter({ hasText: dish });
 const total = (page: Page) => page.getByTestId("bill-total");
 // Owner's rule 23, no layout shift: where every part of the Bill sits. The Bill with the line is laid over the Bill without it: only the header may differ, and it keeps its size.
-const PARTS = [".ui-head", ".ui-head h1", ".ui-back", ".ui-slip", ".ui-slip-head", ".ui-slip-lines > div >> nth=0", ".ui-slip-lines > div >> nth=1", ".ui-slip-total", ".ui-add-more", "#phone", "[aria-label='Deliver to']", "#note", ".ui-pay", ".ui-sticky", ".ui-sticky .ui-btn"];
+const PARTS = [".ui-head", ".ui-head h1", ".ui-back", ".ui-slip", ".ui-slip-head", ".ui-slip-lines > div >> nth=0", ".ui-slip-lines > div >> nth=1", ".ui-slip-total", ".ui-add-more", "#phone", "[aria-label='Serving at']", "#note", ".ui-pay", ".ui-sticky", ".ui-sticky .ui-btn"];
 const boxes = async (page: Page) => ({ ...Object.fromEntries(await Promise.all(PARTS.map(async (sel) => [sel, await page.locator(sel).boundingBox()]))), long: await page.locator(".ui-scroll").evaluate((el) => el.scrollHeight) }) as Record<string, { x: number; y: number; width: number; height: number } | null>;
 
 // On the Bill with both dishes, then "Confirm on the map" in the other kitchen's postal code: the customer stays on the Bill.

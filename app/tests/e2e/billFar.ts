@@ -10,9 +10,9 @@ const AT_HOME = { latitude: HOME.lat, longitude: HOME.lng };
 const AWAY = { latitude: 28.6139, longitude: 77.209 };   // about 6 km from Home
 const ONE_KM = { latitude: 28.5767, longitude: 77.2432 };   // about 1 km from Home
 const LINE = /^\d+ km from your current location$/;
-const row = (page: Page) => page.getByRole("group", { name: "Deliver to" });
+const row = (page: Page) => page.getByRole("group", { name: "Serving at" });
 const line = (page: Page) => row(page).getByText(/km from your current location/);
-const label = (page: Page) => row(page).getByText("Serving at", { exact: true });   // the small label; the row's own name (aria-label) stays "Deliver to" either way
+const label = (page: Page) => row(page).getByText("Serving at", { exact: true });   // the small label; the row's own name (aria-label) is "Serving at" too
 const small = (page: Page) => row(page).locator("small");   // the one small line of the row: the label, or the km line in its place
 const spot = async (page: Page) => { const b = (await small(page).boundingBox())!; return `at ${Math.round(b.x)},${Math.round(b.y)}, ${Math.round(b.height)} high`; };
 const homePlace = { address: HOME.address, pin: HOME.pin_code, lat: HOME.lat, lng: HOME.lng, house: "", landmark: "", confirmed: true, id: HOME.id as string | null };
@@ -40,7 +40,7 @@ const parts = (page: Page) => page.evaluate(() => {
   const form = document.querySelector(".ui-form")!;
   put("form", form);
   [...form.children].forEach((el, i) => put(`form part ${i} (${el.tagName.toLowerCase()}.${String(el.className).split(" ")[0]})`, el));
-  const group = document.querySelector("[role=group][aria-label='Deliver to']")!;
+  const group = document.querySelector("[role=group][aria-label='Serving at']")!;
   const at = (name: string, el: Element | null) => { if (!el) return void out.push(`${name} is not on the screen`); const r = el.getBoundingClientRect(); out.push(`${name} ${Math.round(r.height * 10) / 10} high at ${Math.round(r.x * 10) / 10},${Math.round(r.y * 10) / 10}`); };
   at("deliver to small line", group.querySelector("small"));   // the label, or the km line in its place: the same spot and height (its words differ, so its width may)
   at("deliver to words", group.querySelector("span > span"));
@@ -89,7 +89,7 @@ export function billFar() {
       expect(far).toEqual(near);   // rule 23: every part is where it was, at the same size
       await expect(label(page)).toHaveCount(0);
       expect(await spot(page)).toBe(labelAt);   // the km line sits exactly where the label was
-      await expect(page.getByRole("group", { name: "Deliver to" })).toHaveCount(1);   // the row keeps its name for a screen reader
+      await expect(page.getByRole("group", { name: "Serving at" })).toHaveCount(1);   // the row keeps its name for a screen reader
       expect(far.join(" | ")).not.toContain("is not on the screen");
       const [l, r] = [(await line(page).boundingBox())!, (await row(page).boundingBox())!];
       expect(l.y >= r.y && l.y + l.height <= r.y + r.height + 0.5 && l.x >= r.x && l.x + l.width <= r.x + r.width + 0.5, "the line sits inside the Deliver to row").toBe(true);

@@ -284,7 +284,7 @@ test("Nothing moves: when the location is found or not found only the Delivering
     const key = `${kind}${withRecents ? "" : " no recents"}`;
     shot[key] = await measure(page);
     if (kind === "blocked" && withRecents) {
-      const going = page.getByRole("region", { name: "Delivering to" });
+      const going = page.getByRole("region", { name: "Serving at" });
       const card = page.getByRole("button", { name: "Use current location" });
       await expect(going).toContainText("Location is off or blocked");
       for (const [name, pos, words] of [["off", 2, "Your phone's location is off"], ["slow", 3, "Finding you is taking too long"], ["still", 1, "Still off or blocked"]] as const) {
@@ -387,7 +387,7 @@ test("No kitchen here, with a saved address: the filled button is last and the s
 
 test("While I type in the search only the results show: the two cards and the Delivering to box are not above them", async ({ page, context }) => {
   await open(page, context, { recents: FIVE, pos: AWAY });
-  const cards = page.locator(".ui-two-cards"), going = page.getByRole("region", { name: "Delivering to" });
+  const cards = page.locator(".ui-two-cards"), going = page.getByRole("region", { name: "Serving at" });
   await expect(cards).toBeVisible();
   await expect(going).toBeVisible();
   await search(page).fill("green");

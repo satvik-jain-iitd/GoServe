@@ -93,7 +93,7 @@ export function DeliverToScreen({ focusSearch, forMap, list, recents, recentId, 
           <button type="button" className="ui-card-btn" onClick={() => onAddNew()}>{I(<><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M12 8v8M8 12h8" /></>)}<span>Add new address</span></button>
         </div>}   {/* board LF13: while the customer types only the results show */}
         {going && !q && (
-          <section aria-label="Delivering to" className={going.here ? "ui-going here" : "ui-going"}>
+          <section aria-label="Serving at" className={going.here ? "ui-going here" : "ui-going"}>
             <h2 className="mono ui-saved-head">Serving at</h2>
             <div>{going.here ? PIN : OFF}<span className="ui-going-words"><span className="ui-going-title">{going.title}{going.here && <span className="ui-tag ready">Selected</span>}</span><span className="ui-going-sub">{going.sub}</span></span></div>
           </section>

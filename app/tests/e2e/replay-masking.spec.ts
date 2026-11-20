@@ -11,7 +11,7 @@ test("S1 the Bill's details form is blocked in a replay", async ({ page, context
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Add Dal Makhani" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
-  await expect(page.getByRole("group", { name: "Deliver to" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Serving at" })).toBeVisible();
   await expect(page.locator("form.ui-form")).toHaveClass(/ph-no-capture/);
 });
 

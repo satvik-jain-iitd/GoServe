@@ -100,7 +100,7 @@ test("The sheet never opens over the first-open screen", async ({ page, context 
 test("Deliver to, Use current location: the card says Finding you…, then the box says the true line, and no map opens by itself", async ({ page, context }) => {
   await open(page, context, { perm: "prompt", pos: "never" });
   await sheet(page).getByRole("button", { name: "View all" }).click();
-  const box = page.getByRole("region", { name: "Delivering to" });
+  const box = page.getByRole("region", { name: "Serving at" });
   await expect(box).toHaveCount(0);   // story 1610: a phone that was never asked shows no box
   await page.getByRole("button", { name: "Use current location" }).click();
   await expect(page.getByRole("button", { name: "Finding you…" })).toBeDisabled();

@@ -75,9 +75,26 @@ test("A screen reader hears Serve at <place> on the saved rows", async ({ page, 
 
 test("The Bill's address row says Serving at, and the exact no-kitchen button keeps its words", async ({ page, context }) => {
   await bill(page, context);
-  const row = page.getByRole("group", { name: "Deliver to" });   // the row's own name for a screen reader is the reviewer's call (story 1548); it is not changed here
+  const row = page.getByRole("group", { name: "Serving at", exact: true });   // a screen reader hears the same words the screen shows
   await expect(row.getByText("Serving at", { exact: true })).toBeVisible();
   await expect(row.getByText("Deliver to", { exact: true })).toHaveCount(0);
+});
+
+test("A screen reader hears Serving at on the Bill row and on the address screen's box, never Deliver to or Delivering to", async ({ page, context }) => {
+  await bill(page, context);
+  await expect(page.getByRole("group", { name: "Serving at", exact: true })).toHaveCount(1);
+  await expect(page.getByRole("group", { name: "Deliver to", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Delivering to", exact: true })).toHaveCount(0);
+});
+
+test("A screen reader hears Serving at on the address screen's box, never Delivering to", async ({ page, context }) => {
+  await menu(page, context, { perm: "granted", pos: 2 });
+  await page.getByTitle("Change the delivery address").click();
+  await page.getByRole("button", { name: "Use current location" }).click();
+  await expect(page.locator(".ui-going")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Serving at", exact: true })).toHaveCount(1);
+  await expect(page.getByRole("region", { name: "Delivering to", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("group", { name: "Deliver to", exact: true })).toHaveCount(0);
 });
 
 test("The no-kitchen screen keeps its button words: Deliver to a saved address", async ({ page, context }) => {
