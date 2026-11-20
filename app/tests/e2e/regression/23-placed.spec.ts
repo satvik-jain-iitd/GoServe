@@ -98,7 +98,7 @@ test("TC 23.5 Sad: Cancel order while placed asks first, then Cancelled with Not
   await answer(page, "/rest/v1/rpc/cancel_order", { ok: true, order: order("cancelled", new Date().toISOString()) });
   await page.getByRole("button", { name: "Cancel order" }).click();
   await expect(page.getByRole("dialog", { name: "Cancel this order?" })).toBeVisible();   // board CX1: the app asks before it cancels
-  await page.getByRole("dialog").getByRole("button", { name: "Yes, cancel the order" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Yes, cancel" }).click();
   await expect(page.getByRole("heading", { name: "Cancelled", exact: true })).toBeVisible();
   await expect(page.getByText("Nothing to pay", { exact: true })).toBeVisible();
   await expect(page.getByText("₹0", { exact: true })).toBeVisible();
@@ -147,18 +147,18 @@ test("TC 23.10 Look: phone not asked yet, the placed screen has no Ping me butto
   await expect(page.getByRole("button", { name: /Ping me/ })).toHaveCount(0);
 });
 
-// Story #1227 (board CX1-CancelSheet): Keep my order and Escape leave the order as it was.
-test("TC 23.11 Sad: Cancel order, then Keep my order or Escape: the order stays live and nothing is cancelled", async ({ page, context }) => {
+// Story #1227 (board CX1-CancelSheet): Keep order and Escape leave the order as it was.
+test("TC 23.11 Sad: Cancel order, then Keep order or Escape: the order stays live and nothing is cancelled", async ({ page, context }) => {
   await answer(page, "/rest/v1/kitchens", kitchen());
   await STEPS["bill"](context, page, PATH);
   await placeFromBill(page);
   let cancels = 0;
   await page.route(isPath("/rest/v1/rpc/cancel_order"), (route) => { cancels++; return reply(route, { ok: true, order: order("cancelled", new Date().toISOString()) }); });
   await page.getByRole("button", { name: "Cancel order" }).click();
-  await page.getByRole("dialog", { name: "Cancel this order?" }).getByRole("button", { name: "Keep my order" }).click();
+  await page.getByRole("dialog", { name: "Cancel this order?" }).getByRole("button", { name: "Keep order" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.getByRole("button", { name: "Cancel order" }).click();
-  await page.keyboard.press("Escape");   // story 1565 (owner): the sheet's head has no Close control; Keep my order, Back, Escape and a tap outside close it (CancelSheet.tsx line 20)
+  await page.keyboard.press("Escape");   // story 1565 (owner): the sheet's head has no Close control; Keep order, Back, Escape and a tap outside close it (CancelSheet.tsx line 20)
   await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(cancels).toBe(0);
   await expect(page.getByRole("button", { name: "Cancel order" })).toBeVisible();
