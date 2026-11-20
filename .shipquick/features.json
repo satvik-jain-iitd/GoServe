@@ -84,6 +84,26 @@
     "gate": {
       "on": true,
       "default": true
+    },
+    "intent-verify": {
+      "on": true,
+      "default": true
+    },
+    "ac-trace": {
+      "on": true,
+      "default": true
+    },
+    "graph-fresh": {
+      "on": true,
+      "default": true
+    },
+    "tests-for-change": {
+      "on": true,
+      "default": true
+    },
+    "coverage": {
+      "on": true,
+      "default": true
     }
   }
 }
