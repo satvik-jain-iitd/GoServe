@@ -33,9 +33,9 @@ async function callApi(body: object, deps: OrderDeps, need: "order" | "decision"
     answer = null;
   }
   if (res.ok && answer?.ok && answer[need]) return answer;
-  // The customer's calls (place, confirm, feedback) show our line for every refusal (story #659). The staff calls keep the server's line.
+  // The customer's calls (place, feedback) show our line for every refusal (story #659). The staff calls keep the server's line.
   const kind = (body as { action?: string }).action;
-  const mine = kind === "place" || kind === "confirm" || kind === "feedback" ? (kind as CustomerAction) : null;
+  const mine = kind === "place" || kind === "feedback" ? (kind as CustomerAction) : null;
   const refused = answer && answer.ok === false && typeof answer.message === "string";
   if (mine) {
     const code = refused ? answer!.error ?? "unknown" : "unknown";
@@ -70,16 +70,6 @@ async function act(orderId: string, action: string, deps: ActDeps, mine: Custome
   if (mine) throw new PlaceError(customerLine(mine, code, typeof a?.message === "string" ? a.message : "") ?? "Already done.", code);
   if (a && a.ok === false && typeof a.message === "string") throw new PlaceError(a.message, code);
   throw new PlaceError("Something went wrong. Please try again.", "unknown");
-}
-
-// The customer's Yes: the order closes as delivered and paid by cash. A second Yes is not an error (alreadyDone).
-export async function confirmDelivery(input: { orderId: string }, deps: ActDeps): Promise<{ order: PlacedOrder | null; alreadyDone: boolean }> {
-  try {
-    return await act(input.orderId, "confirm", deps, "confirm");
-  } catch (e) {
-    if (e instanceof PlaceError && e.code === "already_done") return { order: null, alreadyDone: true };   // an earlier Yes went through: the order is delivered, no line
-    throw e;
-  }
 }
 
 const STEP: Record<string, string> = { accepted: "accept", preparing: "prepare", ready: "ready", out_for_delivery: "pickup", delivered: "deliver" };

@@ -14,13 +14,12 @@ type Props = {
   order: { id: string; status: string } | null;
   getSession: () => Promise<string>;
   send: (report: Report) => Promise<unknown>;
-  preset?: { nonce: number; text: string; doing: Doing };   // opens the sheet with these words (the third Not yet, story S-C)
 };
 
 const BUILD = import.meta.env.VITE_BUILD ?? "dev";
 const phoneName = () => (navigator.userAgent.match(/\(([^)]+)\)/)?.[1] ?? "unknown").slice(0, 80);
 
-export function FeedbackSheet({ role, screen, order, getSession, send, preset, button = true }: Props) {
+export function FeedbackSheet({ role, screen, order, getSession, send, button = true }: Props) {
   const fit = useSheetFit();   // story #954: the overlay follows the visual viewport
   const [open, setOpen] = useState(false);
   useBackCloses(open, () => setOpen(false));   // story 1415
@@ -32,14 +31,6 @@ export function FeedbackSheet({ role, screen, order, getSession, send, preset, b
   const [busy, setBusy] = useState(false);
   const [card, setCard] = useState<{ title: string; line: string } | null>(null);   // story #642: shown after the sheet closes
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!preset) return;
-    setText(preset.text);
-    setTopic(topics.find((t) => t.label && t.doing === preset.doing)?.label ?? defaultTopic(role));
-    setError(null);
-    setOpen(true);
-  }, [preset?.nonce]);
 
   // The You screen opens the sheet with an event (story H10d).
   useEffect(() => {

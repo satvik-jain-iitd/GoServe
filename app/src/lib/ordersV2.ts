@@ -1,7 +1,6 @@
 // Story #590: place the order with POST /orders (backend v2, story #347) instead of the v1 n8n `place` action.
 // Story #940: this is the only way to place an order. The v1 webhook place route is gone, so the order is always placed as the signed-in user.
 // The body carries the price the customer saw. If the server's price is different it answers 409 price_changed with the new quote: nothing is ordered until the customer taps again.
-import { DEFAULT_CFG, type ConfirmCfg } from "./confirm";
 import { customerLine, NO_INTERNET, PRICE_CHANGED_LINE } from "./errorLines";
 import { PlaceError, type PlacedOrder } from "./orders";
 import { ensureCustomerSession, ensureSession, getClient, SessionEnded } from "./supabase";
@@ -47,7 +46,7 @@ export const placeDeps = (renew: () => Promise<boolean>, customer = false): V2De
 
 export type PlaceV2Input = { kitchenId: string; pin: string; items: { menu_item_id: string; qty: number; swap?: boolean }[]; address: string; key: string; expectedPaise: number; code: string | null; none: boolean; drop: { lat: number; lng: number }; instructions?: string };   // story 1528: the point is not optional; story 935: one optional note for the kitchen
 
-export async function placeOrderV2(input: PlaceV2Input, deps: V2Deps): Promise<{ order: PlacedOrder; created: boolean; confirm: ConfirmCfg }> {
+export async function placeOrderV2(input: PlaceV2Input, deps: V2Deps): Promise<{ order: PlacedOrder; created: boolean }> {
   let res: Response;
   const send = async () => deps.fetchFn(`${deps.url}/functions/v1/orders`, {
       method: "POST", headers: { "content-type": "application/json", apikey: deps.anon, authorization: `Bearer ${await deps.token()}` },
@@ -63,10 +62,8 @@ export async function placeOrderV2(input: PlaceV2Input, deps: V2Deps): Promise<{
   }
   const a = await res.json().catch(() => null);
   if (res.ok && a?.ok && a.order?.id) {
-    const o = a.order;   // the confirm times are optional in the answer: the defaults stand until the server sends them
-    const num = (v: unknown, d: number) => (typeof v === "number" && v >= 0 ? v : d);
-    return { order: { id: o.id, status: o.status, total_paise: o.total_paise, updated_at: o.created_at, paid_by: null, bill: o.bill && typeof o.bill === "object" ? o.bill : null }, created: a.created === true,
-      confirm: { afterReadyMin: num(a.confirm_after_ready_min, DEFAULT_CFG.afterReadyMin), afterPlaceMin: num(a.confirm_after_place_min, DEFAULT_CFG.afterPlaceMin) } };
+    const o = a.order;
+    return { order: { id: o.id, status: o.status, total_paise: o.total_paise, updated_at: o.created_at, paid_by: null, bill: o.bill && typeof o.bill === "object" ? o.bill : null }, created: a.created === true };
   }
   if (res.status === 409 && a?.error === "price_changed" && a.quote && Number.isInteger(a.quote.to_pay_paise)) {
     throw new PriceChanged({ ...a.quote, offers: Array.isArray(a.quote.offers) ? a.quote.offers : [] });
