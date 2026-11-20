@@ -38,6 +38,7 @@ test("S2 tapping Call on the rider card records one customer.call for that order
 });
 
 test("S3 the rider's Could not deliver? asks first, then sends rider_refused and the order leaves the list", async ({ page, context }) => {
+  await context.addInitScript((id) => { try { localStorage.setItem(`gs-rider-noloc-${id}`, "1"); } catch { /* blocked */ } }, ID);   // story 1709: "this one time" is chosen; this case is about something else
   const net = await setup(context, page, [order("out_for_delivery", "2020-01-01T10:05:00Z")]);
   net.state.rider = { user_id: "7e57ab1e-0000-4000-8000-0000000000a1", name: "Rider", online: true, lat: null, lng: null };
   let asked = "";
@@ -51,6 +52,7 @@ test("S3 the rider's Could not deliver? asks first, then sends rider_refused and
 });
 
 test("S3 saying no to the question sends nothing", async ({ page, context }) => {
+  await context.addInitScript((id) => { try { localStorage.setItem(`gs-rider-noloc-${id}`, "1"); } catch { /* blocked */ } }, ID);   // story 1709: "this one time" is chosen; this case is about something else
   const net = await setup(context, page, [order("out_for_delivery", "2020-01-01T10:05:00Z")]);
   net.state.rider = { user_id: "7e57ab1e-0000-4000-8000-0000000000a1", name: "Rider", online: true, lat: null, lng: null };
   page.on("dialog", (d) => void d.dismiss());

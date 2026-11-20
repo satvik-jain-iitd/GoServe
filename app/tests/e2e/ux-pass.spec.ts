@@ -1,6 +1,6 @@
 // Story #242: every app shows only its board, every word says what a customer, rider, cook or admin would say, and the menu opens at once for a saved pin.
 import { test, expect } from "@playwright/test";
-import { order, setup, typePlace } from "./helpers";
+import { ID, order, setup, typePlace } from "./helpers";
 
 const SAVED_KITCHEN = { id: "k-1", name: "Hauz Khas Kitchen", pin_codes: ["110016"], lat: null, lng: null, phone: null, open: true, active: true, opens_at: null, closes_at: null };
 
@@ -33,6 +33,7 @@ test("D2 D10 the customer You tab ends with Send feedback and then Privacy · Te
 });
 
 test("D3 D11 D12 the staff apps have a Send feedback row that opens the sheet, and the tabs read Delivery / Today / Me and New / Cooking / Today", async ({ page, context }) => {
+  await context.addInitScript((id) => { try { localStorage.setItem(`gs-rider-noloc-${id}`, "1"); } catch { /* blocked */ } }, ID);   // story 1709: "this one time" is chosen; this case is about something else
   const net = await setup(context, page, [order("ready")]);
   net.state.kitchen = "k-1";
   net.state.admin = true;

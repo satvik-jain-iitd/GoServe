@@ -3,6 +3,8 @@
 // A wrong tap between cash and UPI is put right with "Change" until the night's cash is handed over; Today's rows open their slip.
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { ID, SESSION, order, setup } from "./helpers";
+test.beforeEach(async ({ context }) => { await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.56, longitude: 77.2 }); });   // story 1709: a rider with an order and no location meets a sheet; these cases are about something else
+
 
 const NOW = new Date().toISOString();
 const KITCHEN = { id: "k", name: "Tau Ka Dhaba", address: "C-4, Lajpat Nagar II", phone: null, pin_codes: ["110016"], open: true, active: true, opens_at: "00:00:00", closes_at: "23:59:00" };

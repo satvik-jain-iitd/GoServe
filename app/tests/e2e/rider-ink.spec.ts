@@ -1,6 +1,8 @@
 // Story H11 (#194): the rider app on the Ink v3 boards R1 to R9. The network is answered by the test (helpers.ts).
 import { test, expect, type Page } from "@playwright/test";
 import { ID, SESSION, order, setup, scan as axeScan } from "./helpers";
+test.beforeEach(async ({ context }) => { await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.56, longitude: 77.2 }); });   // story 1709: a rider with an order and no location meets a sheet; these cases are about something else
+
 
 const NOW = new Date().toISOString();
 const tab = (page: Page, name: string) => page.getByRole("button", { name, exact: true });

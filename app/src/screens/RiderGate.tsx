@@ -4,15 +4,46 @@ import { claimInvites } from "../lib/admin";
 import { getRider, sendLocation, setOnline, shouldSendLocation, type RiderGateState, type RiderRow } from "../lib/rider";
 import { ensureSession, getClient, signOutHere } from "../lib/supabase";
 import { SignIn } from "./SignIn";
-import { Skeleton, StaffLanding } from "../ui";
+import { Skeleton, StaffLanding, useSheetFit } from "../ui";
 
-export function RiderGate({ children }: { children: (gate: RiderGateState) => ReactNode }) {
+// Story 1709: with an order in hand and no location the rider gets a sheet that needs an answer. "This one time" is kept by order id (localStorage, in try/catch; the page's memory when storage is off).
+const skipKey = (id: string) => `gs-rider-noloc-${id}`;
+const skippedBefore = (id: string) => { try { return localStorage.getItem(skipKey(id)) === "1"; } catch { return false; } };
+
+function LocationSheet({ blocked, onAgain, onAsk, onSkip }: { blocked: boolean; onAgain: () => void; onAsk: () => void; onSkip: () => void }) {
+  const fit = useSheetFit();
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    box.current?.focus();
+    const keep = (e: FocusEvent) => { if (!box.current?.contains(e.target as Node)) box.current?.focus(); };
+    document.addEventListener("focusin", keep);
+    return () => document.removeEventListener("focusin", keep);
+  }, []);
+  return (
+    <div ref={fit} className="ui-sheet-back">
+      <div ref={box} role="dialog" aria-modal="true" aria-labelledby="loc-head" tabIndex={-1} className="ui-sheet ui-loc-sheet">
+        <div className="ui-sheet-head"><h2 id="loc-head">Location band hai</h2></div>
+        <p>Customer ko aap tabhi dikhenge jab location chalu ho.</p>
+        {blocked && <ol><li>Phone ki Settings kholein</li><li>Apps › GoServe › Location › Allow</li></ol>}
+        <div className="ui-sheet-acts">
+          <button type="button" className="ui-btn ghost big" onClick={onSkip}>Is baar bina location ke</button>
+          <button type="button" className="ui-btn big" onClick={blocked ? onAgain : onAsk}>{blocked ? "Location chalu kar di" : "Location chalu karein"}</button>
+        </div>
+        <p className="ui-meta">Bina location ke chalne par admin ko khabar jati hai</p>
+      </div>
+    </div>
+  );
+}
+
+export function RiderGate({ children, orderId = null }: { children: (gate: RiderGateState) => ReactNode; orderId?: string | null }) {
   const [rider, setRider] = useState<RiderRow | null | undefined>(undefined);   // undefined: still loading
   const [uid, setUid] = useState<string | null>(null);
   const [anonymous, setAnonymous] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [noLocation, setNoLocation] = useState(false);   // story 1497: the phone refused the location while Online; the rider is told, since the customer cannot see him
   const lastSent = useRef<number | null>(null);
+  const [blocked, setBlocked] = useState(false);   // story 1709: the phone says "denied" (settings steps) and not "prompt" (it can still ask)
+  const [skipped, setSkipped] = useState<string[]>([]);
 
   useEffect(() => {
     ensureSession().then(async (id) => {
@@ -50,6 +81,20 @@ export function RiderGate({ children }: { children: (gate: RiderGateState) => Re
     return () => { navigator.geolocation.clearWatch(watch); clearInterval(again); };
   }, [online, uid, front]);
 
+  useEffect(() => {
+    if (!noLocation) return;
+    let alive = true;
+    const ask = navigator.permissions?.query?.({ name: "geolocation" as PermissionName });
+    if (ask) ask.then((r) => { if (alive) setBlocked(r.state === "denied"); }, () => undefined);
+    return () => { alive = false; };
+  }, [noLocation, front]);
+  const sheet = noLocation && !!orderId;
+  const skipNow = () => {
+    if (!orderId) return;
+    setSkipped((cur) => [...cur, orderId]);
+    try { localStorage.setItem(skipKey(orderId), "1"); } catch { /* no storage: the page keeps it until a reload */ }
+  };
+  const askPhone = () => navigator.geolocation.getCurrentPosition(() => setFront((n) => n + 1), () => { setFront((n) => n + 1); }, { enableHighAccuracy: true });
   const signOut = async () => { try { await signOutHere(); } catch { /* offline */ } window.location.reload(); };
   if (rider === undefined) return <><header className="ui-head"><h1>Deliveries</h1></header><div className="ui-pad"><Skeleton lines={3} /></div></>;
   if (!rider) return (   // R1 when there is no Google sign-in yet, R2 when the account is not on the rider list
@@ -79,7 +124,8 @@ export function RiderGate({ children }: { children: (gate: RiderGateState) => Re
   return (
     <>
       {error && <p role="alert" className="ui-note error">{error}</p>}
-      {noLocation && <p role="status" className="ui-note error">Location band hai. Phone ki settings me is app ko location allow karein, tabhi customer ko aap dikhenge.</p>}
+      {noLocation && !orderId && <p role="status" className="ui-note error">Location band hai. Phone ki settings me is app ko location allow karein, tabhi customer ko aap dikhenge.</p>}
+      {sheet && !(orderId && (skipped.includes(orderId) || skippedBefore(orderId))) && <LocationSheet blocked={blocked} onAgain={() => setFront((n) => n + 1)} onAsk={askPhone} onSkip={skipNow} />}
       {children({ name: rider.name, phone: rider.phone ?? null, online, flip, signOut })}
     </>
   );

@@ -1,6 +1,8 @@
 // Story #1262 (epic #1259, board R7-CollectQR): "Delivered" opens Collect payment (story 1182: the button says only "Collect" since story 1715, after Arriving). The rider says how it was paid at the door, and that marks the order delivered.
 import { test, expect, type Page } from "@playwright/test";
 import { ID, SESSION, order, setup } from "./helpers";
+test.beforeEach(async ({ context }) => { await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.56, longitude: 77.2 }); });   // story 1709: a rider with an order and no location meets a sheet; these cases are about something else
+
 
 const NOW = new Date().toISOString();
 const onTheWay = () => ({ ...order("out_for_delivery", NOW, NOW), rider_id: SESSION, customer_name: "Rahul Verma", customer_phone: "9876543210" });

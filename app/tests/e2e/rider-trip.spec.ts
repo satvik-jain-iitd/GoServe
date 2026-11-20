@@ -2,6 +2,8 @@
 // One order alone: board RP3, the order number big, its dishes, one button "Picked up". Many: each packet is ticked; "Picked up all" waits for every tick.
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { ID, SESSION, order, setup } from "./helpers";
+test.beforeEach(async ({ context }) => { await context.grantPermissions(["geolocation"]); await context.setGeolocation({ latitude: 28.56, longitude: 77.2 }); });   // story 1709: a rider with an order and no location meets a sheet; these cases are about something else
+
 
 const NOW = new Date().toISOString();
 const at = (min: number) => new Date(Date.now() - (60 - min) * 60_000).toISOString();

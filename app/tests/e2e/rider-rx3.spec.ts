@@ -1,7 +1,9 @@
 // Story 1182 (owner, 13 Nov 2026, DECIDED, board RX3): the rider's "On the way" screen shows only what a rider needs. Round Call and Navigate
 // beside the name, the note, the amount, a quiet "Could not deliver?" link, and one button at a time (story 1182, RY1 to RY3). No kitchen name, no stamp, no phone digits.
 import { test, expect, type Page } from "@playwright/test";
-import { SESSION, order, setup } from "./helpers";
+import { ID, SESSION, order, setup } from "./helpers";
+test.beforeEach(async ({ context }) => { await context.addInitScript((id) => { try { localStorage.setItem(`gs-rider-noloc-${id}`, "1"); } catch { /* blocked */ } }, ID); });   // story 1709: the rider chose "this one time"; these cases are about the door steps with no place
+
 
 const KITCHEN = { id: "k", name: "Tau Ka Dhaba", address: "C-4, Lajpat Nagar II", phone: "9876500000", pin_codes: ["110016"], open: true, active: true, opens_at: "10:00:00", closes_at: "22:00:00" };
 const PIN = { drop_lat: 28.5677, drop_lng: 77.2432 };

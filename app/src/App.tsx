@@ -1220,7 +1220,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       incentive={incentive} pastDays={demo ? 0 : pastDays} onRetryPastDays={loadPastDays}
       onChangePaid={async (o, m) => { const code = demo ? null : await riderChangePaid(getClient(), o.id, m); if (code === null) setOrders((cur) => cur.map((x) => (x.id === o.id ? { ...x, paid_by: m } : x))); return code; }} />
   );
-  const riderView = lock === "rider" ? <RiderGate>{riderScreen}</RiderGate> : riderScreen(null);
+  const riderView = lock === "rider" ? <RiderGate orderId={riderOrders(orders)[0]?.id ?? null}>{riderScreen}</RiderGate> : riderScreen(null);
   // Story #229: the kitchen confirms a rider's cash. The rows are stamped here too, so the screen does not wait for the next read.
   async function handover(riderId: string): Promise<string | null> {
     const failed = await confirmHandover(getClient(), riderId);
