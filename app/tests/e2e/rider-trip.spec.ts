@@ -59,7 +59,7 @@ test("RT2 Picked up all 3 picks up each packet once, then the first door shows a
 test("RT3 a trip of three on the way: Delivered at the first door delivers only that order, and the next door shows", async ({ page, context }) => {
   const net = await open(context, page, [0, 1, 2].map((i) => packet(i, "out_for_delivery")));
   await page.getByRole("button", { name: `Arriving ${ID.slice(0, 8)}` }).click();
-  await page.getByRole("button", { name: /^Collect ₹/ }).click();
+  await page.getByRole("button", { name: "Collect", exact: true }).click();
   await page.getByRole("button", { name: /^Took cash/ }).click();
   expect(net.calls.status.filter((c) => c.body.action === "deliver").map((c) => c.body.order_id)).toEqual([ID]);
   await page.getByRole("button", { name: "Next delivery" }).click();
