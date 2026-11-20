@@ -79,7 +79,7 @@ export function DeliverToScreen({ focusSearch, forMap, list, recents, recentId, 
     <>
       <header className="ui-head">
         {onBack ? <button type="button" className="ui-back" aria-label="Back" onClick={onBack}><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M11 18l-6-6 6-6" /></svg></button> : <span className="ui-back" aria-hidden="true" />}
-        <h1>Deliver to</h1>
+        <h1>Serving at</h1>
         <span className="meta">{rows.length} saved</span>
       </header>
       <div className="ui-scroll ui-deliver-to">
@@ -94,7 +94,7 @@ export function DeliverToScreen({ focusSearch, forMap, list, recents, recentId, 
         </div>}   {/* board LF13: while the customer types only the results show */}
         {going && !q && (
           <section aria-label="Delivering to" className={going.here ? "ui-going here" : "ui-going"}>
-            <h2 className="mono ui-saved-head">Delivering to</h2>
+            <h2 className="mono ui-saved-head">Serving at</h2>
             <div>{going.here ? PIN : OFF}<span className="ui-going-words"><span className="ui-going-title">{going.title}{going.here && <span className="ui-tag ready">Selected</span>}</span><span className="ui-going-sub">{going.sub}</span></span></div>
           </section>
         )}
@@ -112,7 +112,7 @@ export function DeliverToScreen({ focusSearch, forMap, list, recents, recentId, 
               return (
                 <li key={a.id} className={pinned ? "ui-saved-row" : "ui-saved-row unpinned"}>
                   <span className="ui-chip-box" aria-hidden="true">{iconFor(a.label, isHere)}<span className="mono">{isHere ? "here" : here && hasPoint(a) ? distanceWord(distanceM(here, a)) : ""}</span></span>
-                  <button type="button" className="ui-saved-main" aria-label={pinned ? `Deliver to ${a.label}` : `${a.label} has no pin. Set the pin`} onClick={() => onSelect(a.id)}>
+                  <button type="button" className="ui-saved-main" aria-label={pinned ? `Serve at ${a.label}` : `${a.label} has no pin. Set the pin`} onClick={() => onSelect(a.id)}>
                     <span className="ui-saved-label"><span>{bold(a.label)}</span>{a.id === picked && !going?.here && <span className="ui-tag ready">Selected</span>}</span>
                     <span className="ui-saved-addr">{pinned ? bold(a.address) : "Set the pin"}</span>
                   </button>
@@ -133,7 +133,7 @@ export function DeliverToScreen({ focusSearch, forMap, list, recents, recentId, 
                 {recentShown.map((r) => (
                   <li key={r.id} className="ui-saved-row">
                     <span className="ui-chip-box" aria-hidden="true">{CLOCK}<span className="mono">{here ? distanceWord(distanceM(here, r)) : ""}</span></span>
-                    <button type="button" className="ui-saved-main" aria-label={`Deliver to ${r.name}`} onClick={() => onRecent(r)}>
+                    <button type="button" className="ui-saved-main" aria-label={`Serve at ${r.name}`} onClick={() => onRecent(r)}>
                       <span className="ui-saved-label"><span>{bold(r.name)}</span>{r.id === recentId && !going?.here && <span className="ui-tag ready">Selected</span>}</span>
                       <span className="ui-saved-addr">{bold(r.address)}</span>
                     </button>

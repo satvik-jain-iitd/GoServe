@@ -45,7 +45,7 @@ test("S2 a slow phone location that answers after the order is placed does not p
   await placeOne(page);
   await page.waitForTimeout(6000);
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toHaveCount(0);
 });
 
 test("S3 a slow phone location that answers while the customer is on the Bill leaves the Bill and its place alone", async ({ page, context }) => {

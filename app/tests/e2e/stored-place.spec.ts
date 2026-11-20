@@ -76,7 +76,7 @@ test("No free text for the address: the Bill and the You screen show the words, 
   await expect(page.getByRole("textbox", { name: "Address" })).toHaveCount(0);
   await expect(page.getByRole("group", { name: "Deliver to" })).toContainText(HOME.address);
   await page.getByRole("button", { name: "Change address" }).click();
-  await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
   await page.getByRole("button", { name: "Back", exact: true }).click();
   await page.getByRole("button", { name: "Account" }).click();
   await expect(page.getByRole("group", { name: "Deliver to" })).toContainText(HOME.address);
@@ -85,7 +85,7 @@ test("No free text for the address: the Bill and the You screen show the words, 
   await expect(page.locator("[id=acc-address]")).toHaveCount(0);
   await expect(page.getByRole("textbox", { name: "Address" })).toHaveCount(0);
   await page.getByRole("button", { name: "Change address" }).click();
-  await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
 });
 
 test("An app open on an open order keeps the point: the next order from the menu carries it", async ({ page, context }) => {

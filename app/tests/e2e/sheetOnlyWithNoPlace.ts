@@ -58,7 +58,7 @@ export function sheetOnlyWithNoPlace() {
     await open(context, page, { perm: "prompt", pos: "never" });
     await menuOfHome(page);
     await toDeliverTo(page);
-    await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
     await expect(page.getByRole("button", { name: "Use current location" })).toBeVisible();   // the ask for the phone's place lives on a tap
     expect(await asked(page)).toBe(0);
   });

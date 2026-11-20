@@ -103,14 +103,14 @@ test("I delete my last address: I stay on Deliver to, and I do not see Where doe
   await page.getByRole("button", { name: "Remove", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "Home removed" })).toBeVisible();   // the 6 s Undo stays
   await expect.poll(() => net.state.addresses.length, { timeout: 10_000 }).toBe(0);
-  await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
   await expect(firstScreen(page)).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Back" })).toHaveCount(0);   // no place, so no menu to go back to
   await expect(box(page)).toContainText("Location is off or blocked");
   expect(net.calls.customerWrites.some((w) => typeof w.body.place_confirmed_at === "string")).toBe(true);   // the mark was set while Home was there
   net.state.customer = { name: "", phone: "", address: "", place_confirmed_at: "2026-11-01T10:00:00Z" };   // so the server holds it
   await page.reload();   // the next open: still not the first-open screen
-  await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
   await expect(firstScreen(page)).toHaveCount(0);
 });
 
@@ -161,7 +161,7 @@ test("The first-open screen shows once only: a customer who confirmed a place be
   net.state.customer = { name: "Amit", phone: "9876543210", address: "", place_confirmed_at: "2026-11-01T10:00:00Z" };   // the mark on the server
   await phoneLoc(page, { perm: "prompt", pos: "never" });
   await page.goto("/customer/");
-  await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
   await expect(firstScreen(page)).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Get order alerts" })).toHaveCount(0);   // the alerts ask uses the same mark
   await expect(page.getByRole("button", { name: "Back" })).toHaveCount(0);
@@ -249,12 +249,12 @@ test("Deliver to: at home there is no Delivering to box and Home keeps Selected;
   await phoneLoc(page, { perm: "granted", pos: AT_HOME });
   await page.goto("/customer/");
   await header(page, /^Home\b/).click();
-  await expect(page.getByRole("button", { name: "Deliver to Home" })).toContainText("Selected");
+  await expect(page.getByRole("button", { name: "Serve at Home" })).toContainText("Selected");
   await expect(box(page)).toHaveCount(0);
   await phoneLoc(page, { perm: "granted", pos: AWAY });   // the next open is somewhere else
   await page.reload();
   await anotherAddress(page);
-  await expect(page.getByRole("button", { name: "Deliver to Home" })).toContainText("Selected");   // Home is still the place
+  await expect(page.getByRole("button", { name: "Serve at Home" })).toContainText("Selected");   // Home is still the place
   await expect(box(page)).toHaveCount(0);
   await expect(page.getByText("Where you are now")).toHaveCount(0);
 });

@@ -7,7 +7,7 @@ const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
 const HOME = { id: "h1", label: "Home", address: "Z-900, near the park gate, Green Park, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" };
 const WORK = { id: "w1", label: "Work", address: "Tower B, Sector 62, Noida", pin_code: "110016", lat: 28.6208, lng: 77.3639, last_used_at: "2026-11-01T10:00:00Z" };
 const onMenu = (page: Page) => expect(page.getByRole("searchbox", { name: "Search dishes" })).toBeVisible();
-const deliverTo = (page: Page) => page.getByRole("heading", { name: "Deliver to", exact: true });
+const deliverTo = (page: Page) => page.getByRole("heading", { name: "Serving at", exact: true, level: 1 });
 const leftApp = async (page: Page) => { await page.goBack(); await expect(page).not.toHaveURL(/\/customer\//); };
 
 test("S12 address menu Edit, then the map: Back closes the map, Back shows the menu, the next Back leaves the app", async ({ page, context }) => {

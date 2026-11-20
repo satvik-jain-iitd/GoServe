@@ -50,7 +50,7 @@ test("Location is blocked for the app: no button on the sheet does nothing when 
   await page.evaluate(() => { localStorage.removeItem("gs-place"); localStorage.removeItem("gs-pin"); });   // a phone with no place again
   await page.reload();
   await sheet(page).getByRole("button", { name: "Search your area" }).click();   // the filled button opens the search
-  await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
 });
 
 test("I fix it and come back: the sheet closes without a tap", async ({ page, context }) => {
@@ -85,7 +85,7 @@ test("The sheet: the picked address carries a tick, two rows show, and View all 
   const buttons = await sheet(page).getByRole("button").allTextContents();
   expect(buttons.slice(-2)).toEqual(["Search your area", "Use my current location"]);   // the filled button is last
   await sheet(page).getByRole("button", { name: "View all" }).click();
-  await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
 });
 
 test("The sheet never opens over the first-open screen", async ({ page, context }) => {

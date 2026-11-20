@@ -1284,7 +1284,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             closed={shown?.kind === "closed" ? closedCopy(shown.opens_at, shown.paused === true) : null} closedNote={closedNote === BILL_CLEARED_LINE ? null : closedNote} greetNote={closedNote === BILL_CLEARED_LINE ? closedNote : moved && !moved.seen ? KITCHEN_CHANGED_MENU : null}
             tellMe={tellMe} tellMeError={tellMeError} onTellMe={tellMeWhenOpen}
             onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
-            onChangePin={() => setStep("deliver")} onOrders={() => setStep("orders")} address={isHere(where) ? "" : address} label={isHere(where) ? HERE : saved?.find((r) => r.id === selectedId)?.label ?? "Deliver to"} photo={photo} onProfile={() => setStep("account")} />
+            onChangePin={() => setStep("deliver")} onOrders={() => setStep("orders")} address={isHere(where) ? "" : address} label={isHere(where) ? HERE : saved?.find((r) => r.id === selectedId)?.label ?? "Serving at"} photo={photo} onProfile={() => setStep("account")} />
         )}
         {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} kitchenId={kitchenId} kitchenNames={kitchenNames} />}
         {step === "account" && (

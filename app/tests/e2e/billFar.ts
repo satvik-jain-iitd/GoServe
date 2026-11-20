@@ -12,7 +12,7 @@ const ONE_KM = { latitude: 28.5767, longitude: 77.2432 };   // about 1 km from H
 const LINE = /^\d+ km from your current location$/;
 const row = (page: Page) => page.getByRole("group", { name: "Deliver to" });
 const line = (page: Page) => row(page).getByText(/km from your current location/);
-const label = (page: Page) => row(page).getByText("Deliver to", { exact: true });   // the small label; the row's own name (aria-label) stays "Deliver to" either way
+const label = (page: Page) => row(page).getByText("Serving at", { exact: true });   // the small label; the row's own name (aria-label) stays "Deliver to" either way
 const small = (page: Page) => row(page).locator("small");   // the one small line of the row: the label, or the km line in its place
 const spot = async (page: Page) => { const b = (await small(page).boundingBox())!; return `at ${Math.round(b.x)},${Math.round(b.y)}, ${Math.round(b.height)} high`; };
 const homePlace = { address: HOME.address, pin: HOME.pin_code, lat: HOME.lat, lng: HOME.lng, house: "", landmark: "", confirmed: true, id: HOME.id as string | null };
@@ -57,7 +57,7 @@ export function billFar() {
   test("The Bill knows I am far: my delivery place is far from my phone, I open the Bill, and the delivery row says how many km it is from my current location", async ({ page, context }) => {
     const net = await open(context, page, { perm: "granted", pos: AWAY }, { step: "menu" });
     await whereBox(page).getByRole("button", { name: "Use another address" }).click();   // far from Home: Home is my answer
-    await page.getByRole("button", { name: "Deliver to Home" }).click();
+    await page.getByRole("button", { name: "Serve at Home" }).click();
     const asks = await asked(page);
     await page.getByRole("button", { name: /View bill/ }).click();
     await expect(row(page)).toContainText(HOME.address);

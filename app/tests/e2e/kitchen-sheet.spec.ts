@@ -14,7 +14,7 @@ const open = async (page: Page, context: Parameters<typeof setup>[0], status: st
 };
 const nothingExtra = async (where: ReturnType<Page["locator"]>) => {
   await expect(where).toContainText("2 × Butter Chicken");
-  for (const t of ["Deliver to", "Flat 4, Green Park", "Rahul", "Rider collects", "Paid online", "₹", "Cash", "Early friend gift"]) await expect(where.getByText(t)).toHaveCount(0);
+  for (const t of ["Serving at", "Flat 4, Green Park", "Rahul", "Rider collects", "Paid online", "₹", "Cash", "Early friend gift"]) await expect(where.getByText(t)).toHaveCount(0);
 };
 
 test("KO1a given the order sheet of a New ticket, it shows no address, no customer name, no price and no Rider collects", async ({ page, context }) => {

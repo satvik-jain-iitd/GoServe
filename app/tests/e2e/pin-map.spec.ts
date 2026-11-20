@@ -147,7 +147,7 @@ test("S9 Use current location opens the map at the phone; a tapped search result
   await expect(screen(page)).toBeVisible();
   await expect.poll(() => net.calls.serve.at(-1) ?? "").toContain("lat=28.56");
   await page.getByRole("button", { name: "Back" }).click();
-  await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
   const box = page.getByRole("searchbox", { name: "Search an area or address" });
   await box.fill("sample"); await box.press("Enter");
   await page.getByRole("region", { name: "Places" }).getByRole("button").first().click();

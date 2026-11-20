@@ -16,7 +16,7 @@ async function open(page: Page, context: Parameters<typeof setup>[0], at: { lati
   return net;
 }
 const AT_HOME = { latitude: 28.5678, longitude: 77.2433 };
-const dialog = (page: Page) => page.getByRole("heading", { name: "Deliver to", exact: true });
+const dialog = (page: Page) => page.getByRole("heading", { name: "Serving at", exact: true, level: 1 });
 
 test("S1 story 1529 (this reverses story 1035): phone at Home, Home is picked on open, not the one used last (Office); Home shows here, Office 8 km", async ({ page, context }) => {
   await open(page, context, AT_HOME);
@@ -35,7 +35,7 @@ test("S2 story 1548 (was 1529): phone far from every saved address, the page doe
   await page.route("**/rest/v1/rpc/address_near_m", (r) => { reads++; return r.abort(); });   // a page route wins over the helper's
   await open(page, context, { latitude: 28.5, longitude: 77.3 });
   await expect(whereBox(page)).toBeVisible();
-  await expect(page.getByRole("button", { name: /^Deliver to\b/ })).toContainText("Flat 4, Green Park");   // the place on this phone, not "Where you are now"
+  await expect(page.getByRole("button", { name: /^Serving at\b/ })).toContainText("Flat 4, Green Park");   // the place on this phone, not "Where you are now"
   await expect(dialog(page)).toHaveCount(0);
   expect(reads).toBe(1);
   await whereBox(page).getByRole("button", { name: "Use another address" }).click();
@@ -44,7 +44,7 @@ test("S2 story 1548 (was 1529): phone far from every saved address, the page doe
 
 test("S3 no location permission: the place on this phone stays, no sheet opens (story 1547), and the page does not open by itself", async ({ page, context }) => {
   await open(page, context, null);
-  await expect(page.getByRole("button", { name: /^Deliver to\b/ })).toContainText("Flat 4, Green Park");
+  await expect(page.getByRole("button", { name: /^Serving at\b/ })).toContainText("Flat 4, Green Park");
   await page.waitForTimeout(500);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(dialog(page)).toHaveCount(0);
@@ -98,7 +98,7 @@ test("S7 (story 1532) the profile's single address makes no saved row: it has no
   await page.waitForLoadState("networkidle");
   expect(net.state.addresses).toHaveLength(0);
   await page.reload();
-  await expect(page.getByRole("button", { name: /^Deliver to\b/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Serving at\b/ })).toBeVisible();
   await page.waitForLoadState("networkidle");
   expect(net.state.addresses).toHaveLength(0);
 });

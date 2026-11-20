@@ -36,7 +36,7 @@ async function deliverTo(page: Page, context: Ctx) {
   await phoneLoc(page, { perm: "granted", pos: { latitude: 28.5683, longitude: 77.2436 } });
   await page.goto("/customer/");
   await page.getByTitle("Change the delivery address").click();
-  await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
   return net;
 }
 

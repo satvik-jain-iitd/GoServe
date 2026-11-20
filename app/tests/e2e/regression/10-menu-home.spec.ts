@@ -125,8 +125,8 @@ test("TC 10.6 Tap the address: the Deliver to page opens", async ({ page, contex
   await STEPS["menu"](context, page, PATH);
   const search = page.getByRole("searchbox", { name: "Search dishes" });
   await expect(search).toBeVisible();   // proves the menu shows before the tap
-  await page.getByRole("button", { name: /^(Home|Deliver to)\b/ }).click();
-  await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /^(Home|Serving at)\b/ }).click();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
   await expect(search).toHaveCount(0);
 });
 

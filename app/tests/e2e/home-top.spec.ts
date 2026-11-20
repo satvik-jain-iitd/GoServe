@@ -19,7 +19,7 @@ const home = async (page: Page, context: Parameters<typeof setup>[0], avatar: st
 
 test("S1 the top shows the label and the address, the circle, search and the VEG switch; the bar has two tabs", async ({ page, context }) => {
   await home(page, context);
-  const where = page.getByRole("button", { name: /^(Home|Deliver to)\b/ });
+  const where = page.getByRole("button", { name: /^(Home|Serving at)\b/ });
   await expect(where).toContainText("Home");
   await expect(where).toContainText(ADDRESS);
   await expect(page.getByRole("button", { name: /^You: / })).toBeVisible();
@@ -40,9 +40,9 @@ test("S2 no greeting sentence and no zigzag under it; the Open till line stays",
 
 test("S3 tapping the address opens the Deliver to page", async ({ page, context }) => {
   await home(page, context);
-  await page.getByRole("button", { name: /^(Home|Deliver to)\b/ }).click();
+  await page.getByRole("button", { name: /^(Home|Serving at)\b/ }).click();
   await expect(page.getByRole("searchbox", { name: "Search dishes" })).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
 });
 
 test("S4 tapping the circle opens the profile; no You tab exists", async ({ page, context }) => {
