@@ -37,8 +37,8 @@ test("S3 Back on You shows the menu", async ({ page, context }) => {
 
 test("S4 Back on Deliver to shows the menu", async ({ page, context }) => {
   await open(page, context);
-  await page.getByRole("button", { name: /^(Home|Deliver to)\b/ }).click();
-  await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
+  await page.getByRole("button", { name: /^(Home|Serving at)\b/ }).click();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
   await page.goBack();
   await onMenu(page);
 });
@@ -87,12 +87,12 @@ test("S8 Back on orders shows the menu; Back on a slip opened from orders shows 
 
 test("S9 Back on the pin map closes the map and shows the screen it was opened from", async ({ page, context }) => {
   await open(page, context);
-  await page.getByRole("button", { name: /^(Home|Deliver to)\b/ }).click();
+  await page.getByRole("button", { name: /^(Home|Serving at)\b/ }).click();
   await page.getByRole("button", { name: "Add new address" }).click();
   await expect(page.getByRole("region", { name: "Pin map" })).toBeVisible();
   await page.goBack();
   await expect(page.getByRole("region", { name: "Pin map" })).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
 });
 
 test("S10 Back closes the cancel sheet and keeps the order", async ({ page, context }) => {

@@ -253,6 +253,9 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-swap-price .was { color: var(--gs-text-muted); text-decoration: line-through; }
 .ui-swap-actions { display: flex; gap: var(--gs-space-2); }
 .ui-swap-actions .ui-btn { flex: 1; min-height: 44px; justify-content: center; }
+/* story 1706: the offer with a dish to swap in is a sheet (shared .ui-sheet); these two rules only keep its words tight and the focused dialog free of a ring. The old box (.ui-swap) stays for a dish the new kitchen does not make. */
+.ui-swap-sheet p { margin: 0; }
+.ui-swap-sheet:focus { outline: none; }
 .ui-closed-ask { display: flex; flex-direction: column; align-items: flex-start; gap: var(--gs-space-2); padding: var(--gs-space-3) var(--gs-gutter) var(--gs-space-3); }   /* story 984: 12 px under the banner, on its left edge */
 .ui-closed-ask p { margin: 0; }
 .ui-closed-sub { font-size: var(--gs-text-xs); color: var(--gs-text-muted); }
@@ -297,13 +300,14 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-live-dot { width: 8px; height: 8px; border-radius: var(--gs-radius-pill); background: var(--md-primary); }
 .ui-ask { display: flex; flex-direction: column; align-items: stretch; margin: 0; }
 .ui-ask h3 { margin: 0; font-size: var(--gs-text-lg); }
-.ui-ask-act { display: flex; gap: var(--gs-space-2); }
-.ui-bottom { display: flex; flex-direction: column; gap: var(--gs-space-2); padding: var(--gs-space-3) var(--gs-gutter) max(var(--gs-space-5), env(safe-area-inset-bottom)); }
+.ui-bottom .ui-ask { margin-top: var(--gs-space-2); }   /* story 1691: with the foot's 8 px gap, 16 px above the card */
+.ui-bottom { display: flex; flex-direction: column; gap: var(--gs-space-2); padding: var(--gs-space-3) var(--gs-gutter) max(var(--gs-space-5), env(safe-area-inset-bottom)); border-top: 1px solid var(--md-outline-variant); background: var(--md-background); }   /* story 1697: a flat line above the foot, the tab bar's line, the page's own background */
+.ui-bottom:not(:has(*)) { border-top: 0; }   /* story 1697: a foot with no button has no line; :empty fails because the JSX leaves blank text in it */
 .ui-bottom .ui-btn.big { width: 100%; }
 /* Orders and You (story H10d). Boards 08, 08e and 09. */
 .ui-center { justify-content: center; }
 .ui-orders { padding: var(--gs-space-4) var(--gs-gutter) var(--gs-space-4); gap: var(--gs-space-4); }   /* story 1611: the gap between kitchen cards is the saved-address gap (.ui-deliver-to) */
-.ui-orders .ui-foot { margin: 0; }
+.ui-orders > * { flex: none; }   /* story 1621: a child of the column keeps its own height, as .ui-deliver-to (story 976); a card never shrinks and cuts its rows */
 .ui-order-row { display: grid; grid-template-columns: 1fr auto; gap: var(--gs-space-4); align-items: center; width: 100%; padding: var(--gs-space-4) 0; border: 0; border-bottom: 1px solid var(--md-outline-variant); background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .ui-order-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .ui-order-no { font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
@@ -325,6 +329,10 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-google-stack { display: flex; flex-direction: column; gap: var(--gs-space-4); }
 .ui-google-help { margin: 0; font-size: 13px; color: var(--gs-text-muted); }
 .ui-edit-actions { display: flex; gap: 8px; padding-top: 4px; }
+/* story 1693: the You page's edit bar. Sticky at the page's bottom edge (the page itself follows the keyboard, so the bar rides on it), the page's own background, 24 px or the safe area under the pair; it cancels the page's bottom padding so it ends at the screen's edge. */
+.ui-you-page .ui-edit-bar { position: sticky; bottom: calc(-24px - env(safe-area-inset-bottom, 0px)); z-index: 1; margin: 12px -16px calc(-24px - env(safe-area-inset-bottom, 0px)); padding: 12px 16px max(24px, env(safe-area-inset-bottom, 0px)); background: var(--gs-you-page); border-top: 1px solid var(--md-outline-variant); }
+.ui-you-page { box-sizing: border-box; }   /* the keyboard fit sets an inline height: it must count the page's padding, else the bottom 36 px sit under the keyboard */
+.ui-you-page:has(.ui-edit-bar) { scroll-padding-bottom: calc(var(--gs-space-3) * 2 + var(--gs-tap-big) + var(--gs-space-5)); }   /* a focused field scrolls to above the bar */
 .ui-row-label { display: flex; flex-direction: column; gap: 2px; padding: var(--gs-space-2) 0; }
 .ui-today .ui-row-label { overflow-wrap: anywhere; }   /* story 1557: a long address in a Today row breaks inside the row */
 .ui-row-label > span:first-child { font-weight: 600; }
@@ -518,7 +526,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-btn.danger { color: var(--md-error); border-color: var(--md-error); }
 .ui-btn.danger-fill { background: var(--md-error); color: var(--md-on-error); }
 .ui-row-pair { display: flex; gap: var(--gs-space-3); }
-.ui-row-pair > .ui-btn { flex: 1; }
+.ui-row-pair > .ui-btn { flex: 1 1 calc(50% - var(--gs-space-3) / 2); padding-inline: var(--gs-space-3); }   /* story 1692: the same basis for both, so an outline button's border never makes the halves unequal */
 /* Story 848: a scenario row that opens (board A-Sim-Groups): name and one line of numbers, a chevron on the right. */
 .ui-details > summary { display: flex; flex-direction: column; gap: 2px; padding: var(--gs-space-3) var(--gs-space-6) var(--gs-space-3) 0; border-bottom: 1px solid var(--md-outline-variant); cursor: pointer; position: relative; list-style: none; font-weight: 600; min-height: var(--gs-tap); justify-content: center; }
 .ui-details > summary::-webkit-details-marker { display: none; }
@@ -600,7 +608,6 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-sheet-lead { margin: 0 0 12px; font-size: 15px; }
 .ui-sheet-text { box-sizing: border-box; width: 100%; padding: 10px 12px; border: 1px solid var(--md-outline); border-radius: 6px; background: var(--md-surface); color: var(--md-on-surface); font: inherit; font-size: 16px; resize: none; }
 .ui-sheet-count { margin: 6px 0 0; display: flex; justify-content: space-between; font-size: 12px; color: var(--gs-text-muted); }
-.ui-sheet-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; }
 .ui-order-sheet .ui-btn.danger-fill:disabled { opacity: 0.4; }
 .ui-declined { margin: 0; padding: 12px 14px; border-left: 4px solid var(--md-error); background: var(--md-surface); border-radius: 0 6px 6px 0; }
 .ui-declined p { margin: 0; font-size: 16px; }
@@ -624,13 +631,14 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-noteband-text { font-size: 20px; font-weight: 700; line-height: 1.25; white-space: normal; overflow-wrap: anywhere; }
 /* Story 972, board F1-Filter: a checkbox per category */
 .ui-switch-note { font-size: 11px; font-weight: 400; color: var(--gs-text-muted); }
-.ui-cats { display: flex; flex-direction: column; padding: 0 var(--gs-gutter); }
+.ui-cats { display: flex; flex-direction: column; padding: 0 var(--gs-gutter); min-height: 0; overflow-y: auto; }   /* story 1719: with many categories the list scrolls, the button below it does not */
 .ui-cat-row { display: grid; grid-template-columns: 24px 1fr auto; gap: 12px; align-items: center; cursor: pointer; }
 .ui-cat-row input { width: 22px; height: 22px; margin: 0; accent-color: var(--md-primary); }
 .ui-cat-row span { font-weight: 400; }
 .ui-cat-row span.on { font-weight: 600; }
 .ui-cat-row .ui-count { font-weight: 400; }
-.ui-clear { align-self: flex-end; margin: 8px 0 0; font-size: 12px; color: var(--md-primary); }
+.ui-clear { flex: none; align-self: flex-end; display: flex; align-items: center; min-height: 44px; margin: 0 0 8px; font-size: 12px; color: var(--md-primary); }   /* story 1719: a whole 44 px row, 8 px above the button; always there so ticking never moves the button */
+.ui-clear.off { visibility: hidden; }   /* keeps its room; hidden from keys and readers while nothing is ticked */
 
 /* Story 983: on a short landscape screen the lockup keeps a phone-sized width (it scales with the width and would fill the screen). After the base rules on purpose. */
 @media (orientation: landscape) and (max-height: 520px) {
@@ -675,6 +683,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-order-group b { min-width: 0; overflow-wrap: anywhere; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; color: var(--md-on-background); }
 .ui-saved-card.ui-order-card .ui-order-row { padding: var(--gs-space-4); }
 .ui-saved-card.ui-order-card .ui-order-row:last-child { border-bottom: 0; }
+.ui-order-card .ui-view-all { border-top: 0; }   /* story 1637: the third row's own bottom border is the one line above the button; the button adds no second line */
 .ui-order-row { min-height: 64px; }
 .ui-order-row svg { color: var(--gs-text-muted); }
 .ui-order-word.bad { color: var(--md-error); font-weight: 700; }
@@ -827,8 +836,9 @@ a.ui-locrow { text-decoration: none; }   /* story 1498: the rider row is a link 
 .ui-going svg { margin-top: 2px; color: var(--md-primary); }
 .ui-going-words { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .ui-going-title { display: flex; align-items: center; gap: 8px; min-height: 24px; font-weight: 600; line-height: 1.25; }
-.ui-going-title .ui-tag { font-size: 11px; }
-.ui-going-sub { height: 38px; font-size: 14px; line-height: 1.35; color: var(--gs-text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ui-going-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ui-going-title .ui-tag { flex: none; font-size: 11px; }
+.ui-going-sub { font-size: 14px; line-height: 1.35; color: var(--gs-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* story 1734: one line, one height; longer text ends in an ellipsis */
 .ui-card-btn:disabled { color: var(--gs-text-muted); cursor: default; }   /* board LF6d: Finding you… */
 .ui-card-btn:disabled svg { color: var(--gs-text-muted); }
 .ui-saved-row.unpinned .ui-saved-main, .ui-saved-row.unpinned .ui-chip-box { color: var(--gs-text-muted); }   /* board LF11: an old row with no pin */

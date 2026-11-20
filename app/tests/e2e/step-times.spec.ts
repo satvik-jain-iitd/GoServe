@@ -26,7 +26,7 @@ test("T2 A step with no known time: that row shows no time, never a wrong one", 
   await page.goto("/customer/");
   await expect(rowOf(page, "Ready, rider picks up")).toHaveText("Ready, rider picks up");
   await expect(rowOf(page, "On the way")).toHaveText("On the wayNow");
-  await expect(list(page).getByRole("listitem")).toHaveText(["Ready, rider picks up", "On the wayNow", "At your door"]);   // the three rows in view: no time on any
+  await expect(list(page).getByRole("listitem")).toHaveText(["Ready, rider picks up", "On the wayNow", "Delivered"]);   // the three rows in view: no time on any
 });
 
 test("T3 The time is the event's: a status that reaches the phone later still shows when it happened", async ({ page, context }) => {

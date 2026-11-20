@@ -18,15 +18,16 @@ const step = (name: string) => {
   return app.slice(start, next > 0 ? next : undefined);
 };
 
+// Story 1641: the browser e2e tests are a job of their own (shards), after regression; the App job keeps the screen check.
+const browser = ci.slice(ci.indexOf("  browser:"), ci.indexOf("\n  guard:") > 0 ? ci.indexOf("\n  guard:") : undefined);
+
 describe("ci.yml, App job: the screen spec runs once", () => {
-  it("the e2e step leaves screens.spec.ts out by file name", () => {
-    expect(app).toMatch(/npm run test:e2e -- --grep-invert 'screens\\\.spec\\\.ts'/);
+  it("the browser shards leave screens.spec.ts out by file name", () => {
+    expect(browser).toMatch(/npm run test:e2e -- --grep-invert 'screens\\\.spec\\\.ts'/);
   });
-  it("one step runs scripts/screens.sh --check after the e2e step", () => {
-    const e2e = app.indexOf("npm run test:e2e");
-    const check = app.indexOf("bash scripts/screens.sh --check");
-    expect(e2e).toBeGreaterThan(-1);
-    expect(check).toBeGreaterThan(e2e);
+  it("the App job has no e2e line, and one step runs scripts/screens.sh --check", () => {
+    expect(app).not.toContain("npm run test:e2e");
+    expect(app).toContain("bash scripts/screens.sh --check");
   });
   it("that step runs from the repo root, where scripts/screens.sh is (the App job defaults to app/)", () => {
     const s = step("Screens (the render gate, once)");

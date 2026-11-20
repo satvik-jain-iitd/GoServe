@@ -33,7 +33,7 @@ test("S2 with location allowed Use my location opens the pin map at the phone; C
   await expect(page.getByText(/Open till/)).toBeVisible();
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
-  await expect(page.getByRole("group", { name: "Deliver to" })).toContainText(/near the park gate/);   // story 1532: the words, not a text box
+  await expect(page.getByRole("group", { name: "Serving at" })).toContainText(/near the park gate/);   // story 1532: the words, not a text box
 });
 
 test("S4 location not given: a true line says why (bug 1526), and Search for my address opens the search", async ({ page, context }) => {

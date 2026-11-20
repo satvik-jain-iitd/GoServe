@@ -6,7 +6,7 @@ export type RiderRow = { name: string | null; phone?: string | null; online: boo
 export type KitchenCard = { name: string; address: string | null; opens_at?: string | null; closes_at?: string | null; lat?: number | null; lng?: number | null; phone?: string | null };
 /** What the rider screens get from the gate (story H11): who, online or not, and the two taps. Null in the demo console. */
 export type RiderGateState = { name: string | null; phone: string | null; online: boolean; flip: () => Promise<void>; signOut: () => void };
-export const LOCATION_EVERY_MS = 30_000;
+export const LOCATION_EVERY_MS = 10_000;
 /** Story 1182: the rider is "near" the door within this many metres of the order's pin, and the Arriving button shows. A guess (docs/assumptions.md). */
 export const DOOR_NEAR_M = 150;
 export const shouldSendLocation = (lastSentMs: number | null, nowMs: number): boolean => lastSentMs === null || nowMs - lastSentMs >= LOCATION_EVERY_MS;

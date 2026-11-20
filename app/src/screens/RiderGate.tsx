@@ -1,4 +1,4 @@
-// The rider app's door on the Ink v3 boards R1 and R2 (story H11, #194; story A5): sign in, the gate, and while online the location every 30 seconds.
+// The rider app's door on the Ink v3 boards R1 and R2 (story H11, #194; story A5): sign in, the gate, and while online the location every 10 seconds.
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { claimInvites } from "../lib/admin";
 import { getRider, sendLocation, setOnline, shouldSendLocation, type RiderGateState, type RiderRow } from "../lib/rider";
@@ -26,7 +26,7 @@ export function RiderGate({ children }: { children: (gate: RiderGateState) => Re
       .catch(() => { setError("Could not load your rider details. Check your connection."); setRider(null); });
   }, []);
 
-  // While online, the browser reports the position; it is saved at once the first time and then every 30 seconds.
+  // While online, the browser reports the position; it is saved at once the first time and then every 10 seconds (the last place again if the phone gives no new one).
   const online = rider?.online === true;
   // Story 1497: a watch that was refused stays dead in the browser. Each time the page comes back to the front (the rider returns from the phone's
   // settings, or from Google Maps) the watch starts again, so an allowed location is picked up with no reload and a place is sent at once.
@@ -39,13 +39,15 @@ export function RiderGate({ children }: { children: (gate: RiderGateState) => Re
   useEffect(() => {
     if (!online || !uid || !("geolocation" in navigator)) return void setNoLocation(false);
     lastSent.current = null;
+    const lastPos = { current: null as { lat: number; lng: number } | null };   // story 1686: the newest place the phone gave, sent again when no new one comes
+    const send = () => { const q = lastPos.current; if (!q || !shouldSendLocation(lastSent.current, Date.now())) return; lastSent.current = Date.now(); void sendLocation(getClient(), q.lat, q.lng); };
     const watch = navigator.geolocation.watchPosition((p) => {
       setNoLocation(false);
-      if (!shouldSendLocation(lastSent.current, Date.now())) return;
-      lastSent.current = Date.now();
-      void sendLocation(getClient(), p.coords.latitude, p.coords.longitude);
-    }, (e) => { if (e.code === e.PERMISSION_DENIED) setNoLocation(true); }, { enableHighAccuracy: true, maximumAge: 10_000 });   // a weak signal or a timeout is not a refusal: no word for those
-    return () => navigator.geolocation.clearWatch(watch);
+      lastPos.current = { lat: p.coords.latitude, lng: p.coords.longitude };
+      send();
+    }, (e) => { lastPos.current = null; if (e.code === e.PERMISSION_DENIED) setNoLocation(true); }, { enableHighAccuracy: true, maximumAge: 10_000 });   // any error clears the place (a place sent again must be true); a weak signal or a timeout is not a refusal: no word for those
+    const again = setInterval(send, 1_000);   // a 1 s check keeps the gap within a second of 10 s
+    return () => { navigator.geolocation.clearWatch(watch); clearInterval(again); };
   }, [online, uid, front]);
 
   const signOut = async () => { try { await signOutHere(); } catch { /* offline */ } window.location.reload(); };

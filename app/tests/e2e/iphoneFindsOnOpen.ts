@@ -10,7 +10,7 @@ const HOME = { id: "h1", label: "Home", address: "Z-900, Sample Garden Colony, S
 const WORK = { id: "w1", label: "Work", address: "Tower B, Sector 62, Noida", pin_code: "110016", lat: 28.6208, lng: 77.3639, last_used_at: "2026-11-01T10:00:00Z" };
 const AT_WORK = { latitude: 28.6209, longitude: 77.364 };
 const header = (page: Page, name: RegExp) => page.getByRole("button", { name }).first();
-const box = (page: Page) => page.getByRole("region", { name: "Delivering to" });
+const box = (page: Page) => page.getByRole("region", { name: "Serving at" });
 const theMark = (page: Page) => page.evaluate(() => window.localStorage.getItem("gs-loc-ok"));
 const quiet = async (page: Page, ms = 700) => { await page.waitForTimeout(ms); await expect(page.getByRole("dialog")).toHaveCount(0); };
 const NEVER_ASKED: [string, Loc["perm"]][] = [["the iPhone says prompt", "prompt"], ["an old iPhone with no permissions.query", null]];

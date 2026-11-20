@@ -2,6 +2,7 @@
 // Both sheets are the same shape: the same class names, one 20 px margin for everything, a 44 px round close, a facts table, a word gate, red first, ghost to leave.
 import { test, expect, type Page } from "@playwright/test";
 import { setup } from "./helpers";
+import { expectDangerPair } from "./dangerPair";
 
 const KITCHEN = { id: "k-1", name: "Tau Ka Dhaba", address: "C-4, Hauz Khas", phone: "9876500011", pin_codes: ["110016"], open: true, active: true, opens_at: "11:00:00", closes_at: "22:00:00" };
 
@@ -65,6 +66,16 @@ for (const [name, open] of [["Remove kitchen", removeSheet], ["Clear everything"
     await sheet.getByRole("button", { name: "Close", exact: true }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });
+}
+
+for (const [name, open, risky, safe] of [["Remove kitchen", removeSheet, "Remove", "Keep it open"], ["Clear everything", clearSheet, "Clear", "Keep the city"]] as const) {
+  for (const [w, h] of [[360, 640], [390, 844]]) {
+    test(`S4 (story 1704) ${name}: the answers are an equal pair, ${risky} red on the left, ${safe} on the right, one line each (${w}x${h})`, async ({ page, context }) => {
+      await page.setViewportSize({ width: w, height: h });
+      const sheet = await open(page, context);
+      console.log("PAIR", name, w, JSON.stringify(await expectDangerPair(sheet, risky, safe)));
+    });
+  }
 }
 
 test("S3 both sheets use the same class names", async ({ page, context }) => {

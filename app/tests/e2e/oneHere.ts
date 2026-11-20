@@ -114,7 +114,7 @@ export function oneHere() {
     expect(await tops(page)).toEqual(before);   // rule 23: every row where it was
     await page.getByRole("button", { name: "Use current location" }).click();   // the tap: the map opens at the phone
     await page.getByRole("button", { name: "Back" }).click();
-    await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
     expect(await labels(page)).toEqual(["Office", "Home"]);
     await expect(chip(saved(page).nth(0))).toHaveText("here");
   });

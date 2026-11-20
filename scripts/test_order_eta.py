@@ -50,7 +50,7 @@ class OrderEta(unittest.TestCase):
 
     def test_ready_counts_rider_to_kitchen_then_on(self):
         far = run(make_order("ready"), GIVE, ping(28.58), final=ROW)["row"]
-        self.assertEqual(far["eta_lo_min"], 10, far)   # 2.2 km x 1.3 / 300 = 9.53
+        self.assertEqual(far["eta_lo_min"], 9, far)   # 2.2 km x 1.3 / 333.33 = 8.58 (story 1689: 20 km/h)
 
     def test_out_for_delivery_falls_as_the_rider_closes_in(self):
         a = run(make_order("out_for_delivery"), final=ROW)["row"]["eta_lo_min"]
@@ -70,7 +70,7 @@ class OrderEta(unittest.TestCase):
         self.assertEqual((c["eta_lo_min"], c["eta_hi_min"]), (None, None), c)
 
     def test_a_new_version_of_the_rules_changes_the_speed_without_code(self):
-        v2 = "insert into params (session_id, key, value, version) values ('global', 'eta_rules', '{\"speed_m_min\": 600, \"detour\": 1.3, \"buffer_min\": 10}'::jsonb, 2)"
+        v2 = "insert into params (session_id, key, value, version) select 'global', 'eta_rules', '{\"speed_m_min\": 600, \"detour\": 1.3, \"buffer_min\": 10}'::jsonb, coalesce(max(version), 0) + 1 from params where session_id = 'global' and key = 'eta_rules' and kitchen_id is null"
         r = run(v2, make_order(), final=ROW)["row"]
         self.assertEqual(r["eta_lo_min"], 23, r)   # 20 + 2.38 -> 23
 

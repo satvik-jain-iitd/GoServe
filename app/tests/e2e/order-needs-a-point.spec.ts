@@ -67,7 +67,7 @@ test("The Bill keeps the point: my place has a point, I change the house number 
   await expect.poll(() => net.state.addresses[0].house).toBe("C-5, first floor");
   await page.getByRole("button", { name: "Back", exact: true }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
-  await expect(page.getByRole("group", { name: "Deliver to" })).toContainText("C-5, first floor");
+  await expect(page.getByRole("group", { name: "Serving at" })).toContainText("C-5, first floor");
   await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   const sent = net.calls.place[0].body.address;
@@ -98,7 +98,7 @@ test("An old saved address with no point: its row says Set the pin, and it canno
   await page.getByRole("button", { name: "Back", exact: true }).click();
   await page.getByRole("button", { name: "Back", exact: true }).click();
   await toBill(page);
-  await expect(page.getByRole("group", { name: "Deliver to" })).toContainText(HOME.address);   // the place is still Home
+  await expect(page.getByRole("group", { name: "Serving at" })).toContainText(HOME.address);   // the place is still Home
   await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   expect([net.calls.place[0].body.address.lat, net.calls.place[0].body.address.lng]).toEqual([HOME.lat, HOME.lng]);

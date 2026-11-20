@@ -22,7 +22,7 @@ test("S1 the Settings row shows the percent now and who set it", async ({ page, 
 test("S2 Save sends the new percent and the line says it is now that", async ({ page, context }) => {
   const net = await toSettings(page, context);
   await page.getByLabel("Sold-out swap discount, percent").fill("15");
-  await page.getByRole("button", { name: "Save" }).click();
+  await page.getByRole("region", { name: "Settings" }).getByRole("button", { name: "Save" }).click();
   await expect(page.getByText(/^Now 15% · /)).toBeVisible();
   expect(net.calls.rpc.filter((c) => c.name === "swap_discount_set_v2").map((c) => c.body)).toEqual([{ p_pct: 15 }]);
 });
@@ -31,7 +31,7 @@ test("S2 Save sends the new percent and the line says it is now that", async ({ 
 test("S2b a Save made before the slow first read lands keeps the new percent on the line", async ({ page, context }) => {
   const net = await toSettings(page, context, 1500);
   await page.getByLabel("Sold-out swap discount, percent").fill("15");
-  await page.getByRole("button", { name: "Save" }).click();
+  await page.getByRole("region", { name: "Settings" }).getByRole("button", { name: "Save" }).click();
   await expect(page.getByText(/^Now 15% · /)).toBeVisible();
   await expect.poll(() => net.calls.rpc.filter((c) => c.name === "swap_discount_get_v2").length).toBeGreaterThan(0);
   await page.waitForTimeout(2000);   // the slow read has landed by now
@@ -42,7 +42,7 @@ test("S2b a Save made before the slow first read lands keeps the new percent on 
 test("S3 a percent over 50 is refused before sending, with a plain line", async ({ page, context }) => {
   const net = await toSettings(page, context);
   await page.getByLabel("Sold-out swap discount, percent").fill("60");
-  await page.getByRole("button", { name: "Save" }).click();
+  await page.getByRole("region", { name: "Settings" }).getByRole("button", { name: "Save" }).click();
   await expect(page.getByText("Pick a whole number from 0 to 50.")).toBeVisible();
   expect(net.calls.rpc.filter((c) => c.name === "swap_discount_set_v2")).toEqual([]);
 });
@@ -58,7 +58,7 @@ test("S5 a slow load never overwrites what the admin has already typed (the CI f
   await page.getByLabel("Sold-out swap discount, percent").fill("15");   // typed before the load answers
   await expect(page.getByText(/^Now 10% · /)).toBeVisible({ timeout: 5000 });   // the load has answered now
   await expect(page.getByLabel("Sold-out swap discount, percent")).toHaveValue("15");
-  await page.getByRole("button", { name: "Save" }).click();
+  await page.getByRole("region", { name: "Settings" }).getByRole("button", { name: "Save" }).click();
   await expect(page.getByText(/^Now 15% · /)).toBeVisible();
   expect(net.calls.rpc.filter((c) => c.name === "swap_discount_set_v2").map((c) => c.body)).toEqual([{ p_pct: 15 }]);
 });

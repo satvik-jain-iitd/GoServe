@@ -7,11 +7,11 @@ const PATH = "/customer/";
 test.use({ viewport: { width: 390, height: 844 } });
 
 const rowOf = (page: Page, label: string) => page.getByRole("listitem").filter({ hasText: label });
-const deliverTo = (page: Page, label: string) => page.getByRole("button", { name: `Deliver to ${label}`, exact: true });
+const deliverTo = (page: Page, label: string) => page.getByRole("button", { name: `Serve at ${label}`, exact: true });
 
 test("TC 29.1 Look: Back, Deliver to, 2 saved, search, Use current location, Add new address, rows with icon, label, Selected chip and the menu button", async ({ page, context }) => {
   await STEPS["deliver-to"](context, page, PATH);
-  await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();   // proves the page shows before the parts are checked
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();   // proves the page shows before the parts are checked
   await expect(page.getByRole("button", { name: "Back" })).toBeVisible();
   await expect(page.getByText("2 saved", { exact: true })).toBeVisible();
   await expect(page.getByRole("searchbox", { name: "Search an area or address" })).toBeVisible();
@@ -55,7 +55,7 @@ test("TC 29.4 Tap a row: that address is chosen and the page goes back to the me
   await expect(deliverTo(page, "Office")).toBeVisible();   // proves the row shows before the tap
   await deliverTo(page, "Office").click();
   await expect(page.getByRole("searchbox", { name: "Search dishes" })).toBeVisible();   // the menu is back
-  await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toHaveCount(0);
   const where = page.getByRole("button", { name: /^Office\b/ });
   await expect(where).toBeVisible();
   await expect(where).toContainText("Tower B, Connaught Place, New Delhi");

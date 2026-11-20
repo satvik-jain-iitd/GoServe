@@ -33,7 +33,7 @@ for (const theme of ["day", "night"] as const) {
     await shot("Menu");
     await page.getByRole("button", { name: "Filter" }).click();
     await shot("Categories");
-    await page.getByRole("button", { name: /Show \d+ dishes/ }).click();
+    await page.getByRole("button", { name: "Show dishes" }).click();
     await page.getByRole("button", { name: "Chicken Curry details" }).click();
     await shot("Dish");
     await page.getByRole("button", { name: "Close", exact: true }).click();
@@ -146,7 +146,7 @@ for (const theme of ["day", "night"] as const) {
     await page.getByText("On the way", { exact: true }).waitFor();
     await shot("R-OnTheWay");
     await page.getByRole("button", { name: "Arriving 0f0f0f0f" }).click();
-    await page.getByRole("button", { name: /^Collect ₹/ }).click();   // story 1182, board RY3: Collect opens Collect payment
+    await page.getByRole("button", { name: "Collect", exact: true }).click();   // story 1182, board RY3: Collect opens Collect payment
     await page.getByText("Cash collected").waitFor();
     await shot("R-Delivered");
     await page.getByRole("button", { name: /^(Next delivery|Done)$/ }).click();

@@ -278,7 +278,7 @@ function Modal({ label, onClose, children }: { label: string; onClose: () => voi
   );
 }
 
-// Story #972, board F1-Filter: a checkbox per category (multi-select, none ticked is all), the veg switch for the whole menu, the count of what matches, Show n dishes.
+// Story #972, board F1-Filter: a checkbox per category (multi-select, none ticked is all), the veg switch for the whole menu, the count of what matches, Show dishes.
 function FilterSheet({ count, total, vegOnly, onVeg, sections, ticked, onTick, onClear, onClose }: { count: number; total: number; vegOnly: boolean; onVeg: (v: boolean) => void; sections: { id: string; title: string; dishes: Dish[] }[]; ticked: string[]; onTick: (key: string, on: boolean) => void; onClear: () => void; onClose: () => void }) {
   return (
     <Modal label="Filter" onClose={onClose}>
@@ -298,9 +298,9 @@ function FilterSheet({ count, total, vegOnly, onVeg, sections, ticked, onTick, o
             </label>
           );
         })}
-        {ticked.length > 0 && <a href="#" className="mono ui-clear" onClick={(e) => { e.preventDefault(); onClear(); }}>Clear all</a>}
+        <a href="#" className={`mono ui-clear${ticked.length ? "" : " off"}`} onClick={(e) => { e.preventDefault(); onClear(); }}>Clear all</a>
       </div>
-      <button type="button" className="ui-btn big" onClick={onClose}>Show {count} {count === 1 ? "dish" : "dishes"}</button>
+      <button type="button" className="ui-btn big" onClick={onClose}>Show dishes</button>
     </Modal>
   );
 }
@@ -311,15 +311,17 @@ function DishSheet({ dish, closed, qty, onAdd, onClose }: { dish: Dish; closed: 
     <Modal label={dish.name} onClose={onClose}>
       <Photo src={dish.image_url} cls="ui-dish-photo" />
       <div className="ui-dish-body">
-        <div className="ui-dish-head"><h2>{dish.veg !== undefined && <VegMark veg={dish.veg} size={14} />}{dish.name}</h2><span className="ui-dish-price">{formatRupees(dish.price_paise)}</span></div>
+        <div className="ui-dish-head"><h2>{dish.veg !== undefined && <VegMark veg={dish.veg} size={14} />}{dish.name}</h2><span className="ui-dish-price">{formatRupees(dish.price_paise * n)}</span></div>
         <p className="ui-kicker">{dish.veg === undefined ? "" : dish.veg ? "Veg" : "Non-veg"}{dish.category ? ` · ${dish.category}` : ""}</p>
         {dish.description && <p className="ui-meta">{dish.description}</p>}
         {dish.image_credit && <CreditLine credit={dish.image_credit} />}
         {!closed && <div className="ui-dish-count"><span className="ui-kicker">How many</span><Stepper label={dish.name} value={n} min={1} onChange={setN} /></div>}
       </div>
       <div className="ui-dish-act">
-        <button type="button" className="ui-btn ghost big" onClick={onClose}>Close</button>
-        {!closed && <button type="button" className="ui-btn big" onClick={() => onAdd(n)}>Add to bill · {formatRupees(dish.price_paise * n)}</button>}   {/* story #1161: the filled button is last, at the bottom */}
+        <div className="ui-row-pair">   {/* story 1694: a half and half pair, Close left, Add last on the right; closed, Close alone fills the row */}
+          <button type="button" className="ui-btn ghost big" onClick={onClose}>Close</button>
+          {!closed && <button type="button" className="ui-btn big" onClick={() => onAdd(n)}>Add</button>}
+        </div>
       </div>
     </Modal>
   );

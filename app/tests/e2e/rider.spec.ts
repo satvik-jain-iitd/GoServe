@@ -16,7 +16,7 @@ test("S1 rider steps: pick up, arriving, delivered each send their step as the r
   await expect(page.getByText("On the way", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Arriving 0f0f0f0f" }).click();
   await expect(page.getByRole("button", { name: "Arriving 0f0f0f0f" })).toHaveCount(0);   // done once; story 1182: step 3 has no Arriving button
-  await page.getByRole("button", { name: /^Collect ₹/ }).click();   // story 1182, board RY3: Collect opens Collect payment
+  await page.getByRole("button", { name: "Collect", exact: true }).click();   // story 1182, board RY3: Collect opens Collect payment
   await page.getByRole("button", { name: /^Took cash/ }).click();   // story 1262: Delivered opens Collect payment first
   await page.getByRole("button", { name: "Done", exact: true }).click();   // H11: the delivered slip stays until the rider lets it go
   await expect(page.getByText("No. 0f0f0f0f")).toHaveCount(0);   // delivered orders leave the Job tab
@@ -70,5 +70,5 @@ test("S2 the customer sees every step live, without a refresh, and it ends at De
     if (label === "Delivered") await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible({ timeout: 6000 });
     else await expect(current).toHaveText(`${label}Now`, { timeout: 6000 });
   }
-  await expect(current).toHaveText("At your door");   // the rows end on the delivered step (the thank-you line left in story 1324)
+  await expect(current).toHaveText("Delivered");   // the rows end on the delivered step (the thank-you line left in story 1324)
 });

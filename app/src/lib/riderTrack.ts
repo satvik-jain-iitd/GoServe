@@ -1,4 +1,4 @@
-// Story #691: the rider's place for one order. The database keeps one order_tracking row per order (migration 20261027200000, filled by the rider's 30 s pings) and the
+// Story #691: the rider's place for one order. The database keeps one order_tracking row per order (migration 20261027200000, filled by the rider's 10 s pings) and the
 // customer reads only their own. The realtime event only says "something changed"; the row is read again, so a missed event is healed by the next one.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { toPoint, type Point } from "./riderMap";

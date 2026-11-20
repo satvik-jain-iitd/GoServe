@@ -10,7 +10,7 @@ test("S1 a refresh on the cart keeps the dishes and the address", async ({ page,
   await page.getByLabel("Phone").fill("9876543210");
   await page.reload();
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
-  await expect(page.getByRole("group", { name: "Deliver to" })).toContainText("Flat 4, Green Park");
+  await expect(page.getByRole("group", { name: "Serving at" })).toContainText("Flat 4, Green Park");
   await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
 });
 

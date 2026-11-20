@@ -1,6 +1,6 @@
 // Story 1530 (boards LF4b, LF5, LF6, LF13, LF14): the Deliver to screen. The search box has no arrow, one search for the whole app (the pin map's bar opens it),
 // "Recently searched" under the saved list, and nothing moves between the states of the screen.
-// A recent is made only by "Confirm & proceed" on a place picked from search. It holds the confirmed point and the customer's own words, never an answer of Ola.
+// A recent is made by a tap on a place picked from search (kept as not confirmed) and updated by "Confirm & proceed". It holds the point, and the tapped result's own name and address (owner, 17 Nov 2026; loan: undo recent_drop_ola()).
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { phoneLoc, setLoc, setup, whereBox } from "./helpers";
 
@@ -32,7 +32,7 @@ async function open(page: Page, context: BrowserContext, over: { recents?: objec
   await phoneLoc(page, { perm: "granted", pos: over.pos ?? AT_HOME });
   await page.goto("/customer/");
   if (over.pos) await anotherAddress(page); else await page.getByTitle("Change the delivery address").click();
-  await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
   return net;
 }
 const search = (page: Page) => page.getByRole("searchbox", { name: "Search an area or address" });
@@ -82,18 +82,18 @@ test("A search becomes a recent: I pick a place from search and confirm the pin,
   await details(page).getByRole("button", { name: "Deliver here" }).click();
   await expect(page.getByRole("searchbox", { name: "Search dishes" })).toBeVisible();   // the menu, for the confirmed place
   // Story 1609: the tap already kept the row; Confirm updates that same row, so wait for the update, then check there is still one row for it.
-  await expect.poll(() => net.state.recents.at(-1)?.address).toBe("12B, near park gate, green park");
+  await expect.poll(() => net.state.recents.at(-1)?.address).toBe("12B, near park gate, Olaname Market, Olatown, New Delhi");
   expect(net.state.recents).toHaveLength(2);
   const row = net.state.recents.at(-1)!;
-  expect(row).toMatchObject({ name: "green park", address: "12B, near park gate, green park", pin_code: "110017", house: "12B", landmark: "park gate" });
+  expect(row).toMatchObject({ name: "Olaname Market", address: "12B, near park gate, Olaname Market, Olatown, New Delhi", pin_code: "110017", house: "12B", landmark: "park gate" });
   expect(row.lat).toBeCloseTo(OLA_HIT.lat, 3);
-  expect(JSON.stringify(net.calls.recentWrites)).not.toMatch(/ola/i);   // no word of Ola's search row or lookup is stored
+  expect(JSON.stringify(net.calls.recentWrites)).toMatch(/Olaname Market/);   // owner, 17 Nov 2026: the tapped result's own name and address are kept (loan: undo recent_drop_ola())
   expect(net.state.addresses).toHaveLength(2);   // not a saved address
   const place = await page.evaluate(() => JSON.parse(localStorage.getItem("gs-place")!));
   expect(place).toMatchObject({ confirmed: true, id: null });
   await page.getByTitle("Change the delivery address").click();
   await expect(page.getByText("2 saved")).toBeVisible();   // recents are not counted
-  await expect(recents(page).getByRole("listitem").first()).toContainText("green park");
+  await expect(recents(page).getByRole("listitem").first()).toContainText("Olaname Market");
   await expect(recents(page).getByRole("listitem").first()).toContainText("12B, near park gate");
   await expect(recents(page).getByRole("listitem").first()).toContainText("Selected");
   await expect(recents(page).getByRole("listitem")).toHaveCount(2);
@@ -113,10 +113,10 @@ test("A search tapped but not confirmed shows in Recently searched at once, mark
   const net = await open(page, context);
   await pick(page, "green park");
   await pinMap(page).getByRole("button", { name: "Back" }).click();
-  await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
   await expect(recents(page)).toHaveCount(1);
   await expect.poll(() => net.calls.recentWrites.filter((w) => w.method === "POST").length).toBe(1);
-  expect(net.calls.recentWrites.find((w) => w.method === "POST")!.body).toMatchObject({ name: "green park", confirmed: false });
+  expect(net.calls.recentWrites.find((w) => w.method === "POST")!.body).toMatchObject({ name: "Olaname Market", confirmed: false });
 });
 
 test("Add new address still saves a named address, not a recent", async ({ page, context }) => {
@@ -161,7 +161,7 @@ test("A recent row looks as a saved row: the same card, chip, and row box", asyn
 
 test("A tap on a recent picks it as my place, with its confirmed point", async ({ page, context }) => {
   const net = await open(page, context, { recents: FIVE });
-  await recents(page).getByRole("button", { name: "Deliver to Road 4" }).click();
+  await recents(page).getByRole("button", { name: "Serve at Road 4" }).click();
   await expect(page.getByRole("searchbox", { name: "Search dishes" })).toBeVisible();
   const place = await page.evaluate(() => JSON.parse(localStorage.getItem("gs-place")!));
   expect(place).toMatchObject({ address: "Flat 4, Road 4", pin: "110016", lat: 28.61, lng: 77.24, house: "Flat 4", confirmed: true, id: null });
@@ -196,7 +196,7 @@ test("One search: the pin map's search bar opens the Deliver to search, and a pi
   await expect(page.getByRole("button", { name: "Confirm & proceed" })).toBeEnabled();
   await pinMap(page).getByRole("button", { name: "Search an area or address" }).click();
   await expect(pinMap(page)).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
   await expect(search(page)).toBeFocused();
   await expect(recents(page)).toBeVisible();   // the saved and the recent rows show there
   await search(page).fill("green park");
@@ -220,7 +220,7 @@ for (const how of ["the Back arrow", "the phone's Back button"]) {
     const at = new URL(net.calls.serve.at(-1)!).searchParams.get("lat")!;
     const lng = new URL(net.calls.serve.at(-1)!).searchParams.get("lng")!;
     await pinMap(page).getByRole("button", { name: "Search an area or address" }).click();
-    await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();   // the one search, not a list over the map
+    await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();   // the one search, not a list over the map
     await expect(search(page)).toBeFocused();
     if (how === "the Back arrow") await page.getByRole("button", { name: "Back" }).click(); else await page.goBack();
     await expect(pinMap(page)).toBeVisible();
@@ -229,7 +229,7 @@ for (const how of ["the Back arrow", "the phone's Back button"]) {
     expect(Number(again.searchParams.get("lat"))).toBeCloseTo(Number(at), 4);
     expect(Number(again.searchParams.get("lng"))).toBeCloseTo(Number(lng), 4);   // the pin is where I left it
     await pinMap(page).getByRole("button", { name: "Back" }).click();
-    await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();   // and Back on the map still closes the map
+    await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();   // and Back on the map still closes the map
     await expect(search(page)).not.toBeFocused();
   });
 }
@@ -269,7 +269,7 @@ async function state(page: Page, context: BrowserContext, kind: "home" | "away" 
   if (kind === "blocked") await page.getByRole("dialog", { name: "Where to bring your food?" }).getByRole("button", { name: "View all" }).click();
   else if (kind === "away") await anotherAddress(page);
   else await page.getByTitle("Change the delivery address").click();
-  await expect(page.getByRole("heading", { name: "Deliver to" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
   await expect(page.getByRole("region", { name: "Saved addresses" }).getByRole("listitem")).toHaveCount(2);   // story 1608: two rows, then View all
   if (withRecents) await expect(recents(page).getByRole("listitem")).toHaveCount(2);
 }
@@ -284,7 +284,7 @@ test("Nothing moves: when the location is found or not found only the Delivering
     const key = `${kind}${withRecents ? "" : " no recents"}`;
     shot[key] = await measure(page);
     if (kind === "blocked" && withRecents) {
-      const going = page.getByRole("region", { name: "Delivering to" });
+      const going = page.getByRole("region", { name: "Serving at" });
       const card = page.getByRole("button", { name: "Use current location" });
       await expect(going).toContainText("Location is off or blocked");
       for (const [name, pos, words] of [["off", 2, "Your phone's location is off"], ["slow", 3, "Finding you is taking too long"], ["still", 1, "Still off or blocked"]] as const) {
@@ -387,7 +387,7 @@ test("No kitchen here, with a saved address: the filled button is last and the s
 
 test("While I type in the search only the results show: the two cards and the Delivering to box are not above them", async ({ page, context }) => {
   await open(page, context, { recents: FIVE, pos: AWAY });
-  const cards = page.locator(".ui-two-cards"), going = page.getByRole("region", { name: "Delivering to" });
+  const cards = page.locator(".ui-two-cards"), going = page.getByRole("region", { name: "Serving at" });
   await expect(cards).toBeVisible();
   await expect(going).toBeVisible();
   await search(page).fill("green");
