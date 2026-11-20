@@ -33,9 +33,9 @@ async function callApi(body: object, deps: OrderDeps, need: "order" | "decision"
     answer = null;
   }
   if (res.ok && answer?.ok && answer[need]) return answer;
-  // The customer's calls (place, confirm, feedback) show our line for every refusal (story #659). The staff calls keep the server's line.
+  // The customer's calls (place, feedback) show our line for every refusal (story #659). The staff calls keep the server's line.
   const kind = (body as { action?: string }).action;
-  const mine = kind === "place" || kind === "confirm" || kind === "feedback" ? (kind as CustomerAction) : null;
+  const mine = kind === "place" || kind === "feedback" ? (kind as CustomerAction) : null;
   const refused = answer && answer.ok === false && typeof answer.message === "string";
   if (mine) {
     const code = refused ? answer!.error ?? "unknown" : "unknown";

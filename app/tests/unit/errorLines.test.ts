@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { cancelLine, customerLine, NO_INTERNET } from "../../src/lib/errorLines";
 
 const GENERIC = "Something went wrong. Please try again.";
-const DELIVERED = "Could not mark it delivered. Try again in a minute.";
 const BILL = "Something in the bill did not go through. Check it and try again.";
 
 describe("customerLine", () => {
@@ -15,7 +14,6 @@ describe("customerLine", () => {
     ["place", "unknown", "Missing or wrong demo token."],
     ["place", "unknown", "Unknown event."],
     ["place", "unknown", "Unknown status."],
-    ["confirm", "invalid_request", "Only the customer can confirm."],
   ] as const)("%s %s %s -> a generic line", (action, code, message) => {
     expect(customerLine(action, code, message)).toBe(action === "place" ? "Something went wrong. Your order was not placed and nothing was charged. Please try again." : GENERIC);
   });
@@ -37,18 +35,6 @@ describe("customerLine", () => {
   it("a bad order says the bill did not go through", () => {
     expect(customerLine("place", "invalid_request", "The order is not valid.")).toBe(BILL);
     expect(customerLine("place", "invalid_request", "The order is missing something.")).toBe(BILL);
-  });
-  it.each([
-    ["order_not_found", "No such order in this session."],
-    ["not_ready", "The order is not ready yet."],
-    ["rider_unavailable", "That rider is not available."],
-    ["illegal_step", "That step is not allowed now."],
-    ["invalid_request", "The status change is missing something."],
-  ])("Yes, I have it refused (%s) -> could not mark it delivered", (code, message) => {
-    expect(customerLine("confirm", code, message)).toBe(DELIVERED);
-  });
-  it("Already done is a success, not a line", () => {
-    expect(customerLine("confirm", "already_done", "Already done.")).toBeNull();
   });
   it("a refused feedback note says so in our words", () => {
     expect(customerLine("feedback", "invalid_request", "The report is not valid.")).toBe("Could not send the note. Try again.");

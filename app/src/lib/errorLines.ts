@@ -20,13 +20,10 @@ const PLACE_LINES: Record<string, string> = {
   unauthorized: SIGN_IN_LINE,
   order_unavailable: TRY_LATER, quote_unavailable: TRY_LATER, internal_error: TRY_LATER,
 };
-const DELIVERED = "Could not mark it delivered. Try again in a minute.";
 
-export type CustomerAction = "place" | "confirm" | "feedback";
+export type CustomerAction = "place" | "feedback";
 
-// null = not an error: "Already done." on the customer's Yes means the order is already delivered.
 export function customerLine(action: CustomerAction, code: string, message: string, opensAt?: string | null, status?: number): string | null {
-  if (action === "confirm" && code === "already_done") return null;
   if (code === "kill_switch") return "Orders are paused. Please try again soon.";
   if (code === "kitchen_closed") return opensAt ? `The kitchen closed just now. It opens at ${openingClock(opensAt)}.` : "The kitchen closed just now. Check back later.";
   if (code === "zone_closed") return "We are very busy right now. Please try again in a few minutes.";
@@ -36,7 +33,6 @@ export function customerLine(action: CustomerAction, code: string, message: stri
   if (action === "feedback") return "Could not send the note. Try again.";
   if (code === "sold_out" || code === "dish_sold_out") return BILL;   // story #619: a dish went sold out; the Bill says which and offers the way out
   if (message === "The order is not valid." || message === "The order is missing something.") return BILL;
-  if (action === "confirm" && message !== "Only the customer can confirm.") return DELIVERED;
   return GENERIC;
 }
 
