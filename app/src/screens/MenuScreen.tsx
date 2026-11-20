@@ -298,7 +298,7 @@ function FilterSheet({ count, total, vegOnly, onVeg, sections, ticked, onTick, o
             </label>
           );
         })}
-        {ticked.length > 0 && <a href="#" className="mono ui-clear" onClick={(e) => { e.preventDefault(); onClear(); }}>Clear all</a>}
+        <a href="#" className={`mono ui-clear${ticked.length ? "" : " off"}`} onClick={(e) => { e.preventDefault(); onClear(); }}>Clear all</a>
       </div>
       <button type="button" className="ui-btn big" onClick={onClose}>Show dishes</button>
     </Modal>

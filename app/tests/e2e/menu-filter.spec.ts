@@ -130,5 +130,73 @@ for (const vp of [{ width: 360, height: 640 }, { width: 390, height: 844 }]) {
     const after = (await btn.boundingBox())!;
     expect({ x: after.x, width: after.width, height: after.height }).toEqual({ x: before.x, width: before.width, height: before.height });   // same width; the sheet grows upward from the bottom (Clear all appears), so the foot of the button stays put
     expect(vp.height - (after.y + after.height)).toBeCloseTo(vp.height - (before.y + before.height), 0);
+    expect(after.y).toBeCloseTo(before.y, 0);   // story 1719: the row for Clear all is always there, so the button does not move at all
+  });
+}
+
+// Story 1719: Clear all is whole, at least 44 tall, never under or touching the button; the button never moves; with many categories the list scrolls, the button does not.
+const MANY = Array.from({ length: 12 }, (_, i) => dish(`x${i}`, `Dish ${i}`, `Group ${i}`, true));
+for (const vp of [{ width: 360, height: 640 }, { width: 390, height: 844 }]) {
+  test(`S12 Clear all is whole, 44 tall and 8 clear of the button with one and with all ticked at ${vp.width}x${vp.height}`, async ({ page, context }) => {
+    await page.setViewportSize(vp);
+    const sheet = await open(page, context);
+    const group = sheet.getByRole("group", { name: "Categories" });
+    const link = sheet.getByRole("link", { name: "Clear all" });
+    const btn = sheet.getByRole("button", { name: "Show dishes", exact: true });
+    await page.waitForTimeout(600);
+    const check = async (label: string) => {
+      await expect(link).toBeVisible();
+      const l = (await link.boundingBox())!, b = (await btn.boundingBox())!, sh = (await sheet.boundingBox())!;
+      console.log("CA-PX", vp.width, label, "link", JSON.stringify(l), "btn", JSON.stringify(b), "sheet", JSON.stringify(sh));
+      expect(l.height).toBeGreaterThanOrEqual(44);
+      expect(b.y - (l.y + l.height)).toBeGreaterThanOrEqual(8);   // a gap, so no touching and no overlap
+      expect(l.y).toBeGreaterThanOrEqual(sh.y);
+      expect(l.y + l.height).toBeLessThanOrEqual(sh.y + sh.height);
+    };
+    await group.getByRole("checkbox", { name: "Breads" }).check();
+    await check("one");
+    for (const n of ["Mains", "Rice", "Sweets"]) await group.getByRole("checkbox", { name: n }).check();
+    await check("all");
+  });
+
+  test(`S13 the button and the sheet do not move when a category is ticked, and Clear all is hidden from keys and readers until then at ${vp.width}x${vp.height}`, async ({ page, context }) => {
+    await page.setViewportSize(vp);
+    const sheet = await open(page, context);
+    const btn = sheet.getByRole("button", { name: "Show dishes", exact: true });
+    await page.waitForTimeout(600);
+    await expect(sheet.getByRole("link", { name: "Clear all" })).toHaveCount(0);
+    await expect(sheet.getByRole("button", { name: "Clear all" })).toHaveCount(0);
+    const link = sheet.locator(".ui-clear");
+    await link.evaluate((e) => (e as HTMLElement).focus());
+    expect(await link.evaluate((e) => document.activeElement === e)).toBe(false);   // not focusable, so not in the tab order
+    const b0 = (await btn.boundingBox())!, s0 = (await sheet.boundingBox())!;
+    await sheet.getByRole("checkbox", { name: "Breads" }).check();
+    await expect(sheet.getByRole("link", { name: "Clear all" })).toBeVisible();
+    await page.waitForTimeout(600);
+    const b1 = (await btn.boundingBox())!, s1 = (await sheet.boundingBox())!;
+    for (const k of ["x", "y", "width", "height"] as const) expect(b1[k]).toBeCloseTo(b0[k], 0);
+    expect(s1.height).toBeCloseTo(s0.height, 0);
+    expect(s1.y).toBeCloseTo(s0.y, 0);
+  });
+
+  test(`S14 with 12 categories the list scrolls and the button does not at ${vp.width}x${vp.height}`, async ({ page, context }) => {
+    await page.setViewportSize(vp);
+    const net = await setup(context, page);
+    net.state.menu = MANY;
+    await page.goto("/customer/");
+    await page.getByRole("button", { name: "Filter" }).click();
+    const sheet = page.getByRole("dialog", { name: "Filter" });
+    const group = sheet.getByRole("group", { name: "Categories" });
+    const btn = sheet.getByRole("button", { name: "Show dishes", exact: true });
+    await page.waitForTimeout(600);
+    const dims = await group.evaluate((e) => ({ sh: e.scrollHeight, ch: e.clientHeight }));
+    expect(dims.sh).toBeGreaterThan(dims.ch);   // the list scrolls
+    const b0 = (await btn.boundingBox())!;
+    expect(b0.y + b0.height).toBeLessThanOrEqual(vp.height);   // the button is on screen
+    await group.evaluate((e) => { e.scrollTop = e.scrollHeight; });
+    await page.waitForTimeout(200);
+    const b1 = (await btn.boundingBox())!;
+    expect(b1.y).toBeCloseTo(b0.y, 0);
+    expect(await sheet.evaluate((e) => e.scrollTop)).toBe(0);   // the sheet itself does not scroll
   });
 }
