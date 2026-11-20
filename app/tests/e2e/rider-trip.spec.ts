@@ -1,5 +1,5 @@
 // Story 1441, layer 1 (boards RP3, RT1, RT2; owner, 13 Nov 2026: "tick wala tareeka karte hain bro"): one trip, many packets.
-// One order alone: board RP3, the order number big, its dishes, one button "Picked up". Many: each packet is ticked; "Picked up all N" waits for every tick.
+// One order alone: board RP3, the order number big, its dishes, one button "Picked up". Many: each packet is ticked; "Picked up all" waits for every tick.
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { ID, SESSION, order, setup } from "./helpers";
 
@@ -14,7 +14,7 @@ const open = async (context: BrowserContext, page: Page, orders: object[]) => {
   return net;
 };
 const tick = (page: Page, i: number) => page.getByRole("checkbox", { name: new RegExp(IDS[i].slice(0, 8)) });
-const all = (page: Page, n: number) => page.getByRole("button", { name: `Picked up all ${n}` });
+const all = (page: Page) => page.getByRole("button", { name: "Picked up all", exact: true });
 
 test("RP3 one order alone: Pick up, Ready, the order number big with its dishes, where it goes, one button Picked up, and no tick", async ({ page, context }) => {
   await open(context, page, [packet(0)]);
@@ -30,27 +30,27 @@ test("RP3 one order alone: Pick up, Ready, the order number big with its dishes,
   await expect(page.getByRole("checkbox")).toHaveCount(0);
 });
 
-test("RT1 a trip of 4 packets with 2 ticked: Picked up all 4 is off and the line says 2 are left; all 4 ticked turns it on", async ({ page, context }) => {
+test("RT1 a trip of 4 packets with 2 ticked: Picked up all is off and the line says 2 are left; all 4 ticked turns it on", async ({ page, context }) => {
   await open(context, page, [0, 1, 2, 3].map((i) => packet(i)));
   await expect(page.getByText("This trip · 4 packets")).toBeVisible();
-  await expect(all(page, 4)).toBeDisabled();
+  await expect(all(page)).toBeDisabled();
   await tick(page, 0).click();
   await tick(page, 1).click();
   await expect(tick(page, 0)).toHaveAttribute("aria-checked", "true");
   await expect(page.getByText("2 packet baaki · thaile me rakh kar tick karein")).toBeVisible();
-  await expect(all(page, 4)).toBeDisabled();
+  await expect(all(page)).toBeDisabled();
   await tick(page, 2).click();
   await tick(page, 3).click();
-  await expect(all(page, 4)).toBeEnabled();   // board RT2
+  await expect(all(page)).toBeEnabled();   // board RT2
   await expect(page.getByText(/packet baaki/)).toHaveCount(0);
   await tick(page, 3).click();   // a tick can be taken back
-  await expect(all(page, 4)).toBeDisabled();
+  await expect(all(page)).toBeDisabled();
 });
 
-test("RT2 Picked up all 3 picks up each packet once, then the first door shows and the rest wait", async ({ page, context }) => {
+test("RT2 Picked up all picks up each packet once, then the first door shows and the rest wait", async ({ page, context }) => {
   const net = await open(context, page, [0, 1, 2].map((i) => packet(i)));
   for (const i of [0, 1, 2]) await tick(page, i).click();
-  await all(page, 3).click();
+  await all(page).click();
   await expect(page.getByRole("heading", { name: "On the way" })).toBeVisible();
   await expect.poll(() => net.calls.status.map((c) => c.body)).toEqual(IDS.slice(0, 3).map((id) => ({ order_id: id, action: "pickup" })));   // one save each, in turn
   await expect(page.getByText("2 more waiting")).toBeVisible();
@@ -76,7 +76,7 @@ test("RT4 a trip of 3, the second pickup fails: the third is not sent, the error
     return route.fallback();
   });
   for (const i of [0, 1, 2]) await tick(page, i).click();
-  await all(page, 3).click();
+  await all(page).click();
   await expect(page.getByRole("alert")).toHaveText("That step is not allowed now.");
   expect(net.calls.status.map((c) => c.body.order_id)).toEqual([IDS[0]]);   // the failed one never reached the mock; the third was not sent
   await expect(page.getByRole("heading", { name: "Pick up" })).toBeVisible();
@@ -93,3 +93,21 @@ test("RT5 a trip on the way: Could not deliver? at the second door marks only th
   expect(net.calls.rpc.filter((c) => c.name === "rider_refused").map((c) => c.body)).toEqual([{ p_order: IDS[1] }]);
   expect(net.calls.status).toEqual([]);
 });
+
+for (const [w, h] of [[360, 640], [390, 844]]) {
+  test(`RT7 story 1716 at ${w} x ${h}: the pick-up button is named exactly Picked up all, one line, 44 px tall or more, and the packet count stays on the screen`, async ({ page, context }) => {
+    await page.setViewportSize({ width: w, height: h });
+    await open(context, page, [0, 1, 2].map((i) => packet(i)));
+    const btn = all(page);
+    await expect(btn).toHaveCount(1);
+    await expect(btn).toHaveText("Picked up all");
+    const box = (await btn.boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(box.x + box.width).toBeLessThanOrEqual(w);
+    const lines = await btn.evaluate((el) => { const r = document.createRange(); r.selectNodeContents(el); return new Set(Array.from(r.getClientRects()).map((q) => Math.round(q.top))).size; });
+    expect(lines).toBe(1);
+    await expect(page.getByText("This trip · 3 packets")).toBeVisible();
+    await expect(page.getByText("To collect, 3 doors")).toBeVisible();
+    console.log(`PX1716 ${w}: w=${box.width} h=${box.height}`);
+  });
+}

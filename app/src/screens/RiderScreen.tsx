@@ -219,7 +219,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
             </div>
             <div className="ui-bottom">
               {left > 0 && <p role="status" className="ui-rx-next">{left} packet baaki · thaile me rakh kar tick karein</p>}
-              <button type="button" className="ui-btn big" disabled={left > 0 || tripBusy} onClick={() => void pickAll(trip)}>Picked up all {trip.length}</button>
+              <button type="button" className="ui-btn big" disabled={left > 0 || tripBusy} onClick={() => void pickAll(trip)}>Picked up all</button>
             </div>
           </>
         );
