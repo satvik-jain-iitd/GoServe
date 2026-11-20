@@ -2,12 +2,14 @@
 """Repo guard (PLAN.md 9.1, CLAUDE.md rule 13). Stdlib only.
   guard.py files <paths...>   secrets, files over 500KB, merge markers, unclosed code blocks
   guard.py msg <message>      Conventional Commits, short subject
-  guard.py count <n> [title]  PR size, max 50 files (a title starting chore(sync) skips the cap)
+  guard.py count [title]      PR size from the changed paths on stdin, max 100 code files; test files are not counted (a title starting chore(sync) skips the cap)
 Used by .pre-commit-config.yaml and by CI."""
 import os, re, sys
 
 MAX_BYTES = 500 * 1024
-MAX_FILES = 50
+MAX_FILES = 100   # code files; test files are not counted (story 1727)
+# A test file: under app/tests/ or spec/, a scripts/test_*.py file, or anything in a screens-baseline folder.
+TEST_PATH = re.compile(r"^(app/tests/|spec/)|(^|/)screens-baseline/|^scripts/test_[^/]*\.py$")
 SECRET = re.compile(
     r"-----BEGIN [A-Z ]*PRIVATE KEY-----"
     r"|sk-or-v1-[A-Za-z0-9]{20,}|sk-ant-[A-Za-z0-9_-]{20,}"
@@ -55,10 +57,12 @@ def check_message(msg):
     return None
 
 
-def check_count(n, title=""):
+def check_count(paths, title=""):
     if title.startswith("chore(sync)"):   # a sync of main into staging: the code was reviewed on main, the cap does not apply (reviewer, 28 Oct 2026, story #621)
         return None
-    return f"PR changes {n} files, max {MAX_FILES}" if n > MAX_FILES else None
+    code = [p for p in paths if not TEST_PATH.search(p)]
+    tests = len(paths) - len(code)
+    return f"PR changes {len(code)} code files and {tests} test files, max {MAX_FILES} code files" if len(code) > MAX_FILES else None
 
 
 if __name__ == "__main__":
@@ -68,7 +72,7 @@ if __name__ == "__main__":
     elif cmd == "msg":
         errs = [e for e in [check_message(args[0])] if e]
     elif cmd == "count":
-        errs = [e for e in [check_count(int(args[0]), args[1] if len(args) > 1 else "")] if e]
+        errs = [e for e in [check_count([l.strip() for l in sys.stdin if l.strip()], args[0] if args else "")] if e]
     else:
         sys.exit(f"unknown command {cmd}")
     print("\n".join(errs))
