@@ -75,13 +75,13 @@ test("RX3.7 at 360 x 640 with the longest legal address and a 200-letter note, t
   await page.setViewportSize({ width: 360, height: 640 });
   const address = `${words(120, "House")}, ${words(120, "Landmark")}, Lajpat Nagar II, South East Delhi, Delhi 110024`;
   const net = await open(page, context, job({ address, instructions: words(200, "Ring") }));
-  const inView = async (name: RegExp) => { const b = (await page.getByRole("button", { name }).boundingBox())!; expect(b.y + b.height).toBeLessThanOrEqual(640); };
+  const inView = async (name: RegExp | string) => { const b = (await page.getByRole("button", { name }).boundingBox())!; expect(b.y + b.height).toBeLessThanOrEqual(640); };
   const tabs = (await page.getByRole("navigation", { name: "Main" }).boundingBox())!;
   expect(tabs.y + tabs.height).toBeLessThanOrEqual(640);
   await inView(/^Arriving/);   // story 1182 layer 2: one button at a time, Arriving then Collect
   await page.getByRole("button", { name: /^Arriving/ }).click();
-  await inView(/^Collect ₹/);
-  await page.getByRole("button", { name: /^Collect ₹/ }).click();
+  await inView("Collect");
+  await page.getByRole("button", { name: "Collect", exact: true }).click();
   await expect(page.getByRole("region", { name: /^Collect payment/ })).toBeVisible();
   expect(net.calls.status.filter((c) => c.body.action === "deliver")).toEqual([]);
 });

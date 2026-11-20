@@ -55,11 +55,11 @@ test("TC 18.1 Filter sheet: the title, N of M dishes, Veg only, a row per group 
   await expect(rows.nth(1)).not.toBeChecked();
   await expect(rows.nth(2)).not.toBeChecked();
   await expect(s.getByRole("link", { name: "Clear all" })).toHaveCount(0);
-  await expect(s.getByRole("button", { name: "Show 5 dishes" })).toBeVisible();
+  await expect(s.getByRole("button", { name: "Show dishes" })).toBeVisible();
   // Clear all shows once a group is ticked, so tick one to see it, then check the filled Show button.
   await group(page, "Mains").check();
   await expect(s.getByRole("link", { name: "Clear all" })).toBeVisible();
-  const show = s.getByRole("button", { name: "Show 2 dishes" });
+  const show = s.getByRole("button", { name: "Show dishes" });
   await expect(show).toBeVisible();
   expect(await show.evaluate((e) => getComputedStyle(e).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");   // filled, not an outline
 });
@@ -69,7 +69,7 @@ test("TC 18.2 tick two groups, Show: the menu shows only the ticked groups", asy
   await openFilter(page);
   await group(page, "Mains").check();
   await group(page, "Desserts").check();
-  await sheet(page).getByRole("button", { name: "Show 3 dishes" }).click();
+  await sheet(page).getByRole("button", { name: "Show dishes" }).click();
   await expect(sheet(page)).toBeHidden();
   await expect(dish(page, "Dal Makhani")).toBeVisible();
   await expect(dish(page, "Gulab Jamun")).toBeVisible();
@@ -83,7 +83,7 @@ test("TC 18.3 Veg only on: the count and the list change to veg only", async ({ 
   await openFilter(page);
   await sheet(page).getByRole("switch", { name: /^Veg only/ }).check();
   await expect(sheet(page).getByText("3 of 5 dishes")).toBeVisible();
-  await sheet(page).getByRole("button", { name: "Show 3 dishes" }).click();
+  await sheet(page).getByRole("button", { name: "Show dishes" }).click();
   await expect(sheet(page)).toBeHidden();
   await expect(dish(page, "Paneer Tikka")).toBeVisible();
   await expect(dish(page, "Dal Makhani")).toBeVisible();
@@ -98,7 +98,7 @@ test("TC 18.4 tick a group, then untick it: the whole menu is back and Show can 
   await group(page, "Mains").check();
   await group(page, "Mains").uncheck();
   await expect(sheet(page).getByText("5 of 5 dishes")).toBeVisible();
-  await expect(sheet(page).getByRole("button", { name: "Show 5 dishes" })).toBeEnabled();
+  await expect(sheet(page).getByRole("button", { name: "Show dishes" })).toBeEnabled();
 });
 
 test("TC 18.5 Clear all: no group ticked, the whole menu is back and the Clear all link is gone (#972)", async ({ page, context }) => {

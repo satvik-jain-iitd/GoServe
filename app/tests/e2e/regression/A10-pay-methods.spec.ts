@@ -53,12 +53,12 @@ test("TC A10.4 The rider sees the QR the admin uploaded on Collect payment, and 
   net.state.qrObject = obj;
   await page.goto("/rider/");
   await page.getByRole("button", { name: "Arriving 0f0f0f0f" }).click();
-  await page.getByRole("button", { name: /^Collect ₹/ }).click();   // story 1182, board RY3
+  await page.getByRole("button", { name: "Collect", exact: true }).click();   // story 1182, board RY3
   await expect(page.getByRole("img", { name: "UPI QR to scan" })).toHaveAttribute("src", `https://test.supabase.co/storage/v1/object/public/upi-qr/${obj}`);
   await expect(page.getByRole("button", { name: "Paid by UPI ₹640" })).toBeVisible();
   await page.getByRole("button", { name: "Back" }).click();
   net.state.qrObject = null; net.state.doorMethods = ["cash"];
-  await page.getByRole("button", { name: /^Collect ₹/ }).click();   // story 1182, board RY3
+  await page.getByRole("button", { name: "Collect", exact: true }).click();   // story 1182, board RY3
   await expect(page.getByRole("img")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Paid by UPI ₹640" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Took cash", exact: true })).toBeVisible();

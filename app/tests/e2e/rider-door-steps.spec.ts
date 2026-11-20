@@ -1,5 +1,5 @@
 // Story 1182 (owner, 13 Nov 2026, DECIDED, boards RY1 to RY3): the rider's door steps. The bottom zone holds one button at a time.
-// Far from the pin: the distance and a quiet "I am at the door" link. Near: "Arriving · tell <first name>". After Arriving: the "Say at the door" card and "Collect ₹<amount>".
+// Far from the pin: the distance and a quiet "I am at the door" link. Near: "Arriving · tell <first name>". After Arriving: the "Say at the door" card and "Collect".
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { SESSION, order, setup } from "./helpers";
 
@@ -41,14 +41,14 @@ test("RY2 near the pin: exactly one button in the bottom zone, Arriving · tell 
   await expect(page.getByRole("button", { name: "I am at the door" })).toHaveCount(0);
 });
 
-test("RY3 after Arriving: the card Say at the door with the rider's own first name; exactly one button, Collect ₹<amount>; it opens Collect payment", async ({ page, context }) => {
+test("RY3 after Arriving: the card Say at the door with the rider's own first name; exactly one button, Collect; it opens Collect payment", async ({ page, context }) => {
   await open(page, context, NEAR);
   await arriving(page).click();
   const card = page.getByRole("region", { name: "Say at the door" });
   await expect(card).toContainText("Namaste sir, main Amit, GoServe kitchen team se. Thank you for ordering.");
   await expect(page.getByText(/^Rahul was told at \d\d:\d\d$/)).toBeVisible();
   await expect(bottom(page)).toHaveCount(1);
-  await expect(bottom(page)).toHaveText("Collect ₹640");
+  await expect(bottom(page)).toHaveText("Collect");
   await bottom(page).click();
   await expect(page.getByRole("region", { name: /^Collect payment/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /^Took cash/ })).toBeVisible();
@@ -57,7 +57,7 @@ test("RY3 after Arriving: the card Say at the door with the rider's own first na
 test("RY3b after Arriving, a reload still shows step 3", async ({ page, context }) => {
   await open(page, context, NEAR, job(), { arrivingAt: "2026-11-13T09:12:00Z" });   // the server has the Arriving row from an earlier tap or another phone
   await expect(page.getByRole("region", { name: "Say at the door" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Collect ₹640" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Collect", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: /^Arriving/ })).toHaveCount(0);
 });
 
@@ -116,3 +116,21 @@ test("RY7 the boards' look: a quiet underlined link, a surface card with a green
   const head = await style(page.getByRole("region", { name: "Say at the door" }).getByText("Say at the door", { exact: true }));
   expect({ size: head.size, weight: head.weight, mono: /mono/i.test(head.family), color: head.color }).toEqual({ size: "12px", weight: "400", mono: true, color: link.color });
 });
+
+for (const [w, h] of [[360, 640], [390, 844]]) {
+  test(`RY3c story 1715 at ${w} x ${h}: the cash button is named exactly Collect, one line, 44 px tall or more, and the amount stays on the card`, async ({ page, context }) => {
+    await page.setViewportSize({ width: w, height: h });
+    await open(page, context, NEAR);
+    await arriving(page).click();
+    const btn = page.getByRole("button", { name: "Collect", exact: true });
+    await expect(btn).toHaveCount(1);
+    await expect(btn).toHaveText("Collect");
+    const box = (await btn.boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(box.x + box.width).toBeLessThanOrEqual(w);
+    const lines = await btn.evaluate((el) => { const r = document.createRange(); r.selectNodeContents(el); return new Set(Array.from(r.getClientRects()).map((q) => Math.round(q.top))).size; });
+    expect(lines).toBe(1);
+    await expect(page.locator(".ui-slip-total", { hasText: "To collect at door" })).toContainText("₹640");
+    console.log(`PX1715 ${w}: w=${box.width} h=${box.height}`);
+  });
+}
