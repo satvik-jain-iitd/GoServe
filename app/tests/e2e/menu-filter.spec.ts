@@ -31,7 +31,7 @@ test("S2 tick Breads: only breads show and the count says so; tick Rice too: bot
   await expect(sheet.getByText("2 of 6 dishes")).toBeVisible();
   await sheet.getByRole("checkbox", { name: "Rice" }).check();
   await expect(sheet.getByText("3 of 6 dishes")).toBeVisible();
-  await sheet.getByRole("button", { name: "Show 3 dishes" }).click();
+  await sheet.getByRole("button", { name: "Show dishes" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   for (const n of ["Tandoori Roti", "Keema Naan", "Jeera Rice"]) await expect(page.getByRole("heading", { name: n })).toBeVisible();
   for (const n of ["Dal Makhani", "Butter Chicken", "Gulab Jamun"]) await expect(page.getByRole("heading", { name: n })).toHaveCount(0);
@@ -54,7 +54,7 @@ test("S4 Veg only with Breads shows only the veg breads", async ({ page, context
   await sheet.getByRole("switch", { name: /Veg only/ }).check();
   await sheet.getByRole("checkbox", { name: "Breads" }).check();
   await expect(sheet.getByText("1 of 6 dishes")).toBeVisible();
-  await sheet.getByRole("button", { name: "Show 1 dish" }).click();
+  await sheet.getByRole("button", { name: "Show dishes" }).click();
   await expect(page.getByRole("heading", { name: "Tandoori Roti" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Keema Naan" })).toHaveCount(0);
 });
@@ -64,7 +64,7 @@ test("S5 ticks that match nothing show the Nothing matches card with the way out
   await sheet.getByRole("switch", { name: /Veg only/ }).check();
   await sheet.getByRole("checkbox", { name: "Mains" }).check();
   await sheet.getByRole("checkbox", { name: "Mains" }).uncheck();
-  await sheet.getByRole("button", { name: /^Show \d+ dish(es)?$/ }).click();
+  await sheet.getByRole("button", { name: "Show dishes" }).click();
   await page.getByRole("searchbox", { name: "Search dishes" }).fill("zzz");
   await expect(page.getByText("Nothing matches")).toBeVisible();
   await expect(page.getByText("Try another word or clear the filters.")).toBeVisible();
@@ -83,7 +83,7 @@ test("S9 a Thali row is first in the list with its count; ticking it alone keeps
   await expect(sheet.getByText("4 of 4 dishes")).toBeVisible();   // the rows add up: 2 thalis + 2 mains
   await rows.first().check();
   await expect(sheet.getByText("2 of 4 dishes")).toBeVisible();
-  await sheet.getByRole("button", { name: "Show 2 dishes" }).click();
+  await sheet.getByRole("button", { name: "Show dishes" }).click();
   await expect(page.getByText("Veg Thali").first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "Dal Makhani" })).toHaveCount(0);
 });
@@ -106,3 +106,29 @@ test("S11 thalis under two category words give one Thali row, and ticking it kee
   await group.getByRole("checkbox", { name: /^Thali\b/ }).check();
   await expect(sheet.getByText("2 of 3 dishes")).toBeVisible();   // the tick keeps both
 });
+
+// Story 1717: the filter button says only "Show dishes" in every state (the sheet head carries the count); it keeps its place, width and one line.
+for (const vp of [{ width: 360, height: 640 }, { width: 390, height: 844 }]) {
+  test(`S11 the filter button is exactly Show dishes at ${vp.width}x${vp.height}, one line, 44 tall, and does not move when the count changes`, async ({ page, context }) => {
+    await page.setViewportSize(vp);
+    const sheet = await open(page, context);
+    const btn = sheet.getByRole("button", { name: "Show dishes", exact: true });
+    await expect(sheet.getByText("6 of 6 dishes")).toBeVisible();
+    await page.waitForTimeout(600);   // the sheet has finished sliding in
+    const before = (await btn.boundingBox())!;
+    expect(before.height).toBeGreaterThanOrEqual(44);
+    const lines = () => btn.evaluate((e) => { const r = document.createRange(); r.selectNodeContents(e); return r.getClientRects().length; });
+    expect(await lines()).toBe(1);
+    console.log("MB-PX", vp.width, JSON.stringify(before));
+    await sheet.getByRole("checkbox", { name: "Sweets" }).check();   // one dish
+    await expect(sheet.getByText("1 of 6 dishes")).toBeVisible();
+    await expect(btn).toBeVisible();
+    await sheet.getByRole("checkbox", { name: "Breads" }).check();   // three dishes
+    await expect(sheet.getByText("3 of 6 dishes")).toBeVisible();
+    expect(await lines()).toBe(1);
+    await page.waitForTimeout(600);
+    const after = (await btn.boundingBox())!;
+    expect({ x: after.x, width: after.width, height: after.height }).toEqual({ x: before.x, width: before.width, height: before.height });   // same width; the sheet grows upward from the bottom (Clear all appears), so the foot of the button stays put
+    expect(vp.height - (after.y + after.height)).toBeCloseTo(vp.height - (before.y + before.height), 0);
+  });
+}

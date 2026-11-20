@@ -33,7 +33,7 @@ for (const theme of ["day", "night"] as const) {
     await shot("Menu");
     await page.getByRole("button", { name: "Filter" }).click();
     await shot("Categories");
-    await page.getByRole("button", { name: /Show \d+ dishes/ }).click();
+    await page.getByRole("button", { name: "Show dishes" }).click();
     await page.getByRole("button", { name: "Chicken Curry details" }).click();
     await shot("Dish");
     await page.getByRole("button", { name: "Close", exact: true }).click();
