@@ -18,7 +18,7 @@ const deliver = async (context: BrowserContext, page: Page, orders: object[], ho
   Object.assign(net.state, state);
   await page.goto("/rider/");
   await page.getByRole("button", { name: `Arriving ${ID.slice(0, 8)}` }).click();
-  await page.getByRole("button", { name: /^Collect ₹/ }).click();
+  await page.getByRole("button", { name: "Collect", exact: true }).click();
   await page.getByRole("button", { name: new RegExp(`^${how}`) }).click();
   await expect(page.getByText("Delivered", { exact: true })).toBeVisible();
   return net;
@@ -101,7 +101,7 @@ test("CP1 the Collect payment screen: the line under the QR reads Pehle paisa, p
   net.state.qrObject = "qr-0a1b2c3d-0000-4000-8000-0123456789ab.png";
   await page.goto("/rider/");
   await page.getByRole("button", { name: `Arriving ${ID.slice(0, 8)}` }).click();
-  await page.getByRole("button", { name: /^Collect ₹/ }).click();
+  await page.getByRole("button", { name: "Collect", exact: true }).click();
   await expect(page.getByText("Pehle paisa, phir button.", { exact: true })).toBeVisible();
 });
 

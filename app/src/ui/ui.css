@@ -631,13 +631,14 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-noteband-text { font-size: 20px; font-weight: 700; line-height: 1.25; white-space: normal; overflow-wrap: anywhere; }
 /* Story 972, board F1-Filter: a checkbox per category */
 .ui-switch-note { font-size: 11px; font-weight: 400; color: var(--gs-text-muted); }
-.ui-cats { display: flex; flex-direction: column; padding: 0 var(--gs-gutter); }
+.ui-cats { display: flex; flex-direction: column; padding: 0 var(--gs-gutter); min-height: 0; overflow-y: auto; }   /* story 1719: with many categories the list scrolls, the button below it does not */
 .ui-cat-row { display: grid; grid-template-columns: 24px 1fr auto; gap: 12px; align-items: center; cursor: pointer; }
 .ui-cat-row input { width: 22px; height: 22px; margin: 0; accent-color: var(--md-primary); }
 .ui-cat-row span { font-weight: 400; }
 .ui-cat-row span.on { font-weight: 600; }
 .ui-cat-row .ui-count { font-weight: 400; }
-.ui-clear { align-self: flex-end; margin: 8px 0 0; font-size: 12px; color: var(--md-primary); }
+.ui-clear { flex: none; align-self: flex-end; display: flex; align-items: center; min-height: 44px; margin: 0 0 8px; font-size: 12px; color: var(--md-primary); }   /* story 1719: a whole 44 px row, 8 px above the button; always there so ticking never moves the button */
+.ui-clear.off { visibility: hidden; }   /* keeps its room; hidden from keys and readers while nothing is ticked */
 
 /* Story 983: on a short landscape screen the lockup keeps a phone-sized width (it scales with the width and would fill the screen). After the base rules on purpose. */
 @media (orientation: landscape) and (max-height: 520px) {

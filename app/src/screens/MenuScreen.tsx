@@ -278,7 +278,7 @@ function Modal({ label, onClose, children }: { label: string; onClose: () => voi
   );
 }
 
-// Story #972, board F1-Filter: a checkbox per category (multi-select, none ticked is all), the veg switch for the whole menu, the count of what matches, Show n dishes.
+// Story #972, board F1-Filter: a checkbox per category (multi-select, none ticked is all), the veg switch for the whole menu, the count of what matches, Show dishes.
 function FilterSheet({ count, total, vegOnly, onVeg, sections, ticked, onTick, onClear, onClose }: { count: number; total: number; vegOnly: boolean; onVeg: (v: boolean) => void; sections: { id: string; title: string; dishes: Dish[] }[]; ticked: string[]; onTick: (key: string, on: boolean) => void; onClear: () => void; onClose: () => void }) {
   return (
     <Modal label="Filter" onClose={onClose}>
@@ -298,9 +298,9 @@ function FilterSheet({ count, total, vegOnly, onVeg, sections, ticked, onTick, o
             </label>
           );
         })}
-        {ticked.length > 0 && <a href="#" className="mono ui-clear" onClick={(e) => { e.preventDefault(); onClear(); }}>Clear all</a>}
+        <a href="#" className={`mono ui-clear${ticked.length ? "" : " off"}`} onClick={(e) => { e.preventDefault(); onClear(); }}>Clear all</a>
       </div>
-      <button type="button" className="ui-btn big" onClick={onClose}>Show {count} {count === 1 ? "dish" : "dishes"}</button>
+      <button type="button" className="ui-btn big" onClick={onClose}>Show dishes</button>
     </Modal>
   );
 }
