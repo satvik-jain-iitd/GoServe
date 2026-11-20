@@ -23,11 +23,12 @@ type Props = {
   onChangePaid: (order: Order, method: DoorMethod) => Promise<string | null>;
   pastDays?: number | "fail" | null;   // story 1442: the admin's "Past days" number; "fail" when the read failed, null while it is on its way
   onRetryPastDays?: () => void;
+  supportPhone?: string | null;   // story 1718: the admin's number; null when none is set or the read failed
   incentive?: Rates | null;   // stories 1443 and 1438: the admin's switch and its recent changes; null when the read failed or is on its way   // story 1448: put a wrong cash or UPI tap right; the refusal code, or null when saved
 };
 const TABS: { key: Tab; label: string; icon: Tab }[] = [{ key: "job", label: "Delivery", icon: "job" }, { key: "today", label: "Today", icon: "today" }, { key: "me", label: "Me", icon: "me" }];
 
-export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, methods: methodsRead, qrUrl, onLoadMethods, gate, kitchen, onAtDoor, onChangePaid, incentive = null, pastDays = null, onRetryPastDays }: Props) {
+export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, methods: methodsRead, qrUrl, onLoadMethods, gate, kitchen, onAtDoor, onChangePaid, incentive = null, pastDays = null, onRetryPastDays, supportPhone = null }: Props) {
   const methods = qrUrl === undefined ? null : methodsRead;   // the screen names nothing until both answers are in
   const [tab, setTab] = useState<Tab>("job");
   const [doneId, setDoneId] = useState<string | null>(null);   // the slip just delivered stays until "Next delivery" (R7)
@@ -160,7 +161,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
           </section>
           <div className="ui-bottom">
             {methods !== null && methods.length === 0 && <button type="button" className="ui-btn big" onClick={onLoadMethods}>Try again</button>}
-            {(deliver || changing) && cash && <button type="button" className={upi ? "ui-btn ghost big" : "ui-btn big"} disabled={busy} onClick={() => pick("cash")}>Took cash {amount}</button>}
+            {(deliver || changing) && cash && <button type="button" className={upi ? "ui-btn ghost big" : "ui-btn big"} disabled={busy} onClick={() => pick("cash")}>Took cash</button>}
             {(deliver || changing) && upi && <button type="button" className="ui-btn big" disabled={busy} onClick={() => pick("upi_door")}>Paid by UPI {amount}</button>}
             <button type="button" className="ui-btn text" disabled={busy} onClick={() => (changing ? setChangeId(null) : setCollectId(null))}>Back</button>
           </div>
@@ -219,7 +220,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
             </div>
             <div className="ui-bottom">
               {left > 0 && <p role="status" className="ui-rx-next">{left} packet baaki · thaile me rakh kar tick karein</p>}
-              <button type="button" className="ui-btn big" disabled={left > 0 || tripBusy} onClick={() => void pickAll(trip)}>Picked up all {trip.length}</button>
+              <button type="button" className="ui-btn big" disabled={left > 0 || tripBusy} onClick={() => void pickAll(trip)}>Picked up all</button>
             </div>
           </>
         );
@@ -280,7 +281,8 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
             {door.step === 2 && door.awayText && <p className="mono ui-rx-door">{door.awayText} to the door</p>}
             {door.step === 2 && button(job, first, `Arriving · tell ${firstName(job.customer_name)}`)}
             {door.step === 3 && told && <p className="mono ui-rx-door">{firstName(job.customer_name)} was told at {hhmm(told)}</p>}
-            {door.step === 3 && rest[0] && <button type="button" className="ui-btn big" disabled={busyId === job.id} onClick={() => openCollect(job)}>Collect {formatRupees(job.total_paise)}</button>}
+            {door.step === 3 && rest[0] && supportPhone && <a className="ui-btn big ghost" href={`tel:${supportPhone}`}>Call support</a>}
+            {door.step === 3 && rest[0] && <button type="button" className="ui-btn big" disabled={busyId === job.id} onClick={() => openCollect(job)}>Collect</button>}
           </div>
         </>
       );

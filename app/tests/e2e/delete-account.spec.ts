@@ -74,3 +74,47 @@ test("S6 the privacy page has a Delete your account section at #delete, and no d
   await page.goto("/privacy/#delete");
   await expect(page.getByRole("heading", { name: "Delete your account" })).toBeInViewport();
 });
+
+// Story 1705 (owner, 20 Nov 2026, epic 1690): the two answers are an equal half and half pair, 56 px tall, red "Delete" left, "Keep it" right. Both are asleep while it deletes and keep their size.
+type Pg = import("@playwright/test").Page;
+const rect = (loc: ReturnType<Pg["locator"]>) => loc.evaluate((e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+const lines = (loc: ReturnType<Pg["locator"]>) => loc.evaluate((e) => { const r = document.createRange(); r.selectNodeContents(e); return { text: r.getBoundingClientRect().height, line: parseFloat(getComputedStyle(e).lineHeight) || parseFloat(getComputedStyle(e).fontSize) * 1.2 }; });
+const settle = (page: Pg) => page.evaluate(async () => { await Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => undefined))); });
+for (const [w, h] of [[360, 640], [390, 844]]) {
+  test(`S7 the answers are an equal pair, 56 px tall: red Delete left, Keep it right, same top, together as wide as the sheet's content, one line each (${w}x${h})`, async ({ page, context }) => {
+    await setup(context, page);
+    await page.setViewportSize({ width: w, height: h });
+    const sheet = await openSheet(page);
+    await settle(page);
+    const del = sheet.getByRole("button", { name: "Delete", exact: true }), keep = sheet.getByRole("button", { name: "Keep it", exact: true });
+    const [a, b, s] = [await rect(del), await rect(keep), await rect(sheet)];
+    const pad = await sheet.evaluate((e) => { const c = getComputedStyle(e); return { l: parseFloat(c.paddingLeft) + parseFloat(c.borderLeftWidth), r: parseFloat(c.paddingRight) + parseFloat(c.borderRightWidth) }; });
+    expect(a.x).toBeLessThan(b.x);
+    expect(Math.abs(a.w - b.w)).toBeLessThanOrEqual(1);
+    expect(Math.abs(a.y - b.y)).toBeLessThanOrEqual(1);
+    expect(Math.abs(a.h - 56)).toBeLessThanOrEqual(1);
+    expect(Math.abs(b.h - 56)).toBeLessThanOrEqual(1);
+    expect(Math.abs(a.x - (s.x + pad.l))).toBeLessThanOrEqual(1);
+    expect(Math.abs(b.x + b.w - (s.x + s.w - pad.r))).toBeLessThanOrEqual(1);
+    for (const l of [await lines(del), await lines(keep)]) expect(l.text).toBeLessThan(1.5 * l.line);
+  });
+}
+
+test("S8 while it deletes both buttons are asleep and keep their size, and Deleting stays on one line", async ({ page, context }) => {
+  await setup(context, page);
+  await page.setViewportSize({ width: 360, height: 640 });
+  await page.route("**/rpc/delete_my_account*", async (route) => { await new Promise((r) => setTimeout(r, 1500)); await route.fallback(); });
+  const sheet = await openSheet(page);
+  await settle(page);
+  const del = sheet.getByRole("button", { name: "Delete", exact: true }), keep = sheet.getByRole("button", { name: "Keep it", exact: true });
+  const [a0, b0] = [await rect(del), await rect(keep)];
+  await del.click();
+  const busy = sheet.getByRole("button", { name: "Deleting…" });
+  await expect(busy).toBeDisabled();
+  await expect(keep).toBeDisabled();
+  const [a1, b1] = [await rect(busy), await rect(keep)];
+  expect(a1).toEqual(a0);
+  expect(b1).toEqual(b0);
+  const l = await lines(busy);
+  expect(l.text).toBeLessThan(1.5 * l.line);
+});

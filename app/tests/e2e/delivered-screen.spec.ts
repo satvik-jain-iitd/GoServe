@@ -71,7 +71,7 @@ test("D6 a kitchen with no phone: only the Order again button", async ({ page, c
 });
 
 // The reviewer's ask on PR #1511: the status box keeps its rows and times (story 1507) on a delivered order, and the last row shows its own time, not "Now".
-test("D7 A delivered order: the last step row, At your door, shows the time of the delivery, and no row says Now", async ({ page, context }) => {
+test("D7 A delivered order: the last step row, Delivered, shows the time of the delivery, and no row says Now", async ({ page, context }) => {
   const ev = (event: string, when: string) => ({ id: `e-${event}`, order_id: ID, kitchen_id: "k", session_id: SESSION, event, actor: "rider", created_at: when });
   const net = await setup(context, page, [order("out_for_delivery")]);
   net.state.kitchens = KITCHEN;
@@ -82,7 +82,7 @@ test("D7 A delivered order: the last step row, At your door, shows the time of t
   net.state.events = [...net.state.events, ev("order.delivered", at(20, 8))];
   net.push("UPDATE", { ...order("delivered", at(21, 30)), delivered_at: at(20, 8), promised_at: at(20, 12) });
   await expect(slip(page)).toBeVisible();
-  await expect(list.getByRole("listitem").filter({ hasText: "At your door" })).toHaveText("At your door8:08 pm");
+  await expect(list.getByRole("listitem").filter({ hasText: "Delivered" })).toHaveText("Delivered8:08 pm");
   await expect(list.getByRole("listitem").filter({ hasText: "On the way" })).toHaveText("On the way7:58 pm");
   await expect(list.getByText("Now")).toHaveCount(0);
 });

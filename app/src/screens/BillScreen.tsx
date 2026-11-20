@@ -6,7 +6,7 @@ import { DOOR_METHODS, type DoorMethod } from "../lib/doorMethods";
 import type { Alternative, Quote } from "../lib/quote";
 import { useEffect, useRef, useState } from "react";
 import { SIGN_IN_LINE } from "../lib/errorLines";
-import { TornTop } from "../ui";
+import { TornTop, useSheetFit } from "../ui";
 
 type Props = {
   lines: Line[]; total: number; kitchenName: string; pin: string | null;
@@ -28,7 +28,7 @@ export const CONFIRM_PLACE_LINE = "Confirm your place on the map to place the or
 // Story 1548, rule 11: far from the phone, the row says how far, in the place of the small "Deliver to" label (the reviewer's call): no line is added, so the row has
 // one height either way (owner's rule 23). The row's own name stays "Deliver to". farKm null or not given: not far, or the phone's place is not known.
 export const PlaceRow = ({ words, onChange, farKm }: { words: string; onChange: () => void; farKm?: number | null }) => (
-  <div className="ui-phone-row" role="group" aria-label="Deliver to"><span><small className="mono">{farKm == null ? "Deliver to" : `${farKm} km from your current location`}</small><span>{words.trim() || "Not set yet"}</span></span><button type="button" className="ui-pinmap-change" aria-label="Change address" onClick={onChange}>Change</button></div>
+  <div className="ui-phone-row" role="group" aria-label="Serving at"><span><small className="mono">{farKm == null ? "Serving at" : `${farKm} km from your current location`}</small><span>{words.trim() || "Not set yet"}</span></span><button type="button" className="ui-pinmap-change" aria-label="Change address" onClick={onChange}>Change</button></div>
 );
 const plain = (paise: number) => formatRupees(paise).replace("₹", "");
 export const BackChevron = ({ label, onClick }: { label: string; onClick: () => void }) => (
@@ -36,6 +36,32 @@ export const BackChevron = ({ label, onClick }: { label: string; onClick: () => 
     <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="square"><path d="M15 6l-6 6 6 6" /></svg>
   </button>
 );
+
+// Story 1706 (owner, 20 Nov 2026): the sold-out offer is a bottom sheet that needs an answer. No close control, no tap-outside, no Escape, no history step:
+// Back leaves the Bill, and the Bill opens the sheet again while the dish is still sold out. Focus is on the dialog itself (so Enter swaps nothing) and stays inside it.
+function SwapSheet({ soldOut, alt }: { soldOut: NonNullable<Props["soldOut"]>; alt: Alternative }) {
+  const fit = useSheetFit();
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    box.current?.focus();
+    const keep = (e: FocusEvent) => { if (!box.current?.contains(e.target as Node)) box.current?.focus(); };
+    document.addEventListener("focusin", keep);
+    return () => document.removeEventListener("focusin", keep);
+  }, []);
+  return (
+    <div ref={fit} className="ui-sheet-back">
+      <div ref={box} role="dialog" aria-modal="true" aria-labelledby="swap-head" tabIndex={-1} className="ui-sheet ui-swap-sheet">
+        <div className="ui-sheet-head"><h2 id="swap-head">{soldOut.line ?? `${soldOut.name} is sold out`}</h2></div>
+        <p className="ui-swap-try">Try {alt.name} instead</p>
+        <p className="ui-swap-price"><span className="mono">{formatRupees(alt.price_paise - alt.discount_paise)}</span> <span className="mono was">{formatRupees(alt.price_paise)}</span> · {Math.round((100 * alt.discount_paise) / Math.max(1, alt.price_paise))}% off from us, sorry for the trouble</p>
+        <div className="ui-sheet-acts">
+          <button type="button" className="ui-btn ghost big" onClick={soldOut.onRemove}>Take it out</button>
+          <button type="button" className="ui-btn big" onClick={soldOut.onSwap}>Swap it in</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function BillScreen({ lines, total, kitchenName, pin, address, farKm = null, confirmed, onChangePlace, onConfirmPlace, note, onNote, details, offers, soldOut, door, sending, error, onSignIn, under, onBack, onPlace }: Props) {
   const [typed, setTyped] = useState("");
@@ -88,24 +114,11 @@ export function BillScreen({ lines, total, kitchenName, pin, address, farKm = nu
             {!empty && <button type="button" className="ui-btn ghost ui-add-more" onClick={onBack}>+ Add more</button>}
           </div>
         </section>
-        {soldOut && (
+        {soldOut && soldOut.alt && soldOut.canSwap && <SwapSheet soldOut={soldOut} alt={soldOut.alt} />}
+        {soldOut && !(soldOut.alt && soldOut.canSwap) && (   /* story 1706: no swap to offer (a dish the new kitchen does not make, or the quote not back yet): the old box with its one way out stays, as today */
           <div role="alert" className="ui-swap">
             <p className="ui-swap-reason">{soldOut.line ?? `${soldOut.name} is sold out.`}</p>
-            {soldOut.alt && soldOut.canSwap && (
-              <>
-                <div className="ui-swap-alt">
-                  <div>
-                    <p className="ui-swap-try">Try {soldOut.alt.name} instead</p>
-                    <p className="ui-swap-price"><span className="mono">{formatRupees(soldOut.alt.price_paise - soldOut.alt.discount_paise)}</span> <span className="mono was">{formatRupees(soldOut.alt.price_paise)}</span> · {Math.round((100 * soldOut.alt.discount_paise) / Math.max(1, soldOut.alt.price_paise))}% off from us, sorry for the trouble</p>
-                  </div>
-                </div>
-                <div className="ui-swap-actions">
-                  <button type="button" className="ui-btn" onClick={soldOut.onSwap}>Swap it in</button>
-                  <button type="button" className="ui-btn ghost" onClick={soldOut.onRemove}>Take it out</button>
-                </div>
-              </>
-            )}
-            {!(soldOut.alt && soldOut.canSwap) && <div className="ui-swap-actions"><button type="button" className="ui-btn ghost" onClick={soldOut.onRemove}>Take it out</button></div>}
+            <div className="ui-swap-actions"><button type="button" className="ui-btn ghost" onClick={soldOut.onRemove}>Take it out</button></div>
           </div>
         )}
         {offers && (offers.quote.offers.length > 0 || offers.quote.coupon) && (

@@ -9,7 +9,7 @@ import { clientPlatform } from "./lib/platform";
 import { riderRefused, savePlatform, tapCall } from "./lib/signals";
 import { useLiveOrders } from "./lib/useLiveOrders";
 import { loadMenu, MENU_KEY, type Dish } from "./lib/menu";
-import { chooseKitchen, fetchKitchens, loadArea, closedCopy, clearedLine, openingText, resolveArea, shownArea, type Area } from "./lib/area";
+import { chooseKitchen, fetchKitchens, loadArea, closedCopy, clearedLine, openingText, resolveArea, shownArea, isPin, type Area } from "./lib/area";
 import { clearPlace, HERE, herePlace, isHere, loadPlace, pointOf, savePlace, type StoredPlace } from "./lib/place";
 import { AreaScreen } from "./screens/AreaScreen";
 import { AlertsAsk } from "./screens/AlertsAsk";
@@ -23,7 +23,8 @@ import { AdminGate } from "./screens/AdminGate";
 import { RiderGate } from "./screens/RiderGate";
 import { readRates, type Rates } from "./lib/incentive";
 import { readPastDays } from "./lib/pastDays";
-import { fetchKitchen, fetchOnlyKitchen, riderChangePaid, type KitchenCard, type RiderGateState } from "./lib/rider";
+import { readSupportPhone } from "./lib/supportPhone";
+import { fetchKitchen, fetchOnlyKitchen, LOCATION_EVERY_MS, riderChangePaid, type KitchenCard, type RiderGateState } from "./lib/rider";
 import { KitchenGate, type KitchenGateState } from "./screens/KitchenGate";
 import { enablePush, watchSession } from "./lib/push";
 import { takeReturn } from "./lib/auth";
@@ -629,10 +630,10 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       if (pin && !held() && !whereNow.current) choosePlace(herePlace(at, pin));
       return;
     }
-    // Story 1548. A rough fix raises no box, and a known place the fix could be at counts as near: a saved address, a recent, or the confirmed place this phone holds (story 1530).
+    // Story 1548. A rough fix raises no box, and a known place the fix could be at counts as near: a saved address, a confirmed recent, or the confirmed place this phone holds (story 1530).
     const slack = at.accuracy ?? 0;
     const close = (p: { lat: number | null; lng: number | null }) => p.lat !== null && p.lng !== null && distanceM(at, { lat: p.lat, lng: p.lng }) - slack <= near;
-    const known = !!nearSaved(savedNow.current ?? [], at, near, slack) || recentsNow.current.some(close) || (was.confirmed && close(was));   // the held place counts with or without an id: the saved rows may not have been read (a bad network)
+    const known = !!nearSaved(savedNow.current ?? [], at, near, slack) || recentsNow.current.filter((r) => r.confirmed).some(close) || (was.confirmed && close(was));   // the held place counts with or without an id: the saved rows may not have been read (a bad network)
     if (tap && !known) { endAsk(); return void setPinMap({ center: { lat: at.lat, lng: at.lng } }); }
     if (slack > ROUGH_M) return;   // a rough read raises no box and ends none
     if (known || answered(loadSpots(), at, near, new Date(), slack)) return endAsk();
@@ -693,16 +694,16 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     setStep((s) => (s === "bill" ? "bill" : "menu"));   // "Confirm on the map" from the Bill comes back to the Bill
   }
   // Story 1530 (owner, 15 Nov 2026): a place picked from search and confirmed on the pin map is the place now and becomes a recent, never a saved address.
-  // The recent holds the confirmed point, the customer's own words and a postal code that is ours (nearest_pin) or his (typed on the sheet): nothing of Ola's answer.
+  // The recent holds the tapped result's own name and address, the confirmed point and a postal code (the result's, ours from nearest_pin, or the one typed on the sheet). Owner, 17 Nov 2026; loan: undo recent_drop_ola().
   function useSearched(a: Saved, s: Searched) {
     markOnce();
     choosePlace({ address: a.address, pin: a.pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark, confirmed: true, id: null });
     setStep((st) => (st === "bill" ? "bill" : "menu"));
     void (async () => {
-      const tapped = await tapWrite.current;   // the tap's row, if the customer tapped this place in search first
+      const tapped = s.row ?? (await tapWrite.current);   // the row he tapped: from the recent list, or the search tap just made
       const list = tapped ? [tapped, ...recentsNow.current.filter((r) => r.id !== tapped.id)] : recentsNow.current;
-      const pin = (await nearestPin(a.from, undefined)) || (a.pinTyped ? a.pin : "");
-      const row = await keepRecent(getClient(), list, { ...recentWords(s.typed, s.hit, a), pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark });
+      const pin = a.pinTyped && isPin(a.pin) ? a.pin : ((await nearestPin(a.from, undefined)) || (isPin(a.pin) ? a.pin : ""));   // the pin the customer typed wins; else our table's; else the geocode's pin for the point (the place's own pin)
+      const row = await keepRecent(getClient(), list, { ...recentWords(s.typed, s.hit, a, tapped ?? undefined), pin, lat: a.from.lat, lng: a.from.lng, house: a.house, landmark: a.landmark, source: tapped?.source ?? (s.hit ? (s.hit.from === "own" ? "own" : "ola") : null) }, true, tapped?.id);
       if (row) setRecents((cur) => [row, ...cur.filter((r) => r.id !== row.id)].slice(0, RECENTS_MAX));
     })().catch(() => undefined);
   }
@@ -710,8 +711,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   // The tap's write is kept in tapWrite: a Confirm made fast waits for it, so Confirm updates the tapped row and never adds a second one (reviewer, #1615).
   function tapRecent(h: PlaceHit, typed: string) {
     tapWrite.current = (async () => {
-      const pin = (await nearestPin(h, undefined)) || "";
-      const row = await keepRecent(getClient(), recentsNow.current, { ...recentWords(typed, h, { house: "", landmark: "", area: "" }), pin, lat: h.lat, lng: h.lng, house: "", landmark: "" }, false);
+      const pin = h.pin || (await nearestPin(h, undefined)) || "";
+      const row = await keepRecent(getClient(), recentsNow.current, { ...recentWords(typed, h, { house: "", landmark: "", area: "" }), pin, lat: h.lat, lng: h.lng, house: "", landmark: "", source: h.from === "own" ? "own" : "ola" }, false);
       if (row) setRecents((cur) => [row, ...cur.filter((r) => r.id !== row.id)].slice(0, RECENTS_MAX));
       return row;
     })().catch(() => null);
@@ -719,7 +720,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   function pickRecent(r: Recent) {   // a recent is a confirmed place with its point; the tap makes it the newest
     if (!r.confirmed) {   // story 1609 (reviewer, #1615): a recent only tapped in search opens the pin map at its point; the place changes only on Confirm, which updates this row
       setFocusSearch(false); setSheet(false);
-      setPinMap({ center: { lat: r.lat, lng: r.lng }, follow: false, recent: { typed: r.name, hit: null } });
+      setPinMap({ center: { lat: r.lat, lng: r.lng }, follow: false, recent: { typed: r.name, hit: null, row: r } });
       return;
     }
     const used_at = new Date().toISOString();
@@ -896,7 +897,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     return () => { alive = false; };
   }, [placed?.id, riderStatus, demo]);
 
-  // Story #691 (boards T2, T3): On the way, the rider's place comes from the order_tracking row (read now, again on every realtime event and every 30 s, the ping rhythm).
+  // Story #691 (boards T2, T3): On the way, the rider's place comes from the order_tracking row (read now, again on every realtime event and every 10 s, the rider's ping rhythm).
   const [riderPoint, setRiderPoint] = useState<Tracked | null>(null);   // story 1497: the rider's place and the order's own drop point, both from the order's row
   const onTheWay = !!placed && !demo && riderStatus === "out_for_delivery";
   useEffect(() => {
@@ -906,7 +907,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     const read = () => void readRider(c, placed.id).then((p) => { if (alive && p) setRiderPoint(p); }).catch(() => undefined);   // a failed read keeps the last place
     read();
     const stop = watchRider(c, placed.id, read);
-    const tick = setInterval(read, 30_000);
+    const tick = setInterval(read, LOCATION_EVERY_MS);
     return () => { alive = false; stop(); clearInterval(tick); };
   }, [placed?.id, onTheWay]);
   // Story #1015 (board E2a): the delivery time is the server's. Read now, again on every realtime event of the tracking row and every 30 s; a failed read keeps the last answer.
@@ -1190,6 +1191,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }, [riderLive, orders.length]);   // and when an order comes or goes
   const [pastDays, setPastDays] = useState<number | "fail" | null>(null);   // story 1442: the admin's "Past days" number, read at open; a failed read says so on the list
   const loadPastDays = () => { setPastDays(null); readPastDays(getClient()).then(setPastDays, () => setPastDays("fail")); };
+  const [supportPhone, setSupportPhone] = useState<string | null>(null);   // story 1718: read once at open; a failed read means no Call support button
+  useEffect(() => { if (riderLive) readSupportPhone(getClient()).then(setSupportPhone, () => setSupportPhone(null)); }, [riderLive]);
   useEffect(() => { if (riderLive) loadPastDays(); }, [riderLive]);   // once at open; Try again reads it again
   const riderNoKitchen = role === "rider" && !demo && !jobKitchenId && !live.loading;   // stories 1445 and 1440: no order yet, so the one active kitchen, if there is only one
   useEffect(() => {
@@ -1217,7 +1220,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const riderScreen = (gate: RiderGateState | null) => (
     <RiderScreen orders={orders} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
       onAct={(o, a, method) => act(o, a, "rider", method)} methods={riderMethods} qrUrl={riderQr} onLoadMethods={loadRiderMethods} gate={gate} kitchen={jobKitchen} onAtDoor={(o, m) => { if (!demo) void riderAtDoor(getClient(), o.id, m); }}
-      incentive={incentive} pastDays={demo ? 0 : pastDays} onRetryPastDays={loadPastDays}
+      incentive={incentive} pastDays={demo ? 0 : pastDays} onRetryPastDays={loadPastDays} supportPhone={demo ? null : supportPhone}
       onChangePaid={async (o, m) => { const code = demo ? null : await riderChangePaid(getClient(), o.id, m); if (code === null) setOrders((cur) => cur.map((x) => (x.id === o.id ? { ...x, paid_by: m } : x))); return code; }} />
   );
   const riderView = lock === "rider" ? <RiderGate>{riderScreen}</RiderGate> : riderScreen(null);
@@ -1284,7 +1287,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             closed={shown?.kind === "closed" ? closedCopy(shown.opens_at, shown.paused === true) : null} closedNote={closedNote === BILL_CLEARED_LINE ? null : closedNote} greetNote={closedNote === BILL_CLEARED_LINE ? closedNote : moved && !moved.seen ? KITCHEN_CHANGED_MENU : null}
             tellMe={tellMe} tellMeError={tellMeError} onTellMe={tellMeWhenOpen}
             onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
-            onChangePin={() => setStep("deliver")} onOrders={() => setStep("orders")} address={isHere(where) ? "" : address} label={isHere(where) ? HERE : saved?.find((r) => r.id === selectedId)?.label ?? "Deliver to"} photo={photo} onProfile={() => setStep("account")} />
+            onChangePin={() => setStep("deliver")} onOrders={() => setStep("orders")} address={isHere(where) ? "" : address} label={isHere(where) ? HERE : saved?.find((r) => r.id === selectedId)?.label ?? "Serving at"} photo={photo} onProfile={() => setStep("account")} />
         )}
         {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} kitchenId={kitchenId} kitchenNames={kitchenNames} />}
         {step === "account" && (

@@ -46,7 +46,7 @@ async function deliverFrom(context: BrowserContext, page: Page, path: string, ro
   }
   await page.goto(path);
   if (o.locate === false && rows > 0) await viaSheet(page); else await toDeliverTo(page);   // story 1529: the place follows the phone; not found, the sheet is over the menu
-  await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible();
 }
 
 export const STEPS: Record<string, (context: BrowserContext, page: Page, path: string) => Promise<void>> = {
@@ -199,7 +199,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
       { id: "h1", label: "Home", address: "Z-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" },
       { id: "o1", label: "Office", address: "Tower B, Connaught Place, New Delhi", pin_code: "110016", lat: 28.6315, lng: 77.2167, last_used_at: "2026-11-01T10:00:00Z" }];
     await page.goto(path);
-    await viaSheet(page); await expect(page.getByRole("heading", { name: "Deliver to", exact: true })).toBeVisible(); },
+    await viaSheet(page); await expect(page.getByRole("heading", { name: "Serving at", exact: true, level: 1 })).toBeVisible(); },
   "deliver-to-search": async (context, page, path) => {   // story #1036: Deliver to after a submitted search, board C8-SearchResults
     const net = await setup(context, page, [], { pin: null }); net.state.addresses = [
       { id: "h1", label: "Home", address: "Z-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: "2026-11-05T10:00:00Z" },
@@ -270,7 +270,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click(); await expect(page.getByRole("dialog", { name: "Order 0f0f0f0f" })).toBeVisible(); },
   "order-decline": async (context, page, path) => {   // story 934: board K3-OrderDecline
     const net = await setup(context, page, [order("placed")]); net.state.kitchen = "k-1"; await page.goto(path);
-    await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click(); await page.getByRole("button", { name: "Decline, with a reason" }).click();
+    await page.getByRole("button", { name: "Open ticket 0f0f0f0f" }).click(); await page.getByRole("button", { name: "Decline 0f0f0f0f" }).click();
     await page.getByLabel("Reason").fill("We are out of butter chicken tonight, so this order cannot be made."); },
   declined: async (context, page, path) => {   // story 934: board T2-Declined
     await setup(context, page, [{ ...order("cancelled", "2020-01-01T10:02:00Z"), cancel_reason: "We are out of butter chicken tonight, so this order cannot be made." }]);

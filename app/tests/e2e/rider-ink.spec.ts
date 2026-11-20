@@ -17,7 +17,7 @@ test("S1 the Job tab holds the one delivery in hand: pick up, on the way, delive
   await expect(page.getByRole("link", { name: "Call Rahul" })).toHaveAttribute("href", "tel:9876543210");
   await page.getByRole("button", { name: "Arriving 0f0f0f0f" }).click();
   await expect(page.getByRole("button", { name: "Arriving 0f0f0f0f" })).toHaveCount(0);   // story 1182: step 3 has no Arriving button
-  await page.getByRole("button", { name: /^Collect ₹/ }).click();   // story 1182, board RY3: Collect opens Collect payment
+  await page.getByRole("button", { name: "Collect", exact: true }).click();   // story 1182, board RY3: Collect opens Collect payment
   await page.getByRole("button", { name: /^Took cash/ }).click();   // story 1262
   await expect(page.getByText("Cash collected")).toBeVisible();
   await page.getByRole("button", { name: "Done", exact: true }).click();   // story 1448: no order waits
@@ -81,7 +81,7 @@ for (const theme of ["day", "night"] as const) {
     await scan();   // R5 pick up
     await page.getByRole("button", { name: "Pick up 0f0f0f0f" }).click();
     await page.getByRole("button", { name: "Arriving 0f0f0f0f" }).click();
-    await page.getByRole("button", { name: /^Collect ₹/ }).click();   // story 1182, board RY3: Collect opens Collect payment
+    await page.getByRole("button", { name: "Collect", exact: true }).click();   // story 1182, board RY3: Collect opens Collect payment
     await expect(page.getByRole("button", { name: /^Paid by UPI/ })).toBeVisible();
     await scan();   // R7 collect payment, with the QR
     await page.getByRole("button", { name: /^Took cash/ }).click();   // story 1262

@@ -44,6 +44,61 @@ test("S4 while online the rider's location is sent, first at once", async ({ pag
   expect(net.calls.riderWrites.filter((w) => w.body.lat !== undefined)).toHaveLength(0);
 });
 
+test("S4b story 1686 while online with no new position, the last place is sent again every 10 seconds; offline, it stops", async ({ page, context }) => {
+  await page.clock.install({ time: new Date("2026-11-19T06:30:00Z") });
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 28.5494, longitude: 77.2001 });   // one position, and none after it
+  const net = await setup(context, page);
+  const pings = () => net.calls.rpc.filter((c) => c.name === "rider_ping");
+  await page.goto("/rider/");
+  await expect(page.getByRole("heading", { name: "Waiting for a delivery" })).toBeVisible();
+  await expect.poll(() => pings().length).toBe(1);
+  await page.clock.runFor(9_999);
+  expect(pings()).toHaveLength(1);
+  await page.clock.runFor(1_001);   // the 1 s check keeps the gap within a second of 10 s
+  await expect.poll(() => pings().length).toBe(2);
+  await page.clock.runFor(10_000);
+  await expect.poll(() => pings().length).toBe(3);
+  for (const c of pings()) expect(c.body).toEqual({ p_lat: 28.5494, p_lng: 77.2001 });
+  await page.getByRole("button", { name: "Go offline" }).click();
+  await expect(page.getByRole("heading", { name: "You are offline" })).toBeVisible();
+  const n = pings().length;
+  await page.clock.runFor(30_000);
+  expect(pings()).toHaveLength(n);
+});
+
+test("S4c story 1686 a lost fix stops the resend: one position, then an error with code 2, then no more pings; a new position sends again at once", async ({ page, context }) => {
+  await page.clock.install({ time: new Date("2026-11-19T06:30:00Z") });
+  await context.grantPermissions(["geolocation"]);
+  await page.addInitScript(() => {   // Playwright cannot make a code 2 error, so a small fake watch takes its place
+    let ok: (p: unknown) => void = () => {}, bad: (e: unknown) => void = () => {};
+    const geo = {
+      watchPosition: (s: typeof ok, e: typeof bad) => { ok = s; bad = e; return 1; },
+      clearWatch: () => {},
+      getCurrentPosition: () => {},
+    };
+    Object.defineProperty(navigator, "geolocation", { value: geo, configurable: true });
+    (window as unknown as Record<string, unknown>).__geo = {
+      pos: (lat: number, lng: number) => ok({ coords: { latitude: lat, longitude: lng, accuracy: 10 }, timestamp: Date.now() }),
+      err: (code: number) => bad({ code, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3, message: "" }),
+    };
+  });
+  const net = await setup(context, page);
+  const pings = () => net.calls.rpc.filter((c) => c.name === "rider_ping");
+  const geo = (f: string, ...a: number[]) => page.evaluate(([f, a]) => (window as unknown as { __geo: Record<string, (...x: number[]) => void> }).__geo[f as string](...(a as number[])), [f, a] as const);
+  await page.goto("/rider/");
+  await expect(page.getByRole("heading", { name: "Waiting for a delivery" })).toBeVisible();
+  await geo("pos", 28.5494, 77.2001);
+  await expect.poll(() => pings().length).toBe(1);
+  await geo("err", 2);
+  await page.clock.runFor(30_000);
+  expect(pings()).toHaveLength(1);
+  await expect(page.getByRole("status").filter({ hasText: "Location band hai" })).toHaveCount(0);   // code 2 is a weak signal, not a refusal
+  await geo("pos", 28.6, 77.3);
+  await expect.poll(() => pings().length).toBe(2);
+  expect(pings()[1].body).toEqual({ p_lat: 28.6, p_lng: 77.3 });
+});
+
 test("S5 an offline rider sends no location", async ({ page, context }) => {
   await context.grantPermissions(["geolocation"]);
   await context.setGeolocation({ latitude: 28.5, longitude: 77.2 });

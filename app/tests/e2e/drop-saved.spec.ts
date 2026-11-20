@@ -25,7 +25,7 @@ async function toBill(page: import("@playwright/test").Page, context: import("@p
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
   await page.getByRole("button", { name: /View bill/ }).click();
   await page.getByLabel("Phone").fill("9876543210");
-  await expect(page.getByRole("group", { name: "Deliver to" })).toContainText(HOME.address);
+  await expect(page.getByRole("group", { name: "Serving at" })).toContainText(HOME.address);
   return orders;
 }
 async function placeFrom(page: import("@playwright/test").Page, context: import("@playwright/test").BrowserContext, saved: object) {

@@ -169,7 +169,7 @@ test("S10 (#848) Clear everything asks for the word CLEAR, then calls the databa
   await expect(sheet).toContainText("This empties the dev city. Seed the kitchens brings it back.");
   await expect(sheet).toContainText("Dev only · cannot be undone");
   await expect(sheet).toContainText("Run log, decision log, and every account.");
-  const go = sheet.getByRole("button", { name: "Clear everything" });
+  const go = sheet.getByRole("button", { name: "Clear", exact: true });
   await expect(go).toBeDisabled();
   await sheet.getByLabel("Type CLEAR to go on").fill("CLE");
   await expect(go).toBeDisabled();
@@ -210,7 +210,7 @@ test("S13 (#848) a refusal from the database shows its line and the city stays",
   await open(page);
   await page.getByRole("button", { name: "Clear everything" }).click();
   await page.getByLabel("Type CLEAR to go on").fill("CLEAR");
-  await page.getByRole("dialog").getByRole("button", { name: "Clear everything" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Clear", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("Clear everything is switched off on this database.");
   await expect(page.getByTestId("sim-counts")).toHaveText("10 kitchens · 40 riders (29 online) · 137 dishes");
 });
@@ -246,7 +246,7 @@ test("S15 (#873) Clear everything calls the function again until it says done, w
   await open(page);
   await page.getByRole("button", { name: "Clear everything" }).click();
   await page.getByLabel("Type CLEAR to go on").fill("CLEAR");
-  await page.getByRole("dialog").getByRole("button", { name: "Clear everything" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Clear", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("Cleared: 16 kitchens, 42 riders, 137 dishes, 41 orders.");   // 20 + 20 + 1 orders
   const calls = net.calls.rpc.filter((r) => r.name === "sim_clear_all");
   expect(calls).toHaveLength(3);
@@ -275,4 +275,32 @@ test("S17 (#941) a database that does not allow Clear removes the button once it
   await open(page);
   await expect(page.getByRole("button", { name: "Reset the city" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Clear everything" })).toHaveCount(0);
+});
+
+test("S17 (story 1708) Reset the city above Clear everything, each full width of the group, one line of text each, no sideways scroll (360x640, 390x844)", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.admin = true;
+  for (const [w, h] of [[360, 640], [390, 844]]) {
+    await page.setViewportSize({ width: w, height: h });
+    await open(page);
+    const group = page.getByRole("region", { name: "Start over" });
+    await expect(group.getByRole("button", { name: "Clear everything" })).toBeVisible();
+    await expect(group.getByRole("button", { name: "Reset the city" })).toBeVisible();
+    const m = await page.evaluate(() => {
+      const g = document.querySelector('section[aria-label="Start over"]')!;
+      const [a, b] = [...g.querySelectorAll(".ui-form-acts > .ui-btn")].map((e) => { const r = e.getBoundingClientRect(); const t = document.createRange(); t.selectNodeContents(e); return { x: r.x, y: r.y, w: r.width, h: r.height, text: t.getBoundingClientRect().height, line: parseFloat(getComputedStyle(e).lineHeight) || parseFloat(getComputedStyle(e).fontSize) * 1.2, name: e.textContent }; });
+      const acts = g.querySelector(".ui-form-acts")!.getBoundingClientRect();
+      return { a, b, acts: { x: acts.x, w: acts.width }, sw: document.documentElement.scrollWidth, iw: window.innerWidth };
+    });
+    console.log("S17 raw", w, JSON.stringify(m));
+    expect([m.a?.name, m.b?.name]).toEqual(["Reset the city", "Clear everything"]);
+    expect(m.a.y + m.a.h).toBeLessThanOrEqual(m.b.y);   // Reset above Clear
+    for (const x of [m.a, m.b]) {
+      expect(Math.abs(x.x - m.acts.x)).toBeLessThanOrEqual(1);   // as wide as the group
+      expect(Math.abs(x.w - m.acts.w)).toBeLessThanOrEqual(1);
+      expect(x.text).toBeLessThan(1.5 * x.line);   // one line of text
+      expect(x.h).toBeGreaterThanOrEqual(44);
+    }
+    expect(m.sw).toBeLessThanOrEqual(m.iw);
+  }
 });

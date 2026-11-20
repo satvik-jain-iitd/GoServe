@@ -1,4 +1,4 @@
-// Story #1262 (epic #1259, board R7-CollectQR): "Delivered" opens Collect payment (story 1182: the button is now "Collect ₹<amount>", after Arriving). The rider says how it was paid at the door, and that marks the order delivered.
+// Story #1262 (epic #1259, board R7-CollectQR): "Delivered" opens Collect payment (story 1182: the button says only "Collect" since story 1715, after Arriving). The rider says how it was paid at the door, and that marks the order delivered.
 import { test, expect, type Page } from "@playwright/test";
 import { ID, SESSION, order, setup } from "./helpers";
 
@@ -12,7 +12,7 @@ const open = async (context: Parameters<typeof setup>[0], page: Page, state: Rec
   Object.assign(net.state, state);
   await page.goto("/rider/");
   await page.getByRole("button", { name: "Arriving 0f0f0f0f" }).click();
-  await page.getByRole("button", { name: /^Collect ₹/ }).click();   // story 1182, board RY3: Collect opens Collect payment
+  await page.getByRole("button", { name: "Collect", exact: true }).click();   // story 1182, board RY3: Collect opens Collect payment
   return net;
 };
 const deliverCalls = (net: Awaited<ReturnType<typeof setup>>) => net.calls.status.filter((c) => c.body.action === "deliver").map((c) => c.body);
@@ -23,7 +23,7 @@ test("C1 UPI at the door on: Delivered opens Collect payment with the name, the 
   await expect(page.getByTestId("collect-total")).toHaveText("₹640");
   await expect(page.getByRole("img", { name: "UPI QR to scan" })).toHaveAttribute("src", SRC);
   await expect(page.getByText("Pehle paisa, phir button.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Took cash ₹640" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Took cash", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Paid by UPI ₹640" })).toBeVisible();
   expect(deliverCalls(net)).toEqual([]);
 });
@@ -41,7 +41,7 @@ test("C2 Paid by UPI delivers with upi_door, the slip says Paid by UPI, Today sa
 
 test("C3 Took cash delivers with cash, and the cash in hand grows by the amount", async ({ page, context }) => {
   const net = await open(context, page);
-  await page.getByRole("button", { name: "Took cash ₹640" }).click();
+  await page.getByRole("button", { name: "Took cash", exact: true }).click();
   await expect(page.getByText("Cash collected", { exact: true })).toBeVisible();
   expect(deliverCalls(net)).toEqual([{ order_id: ID, action: "deliver", method: "cash" }]);
   await page.getByRole("button", { name: "Done", exact: true }).click();   // story 1448: no order waits
@@ -51,11 +51,11 @@ test("C3 Took cash delivers with cash, and the cash in hand grows by the amount"
 
 test("C4 UPI at the door off: no QR, no UPI button, one filled Took cash button", async ({ page, context }) => {
   await open(context, page, { doorMethods: ["cash"] });
-  await expect(page.getByRole("button", { name: "Took cash ₹640" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Took cash", exact: true })).toBeVisible();
   await expect(page.getByRole("img", { name: "UPI QR to scan" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Paid by UPI/ })).toHaveCount(0);
   await expect(page.locator("body")).not.toContainText(/UPI/i);
-  await expect(page.getByRole("button", { name: "Took cash ₹640" })).toHaveClass(/^ui-btn big$/);   // the only way is the filled one
+  await expect(page.getByRole("button", { name: "Took cash", exact: true })).toHaveClass(/^ui-btn big$/);   // the only way is the filled one
 });
 
 test("C5 while the list is on its way the screen names no method and offers no button to save", async ({ page, context }) => {
@@ -74,17 +74,17 @@ test("C6 when the list cannot be read the screen says so, names no method, and T
   await expect(page.getByRole("button", { name: /Paid by UPI/ })).toHaveCount(0);
   net.state.doorFail = false;
   await page.getByRole("button", { name: "Try again" }).click();
-  await expect(page.getByRole("button", { name: "Took cash ₹640" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Took cash", exact: true })).toBeVisible();
 });
 
 test("C7 a failed save shows the error, keeps the screen, and the retry saves once", async ({ page, context }) => {
   const net = await open(context, page);
   net.state.reply = { status: 502, body: { ok: false, error: "order_action_unavailable" } };
-  await page.getByRole("button", { name: "Took cash ₹640" }).click();
+  await page.getByRole("button", { name: "Took cash", exact: true }).click();
   await expect(page.getByRole("alert")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Took cash ₹640" })).toBeVisible();   // still on Collect payment
+  await expect(page.getByRole("button", { name: "Took cash", exact: true })).toBeVisible();   // still on Collect payment
   net.state.reply = null;
-  await page.getByRole("button", { name: "Took cash ₹640" }).click();
+  await page.getByRole("button", { name: "Took cash", exact: true }).click();
   await expect(page.getByText("Cash collected", { exact: true })).toBeVisible();
   expect(deliverCalls(net)).toHaveLength(2);   // one for the failed tap, one for the retry; a tap that worked is never sent twice
 });
@@ -103,7 +103,7 @@ test("C8 already_done is not an error: the order is read again and the slip show
 test("C8b already_done and the re-read fails: the slip says Collected, never a guessed way", async ({ page, context }) => {
   const net = await open(context, page);
   net.state.reply = { status: 409, body: { ok: false, error: "already_done", message: "This step was already done." } };
-  await page.getByRole("button", { name: "Took cash ₹640" }).click();
+  await page.getByRole("button", { name: "Took cash", exact: true }).click();
   await expect(page.getByText("Collected", { exact: true })).toBeVisible();
   await expect(page.getByText("Cash collected")).toHaveCount(0);
 });
@@ -124,29 +124,29 @@ test("C10 UPI is turned off while the rider is on the screen: method_off reads t
   await expect(page.getByRole("alert")).toContainText("UPI at the door is not on.");
   await expect(page.getByRole("button", { name: "Paid by UPI ₹640" })).toHaveCount(0);
   await expect(page.getByRole("img", { name: "UPI QR to scan" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Took cash ₹640" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Took cash", exact: true })).toBeVisible();
 });
 
 test("C9 Back leaves Collect payment without saving", async ({ page, context }) => {
   const net = await open(context, page);
   await page.getByRole("button", { name: "Back" }).click();
-  await expect(page.getByRole("button", { name: /^Collect ₹/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Collect", exact: true })).toBeVisible();
   expect(deliverCalls(net)).toEqual([]);
 });
 
 test("C11 no QR uploaded yet (the server leaves UPI out): the rider sees cash only, no QR, no UPI button, no sample picture", async ({ page, context }) => {
   await open(context, page, { qrObject: null, doorMethods: ["cash"] });
-  await expect(page.getByRole("button", { name: "Took cash ₹640" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Took cash", exact: true })).toBeVisible();
   await expect(page.getByRole("img")).toHaveCount(0);
   await expect(page.locator("body")).not.toContainText(/UPI|QR/i);
-  await expect(page.getByRole("button", { name: "Took cash ₹640" })).toHaveClass(/^ui-btn big$/);
+  await expect(page.getByRole("button", { name: "Took cash", exact: true })).toHaveClass(/^ui-btn big$/);
 });
 
 test("C12 the QR picture will not load: the screen says UPI has no QR yet, hides the UPI button and keeps cash", async ({ page, context }) => {
   await open(context, page, { qrFail: "image" });
   await expect(page.getByText("UPI at the door has no QR yet. Take cash, or ask the admin to upload the QR.")).toBeVisible();
   await expect(page.getByRole("button", { name: /Paid by UPI/ })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Took cash ₹640" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Took cash", exact: true })).toBeVisible();
 });
 
 test("C13 the QR read fails: the screen says it could not check, names no method, and Try again reads it again", async ({ page, context }) => {
@@ -158,3 +158,17 @@ test("C13 the QR read fails: the screen says it could not check, names no method
   await page.getByRole("button", { name: "Try again" }).click();
   await expect(page.getByRole("button", { name: "Paid by UPI ₹640" })).toBeVisible();
 });
+
+for (const [label, state] of [["on", {}], ["off", { doorMethods: ["cash"] }]] as const) {
+  test(`C9 story 1696: the cash button says only Took cash, no digit; the amount sits in To collect above it, UPI at the door ${label}`, async ({ page, context }) => {
+    const net = await open(context, page, state);
+    const cash = page.getByRole("button", { name: "Took cash", exact: true });
+    await expect(cash).toBeVisible();
+    expect((await cash.textContent()) ?? "").not.toMatch(/\d/);
+    await expect(page.getByTestId("collect-total")).toHaveText("₹640");
+    const [a, b] = [await page.getByTestId("collect-total").boundingBox(), await cash.boundingBox()];
+    expect(a!.y).toBeLessThan(b!.y);   // the amount is above the button, on the same screen
+    await expect(page.getByRole("button", { name: "Back", exact: true })).toBeVisible();
+    expect(deliverCalls(net)).toEqual([]);
+  });
+}

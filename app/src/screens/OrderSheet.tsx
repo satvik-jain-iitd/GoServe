@@ -4,12 +4,6 @@ import { hhmm, shortId, type Order } from "../lib/kitchen";
 import { MIN_REASON } from "../lib/orders";
 import { NoteBand, useSheetFit } from "../ui";
 
-const CHIPS: [string, string][] = [
-  ["Out of an ingredient", "We are out of an ingredient tonight, so this dish cannot be made."],
-  ["Too many orders right now", "We have too many orders right now and cannot take this one in time."],
-  ["Closing early today", "We are closing early today and cannot take new orders."],
-];
-
 type Props = { order: Order; busy: boolean; error: string | null; onAccept: () => void; onDecline: (reason: string) => Promise<string | null>; onClose: () => void };
 
 export function OrderSheet({ order, busy, error, onAccept, onDecline, onClose }: Props) {
@@ -33,8 +27,10 @@ export function OrderSheet({ order, busy, error, onAccept, onDecline, onClose }:
           {order.instructions?.trim() && <><div className="ui-slip-rule" /><NoteBand text={order.instructions.trim()} /></>}
           {error && <p role="alert" className="ui-note error">{error}</p>}
           <div className="ui-sheet-acts">
-            <button type="button" className="ui-btn big" aria-label={`Accept ${no}`} disabled={busy} onClick={onAccept}>Accept</button>
-            <button type="button" className="ui-btn ghost big ui-decline" onClick={() => setDeciding(true)}>Decline, with a reason</button>
+            <div className="ui-row-pair">   {/* story 1695: Decline left, Accept last (right), equal halves; the name keeps its meaning for a screen reader */}
+              <button type="button" className="ui-btn ghost big ui-decline" aria-label={`Decline ${no}`} onClick={() => setDeciding(true)}>Decline</button>
+              <button type="button" className="ui-btn big" aria-label={`Accept ${no}`} disabled={busy} onClick={onAccept}>Accept</button>
+            </div>
           </div>
         </section>
       ) : (
@@ -44,11 +40,12 @@ export function OrderSheet({ order, busy, error, onAccept, onDecline, onClose }:
           <label htmlFor="decline-why" className="mono ui-kicker">Reason</label>
           <textarea id="decline-why" className="ui-sheet-text" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />
           <p className="mono ui-sheet-count"><span>{reason.trim().length} characters</span><span>at least {MIN_REASON}</span></p>
-          <div className="ui-sheet-chips">{CHIPS.map(([label, sentence]) => <button key={label} type="button" className="ui-chip" onClick={() => setReason(sentence)}>{label}</button>)}</div>
           {declineError && <p role="alert" className="ui-note error">{declineError}</p>}
           <div className="ui-sheet-acts">
-            <button type="button" className="ui-btn big danger-fill" disabled={!long || busy} aria-disabled={!long || busy} onClick={() => void decline()}>Decline this order</button>
-            <button type="button" className="ui-btn ghost big" onClick={() => setDeciding(false)}>Back to the order</button>
+            <div className="ui-row-pair">   {/* story 1703: red Decline left, Back last (right) */}
+              <button type="button" className="ui-btn big danger-fill" disabled={!long || busy} aria-disabled={!long || busy} onClick={() => void decline()}>Decline</button>
+              <button type="button" className="ui-btn ghost big" onClick={() => setDeciding(false)}>Back</button>
+            </div>
           </div>
           <p className="mono ui-sheet-foot">Under {MIN_REASON} characters the red button stays asleep</p>
         </section>

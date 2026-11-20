@@ -29,7 +29,7 @@ test("G1 the tap opens Google Maps with the route from the rider's last place to
 
 test("G2 the order screen stays as it is: the same row words and the Live mark", async ({ page, context }) => {
   await onTheWay(page, context);
-  await expect(row(page)).toContainText("Ravi is 2.0 km away");
+  await expect(row(page)).toContainText("Ravi is 8 min away · 2.0 km");
   await expect(row(page)).toContainText("On the map · updated 20 sec ago");
   await expect(page.getByText("Live", { exact: true })).toBeVisible();
 });

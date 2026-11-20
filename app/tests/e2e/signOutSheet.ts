@@ -1,4 +1,4 @@
-// Story 1593 (owner, 16 Nov 2026): "Sign out of this phone" asks once, in a bottom sheet with two full-width buttons one above the other (outline "Stay signed in", filled "Sign out" last).
+// Story 1593 (owner, 16 Nov 2026): "Sign out of this phone" asks once, in a bottom sheet. Story 1692 (owner, 20 Nov 2026): the two buttons are a half and half pair on one line (outline "Stay signed in" left, filled "Sign out" last, right).
 // The old box "Forget your details on this phone?" with "Yes, forget" and "No" side by side is gone: one act, one name. Shared cases: Chromium (sign-out-sheet.spec.ts) and WebKit (sign-out-sheet.webkit.spec.ts).
 import { test, expect, type Page } from "@playwright/test";
 import { setup } from "./helpers";
@@ -31,15 +31,20 @@ export function signOutSheet() {
   });
 
   for (const [w, h] of [[360, 640], [390, 844]]) {
-    test(`the two buttons are one above the other, same left and width, as wide as the sheet's content, Stay signed in first (${w}x${h})`, async ({ page, context }) => {
+    test(`the two buttons are a half and half pair on one line, Stay signed in left, together as wide as the sheet's content, one line of text each (${w}x${h})`, async ({ page, context }) => {
       await open(page, context, w, h);
       const stay = sheet(page).getByRole("button", { name: "Stay signed in" }), out = sheet(page).getByRole("button", { name: "Sign out", exact: true });
       await settle(page);
       const [a, b, s] = [await rect(stay), await rect(out), await rect(sheet(page))];
-      expect(a.x).toBe(b.x);
-      expect(a.w).toBe(b.w);
-      expect(b.y).toBeGreaterThan(a.y + a.h - 1);   // Sign out is last, below
-      expect(Math.abs(a.w - (s.w - 2 * (a.x - s.x)))).toBeLessThanOrEqual(1);   // full width of the sheet's content
+      const pad = await sheet(page).evaluate((e) => { const c = getComputedStyle(e); return { l: parseFloat(c.paddingLeft) + parseFloat(c.borderLeftWidth), r: parseFloat(c.paddingRight) + parseFloat(c.borderRightWidth) }; });
+      const lines = (loc: ReturnType<Page["locator"]>) => loc.evaluate((e) => { const r = document.createRange(); r.selectNodeContents(e); return { text: r.getBoundingClientRect().height, line: parseFloat(getComputedStyle(e).lineHeight) || parseFloat(getComputedStyle(e).fontSize) * 1.2 }; });
+      expect(a.x).toBeLessThan(b.x);   // Stay signed in is left, Sign out last
+      expect(Math.abs(a.w - b.w)).toBeLessThanOrEqual(1);
+      expect(Math.abs(a.y - b.y)).toBeLessThanOrEqual(1);
+      expect(Math.abs(a.x - (s.x + pad.l))).toBeLessThanOrEqual(1);   // together they fill the sheet's content width
+      expect(Math.abs(b.x + b.w - (s.x + s.w - pad.r))).toBeLessThanOrEqual(1);
+      for (const l of [await lines(stay), await lines(out)]) expect(l.text).toBeLessThan(1.5 * l.line);   // one line of text each
+      expect(Math.abs(a.h - b.h)).toBeLessThanOrEqual(1);
     });
   }
 

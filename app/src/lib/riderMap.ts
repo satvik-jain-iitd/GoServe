@@ -19,9 +19,20 @@ export function metres(lat1: number, lng1: number, lat2: number, lng2: number): 
   const a = Math.sin(r(lat2 - lat1) / 2) ** 2 + Math.cos(r(lat1)) * Math.cos(r(lat2)) * Math.sin(r(lng2 - lng1) / 2) ** 2;
   return 2 * 6371000 * Math.asin(Math.sqrt(a));
 }
+const fmtDistance = (m: number): string => m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`;
 export function distanceText(lat1: number, lng1: number, lat2: number, lng2: number): string {
-  const m = metres(lat1, lng1, lat2, lng2);
-  return m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`;
+  return fmtDistance(metres(lat1, lng1, lat2, lng2));
+}
+
+// Story 1682: a first guess (a scooter at 20 km/h, roads 1.3x the straight line), to be replaced by measured trips (see docs/assumptions.md).
+export const RIDER_KMPH = 20;   // story 1689: the server twin is eta_rules.speed_m_min (333.33 m a minute); keep the two the same
+export const ROAD_FACTOR = 1.3;
+export const SANE_M = 30000;
+/** Minutes first, then the distance; null when the rider is too far to be a real trip (a stale or wrong ping). */
+export function awayText(m: number): string | null {
+  if (m > SANE_M) return null;
+  const min = Math.max(1, Math.ceil((m * ROAD_FACTOR) / ((RIDER_KMPH * 1000) / 60)));
+  return `${min} min away \u00b7 ${fmtDistance(m)}`;
 }
 
 export const lastSeenText = (at: string, now: number): string => `Last seen ${clock12(new Date(at))}, ${agoText(at, now)}`;
