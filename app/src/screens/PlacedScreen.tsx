@@ -12,7 +12,7 @@ import { Timeline, TornTop } from "../ui";
 import { AdjustLines } from "../ui/AdjustLines";
 import { BackChevron } from "./BillScreen";
 import { CancelSheet } from "./CancelSheet";
-import { agoText, distanceText, lastSeenText, riderLink, type Point } from "../lib/riderMap";
+import { agoText, awayText, lastSeenText, metres, riderLink, type Point } from "../lib/riderMap";
 import { useNowOnline } from "../lib/useNowOnline";
 import type { LatLng } from "../lib/riderTrack";
 
@@ -69,7 +69,7 @@ function RiderRow({ t }: { t: Track }) {
     <a className="ui-locrow ui-riderrow" aria-label="See the rider on Google Maps" href={riderLink(t.rider, t.you)} target="_blank" rel="noopener noreferrer">
       <span className="ui-locrow-icon">{MAP_ICON}</span>
       <span className="ui-locrow-words">
-        <span className="ui-locrow-title"><b>{t.name}</b> is {t.you ? `${distanceText(t.rider.lat, t.rider.lng, t.you.lat, t.you.lng)} away` : "on the way"}</span>
+        <span className="ui-locrow-title"><b>{t.name}</b> is {(t.you && awayText(metres(t.rider.lat, t.rider.lng, t.you.lat, t.you.lng))) || "on the way"}</span>
         <span className="ui-locrow-sub mono">{online ? `On the map · updated ${agoText(t.rider.at, now)}` : `No connection · ${lastSeenText(t.rider.at, now)}`}</span>
       </span>
       <span className="ui-locrow-go">{GO}</span>
@@ -85,8 +85,8 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
   return <p className="ui-wait">Waiting for payment · {mmss(Math.max(0, PAY_WINDOW_S - Math.floor((now - new Date(startedAt).getTime()) / 1000)))}</p>;
 }
 
-// The customer says it in his words: the kitchen's "Ready" is "Ready, rider picks up", the last step is "At your door".
-const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "At your door" };
+// The customer says it in his words: the kitchen's "Ready" is "Ready, rider picks up", the last step is "Delivered".
+const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "Delivered" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
 export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, placedAt, lines, kitchenName, headWait, pin, kitchenPhone, address, asking, busy, error, onYes, onNotYet, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta, again }: Props) {
@@ -176,15 +176,6 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, 
               <p className="ui-meta">{pay ? "Your money is not taken. If you paid online, it comes back in 5 to 7 days." : "Nothing was charged."}</p>   {/* story #1261: a pay-at-door order never talks about paying online */}
             </>
           ) : cancelled && <p role="status"><strong>Your order was cancelled. Nothing to pay.</strong></p>}
-          {asking && (
-            <div role="group" aria-label="Delivery check" className="ui-closed ui-ask">
-              <h3>Was your order delivered?</h3>
-              <div className="ui-ask-act">
-                <button type="button" className="ui-btn" disabled={busy} onClick={onYes}>Yes, I have it</button>
-                <button type="button" className="ui-btn ghost" disabled={busy} onClick={onNotYet}>Not yet</button>
-              </div>
-            </div>
-          )}
           {error && <p role="alert" className="ui-field-error">{error}</p>}
         </div>
       </div>
@@ -196,6 +187,15 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, 
         {declined && <button type="button" className="ui-btn big" onClick={onMenu}>Order something else</button>}   {/* story 1458 (board T2b): the main button last, as on every end slip */}
         {again?.bar}
         {(cancelled || (delivered && !again)) && !declined && <button type="button" className="ui-btn big" onClick={onMenu}>Back to menu</button>}   {/* story 1434 (boards T1b, Delivered b): one name on both end slips, the main button last; the same dishes again only from History */}
+        {asking && (
+          <div role="group" aria-label="Delivery check" className="ui-closed ui-ask">   {/* story 1691: the question is the last thing in the foot, two equal buttons, Yes on the right */}
+            <h3>Was your order delivered?</h3>
+            <div className="ui-row-pair">
+              <button type="button" className="ui-btn ghost" disabled={busy} onClick={onNotYet}>Not yet</button>
+              <button type="button" className="ui-btn" disabled={busy} onClick={onYes}>Yes, I have it</button>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

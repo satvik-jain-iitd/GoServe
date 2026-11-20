@@ -1,6 +1,6 @@
 // Story #691 (board T2, T3): the rider's ping becomes a marker, a distance and the words under the map.
 import { describe, expect, it } from "vitest";
-import { agoText, distanceText, lastSeenText, tileUrl, toPoint } from "../../src/lib/riderMap";
+import { agoText, awayText, distanceText, lastSeenText, tileUrl, toPoint } from "../../src/lib/riderMap";
 
 const SEEN = new Date(2026, 9, 29, 20, 0, 0);   // 8:00 pm on the phone's own clock, so the test holds in any time zone
 const NOW = SEEN.getTime() + 140_000;
@@ -25,6 +25,13 @@ describe("the words", () => {
   it("S3 distance: km with one decimal from 1 km, whole metres under it", () => {
     expect(distanceText(28.5700, 77.2400, 28.5810, 77.2400)).toBe("1.2 km");
     expect(distanceText(28.5700, 77.2400, 28.5740, 77.2400)).toBe("440 m");
+  });
+  it("S3b story 1682: minutes first, then the distance; nothing past SANE_M", () => {
+    expect(awayText(1200)).toBe("5 min away \u00b7 1.2 km");
+    expect(awayText(2000)).toBe("8 min away \u00b7 2.0 km");
+    expect(awayText(100)).toBe("1 min away \u00b7 100 m");
+    expect(awayText(30001)).toBeNull();
+    expect(awayText(379200)).toBeNull();
   });
   it("S4 the line under the map is word for word from board T2, and the offline line from board T3", () => {
     expect(lastSeenText(SEEN.toISOString(), NOW)).toBe("Last seen 8:00 pm, 2 min ago");
