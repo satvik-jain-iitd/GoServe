@@ -926,6 +926,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     const unknown = o.items.map((i) => i.menu_item_id).filter((id) => !dishes.some((d) => d.id === id));
     const marks = unknown.length ? await fetchDishVeg(unknown).catch(() => ({})) : {};
     setAgainBusy(false);
+    if (stepNow.current !== "orders") return;   // the customer left History while the marks were read: he stays where he went, the bag is untouched
     const { cart: next } = reorderCart(o.items, dishes, marks);
     setError(null);
     if (Object.keys(next).length === 0) return void setStep("menu");

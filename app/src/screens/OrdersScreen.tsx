@@ -65,7 +65,7 @@ export function OrdersScreen({ orders, loading, kitchenName, kitchenId, kitchenN
                     <span className="ui-order-items">{dishes(o)}</span>
                     <span className="ui-order-sub">{when(o.created_at)}{word && <> · <span className={`ui-order-word${bad ? " bad" : ""}`}>{word}</span></>}{!bad && <> · <span className="mono">{formatRupees(o.total_paise)}</span></>}</span>
                   </span>
-                  {CHEVRON}
+                  {o.status !== "delivered" && CHEVRON}   {/* story 1738: a delivered row has the Order again button instead of the chevron; the row still opens the order */}
                   </button>
                   {o.status === "delivered" && <button type="button" className="ui-btn ghost" disabled={againOff} onClick={() => onAgain(o)}>Order again</button>}
                 </li>
