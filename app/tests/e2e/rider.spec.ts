@@ -70,5 +70,5 @@ test("S2 the customer sees every step live, without a refresh, and it ends at De
     if (label === "Delivered") await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible({ timeout: 6000 });
     else await expect(current).toHaveText(`${label}Now`, { timeout: 6000 });
   }
-  await expect(current).toHaveText("Delivered");   // the rows end on the delivered step (the thank-you line left in story 1324)
+  await expect(page.getByRole("list", { name: "Order progress" })).toHaveCount(0);   // story 1675: a delivered order has no steps list; the slip stamp says Delivered
 });
