@@ -1,5 +1,5 @@
 // Story 1508 (board DL1, canvas 3 row 2ck; owner 14 Nov 2026): the delivered screen. The title is "Your order". The time stays small ("At your door 8:08 pm").
-// A small line "4 min early" shows only when the food came before the promised time (orders.promised_at). No address. Call the kitchen above Back to menu.
+// Story 1739: no "early" line any more (it measured against a time the customer was never shown). No address. Call the kitchen above Back to menu.
 import { test, expect, type Page } from "@playwright/test";
 import { ID, SESSION, order, setup } from "./helpers";
 
@@ -25,13 +25,26 @@ test("D1 A delivered order: the title is Your order, At your door 8:08 pm as tod
   await expect(page.getByText("Flat 4, Green Park")).toHaveCount(0);
 });
 
-test("D2 Early: promised 8:12 pm, came at 8:08 pm, a line under the time says 4 min early", async ({ page, context }) => {
+test("D2 Early: promised 8:12 pm, came at 8:08 pm (story 1739): no line with the word early, and the door time stays", async ({ page, context }) => {
   await delivered(context, page, { delivered_at: at(20, 8), promised_at: at(20, 12) });
-  const early = slip(page).getByText("4 min early", { exact: true });
-  await expect(early).toBeVisible();
-  const time = (await slip(page).getByText("At your door 8:08 pm").boundingBox())!;
-  expect((await early.boundingBox())!.y).toBeGreaterThanOrEqual(time.y + time.height - 1);   // a line of its own, under the time
+  await expect(slip(page).getByText("At your door 8:08 pm")).toBeVisible();
+  await expect(page.getByText(/early/i)).toHaveCount(0);
 });
+
+for (const size of [{ width: 360, height: 640 }, { width: 390, height: 844 }]) {
+  test(`D2b at ${size.width} by ${size.height} the At your door line has one place and size, whatever the promised time (story 1739)`, async ({ page, context }) => {
+    await page.setViewportSize(size);
+    const net = await delivered(context, page, { delivered_at: at(20, 8), promised_at: at(20, 12) });
+    const line = slip(page).getByText("At your door 8:08 pm");
+    const read = async () => ({ box: (await line.boundingBox())!, font: await line.evaluate((e) => getComputedStyle(e).fontSize) });
+    const early = await read();
+    net.push("UPDATE", { ...order("delivered", at(21, 30)), delivered_at: at(20, 8), promised_at: null });
+    await page.waitForTimeout(300);
+    const none = await read();
+    expect(none.font).toBe(early.font);
+    for (const k of ["x", "y", "width", "height"] as const) expect(Math.abs(none.box[k] - early.box[k])).toBeLessThanOrEqual(0.5);
+  });
+}
 
 test("D3 On time or late: no early line, and the word late is never written", async ({ page, context }) => {
   await delivered(context, page, { delivered_at: at(20, 20), promised_at: at(20, 12) });
@@ -39,11 +52,13 @@ test("D3 On time or late: no early line, and the word late is never written", as
   await expect(page.getByText(/early|late/i)).toHaveCount(0);
 });
 
-test("D3b under one minute early counts as on time: no line", async ({ page, context }) => {
-  await delivered(context, page, { delivered_at: at(20, 11, 30), promised_at: at(20, 12) });
-  await expect(slip(page).getByText("At your door 8:11 pm")).toBeVisible();
-  await expect(page.getByText(/early/i)).toHaveCount(0);
-});
+for (const [name, d, p] of [["under a minute early", at(20, 11, 30), at(20, 12)], ["33 minutes early", at(20, 0), at(20, 33)], ["exactly on time", at(20, 12), at(20, 12)]] as const) {
+  test(`D3b ${name} (story 1739): no line with the word early`, async ({ page, context }) => {
+    await delivered(context, page, { delivered_at: d, promised_at: p });
+    await expect(slip(page).getByText(/^At your door/)).toBeVisible();
+    await expect(page.getByText(/early/i)).toHaveCount(0);
+  });
+}
 
 test("D4 No promised time is known: no early line, never a guessed number", async ({ page, context }) => {
   await delivered(context, page, { delivered_at: at(20, 8), promised_at: null });

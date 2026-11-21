@@ -4,7 +4,7 @@ import { fetchDoorMethods, type DoorMethod } from "./lib/doorMethods";
 import { onBackScreen, screenStep } from "./lib/back";
 import { readRiderQr } from "./lib/payMethods";
 import { addDish, againRows, BILL_CLEARED_LINE, cartLines, cartTotal, changeQty, kitchenChangedBill, KITCHEN_CHANGED_MENU, moveCart, notMadeLine, reorderCart, toOrderItems, type Cart, type Held, type Line } from "./lib/cart";
-import { mergeOrder, riderOrders, cancelKind, shortId, statusLabel, type Order, type RiderAction, confirmHandover, deliveredAt, earlyMin, isCash } from "./lib/kitchen";
+import { mergeOrder, riderOrders, cancelKind, shortId, statusLabel, type Order, type RiderAction, confirmHandover, deliveredAt, isCash } from "./lib/kitchen";
 import { clientPlatform } from "./lib/platform";
 import { riderRefused, savePlatform, tapCall } from "./lib/signals";
 import { useLiveOrders } from "./lib/useLiveOrders";
@@ -1202,7 +1202,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             placedAt={tracked?.created_at ?? placedAt} kitchenName={nameOf(placedOrder)} headWait={nameWait(placedOrder)} pin={pin} kitchenPhone={area?.kind === "ok" ? area.kitchen.phone ?? null : null}
             lines={tracked && "items" in tracked ? tracked.items.map((i) => ({ name: i.name, qty: i.qty, paise: i.price_paise * i.qty })) : placedLines}
             address={tracked && "address" in tracked ? tracked.address : address.trim()}
-            confirmedAt={tracked && tracked.status === "delivered" ? deliveredAt(tracked) : null} early={tracked && tracked.status === "delivered" ? earlyMin(tracked as Order) : null}
+            confirmedAt={tracked && tracked.status === "delivered" ? deliveredAt(tracked) : null}
             declined={tracked && cancelKind(tracked) === "declined" ? { reason: (tracked as Order).cancel_reason ?? "", at: tracked.updated_at } : null}
             again={again && placedOrder ? { block: <AgainBlock a={again} />, bar: <AgainBar a={again} onAgain={() => orderAgain(placedOrder)} onMenu={() => { setPlaced(null); setStep("menu"); }} /> } : undefined}
             error={cancelError} pay={paidNow || payState || resumedOnline ? { state: paidNow ? "paid" : payState ?? "waiting", method: payMethod === "cod" ? "upi" : payMethod, startedAt: payState ? payStart : null, error: payError, onPay: payNow, onCash: payCash, onSimulate: () => void simulatePaid(import.meta.env.VITE_PAYMENTS_DEV_SECRET ?? "", payRef.current) } : undefined}
