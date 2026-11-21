@@ -53,6 +53,31 @@ describe("picture size (S4)", () => {
   });
 });
 
+describe("a queued note survives a server fault (story 1751, reviewer 21 Nov)", () => {
+  const R = { action: "feedback", session_id: "s1", role: "kitchen", screen: "/", order_id: "", doing: "other", text: "keep me", context: {} } as Report;
+  let answer: { data?: unknown; error?: { message: string } | null; status?: number } = {};
+  const client = { rpc: async () => answer } as unknown as SupabaseClient;
+  it("a 500, then not_signed_in keep the note; a 200 empties the queue; a named refusal drops it", async () => {
+    const store = memory();
+    queueReport(store, R);
+    answer = { data: null, error: { message: "Internal Server Error" }, status: 500 };
+    expect(await flushQueue(store, (r) => sendFeedback(r, client))).toBe(1);
+    answer = { data: { ok: false, error: "not_signed_in", message: "Sign in again." }, error: null };
+    expect(await flushQueue(store, (r) => sendFeedback(r, client))).toBe(1);
+    answer = { data: { ok: true, id: "f1" }, error: null };
+    expect(await flushQueue(store, (r) => sendFeedback(r, client))).toBe(0);
+    queueReport(store, R);
+    answer = { data: { ok: false, error: "text_too_long", message: "Too long." }, error: null };
+    expect(await flushQueue(store, (r) => sendFeedback(r, client))).toBe(0);
+  });
+  it("the admin app sends as ops: the function has no admin role", async () => {
+    let seen: Record<string, unknown> = {};
+    const c = { rpc: async (_n: string, a: Record<string, unknown>) => { seen = a; return { data: { ok: true, id: "f2" }, error: null }; } } as unknown as SupabaseClient;
+    await sendFeedback({ ...R, role: "admin" }, c);
+    expect(seen.p_role).toBe("ops");
+  });
+});
+
 describe("offline queue (S3)", () => {
   const report = (n: number): Report => ({ action: "feedback", session_id: "s1", role: "kitchen", screen: "/", order_id: "", doing: "other", text: "r" + n, context: {} });
   it("keeps reports in order and sends them when online, stopping at the first failure", async () => {

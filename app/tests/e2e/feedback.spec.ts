@@ -85,17 +85,18 @@ test("S5 AC-4 nothing is posted to the old webhook for feedback any more", async
   expect(net.calls.feedback).toHaveLength(1);
 });
 
-for (const [path, role] of [["/customer/", "customer"], ["/kitchen/", "kitchen"], ["/rider/", "rider"]] as const) {
+for (const [path, role, sent] of [["/customer/", "customer", "customer"], ["/kitchen/", "kitchen", "kitchen"], ["/rider/", "rider", "rider"], ["/admin/", "admin", "ops"]] as const) {
   test(`S6 AC-6 the ${role} app sends through the function with its own role`, async ({ page, context }) => {
     const net = await setup(context, page, [order("accepted")]);
     net.state.kitchen = "k-1";
+    net.state.admin = true;
     await page.goto(path);
     await page.evaluate(() => window.dispatchEvent(new Event("gs-feedback")));   // the Send feedback row on the You page does the same
     await page.getByLabel("What happened?").fill(`A note from the ${role}`);
     await page.getByRole("button", { name: "Send" }).click();
     await expect(page.getByTestId("feedback-sent")).toContainText("Sent. Thank you.");
     expect(net.calls.feedback).toHaveLength(1);
-    expect(net.calls.feedback[0].body).toMatchObject({ p_role: role, p_text: `A note from the ${role}` });
+    expect(net.calls.feedback[0].body).toMatchObject({ p_role: sent, p_text: `A note from the ${role}` });
   });
 }
 

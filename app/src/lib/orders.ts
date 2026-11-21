@@ -111,13 +111,12 @@ const FEEDBACK_FAILED = "Could not send the note. Try again.";
 export async function sendFeedback(report: Report, client: SupabaseClient): Promise<string> {
   let res;
   try {
-    res = await client.rpc("feedback_save_v2", { p_role: report.role, p_screen: report.screen, p_order: report.order_id || null, p_doing: report.doing, p_text: report.text, p_context: report.context });
+    res = await client.rpc("feedback_save_v2", { p_role: report.role === "admin" ? "ops" : report.role, p_screen: report.screen, p_order: report.order_id || null, p_doing: report.doing, p_text: report.text, p_context: report.context });
   } catch {
     throw new PlaceError(NO_INTERNET, "network");
   }
   if (res.error) {
-    if (res.status === 0 || /fetch|network/i.test(res.error.message)) throw new PlaceError(NO_INTERNET, "network");
-    throw new PlaceError(customerLine("feedback", "unknown", "") ?? FEEDBACK_FAILED, "unknown");
+    throw new PlaceError(NO_INTERNET, "network");   // a dead network, a 500 or an expired sign-in: the note is kept and tried again, never dropped
   }
   const a = res.data as { ok?: boolean; id?: string; error?: string; message?: string } | null;
   if (a?.ok && a.id) return a.id;

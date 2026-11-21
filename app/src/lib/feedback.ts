@@ -100,7 +100,7 @@ export async function flushQueue(store: Storage, send: (r: Report) => Promise<un
       await send(r);
       sent++;
     } catch (e) {
-      if (e instanceof PlaceError && e.code !== "network") sent++;   // the server refused this one for good; do not retry it forever
+      if (e instanceof PlaceError && e.code !== "network" && e.code !== "not_signed_in") sent++;   // a named refusal is for good; a network fault or a lapsed sign-in keeps the note
       else break;
     }
   }
