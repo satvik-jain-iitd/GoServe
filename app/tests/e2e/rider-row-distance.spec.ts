@@ -30,9 +30,9 @@ test("AC-1 under 1 km the distance is in metres: Rider is 890 m away", async ({ 
   await expect(title(page)).toHaveText("Rider is 890 m away");
 });
 
-test("AC-1 no position on the order keeps the title as it was: no new text", async ({ page, context }) => {
+test("AC-1 no position on the order: Rider is on the way, no name in the row", async ({ page, context }) => {
   await onTheWay(page, context, "Ravi", { drop_lat: null, drop_lng: null });
-  await expect(title(page)).toHaveText("Ravi is on the way");
+  await expect(title(page)).toHaveText("Rider is on the way");
 });
 
 test("AC-2 the sub line says updated 20 sec ago, without On the map; offline it says No connection · Last seen", async ({ page, context }) => {
@@ -53,10 +53,10 @@ for (const size of SIZES) {
     const long = (await row(page).boundingBox())!;
     expect(long.height).toBe(short.height);
     expect(long.width).toBe(short.width);
-    // the no-position title keeps the name, so a long name must not make it a second line
+    // no position: the title has no name, so a long name changes nothing in the row
     net.state.tracking = { ...net.state.tracking!, drop_lat: null, drop_lng: null };
     await page.reload();
-    await expect(title(page)).toHaveText("Abcdefghijklmnopqrstuvwxyz is on the way");
+    await expect(title(page)).toHaveText("Rider is on the way");
     expect((await row(page).boundingBox())!.height).toBe(short.height);
   });
 }

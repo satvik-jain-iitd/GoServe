@@ -34,7 +34,7 @@ test("T2 given the postal code has no point and the kitchen has no saved locatio
 test("T3 given the order has no drop point, the row shows the rider with no distance, and its link has no route", async ({ page, context }) => {
   await onTheWay(page, context, { drop_lat: null, drop_lng: null });
   await page.goto("/customer/");
-  await expect(row(page)).toContainText("Ravi is on the way");
+  await expect(row(page)).toContainText("Rider is on the way");
   await expect(row(page)).not.toContainText("away");
   await expect(row(page)).toHaveAttribute("href", /maps\/search\/\?api=1&query=/);   // story 1498: no drop point, so no route: the rider's place only
 });

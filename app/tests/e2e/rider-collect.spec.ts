@@ -6,12 +6,13 @@ const NOW = new Date().toISOString();
 const onTheWay = () => ({ ...order("out_for_delivery", NOW, NOW), rider_id: SESSION, customer_name: "Rahul Verma", customer_phone: "9876543210" });
 const OBJ = "qr-0a1b2c3d-0000-4000-8000-0123456789ab.png";
 const SRC = `https://test.supabase.co/storage/v1/object/public/upi-qr/${OBJ}`;
-const open = async (context: Parameters<typeof setup>[0], page: Page, state: Record<string, unknown> = {}) => {
+const open = async (context: Parameters<typeof setup>[0], page: Page, state: Record<string, unknown> = {}, before?: () => Promise<void>) => {
   const net = await setup(context, page, [onTheWay()]);
   net.state.qrObject = OBJ;   // the admin has uploaded the QR; the cases without one say so
   Object.assign(net.state, state);
   await page.goto("/rider/");
   await page.getByRole("button", { name: "Arriving 0f0f0f0f" }).click();
+  await before?.();
   await page.getByRole("button", { name: "Collect", exact: true }).click();   // story 1182, board RY3: Collect opens Collect payment
   return net;
 };
@@ -176,7 +177,12 @@ for (const [label, state] of [["on", {}], ["off", { doorMethods: ["cash"] }]] as
 for (const [w, h] of [[390, 844], [360, 640]] as const) {
   test(`C14 story 1747 at ${w}x${h}: two equal filled buttons side by side (cash left), no amount in a button, Back is the 44px header arrow, header and slip keep their place`, async ({ page, context }) => {
     await page.setViewportSize({ width: w, height: h });
-    const net = await open(context, page);
+    const frame = async () => ({ head: (await page.locator("header.ui-head").boundingBox())!, slip: (await page.locator(".ui-slip").boundingBox())!.y });
+    let was!: Awaited<ReturnType<typeof frame>>;
+    const net = await open(context, page, {}, async () => { was = await frame(); });
+    const now = await frame();
+    expect(now.head).toMatchObject({ y: was.head.y, height: was.head.height });   // AC-5: the header and the slip stay where they were before Collect opened
+    expect(now.slip).toBe(was.slip);
     const cash = page.getByRole("button", { name: "Took cash", exact: true }), upi = page.getByRole("button", { name: "Paid by UPI", exact: true });
     const [a, b] = [(await cash.boundingBox())!, (await upi.boundingBox())!];
     expect(Math.abs(a.y - b.y)).toBeLessThan(1);
@@ -190,7 +196,6 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
     const bb = (await back.boundingBox())!, hb = (await page.locator("header.ui-head").boundingBox())!, h1 = (await page.locator("header.ui-head h1").boundingBox())!;
     expect([Math.round(bb.width), Math.round(bb.height)]).toEqual([44, 44]);
     expect(bb.x).toBeLessThan(h1.x);
-    console.log(`MEASURE ${w}x${h} header top ${hb.y} h ${hb.height} slip top ${(await page.locator(".ui-slip").boundingBox())!.y} cash ${JSON.stringify(a)} upi ${JSON.stringify(b)}`);
     expect(hb.height).toBe(49);
     if (w === 360) expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight)).toBe(true);
     await page.goBack();   // AC-7: the phone's Back does the same as the arrow, saves nothing

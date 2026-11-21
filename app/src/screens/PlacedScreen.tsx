@@ -66,7 +66,7 @@ function RiderRow({ t }: { t: Track }) {
     <a className="ui-locrow ui-riderrow" aria-label="See the rider on Google Maps" href={riderLink(t.rider, t.you)} target="_blank" rel="noopener noreferrer">
       <span className="ui-locrow-icon">{MAP_ICON}</span>
       <span className="ui-locrow-words">
-        <span className="ui-locrow-title">{away ? `Rider is ${away} away` : <><b>{t.name}</b> is on the way</>}</span>
+        <span className="ui-locrow-title">{away ? `Rider is ${away} away` : "Rider is on the way"}</span>
         <span className="ui-locrow-sub mono">{online ? `updated ${agoText(t.rider.at, now)}` : `No connection · ${lastSeenText(t.rider.at, now)}`}</span>
       </span>
       <span className="ui-locrow-go">{GO}</span>
