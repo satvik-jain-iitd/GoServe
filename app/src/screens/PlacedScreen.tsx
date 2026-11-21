@@ -155,8 +155,8 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, 
         {again?.block}
         <div className="ui-after">
           {track && status === "out_for_delivery" && <RiderRow t={track} />}   {/* board T4: the row sits under the slip, above the timeline */}
-          {!cancelled && <Timeline rows={3} steps={steps.map((x) => (atDoor && x.status === "out_for_delivery" ? "Rider at your door" : STEP_WORDS[x.status] ?? x.label))} current={steps.findIndex((x) => x.state === "current")} label="Order progress"
-            right={steps.map((x) => (x.state === "current" && !delivered ? "Now" : x.state !== "todo" && times?.[x.status] ? clock12(new Date(times[x.status])) : null))} />}   {/* story 1324 (PL6, PL4, PL7): three rows, the delivered slip too */}
+          {!cancelled && !delivered && <Timeline rows={3} steps={steps.map((x) => (atDoor && x.status === "out_for_delivery" ? "Rider at your door" : STEP_WORDS[x.status] ?? x.label))} current={steps.findIndex((x) => x.state === "current")} label="Order progress"
+            right={steps.map((x) => (x.state === "current" ? "Now" : x.state !== "todo" && times?.[x.status] ? clock12(new Date(times[x.status])) : null))} />}   {/* story 1324 (PL6, PL4): three rows; story 1675: none on a delivered order, the stamp says it */}
           {!delivered && !cancelled && address && <p className="mono ui-addr ph-no-capture">{address}</p>}
           {rider && !(track && status === "out_for_delivery") && (
             <div className="notice ui-ridercard" data-testid="rider-card">   {/* story 1657: one line, the name cut with dots, no button: the call is in the foot */}
