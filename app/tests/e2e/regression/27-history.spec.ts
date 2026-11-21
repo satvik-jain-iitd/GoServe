@@ -92,20 +92,7 @@ test("TC 27.3 Tap a row: that order opens (the delivered slip)", async ({ page, 
   await expect(page.locator(".ui-slip-lines")).not.toContainText("Butter Chicken");   // another order's dish is not on this slip
 });
 
-test("TC 27.4 Order again: the Bill opens with those dishes at today's prices", async ({ page, context }) => {
-  // Only the delivered order on the list: no open order, so the reload does not send the app to a tracker.
-  await openHistory(context, page, [DELIVERED], MENU);
-  await page.locator(".ui-order-row").click();   // story 1589: the button is inside the opened order
-  const again = page.getByRole("button", { name: /Order again ›/ });
-  await expect(again).toBeVisible();   // proves the button shows before the tap
-  await again.click();
-  await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
-  await expect(page.getByText("Veg Thali").first()).toBeVisible();
-  await expect(page.getByText("Roti").first()).toBeVisible();
-  await expect(page.getByText("₹230").first()).toBeVisible();   // 180 + 2 x 25 at today's prices
-  await expect(page.getByText("Butter Chicken")).toHaveCount(0);   // not in this order, so not in the bill
-  await expect(page.getByRole("status").filter({ hasText: "not on the menu today" })).toHaveCount(0);
-});
+// TC 27.4 Order again: the Bill opens with those dishes at today's prices. Story 1676 took the button off the order page; the case moves to story 1738 (the button on the History list).
 
 test("TC 27.5 50 orders: the list scrolls down to the last order, nothing jumps, nothing is lost", async ({ page, context }) => {
   const MANY = Array.from({ length: 50 }, (_, i) => past(i + 1, "delivered", i + 1, [line("m-thali", "Veg Thali", 1, 18000)], 18000));

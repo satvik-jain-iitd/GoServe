@@ -8,7 +8,7 @@ const files = walk(resolve(__dirname, "../../src")).filter((f) => /\.(ts|tsx)$/.
 
 describe("one way to order", () => {
   it("no Order again text, no orderAgain code, no reorder button anywhere in the app source", () => {
-    const ALLOWED = ["OrderAgain.tsx", "App.tsx", "cart.ts", "area.ts"];   // story #977: the one function behind it (story 1589: its button lives in OrderAgain.tsx, no longer in History); story #1162: area.ts holds the sentence "Order again from 6:00 pm." on a closed menu (owner's words, a line, not a button)
+    const ALLOWED = ["App.tsx", "cart.ts", "area.ts"];   // story #977: the one function behind it (App.tsx: a comment about reading an order again; story 1676: the order page has no Order again; story 1738 puts the button on the History list); story #1162: area.ts holds the sentence "Order again from 6:00 pm." on a closed menu (owner's words, a line, not a button)
     for (const f of files.filter((f) => !ALLOWED.some((a) => f.endsWith(a)))) expect(readFileSync(f, "utf8"), f).not.toMatch(/order again|orderAgain|reorder/i);
     expect(readFileSync(resolve(__dirname, "../../src/screens/OrdersScreen.tsx"), "utf8")).not.toMatch(/order again/i);   // story 1589: no History row has the button; it lives in the opened delivered order (OrderAgain.tsx)
   });

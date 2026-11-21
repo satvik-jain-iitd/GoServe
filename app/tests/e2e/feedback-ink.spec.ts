@@ -25,7 +25,6 @@ test("S2 the words are the boards' words and the sheet has no serious contrast o
   const sheet = page.getByRole("dialog", { name: "Feedback" });
   await expect(sheet.getByLabel("What happened?")).toBeVisible();
   await expect(sheet.getByLabel("What were you doing?")).toBeVisible();
-  await expect(sheet.getByLabel("Add a screenshot (optional)")).toBeVisible();
-  await expect(sheet.getByText("Take one with your phone buttons first, then pick it here.")).toBeVisible();
+  await expect(sheet.getByLabel("Add a screenshot (optional)")).toHaveCount(0);   // #1751: words only
   expect(await scan(page)).toEqual([]);
 });

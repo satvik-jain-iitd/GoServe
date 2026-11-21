@@ -26,10 +26,11 @@ describe("the words", () => {
     expect(distanceText(28.5700, 77.2400, 28.5810, 77.2400)).toBe("1.2 km");
     expect(distanceText(28.5700, 77.2400, 28.5740, 77.2400)).toBe("440 m");
   });
-  it("S3b story 1682: minutes first, then the distance; nothing past SANE_M", () => {
-    expect(awayText(1200)).toBe("5 min away \u00b7 1.2 km");
-    expect(awayText(2000)).toBe("8 min away \u00b7 2.0 km");
-    expect(awayText(100)).toBe("1 min away \u00b7 100 m");
+  it("S3b story 1744: the distance only, metres under 1 km; nothing past SANE_M", () => {
+    expect(awayText(1200)).toBe("1.2 km");
+    expect(awayText(2000)).toBe("2.0 km");
+    expect(awayText(890)).toBe("890 m");
+    expect(awayText(100)).toBe("100 m");
     expect(awayText(30001)).toBeNull();
     expect(awayText(379200)).toBeNull();
   });

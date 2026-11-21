@@ -8,7 +8,7 @@ test("S1 the Send feedback row says what happens on tap", async ({ page, context
   await setup(context, page);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "You" }).click();
-  await expect(page.getByText("Two lines and a screenshot. We read every note.")).toBeVisible();
+  await expect(page.getByText("Two lines is enough. We read every note.")).toBeVisible();
 });
 
 test("S2 the customer's Feedback list is the four customer choices, Something else picked", async ({ page, context }) => {
@@ -18,8 +18,7 @@ test("S2 the customer's Feedback list is the four customer choices, Something el
   const pick = page.getByLabel("What were you doing?");
   expect(await pick.locator("option").allTextContents()).toEqual(["Ordering", "Tracking my order", "Paying the rider", "Something else"]);
   await expect(pick).toHaveValue("Something else");
-  await expect(page.getByText("Add a screenshot (optional)")).toBeVisible();
-  await expect(page.getByText("Take one with your phone buttons first, then pick it here.")).toBeVisible();
+  await expect(page.getByText("Add a screenshot (optional)")).toHaveCount(0);   // #1751: words only
 });
 
 test("S3 the kitchen app keeps the full list with nothing picked", async ({ page, context }) => {
@@ -40,8 +39,8 @@ test("S4 a customer's pick goes out as a stored kind and as the words the custom
   await page.getByLabel("What were you doing?").selectOption("Paying the rider");
   await page.getByRole("button", { name: "Send" }).click();
   await expect(page.getByTestId("feedback-sent")).toBeVisible();
-  expect(net.calls.feedback[0].body).toMatchObject({ doing: "delivering" });
-  expect(net.calls.feedback[0].body.context.topic).toBe("Paying the rider");
+  expect(net.calls.feedback[0].body).toMatchObject({ p_doing: "delivering" });
+  expect(net.calls.feedback[0].body.p_context.topic).toBe("Paying the rider");
 });
 
 test("S5 the privacy and terms pages carry the new contact address", async ({ page }) => {

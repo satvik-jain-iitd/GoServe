@@ -24,15 +24,10 @@ export function distanceText(lat1: number, lng1: number, lat2: number, lng2: num
   return fmtDistance(metres(lat1, lng1, lat2, lng2));
 }
 
-// Story 1682: a first guess (a scooter at 20 km/h, roads 1.3x the straight line), to be replaced by measured trips (see docs/assumptions.md).
-export const RIDER_KMPH = 20;   // story 1689: the server twin is eta_rules.speed_m_min (333.33 m a minute); keep the two the same
-export const ROAD_FACTOR = 1.3;
 export const SANE_M = 30000;
-/** Minutes first, then the distance; null when the rider is too far to be a real trip (a stale or wrong ping). */
+/** Story 1744: the distance only (metres under 1 km); null when the rider is too far to be a real trip (a stale or wrong ping). */
 export function awayText(m: number): string | null {
-  if (m > SANE_M) return null;
-  const min = Math.max(1, Math.ceil((m * ROAD_FACTOR) / ((RIDER_KMPH * 1000) / 60)));
-  return `${min} min away \u00b7 ${fmtDistance(m)}`;
+  return m > SANE_M ? null : fmtDistance(m);
 }
 
 export const lastSeenText = (at: string, now: number): string => `Last seen ${clock12(new Date(at))}, ${agoText(at, now)}`;

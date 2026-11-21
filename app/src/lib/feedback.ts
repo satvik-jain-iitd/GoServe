@@ -1,5 +1,5 @@
 // What the Feedback button builds, shrinks, queues and sends (story S-B, #94, ADR-014).
-// The phone's own screenshot is the picture: there is no screenshot library. The words and the picture go to n8n (SUB 17), which saves them.
+// Words only (#1751): the report is saved by the database function feedback_save_v2. The picture is a later story.
 import { PlaceError } from "./orders";
 import type { TrailEntry } from "./trail";
 
@@ -100,7 +100,7 @@ export async function flushQueue(store: Storage, send: (r: Report) => Promise<un
       await send(r);
       sent++;
     } catch (e) {
-      if (e instanceof PlaceError && e.code !== "network") sent++;   // the server refused this one for good; do not retry it forever
+      if (e instanceof PlaceError && e.code !== "network" && e.code !== "not_signed_in") sent++;   // a named refusal is for good; a network fault or a lapsed sign-in keeps the note
       else break;
     }
   }

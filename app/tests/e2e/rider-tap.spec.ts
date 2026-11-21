@@ -29,14 +29,14 @@ test("G1 the tap opens Google Maps with the route from the rider's last place to
 
 test("G2 the order screen stays as it is: the same row words and the Live mark", async ({ page, context }) => {
   await onTheWay(page, context);
-  await expect(row(page)).toContainText("Ravi is 8 min away · 2.0 km");
-  await expect(row(page)).toContainText("On the map · updated 20 sec ago");
+  await expect(row(page)).toContainText("Rider is 2.0 km away");
+  await expect(row(page)).toContainText("updated 20 sec ago");
   await expect(page.getByText("Live", { exact: true })).toBeVisible();
 });
 
 test("G3 an order with no map pin opens only the rider's last place: no route", async ({ page, context }) => {
   await onTheWay(page, context, { drop_lat: null, drop_lng: null });
-  await expect(row(page)).toContainText("Ravi is on the way");
+  await expect(row(page)).toContainText("Rider is on the way");
   const href = new URL((await row(page).getAttribute("href"))!);
   expect(href.origin + href.pathname).toBe("https://www.google.com/maps/search/");
   expect([href.searchParams.get("api"), href.searchParams.get("query")]).toEqual(["1", "28.58,77.25"]);

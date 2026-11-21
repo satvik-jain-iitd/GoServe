@@ -24,22 +24,7 @@ async function history(page: Page, context: Ctx, orders: object[], tune?: (s: an
   await expect(page.getByRole("heading", { name: "History", exact: true })).toBeVisible();
   return net;
 }
-async function openDelivered(page: Page, context: Ctx, tune?: (s: any) => void) {
-  await history(page, context, [past(1, "delivered", "2020-11-12T14:00:00Z", THALI_ROTI)], tune);
-  await page.getByRole("button", { name: /Veg Thali/ }).click();
-  await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();
-  await expect(page.locator(".ui-again")).toBeVisible();
-}
-// The four states of the block. `tune` is what the network answers for that state.
-const STATES: Record<string, (s: any) => void> = {
-  all: () => undefined,
-  some: (s) => { s.menu = [dish("d1", "Veg Thali", 18000)]; },
-  none: (s) => { s.menu = [dish("d9", "Dal Makhani", 20000)]; },
-  closed: (s) => { s.kitchens = [{ ...s.kitchens[0], open: false }, K2]; },
-};
 const box = (page: Page, sel: string) => page.locator(sel).evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)]; }));
-const PARTS = [".ui-again h2", ".ui-again-line", ".ui-again-dish", ".ui-bottom .ui-btn:last-of-type", ".ui-again-note", ".ui-slip", ".ui-bottom"];
-
 export function historyOrderAgain() {
   test.describe("the list", () => {
     const ORDERS = [
@@ -86,84 +71,8 @@ export function historyOrderAgain() {
     });
   });
 
-  test.describe("the opened order", () => {
-    for (const [key, tune] of Object.entries(STATES)) {
-      test(`state ${key}: the block, its rows and its button`, async ({ page, context }) => {
-        await openDelivered(page, context, tune);
-        const rows = page.locator(".ui-again-dish");
-        await expect(rows).toHaveCount(2);
-        const bar = page.locator(".ui-bottom .ui-btn").last();
-        if (key === "all") {
-          await expect(rows.nth(0)).toContainText("Veg Thali");
-          await expect(rows.nth(0)).toContainText("₹180");
-          await expect(rows.nth(1)).toContainText("₹40");
-          await expect(page.locator(".ui-again-line")).toContainText("Hauz Khas Kitchen cooks for");
-          await expect(bar).toHaveText(/₹220\s*Order again ›/);
-          await expect(bar).toBeEnabled();
-        }
-        if (key === "some") {
-          await expect(rows.nth(0)).toContainText("₹180");
-          await expect(rows.nth(1)).toContainText("not made today");
-          await expect(rows.nth(1).locator(".nm")).toHaveCSS("text-decoration-line", "line-through");
-          await expect(bar).toHaveText(/1 of 2 · ₹180\s*Order again ›/);
-        }
-        if (key === "none") {
-          await expect(rows).toHaveText([/not made today/, /not made today/]);
-          await expect(page.locator(".ui-again-line")).toHaveText("Hauz Khas Kitchen does not make these dishes today.");
-          await expect(bar).toHaveText("See the menu");
-        }
-        if (key === "closed") {
-          await expect(bar).toBeDisabled();
-          await expect(bar).toHaveText(/Order again ›/);
-          await expect(page.locator(".ui-again-note")).toHaveText("Hauz Khas Kitchen is closed now.");
-        } else await expect(page.locator(".ui-again-note")).toHaveText("");
-      });
-      test(`state ${key}: the answer is on screen at 360x640 with no scroll`, async ({ page, context }) => {
-        await page.setViewportSize({ width: 360, height: 640 });
-        await openDelivered(page, context, tune);
-        await expect(page.locator(".ui-bottom .ui-btn").last()).toBeInViewport({ ratio: 1 });
-        await expect(page.locator(".ui-again-line")).toBeInViewport({ ratio: 1 });
-        if (key === "closed") await expect(page.locator(".ui-again-note")).toBeInViewport({ ratio: 1 });
-      });
-    }
-    test("rule 23: nothing moves between the four states (boxes laid over each other)", async ({ page, context }) => {
-      const seen: Record<string, Record<string, number[][]>> = {};
-      for (const [key, tune] of Object.entries(STATES)) {
-        await openDelivered(page, context, tune);
-        seen[key] = {};
-        for (const p of PARTS) seen[key][p] = await box(page, p);
-        await page.unrouteAll({ behavior: "ignoreErrors" });
-      }
-      for (const key of ["some", "none", "closed"]) for (const p of PARTS) expect(seen[key][p], `${key} ${p}`).toEqual(seen.all[p]);
-    });
-    test("Order again fills the bag with the dishes made today and opens the Bill", async ({ page, context }) => {
-      await openDelivered(page, context, STATES.some);
-      await page.getByRole("button", { name: /Order again ›/ }).click();
-      await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
-      await expect(page.getByText("Veg Thali").first()).toBeVisible();
-      await expect(page.getByText("Butter Roti")).toHaveCount(0);
-    });
-    test("an order of another kitchen is matched by name and veg mark; the slip shows that kitchen", async ({ page, context }) => {
-      await history(page, context, [past(1, "delivered", "2020-11-12T14:00:00Z", [["old-1", "Veg Thali", 1], ["old-2", "Butter Roti", 1]], { kitchen_id: "k-2" })], (s) => { s.oldDishes = [{ id: "old-1", veg: true }, { id: "old-2", veg: false }]; });
-      await page.getByRole("button", { name: /Veg Thali/ }).click();
-      await expect(page.locator(".ui-slip-head")).toContainText("Saket Kitchen");   // the order's own kitchen, never the present one
-      await expect(page.locator(".ui-again-dish").nth(0)).toContainText("₹180");
-      await expect(page.locator(".ui-again-dish").nth(1)).toContainText("not made today");   // the veg mark differs: not the same dish
-    });
-    test("the menu cannot be read: no marks, the line says so, the button is See the menu", async ({ page, context }) => {
-      await history(page, context, [past(1, "delivered", "2020-11-12T14:00:00Z", [["old-1", "Veg Thali", 1]], { kitchen_id: "k-2" })], (s) => { s.oldDishesDown = true; });
-      await page.getByRole("button", { name: /Veg Thali/ }).click();
-      await expect(page.locator(".ui-again-line")).toHaveText("Could not check today's menu.");
-      await expect(page.locator(".ui-again-dish .ui-again-mk")).toHaveText([""]);
-      await expect(page.locator(".ui-bottom .ui-btn").last()).toHaveText("See the menu");
-    });
-    test("a cancelled, a declined and an order in progress have no block", async ({ page, context }) => {
-      await history(page, context, [past(1, "cancelled", "2020-11-12T14:00:00Z", THALI_ROTI)]);
-      await page.getByRole("button", { name: /Veg Thali/ }).click();
-      await expect(page.getByRole("heading", { name: "Cancelled" })).toBeVisible();
-      await expect(page.locator(".ui-again")).toHaveCount(0);
-    });
-  });
+  // Story 1676: no Order it again block on the opened order (delivered-no-again.spec.ts); the block cases move to story 1738, on the History list.
+
 
   // Story 1589 (reviewer, 16 Nov 2026): the slip's header names the order's own kitchen. Until another kitchen's name is known the line is empty and keeps its box; a failed read shows the pin alone.
   const other = () => past(2, "delivered", "2020-11-12T14:00:00Z", THALI_ROTI, { kitchen_id: "k-2" });

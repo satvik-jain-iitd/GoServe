@@ -22,7 +22,6 @@ type Props = {
   paidBy: string | null;
   bill?: OrderBill | null;   // story #1295: every amount the server took off has its own line, so the lines add up to the total
   confirmedAt: string | null;   // when the order closed, shown as the customer's local time
-  early?: number | null;        // story 1508 (board DL1): minutes before the promised time; null on time, late or not known
   placedAt: string;             // when the order was made (ISO)
   lines: { name: string; qty: number; paise: number }[];
   kitchenName: string;
@@ -43,7 +42,6 @@ type Props = {
   track?: Track;                // story #691: On the way, with the rider's place known
   eta?: Eta | null;             // story #1015: the server's delivery time
   declined?: { reason: string; at: string } | null;   // story #934: the kitchen said no, in its own words
-  again?: { block: ReactNode; bar: ReactNode };   // story 1589: a delivered order from History: the block under the slip and the one filled button, in place of Back to menu
 };
 export type Track = { you: LatLng | null; rider: Point; name: string; phone: string | null };   // story 1497: `you` is the order's own drop point; null when the order has none
 export type Pay = {
@@ -61,12 +59,13 @@ const GO = <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fi
 // Story 1498 (owner, 14 Nov 2026): the row looks as before; the tap opens Google Maps, the route from the rider to the order's pin.
 function RiderRow({ t }: { t: Track }) {
   const { now, online } = useNowOnline();
+  const away = t.you && awayText(metres(t.rider.lat, t.rider.lng, t.you.lat, t.you.lng));
   return (
     <a className="ui-locrow ui-riderrow" aria-label="See the rider on Google Maps" href={riderLink(t.rider, t.you)} target="_blank" rel="noopener noreferrer">
       <span className="ui-locrow-icon">{MAP_ICON}</span>
       <span className="ui-locrow-words">
-        <span className="ui-locrow-title"><b>{t.name}</b> is {(t.you && awayText(metres(t.rider.lat, t.rider.lng, t.you.lat, t.you.lng))) || "on the way"}</span>
-        <span className="ui-locrow-sub mono">{online ? `On the map · updated ${agoText(t.rider.at, now)}` : `No connection · ${lastSeenText(t.rider.at, now)}`}</span>
+        <span className="ui-locrow-title">{away ? `Rider is ${away} away` : "Rider is on the way"}</span>
+        <span className="ui-locrow-sub mono">{online ? `updated ${agoText(t.rider.at, now)}` : `No connection · ${lastSeenText(t.rider.at, now)}`}</span>
       </span>
       <span className="ui-locrow-go">{GO}</span>
     </a>
@@ -85,7 +84,8 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "Delivered" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
-export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, placedAt, lines, kitchenName, headWait, pin, kitchenPhone, address, error, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta, again }: Props) {
+export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedAt, lines, kitchenName, headWait, pin, kitchenPhone, address, error, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta }: Props) {
+  const riderPhone = (status === "out_for_delivery" ? track?.phone ?? rider?.phone : status === "ready" ? rider?.phone : null) || null;   // the track exists only on the way; the rider card is there from ready
   const [askCancel, setAskCancel] = useState(false);   // story #1227: the cancel sheet
   const steps = trackerSteps(status);
   const { now, online } = useNowOnline();
@@ -139,7 +139,6 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, 
             {!cancelled && !delivered && view.kind === "late" && <p className="ui-clock ui-eta-late" role="status">Running late, sorry</p>}
             {!cancelled && !delivered && view.kind === "working" && <p className="ui-clock ui-eta-by">Working out the time</p>}
             {delivered && confirmedAt && <p className="ui-clock">At your door <b>{clock12(new Date(confirmedAt))}</b></p>}
-            {delivered && confirmedAt && !!early && <p className="ui-clock ui-early">{early} min early</p>}   {/* story 1508 (board DL1): only when early; never "late" here */}
             <div className="ui-slip-rule" />
             <div className="ui-slip-lines">
               {lines.map((l) => <div key={l.name}><span>{l.qty} × {l.name}</span><span>{formatRupees(l.paise).replace("₹", "")}</span></div>)}
@@ -150,16 +149,14 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, 
             <div className="ui-slip-total"><b>{declined || cancelled ? "Nothing to pay" : pay?.state === "paid" ? "Paid online" : pay ? "To pay online" : delivered && paidBy === "cash" ? "Cash paid" : delivered && paidBy === "upi_door" ? "Paid by UPI at the door" : delivered ? "Paid at the door" : "To pay at door"}</b><span>{declined || cancelled ? formatRupees(0) : formatRupees(order.total_paise)}</span></div>
           </div>
         </section>
-        {again?.block}
         <div className="ui-after">
           {track && status === "out_for_delivery" && <RiderRow t={track} />}   {/* board T4: the row sits under the slip, above the timeline */}
-          {!cancelled && <Timeline rows={3} steps={steps.map((x) => (atDoor && x.status === "out_for_delivery" ? "Rider at your door" : STEP_WORDS[x.status] ?? x.label))} current={steps.findIndex((x) => x.state === "current")} label="Order progress"
-            right={steps.map((x) => (x.state === "current" && !delivered ? "Now" : x.state !== "todo" && times?.[x.status] ? clock12(new Date(times[x.status])) : null))} />}   {/* story 1324 (PL6, PL4, PL7): three rows, the delivered slip too */}
+          {!cancelled && !delivered && <Timeline rows={3} steps={steps.map((x) => (atDoor && x.status === "out_for_delivery" ? "Rider at your door" : STEP_WORDS[x.status] ?? x.label))} current={steps.findIndex((x) => x.state === "current")} label="Order progress"
+            right={steps.map((x) => (x.state === "current" ? "Now" : x.state !== "todo" && times?.[x.status] ? clock12(new Date(times[x.status])) : null))} />}   {/* story 1324 (PL6, PL4): three rows; story 1675: none on a delivered order, the stamp says it */}
           {!delivered && !cancelled && address && <p className="mono ui-addr ph-no-capture">{address}</p>}
           {rider && !(track && status === "out_for_delivery") && (
-            <div className="notice" data-testid="rider-card">
-              <strong>{atDoor ? rider.name.split(" ")[0] : rider.name}</strong> {atDoor ? "is at your door." : "is bringing your order."}{" "}
-              <a className="ui-btn" href={`tel:${rider.phone}`} onClick={onCall}>Call {rider.name}</a>
+            <div className="notice ui-ridercard" data-testid="rider-card">   {/* story 1657: one line, the name cut with dots, no button: the call is in the foot */}
+              <strong>{(atDoor ? rider.name.split(" ")[0] : rider.name).trim() || "Your rider"}</strong>{" "}<span>{atDoor ? "is at your door." : "is bringing your order."}</span>
             </div>
           )}
           {declined ? (
@@ -177,12 +174,11 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, 
       </div>
       {(status === "placed" || status === "accepted") && askCancel && <CancelSheet lines={lines} kitchenName={kitchenName || "the kitchen"} paidOnline={pay?.state === "paid"} onKeep={() => setAskCancel(false)} onYes={() => { setAskCancel(false); onCancel(); }} />}
       <div className="ui-bottom">   {/* story 1572: one button per line, full width, never side by side */}
-        {(status === "placed" || status === "accepted") && <button type="button" className="ui-btn ghost big" disabled={cancelling} onClick={() => setAskCancel(true)}>Cancel order</button>}
-        {track?.phone && status === "out_for_delivery" && <a href={`tel:${track.phone}`} className="ui-btn ghost big" onClick={onCall}>Call the rider</a>}
-        {kitchenPhone && status !== "out_for_delivery" && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
+        {(status === "placed" || status === "accepted") && <button type="button" className="ui-btn ghost big danger" disabled={cancelling} onClick={() => setAskCancel(true)}>Cancel order</button>}
+        {riderPhone && <a href={`tel:${riderPhone}`} className="ui-btn ghost big" onClick={onCall}>Call the rider</a>}   {/* stories 1656, 1657: one call button by stage; the name is never in a button */}
+        {!riderPhone && kitchenPhone && status !== "out_for_delivery" && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
         {declined && <button type="button" className="ui-btn big" onClick={onMenu}>Order something else</button>}   {/* story 1458 (board T2b): the main button last, as on every end slip */}
-        {again?.bar}
-        {(cancelled || (delivered && !again)) && !declined && <button type="button" className="ui-btn big" onClick={onMenu}>Back to menu</button>}   {/* story 1434 (boards T1b, Delivered b): one name on both end slips, the main button last; the same dishes again only from History */}
+        {(cancelled || delivered) && !declined && <button type="button" className="ui-btn big" onClick={onMenu}>Back to menu</button>}   {/* story 1434 (boards T1b, Delivered b): one name on both end slips, the main button last; the same dishes again only from History */}
       </div>
     </>
   );
