@@ -8,7 +8,7 @@ test("S1 the Send feedback row says what happens on tap", async ({ page, context
   await setup(context, page);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "You" }).click();
-  await expect(page.getByText("Two lines and a screenshot. We read every note.")).toBeVisible();
+  await expect(page.getByText("Two lines is enough. We read every note.")).toBeVisible();
 });
 
 test("S2 the customer's Feedback list is the four customer choices, Something else picked", async ({ page, context }) => {
