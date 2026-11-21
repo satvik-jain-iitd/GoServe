@@ -1,5 +1,5 @@
 // What the Feedback button builds, shrinks, queues and sends (story S-B, #94, ADR-014).
-// The phone's own screenshot is the picture: there is no screenshot library. The words and the picture go to n8n (SUB 17), which saves them.
+// Words only (#1751): the report is saved by the database function feedback_save_v2. The picture is a later story.
 import { PlaceError } from "./orders";
 import type { TrailEntry } from "./trail";
 

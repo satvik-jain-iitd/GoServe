@@ -34,7 +34,7 @@ async function openSheet(page: Page) {
   await expect(dialog(page)).toBeVisible();
 }
 
-test("TC 32.1 Look: Feedback, What happened? box with an e.g. example, What were you doing? list, Add a screenshot (optional), Send, Close", async ({ page, context }) => {
+test("TC 32.1 Look: Feedback, What happened? box with an e.g. example, What were you doing? list, Send, Close", async ({ page, context }) => {
   await reach(context, page);
   await openSheet(page);
   await expect(dialog(page).getByRole("heading", { name: "Feedback", exact: true })).toBeVisible();
@@ -42,7 +42,7 @@ test("TC 32.1 Look: Feedback, What happened? box with an e.g. example, What were
   const topics = dialog(page).getByLabel("What were you doing?");
   await expect(topics).toBeVisible();
   await expect(topics.getByRole("option")).toHaveText(["Ordering", "Tracking my order", "Paying the rider", "Something else"]);
-  await expect(dialog(page).getByLabel("Add a screenshot (optional)")).toBeVisible();
+  await expect(dialog(page).getByLabel("Add a screenshot (optional)")).toHaveCount(0);   // #1751: words only
   await expect(sendBtn(page)).toBeVisible();
   await expect(dialog(page).getByRole("button", { name: "Close", exact: true })).toBeVisible();
   test.fail(true, "#1231: the What happened? box has no e.g. example text (no placeholder)");

@@ -1244,7 +1244,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       {role === "admin" && !framed && <AdminScreen />}
       <FeedbackSheet role={lock ?? "console"} button={!lock} screen={`${window.location.pathname}${lock ? "" : ` (${role} tab)`}`}
         order={placed ? { id: placed.id, status: orders.find((o) => o.id === placed.id)?.status ?? placed.status } : orders[0] ? { id: orders[0].id, status: orders[0].status } : null}
-        getSession={currentSession} send={async (r) => { const id = await sendFeedback(r, api()); capture("feedback_sent"); return id; }} />
+        getSession={currentSession} send={async (r) => { const id = await sendFeedback(r, getClient()); capture("feedback_sent"); return id; }} />
       {role === "split" && (
         <div className="panes">
           <div>{customerView}</div>

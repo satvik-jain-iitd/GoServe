@@ -1,9 +1,7 @@
-// Story S-B (#94): the Feedback button. The network is answered by the test (see helpers.ts); the real save, Drive file and Telegram message are checked live.
+// Story S-B (#94), changed by story 1751 (epic #1299): the Feedback sheet saves through the database function feedback_save_v2, not the old webhook. The network is answered by the test (see helpers.ts).
+// Words only for now: the picture picker is gone for every role until the picture story.
 import { test, expect, type Page } from "@playwright/test";
 import { ID, order, setup } from "./helpers";
-
-// A 1x1 PNG: the "screenshot" the tester picks.
-const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
 
 const openFeedback = async (page: Page) => {   // #242: the floating button lives on the console; the kitchen tab there shows the session's orders
   await page.goto("/console/");
@@ -15,37 +13,33 @@ const openFeedback = async (page: Page) => {   // #242: the floating button live
   await expect(page.getByRole("dialog", { name: "Feedback" })).toBeVisible();
 };
 
-test("S1 a report with a screenshot: words, kind of work, order, trail and picture reach the server", async ({ page, context }) => {
+test("S1 AC-1 a report: the function is called once with the words, the kind of work, the screen, the order and the trail; the sheet says it was sent", async ({ page, context }) => {
   const net = await setup(context, page, [order("accepted")]);
   net.state.kitchen = "k-1";
   await openFeedback(page);
   await page.getByLabel("What happened?").fill("Accept button did nothing");
   await page.getByLabel("What were you doing?").selectOption("Cooking");
-  await page.getByLabel("Add a screenshot").setInputFiles({ name: "shot.png", mimeType: "image/png", buffer: PNG });
   await page.getByRole("button", { name: "Send" }).click();
   await expect(page.getByRole("dialog", { name: "Feedback" })).toHaveCount(0);   // story #642: the sheet closes
   const card = page.getByTestId("feedback-sent");
   await expect(card).toContainText("Sent. Thank you.");
   await expect(card).toContainText("The GoServe team reads every note. Yours makes the app better for everyone.");
   expect(net.calls.feedback).toHaveLength(1);
-  const sent = net.calls.feedback[0];
-  expect(sent.headers["x-gs-token"]).toBe("demo-token");
-  expect(sent.body).toMatchObject({ action: "feedback", role: "console", screen: "/console/ (kitchen tab)", order_id: ID, doing: "cooking", text: "Accept button did nothing" });
-  expect(sent.body.image_b64.length).toBeGreaterThan(20);
-  expect(sent.body.context.trail.map((t: { line: string }) => t.line).join(" ")).toMatch(/preparing/);
+  const b = net.calls.feedback[0].body;
+  expect(b).toMatchObject({ p_role: "console", p_screen: "/console/ (kitchen tab)", p_order: ID, p_doing: "cooking", p_text: "Accept button did nothing" });
+  expect(b.p_context.trail.map((t: { line: string }) => t.line).join(" ")).toMatch(/preparing/);
+  expect("session_id" in b || "p_session" in b || "image_b64" in b).toBe(false);   // the server takes the person from the sign-in; no picture yet
 });
 
-test("S2 a report without a screenshot sends no picture", async ({ page, context }) => {
+test("S2 the sheet has no picture picker, for any role (words only for now)", async ({ page, context }) => {
   const net = await setup(context, page, [order("accepted")]);
   net.state.kitchen = "k-1";
   await openFeedback(page);
-  await page.getByLabel("What happened?").fill("The card is hard to read");
-  await page.getByRole("button", { name: "Send" }).click();
-  await expect(page.getByTestId("feedback-sent")).toContainText("Sent. Thank you.");
-  expect("image_b64" in net.calls.feedback[0].body).toBe(false);
+  await expect(page.getByLabel("Add a screenshot")).toHaveCount(0);
+  await expect(page.locator('input[type="file"]')).toHaveCount(0);
 });
 
-test("S3 an offline report waits on the phone and is sent when the phone is back online", async ({ page, context }) => {
+test("S3 AC-2 an offline report waits on the phone and is sent through the function when the phone is back online; the queue is then empty", async ({ page, context }) => {
   const net = await setup(context, page, [order("accepted")]);
   net.state.kitchen = "k-1";
   await openFeedback(page);
@@ -60,23 +54,50 @@ test("S3 an offline report waits on the phone and is sent when the phone is back
   net.state.feedbackDown = false;
   await page.evaluate(() => window.dispatchEvent(new Event("online")));
   await expect.poll(() => net.calls.feedback.length).toBe(1);
-  expect(net.calls.feedback[0].body.text).toBe("Lost signal in the kitchen");
+  expect(net.calls.feedback[0].body.p_text).toBe("Lost signal in the kitchen");
+  await expect.poll(() => page.evaluate(() => JSON.parse(window.localStorage.getItem("gs-feedback-queue") ?? "[]").length)).toBe(0);
 });
 
-test("S4 a server failure keeps the sheet open with the words and the file, shows the error and lets the customer send again (story #642)", async ({ page, context }) => {
+test("S4 AC-3 too many reports: one true line, the sheet stays open with the typed words", async ({ page, context }) => {
   const net = await setup(context, page, [order("accepted")]);
   net.state.kitchen = "k-1";
   await openFeedback(page);
-  net.state.reply = { status: 500, body: { ok: false, error: "server", message: "We could not send that. Please try again." } };
+  net.state.feedbackReply = { ok: false, error: "too_many", message: "You have sent a lot of notes. Try again in an hour." };
   await page.getByLabel("What happened?").fill("Nothing happens on Pay");
-  await page.getByLabel("Add a screenshot").setInputFiles({ name: "shot.png", mimeType: "image/png", buffer: PNG });
   await page.getByRole("button", { name: "Send" }).click();
-  await expect(page.getByRole("alert")).toContainText("Could not send the note. Try again.");
+  await expect(page.getByRole("alert")).toHaveText("You have sent a lot of notes. Try again in an hour.");
   await expect(page.getByRole("dialog", { name: "Feedback" })).toBeVisible();
   await expect(page.getByLabel("What happened?")).toHaveValue("Nothing happens on Pay");
   await expect(page.getByTestId("feedback-sent")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Send" })).toBeEnabled();
 });
+
+test("S5 AC-4 nothing is posted to the old webhook for feedback any more", async ({ page, context }) => {
+  const net = await setup(context, page, [order("accepted")]);
+  net.state.kitchen = "k-1";
+  const hooks: string[] = [];
+  page.on("request", (r) => { if (r.url().startsWith("https://orders.test/") && (r.postData() ?? "").includes('"feedback"')) hooks.push(r.url()); });
+  await openFeedback(page);
+  await page.getByLabel("What happened?").fill("Words for the database");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByTestId("feedback-sent")).toContainText("Sent. Thank you.");
+  expect(hooks).toHaveLength(0);
+  expect(net.calls.feedback).toHaveLength(1);
+});
+
+for (const [path, role] of [["/customer/", "customer"], ["/kitchen/", "kitchen"], ["/rider/", "rider"]] as const) {
+  test(`S6 AC-6 the ${role} app sends through the function with its own role`, async ({ page, context }) => {
+    const net = await setup(context, page, [order("accepted")]);
+    net.state.kitchen = "k-1";
+    await page.goto(path);
+    await page.evaluate(() => window.dispatchEvent(new Event("gs-feedback")));   // the Send feedback row on the You page does the same
+    await page.getByLabel("What happened?").fill(`A note from the ${role}`);
+    await page.getByRole("button", { name: "Send" }).click();
+    await expect(page.getByTestId("feedback-sent")).toContainText("Sent. Thank you.");
+    expect(net.calls.feedback).toHaveLength(1);
+    expect(net.calls.feedback[0].body).toMatchObject({ p_role: role, p_text: `A note from the ${role}` });
+  });
+}
 
 test("the floating button is on the console only; the role apps carry a Send feedback row instead (story #242)", async ({ page, context }) => {
   await setup(context, page);
