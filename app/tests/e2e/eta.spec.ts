@@ -58,7 +58,7 @@ test("S6 once the order is cancelled the time line is gone", async ({ page, cont
   await page.goto("/customer/");
   await expect(page.getByText("25 min", { exact: true })).toBeVisible();
   net.push("UPDATE", order("cancelled", "2020-01-01T10:01:00Z"));
-  await expect(page.getByText("Your order was cancelled. Nothing to pay.")).toBeVisible({ timeout: 5000 });
+  await expect(page.locator(".ui-stamp")).toHaveText("Cancelled", { timeout: 5000 });   // story 1745: the cancelled sentence is gone; the slip and its stamp say it
   await expect(page.getByText("25 min", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Working out the time")).toHaveCount(0);
 });

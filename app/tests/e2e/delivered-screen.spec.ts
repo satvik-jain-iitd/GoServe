@@ -7,9 +7,10 @@ const at = (h: number, m: number, s = 0) => new Date(2026, 10, 14, h, m, s).toIS
 const KITCHEN = [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: "9876543210", pin_codes: ["110016"], open: true, active: true, opens_at: "00:00:00", closes_at: "23:59:00" }];
 const slip = (page: Page) => page.getByRole("region", { name: "Order, delivered" });
 // The app opens an order that is still on its way; the delivered state comes live, the way a customer sees it.
-async function delivered(context: Parameters<typeof setup>[0], page: Page, row: object, kitchens: object[] = KITCHEN) {
+async function delivered(context: Parameters<typeof setup>[0], page: Page, row: object, kitchens: object[] = KITCHEN, support: string | null = null) {
   const net = await setup(context, page, [order("out_for_delivery")]);
   net.state.kitchens = kitchens;
+  net.state.supportPhone = support;
   await page.goto("/customer/");
   await expect(page.getByRole("list", { name: "Order progress" })).toBeVisible();
   net.push("UPDATE", { ...order("delivered", at(21, 30)), ...row });   // updated_at moved later (a later change): it is not the delivery time
@@ -66,23 +67,23 @@ test("D4 No promised time is known: no early line, never a guessed number", asyn
   await expect(page.getByText(/early/i)).toHaveCount(0);
 });
 
-test("D5 Buttons: Call the kitchen above Back to menu (story 1676; before: Order again), Back to menu filled and last, both in view at 360 by 640 with no scroll", async ({ page, context }) => {
+test("D5 Buttons: Call support above Share feedback (story 1658; before: Call the kitchen above Order again), Share feedback filled and last, both in view at 360 by 640 with no scroll", async ({ page, context }) => {
   await page.setViewportSize({ width: 360, height: 640 });
-  await delivered(context, page, { delivered_at: at(20, 8), promised_at: at(20, 12) });
-  const call = page.getByRole("link", { name: "Call the kitchen" }), back = page.locator(".ui-bottom .ui-btn").last();
+  await delivered(context, page, { delivered_at: at(20, 8), promised_at: at(20, 12) }, KITCHEN, "9000000000");
+  const call = page.getByRole("link", { name: "Call support" }), back = page.locator(".ui-bottom .ui-btn").last();
   await expect(call).toBeInViewport({ ratio: 1 });
   await expect(back).toBeInViewport({ ratio: 1 });
   expect((await call.boundingBox())!.y + (await call.boundingBox())!.height).toBeLessThanOrEqual((await back.boundingBox())!.y);
   await expect(back).not.toHaveClass(/ghost/);
-  await expect(back).toHaveText("Back to menu");
+  await expect(back).toHaveText("Share feedback");
   expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight)).toBe(true);
 });
 
-test("D6 a kitchen with no phone: only the Back to menu button", async ({ page, context }) => {
-  await delivered(context, page, { delivered_at: at(20, 8), promised_at: at(20, 12) }, [{ ...KITCHEN[0], phone: null }]);
-  await expect(page.getByRole("link", { name: "Call the kitchen" })).toHaveCount(0);
-  await expect(page.locator(".ui-bottom > .ui-btn")).toHaveCount(1);   // story 1589: the note line under it is not a button
-  await expect(page.locator(".ui-bottom").getByRole("button", { name: "Back to menu" })).toBeVisible();
+test("D6 no support number: only the Share feedback button, and never a call to the kitchen (story 1658)", async ({ page, context }) => {
+  await delivered(context, page, { delivered_at: at(20, 8), promised_at: at(20, 12) });
+  await expect(page.getByRole("link", { name: /Call/ })).toHaveCount(0);
+  await expect(page.locator(".ui-bottom > .ui-btn")).toHaveCount(1);
+  await expect(page.locator(".ui-bottom").getByRole("button", { name: "Share feedback" })).toBeVisible();
 });
 
 // The reviewer's ask on PR #1511: the status box keeps its rows and times (story 1507) on a delivered order, and the last row shows its own time, not "Now".

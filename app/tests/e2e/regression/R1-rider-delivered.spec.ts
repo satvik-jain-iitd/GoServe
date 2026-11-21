@@ -17,7 +17,7 @@ test("TC R1.1 a wrong cash tap is put right on a small phone: the slip and Done 
   const done = (await page.getByRole("button", { name: "Done", exact: true }).boundingBox())!;
   expect(done.y + done.height).toBeLessThanOrEqual(640);
   await page.getByRole("button", { name: "Change", exact: true }).click();
-  await page.getByRole("button", { name: "Paid by UPI ₹640" }).click();
+  await page.getByRole("button", { name: "Paid by UPI", exact: true }).click();
   await expect(page.getByText("Paid by UPI", { exact: true })).toBeVisible();
   await expect(page.getByText("Cash aapke paas ₹0", { exact: true })).toBeVisible();
 });

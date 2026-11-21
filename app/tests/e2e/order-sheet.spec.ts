@@ -78,7 +78,7 @@ test("S4b a customer's own cancel, recorded as cancelled_by customer, reads Canc
   await page.getByRole("button", { name: "History" }).click();
   await expect(page.locator(".ui-order-row .ui-order-word.bad")).toHaveText("Cancelled");
   await page.getByRole("button", { name: /Butter Chicken/ }).click();
-  await expect(page.getByRole("heading", { name: "Cancelled" })).toBeVisible();
+  await expect(page.locator(".ui-stamp")).toHaveText("Cancelled");   // story 1745: the title is Your order, the stamp says Cancelled
   await expect(page.getByRole("heading", { name: "Declined" })).toHaveCount(0);
 });
 
@@ -96,6 +96,7 @@ test("S5 a customer's own cancel still says Cancelled", async ({ page, context }
   await page.getByRole("button", { name: "History" }).click();
   await expect(page.locator(".ui-order-row .ui-order-word.bad")).toHaveText("Cancelled");
   await page.getByRole("button", { name: /Butter Chicken/ }).click();
-  await expect(page.getByRole("heading", { name: "Cancelled" })).toBeVisible();
-  await expect(page.getByText("Your order was cancelled. Nothing to pay.")).toBeVisible();
+  await expect(page.locator(".ui-stamp")).toHaveText("Cancelled");   // story 1745: the title is Your order, the stamp says Cancelled
+  await expect(page.getByText("Your order was cancelled. Nothing to pay.")).toHaveCount(0);
+  await expect(page.getByText("Nothing to pay")).toHaveCount(1);
 });

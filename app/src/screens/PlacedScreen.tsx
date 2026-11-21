@@ -30,6 +30,9 @@ type Props = {
   kitchenPhone: string | null;
   address: string;
   error: string | null;         // the cancel line
+  cancelledAt?: string | null;   // story 1745: when a cancelled order was cancelled
+  backLabel?: string;           // story 1745: the header arrow of an order opened from History says where it goes
+  supportPhone?: string | null;   // story 1658: the admin's number; none, no Call support
   onMenu: () => void;           // Back to menu, with an empty cart (a delivered or cancelled order; story 1434)
   onBack: () => void;           // the chevron: back to the menu
   onCancel: () => void;         // story B3, #904: allowed while the order is placed or accepted
@@ -84,7 +87,7 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "Delivered" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
-export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedAt, lines, kitchenName, headWait, pin, kitchenPhone, address, error, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta }: Props) {
+export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedAt, lines, kitchenName, headWait, pin, kitchenPhone, address, error, onMenu, onBack, backLabel, cancelledAt, supportPhone, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta }: Props) {
   const riderPhone = (status === "out_for_delivery" ? track?.phone ?? rider?.phone : status === "ready" ? rider?.phone : null) || null;   // the track exists only on the way; the rider card is there from ready
   const [askCancel, setAskCancel] = useState(false);   // story #1227: the cancel sheet
   const steps = trackerSteps(status);
@@ -93,12 +96,13 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
   const placed = new Date(placedAt);
   const delivered = status === "delivered";
   const cancelled = status === "cancelled";
-  const title = status === "placed" ? "Order placed" : cancelled ? (declined ? "Declined" : "Cancelled") : "Your order";
+  const gone = cancelled && !declined;   // story 1745: the customer's own cancel; a declined order keeps its own page
+  const title = status === "placed" ? "Order placed" : cancelled ? (declined ? "Declined" : "Your order") : "Your order";
   const head = headWait ? "" : [kitchenName, pin].filter(Boolean).join(" · ");
   return (
     <>
       <header className="ui-head">
-        <BackChevron label="Back to menu" onClick={onBack} />
+        <BackChevron label={backLabel ?? "Back to menu"} onClick={onBack} />
         <h1>{title}</h1>
         {!delivered && !cancelled && status !== "placed" ? online ? <span className="meta ui-livemark"><span aria-hidden="true" className="ui-live-dot" />Live</span> : <span className="meta">Offline</span> : <span className="meta">No. {shortId(order.id)}</span>}
       </header>
@@ -132,12 +136,13 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
         <section className="ui-slip ui-slip-pad" aria-label={delivered ? "Order, delivered" : "Order"}>
           <TornTop />
           <div className="ui-slip-body">
-            <div className="ui-slip-head"><span>{head}</span><span>{delivered ? `${placed.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${clock12(placed)}` : `No. ${shortId(order.id)}`}</span></div>
+            <div className="ui-slip-head"><span>{head}</span><span>{delivered || gone ? `${placed.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${clock12(placed)}` : `No. ${shortId(order.id)}`}</span></div>
             <div className="ui-slip-stamp"><span className={`ui-stamp ${STAMP[status] ?? "placed"}`}>{declined ? "Declined" : statusLabel(status)}</span></div>
             {pay && status === "placed" && (pay.state === "ready" || pay.state === "starting" || pay.state === "waiting") && <Countdown startedAt={pay.startedAt} />}
             {!cancelled && !delivered && view.kind === "time" && <><p className="display ui-eta-big">{view.min} min</p></>}
             {!cancelled && !delivered && view.kind === "late" && <p className="ui-clock ui-eta-late" role="status">Running late, sorry</p>}
             {!cancelled && !delivered && view.kind === "working" && <p className="ui-clock ui-eta-by">Working out the time</p>}
+            {gone && cancelledAt && <p className="ui-clock">Cancelled at <b>{clock12(new Date(cancelledAt))}</b></p>}
             {delivered && confirmedAt && <p className="ui-clock">At your door <b>{clock12(new Date(confirmedAt))}</b></p>}
             <div className="ui-slip-rule" />
             <div className="ui-slip-lines">
@@ -168,7 +173,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
               </div>
               <p className="ui-meta">{pay ? "Your money is not taken. If you paid online, it comes back in 5 to 7 days." : "Nothing was charged."}</p>   {/* story #1261: a pay-at-door order never talks about paying online */}
             </>
-          ) : cancelled && <p role="status"><strong>Your order was cancelled. Nothing to pay.</strong></p>}
+          ) : null}
           {error && <p role="alert" className="ui-field-error">{error}</p>}
         </div>
       </div>
@@ -176,9 +181,10 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
       <div className="ui-bottom">   {/* story 1572: one button per line, full width, never side by side */}
         {(status === "placed" || status === "accepted") && <button type="button" className="ui-btn ghost big danger" disabled={cancelling} onClick={() => setAskCancel(true)}>Cancel order</button>}
         {riderPhone && <a href={`tel:${riderPhone}`} className="ui-btn ghost big" onClick={onCall}>Call the rider</a>}   {/* stories 1656, 1657: one call button by stage; the name is never in a button */}
-        {!riderPhone && kitchenPhone && status !== "out_for_delivery" && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
+        {!riderPhone && kitchenPhone && status !== "out_for_delivery" && !delivered && !gone && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
         {declined && <button type="button" className="ui-btn big" onClick={onMenu}>Order something else</button>}   {/* story 1458 (board T2b): the main button last, as on every end slip */}
-        {(cancelled || delivered) && !declined && <button type="button" className="ui-btn big" onClick={onMenu}>Back to menu</button>}   {/* story 1434 (boards T1b, Delivered b): one name on both end slips, the main button last; the same dishes again only from History */}
+        {(delivered || gone) && supportPhone && <a href={`tel:${supportPhone}`} className="ui-btn ghost big">Call support</a>}   {/* story 1658: a finished order has one door for help */}
+        {(delivered || gone) && <button type="button" className="ui-btn big" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}>Share feedback</button>}   {/* the feedback sheet takes the open order from the app */}
       </div>
     </>
   );

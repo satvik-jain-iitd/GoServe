@@ -1,5 +1,5 @@
 // "History" of the Ink v3 boards 08 and 08e (story H10d, #193), as the owner picked in story 1589 (frame history-1): the orders grouped by kitchen, a row with the dishes,
-// the time and the price, a chevron, no tag and no button. Only an exception is a word. A tap opens the order; Order it again lives there.
+// the time and the price, a chevron, no tag. Only an exception is a word. A tap on the row opens the order. Story 1738: a delivered row has a small outline "Order again" button on the right.
 import { useState } from "react";
 import { clock12 } from "../lib/clock";
 import { formatRupees } from "../lib/money";
@@ -26,9 +26,9 @@ function groups(orders: Order[], now: string | null) {
   return [...by.entries()].sort((a, b) => rank(a[0]) - rank(b[0]));   // a stable sort keeps the newest-first order among the others
 }
 
-type Props = { orders: Order[]; loading: boolean; kitchenName: string; kitchenId: string | null; kitchenNames: Record<string, string>; onOpen: (o: Order) => void; onMenu: () => void };
+type Props = { orders: Order[]; loading: boolean; kitchenName: string; kitchenId: string | null; kitchenNames: Record<string, string>; onOpen: (o: Order) => void; onAgain: (o: Order) => void; againOff: boolean; onMenu: () => void };
 
-export function OrdersScreen({ orders, loading, kitchenName, kitchenId, kitchenNames, onOpen, onMenu }: Props) {
+export function OrdersScreen({ orders, loading, kitchenName, kitchenId, kitchenNames, onOpen, onAgain, againOff, onMenu }: Props) {
   const empty = !loading && orders.length === 0;
   const [open, setOpen] = useState<string[]>([]);   // the kitchens the customer opened on this visit; not saved anywhere
   return (
@@ -54,19 +54,24 @@ export function OrdersScreen({ orders, loading, kitchenName, kitchenId, kitchenN
               <b>{name}</b>
               {id && <span>{id === kitchenId ? "cooks for you now" : "your older orders"}</span>}
             </h2>
+            <ul className="ui-order-list">
             {shown.map((o) => {
               const bad = o.status === "cancelled";
               const word = bad ? (cancelKind(o) === "declined" ? "Declined" : "Cancelled") : o.status === "delivered" ? "" : statusLabel(o.status);   // story #1172: a cancelled or declined order owes nothing, so no price
               return (
-                <button key={o.id} type="button" className="ui-order-row" onClick={() => onOpen(o)}>
+                <li key={o.id} className="ui-order-row">
+                  <button type="button" className="ui-order-open" onClick={() => onOpen(o)}>
                   <span className="ui-order-main">
                     <span className="ui-order-items">{dishes(o)}</span>
                     <span className="ui-order-sub">{when(o.created_at)}{word && <> · <span className={`ui-order-word${bad ? " bad" : ""}`}>{word}</span></>}{!bad && <> · <span className="mono">{formatRupees(o.total_paise)}</span></>}</span>
                   </span>
-                  {CHEVRON}
-                </button>
+                  {o.status !== "delivered" && CHEVRON}   {/* story 1738: a delivered row has the Order again button instead of the chevron; the row still opens the order */}
+                  </button>
+                  {o.status === "delivered" && <button type="button" className="ui-btn ghost" disabled={againOff} onClick={() => onAgain(o)}>Order again</button>}
+                </li>
               );
             })}
+            </ul>
             {!open.includes(id) && list.length > SHORT && (
               <button type="button" className="ui-view-all" aria-label={"View all orders of " + name} onClick={() => setOpen([...open, id])}>View all {DOWN}</button>
             )}

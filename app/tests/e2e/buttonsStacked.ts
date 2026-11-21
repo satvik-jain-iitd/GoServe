@@ -3,12 +3,12 @@
 import { test, expect, type Page } from "@playwright/test";
 import { setup, order } from "./helpers";
 
-const STATES: [string, string, (string | RegExp)[]][] = [   // story 1589: story 1676: a delivered slip has Back to menu, like a cancelled one
+const STATES: [string, string, (string | RegExp)[]][] = [   // stories 1658, 1745: a delivered and a cancelled slip have Call support above Share feedback
   ["placed", "placed", ["Cancel order", "Call the kitchen"]],
   ["accepted", "accepted", ["Cancel order", "Call the kitchen"]],
   ["out_for_delivery", "out for delivery", ["Call the rider"]],
-  ["delivered", "delivered", ["Call the kitchen", "Back to menu"]],
-  ["cancelled", "cancelled", ["Call the kitchen", "Back to menu"]],
+  ["delivered", "delivered", ["Call support", "Share feedback"]],
+  ["cancelled", "cancelled", ["Call support", "Share feedback"]],
   ["declined", "declined", ["Call the kitchen", "Order something else"]],
 ];
 
@@ -16,12 +16,13 @@ async function open(context: Parameters<typeof setup>[0], page: Page, key: strin
   const live = key === "cancelled" ? "placed" : key === "delivered" ? "out_for_delivery" : key;   // an end slip is reached live, the way a customer sees it
   const net = await setup(context, page, key === "declined" ? [{ ...order("cancelled", "2020-01-01T10:02:00Z"), cancel_reason: "We are out of butter chicken tonight, so this order cannot be made." }] : [order(live)]);
   Object.assign(net.state.kitchens[0], { phone: "9876543210" });
+  net.state.supportPhone = "9000000000";   // story 1658: a delivered slip has Call support when the admin set a number
   net.state.riderCard = { name: "Ravi", phone: "9876500000" };
   net.state.tracking = { rider_lat: 28.58, rider_lng: 77.25, updated_at: new Date().toISOString() };   // a rider point, so the on-the-way card and its call button show
   await page.goto("/customer/");
   if (key === "out_for_delivery") await expect(page.getByRole("link", { name: "Call the rider" })).toBeVisible();
   if (key === "declined") { await page.getByRole("button", { name: "History" }).click(); await page.getByRole("button", { name: /Butter Chicken/ }).click(); await expect(page.getByRole("heading", { name: "Declined" })).toBeVisible(); }
-  else if (key === "cancelled") { await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible(); net.push("UPDATE", order("cancelled", "2020-01-01T10:01:00Z")); await expect(page.getByText("Your order was cancelled")).toBeVisible(); }
+  else if (key === "cancelled") { await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible(); net.push("UPDATE", order("cancelled", "2020-01-01T10:01:00Z")); await expect(page.locator(".ui-stamp", { hasText: "Cancelled" })).toBeVisible(); }
   else if (key === "delivered") { await expect(page.locator('[aria-current="step"]')).toHaveText("On the wayNow"); net.push("UPDATE", order("delivered", "2020-01-01T10:09:00Z")); await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible(); }
 }
 

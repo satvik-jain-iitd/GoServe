@@ -23,7 +23,7 @@ for (const size of SIZES) {
     await page.goto("/customer/");
     net.push("UPDATE", past());
     await gone(page);
-    await expect(page.locator(".ui-bottom").getByRole("button", { name: "Back to menu" })).toBeVisible();
+    await expect(page.locator(".ui-bottom").getByRole("button", { name: "Share feedback" })).toBeVisible();   // story 1658
   });
 
   test(`AC-2 at ${size.width} by ${size.height}: the same order opened from History shows none of it, and the page reads no veg marks`, async ({ page, context }) => {

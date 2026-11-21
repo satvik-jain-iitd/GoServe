@@ -66,12 +66,13 @@ test("S4 with no rider yet there is no rider card", async ({ page, context }) =>
   await expect(page.getByTestId("rider-card")).toHaveCount(0);
 });
 
-test("S5 My orders: Back on the delivered slip opens the menu with an empty cart (story 1434; story 1676: Back to menu is the filled button too)", async ({ page, context }) => {
+test("S5 My orders: Back on the delivered slip opened from History goes back to History, with an empty cart (stories 1434, 1745)", async ({ page, context }) => {
   await setup(context, page, [{ ...order("delivered", "2020-01-01T11:00:00Z"), paid_by: "cash" }]);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "History" }).click();
   await page.getByRole("button", { name: /Butter Chicken/ }).click();   // the slip opens as the delivered screen
-  await page.locator(".ui-head").getByRole("button", { name: "Back to menu" }).click();
+  await page.locator(".ui-head").getByRole("button", { name: "Back to History" }).click();   // story 1745: an order opened from History goes back to History
+  await expect(page.getByRole("heading", { name: "History", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Your bill" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Place order|View cart|Your bill/ })).toHaveCount(0);   // an empty cart shows no cart bar
 });

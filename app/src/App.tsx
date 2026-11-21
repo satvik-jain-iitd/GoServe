@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchDoorMethods, type DoorMethod } from "./lib/doorMethods";
 import { onBackScreen, screenStep } from "./lib/back";
 import { readRiderQr } from "./lib/payMethods";
-import { addDish, BILL_CLEARED_LINE, cartLines, cartTotal, changeQty, kitchenChangedBill, KITCHEN_CHANGED_MENU, moveCart, notMadeLine, toOrderItems, type Cart, type Held, type Line } from "./lib/cart";
+import { addDish, BILL_CLEARED_LINE, cartLines, cartTotal, changeQty, kitchenChangedBill, KITCHEN_CHANGED_MENU, moveCart, notMadeLine, reorderCart, toOrderItems, type Cart, type Held, type Line } from "./lib/cart";
 import { mergeOrder, riderOrders, cancelKind, shortId, statusLabel, type Order, type RiderAction, confirmHandover, deliveredAt, isCash } from "./lib/kitchen";
 import { clientPlatform } from "./lib/platform";
 import { riderRefused, savePlatform, tapCall } from "./lib/signals";
@@ -36,7 +36,7 @@ import { pushTrail } from "./lib/trail";
 import { trace } from "./lib/trace";
 import { cancelLine, NO_INTERNET } from "./lib/errorLines";
 import { FeedbackSheet } from "./screens/FeedbackSheet";
-import { ensureCustomerSession, ensureSession, fetchMenuRows, fetchRiderCard, getClient, isLeaving, markLeaving, SessionEnded, signOutHere, type RiderCard } from "./lib/supabase";
+import { ensureCustomerSession, ensureSession, fetchDishVeg, fetchMenuRows, fetchRiderCard, getClient, isLeaving, markLeaving, SessionEnded, signOutHere, type RiderCard } from "./lib/supabase";
 import { wasSignedIn } from "./lib/deviceOwner";
 import { openTill } from "./lib/browse";
 import { AccountScreen } from "./screens/AccountScreen";
@@ -796,6 +796,18 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     return () => { alive = false; };
   }, [placed?.id, riderStatus, demo]);
 
+  // Story 1658: a finished order's foot has Call support; the number is read when such an order is open. A failed read, or no number: no button.
+  const [fromHistory, setFromHistory] = useState(false);   // story 1745: an order opened from History goes back to History
+  useEffect(() => { if (step === "menu" || step === "bill") setFromHistory(false); }, [step]);
+  const [orderSupport, setOrderSupport] = useState<string | null>(null);
+  const finished = riderStatus === "delivered" || riderStatus === "cancelled";
+  useEffect(() => {
+    if (!placed || demo || !finished) return void setOrderSupport(null);
+    let alive = true;
+    readSupportPhone(getClient()).then((n) => alive && setOrderSupport(n), () => alive && setOrderSupport(null));
+    return () => { alive = false; };
+  }, [placed?.id, finished, demo]);
+
   // Story #691 (boards T2, T3): On the way, the rider's place comes from the order_tracking row (read now, again on every realtime event and every 10 s, the rider's ping rhythm).
   const [riderPoint, setRiderPoint] = useState<Tracked | null>(null);   // story 1497: the rider's place and the order's own drop point, both from the order's row
   const onTheWay = !!placed && !demo && riderStatus === "out_for_delivery";
@@ -904,6 +916,23 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const nameOf = (o?: Order) => (!o?.kitchen_id || o.kitchen_id === kitchenId ? kitchenName : kitchenNames[o.kitchen_id] ?? "");
   const nameWait = (o?: Order) => !!o?.kitchen_id && o.kitchen_id !== kitchenId && !namesDone;   // story 1589: the slip's header line stays empty (same box) until another kitchen's name is known; a failed read or a gone kitchen shows the pin alone
   const placedOrder = placed ? orders.find((o) => o.id === placed.id) : undefined;
+  // Story 1738: Order again on a History row. The veg marks of the dishes today's menu does not hold by id are read now, at the tap (a failed read: no marks, so those dishes are left out).
+  // Nothing made today: the menu opens. The kitchen closed: the button is disabled.
+  const [againBusy, setAgainBusy] = useState(false);
+  async function orderAgain(o: Order) {
+    if (againBusy) return;
+    setAgainBusy(true);
+    const dishes = menu?.dishes ?? [];
+    const unknown = o.items.map((i) => i.menu_item_id).filter((id) => !dishes.some((d) => d.id === id));
+    const marks = unknown.length ? await fetchDishVeg(unknown).catch(() => ({})) : {};
+    setAgainBusy(false);
+    if (stepNow.current !== "orders") return;   // the customer left History while the marks were read: he stays where he went, the bag is untouched
+    const { cart: next } = reorderCart(o.items, dishes, marks);
+    setError(null);
+    if (Object.keys(next).length === 0) return void setStep("menu");
+    setCart(next);
+    setStep("bill");
+  }
   // Story #619, board L3: a dish the customer chose to swap goes to the server with swap true; the server puts its own alternative in its place.
   const [swapped, setSwapped] = useState<string[]>([]);
   // Story 1540: only the dishes on this kitchen's menu are sent (the rows the customer sees), never an id the cart still holds from another kitchen.
@@ -1164,7 +1193,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
             onChangePin={() => setStep("deliver")} onOrders={() => setStep("orders")} address={isHere(where) ? "" : address} label={isHere(where) ? HERE : saved?.find((r) => r.id === selectedId)?.label ?? "Serving at"} photo={photo} onProfile={() => setStep("account")} />
         )}
-        {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} kitchenId={kitchenId} kitchenNames={kitchenNames} />}
+        {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={(o) => { openOrder(o); setFromHistory(true); }} onAgain={orderAgain} againOff={shown?.kind === "closed" || againBusy} onMenu={() => setStep("menu")} kitchenId={kitchenId} kitchenNames={kitchenNames} />}
         {step === "account" && (
           <AccountScreen farKm={farKm} photo={photo} email={email} onGivenName={(n) => setName((v) => v || n)} name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone}
             alerts={reminder} onAlerts={toggleAlerts} alertsError={alertsError} live={openLive} onForget={forgetMe} onDeleteAccount={deleteAccount}
@@ -1185,8 +1214,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             confirmedAt={tracked && tracked.status === "delivered" ? deliveredAt(tracked) : null}
             declined={tracked && cancelKind(tracked) === "declined" ? { reason: (tracked as Order).cancel_reason ?? "", at: tracked.updated_at } : null}
             error={cancelError} pay={paidNow || payState || resumedOnline ? { state: paidNow ? "paid" : payState ?? "waiting", method: payMethod === "cod" ? "upi" : payMethod, startedAt: payState ? payStart : null, error: payError, onPay: payNow, onCash: payCash, onSimulate: () => void simulatePaid(import.meta.env.VITE_PAYMENTS_DEV_SECRET ?? "", payRef.current) } : undefined}
-            onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }}
-            onCancel={cancelOrder} cancelling={cancelling} rider={rider} atDoor={atDoor} times={stepTimes && placed && stepTimes.id === placed.id ? stepTimes.at : undefined} track={riderTrack} eta={eta} onCall={() => void tapCall(getClient(), placed.id)} />
+            onBack={fromHistory ? () => window.history.back() : () => setStep("menu")} backLabel={fromHistory ? "Back to History" : undefined} cancelledAt={tracked?.status === "cancelled" ? tracked.updated_at : null} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }}
+            supportPhone={orderSupport} onCancel={cancelOrder} cancelling={cancelling} rider={rider} atDoor={atDoor} times={stepTimes && placed && stepTimes.id === placed.id ? stepTimes.at : undefined} track={riderTrack} eta={eta} onCall={() => void tapCall(getClient(), placed.id)} />
         )}
     </>
   );

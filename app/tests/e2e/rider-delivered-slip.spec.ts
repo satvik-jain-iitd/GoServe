@@ -58,7 +58,7 @@ test("DV5 a delivery marked Took cash by mistake: Change, then Paid by UPI, the 
   const net = await deliver(context, page, [onTheWay()]);
   await expect(page.getByText("Cash aapke paas ₹640", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Change", exact: true }).click();
-  await page.getByRole("button", { name: "Paid by UPI ₹640" }).click();
+  await page.getByRole("button", { name: "Paid by UPI", exact: true }).click();
   await expect(page.getByText("Paid by UPI", { exact: true })).toBeVisible();
   await expect(page.getByText("Cash aapke paas ₹0", { exact: true })).toBeVisible();
   expect(net.calls.rpc.filter((c) => c.name === "rider_change_paid").map((c) => c.body)).toEqual([{ p_order: ID, p_method: "upi_door" }]);
@@ -67,7 +67,7 @@ test("DV5 a delivery marked Took cash by mistake: Change, then Paid by UPI, the 
 test("DV6 the server refuses a change: the slip keeps the old way and says why", async ({ page, context }) => {
   await deliver(context, page, [onTheWay()], "Took cash", { changeReply: { ok: false, error: "handed_over" } });
   await page.getByRole("button", { name: "Change", exact: true }).click();
-  await page.getByRole("button", { name: "Paid by UPI ₹640" }).click();
+  await page.getByRole("button", { name: "Paid by UPI", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("Cash kitchen me jama ho chuka hai");
   await expect(page.getByText("Cash collected", { exact: true })).toBeVisible();
 });
@@ -136,7 +136,7 @@ test("DV9 a Change on a bad network: the slip keeps the old way and says it coul
   await deliver(context, page, [onTheWay()]);
   await page.route("**/rest/v1/rpc/rider_change_paid", (r) => r.abort("internetdisconnected"));
   await page.getByRole("button", { name: "Change", exact: true }).click();
-  await page.getByRole("button", { name: "Paid by UPI ₹640" }).click();
+  await page.getByRole("button", { name: "Paid by UPI", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("Badal nahin paye");
   await expect(page.getByText("Cash collected", { exact: true })).toBeVisible();
 });
@@ -144,7 +144,7 @@ test("DV9 a Change on a bad network: the slip keeps the old way and says it coul
 test("DV10 the server says that way of paying is off: the slip keeps the old way and says so", async ({ page, context }) => {
   await deliver(context, page, [onTheWay()], "Took cash", { changeReply: { ok: false, error: "method_off" } });
   await page.getByRole("button", { name: "Change", exact: true }).click();
-  await page.getByRole("button", { name: "Paid by UPI ₹640" }).click();
+  await page.getByRole("button", { name: "Paid by UPI", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("Ye tareeka abhi band hai");
   await expect(page.getByText("Cash collected", { exact: true })).toBeVisible();
 });
