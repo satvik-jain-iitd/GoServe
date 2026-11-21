@@ -39,7 +39,7 @@ def run(*stmts):
 @unittest.skipUnless(TOKEN, "SUPABASE_ACCESS_TOKEN not set")
 class FeedbackSave(unittest.TestCase):
     def test_ac1_a_customer_saves_one_row_with_his_own_uid_the_order_and_gets_the_id(self):
-        r = run(as_user(A, save(order=f"'{OWN}'")), "select count(*) as n, bool_and(session_id = '" + A + "') as mine, bool_and(order_id = '" + OWN + "') as ord, bool_and(kitchen_id = '" + KIT + "') as kit from feedback")
+        r = run(as_user(A, save(order=f"'{OWN}'")), "select count(*) as n, bool_and(session_id = '" + A + "') as mine, bool_and(order_id = '" + OWN + "') as ord, bool_and(kitchen_id = '" + KIT + "') as kit from feedback where session_id = '" + A + "'")   # only this test's user: dev holds real rows
         self.assertEqual(r[-1] if isinstance(r, list) else r, {"n": 1, "mine": True, "ord": True, "kit": True}, r)
 
     def test_ac1_the_answer_has_an_id(self):
