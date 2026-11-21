@@ -135,7 +135,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, 
             <div className="ui-slip-head"><span>{head}</span><span>{delivered ? `${placed.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${clock12(placed)}` : `No. ${shortId(order.id)}`}</span></div>
             <div className="ui-slip-stamp"><span className={`ui-stamp ${STAMP[status] ?? "placed"}`}>{declined ? "Declined" : statusLabel(status)}</span></div>
             {pay && status === "placed" && (pay.state === "ready" || pay.state === "starting" || pay.state === "waiting") && <Countdown startedAt={pay.startedAt} />}
-            {!cancelled && !delivered && view.kind === "time" && <><p className="display ui-eta-big">{view.min} min</p><p className="ui-clock ui-eta-by">By {clock12(view.by)}</p></>}
+            {!cancelled && !delivered && view.kind === "time" && <><p className="display ui-eta-big">{view.min} min</p></>}
             {!cancelled && !delivered && view.kind === "late" && <p className="ui-clock ui-eta-late" role="status">Running late, sorry</p>}
             {!cancelled && !delivered && view.kind === "working" && <p className="ui-clock ui-eta-by">Working out the time</p>}
             {delivered && confirmedAt && <p className="ui-clock">At your door <b>{clock12(new Date(confirmedAt))}</b></p>}

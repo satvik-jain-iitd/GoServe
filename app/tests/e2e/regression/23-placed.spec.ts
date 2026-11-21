@@ -53,7 +53,7 @@ test("TC 23.1 Look: right after Place order, the grey Placed stamp, Working out 
   await expect(page.getByRole("link", { name: "Call the kitchen" })).toHaveAttribute("href", `tel:${PHONE}`);
 });
 
-test("TC 23.2 Look: the kitchen accepts, the yellow Cooking stamp, the big 25 min, By 9:25 am, the Live mark", async ({ page, context }) => {
+test("TC 23.2 Look: the kitchen accepts, the yellow Cooking stamp, the big 25 min, no By clock line (story 1742), the Live mark", async ({ page, context }) => {
   await page.clock.install({ time: NINE });   // the step's 25 minutes count from 9:00 am
   await STEPS["eta-big"](context, page, PATH);
   await expect(page.getByText("25 min", { exact: true })).toBeVisible();   // proves the big number shows before the rest is checked
@@ -63,7 +63,7 @@ test("TC 23.2 Look: the kitchen accepts, the yellow Cooking stamp, the big 25 mi
   test.fail(true, "#1267: the Cooking stamp is dark green, rgb(38, 53, 40), not yellow: its red does not lead blue");
   expect(r, `Cooking stamp colour rgb(${r}, ${g}, ${b}) is yellow`).toBeGreaterThan(b);   // yellow: red and green both above blue
   expect(g, `Cooking stamp colour rgb(${r}, ${g}, ${b}) is yellow`).toBeGreaterThan(b);
-  await expect(page.getByText("By 9:25 am", { exact: true })).toBeVisible();
+  await expect(page.getByText(/^By /)).toHaveCount(0);   // story 1742: minutes only
   await expect(page.getByText("Live", { exact: true })).toBeVisible();
 });
 
