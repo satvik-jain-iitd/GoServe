@@ -2,7 +2,7 @@
 import { expect, type BrowserContext, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { answeredAt, order, setup, typePlace, toDeliverTo, whereBox } from "./helpers";
+import { answeredAt, ID, order, setup, typePlace, toDeliverTo, whereBox } from "./helpers";
 
 export type Screen = { name: string; path: string; width: number; height: number; step: string };
 export const screens: Screen[] = readFileSync(resolve(import.meta.dirname, "../../../docs/screens.txt"), "utf8")
@@ -276,5 +276,5 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await setup(context, page, [{ ...order("cancelled", "2020-01-01T10:02:00Z"), cancel_reason: "We are out of butter chicken tonight, so this order cannot be made." }]);
     await page.goto(path); await page.getByRole("button", { name: "History" }).click(); await page.getByRole("button", { name: /Butter Chicken/ }).click();
     await expect(page.getByRole("heading", { name: "Declined" })).toBeVisible(); },
-  orders: async (context, page, path) => { await setup(context, page); await page.goto(path); await page.getByRole("button", { name: "History" }).click(); await page.waitForLoadState("networkidle"); },
+  orders: async (context, page, path) => { await setup(context, page, [order("delivered", "2020-01-01T12:00:00Z", "2020-01-01T11:30:00Z"), { ...order("cancelled", "2020-01-01T10:10:00Z"), id: `${ID.slice(0, -1)}9`, client_order_key: "k2" }]); await page.goto(path); await page.getByRole("button", { name: "History" }).click(); await page.waitForLoadState("networkidle"); },   // story 1738: one delivered row (Order again) and one cancelled row, so the picture covers both
 };
