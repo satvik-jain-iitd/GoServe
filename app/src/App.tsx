@@ -796,6 +796,16 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     return () => { alive = false; };
   }, [placed?.id, riderStatus, demo]);
 
+  // Story 1658: a finished order's foot has Call support; the number is read when such an order is open. A failed read, or no number: no button.
+  const [orderSupport, setOrderSupport] = useState<string | null>(null);
+  const finished = riderStatus === "delivered" || riderStatus === "cancelled";
+  useEffect(() => {
+    if (!placed || demo || !finished) return void setOrderSupport(null);
+    let alive = true;
+    readSupportPhone(getClient()).then((n) => alive && setOrderSupport(n), () => alive && setOrderSupport(null));
+    return () => { alive = false; };
+  }, [placed?.id, finished, demo]);
+
   // Story #691 (boards T2, T3): On the way, the rider's place comes from the order_tracking row (read now, again on every realtime event and every 10 s, the rider's ping rhythm).
   const [riderPoint, setRiderPoint] = useState<Tracked | null>(null);   // story 1497: the rider's place and the order's own drop point, both from the order's row
   const onTheWay = !!placed && !demo && riderStatus === "out_for_delivery";
@@ -1186,7 +1196,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             declined={tracked && cancelKind(tracked) === "declined" ? { reason: (tracked as Order).cancel_reason ?? "", at: tracked.updated_at } : null}
             error={cancelError} pay={paidNow || payState || resumedOnline ? { state: paidNow ? "paid" : payState ?? "waiting", method: payMethod === "cod" ? "upi" : payMethod, startedAt: payState ? payStart : null, error: payError, onPay: payNow, onCash: payCash, onSimulate: () => void simulatePaid(import.meta.env.VITE_PAYMENTS_DEV_SECRET ?? "", payRef.current) } : undefined}
             onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }}
-            onCancel={cancelOrder} cancelling={cancelling} rider={rider} atDoor={atDoor} times={stepTimes && placed && stepTimes.id === placed.id ? stepTimes.at : undefined} track={riderTrack} eta={eta} onCall={() => void tapCall(getClient(), placed.id)} />
+            supportPhone={orderSupport} onCancel={cancelOrder} cancelling={cancelling} rider={rider} atDoor={atDoor} times={stepTimes && placed && stepTimes.id === placed.id ? stepTimes.at : undefined} track={riderTrack} eta={eta} onCall={() => void tapCall(getClient(), placed.id)} />
         )}
     </>
   );

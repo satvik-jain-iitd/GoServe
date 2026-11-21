@@ -30,6 +30,7 @@ type Props = {
   kitchenPhone: string | null;
   address: string;
   error: string | null;         // the cancel line
+  supportPhone?: string | null;   // story 1658: the admin's number; none, no Call support
   onMenu: () => void;           // Back to menu, with an empty cart (a delivered or cancelled order; story 1434)
   onBack: () => void;           // the chevron: back to the menu
   onCancel: () => void;         // story B3, #904: allowed while the order is placed or accepted
@@ -84,7 +85,7 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "Delivered" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
-export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedAt, lines, kitchenName, headWait, pin, kitchenPhone, address, error, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta }: Props) {
+export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedAt, lines, kitchenName, headWait, pin, kitchenPhone, address, error, onMenu, onBack, supportPhone, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta }: Props) {
   const riderPhone = (status === "out_for_delivery" ? track?.phone ?? rider?.phone : status === "ready" ? rider?.phone : null) || null;   // the track exists only on the way; the rider card is there from ready
   const [askCancel, setAskCancel] = useState(false);   // story #1227: the cancel sheet
   const steps = trackerSteps(status);
@@ -176,9 +177,11 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
       <div className="ui-bottom">   {/* story 1572: one button per line, full width, never side by side */}
         {(status === "placed" || status === "accepted") && <button type="button" className="ui-btn ghost big danger" disabled={cancelling} onClick={() => setAskCancel(true)}>Cancel order</button>}
         {riderPhone && <a href={`tel:${riderPhone}`} className="ui-btn ghost big" onClick={onCall}>Call the rider</a>}   {/* stories 1656, 1657: one call button by stage; the name is never in a button */}
-        {!riderPhone && kitchenPhone && status !== "out_for_delivery" && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
+        {!riderPhone && kitchenPhone && status !== "out_for_delivery" && !delivered && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
         {declined && <button type="button" className="ui-btn big" onClick={onMenu}>Order something else</button>}   {/* story 1458 (board T2b): the main button last, as on every end slip */}
-        {(cancelled || delivered) && !declined && <button type="button" className="ui-btn big" onClick={onMenu}>Back to menu</button>}   {/* story 1434 (boards T1b, Delivered b): one name on both end slips, the main button last; the same dishes again only from History */}
+        {delivered && supportPhone && <a href={`tel:${supportPhone}`} className="ui-btn ghost big">Call support</a>}   {/* story 1658: a finished order has one door for help */}
+        {delivered && <button type="button" className="ui-btn big" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}>Share feedback</button>}   {/* the feedback sheet takes the open order from the app */}
+        {cancelled && !declined && <button type="button" className="ui-btn big" onClick={onMenu}>Back to menu</button>}   {/* story 1434 (boards T1b, Delivered b): one name on both end slips, the main button last; the same dishes again only from History */}
       </div>
     </>
   );

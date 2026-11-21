@@ -51,18 +51,16 @@ test("S4 Back to menu on a cancelled slip opens the menu with an empty cart, no 
   await expect(page.getByRole("button", { name: /View bill/ })).toHaveCount(0);   // nothing from the cancelled order went in the cart
 });
 
-test("S5 a delivered slip: Back to menu is the main button, last, under Call the kitchen; no Order again (story 1676)", async ({ page, context }) => {
+test("S5 a delivered slip: Share feedback is the main button, last, under Call support; no Order again, no Back to menu (stories 1676, 1658)", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
-  Object.assign(net.state.kitchens[0], { phone: "9876543210" });
+  net.state.supportPhone = "9000000000";
   await page.goto("/customer/");
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   net.push("UPDATE", { ...order("delivered", new Date().toISOString()), paid_by: "cash" });
   await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible({ timeout: 6000 });
-  await expect(page.getByRole("button", { name: /Order again/ })).toHaveCount(0);
-  const back = page.locator(".ui-bottom .ui-btn").last();
-  await expect(back).toHaveText("Back to menu");
-  await expect(back).not.toHaveClass(/ghost/);
-  expect((await page.getByRole("link", { name: "Call the kitchen" }).boundingBox())!.y).toBeLessThan((await back.boundingBox())!.y);
-  await back.click();
-  await expect(page.getByRole("heading", { name: "Your bill" })).toHaveCount(0);   // an empty cart: the menu, never the Bill
+  await expect(page.locator(".ui-bottom").getByRole("button", { name: /Order again|Back to menu/ })).toHaveCount(0);
+  const main = page.locator(".ui-bottom .ui-btn").last();
+  await expect(main).toHaveText("Share feedback");
+  await expect(main).not.toHaveClass(/ghost/);
+  expect((await page.getByRole("link", { name: "Call support" }).boundingBox())!.y).toBeLessThan((await main.boundingBox())!.y);
 });
