@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchDoorMethods, type DoorMethod } from "./lib/doorMethods";
 import { onBackScreen, screenStep } from "./lib/back";
 import { readRiderQr } from "./lib/payMethods";
-import { addDish, BILL_CLEARED_LINE, cartLines, cartTotal, changeQty, kitchenChangedBill, KITCHEN_CHANGED_MENU, moveCart, notMadeLine, toOrderItems, type Cart, type Held, type Line } from "./lib/cart";
+import { addDish, BILL_CLEARED_LINE, cartLines, cartTotal, changeQty, kitchenChangedBill, KITCHEN_CHANGED_MENU, moveCart, notMadeLine, reorderCart, toOrderItems, type Cart, type Held, type Line } from "./lib/cart";
 import { mergeOrder, riderOrders, cancelKind, shortId, statusLabel, type Order, type RiderAction, confirmHandover, deliveredAt, isCash } from "./lib/kitchen";
 import { clientPlatform } from "./lib/platform";
 import { riderRefused, savePlatform, tapCall } from "./lib/signals";
@@ -36,7 +36,7 @@ import { pushTrail } from "./lib/trail";
 import { trace } from "./lib/trace";
 import { cancelLine, NO_INTERNET } from "./lib/errorLines";
 import { FeedbackSheet } from "./screens/FeedbackSheet";
-import { ensureCustomerSession, ensureSession, fetchMenuRows, fetchRiderCard, getClient, isLeaving, markLeaving, SessionEnded, signOutHere, type RiderCard } from "./lib/supabase";
+import { ensureCustomerSession, ensureSession, fetchDishVeg, fetchMenuRows, fetchRiderCard, getClient, isLeaving, markLeaving, SessionEnded, signOutHere, type RiderCard } from "./lib/supabase";
 import { wasSignedIn } from "./lib/deviceOwner";
 import { openTill } from "./lib/browse";
 import { AccountScreen } from "./screens/AccountScreen";
@@ -916,6 +916,22 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const nameOf = (o?: Order) => (!o?.kitchen_id || o.kitchen_id === kitchenId ? kitchenName : kitchenNames[o.kitchen_id] ?? "");
   const nameWait = (o?: Order) => !!o?.kitchen_id && o.kitchen_id !== kitchenId && !namesDone;   // story 1589: the slip's header line stays empty (same box) until another kitchen's name is known; a failed read or a gone kitchen shows the pin alone
   const placedOrder = placed ? orders.find((o) => o.id === placed.id) : undefined;
+  // Story 1738: Order again on a History row. The veg marks of the dishes today's menu does not hold by id are read now, at the tap (a failed read: no marks, so those dishes are left out).
+  // Nothing made today: the menu opens. The kitchen closed: the button is disabled.
+  const [againBusy, setAgainBusy] = useState(false);
+  async function orderAgain(o: Order) {
+    if (againBusy) return;
+    setAgainBusy(true);
+    const dishes = menu?.dishes ?? [];
+    const unknown = o.items.map((i) => i.menu_item_id).filter((id) => !dishes.some((d) => d.id === id));
+    const marks = unknown.length ? await fetchDishVeg(unknown).catch(() => ({})) : {};
+    setAgainBusy(false);
+    const { cart: next } = reorderCart(o.items, dishes, marks);
+    setError(null);
+    if (Object.keys(next).length === 0) return void setStep("menu");
+    setCart(next);
+    setStep("bill");
+  }
   // Story #619, board L3: a dish the customer chose to swap goes to the server with swap true; the server puts its own alternative in its place.
   const [swapped, setSwapped] = useState<string[]>([]);
   // Story 1540: only the dishes on this kitchen's menu are sent (the rows the customer sees), never an id the cart still holds from another kitchen.
@@ -1176,7 +1192,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
             onChangePin={() => setStep("deliver")} onOrders={() => setStep("orders")} address={isHere(where) ? "" : address} label={isHere(where) ? HERE : saved?.find((r) => r.id === selectedId)?.label ?? "Serving at"} photo={photo} onProfile={() => setStep("account")} />
         )}
-        {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={(o) => { openOrder(o); setFromHistory(true); }} onMenu={() => setStep("menu")} kitchenId={kitchenId} kitchenNames={kitchenNames} />}
+        {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={(o) => { openOrder(o); setFromHistory(true); }} onAgain={orderAgain} againOff={shown?.kind === "closed" || againBusy} onMenu={() => setStep("menu")} kitchenId={kitchenId} kitchenNames={kitchenNames} />}
         {step === "account" && (
           <AccountScreen farKm={farKm} photo={photo} email={email} onGivenName={(n) => setName((v) => v || n)} name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone}
             alerts={reminder} onAlerts={toggleAlerts} alertsError={alertsError} live={openLive} onForget={forgetMe} onDeleteAccount={deleteAccount}
