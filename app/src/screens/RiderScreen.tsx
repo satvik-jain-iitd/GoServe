@@ -128,11 +128,15 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
   };
   const todayLine = <p className="mono ui-foot">Today · {today.length} delivered</p>;
 
+  const changing = changeId && done?.id === changeId ? done : null;   // story 1448: Change opens the same two choices again
+  const collecting = changing ?? (collectId ? jobs.find((o) => o.id === collectId) ?? null : null);
+  const onPay = !!collecting && (!!changing || !done);
+  const payBack = () => (changing ? setChangeId(null) : setCollectId(null));
+  useBackCloses(onPay, payBack);   // story 1747: the phone's Back does what the header arrow does
+
   const jobView = () => {
     if (loading && orders.length === 0) return <div className="ui-pad"><Skeleton lines={3} /></div>;
-    const changing = changeId && done?.id === changeId ? done : null;   // story 1448: Change opens the same two choices again
-    const collecting = changing ?? (collectId ? jobs.find((o) => o.id === collectId) ?? null : null);
-    if (collecting && (changing || !done)) {   // R7 Collect payment: the rider says how it was paid, and that marks the order delivered
+    if (collecting && onPay) {   // R7 Collect payment: the rider says how it was paid, and that marks the order delivered
       const deliver = changing ? undefined : riderActions(collecting.status).find((a) => a.kind === "status" && a.to === "delivered");
       const amount = formatRupees(collecting.total_paise);
       const busy = changing ? changeBusy : busyId === collecting.id;
@@ -161,9 +165,10 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
           </section>
           <div className="ui-bottom">
             {methods !== null && methods.length === 0 && <button type="button" className="ui-btn big" onClick={onLoadMethods}>Try again</button>}
-            {(deliver || changing) && cash && <button type="button" className={upi ? "ui-btn ghost big" : "ui-btn big"} disabled={busy} onClick={() => pick("cash")}>Took cash</button>}
-            {(deliver || changing) && upi && <button type="button" className="ui-btn big" disabled={busy} onClick={() => pick("upi_door")}>Paid by UPI {amount}</button>}
-            <button type="button" className="ui-btn text" disabled={busy} onClick={() => (changing ? setChangeId(null) : setCollectId(null))}>Back</button>
+            <div className="ui-door-pay">
+              {(deliver || changing) && cash && <button type="button" className="ui-btn big" disabled={busy} onClick={() => pick("cash")}>Took cash</button>}
+              {(deliver || changing) && upi && <button type="button" className="ui-btn big" disabled={busy} onClick={() => pick("upi_door")}>Paid by UPI</button>}
+            </div>
           </div>
         </>
       );
@@ -342,6 +347,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
   return (
     <>
       <header className="ui-head">
+        {tab === "job" && onPay && <button type="button" className="ui-back ui-back-tight" aria-label="Back" onClick={payBack}>{BACK}</button>}
         <h1>{head.h}</h1>
         {head.meta && <span className="meta">{tab === "job" && !job && !done && gate && <span className={gate.online ? "ui-state-dot on" : "ui-state-dot"} aria-hidden="true" />}{head.meta}</span>}
       </header>
