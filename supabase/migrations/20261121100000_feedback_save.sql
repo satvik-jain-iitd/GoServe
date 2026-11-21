@@ -1,6 +1,7 @@
 -- Story 1750 (epic #1299). A signed-in person saves his own report from the Feedback sheet, with no n8n in the path.
 -- The table `feedback` is closed (RLS on, no write policy); this one function is the way in. session_id is always auth.uid(), never what the caller sends.
 -- It answers { ok: true, id } or { ok: false, error, message } with a named refusal. Dev only until the release (rule: prod waits for the owner's own yes).
+-- The screen name is capped at 80 letters (a named refusal, not a cut). The 10 per hour count can be passed by two calls at the same instant (accepted); it scans by session_id with no index (fine at this size).
 -- A guest (anonymous sign-in) counts as a customer. A guest can get a fresh limit of 10 by making a new session: accepted for now.
 -- The first object of this file is new (feedback_save_v2) so the prod plan reads the file as not yet applied; create or replace lets the tests run the text again on dev.
 create or replace function feedback_save_v2(p_role text, p_screen text, p_order uuid, p_doing text, p_text text, p_context jsonb default '{}'::jsonb)
@@ -21,6 +22,9 @@ begin
      or p_doing is null or p_doing not in ('ordering', 'cooking', 'delivering', 'watching ops', 'installing', 'other')
      or coalesce(btrim(p_screen), '') = '' then
     return jsonb_build_object('ok', false, 'error', 'bad_role_or_doing', 'message', 'This note could not be read.');
+  end if;
+  if char_length(btrim(p_screen)) > 80 then
+    return jsonb_build_object('ok', false, 'error', 'screen_too_long', 'message', 'This note could not be sent.');
   end if;
   if char_length(v_text) = 0 then
     return jsonb_build_object('ok', false, 'error', 'text_empty', 'message', 'Write a few words first.');

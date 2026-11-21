@@ -7,7 +7,7 @@ from test_schema import TOKEN, sql
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 MIG = "" if os.environ.get("SKIP_MIG") else open(os.path.join(HERE, "..", "supabase", "migrations", "20261121100000_feedback_save.sql")).read()
-A, B, R, K, ADM = ("00000000-0000-0000-0000-0000000000e%d" % i for i in (1, 2, 3, 4, 5))
+A, B, R, K, ADM, C = ("00000000-0000-0000-0000-0000000000e%d" % i for i in (1, 2, 3, 4, 5, 6))   # C has no order: delete_my_account refuses a person with an open one
 KIT = "00000000-0000-0000-0000-0000000000f1"
 OWN, OTHER, RIDE, KITCH = ("00000000-0000-0000-0000-0000000000c%d" % i for i in (1, 2, 3, 4))
 
@@ -24,7 +24,7 @@ def save(role="customer", order="null", text="'made up words'", doing="'ordering
     return f"select feedback_save_v2('{role}', 'menu', {order}, {doing}, {text}, {ctx}) as r"
 
 
-SETUP = [user(A), user(B), user(R), user(K), user(ADM),
+SETUP = [user(A), user(B), user(R), user(K), user(ADM), user(C),
          f"insert into kitchens (id, name, pin_codes) values ('{KIT}', 'Test kitchen', array['110016'])",
          f"insert into riders (user_id, name) values ('{R}', 'Test rider')",
          f"insert into kitchen_staff (kitchen_id, user_id, role) values ('{KIT}', '{K}', 'kitchen')",
@@ -76,9 +76,33 @@ class FeedbackSave(unittest.TestCase):
         self.assertEqual(r[-1]["r"]["error"], "too_many")
         self.assertEqual(run(*[as_user(A, save()) for _ in range(10)], as_user(B, save()))[-1]["r"]["ok"], True)   # another person has his own ten
 
-    def test_ac5_the_account_delete_removes_these_rows(self):
-        r = run(as_user(A, save()), "select count(*) as n from feedback where session_id = '" + A + "'", "select delete_my_account_v2() as d" if False else "delete from feedback where session_id = '" + A + "'", "select count(*) as n from feedback")
-        self.assertEqual(r[-1], {"n": 0})   # the delete paths (profiles, purge_pii) use `delete from feedback where session_id = <uid>::text`: the row's session_id is that
+    def test_ac5_the_account_delete_removes_the_row(self):   # the real delete_my_account(), called as the person, inside the rolled-back transaction
+        r = run(as_user(C, save()), as_user(C, "select delete_my_account()"), "select count(*) as n from feedback where session_id = '" + C + "'")
+        self.assertEqual(r[-1], {"n": 0}, r)
+        self.assertEqual(run(as_user(C, save()), "select count(*) as n from feedback where session_id = '" + C + "'")[-1], {"n": 1})   # and without the delete the row is there
+
+    def test_ac5_the_pii_purge_removes_the_row(self):   # purge_deleted_accounts_v2: every account marked deleted more than p_days ago; days = -1 takes the one marked in this transaction
+        r = run(as_user(A, save()), f"insert into profiles (user_id, deleted_at) values ('{A}', now())", "select purge_deleted_accounts_v2(-1) as p",
+                "select count(*) as n from feedback where session_id = '" + A + "'")
+        self.assertEqual(r[-1], {"n": 0}, r)
+
+    def test_a_kitchen_report_with_no_order_takes_the_kitchen_from_the_staff_row(self):
+        r = run(as_user(K, save(role="kitchen", doing="'cooking'")), "select kitchen_id = '" + KIT + "' as k from feedback where session_id = '" + K + "'")
+        self.assertEqual(r[-1], {"k": True}, r)
+
+    def test_an_admin_saves_as_ops_and_console_with_and_without_an_order(self):
+        make = f"insert into admins (user_id) values ('{ADM}')"
+        for role in ("ops", "console"):
+            self.assertTrue(run(make, as_user(ADM, save(role=role, doing="'watching ops'")))[-1]["r"]["ok"], role)
+            r = run(make, as_user(ADM, save(role=role, order=f"'{OWN}'", doing="'watching ops'")), "select kitchen_id = '" + KIT + "' as k, order_id = '" + OWN + "' as o from feedback where session_id = '" + ADM + "'")
+            self.assertEqual(r[-1], {"k": True, "o": True}, (role, r))
+        self.assertEqual(run(as_user(ADM, save(role="ops", doing="'watching ops'")))[-1]["r"]["error"], "role_not_yours")   # a person who is not an admin
+
+    def test_a_screen_name_over_80_letters_is_refused_by_name(self):
+        r = run(as_user(A, "select feedback_save_v2('customer', repeat('s', 81), null, 'other', 'made up words') as r"))
+        self.assertEqual(r[-1]["r"]["error"], "screen_too_long", r)
+        r = run(as_user(A, "select feedback_save_v2('customer', repeat('s', 80), null, 'other', 'made up words') as r"))
+        self.assertTrue(r[-1]["r"]["ok"], r)
 
     def test_the_function_is_not_open_to_the_phone_anon_role(self):
         r = run("select has_function_privilege('anon', 'feedback_save_v2(text,text,uuid,text,text,jsonb)', 'execute') as a, has_function_privilege('authenticated', 'feedback_save_v2(text,text,uuid,text,text,jsonb)', 'execute') as b")
