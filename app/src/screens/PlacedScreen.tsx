@@ -42,7 +42,6 @@ type Props = {
   track?: Track;                // story #691: On the way, with the rider's place known
   eta?: Eta | null;             // story #1015: the server's delivery time
   declined?: { reason: string; at: string } | null;   // story #934: the kitchen said no, in its own words
-  again?: { block: ReactNode; bar: ReactNode };   // story 1589: a delivered order from History: the block under the slip and the one filled button, in place of Back to menu
 };
 export type Track = { you: LatLng | null; rider: Point; name: string; phone: string | null };   // story 1497: `you` is the order's own drop point; null when the order has none
 export type Pay = {
@@ -85,7 +84,7 @@ function Countdown({ startedAt }: { startedAt: string | null }) {
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", delivered: "Delivered" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
-export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedAt, lines, kitchenName, headWait, pin, kitchenPhone, address, error, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta, again }: Props) {
+export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedAt, lines, kitchenName, headWait, pin, kitchenPhone, address, error, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta }: Props) {
   const riderPhone = (status === "out_for_delivery" ? track?.phone ?? rider?.phone : status === "ready" ? rider?.phone : null) || null;   // the track exists only on the way; the rider card is there from ready
   const [askCancel, setAskCancel] = useState(false);   // story #1227: the cancel sheet
   const steps = trackerSteps(status);
@@ -150,7 +149,6 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
             <div className="ui-slip-total"><b>{declined || cancelled ? "Nothing to pay" : pay?.state === "paid" ? "Paid online" : pay ? "To pay online" : delivered && paidBy === "cash" ? "Cash paid" : delivered && paidBy === "upi_door" ? "Paid by UPI at the door" : delivered ? "Paid at the door" : "To pay at door"}</b><span>{declined || cancelled ? formatRupees(0) : formatRupees(order.total_paise)}</span></div>
           </div>
         </section>
-        {again?.block}
         <div className="ui-after">
           {track && status === "out_for_delivery" && <RiderRow t={track} />}   {/* board T4: the row sits under the slip, above the timeline */}
           {!cancelled && !delivered && <Timeline rows={3} steps={steps.map((x) => (atDoor && x.status === "out_for_delivery" ? "Rider at your door" : STEP_WORDS[x.status] ?? x.label))} current={steps.findIndex((x) => x.state === "current")} label="Order progress"
@@ -180,8 +178,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
         {riderPhone && <a href={`tel:${riderPhone}`} className="ui-btn ghost big" onClick={onCall}>Call the rider</a>}   {/* stories 1656, 1657: one call button by stage; the name is never in a button */}
         {!riderPhone && kitchenPhone && status !== "out_for_delivery" && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
         {declined && <button type="button" className="ui-btn big" onClick={onMenu}>Order something else</button>}   {/* story 1458 (board T2b): the main button last, as on every end slip */}
-        {again?.bar}
-        {(cancelled || (delivered && !again)) && !declined && <button type="button" className="ui-btn big" onClick={onMenu}>Back to menu</button>}   {/* story 1434 (boards T1b, Delivered b): one name on both end slips, the main button last; the same dishes again only from History */}
+        {(cancelled || delivered) && !declined && <button type="button" className="ui-btn big" onClick={onMenu}>Back to menu</button>}   {/* story 1434 (boards T1b, Delivered b): one name on both end slips, the main button last; the same dishes again only from History */}
       </div>
     </>
   );

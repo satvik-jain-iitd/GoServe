@@ -36,7 +36,7 @@ test("R3 delivered: no steps list (story 1675; before: three rows, PL7)", async 
   await openAt(context, page, "delivered");
   await expect(list(page)).toHaveCount(0);
   const buttons = page.locator(".ui-bottom .ui-btn");
-  await expect(buttons.last()).toHaveText(/Order again ›/);   // story 1434: the main button is last (story 1589: Order again on a delivered slip)
+  await expect(buttons.last()).toHaveText("Back to menu");   // story 1434: the main button is last (story 1676: no Order again on the order page)
 });
 
 test("R4 the status changes: the rows slide up one row, the box keeps its height and the main button keeps its place", async ({ page, context }) => {
@@ -111,7 +111,7 @@ test("R8 the two outline buttons stack, Cancel above Call the kitchen, same left
   expect(Math.abs(cancel.width - call.width)).toBeLessThanOrEqual(1);
 });
 
-test("R8b delivered: Order again (story 1589; before: Back to menu) stays full width under Call the kitchen", async ({ page, context }) => {
+test("R8b delivered: Back to menu (story 1676; before: Order again) stays full width under Call the kitchen", async ({ page, context }) => {
   await openAt(context, page, "delivered");
   await expect(page.locator(".ui-bottom > .ui-btn")).toHaveCount(2);
   const call = (await page.getByRole("link", { name: "Call the kitchen" }).boundingBox())!;

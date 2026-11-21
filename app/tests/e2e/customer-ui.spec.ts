@@ -66,7 +66,7 @@ test("S4 with no rider yet there is no rider card", async ({ page, context }) =>
   await expect(page.getByTestId("rider-card")).toHaveCount(0);
 });
 
-test("S5 My orders: Back on the delivered slip opens the menu with an empty cart (story 1434; story 1589: the filled button is Order again, Back is the chevron)", async ({ page, context }) => {
+test("S5 My orders: Back on the delivered slip opens the menu with an empty cart (story 1434; story 1676: Back to menu is the filled button too)", async ({ page, context }) => {
   await setup(context, page, [{ ...order("delivered", "2020-01-01T11:00:00Z"), paid_by: "cash" }]);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "History" }).click();

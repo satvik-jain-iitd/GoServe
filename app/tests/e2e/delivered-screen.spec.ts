@@ -66,7 +66,7 @@ test("D4 No promised time is known: no early line, never a guessed number", asyn
   await expect(page.getByText(/early/i)).toHaveCount(0);
 });
 
-test("D5 Buttons: Call the kitchen above Order again (story 1589; before: Back to menu), Order again filled and last, both in view at 360 by 640 with no scroll", async ({ page, context }) => {
+test("D5 Buttons: Call the kitchen above Back to menu (story 1676; before: Order again), Back to menu filled and last, both in view at 360 by 640 with no scroll", async ({ page, context }) => {
   await page.setViewportSize({ width: 360, height: 640 });
   await delivered(context, page, { delivered_at: at(20, 8), promised_at: at(20, 12) });
   const call = page.getByRole("link", { name: "Call the kitchen" }), back = page.locator(".ui-bottom .ui-btn").last();
@@ -74,15 +74,15 @@ test("D5 Buttons: Call the kitchen above Order again (story 1589; before: Back t
   await expect(back).toBeInViewport({ ratio: 1 });
   expect((await call.boundingBox())!.y + (await call.boundingBox())!.height).toBeLessThanOrEqual((await back.boundingBox())!.y);
   await expect(back).not.toHaveClass(/ghost/);
-  await expect(back).toHaveText(/Order again ›/);
+  await expect(back).toHaveText("Back to menu");
   expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight)).toBe(true);
 });
 
-test("D6 a kitchen with no phone: only the Order again button", async ({ page, context }) => {
+test("D6 a kitchen with no phone: only the Back to menu button", async ({ page, context }) => {
   await delivered(context, page, { delivered_at: at(20, 8), promised_at: at(20, 12) }, [{ ...KITCHEN[0], phone: null }]);
   await expect(page.getByRole("link", { name: "Call the kitchen" })).toHaveCount(0);
   await expect(page.locator(".ui-bottom > .ui-btn")).toHaveCount(1);   // story 1589: the note line under it is not a button
-  await expect(page.locator(".ui-bottom").getByRole("button", { name: /Order again ›/ })).toBeVisible();
+  await expect(page.locator(".ui-bottom").getByRole("button", { name: "Back to menu" })).toBeVisible();
 });
 
 // The reviewer's ask on PR #1511: the status box keeps its rows and times (story 1507) on a delivered order, and the last row shows its own time, not "Now".

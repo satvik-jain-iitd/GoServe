@@ -3,11 +3,11 @@
 import { test, expect, type Page } from "@playwright/test";
 import { setup, order } from "./helpers";
 
-const STATES: [string, string, (string | RegExp)[]][] = [   // story 1589: a delivered slip's main button is Order again (its text holds the price too); Back to menu stays on a cancelled one
+const STATES: [string, string, (string | RegExp)[]][] = [   // story 1589: story 1676: a delivered slip has Back to menu, like a cancelled one
   ["placed", "placed", ["Cancel order", "Call the kitchen"]],
   ["accepted", "accepted", ["Cancel order", "Call the kitchen"]],
   ["out_for_delivery", "out for delivery", ["Call the rider"]],
-  ["delivered", "delivered", ["Call the kitchen", /Order again ›/]],
+  ["delivered", "delivered", ["Call the kitchen", "Back to menu"]],
   ["cancelled", "cancelled", ["Call the kitchen", "Back to menu"]],
   ["declined", "declined", ["Call the kitchen", "Order something else"]],
 ];

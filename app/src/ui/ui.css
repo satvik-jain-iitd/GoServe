@@ -683,22 +683,9 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-order-row { min-height: 64px; }
 .ui-order-row svg { color: var(--gs-text-muted); }
 .ui-order-word.bad { color: var(--md-error); font-weight: 700; }
-.ui-again { margin: var(--gs-space-2) var(--gs-gutter) 0; }
-.ui-again h2 { margin: 0; font: 800 var(--gs-text-lg) var(--gs-font-display); }
-.ui-again-line { margin: 0 0 var(--gs-space-1); min-height: 2.6em; font-size: var(--gs-text-sm); line-height: 1.3; color: var(--gs-text-muted); }   /* two lines always kept: the longest line wraps at 360 px (rule 23) */
-.ui-again-list { margin: 0; padding: 0; list-style: none; }
-.ui-again-dish { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: var(--gs-space-2); min-height: 44px; border-top: 1px solid var(--md-outline-variant); font-size: var(--gs-text-lg); font-weight: 600; }
-.ui-again-dish:last-child { border-bottom: 1px solid var(--md-outline-variant); }
-.ui-again-mk { width: 24px; height: 24px; box-sizing: border-box; display: grid; place-items: center; border-radius: 4px; background: var(--md-primary); color: var(--md-on-primary); font-size: 15px; }
-.ui-again-dish .r { font: 400 var(--gs-mono-base) var(--gs-font-mono); }
-.ui-again-dish.no { color: var(--gs-text-muted); }
-.ui-again-dish.no .nm { text-decoration: line-through; }
-.ui-again-dish.no .ui-again-mk { background: transparent; border: 1.5px solid var(--gs-text-muted); color: var(--gs-text-muted); }
-.ui-again-dish .ui-again-mk:empty { background: transparent; }
 .ui-bottom .ui-btn.bar { justify-content: space-between; padding: 0 var(--gs-space-5); }
 .ui-bottom .ui-btn.bar .mono { font-size: var(--gs-mono-base); font-weight: 400; }
 .ui-bottom .ui-btn.bar .verb { font-size: var(--gs-display-m); font-weight: 600; }
-.ui-again-note { margin: 0; min-height: 1.3em; font-size: var(--gs-text-sm); line-height: 1.3; color: var(--md-on-background); }   /* the room under the button is always kept (rule 23); full ink, not grey (rule 28) */
 
 /* Story 998, board A2-AddressOla: the credit line Ola's terms ask for (clauses 15.2, 15.3), under the address form. */
 .ui-credit { margin: var(--gs-space-3) 0 0; text-align: center; font-size: 11px; letter-spacing: 0.04em; color: var(--gs-text-muted); }

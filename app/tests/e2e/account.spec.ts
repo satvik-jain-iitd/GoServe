@@ -5,15 +5,15 @@ import { order, setup, scan as axeScan } from "./helpers";
 const you = (page: Page) => page.getByRole("button", { name: /^You: / });
 const KITCHEN = { id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: "9876543210", pin_codes: ["110016"], open: true, active: true, lat: null, lng: null, opens_at: "00:00:00", closes_at: "23:59:00" };
 
-test("S1 a tap on a slip opens it, a delivered slip (the tracker) offers Order it again in place of Back to menu (story 1589; before: story 1434)", async ({ page, context }) => {
+test("S1 a tap on a slip opens it, a delivered slip (the tracker) has Back to menu and no Order again (story 1676; before: story 1589)", async ({ page, context }) => {
   await setup(context, page, [{ ...order("delivered", "2020-01-01T11:00:00Z"), paid_by: "cash" }]);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "History" }).click();
   await expect(page.getByRole("heading", { name: "History", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /Butter Chicken/ }).click();
   await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();
-  await expect(page.locator(".ui-bottom").getByRole("button", { name: /Order again|See the menu/ })).toBeVisible();   // story 1589: the one filled button; the menu dishes decide which
-  await expect(page.locator(".ui-bottom").getByRole("button", { name: "Back to menu" })).toHaveCount(0);
+  await expect(page.locator(".ui-bottom").getByRole("button", { name: "Back to menu" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Order again/ })).toHaveCount(0);
 });
 
 test("S2 You shows the details, and Edit delivery details changes them", async ({ page, context }) => {
