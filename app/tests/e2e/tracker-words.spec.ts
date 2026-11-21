@@ -14,13 +14,14 @@ test("S1 no clock line under the minutes (story 1742) and the address is in norm
   expect(await addr.evaluate((el) => getComputedStyle(el).textTransform)).toBe("none");
 });
 
-test("S2 a cancelled order says there is nothing to pay and offers Back to menu (story 1434)", async ({ page, context }) => {
+test("S2 a cancelled order says there is nothing to pay once and offers Share feedback (stories 1434, 1745)", async ({ page, context }) => {
   const net = await setup(context, page, [order("placed")]);
   await page.goto("/customer/");
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   net.push("UPDATE", order("cancelled", "2020-01-01T10:01:00Z"));
-  await expect(page.getByText("Your order was cancelled. Nothing to pay.")).toBeVisible({ timeout: 5000 });
-  await expect(page.locator(".ui-bottom").getByRole("button", { name: "Back to menu" })).toBeVisible();
+  await expect(page.locator(".ui-stamp", { hasText: "Cancelled" })).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText("Nothing to pay")).toHaveCount(1);
+  await expect(page.locator(".ui-bottom").getByRole("button", { name: "Share feedback" })).toBeVisible();
 });
 
 test("S3 a refused cancel (cannot_cancel) tells the customer the kitchen has started cooking", async ({ page, context }) => {

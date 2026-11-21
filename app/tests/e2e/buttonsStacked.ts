@@ -3,12 +3,12 @@
 import { test, expect, type Page } from "@playwright/test";
 import { setup, order } from "./helpers";
 
-const STATES: [string, string, (string | RegExp)[]][] = [   // story 1589: story 1676: a delivered slip has Back to menu, like a cancelled one
+const STATES: [string, string, (string | RegExp)[]][] = [   // stories 1658, 1745: a delivered and a cancelled slip have Call support above Share feedback
   ["placed", "placed", ["Cancel order", "Call the kitchen"]],
   ["accepted", "accepted", ["Cancel order", "Call the kitchen"]],
   ["out_for_delivery", "out for delivery", ["Call the rider"]],
   ["delivered", "delivered", ["Call support", "Share feedback"]],
-  ["cancelled", "cancelled", ["Call the kitchen", "Back to menu"]],
+  ["cancelled", "cancelled", ["Call support", "Share feedback"]],
   ["declined", "declined", ["Call the kitchen", "Order something else"]],
 ];
 
@@ -22,7 +22,7 @@ async function open(context: Parameters<typeof setup>[0], page: Page, key: strin
   await page.goto("/customer/");
   if (key === "out_for_delivery") await expect(page.getByRole("link", { name: "Call the rider" })).toBeVisible();
   if (key === "declined") { await page.getByRole("button", { name: "History" }).click(); await page.getByRole("button", { name: /Butter Chicken/ }).click(); await expect(page.getByRole("heading", { name: "Declined" })).toBeVisible(); }
-  else if (key === "cancelled") { await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible(); net.push("UPDATE", order("cancelled", "2020-01-01T10:01:00Z")); await expect(page.getByText("Your order was cancelled")).toBeVisible(); }
+  else if (key === "cancelled") { await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible(); net.push("UPDATE", order("cancelled", "2020-01-01T10:01:00Z")); await expect(page.locator(".ui-stamp", { hasText: "Cancelled" })).toBeVisible(); }
   else if (key === "delivered") { await expect(page.locator('[aria-current="step"]')).toHaveText("On the wayNow"); net.push("UPDATE", order("delivered", "2020-01-01T10:09:00Z")); await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible(); }
 }
 

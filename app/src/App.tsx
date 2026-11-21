@@ -797,6 +797,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }, [placed?.id, riderStatus, demo]);
 
   // Story 1658: a finished order's foot has Call support; the number is read when such an order is open. A failed read, or no number: no button.
+  const [fromHistory, setFromHistory] = useState(false);   // story 1745: an order opened from History goes back to History
+  useEffect(() => { if (step === "menu" || step === "bill") setFromHistory(false); }, [step]);
   const [orderSupport, setOrderSupport] = useState<string | null>(null);
   const finished = riderStatus === "delivered" || riderStatus === "cancelled";
   useEffect(() => {
@@ -1174,7 +1176,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             onAdd={(id) => setCart((c) => addDish(c, id))} onChange={(id, d) => setCart((c) => changeQty(c, id, d))} onOpenCart={() => { setError(null); setStep("bill"); }}
             onChangePin={() => setStep("deliver")} onOrders={() => setStep("orders")} address={isHere(where) ? "" : address} label={isHere(where) ? HERE : saved?.find((r) => r.id === selectedId)?.label ?? "Serving at"} photo={photo} onProfile={() => setStep("account")} />
         )}
-        {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={openOrder} onMenu={() => setStep("menu")} kitchenId={kitchenId} kitchenNames={kitchenNames} />}
+        {step === "orders" && <OrdersScreen orders={orders} loading={live.loading} kitchenName={kitchenName} onOpen={(o) => { openOrder(o); setFromHistory(true); }} onMenu={() => setStep("menu")} kitchenId={kitchenId} kitchenNames={kitchenNames} />}
         {step === "account" && (
           <AccountScreen farKm={farKm} photo={photo} email={email} onGivenName={(n) => setName((v) => v || n)} name={name} phone={phone} address={address} pin={pin} onName={setName} onPhone={setPhone}
             alerts={reminder} onAlerts={toggleAlerts} alertsError={alertsError} live={openLive} onForget={forgetMe} onDeleteAccount={deleteAccount}
@@ -1195,7 +1197,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             confirmedAt={tracked && tracked.status === "delivered" ? deliveredAt(tracked) : null}
             declined={tracked && cancelKind(tracked) === "declined" ? { reason: (tracked as Order).cancel_reason ?? "", at: tracked.updated_at } : null}
             error={cancelError} pay={paidNow || payState || resumedOnline ? { state: paidNow ? "paid" : payState ?? "waiting", method: payMethod === "cod" ? "upi" : payMethod, startedAt: payState ? payStart : null, error: payError, onPay: payNow, onCash: payCash, onSimulate: () => void simulatePaid(import.meta.env.VITE_PAYMENTS_DEV_SECRET ?? "", payRef.current) } : undefined}
-            onBack={() => setStep("menu")} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }}
+            onBack={fromHistory ? () => window.history.back() : () => setStep("menu")} backLabel={fromHistory ? "Back to History" : undefined} cancelledAt={tracked?.status === "cancelled" ? tracked.updated_at : null} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }}
             supportPhone={orderSupport} onCancel={cancelOrder} cancelling={cancelling} rider={rider} atDoor={atDoor} times={stepTimes && placed && stepTimes.id === placed.id ? stepTimes.at : undefined} track={riderTrack} eta={eta} onCall={() => void tapCall(getClient(), placed.id)} />
         )}
     </>

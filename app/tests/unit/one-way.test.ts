@@ -12,9 +12,9 @@ describe("one way to order", () => {
     for (const f of files.filter((f) => !ALLOWED.some((a) => f.endsWith(a)))) expect(readFileSync(f, "utf8"), f).not.toMatch(/order again|orderAgain|reorder/i);
     expect(readFileSync(resolve(__dirname, "../../src/screens/OrdersScreen.tsx"), "utf8")).not.toMatch(/order again/i);   // story 1589: no History row has the button; it lives in the opened delivered order (OrderAgain.tsx)
   });
-  it("story 1434: the placed screen's main button for a delivered or cancelled order reads Back to menu; the slip has no Order again", () => {
+  it("stories 1658, 1745: the placed screen's main button for a delivered or cancelled order reads Share feedback; the slip has no Order again", () => {
     const placed = readFileSync(resolve(__dirname, "../../src/screens/PlacedScreen.tsx"), "utf8");
-    expect(placed).toMatch(/>Back to menu<\/button>/);
+    expect(placed).toMatch(/>Share feedback<\/button>/);
     expect(placed).not.toMatch(/order again|See the menu/i);
   });
 });

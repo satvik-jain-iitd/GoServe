@@ -94,7 +94,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
   cancelled: async (context, page, path) => {   // story 916: the slip after a cancel
     const net = await setup(context, page, [order("placed")]); await page.goto(path);
     await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
-    net.push("UPDATE", order("cancelled", "2020-01-01T10:01:00Z")); await expect(page.getByText("Your order was cancelled")).toBeVisible({ timeout: 5000 }); },
+    net.push("UPDATE", order("cancelled", "2020-01-01T10:01:00Z")); await expect(page.locator(".ui-stamp", { hasText: "Cancelled" })).toBeVisible({ timeout: 5000 }); },
   "add-kitchen": async (context, page, path) => {   // story 923: the admin's Add kitchen form
     const net = await setup(context, page); net.state.admin = true; await page.goto(path);
     await page.getByRole("button", { name: "City", exact: true }).click(); await page.getByRole("button", { name: "Add a kitchen" }).click();
