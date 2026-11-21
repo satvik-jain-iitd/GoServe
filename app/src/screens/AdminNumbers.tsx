@@ -11,6 +11,7 @@ import { amountProblem, readEarlyFriend, saveEarlyFriend, type EarlyFriendSettin
 import { MAX_DAYS, MIN_DAYS, readPastDaysAdmin, savePastDays, type PastDaysSetting } from "../lib/pastDays";
 import { MAX_RUPEES as INC_MAX, MIN_RUPEES as INC_MIN, STEP_RUPEES, readIncentive, saveIncentive, type IncentiveSetting } from "../lib/incentive";
 import { readSupportPhoneAdmin, saveSupportPhone, showPhone, supportPhoneProblem, type SupportPhoneSetting } from "../lib/supportPhone";
+import { MAX_FEE_RUPEES, feeProblem, readFeeSetting, saveFeeSetting, type FeeSetting } from "../lib/feeSetting";
 import { readSwapSetting, saveSwapSetting, swapPctProblem, type SwapSetting } from "../lib/swapSetting";
 
 // Board A9: the admin-only Settings row for the sold-out swap discount.
@@ -20,6 +21,19 @@ function SwapSettings() {
   const [line, setLine] = useState<string | null>(null);
   const saved = useRef(false);   // a Save beats a slower first read: the read never puts the old percent back
   useEffect(() => { readSwapSetting(getClient()).then((s) => { if (saved.current) return; setNow(s); setText((typed) => (typed === "" ? String(s.pct) : typed)); }, () => { if (!saved.current) setLine("Could not load the setting. Try again."); }); }, []);
+  const [fee, setFee] = useState<FeeSetting | null>(null);   // story 1756: the delivery fee row, first in Settings
+  const [feeText, setFeeText] = useState("");
+  const [feeLine, setFeeLine] = useState<string | null>(null);
+  const feeSaved = useRef(false);
+  useEffect(() => { readFeeSetting(getClient()).then((f) => { if (feeSaved.current) return; setFee(f); setFeeText((typed) => (typed === "" ? String(f.amount_paise / 100) : typed)); }, () => { if (!feeSaved.current) setFeeLine("Could not load the setting. Try again."); }); }, []);
+  async function saveFee() {
+    const problem = feeProblem(feeText);
+    if (problem) return void setFeeLine(problem);
+    const failed = await saveFeeSetting(getClient(), Number(feeText));
+    setFeeLine(failed);
+    if (failed) { if (fee) setFeeText(String(fee.amount_paise / 100)); return; }   // the field goes back to the saved value
+    if (!fee || fee.amount_paise !== Number(feeText) * 100) { feeSaved.current = true; setFee({ amount_paise: Number(feeText) * 100, updated_by: "you", updated_at: new Date().toISOString() }); }
+  }
   async function save() {
     const problem = swapPctProblem(text);
     if (problem) return void setLine(problem);
@@ -30,6 +44,16 @@ function SwapSettings() {
   return (
     <section className="ui-group" aria-label="Settings">
       <h2>Settings</h2>
+      <div className="ui-row ui-row-static">
+        <span className="ui-row-label"><b>Delivery fee</b><span className="ui-row-sub mono">Rupees on every order · 0 to {MAX_FEE_RUPEES}</span></span>
+        <span className="ui-inline">
+          <span className="mono">₹</span>
+          <input type="number" min={0} max={MAX_FEE_RUPEES} step={1} value={feeText} aria-label="Delivery fee, rupees" className="mono ui-pct" onChange={(e) => { setFeeText(e.target.value); setFeeLine(null); }} />
+          <button type="button" className="ui-btn" aria-label="Save delivery fee" onClick={() => void saveFee()}>Save</button>
+        </span>
+      </div>
+      {fee && <p className="mono ui-foot">Now {formatRupees(fee.amount_paise)} · set by {fee.updated_by ?? "the system"}, {new Date(fee.updated_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true })}</p>}
+      {feeLine && <p role="alert" className="ui-note error">{feeLine}</p>}
       <div className="ui-row ui-row-static">
         <span className="ui-row-label"><b>Sold-out swap discount</b><span className="ui-row-sub mono">% off the new item, paid by us · 0 to 50</span></span>
         <span className="ui-inline">
