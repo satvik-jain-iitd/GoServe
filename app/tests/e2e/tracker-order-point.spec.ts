@@ -17,10 +17,10 @@ async function onTheWay(page: Page, context: BrowserContext, tracking: object) {
   return net;
 }
 
-test("T1 given the order's door is 2 km from the rider and its postal code's point is 1.5 km away, the row says 8 min away · 2.0 km: the distance is to the door", async ({ page, context }) => {
+test("T1 given the order's door is 2 km from the rider and its postal code's point is 1.5 km away, the row says Rider is 2.0 km away: the distance is to the door", async ({ page, context }) => {
   await onTheWay(page, context, { drop_lat: 28.598, drop_lng: 77.25 });   // the mock's postal code point stays at 28.59, 77.26
   await page.goto("/customer/");
-  await expect(row(page)).toContainText("Ravi is 8 min away · 2.0 km");
+  await expect(row(page)).toContainText("Rider is 2.0 km away");
 });
 
 test("T2 given the postal code has no point and the kitchen has no saved location, the row still shows: both come from the order", async ({ page, context }) => {
@@ -28,7 +28,7 @@ test("T2 given the postal code has no point and the kitchen has no saved locatio
   net.state.pinPoint = null;
   Object.assign(net.state.kitchens[0], { lat: null, lng: null });
   await page.goto("/customer/");
-  await expect(row(page)).toContainText("Ravi is 8 min away · 2.0 km");
+  await expect(row(page)).toContainText("Rider is 2.0 km away");
 });
 
 test("T3 given the order has no drop point, the row shows the rider with no distance, and its link has no route", async ({ page, context }) => {
@@ -52,14 +52,14 @@ test("T5 given a place with no ping time, the row does not show; the rider card 
   await expect(row(page)).toHaveCount(0);
 });
 
-test("T6 story 1686 given no realtime event, the rider's new place shows within 10 seconds: the row's minutes and distance change", async ({ page, context }) => {
+test("T6 story 1686 given no realtime event, the rider's new place shows within 10 seconds: the row's distance changes", async ({ page, context }) => {
   await page.clock.install({ time: SEEN });
   const net = await onTheWay(page, context, { drop_lat: 28.598, drop_lng: 77.25 });
   await page.goto("/customer/");
-  await expect(row(page)).toContainText("Ravi is 8 min away · 2.0 km");
-  net.state.tracking = { ...net.state.tracking!, rider_lat: 28.59, rider_lng: 77.25 };   // 890 m from the door (awayText says "4 min away · 890 m"); no push, only a read can see it
+  await expect(row(page)).toContainText("Rider is 2.0 km away");
+  net.state.tracking = { ...net.state.tracking!, rider_lat: 28.59, rider_lng: 77.25 };   // 890 m from the door (the row says "Rider is 890 m away"); no push, only a read can see it
   await page.clock.runFor(10_000);
-  await expect(row(page)).toContainText("Ravi is 4 min away · 890 m");
+  await expect(row(page)).toContainText("Rider is 890 m away");
 });
 
 test("R1 given the rider is online and his phone refuses the location, the rider app says so; with the location allowed it does not", async ({ page, context }) => {

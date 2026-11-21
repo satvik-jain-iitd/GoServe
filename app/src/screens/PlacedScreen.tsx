@@ -61,12 +61,13 @@ const GO = <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fi
 // Story 1498 (owner, 14 Nov 2026): the row looks as before; the tap opens Google Maps, the route from the rider to the order's pin.
 function RiderRow({ t }: { t: Track }) {
   const { now, online } = useNowOnline();
+  const away = t.you && awayText(metres(t.rider.lat, t.rider.lng, t.you.lat, t.you.lng));
   return (
     <a className="ui-locrow ui-riderrow" aria-label="See the rider on Google Maps" href={riderLink(t.rider, t.you)} target="_blank" rel="noopener noreferrer">
       <span className="ui-locrow-icon">{MAP_ICON}</span>
       <span className="ui-locrow-words">
-        <span className="ui-locrow-title"><b>{t.name}</b> is {(t.you && awayText(metres(t.rider.lat, t.rider.lng, t.you.lat, t.you.lng))) || "on the way"}</span>
-        <span className="ui-locrow-sub mono">{online ? `On the map · updated ${agoText(t.rider.at, now)}` : `No connection · ${lastSeenText(t.rider.at, now)}`}</span>
+        <span className="ui-locrow-title">{away ? `Rider is ${away} away` : <><b>{t.name}</b> is on the way</>}</span>
+        <span className="ui-locrow-sub mono">{online ? `updated ${agoText(t.rider.at, now)}` : `No connection · ${lastSeenText(t.rider.at, now)}`}</span>
       </span>
       <span className="ui-locrow-go">{GO}</span>
     </a>

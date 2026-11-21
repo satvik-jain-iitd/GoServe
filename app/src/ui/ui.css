@@ -800,6 +800,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 
 /* Story 1053, boards T4 and T5: the rider row, the full-screen rider map. */
 .ui-riderrow { margin: 0; }   /* board T4: 16 px under the slip (the page gap keeps it); the page already keeps 20 px at the sides */
+.ui-riderrow .ui-locrow-title, .ui-riderrow .ui-locrow-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* story 1744: one line for any name, so the row has one height */
 a.ui-locrow { text-decoration: none; }   /* story 1498: the rider row is a link to Google Maps and looks as before */
 .gs-lab { display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--md-primary); }
 .gs-lab b { font-family: var(--gs-font-mono); font-size: 11px; font-weight: 400; color: var(--md-on-surface); white-space: nowrap; }
