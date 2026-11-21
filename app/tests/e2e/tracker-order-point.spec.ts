@@ -45,10 +45,10 @@ test("T4 given the row was written just now but the rider's last ping is 40 minu
   await expect(row(page)).toContainText("updated 40 min ago");
 });
 
-test("T5 given a place with no ping time, the row does not show; the rider card with its call link stays", async ({ page, context }) => {
+test("T5 given a place with no ping time, the row does not show; the rider card and the foot Call the rider stay", async ({ page, context }) => {
   await onTheWay(page, context, { drop_lat: 28.598, drop_lng: 77.25, rider_at: null });
   await page.goto("/customer/");
-  await expect(page.getByRole("link", { name: /Call/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Call the rider" })).toBeVisible();
   await expect(row(page)).toHaveCount(0);
 });
 

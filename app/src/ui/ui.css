@@ -1081,3 +1081,9 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
 .ui-door-pay { display: flex; gap: var(--gs-space-2); }   /* story 1747: cash and UPI are equal answers, each half the foot */
 .ui-door-pay .ui-btn.big { flex: 1 1 0; min-width: 0; width: auto; }
 .ui-back-tight { margin-block: -10px; }   /* story 1747: the 44 px arrow sits in the 24 px title line, so the header keeps its 49 px */
+
+
+/* story 1657: the rider card at ready is one line; the name is cut with dots, the words after it never are. */
+.ui-ridercard { display: flex; gap: 0.3em; white-space: nowrap; }
+.ui-ridercard strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.ui-ridercard span { flex: none; }

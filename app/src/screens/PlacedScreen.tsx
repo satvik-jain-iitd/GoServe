@@ -87,6 +87,7 @@ const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", del
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
 export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, placedAt, lines, kitchenName, headWait, pin, kitchenPhone, address, error, onMenu, onBack, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta, again }: Props) {
+  const riderPhone = (status === "out_for_delivery" ? track?.phone ?? rider?.phone : status === "ready" ? rider?.phone : null) || null;   // the track exists only on the way; the rider card is there from ready
   const [askCancel, setAskCancel] = useState(false);   // story #1227: the cancel sheet
   const steps = trackerSteps(status);
   const { now, online } = useNowOnline();
@@ -158,9 +159,8 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, 
             right={steps.map((x) => (x.state === "current" && !delivered ? "Now" : x.state !== "todo" && times?.[x.status] ? clock12(new Date(times[x.status])) : null))} />}   {/* story 1324 (PL6, PL4, PL7): three rows, the delivered slip too */}
           {!delivered && !cancelled && address && <p className="mono ui-addr ph-no-capture">{address}</p>}
           {rider && !(track && status === "out_for_delivery") && (
-            <div className="notice" data-testid="rider-card">
-              <strong>{atDoor ? rider.name.split(" ")[0] : rider.name}</strong> {atDoor ? "is at your door." : "is bringing your order."}{" "}
-              <a className="ui-btn" href={`tel:${rider.phone}`} onClick={onCall}>Call {rider.name}</a>
+            <div className="notice ui-ridercard" data-testid="rider-card">   {/* story 1657: one line, the name cut with dots, no button: the call is in the foot */}
+              <strong>{(atDoor ? rider.name.split(" ")[0] : rider.name).trim() || "Your rider"}</strong>{" "}<span>{atDoor ? "is at your door." : "is bringing your order."}</span>
             </div>
           )}
           {declined ? (
@@ -179,8 +179,8 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, early, 
       {(status === "placed" || status === "accepted") && askCancel && <CancelSheet lines={lines} kitchenName={kitchenName || "the kitchen"} paidOnline={pay?.state === "paid"} onKeep={() => setAskCancel(false)} onYes={() => { setAskCancel(false); onCancel(); }} />}
       <div className="ui-bottom">   {/* story 1572: one button per line, full width, never side by side */}
         {(status === "placed" || status === "accepted") && <button type="button" className="ui-btn ghost big danger" disabled={cancelling} onClick={() => setAskCancel(true)}>Cancel order</button>}
-        {track?.phone && status === "out_for_delivery" && <a href={`tel:${track.phone}`} className="ui-btn ghost big" onClick={onCall}>Call the rider</a>}
-        {kitchenPhone && status !== "out_for_delivery" && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
+        {riderPhone && <a href={`tel:${riderPhone}`} className="ui-btn ghost big" onClick={onCall}>Call the rider</a>}   {/* stories 1656, 1657: one call button by stage; the name is never in a button */}
+        {!riderPhone && kitchenPhone && status !== "out_for_delivery" && <a href={`tel:${kitchenPhone}`} className="ui-btn ghost big">Call the kitchen</a>}
         {declined && <button type="button" className="ui-btn big" onClick={onMenu}>Order something else</button>}   {/* story 1458 (board T2b): the main button last, as on every end slip */}
         {again?.bar}
         {(cancelled || (delivered && !again)) && !declined && <button type="button" className="ui-btn big" onClick={onMenu}>Back to menu</button>}   {/* story 1434 (boards T1b, Delivered b): one name on both end slips, the main button last; the same dishes again only from History */}

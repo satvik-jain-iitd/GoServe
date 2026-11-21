@@ -49,12 +49,12 @@ test("S3 the tracker has a timeline, an estimate and the short order number", as
   await expect(page.locator("body")).not.toContainText(ID);   // never the whole id
 });
 
-test("S4 once a rider has the order, the card shows the name and a call link", async ({ page, context }) => {
+test("S4 once a rider has the order, the card shows the name and the foot has Call the rider", async ({ page, context }) => {
   const net = await setup(context, page, [order("out_for_delivery", "2020-01-01T10:05:00Z")]);
   net.state.riderCard = { name: "Ravi", phone: "9876500000" };
   await page.goto("/customer/");
   await expect(page.getByTestId("rider-card")).toContainText("Ravi");
-  await expect(page.getByRole("link", { name: "Call Ravi" })).toHaveAttribute("href", "tel:9876500000");
+  await expect(page.getByRole("link", { name: "Call the rider" })).toHaveAttribute("href", "tel:9876500000");
   await expect.poll(() => net.calls.rpc.filter((c) => c.name === "order_rider").length).toBeGreaterThan(0);
   expect(net.calls.rpc.find((c) => c.name === "order_rider")!.body).toEqual({ p_order: ID });
 });
