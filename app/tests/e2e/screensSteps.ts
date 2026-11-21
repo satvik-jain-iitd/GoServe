@@ -92,7 +92,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
   account: async (context, page, path) => { const net = await setup(context, page); net.state.phoneUser = true; await page.goto(path);   // story 829: signed in by phone code (no Google name), so You shows the Google row as in the accepted picture
     await page.getByRole("button", { name: "Account" }).click(); await expect(page.getByTestId("account")).toBeVisible(); },
   cancelled: async (context, page, path) => {   // story 916: the slip after a cancel
-    const net = await setup(context, page, [order("placed")]); await page.goto(path);
+    const net = await setup(context, page, [order("placed")]); net.state.supportPhone = "9000000000"; await page.goto(path);   // story 1745: the admin set a support number, so the foot shows Call support
     await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
     net.push("UPDATE", order("cancelled", "2020-01-01T10:01:00Z")); await expect(page.locator(".ui-stamp", { hasText: "Cancelled" })).toBeVisible({ timeout: 5000 }); },
   "add-kitchen": async (context, page, path) => {   // story 923: the admin's Add kitchen form
