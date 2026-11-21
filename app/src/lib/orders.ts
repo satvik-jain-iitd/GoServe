@@ -116,7 +116,9 @@ export async function sendFeedback(report: Report, client: SupabaseClient): Prom
     throw new PlaceError(NO_INTERNET, "network");
   }
   if (res.error) {
-    throw new PlaceError(NO_INTERNET, "network");   // a dead network, a 500 or an expired sign-in: the note is kept and tried again, never dropped
+    const st = res.status ?? 0;   // no answer, a lapsed sign-in, a slow or busy server, a server fault: keep the note and try again. Any other 4xx can never succeed: a refusal.
+    if (st === 0 || st === 401 || st === 408 || st === 429 || st >= 500) throw new PlaceError(NO_INTERNET, "network");
+    throw new PlaceError(FEEDBACK_FAILED, `http_${st}`);
   }
   const a = res.data as { ok?: boolean; id?: string; error?: string; message?: string } | null;
   if (a?.ok && a.id) return a.id;

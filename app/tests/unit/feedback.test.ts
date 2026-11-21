@@ -70,6 +70,17 @@ describe("a queued note survives a server fault (story 1751, reviewer 21 Nov)", 
     answer = { data: { ok: false, error: "text_too_long", message: "Too long." }, error: null };
     expect(await flushQueue(store, (r) => sendFeedback(r, client))).toBe(0);
   });
+  it("a 4xx the server can never take is a refusal: a fresh send shows the error; a flush drops it and goes on", async () => {
+    const store = memory();
+    queueReport(store, { ...R, text: "bad" });
+    queueReport(store, { ...R, text: "good" });
+    const sent: string[] = [];
+    const c = { rpc: async (_n: string, a: Record<string, unknown>) => (a.p_text === "bad" ? { data: null, error: { message: "Bad Request" }, status: 400 } : (sent.push(String(a.p_text)), { data: { ok: true, id: "f3" }, error: null })) } as unknown as SupabaseClient;
+    expect(await flushQueue(store, (r) => sendFeedback(r, c))).toBe(0);
+    expect(sent).toEqual(["good"]);
+    await expect(sendFeedback(R, { rpc: async () => ({ data: null, error: { message: "Not Found" }, status: 404 }) } as unknown as SupabaseClient)).rejects.toMatchObject({ message: "Could not send the note. Try again." });
+    for (const status of [0, 401, 408, 429, 500, 503]) await expect(sendFeedback(R, { rpc: async () => ({ data: null, error: { message: "x" }, status }) } as unknown as SupabaseClient)).rejects.toMatchObject({ code: "network" });
+  });
   it("the admin app sends as ops: the function has no admin role", async () => {
     let seen: Record<string, unknown> = {};
     const c = { rpc: async (_n: string, a: Record<string, unknown>) => { seen = a; return { data: { ok: true, id: "f2" }, error: null }; } } as unknown as SupabaseClient;
