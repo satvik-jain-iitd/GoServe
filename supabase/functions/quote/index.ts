@@ -1,6 +1,6 @@
 // Story #345: POST /quote. Lines + address + optional coupon in, the one bill out. The data sources are injected so the tests need no network.
 // Prices come from the catalog, never from the request. Reads use the project's own URL; rules come from the versioned params row `quote_rules`.
-import { quote, pickAlternative, DEFAULT_RULES, DEFAULT_SWAP_PCT, MAX_QTY, type Catalog, type Coupon, type MenuRow, type Rules } from "./quote.ts";
+import { quote, pickAlternative, feeRules, DEFAULT_RULES, DEFAULT_SWAP_PCT, MAX_QTY, type Catalog, type Coupon, type MenuRow, type Rules } from "./quote.ts";
 import { withRunLog, writeRunLog } from "../_shared/runlog.ts";
 import { withCors } from "../_shared/cors.ts";
 
@@ -121,7 +121,8 @@ export const live: Deps = {
   rules: async (kitchenId) => {
     const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;   // params is not public to read
     const rows = await get(`params?select=value&kitchen_id=eq.${kitchenId}&session_id=eq.global&key=eq.quote_rules&order=version.desc&limit=1`, headers(key));
-    return rows.length ? { ...DEFAULT_RULES, ...rows[0].value } : DEFAULT_RULES;
+    const fee = await get("settings?select=value&name=eq.delivery_fee&limit=1", headers(key));   // story 1755: the admin's fee; a failed read throws, so the quote is 502, never free
+    return feeRules(rows.length ? { ...DEFAULT_RULES, ...rows[0].value } : DEFAULT_RULES, fee);
   },
   session: async (req) => {   // an anonymous user has a token too; anything that does not check out is no session
     const token = (req.headers.get("authorization") ?? "").replace(/^Bearer /i, "");
