@@ -4,11 +4,11 @@ import { order, setup } from "./helpers";
 
 const TIME = /\b\d{1,2}:\d{2} (am|pm)\b/;
 
-test("S1 the clock line is 12-hour and the address is in normal case", async ({ page, context }) => {
+test("S1 no clock line under the minutes (story 1742) and the address is in normal case", async ({ page, context }) => {
   const net = await setup(context, page, [order("preparing", new Date().toISOString(), new Date().toISOString())]);
   net.state.tracking = { eta_lo_min: 20, eta_hi_min: 30, eta_late: false, updated_at: new Date().toISOString() };   // story #1015: the server's time
   await page.goto("/customer/");
-  await expect(page.locator(".ui-clock").first()).toHaveText(new RegExp(`^By ${TIME.source}$`));
+  await expect(page.getByText(/^By /)).toHaveCount(0);   // story 1742: a promise is minutes, never a clock time; the 12-hour check lives on "At your door" (delivered-screen D1)
   const addr = page.locator(".ui-addr");
   await expect(addr).toHaveText("Flat 4, Green Park");
   expect(await addr.evaluate((el) => getComputedStyle(el).textTransform)).toBe("none");

@@ -124,7 +124,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     net.state.tracking = { rider_lat: 28.5792, rider_lng: 77.26, eta_lo_min: 8, eta_hi_min: 18, eta_late: false, updated_at: new Date(NINE.getTime() - 20_000).toISOString() };
     await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+vg+AAVYAqhyXHCrAAAAAElFTkSuQmCC", "base64") }));
     await page.goto(path); await expect(page.getByRole("link", { name: "See the rider on Google Maps" })).toBeVisible(); },
-  // Story #1015: the boards E2a (big number), E1b (running late) and E1c (working out the time) with the clock fixed at NINE: 25 min from 9:00 am is "By 9:25 am" where the board says 8:12 pm.
+  // Story #1015: the boards E2a (big number), E1b (running late) and E1c (working out the time) with the clock fixed at NINE: 25 min from 9:00 am; story 1742: no "By" clock line any more (the board still shows "By 8:12 pm").
   "eta-big": async (context, page, path) => {   // board E2a
     const net = await setup(context, page, [order("preparing", "2020-01-01T10:02:00Z")]);
     net.state.tracking = { rider_lat: null, rider_lng: null, eta_lo_min: 25, eta_hi_min: 35, eta_late: false, updated_at: NINE.toISOString() };

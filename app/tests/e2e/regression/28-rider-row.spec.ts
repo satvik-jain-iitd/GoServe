@@ -9,12 +9,12 @@ test.use({ viewport: { width: 390, height: 844 } });
 const row = (page: Page) => page.getByRole("link", { name: "See the rider on Google Maps" });   // story 1498: the row opens Google Maps; the app's own map is gone
 const slip = (page: Page) => page.getByRole("region", { name: "Order", exact: true });
 
-test("TC 28.1 Order on the way: the On the way stamp, minutes, By time, the rider row with its words, the steps, Call the rider", async ({ page, context }) => {
+test("TC 28.1 Order on the way: the On the way stamp, minutes (no By time, story 1742), the rider row with its words, the steps, Call the rider", async ({ page, context }) => {
   await page.clock.setFixedTime(NINE);
   await STEPS["tracker-rider-row"](context, page, PATH);
   await expect(slip(page).getByText("On the way", { exact: true })).toBeVisible();   // proves the on-the-way order shows before the rest is checked
   await expect(slip(page).getByText(/^\d+ min$/)).toBeVisible();
-  await expect(slip(page).getByText(/^By \d{1,2}:\d{2} (am|pm)$/)).toBeVisible();
+  await expect(slip(page).getByText(/^By /)).toHaveCount(0);   // story 1742
   await expect(row(page)).toContainText("Rahul is 5 min away · 1.2 km");
   await expect(row(page)).toContainText("On the map · updated 20 sec ago");
   await expect(page.getByRole("list", { name: "Order progress" }).getByRole("listitem").filter({ hasText: "On the way" })).toHaveAttribute("aria-current", "step");
