@@ -937,7 +937,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [swapped, setSwapped] = useState<string[]>([]);
   // Story 1540: only the dishes on this kitchen's menu are sent (the rows the customer sees), never an id the cart still holds from another kitchen.
   const orderItems = useMemo(() => toOrderItems(Object.fromEntries(lines.map((l) => [l.dish.id, l.qty]))).map((i) => (swapped.includes(i.menu_item_id) ? { ...i, swap: true } : i)), [lines, swapped]);
-  const offers = useOffers(lock === "customer" && step === "bill", area?.kind === "ok" ? area.kitchen.id : null, pin, orderItems, !OFFERS_ON);   // story #588; story #995: the quote is always asked on the Bill so the total is the server's; with the offers off it asks for no coupon
+  const offers = useOffers(lock === "customer" && (step === "bill" || (step === "menu" && orderItems.length > 0)), area?.kind === "ok" ? area.kitchen.id : null, pin, orderItems, !OFFERS_ON, step === "bill" ? 0 : 300);   // story #588; story #995: the quote is always asked on the Bill so the total is the server's; with the offers off it asks for no coupon; story 1771: also asked on the menu once a dish is in the cart (300 ms after the last change, at once on the Bill)
   const total = offers.quote ? offers.quote.to_pay_paise : cartTotal(lines);
   const dead = lines.find((l) => l.dish.available === false && !swapped.includes(l.dish.id));   // the first dish in the bill that is sold out
   const canSwap = OFFERS_ON;   // the swap is priced by POST /quote and ordered by POST /orders
