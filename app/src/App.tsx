@@ -53,6 +53,7 @@ import { OFFERS_ON } from "./lib/quote";
 import { watchMenu } from "./lib/liveMenu";
 import { placeDeps, placeOrderV2, PriceChanged, renewSession } from "./lib/ordersV2";
 import { useOffers } from "./lib/useOffers";
+import { useLoadedFee } from "./lib/feeLoaded";
 import { openOrderToResume } from "./lib/resume";
 import { SignIn } from "./screens/SignIn";
 import { OtpSheet } from "./screens/OtpSheet";
@@ -937,7 +938,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [swapped, setSwapped] = useState<string[]>([]);
   // Story 1540: only the dishes on this kitchen's menu are sent (the rows the customer sees), never an id the cart still holds from another kitchen.
   const orderItems = useMemo(() => toOrderItems(Object.fromEntries(lines.map((l) => [l.dish.id, l.qty]))).map((i) => (swapped.includes(i.menu_item_id) ? { ...i, swap: true } : i)), [lines, swapped]);
-  const offers = useOffers(lock === "customer" && (step === "bill" || (step === "menu" && orderItems.length > 0)), area?.kind === "ok" ? area.kitchen.id : null, pin, orderItems, !OFFERS_ON, step === "bill" ? 0 : 300);   // story #588; story #995: the quote is always asked on the Bill so the total is the server's; with the offers off it asks for no coupon; story 1771: also asked on the menu once a dish is in the cart (300 ms after the last change, at once on the Bill)
+  const loadedFee = useLoadedFee(lock === "customer");   // story 1775: the fee is read once at start; the first quote waits for that read so it carries its as_of and is asked once
+  const offers = useOffers(lock === "customer" && loadedFee.settled && (step === "bill" || (step === "menu" && orderItems.length > 0)), area?.kind === "ok" ? area.kitchen.id : null, pin, orderItems, !OFFERS_ON, step === "bill" ? 0 : 300, loadedFee.fee?.as_of ?? null);   // story #588; story #995: the quote is always asked on the Bill so the total is the server's; with the offers off it asks for no coupon; story 1771: also asked on the menu once a dish is in the cart (300 ms after the last change, at once on the Bill)
   const total = offers.quote ? offers.quote.to_pay_paise : cartTotal(lines);
   const dead = lines.find((l) => l.dish.available === false && !swapped.includes(l.dish.id));   // the first dish in the bill that is sold out
   const canSwap = OFFERS_ON;   // the swap is priced by POST /quote and ordered by POST /orders
@@ -1038,7 +1040,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       if (lock === "customer") setSavedPhone(phone);   // story 1417: the next bill shows this phone on one line
       const kitchenId = areaKitchenId ?? (lock ? null : await demoKitchenId());   // the demo console has no area step: it orders from the first open kitchen
       if (!kitchenId) throw new Error("Choose where the food goes first.");   // story #940: the order is placed for a kitchen by POST /orders, as the signed-in user
-      const { order } = await placeOrderV2({ kitchenId, pin: pin ?? where?.pin ?? "", items, address: address.trim(), key: keyRef.current.key, expectedPaise: total, code: offers.code, none: offers.none, drop, instructions: note }, placeDeps(async () => {   // story 1580: after a 401 the sign-in is renewed once. A new guest has no profile row: save the phone and name again under the new id before the retry
+      const { order } = await placeOrderV2({ kitchenId, pin: pin ?? where?.pin ?? "", items, address: address.trim(), key: keyRef.current.key, expectedPaise: total, feeAsOf: loadedFee.fee?.as_of ?? null, code: offers.code, none: offers.none, drop, instructions: note }, placeDeps(async () => {   // story 1580: after a 401 the sign-in is renewed once. A new guest has no profile row: save the phone and name again under the new id before the retry
         const r = await renewSession(lock === "customer");
         return r === "same" || (r === "guest" && lock === "customer" && await saveProfile(getClient(), await ensureCustomerSession(), { name: name.trim() || signInName, phone, address, pin }));
       }, lock === "customer"));
@@ -1057,7 +1059,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     } catch (e) {
       if (e instanceof SessionEnded) return void sessionEnded();   // story 1586: the wall shows; no error line, the bag and the draft stay
       if (e instanceof PlaceError && e.code === "sold_out") setLiveTick((n) => n + 1);   // story #619: read the menu again, the Bill then names the dish
-      if (e instanceof PriceChanged) offers.replace(e.quote);   // the Bill shows the new To pay; nothing is ordered until the customer taps again
+      if (e instanceof PriceChanged) { offers.replace(e.quote); loadedFee.reload(); }   // story 1775: the fee the app loaded is too old (12 hours) or changed: read it again, the next call carries the new time
+         // the Bill shows the new To pay; nothing is ordered until the customer taps again
       if (e instanceof PlaceError && e.code === "point_required") {   // story 1528: the server found no point on this order. The place must be set on the map again: the Bill says so and shows "Confirm on the map"
         if (whereNow.current) setPlace({ ...whereNow.current, confirmed: false });
         return;
@@ -1201,7 +1204,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         )}
         {menu && step === "bill" && (
           <BillScreen under={moved ? kitchenChangedBill(billLines.some((l) => l.was_paise !== undefined)) : null} note={note} onNote={setNote} lines={billLines} total={total} soldOut={dead && step === "bill" ? { id: dead.dish.id, name: dead.dish.name, alt: offers.alt, canSwap, onSwap: () => setSwapped((s) => [...s, dead.dish.id]), onRemove: () => takeOut(dead.dish.id) }
-            : notMade ? { id: notMade.id, name: notMade.name, line: notMadeLine(notMade.name), alt: null, canSwap: false, onSwap: () => undefined, onRemove: () => setMoved((m) => m && { ...m, gone: m.gone.filter((g) => g.id !== notMade.id) }) } : undefined} offers={offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove, show: OFFERS_ON } : undefined} kitchenName={kitchenName} pin={pin} address={address} farKm={farKm} confirmed={!!pointOf(where)} onChangePlace={() => setStep("deliver")} onConfirmPlace={confirmOnMap}
+            : notMade ? { id: notMade.id, name: notMade.name, line: notMadeLine(notMade.name), alt: null, canSwap: false, onSwap: () => undefined, onRemove: () => setMoved((m) => m && { ...m, gone: m.gone.filter((g) => g.id !== notMade.id) }) } : undefined} loading={offers.loading || (lock === "customer" && !loadedFee.settled && orderItems.length > 0 && area?.kind === "ok" && !!pin)} fee={loadedFee.fee} offers={offers.quote ? { quote: offers.quote, codeError: offers.codeError, onApply: offers.apply, onRemove: offers.remove, show: OFFERS_ON } : undefined} kitchenName={kitchenName} pin={pin} address={address} farKm={farKm} confirmed={!!pointOf(where)} onChangePlace={() => setStep("deliver")} onConfirmPlace={confirmOnMap}
             details={lock === "customer" ? { phone, onPhone: setPhone, saved: savedPhone } : undefined}
             door={lock === "customer" ? { methods: doorMethods ?? [], value: doorValue, onChange: setDoorPick } : undefined} sending={sending} error={error} onSignIn={() => { setError(null); setSignedIn(false); }}
             onBack={() => setStep("menu")} onPlace={place} />

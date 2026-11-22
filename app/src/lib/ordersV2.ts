@@ -44,14 +44,14 @@ export const v2Deps = (): V2Deps => ({
 // Place order only: signs in first, and on a 401 renews through `renew`.
 export const placeDeps = (renew: () => Promise<boolean>, customer = false): V2Deps => ({ ...v2Deps(), token: () => userToken(customer), renew });
 
-export type PlaceV2Input = { kitchenId: string; pin: string; items: { menu_item_id: string; qty: number; swap?: boolean }[]; address: string; key: string; expectedPaise: number; code: string | null; none: boolean; drop: { lat: number; lng: number }; instructions?: string };   // story 1528: the point is not optional; story 935: one optional note for the kitchen
+export type PlaceV2Input = { kitchenId: string; pin: string; items: { menu_item_id: string; qty: number; swap?: boolean }[]; address: string; key: string; expectedPaise: number; feeAsOf?: string | null; code: string | null; none: boolean; drop: { lat: number; lng: number }; instructions?: string };   // story 1528: the point is not optional; story 935: one optional note for the kitchen
 
 export async function placeOrderV2(input: PlaceV2Input, deps: V2Deps): Promise<{ order: PlacedOrder; created: boolean }> {
   let res: Response;
   const send = async () => deps.fetchFn(`${deps.url}/functions/v1/orders`, {
       method: "POST", headers: { "content-type": "application/json", apikey: deps.anon, authorization: `Bearer ${await deps.token()}` },
       body: JSON.stringify({ kitchen_id: input.kitchenId, lines: input.items.map((i) => ({ ...i, option_ids: [] })), address: { pin_code: input.pin, text: input.address.trim(), lat: input.drop.lat, lng: input.drop.lng },   // story 1528: every order carries the exact point
-        ...(input.code ? { coupon_code: input.code } : {}), ...(input.none ? { no_coupon: true } : {}), idempotency_key: input.key, expected_to_pay_paise: input.expectedPaise, ...(input.instructions?.trim() ? { instructions: input.instructions.trim() } : {}) }),
+        ...(input.feeAsOf ? { fee_as_of: input.feeAsOf } : {}), ...(input.code ? { coupon_code: input.code } : {}), ...(input.none ? { no_coupon: true } : {}), idempotency_key: input.key, expected_to_pay_paise: input.expectedPaise, ...(input.instructions?.trim() ? { instructions: input.instructions.trim() } : {}) }),
     });
   try {
     res = await send();
