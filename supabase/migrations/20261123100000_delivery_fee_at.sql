@@ -3,7 +3,7 @@
 -- No secret and no per-phone memory: the app keeps the server time of its fee read ("as of"); the server looks up the fee that was live at that time, never older than 12 hours.
 -- 1) A null time, or a time after the last change in delivery_fee_log, answers the settings value: the same number the quote reads without a time, also after a direct edit of settings.
 -- 2) A time before a newer log row answers the log value live then (0 before the first row). A time in the future is now. A time older than 12 hours is now minus 12 hours.
--- 3) Customers and guests may run it. The answer has no name of who set the fee.
+-- 3) Customers and guests may run it (and the service role, which the quote and orders functions use). The answer has no name of who set the fee.
 -- Safe to run twice (create or replace).
 create or replace function delivery_fee_at_v1(p_as_of timestamptz default null) returns jsonb
 language plpgsql stable security definer set search_path = public as $$
@@ -21,4 +21,4 @@ begin
   return jsonb_build_object('amount_paise', v_amount, 'as_of', v_t, 'now', v_now);
 end $$;
 revoke all on function delivery_fee_at_v1(timestamptz) from public;
-grant execute on function delivery_fee_at_v1(timestamptz) to anon, authenticated;
+grant execute on function delivery_fee_at_v1(timestamptz) to anon, authenticated, service_role;   -- the quote and orders functions call it with the service key; named here so no platform default is assumed
