@@ -10,7 +10,7 @@ const quote = (qty: number) => ({
   ok: true, kitchen_id: "k-1", lines: [], item_total_paise: 32000 * qty, fees: { delivery_paise: FEE, packaging_paise: 0, total_paise: FEE }, discount_paise: 0, coupon: null, tax_paise: 0,
   tax_mode: "inclusive", early_friend_paise: 0, to_pay_paise: 32000 * qty + FEE, saved_paise: 0, offers: [],
 });
-type Opt = { rpcFail?: boolean; quoteDelay?: number; quoteFail?: boolean };
+type Opt = { rpcFail?: boolean; rpcDelay?: number; quoteDelay?: number; quoteFail?: boolean };
 
 async function open(context: BrowserContext, page: Page, o: Opt = {}, size = { width: 390, height: 844 }) {
   const net = await setup(context, page);
@@ -26,6 +26,7 @@ async function open(context: BrowserContext, page: Page, o: Opt = {}, size = { w
   });
   await context.route("https://test.supabase.co/rest/v1/rpc/delivery_fee_at_v1**", async (route) => {
     if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: CORS });
+    if (o.rpcDelay) await new Promise((r) => setTimeout(r, o.rpcDelay));
     if (o.rpcFail) return route.fulfill({ status: 500, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify({ message: "down" }) });
     const asOf = `2026-11-22T10:0${rpc.length}:00.000Z`;
     rpc.push({ body: route.request().postDataJSON(), asOf });
@@ -162,3 +163,63 @@ for (const size of [{ width: 390, height: 844 }, { width: 360, height: 640 }]) {
     }
   });
 }
+
+test("F10 while the fee read is still pending the first frame has no Free and no menu total (reviewer, 23 Nov)", async ({ page, context }) => {
+  await open(context, page, { rpcDelay: 3500 });
+  await toBill(page);
+  const f = await first(page);
+  expect(f.rows).not.toContain("Free");
+  expect(f.rows).not.toMatch(/Delivery\s*\d/);
+  expect(f.total).not.toMatch(/\d/);
+  expect(f.btn).not.toMatch(/\d/);
+  await expect(total(page)).toHaveText("₹345", { timeout: 9000 });
+});
+
+// The approved frame: a slim quiet bar (10 to 12 px) centred on the line, as wide as the figure, inside the figure's own box (the box keeps its size, so nothing moves).
+const parse = (c: string) => {
+  const n = (c.match(/-?[\d.]+/g) ?? []).map(Number);
+  return c.startsWith("color(") ? { rgb: n.slice(0, 3).map((v) => Math.round(v * 255)), a: n[3] ?? 1 } : { rgb: n.slice(0, 3), a: n[3] ?? 1 };
+};
+const lum = (rgb: number[]) => { const [r, g, b] = rgb.map((v) => { const x = v / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+const contrast = (a: number[], b: number[]) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
+
+const shapes = (page: Page) => page.evaluate(() => Array.from(document.querySelectorAll(".ui-pending")).map((el) => {
+  const b = el.getBoundingClientRect(), a = getComputedStyle(el, "::after");
+  return { where: el.closest(".bill-foot") ? "button" : el.closest(".ui-slip-total") ? "total" : "delivery", boxH: b.height, boxW: b.width, h: parseFloat(a.height), w: parseFloat(a.width),
+    centre: parseFloat(a.top) + parseFloat(a.marginTop) + parseFloat(a.height) / 2 };
+}));
+const slim = (shape: Awaited<ReturnType<typeof shapes>>[number]) => {
+  expect(shape.h, `${shape.where} height`).toBeGreaterThanOrEqual(7);
+  expect(shape.h, `${shape.where} height`).toBeLessThanOrEqual(14);
+  expect(Math.abs(shape.w - shape.boxW), `${shape.where} width`).toBeLessThanOrEqual(2);   // as wide as the figure
+  expect(Math.abs(shape.centre - shape.boxH / 2), `${shape.where} centre`).toBeLessThanOrEqual(2);   // centred on the line
+};
+
+test("F11 the total and the button amount are slim bars centred on the line, as wide as the figure, inside the figure's own box", async ({ page, context }) => {
+  await open(context, page, { quoteDelay: 2500 });
+  await toBill(page);
+  await expect(total(page)).toHaveAttribute("aria-label", "Price loading");
+  const all = await shapes(page);
+  expect(all.map((x) => x.where).sort()).toEqual(["button", "total"]);   // the fee was read, so the Delivery row has the fee, not a bar
+  all.forEach(slim);
+  expect(all.find((x) => x.where === "total")!.boxH).toBeGreaterThanOrEqual(38);   // the outer box keeps the big figure's line: nothing moves
+});
+
+test("F12 the Delivery value is the same slim bar when the fee could not be read", async ({ page, context }) => {
+  await open(context, page, { rpcFail: true, quoteDelay: 2500 });
+  await toBill(page);
+  await expect(total(page)).toHaveAttribute("aria-label", "Price loading");
+  const all = await shapes(page);
+  expect(all.map((x) => x.where).sort()).toEqual(["button", "delivery", "total"]);
+  all.forEach(slim);
+});
+
+test("F13 the bar on the bottom button can be seen: 3 to 1 against the button's own fill", async ({ page, context }) => {
+  await open(context, page, { quoteDelay: 2500 });
+  await toBill(page);
+  await expect(total(page)).toHaveAttribute("aria-label", "Price loading");
+  const c = await page.evaluate(() => { const el = document.querySelector(".bill-foot .ui-pending")!; return { bar: getComputedStyle(el, "::after").backgroundColor, fill: getComputedStyle(el.closest("button")!).backgroundColor }; });
+  const bar = parse(c.bar), fill = parse(c.fill);
+  const over = bar.rgb.map((v, i) => Math.round(v * bar.a + fill.rgb[i] * (1 - bar.a)));   // the bar's colour laid over the fill
+  expect(contrast(over, fill.rgb), JSON.stringify(c)).toBeGreaterThanOrEqual(3);
+});
