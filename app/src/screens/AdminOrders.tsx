@@ -66,7 +66,7 @@ export function AdminOrders({ kitchens, onError, open, onOpen, onCount }: Props)
             <div className="ui-slip-body">
               <div className="ui-slip-head"><span>{k?.name ?? "Kitchen"}</span><span>Cash</span></div>
               <div className="ui-slip-stamp"><span className={`ui-stamp ${STAMP[o.status] ?? ""}`}>{staffLabel(o.status)}</span></div>
-              <div className="ui-slip-lines">{o.items.map((i, n) => <div key={n}><span>{i.qty} × {i.name}</span>{i.price_paise !== undefined && <span>{formatRupees(linePaise({ price_paise: i.price_paise, extras_paise: i.extras_paise, qty: i.qty }))}</span>}</div>)}<AdjustLines bill={o.bill} /></div>
+              <div className="ui-slip-lines">{o.items.map((i, n) => <div key={n}><span>{i.qty} × {i.name}</span>{i.price_paise !== undefined && <span>{formatRupees(linePaise({ price_paise: i.price_paise, extras_paise: i.extras_paise, qty: i.qty }))}</span>}</div>)}{o.bill?.fees && (o.bill.fees.delivery_paise ?? 0) === 0 && <div><span>Delivery</span><span>Free</span></div>}<AdjustLines bill={o.bill} /></div>
               <div className="ui-slip-rule" />
               <p className="ui-addr mono">{o.address}</p>
               <div className="ui-slip-rule" />

@@ -24,22 +24,7 @@ async function history(page: Page, context: Ctx, orders: object[], tune?: (s: an
   await expect(page.getByRole("heading", { name: "History", exact: true })).toBeVisible();
   return net;
 }
-async function openDelivered(page: Page, context: Ctx, tune?: (s: any) => void) {
-  await history(page, context, [past(1, "delivered", "2020-11-12T14:00:00Z", THALI_ROTI)], tune);
-  await page.getByRole("button", { name: /Veg Thali/ }).click();
-  await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();
-  await expect(page.locator(".ui-again")).toBeVisible();
-}
-// The four states of the block. `tune` is what the network answers for that state.
-const STATES: Record<string, (s: any) => void> = {
-  all: () => undefined,
-  some: (s) => { s.menu = [dish("d1", "Veg Thali", 18000)]; },
-  none: (s) => { s.menu = [dish("d9", "Dal Makhani", 20000)]; },
-  closed: (s) => { s.kitchens = [{ ...s.kitchens[0], open: false }, K2]; },
-};
 const box = (page: Page, sel: string) => page.locator(sel).evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)]; }));
-const PARTS = [".ui-again h2", ".ui-again-line", ".ui-again-dish", ".ui-bottom .ui-btn:last-of-type", ".ui-again-note", ".ui-slip", ".ui-bottom"];
-
 export function historyOrderAgain() {
   test.describe("the list", () => {
     const ORDERS = [
@@ -48,12 +33,12 @@ export function historyOrderAgain() {
       past(3, "delivered", "2020-11-13T14:00:00Z", [["d1", "Veg Thali", 1]], { kitchen_id: "k-2" }),
       past(4, "delivered", "2020-11-14T14:00:00Z", [["d1", "Dal Makhani", 1]], { kitchen_id: undefined }),
     ];
-    test("a row has no tag and no button inside it, and is 44 px tall or more", async ({ page, context }) => {
+    test("a delivered row has one Order again button and no tag; a cancelled row has none; a row is 44 px tall or more (story 1738)", async ({ page, context }) => {
       await history(page, context, ORDERS);
       await expect(page.locator(".ui-order-row")).toHaveCount(4);
       await expect(page.locator(".ui-tag")).toHaveCount(0);
-      await expect(page.locator(".ui-order-row button")).toHaveCount(0);
-      await expect(page.getByRole("button", { name: /^Order again/ })).toHaveCount(0);
+      await expect(page.locator(".ui-order-row", { hasText: "Paneer Thali" }).getByRole("button", { name: "Order again", exact: true })).toHaveCount(0);   // AC-1
+      await expect(page.getByRole("button", { name: "Order again", exact: true })).toHaveCount(3);
       await expect(page.getByText(/Order again . today/)).toHaveCount(0);   // the header line is gone
       for (const h of await box(page, ".ui-order-row")) expect(h[3]).toBeGreaterThanOrEqual(44);
     });
@@ -86,82 +71,100 @@ export function historyOrderAgain() {
     });
   });
 
-  test.describe("the opened order", () => {
+  // Story 1676: no Order it again block on the opened order (delivered-no-again.spec.ts); the block cases move to story 1738, on the History list.
+
+
+  // Story 1738: Order again is a small outline button on each delivered row. The four states of what today's menu can do keep every box where it is (rule 23).
+  const STATES: Record<string, (s: any) => void> = {
+    all: () => undefined,
+    some: (s) => { s.menu = [dish("d1", "Veg Thali", 18000)]; },
+    none: (s) => { s.menu = [dish("d9", "Dal Makhani", 20000)]; },
+    closed: (s) => { s.kitchens = [{ ...s.kitchens[0], open: false }, K2]; },
+  };
+  const again = (page: Page) => page.getByRole("button", { name: "Order again", exact: true });
+  const openList = (page: Page, context: Ctx, tune?: (s: any) => void) => history(page, context, [past(1, "delivered", "2020-11-12T14:00:00Z", THALI_ROTI)], tune);
+  const PARTS = [".ui-order-row", ".ui-order-open", ".ui-order-row .ui-btn"];
+  test.describe("the row button", () => {
     for (const [key, tune] of Object.entries(STATES)) {
-      test(`state ${key}: the block, its rows and its button`, async ({ page, context }) => {
-        await openDelivered(page, context, tune);
-        const rows = page.locator(".ui-again-dish");
-        await expect(rows).toHaveCount(2);
-        const bar = page.locator(".ui-bottom .ui-btn").last();
-        if (key === "all") {
-          await expect(rows.nth(0)).toContainText("Veg Thali");
-          await expect(rows.nth(0)).toContainText("₹180");
-          await expect(rows.nth(1)).toContainText("₹40");
-          await expect(page.locator(".ui-again-line")).toContainText("Hauz Khas Kitchen cooks for");
-          await expect(bar).toHaveText(/₹220\s*Order again ›/);
-          await expect(bar).toBeEnabled();
-        }
-        if (key === "some") {
-          await expect(rows.nth(0)).toContainText("₹180");
-          await expect(rows.nth(1)).toContainText("not made today");
-          await expect(rows.nth(1).locator(".nm")).toHaveCSS("text-decoration-line", "line-through");
-          await expect(bar).toHaveText(/1 of 2 · ₹180\s*Order again ›/);
-        }
-        if (key === "none") {
-          await expect(rows).toHaveText([/not made today/, /not made today/]);
-          await expect(page.locator(".ui-again-line")).toHaveText("Hauz Khas Kitchen does not make these dishes today.");
-          await expect(bar).toHaveText("See the menu");
-        }
-        if (key === "closed") {
-          await expect(bar).toBeDisabled();
-          await expect(bar).toHaveText(/Order again ›/);
-          await expect(page.locator(".ui-again-note")).toHaveText("Hauz Khas Kitchen is closed now.");
-        } else await expect(page.locator(".ui-again-note")).toHaveText("");
+      test(`state ${key}: the button says Order again only (no amount, no count, no arrow) and is ${key === "closed" ? "disabled" : "enabled"}`, async ({ page, context }) => {
+        await openList(page, context, tune);
+        await expect(again(page)).toHaveText("Order again");
+        await expect(again(page)).not.toContainText(/[₹›]|\d/);   // AC-4
+        if (key === "closed") await expect(again(page)).toBeDisabled(); else await expect(again(page)).toBeEnabled();
       });
-      test(`state ${key}: the answer is on screen at 360x640 with no scroll`, async ({ page, context }) => {
+      test(`state ${key}: at 360x640 the button is in view, at least 44 px high, and the page does not scroll sideways`, async ({ page, context }) => {
         await page.setViewportSize({ width: 360, height: 640 });
-        await openDelivered(page, context, tune);
-        await expect(page.locator(".ui-bottom .ui-btn").last()).toBeInViewport({ ratio: 1 });
-        await expect(page.locator(".ui-again-line")).toBeInViewport({ ratio: 1 });
-        if (key === "closed") await expect(page.locator(".ui-again-note")).toBeInViewport({ ratio: 1 });
+        await openList(page, context, tune);
+        await expect(again(page)).toBeInViewport({ ratio: 1 });
+        expect((await again(page).boundingBox())!.height).toBeGreaterThanOrEqual(44);   // AC-2
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       });
     }
     test("rule 23: nothing moves between the four states (boxes laid over each other)", async ({ page, context }) => {
       const seen: Record<string, Record<string, number[][]>> = {};
       for (const [key, tune] of Object.entries(STATES)) {
-        await openDelivered(page, context, tune);
+        await openList(page, context, tune);
         seen[key] = {};
         for (const p of PARTS) seen[key][p] = await box(page, p);
         await page.unrouteAll({ behavior: "ignoreErrors" });
       }
       for (const key of ["some", "none", "closed"]) for (const p of PARTS) expect(seen[key][p], `${key} ${p}`).toEqual(seen.all[p]);
     });
-    test("Order again fills the bag with the dishes made today and opens the Bill", async ({ page, context }) => {
-      await openDelivered(page, context, STATES.some);
-      await page.getByRole("button", { name: /Order again ›/ }).click();
+    test("the tap fills the bag with the dishes made today and opens the Bill, and does not open the order page", async ({ page, context }) => {
+      await openList(page, context, STATES.some);
+      await again(page).click();
       await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
       await expect(page.getByText("Veg Thali").first()).toBeVisible();
       await expect(page.getByText("Butter Roti")).toHaveCount(0);
+      await expect(page.getByRole("region", { name: "Order, delivered" })).toHaveCount(0);
     });
-    test("an order of another kitchen is matched by name and veg mark; the slip shows that kitchen", async ({ page, context }) => {
+    test("nothing made today: the tap opens the menu, not the Bill", async ({ page, context }) => {
+      await openList(page, context, STATES.none);
+      await again(page).click();
+      await expect(page.getByRole("button", { name: "Add Dal Makhani" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Your bill" })).toHaveCount(0);
+    });
+    test("a tap on the rest of the row opens the order page", async ({ page, context }) => {
+      await openList(page, context);
+      await page.getByRole("button", { name: /Veg Thali/ }).first().click();
+      await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();
+    });
+    test("an order of another kitchen: the veg marks are read on the tap, not before, and the dishes are matched by name and mark", async ({ page, context }) => {
+      const marks: string[] = [];
+      page.on("request", (r) => { if (r.url().includes("/rest/v1/menu_items") && r.url().includes("id=in.")) marks.push(r.url()); });
       await history(page, context, [past(1, "delivered", "2020-11-12T14:00:00Z", [["old-1", "Veg Thali", 1], ["old-2", "Butter Roti", 1]], { kitchen_id: "k-2" })], (s) => { s.oldDishes = [{ id: "old-1", veg: true }, { id: "old-2", veg: false }]; });
-      await page.getByRole("button", { name: /Veg Thali/ }).click();
+      await page.waitForTimeout(300);
+      expect(marks).toHaveLength(0);
+      await again(page).click();
+      await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();
+      expect(marks.length).toBeGreaterThan(0);
+      await expect(page.getByText("Veg Thali").first()).toBeVisible();
+      await expect(page.getByText("Butter Roti")).toHaveCount(0);   // the veg mark differs: not the same dish
+    });
+    test("an order of another kitchen: the row opens its page and the slip shows that kitchen", async ({ page, context }) => {
+      await history(page, context, [past(1, "delivered", "2020-11-12T14:00:00Z", [["old-1", "Veg Thali", 1], ["old-2", "Butter Roti", 1]], { kitchen_id: "k-2" })], (s) => { s.oldDishes = [{ id: "old-1", veg: true }, { id: "old-2", veg: false }]; });
+      await page.getByRole("button", { name: /Veg Thali/ }).first().click();
       await expect(page.locator(".ui-slip-head")).toContainText("Saket Kitchen");   // the order's own kitchen, never the present one
-      await expect(page.locator(".ui-again-dish").nth(0)).toContainText("₹180");
-      await expect(page.locator(".ui-again-dish").nth(1)).toContainText("not made today");   // the veg mark differs: not the same dish
     });
-    test("the menu cannot be read: no marks, the line says so, the button is See the menu", async ({ page, context }) => {
+    test("the dishes' marks cannot be read: no match, the tap opens the menu and never the Bill", async ({ page, context }) => {
       await history(page, context, [past(1, "delivered", "2020-11-12T14:00:00Z", [["old-1", "Veg Thali", 1]], { kitchen_id: "k-2" })], (s) => { s.oldDishesDown = true; });
-      await page.getByRole("button", { name: /Veg Thali/ }).click();
-      await expect(page.locator(".ui-again-line")).toHaveText("Could not check today's menu.");
-      await expect(page.locator(".ui-again-dish .ui-again-mk")).toHaveText([""]);
-      await expect(page.locator(".ui-bottom .ui-btn").last()).toHaveText("See the menu");
+      await again(page).click();
+      await expect(page.getByRole("button", { name: "Add Veg Thali" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Your bill" })).toHaveCount(0);
     });
-    test("a cancelled, a declined and an order in progress have no block", async ({ page, context }) => {
-      await history(page, context, [past(1, "cancelled", "2020-11-12T14:00:00Z", THALI_ROTI)]);
-      await page.getByRole("button", { name: /Veg Thali/ }).click();
-      await expect(page.getByRole("heading", { name: "Cancelled" })).toBeVisible();
-      await expect(page.locator(".ui-again")).toHaveCount(0);
+    test("a cancelled and a declined order have no Order again button", async ({ page, context }) => {
+      await history(page, context, [past(1, "cancelled", "2020-11-12T14:00:00Z", THALI_ROTI), past(3, "cancelled", "2020-11-10T14:00:00Z", [["d1", "Roti", 1]], { cancelled_by: "kitchen", cancel_reason: "Out" })]);
+      await expect(again(page)).toHaveCount(0);
+    });
+    test("a long dish list is cut with dots and the button keeps its size (AC-6)", async ({ page, context }) => {
+      await page.setViewportSize({ width: 360, height: 640 });
+      await openList(page, context);
+      const short = (await again(page).boundingBox())!;
+      await page.unrouteAll({ behavior: "ignoreErrors" });
+      await history(page, context, [past(1, "delivered", "2020-11-12T14:00:00Z", Array.from({ length: 9 }, (_, i) => ["d1", `Extra long dish name number ${i}`, 1] as [string, string, number]))]);
+      const long = (await again(page).boundingBox())!;
+      for (const k of ["x", "width", "height"] as const) expect(Math.abs(long[k] - short[k])).toBeLessThanOrEqual(1);
+      expect(await page.locator(".ui-order-items").evaluate((e) => ({ over: e.scrollWidth > e.clientWidth || e.scrollHeight > e.clientHeight, ell: getComputedStyle(e).textOverflow }))).toMatchObject({ over: true });
     });
   });
 

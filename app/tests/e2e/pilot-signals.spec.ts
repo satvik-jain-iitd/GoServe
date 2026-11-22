@@ -28,11 +28,11 @@ test.describe("on an iPhone", () => {
   });
 });
 
-test("S2 tapping Call on the rider card records one customer.call for that order", async ({ page, context }) => {
+test("S2 tapping Call the rider in the foot records one customer.call for that order", async ({ page, context }) => {
   const net = await setup(context, page, [order("out_for_delivery", "2020-01-01T10:05:00Z")]);
   net.state.riderCard = { name: "Ravi", phone: "9876500000" };
   await page.goto("/customer/");
-  await page.getByRole("link", { name: "Call Ravi" }).click({ noWaitAfter: true }).catch(() => {});   // tel: has no page to open
+  await page.getByRole("link", { name: "Call the rider" }).click({ noWaitAfter: true }).catch(() => {});   // tel: has no page to open
   await expect.poll(() => net.calls.rpc.filter((c) => c.name === "customer_call").length).toBe(1);
   expect(net.calls.rpc.find((c) => c.name === "customer_call")!.body).toEqual({ p_order: ID });
 });

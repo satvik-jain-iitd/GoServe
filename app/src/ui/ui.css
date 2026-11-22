@@ -60,7 +60,6 @@ body { margin: 0; background: var(--md-background); color: var(--md-on-backgroun
 .ui-slip-stamp { display: flex; justify-content: center; padding: 10px 0 4px; }
 .ui-clock { margin: 0; text-align: center; font-family: var(--gs-font-mono); font-size: var(--gs-mono-base); }
 .ui-clock b { font-size: var(--gs-mono-lg); font-weight: 500; }
-.ui-early { margin-top: 2px; font-size: var(--gs-mono-sm); color: var(--md-primary); }   /* story 1508 (board DL1): "4 min early", a small line of its own under the time */
 .ui-slip-rule { border-top: 1px dashed var(--md-outline-variant); }
 .ui-slip-lines { display: grid; gap: var(--gs-space-2); font-family: var(--gs-font-mono); font-size: var(--gs-mono-base); }
 .ui-slip-lines div { display: flex; justify-content: space-between; gap: 12px; }
@@ -244,7 +243,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-closed p { margin: 0; }
 .ui-closed-main { font-size: var(--gs-text-sm); font-weight: 600; }
 .ui-inline { display: inline-flex; align-items: center; gap: var(--gs-space-2); flex: none; }
-.ui-pct { box-sizing: border-box; width: 64px; min-height: 44px; padding: 0 var(--gs-space-2); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); text-align: right; }
+.ui-pct { box-sizing: border-box; width: 64px; font-size: 16px; min-height: 44px; padding: 0 var(--gs-space-2); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); background: var(--md-surface); color: var(--md-on-surface); text-align: right; }
 .ui-swap { display: flex; flex-direction: column; gap: var(--gs-space-3); margin: var(--gs-space-3) var(--gs-gutter) 0; padding: var(--gs-space-3) var(--gs-space-4); border: 1px solid var(--md-error); border-radius: var(--gs-radius-s); }
 .ui-swap p { margin: 0; }
 .ui-swap-reason { font-weight: 600; color: var(--md-error); }
@@ -298,9 +297,6 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-addr { font-size: var(--gs-mono-sm); color: var(--gs-text-muted); text-transform: none; overflow-wrap: anywhere; }   /* story 660: the address is read, not shouted */
 .ui-livemark { display: inline-flex; align-items: center; gap: 6px; color: var(--md-primary); }
 .ui-live-dot { width: 8px; height: 8px; border-radius: var(--gs-radius-pill); background: var(--md-primary); }
-.ui-ask { display: flex; flex-direction: column; align-items: stretch; margin: 0; }
-.ui-ask h3 { margin: 0; font-size: var(--gs-text-lg); }
-.ui-bottom .ui-ask { margin-top: var(--gs-space-2); }   /* story 1691: with the foot's 8 px gap, 16 px above the card */
 .ui-bottom { display: flex; flex-direction: column; gap: var(--gs-space-2); padding: var(--gs-space-3) var(--gs-gutter) max(var(--gs-space-5), env(safe-area-inset-bottom)); border-top: 1px solid var(--md-outline-variant); background: var(--md-background); }   /* story 1697: a flat line above the foot, the tab bar's line, the page's own background */
 .ui-bottom:not(:has(*)) { border-top: 0; }   /* story 1697: a foot with no button has no line; :empty fails because the JSX leaves blank text in it */
 .ui-bottom .ui-btn.big { width: 100%; }
@@ -308,7 +304,16 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-center { justify-content: center; }
 .ui-orders { padding: var(--gs-space-4) var(--gs-gutter) var(--gs-space-4); gap: var(--gs-space-4); }   /* story 1611: the gap between kitchen cards is the saved-address gap (.ui-deliver-to) */
 .ui-orders > * { flex: none; }   /* story 1621: a child of the column keeps its own height, as .ui-deliver-to (story 976); a card never shrinks and cuts its rows */
-.ui-order-row { display: grid; grid-template-columns: 1fr auto; gap: var(--gs-space-4); align-items: center; width: 100%; padding: var(--gs-space-4) 0; border: 0; border-bottom: 1px solid var(--md-outline-variant); background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.ui-order-list { margin: 0; padding: 0; list-style: none; }   /* story 1738: a row is an li with two controls */
+button.ui-order-row { display: grid; grid-template-columns: 1fr auto; gap: var(--gs-space-4); align-items: center; width: 100%; padding: var(--gs-space-4) 0; border: 0; border-bottom: 1px solid var(--md-outline-variant); background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.ui-saved-card.ui-order-card button.ui-order-row { padding: var(--gs-space-4); }
+button.ui-order-row { min-height: 64px; }
+button.ui-order-row svg { color: var(--gs-text-muted); }
+.ui-order-list .ui-order-row { display: flex; align-items: center; gap: var(--gs-space-3); width: 100%; box-sizing: border-box; padding: 0 var(--gs-space-4); border-bottom: 1px solid var(--md-outline-variant); }
+.ui-order-open { display: grid; grid-template-columns: 1fr auto; gap: var(--gs-space-4); align-items: center; flex: 1; min-width: 0; min-height: 44px; padding: var(--gs-space-3) 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.ui-order-list .ui-order-row .ui-btn { flex: none; box-sizing: border-box; width: 112px; padding: 0 8px; min-height: 44px; font-size: var(--gs-text-sm); }   /* story 1738: a small outline button, 44 px high, the same box in every state */
+.ui-order-list .ui-order-row .ui-order-items, .ui-order-list .ui-order-row .ui-order-sub { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }   /* one line each, a long dish list is cut with dots; the button keeps its box */
+.ui-order-list .ui-order-row { min-height: 76px; }   /* story 1738: a delivered row (16 + 44 + 16) and a cancelled row are the same height */
 .ui-order-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .ui-order-no { font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
 .ui-order-items { font-size: var(--gs-text-lg); font-weight: 600; line-height: 1.2; }
@@ -681,28 +686,14 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-order-group { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: var(--gs-space-4) var(--gs-space-4) var(--gs-space-2); font: 400 var(--gs-mono-sm) var(--gs-font-mono); letter-spacing: 0.04em; color: var(--gs-text-muted); }
 /* Story 1611 (epic 1274, owner pick A): one card per kitchen. The name is the Deliver to heading (.ui-head h1), in full ink, on its own line. */
 .ui-order-group b { min-width: 0; overflow-wrap: anywhere; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; color: var(--md-on-background); }
-.ui-saved-card.ui-order-card .ui-order-row { padding: var(--gs-space-4); }
 .ui-saved-card.ui-order-card .ui-order-row:last-child { border-bottom: 0; }
+.ui-order-card .ui-order-list:has(+ .ui-view-all) .ui-order-row:last-child { border-bottom: 1px solid var(--md-outline-variant); }   /* story 1637: the line above View all */
 .ui-order-card .ui-view-all { border-top: 0; }   /* story 1637: the third row's own bottom border is the one line above the button; the button adds no second line */
-.ui-order-row { min-height: 64px; }
-.ui-order-row svg { color: var(--gs-text-muted); }
+.ui-order-open svg { color: var(--gs-text-muted); }
 .ui-order-word.bad { color: var(--md-error); font-weight: 700; }
-.ui-again { margin: var(--gs-space-2) var(--gs-gutter) 0; }
-.ui-again h2 { margin: 0; font: 800 var(--gs-text-lg) var(--gs-font-display); }
-.ui-again-line { margin: 0 0 var(--gs-space-1); min-height: 2.6em; font-size: var(--gs-text-sm); line-height: 1.3; color: var(--gs-text-muted); }   /* two lines always kept: the longest line wraps at 360 px (rule 23) */
-.ui-again-list { margin: 0; padding: 0; list-style: none; }
-.ui-again-dish { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: var(--gs-space-2); min-height: 44px; border-top: 1px solid var(--md-outline-variant); font-size: var(--gs-text-lg); font-weight: 600; }
-.ui-again-dish:last-child { border-bottom: 1px solid var(--md-outline-variant); }
-.ui-again-mk { width: 24px; height: 24px; box-sizing: border-box; display: grid; place-items: center; border-radius: 4px; background: var(--md-primary); color: var(--md-on-primary); font-size: 15px; }
-.ui-again-dish .r { font: 400 var(--gs-mono-base) var(--gs-font-mono); }
-.ui-again-dish.no { color: var(--gs-text-muted); }
-.ui-again-dish.no .nm { text-decoration: line-through; }
-.ui-again-dish.no .ui-again-mk { background: transparent; border: 1.5px solid var(--gs-text-muted); color: var(--gs-text-muted); }
-.ui-again-dish .ui-again-mk:empty { background: transparent; }
 .ui-bottom .ui-btn.bar { justify-content: space-between; padding: 0 var(--gs-space-5); }
 .ui-bottom .ui-btn.bar .mono { font-size: var(--gs-mono-base); font-weight: 400; }
 .ui-bottom .ui-btn.bar .verb { font-size: var(--gs-display-m); font-weight: 600; }
-.ui-again-note { margin: 0; min-height: 1.3em; font-size: var(--gs-text-sm); line-height: 1.3; color: var(--md-on-background); }   /* the room under the button is always kept (rule 23); full ink, not grey (rule 28) */
 
 /* Story 998, board A2-AddressOla: the credit line Ola's terms ask for (clauses 15.2, 15.3), under the address form. */
 .ui-credit { margin: var(--gs-space-3) 0 0; text-align: center; font-size: 11px; letter-spacing: 0.04em; color: var(--gs-text-muted); }
@@ -803,6 +794,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 
 /* Story 1053, boards T4 and T5: the rider row, the full-screen rider map. */
 .ui-riderrow { margin: 0; }   /* board T4: 16 px under the slip (the page gap keeps it); the page already keeps 20 px at the sides */
+.ui-riderrow .ui-locrow-title, .ui-riderrow .ui-locrow-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* story 1744: one line for any name, so the row has one height */
 a.ui-locrow { text-decoration: none; }   /* story 1498: the rider row is a link to Google Maps and looks as before */
 .gs-lab { display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--md-primary); }
 .gs-lab b { font-family: var(--gs-font-mono); font-size: 11px; font-weight: 400; color: var(--md-on-surface); white-space: nowrap; }
@@ -1080,3 +1072,12 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
   .ui-landing .ui-bellbadge.ui-hero-abs { top: 149px; }
 }
 .ui-due { color: var(--md-error); }   /* story 1442, boards PD1 to PD3: cash still due is in the error colour */
+.ui-door-pay { display: flex; gap: var(--gs-space-2); }   /* story 1747: cash and UPI are equal answers, each half the foot */
+.ui-door-pay .ui-btn.big { flex: 1 1 0; min-width: 0; width: auto; }
+.ui-back-tight { margin-block: -10px; }   /* story 1747: the 44 px arrow sits in the 24 px title line, so the header keeps its 49 px */
+
+
+/* story 1657: the rider card at ready is one line; the name is cut with dots, the words after it never are. */
+.ui-ridercard { display: flex; gap: 0.3em; white-space: nowrap; }
+.ui-ridercard strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.ui-ridercard span { flex: none; }

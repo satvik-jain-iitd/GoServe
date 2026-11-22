@@ -1,9 +1,9 @@
 // The Feedback button and its sheet (story S-B, #94). A tester tells us what went wrong in ten seconds, without leaving the app.
-// The picture is the phone's own screenshot, picked from the gallery. The words, the screen, the order and the last 20 taps go with it.
+// Story 1751: words only for now (the picture comes with its own story). The words, the screen, the order and the last 20 taps are saved by the database function.
 import { useEffect, useState } from "react";
 import { useBackCloses } from "../lib/back";
 import { useSheetFit } from "../ui";
-import { buildPayload, defaultTopic, flushQueue, pictureToBase64, queueReport, SAVED_CARD, SENT_CARD, TEXT_MAX, topicsFor, type Doing, type Report } from "../lib/feedback";
+import { buildPayload, defaultTopic, flushQueue, queueReport, SAVED_CARD, SENT_CARD, TEXT_MAX, topicsFor, type Doing, type Report } from "../lib/feedback";
 import { PlaceError } from "../lib/orders";
 import { readTrail } from "../lib/trail";
 
@@ -14,13 +14,12 @@ type Props = {
   order: { id: string; status: string } | null;
   getSession: () => Promise<string>;
   send: (report: Report) => Promise<unknown>;
-  preset?: { nonce: number; text: string; doing: Doing };   // opens the sheet with these words (the third Not yet, story S-C)
 };
 
 const BUILD = import.meta.env.VITE_BUILD ?? "dev";
 const phoneName = () => (navigator.userAgent.match(/\(([^)]+)\)/)?.[1] ?? "unknown").slice(0, 80);
 
-export function FeedbackSheet({ role, screen, order, getSession, send, preset, button = true }: Props) {
+export function FeedbackSheet({ role, screen, order, getSession, send, button = true }: Props) {
   const fit = useSheetFit();   // story #954: the overlay follows the visual viewport
   const [open, setOpen] = useState(false);
   useBackCloses(open, () => setOpen(false));   // story 1415
@@ -28,18 +27,9 @@ export function FeedbackSheet({ role, screen, order, getSession, send, preset, b
   const [topic, setTopic] = useState(() => defaultTopic(role));   // story #661: the list is per app
   const topics = topicsFor(role);
   const doing: Doing = topics.find((t) => t.label === topic)?.doing ?? "other";
-  const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [card, setCard] = useState<{ title: string; line: string } | null>(null);   // story #642: shown after the sheet closes
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!preset) return;
-    setText(preset.text);
-    setTopic(topics.find((t) => t.label && t.doing === preset.doing)?.label ?? defaultTopic(role));
-    setError(null);
-    setOpen(true);
-  }, [preset?.nonce]);
 
   // The You screen opens the sheet with an event (story H10d).
   useEffect(() => {
@@ -70,8 +60,7 @@ export function FeedbackSheet({ role, screen, order, getSession, send, preset, b
     setError(null);
     setCard(null);
     try {
-      const image = file ? await pictureToBase64(file) : undefined;
-      const report = buildPayload({ text, doing, topic, role, screen, session: await getSession(), order, build: BUILD, phone: phoneName(), online: navigator.onLine, now: new Date(), trail: readTrail(), image });
+      const report = buildPayload({ text, doing, topic, role, screen, session: await getSession(), order, build: BUILD, phone: phoneName(), online: navigator.onLine, now: new Date(), trail: readTrail() });
       try {
         await send(report);
         setCard(SENT_CARD);
@@ -81,7 +70,6 @@ export function FeedbackSheet({ role, screen, order, getSession, send, preset, b
         setCard(SAVED_CARD);
       }
       setText("");
-      setFile(null);
       setOpen(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
@@ -105,10 +93,6 @@ export function FeedbackSheet({ role, screen, order, getSession, send, preset, b
                 <select id="fb-doing" value={topic} onChange={(e) => setTopic(e.target.value)}>
                   {topics.map((t) => <option key={t.label} value={t.label}>{t.label}</option>)}
                 </select>
-              </div>
-              <div className="ui-field"><label htmlFor="fb-shot">Add a screenshot (optional)</label>
-                <input id="fb-shot" type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-                <span className="ui-note">Take one with your phone buttons first, then pick it here.</span>
               </div>
               {error && <p role="alert" className="ui-field-error">{error}</p>}
               <div className="ui-row-pair">   {/* story 1701: Close left, Send last (right), equal halves */}

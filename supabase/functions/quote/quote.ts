@@ -5,6 +5,14 @@ export type Rules = {
   packaging_paise: number; tax_pct: number; tax_mode: "inclusive" | "exclusive";
 };
 export const DEFAULT_RULES: Rules = { delivery_fee_paise: 0, free_delivery_above_paise: 0, packaging_paise: 0, tax_pct: 0, tax_mode: "inclusive" };
+// Story 1755: the delivery fee is the admin's settings row `delivery_fee` {"amount_paise": N}, the same for every basket (no free-above rule).
+// `rows` is what PostgREST answered for that row. No row: 0. A value the migration would refuse (or no list at all): an error, never a free delivery.
+export const feeRules = (rules: Rules, rows: unknown): Rules => {
+  if (!Array.isArray(rows)) throw new Error("fee unreadable");
+  const paise = rows.length ? (rows[0] as { value?: { amount_paise?: unknown } } | null)?.value?.amount_paise : 0;
+  if (typeof paise !== "number" || !Number.isInteger(paise) || paise < 0 || paise > 20000 || paise % 100 !== 0) throw new Error("fee unreadable");
+  return { ...rules, delivery_fee_paise: paise, free_delivery_above_paise: 0 };
+};
 export type Coupon = { code: string; title: string; kind: "flat" | "percent"; amount_paise: number; percent: number; cap_paise: number; min_order_paise: number; first_order_only: boolean };
 export type Catalog = { dishes: Record<string, { id: string; name: string; price_paise: number; available: boolean; veg?: boolean | null }>; options: Record<string, { id: string; name: string; price_paise: number }> };
 // Story #619 layer b: a sold-out line with swap true is replaced by the server's one pick, at the same quantity, with the swap discount on the new item.

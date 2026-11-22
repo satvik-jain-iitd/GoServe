@@ -27,7 +27,7 @@ test("S2 Place order stays off until the name, a ten digit phone and the address
   await expect(page.getByRole("button", { name: /Place order/ })).toBeEnabled();
 });
 
-test("S4 a delivered order shows the Delivered stamp, Cash paid and a way to call the kitchen", async ({ page, context }) => {
+test("S4 a delivered order shows the Delivered stamp, Cash paid and Share feedback, with no call to the kitchen (story 1658)", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.kitchens = [KITCHEN];
   await page.goto("/customer/");
@@ -39,8 +39,8 @@ test("S4 a delivered order shows the Delivered stamp, Cash paid and a way to cal
   net.push("UPDATE", { ...order("delivered", new Date().toISOString()), paid_by: "cash" });
   await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible({ timeout: 6000 });
   await expect(page.getByText("Cash paid")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Call the kitchen" })).toHaveAttribute("href", "tel:9876543210");
-  await expect(page.locator(".ui-bottom").getByRole("button", { name: /Order again ›|See the menu/ })).toBeVisible();   // story 1589: the delivered slip's one filled button (was Back to menu, story 1434)
+  await expect(page.getByRole("link", { name: "Call the kitchen" })).toHaveCount(0);
+  await expect(page.locator(".ui-bottom").getByRole("button", { name: "Share feedback" })).toBeVisible();   // story 1658: the delivered slip's one filled button (was Back to menu, story 1434)
 });
 
 test("S5 a cooking order shows the Live mark and the Cooking stamp", async ({ page, context }) => {

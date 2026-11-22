@@ -8,7 +8,7 @@ for (const theme of ["day", "night"]) {
     await page.goto("/customer/");
     await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
     net.push("UPDATE", order("cancelled", "2020-01-01T10:01:00Z"));
-    await expect(page.getByText("Your order was cancelled")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator(".ui-stamp", { hasText: "Cancelled" })).toBeVisible({ timeout: 5000 });
     await page.evaluate((t) => document.documentElement.setAttribute("data-theme", t), theme);
     const stamp = page.locator(".ui-stamp", { hasText: "Cancelled" });
     await expect(stamp).toBeVisible();
@@ -25,7 +25,7 @@ test("S2 the other error users keep their fill (note, tag, danger button)", asyn
   await page.goto("/customer/");
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
   net.push("UPDATE", order("cancelled", "2020-01-01T10:01:00Z"));
-  await expect(page.getByText("Your order was cancelled")).toBeVisible({ timeout: 5000 });
+  await expect(page.locator(".ui-stamp", { hasText: "Cancelled" })).toBeVisible({ timeout: 5000 });
   const fills = await page.evaluate(() => [".ui-note.error", ".ui-tag.error", ".ui-btn.danger"].map((q) => document.querySelector(q) ? getComputedStyle(document.querySelector(q)!).backgroundColor : "absent"));
   expect(fills.every((f) => f !== "rgba(0, 0, 0, 0)")).toBe(true);
 });

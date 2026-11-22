@@ -1,14 +1,12 @@
-// Story #593: on the real app the question "Yes, I have it" comes BEFORE the slip says Delivered (confirm.ts asks at the earlier of ready + 3 min and placed + 8 min).
-// A fake page shows that order; the rehearsal's last step must pass on it.
+// Story #593, changed by story 1740: the rehearsal's last step waits for the slip to say Delivered (no question to tap any more). A fake page shows that order.
 import { test, expect } from "@playwright/test";
-import { confirmAndDelivered } from "../live/rehearsalEnd";
+import { waitDelivered } from "../live/rehearsalEnd";
 
-const fake = `<main><button id="yes">Yes, I have it</button><div id="out"></div></main>
-<script>document.getElementById("yes").onclick = () => { document.getElementById("yes").remove();
-  document.getElementById("out").innerHTML = '<h1>Delivered</h1><ol><li aria-current="step">At your door</li></ol>'; };</script>`;
+const fake = `<main><div id="out"></div></main>
+<script>setTimeout(() => { document.getElementById("out").innerHTML = '<h1>Delivered</h1><ol><li aria-current="step">At your door</li></ol>'; }, 500);</script>`;
 
-test("S1 the question first, Delivered after the tap: the last step passes", async ({ page }) => {
+test("S1 Delivered shows by itself: the last step passes", async ({ page }) => {
   await page.setContent(fake);
-  await confirmAndDelivered(page, { ask: 3_000, done: 3_000 });
+  await waitDelivered(page, { done: 3_000 });
   await expect(page.locator('[aria-current="step"]')).toHaveText("At your door");
 });
