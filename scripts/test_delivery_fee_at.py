@@ -66,6 +66,9 @@ class DeliveryFeeAt(unittest.TestCase):
         r = run(LOG, 0, "select has_function_privilege('anon', 'delivery_fee_at_v1(timestamptz)', 'execute') as a, "
                 "has_function_privilege('authenticated', 'delivery_fee_at_v1(timestamptz)', 'execute') as u")[-1]
         self.assertEqual(r, {"a": True, "u": True})
+        # story 1774: the quote and orders functions call it with the service key; the grant names that role, no platform default is assumed
+        self.assertTrue(run(LOG, 0, "select has_function_privilege('service_role', 'delivery_fee_at_v1(timestamptz)', 'execute') as s")[-1]["s"])
+        self.assertFalse(run(LOG, 0, "select has_function_privilege('public', 'delivery_fee_at_v1(timestamptz)', 'execute') as p")[-1]["p"])
 
     def test_ac7_the_12_hours_is_one_named_value_with_the_owners_date(self):
         text = open(FILE).read()
