@@ -2,9 +2,9 @@
 import { test, expect } from "@playwright/test";
 import { setup } from "./helpers";
 
-test("D1 the Bill gets a total from the shared default quote, no spec mock", async ({ page, context }) => {
+test("D1 the Bill gets a total from the shared default quote, asked for with { quote: true }", async ({ page, context }) => {
   const answered = page.waitForResponse((r) => r.url().endsWith("/functions/v1/quote") && r.request().method() === "POST", { timeout: 5000 });
-  await setup(context, page);
+  await setup(context, page, [], { quote: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();

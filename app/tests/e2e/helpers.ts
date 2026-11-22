@@ -24,7 +24,7 @@ type Calls = { place: { headers: Record<string, string>; body: any }[]; riderWri
 type PlacesAnswer = { status: number; body: object; delayMs?: number };
 export const PLACE_WORDS = "Flat 4, Green Park";
 export const placeAt = (pin: string, address = PLACE_WORDS) => ({ address, pin, lat: 28.59, lng: 77.26, house: "", landmark: "", confirmed: true, id: null });   // story 1532: the stored place (app/src/lib/place.ts)
-export async function setup(context: BrowserContext, page: Page, initial: object[] = [], { pin = "110016" as string | null, guest = false } = {}) {
+export async function setup(context: BrowserContext, page: Page, initial: object[] = [], { pin = "110016" as string | null, guest = false, quote = false } = {}) {
   // Story 1532: the phone holds one place, with its point, confirmed on the map (what a picked address leaves). Only when nothing is there, so a reload keeps what the app wrote.
   if (pin) await context.addInitScript((p) => { try { if (!window.localStorage.getItem("gs-pin")) { window.localStorage.setItem("gs-pin", p.pin); window.localStorage.setItem("gs-place", JSON.stringify(p)); } } catch { /* blocked */ } }, placeAt(pin));
   const calls: Calls = { place: [], riderWrites: [], customerWrites: [], menuReads: [], menuWrites: [], uploads: [], uploadMeta: [], kitchenWrites: [], signups: 0, status: [], decide: [], health: [], feedback: [], confirm: [], rpc: [], orderReads: [], staffReads: [], riderReads: [], sim: [], geocode: [], places: [], serve: [], addressWrites: [], recentWrites: [], engine: [] };
@@ -319,9 +319,9 @@ export async function setup(context: BrowserContext, page: Page, initial: object
     const a = state.serve ?? { status: 200, body: { ok: true, serviceable: true, request_here: false, kitchens: [{ kitchen_id: "k-1", name: "Hauz Khas Kitchen", distance_m: 1230, eta_min: 30, open: true }] } };
     return json(route, a.status, a.body);
   });
-  // Story 1766 (layer A, test-infra only): a default answer for POST /quote, made from the cart: the menu's own prices, no fee, no offers, so the total is the menu total.
-  // The Bill asks for it on the menu and on the Bill, so a spec that mocks nothing still gets a price. A spec that mocks the quote itself registers its route later and wins.
-  await context.route("https://test.supabase.co/functions/v1/quote", async (route) => {
+  // Story 1766 (layer A, test-infra only): with { quote: true }, a default answer for POST /quote, made from the cart: the menu's own prices, no fee, no offers, so the total is the menu total.
+  // Off by default: an answered quote puts the Bill in its quote mode, which every older spec and picture was not written for. A spec that mocks the quote itself registers its route later and wins.
+  if (quote) await context.route("https://test.supabase.co/functions/v1/quote", async (route) => {
     const req = route.request();
     if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: CORS });
     const body = JSON.parse(req.postData() ?? "{}");
