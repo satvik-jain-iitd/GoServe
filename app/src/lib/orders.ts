@@ -1,9 +1,10 @@
 import { customerLine, NO_INTERNET, type CustomerAction } from "./errorLines";
 import type { Decision, Rider } from "./ops";
+import type { Report } from "./feedback";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getClient } from "./supabase";
 
-// The n8n webhook is now used only for the rider decision and the tester feedback (story #940 moved placing and every order step to Supabase).
+// The n8n webhook is now used only for the rider decision (story #940 moved placing and every order step to Supabase; story 1751 moved feedback).
 export class PlaceError extends Error {
   constructor(message: string, public code: string) {
     super(message);
@@ -33,9 +34,9 @@ async function callApi(body: object, deps: OrderDeps, need: "order" | "decision"
     answer = null;
   }
   if (res.ok && answer?.ok && answer[need]) return answer;
-  // The customer's calls (place, confirm, feedback) show our line for every refusal (story #659). The staff calls keep the server's line.
+  // The customer's calls (place, feedback) show our line for every refusal (story #659). The staff calls keep the server's line.
   const kind = (body as { action?: string }).action;
-  const mine = kind === "place" || kind === "confirm" || kind === "feedback" ? (kind as CustomerAction) : null;
+  const mine = kind === "place" || kind === "feedback" ? (kind as CustomerAction) : null;
   const refused = answer && answer.ok === false && typeof answer.message === "string";
   if (mine) {
     const code = refused ? answer!.error ?? "unknown" : "unknown";
@@ -72,16 +73,6 @@ async function act(orderId: string, action: string, deps: ActDeps, mine: Custome
   throw new PlaceError("Something went wrong. Please try again.", "unknown");
 }
 
-// The customer's Yes: the order closes as delivered and paid by cash. A second Yes is not an error (alreadyDone).
-export async function confirmDelivery(input: { orderId: string }, deps: ActDeps): Promise<{ order: PlacedOrder | null; alreadyDone: boolean }> {
-  try {
-    return await act(input.orderId, "confirm", deps, "confirm");
-  } catch (e) {
-    if (e instanceof PlaceError && e.code === "already_done") return { order: null, alreadyDone: true };   // an earlier Yes went through: the order is delivered, no line
-    throw e;
-  }
-}
-
 const STEP: Record<string, string> = { accepted: "accept", preparing: "prepare", ready: "ready", out_for_delivery: "pickup", delivered: "deliver" };
 export type StatusInput = { orderId: string; to: string; method?: string };   // method: only for delivered, how the customer paid at the door (story 1262)
 export async function changeStatus(input: StatusInput, deps: ActDeps): Promise<{ order: PlacedOrder }> {
@@ -114,7 +105,22 @@ export async function askDecision(input: { sessionId: string; kitchenId: string;
 const NO_INTERNET_OR_SERVER = "Something went wrong. Please try again.";
 
 // A tester's report from the Feedback button (story S-B). The server saves it and answers with the new id.
-export async function sendFeedback(report: object, deps: OrderDeps): Promise<string> {
-  const a = await callApi(report, deps, "id");
-  return a.id as string;
+// Story 1751: a report is saved by the database function feedback_save_v2 (no n8n). The person comes from the sign-in, never from the report.
+// A phone with no network throws the "network" error, so the sheet keeps the report on the phone. A named refusal shows the server's true words.
+const FEEDBACK_FAILED = "Could not send the note. Try again.";
+export async function sendFeedback(report: Report, client: SupabaseClient): Promise<string> {
+  let res;
+  try {
+    res = await client.rpc("feedback_save_v2", { p_role: report.role === "admin" ? "ops" : report.role, p_screen: report.screen, p_order: report.order_id || null, p_doing: report.doing, p_text: report.text, p_context: report.context });
+  } catch {
+    throw new PlaceError(NO_INTERNET, "network");
+  }
+  if (res.error) {
+    const st = res.status ?? 0;   // no answer, a lapsed sign-in, a slow or busy server, a server fault: keep the note and try again. Any other 4xx can never succeed: a refusal.
+    if (st === 0 || st === 401 || st === 408 || st === 429 || st >= 500) throw new PlaceError(NO_INTERNET, "network");
+    throw new PlaceError(FEEDBACK_FAILED, `http_${st}`);
+  }
+  const a = res.data as { ok?: boolean; id?: string; error?: string; message?: string } | null;
+  if (a?.ok && a.id) return a.id;
+  throw new PlaceError(a?.message || customerLine("feedback", a?.error ?? "unknown", "") || FEEDBACK_FAILED, a?.error ?? "unknown");
 }

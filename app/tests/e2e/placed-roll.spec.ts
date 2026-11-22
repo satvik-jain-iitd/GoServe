@@ -12,6 +12,7 @@ const KITCHEN = [{ id: "k-1", name: "Hauz Khas Kitchen", address: null, phone: "
 async function openAt(context: Parameters<typeof setup>[0], page: Page, status: string) {
   const net = await setup(context, page, [order(status === "delivered" ? "out_for_delivery" : status)]);
   net.state.kitchens = KITCHEN;
+  net.state.supportPhone = "9000000000";   // story 1658: a delivered order has Call support when the admin set a number
   if (status === "out_for_delivery") { net.state.riderCard = { name: "Ravi", phone: "9876500000" }; net.state.tracking = { rider_lat: 28.58, rider_lng: 77.25, updated_at: new Date().toISOString() }; }   // story 1572: on the way, the one button is Call the rider, which needs a rider with a phone
   await page.goto("/customer/");
   if (status === "delivered") { await expect(now(page)).toHaveText("On the wayNow"); net.push("UPDATE", order("delivered", "2020-01-01T10:09:00Z")); await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible(); }
@@ -32,12 +33,11 @@ test("R2 cooking: three rows, the middle one is the step now (PL4)", async ({ pa
   await expect(rows(page).nth(1)).toHaveAttribute("aria-current", "step");
 });
 
-test("R3 delivered: three rows, the last is the step now (PL7)", async ({ page, context }) => {
+test("R3 delivered: no steps list (story 1675; before: three rows, PL7)", async ({ page, context }) => {
   await openAt(context, page, "delivered");
-  await expect(rows(page)).toHaveText(["Ready, rider picks up", "On the way", "Delivered"]);
-  await expect(rows(page).last()).toHaveAttribute("aria-current", "step");
+  await expect(list(page)).toHaveCount(0);
   const buttons = page.locator(".ui-bottom .ui-btn");
-  await expect(buttons.last()).toHaveText(/Order again ›/);   // story 1434: the main button is last (story 1589: Order again on a delivered slip)
+  await expect(buttons.last()).toHaveText("Share feedback");   // story 1434: the main button is last (stories 1676, 1658)
 });
 
 test("R4 the status changes: the rows slide up one row, the box keeps its height and the main button keeps its place", async ({ page, context }) => {
@@ -69,14 +69,14 @@ for (const status of ["placed", "preparing", "out_for_delivery", "delivered"]) {
   test(`R6 at 360 by 640, ${status}: the page does not scroll and every button is in view`, async ({ page, context }) => {
     await page.setViewportSize({ width: 360, height: 640 });
     await openAt(context, page, status);
-    await expect(rows(page)).toHaveCount(3);
+    await expect(rows(page)).toHaveCount(status === "delivered" ? 0 : 3);   // story 1675: no list on a delivered order
     await page.waitForTimeout(300);
     expect(await page.evaluate(() => document.documentElement.scrollHeight > window.innerHeight)).toBe(false);
     for (const b of await page.locator(".ui-bottom .ui-btn").all()) expect((await b.boundingBox())!.y + (await b.boundingBox())!.height).toBeLessThanOrEqual(640);
   });
 }
 
-for (const status of ["placed", "preparing", "delivered"]) {
+for (const status of ["placed", "preparing"]) {   // story 1675: a delivered order has no rows; its fit is measured in delivered-no-steps.spec.ts
   test(`R9 at the board size 390 by 844, ${status}: the three rows end above the buttons and nothing scrolls inside the page`, async ({ page, context }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await openAt(context, page, status);
@@ -112,10 +112,10 @@ test("R8 the two outline buttons stack, Cancel above Call the kitchen, same left
   expect(Math.abs(cancel.width - call.width)).toBeLessThanOrEqual(1);
 });
 
-test("R8b delivered: Order again (story 1589; before: Back to menu) stays full width under Call the kitchen", async ({ page, context }) => {
+test("R8b delivered: Share feedback (story 1658; before: Order again) stays full width under Call support", async ({ page, context }) => {
   await openAt(context, page, "delivered");
   await expect(page.locator(".ui-bottom > .ui-btn")).toHaveCount(2);
-  const call = (await page.getByRole("link", { name: "Call the kitchen" }).boundingBox())!;
+  const call = (await page.getByRole("link", { name: "Call support" }).boundingBox())!;
   const main = (await page.locator(".ui-bottom .ui-btn").last().boundingBox())!;
   expect(call.y + call.height).toBeLessThanOrEqual(main.y);
   expect(Math.abs(call.width - main.width)).toBeLessThanOrEqual(1);

@@ -87,7 +87,7 @@ export function AccountScreen({ name, phone, address, farKm, pin, photo, email, 
           </section>
         </div>
         <div className="ui-you-card">
-          <button type="button" className="ui-row" onClick={() => { onMenu(); window.dispatchEvent(new Event("gs-feedback")); }}><span className="ui-row-label"><span>Send feedback</span><span className="ui-row-sub">Two lines and a screenshot. We read every note.</span></span>{arrow}</button>
+          <button type="button" className="ui-row" onClick={() => { onMenu(); window.dispatchEvent(new Event("gs-feedback")); }}><span className="ui-row-label"><span>Send feedback</span><span className="ui-row-sub">Two lines is enough. We read every note.</span></span>{arrow}</button>
         </div>
         <div className="ui-you-card risky">
           <button type="button" className="ui-row" onClick={() => setSigningOut(true)}><span>Sign out of this phone</span></button>

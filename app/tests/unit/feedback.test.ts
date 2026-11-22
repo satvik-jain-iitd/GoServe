@@ -1,4 +1,5 @@
 // Story S-B (#94): what the Feedback button builds and sends. The phone's own screenshot is the picture (no screenshot library).
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 import { buildPayload, DOING, fitSize, flushQueue, IMAGE_MAX_BYTES, IMAGE_MAX_PX, queueReport, shrinkToLimit, type Report } from "../../src/lib/feedback";
 import { PlaceError, sendFeedback } from "../../src/lib/orders";
@@ -52,6 +53,42 @@ describe("picture size (S4)", () => {
   });
 });
 
+describe("a queued note survives a server fault (story 1751, reviewer 21 Nov)", () => {
+  const R = { action: "feedback", session_id: "s1", role: "kitchen", screen: "/", order_id: "", doing: "other", text: "keep me", context: {} } as Report;
+  let answer: { data?: unknown; error?: { message: string } | null; status?: number } = {};
+  const client = { rpc: async () => answer } as unknown as SupabaseClient;
+  it("a 500, then not_signed_in keep the note; a 200 empties the queue; a named refusal drops it", async () => {
+    const store = memory();
+    queueReport(store, R);
+    answer = { data: null, error: { message: "Internal Server Error" }, status: 500 };
+    expect(await flushQueue(store, (r) => sendFeedback(r, client))).toBe(1);
+    answer = { data: { ok: false, error: "not_signed_in", message: "Sign in again." }, error: null };
+    expect(await flushQueue(store, (r) => sendFeedback(r, client))).toBe(1);
+    answer = { data: { ok: true, id: "f1" }, error: null };
+    expect(await flushQueue(store, (r) => sendFeedback(r, client))).toBe(0);
+    queueReport(store, R);
+    answer = { data: { ok: false, error: "text_too_long", message: "Too long." }, error: null };
+    expect(await flushQueue(store, (r) => sendFeedback(r, client))).toBe(0);
+  });
+  it("a 4xx the server can never take is a refusal: a fresh send shows the error; a flush drops it and goes on", async () => {
+    const store = memory();
+    queueReport(store, { ...R, text: "bad" });
+    queueReport(store, { ...R, text: "good" });
+    const sent: string[] = [];
+    const c = { rpc: async (_n: string, a: Record<string, unknown>) => (a.p_text === "bad" ? { data: null, error: { message: "Bad Request" }, status: 400 } : (sent.push(String(a.p_text)), { data: { ok: true, id: "f3" }, error: null })) } as unknown as SupabaseClient;
+    expect(await flushQueue(store, (r) => sendFeedback(r, c))).toBe(0);
+    expect(sent).toEqual(["good"]);
+    await expect(sendFeedback(R, { rpc: async () => ({ data: null, error: { message: "Not Found" }, status: 404 }) } as unknown as SupabaseClient)).rejects.toMatchObject({ message: "Could not send the note. Try again." });
+    for (const status of [0, 401, 408, 429, 500, 503]) await expect(sendFeedback(R, { rpc: async () => ({ data: null, error: { message: "x" }, status }) } as unknown as SupabaseClient)).rejects.toMatchObject({ code: "network" });
+  });
+  it("the admin app sends as ops: the function has no admin role", async () => {
+    let seen: Record<string, unknown> = {};
+    const c = { rpc: async (_n: string, a: Record<string, unknown>) => { seen = a; return { data: { ok: true, id: "f2" }, error: null }; } } as unknown as SupabaseClient;
+    await sendFeedback({ ...R, role: "admin" }, c);
+    expect(seen.p_role).toBe("ops");
+  });
+});
+
 describe("offline queue (S3)", () => {
   const report = (n: number): Report => ({ action: "feedback", session_id: "s1", role: "kitchen", screen: "/", order_id: "", doing: "other", text: "r" + n, context: {} });
   it("keeps reports in order and sends them when online, stopping at the first failure", async () => {
@@ -72,18 +109,19 @@ describe("offline queue (S3)", () => {
   });
 });
 
-describe("sendFeedback", () => {
-  const deps = (res: () => Promise<Response>, seen: { init?: RequestInit } = {}) => ({
-    url: "https://n8n.test/webhook/gs-order", token: "demo-token", fetchFn: (async (_u: string, init: RequestInit) => { seen.init = init; return res(); }) as typeof fetch,
+describe("sendFeedback (story 1751: the database function, not the webhook)", () => {
+  const R = { action: "feedback", session_id: "s1", role: "kitchen", screen: "/", order_id: "", doing: "other", text: "hi", context: { a: 1 } } as Report;
+  const client = (answer: () => Promise<{ data?: unknown; error?: { message: string } | null; status?: number }>, seen: { name?: string; args?: Record<string, unknown> } = {}) =>
+    ({ rpc: async (name: string, args: Record<string, unknown>) => { seen.name = name; seen.args = args; return answer(); } }) as unknown as SupabaseClient;
+  it("calls feedback_save_v2 with the words, not the session, and returns the new id", async () => {
+    const seen: { name?: string; args?: Record<string, unknown> } = {};
+    expect(await sendFeedback(R, client(async () => ({ data: { ok: true, id: "f1" }, error: null }), seen))).toBe("f1");
+    expect(seen.name).toBe("feedback_save_v2");
+    expect(seen.args).toEqual({ p_role: "kitchen", p_screen: "/", p_order: null, p_doing: "other", p_text: "hi", p_context: { a: 1 } });
   });
-  it("posts the report with the token and returns the new id", async () => {
-    const seen: { init?: RequestInit } = {};
-    const id = await sendFeedback({ action: "feedback", session_id: "s1", role: "kitchen", screen: "/", order_id: "", doing: "other", text: "hi", context: {} }, deps(async () => new Response(JSON.stringify({ ok: true, id: "f1" }), { status: 201 }), seen));
-    expect(id).toBe("f1");
-    expect((seen.init?.headers as Record<string, string>)["x-gs-token"]).toBe("demo-token");
-  });
-  it("turns a refusal into a PlaceError and a dead network into code network", async () => {
-    await expect(sendFeedback({} as Report, deps(async () => new Response(JSON.stringify({ ok: false, error: "invalid_request", message: "The report is not valid." }), { status: 400 })))).rejects.toMatchObject({ code: "invalid_request" });
-    await expect(sendFeedback({} as Report, deps(async () => { throw new TypeError("x"); }))).rejects.toMatchObject({ code: "network" });
+  it("a named refusal shows the server's true words; a dead network is code network", async () => {
+    await expect(sendFeedback(R, client(async () => ({ data: { ok: false, error: "too_many", message: "You have sent a lot of notes. Try again in an hour." }, error: null })))).rejects.toMatchObject({ code: "too_many", message: "You have sent a lot of notes. Try again in an hour." });
+    await expect(sendFeedback(R, client(async () => ({ data: null, error: { message: "TypeError: Failed to fetch" }, status: 0 })))).rejects.toMatchObject({ code: "network" });
+    await expect(sendFeedback(R, client(async () => { throw new TypeError("x"); }))).rejects.toMatchObject({ code: "network" });
   });
 });

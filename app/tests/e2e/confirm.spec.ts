@@ -1,4 +1,4 @@
-// Story S-C (#95): delivered by hand, paid by cash. The prompt "Was your order delivered?", the Yes and Not yet answers, and the reminder.
+// Story S-C (#95), cut down by story 1740: the question "Was your order delivered?" is gone (see no-delivery-question.spec.ts). What is left: the cash line and the kitchen double tap.
 // Times are tiny (set through the place answer) so the test does not wait minutes. The network is answered by the test (see helpers.ts).
 import { test, expect, type Page } from "@playwright/test";
 import { ID, order, setup } from "./helpers";
@@ -14,91 +14,12 @@ async function placeOrder(page: Page) {
   await page.getByRole("button", { name: /Place order/ }).click();
   await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
 }
-const prompt = (page: Page) => page.getByText("Was your order delivered?");
 
 test("the bill and the placed screen say cash on delivery", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.tracking = { eta_lo_min: 20, eta_hi_min: 30, eta_late: false, updated_at: new Date().toISOString() };   // story #1015: the server's time
   await placeOrder(page);
   await expect(page.getByText("20 min", { exact: true })).toBeVisible();
-});
-
-test("S1 the prompt comes after the kitchen taps Ready, not before", async ({ page, context }) => {
-  const net = await setup(context, page);
-  net.state.confirmCfg = { confirm_after_ready_min: 0.01, confirm_after_place_min: 5 };
-  await placeOrder(page);
-  net.push("INSERT", order("placed", now(), now()));
-  await expect(page.getByRole("list", { name: "Order progress" })).toBeVisible();
-  await page.waitForTimeout(1500);
-  await expect(prompt(page)).toHaveCount(0);
-  net.push("UPDATE", order("ready", now(), now()));
-  await expect(prompt(page)).toBeVisible({ timeout: 5000 });
-});
-
-test("S2 (#456) no prompt while the kitchen is still cooking, however long ago the order was placed", async ({ page, context }) => {
-  const net = await setup(context, page);
-  net.state.confirmCfg = { confirm_after_ready_min: 0.01, confirm_after_place_min: 0.01 };
-  await placeOrder(page);
-  net.push("INSERT", order("preparing", now(), new Date(Date.now() - 20 * 60_000).toISOString()));
-  await expect(page.getByRole("list", { name: "Order progress" })).toBeVisible();
-  await page.waitForTimeout(2500);
-  await expect(prompt(page)).toHaveCount(0);
-  net.push("UPDATE", order("out_for_delivery", now(), now()));
-  await expect(prompt(page)).toBeVisible({ timeout: 5000 });
-});
-
-test("S3 Yes closes the order: Paid cash, and the server got the Yes once", async ({ page, context }) => {
-  const net = await setup(context, page);
-  net.state.confirmCfg = { confirm_after_ready_min: 0.03, confirm_after_place_min: 8 };
-  await placeOrder(page);
-  net.push("INSERT", order("ready", now(), now()));
-  await expect(prompt(page)).toBeVisible({ timeout: 8000 });
-  await page.getByRole("button", { name: "Yes, I have it" }).click();
-  await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();   // story #660: no Paid tail; review of PR 1466: the thank-you line is gone, the stamp says it
-  await expect(prompt(page)).toHaveCount(0);
-  expect(net.calls.confirm).toHaveLength(1);
-  expect(net.calls.confirm[0].body).toEqual({ order_id: ID, action: "confirm" });
-  expect(net.calls.confirm[0].headers["authorization"]).toMatch(/^Bearer .+/);
-});
-
-test("S4 a second Yes is not an error", async ({ page, context }) => {
-  const net = await setup(context, page);
-  net.state.confirmCfg = { confirm_after_ready_min: 0.03, confirm_after_place_min: 8 };
-  net.state.confirmDone = true;
-  await placeOrder(page);
-  net.push("INSERT", order("ready", now(), now()));
-  await expect(prompt(page)).toBeVisible({ timeout: 8000 });
-  await page.getByRole("button", { name: "Yes, I have it" }).click();
-  await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();   // story #660: no Paid tail; review of PR 1466: the thank-you line is gone, the stamp says it
-  await expect(page.getByRole("alert")).toHaveCount(0);
-});
-
-test("S5 Not yet three times opens the Feedback sheet with Order not delivered", async ({ page, context }) => {
-  const net = await setup(context, page);
-  net.state.confirmCfg = { confirm_after_ready_min: 0.03, confirm_after_place_min: 8 };
-  await placeOrder(page);
-  net.push("INSERT", order("ready", now(), now()));
-  for (let i = 1; i <= 3; i++) {
-    await expect(prompt(page)).toBeVisible({ timeout: 10_000 });   // the re-ask time is short in this build (VITE_REASK_MS)
-    await page.getByRole("button", { name: "Not yet" }).click();
-  }
-  await expect(page.getByRole("dialog", { name: "Feedback" })).toBeVisible();
-  await expect(page.getByLabel("What happened?")).toHaveValue("Order not delivered");
-  expect(net.calls.confirm).toHaveLength(0);
-});
-
-test("a reminder: when the tester allowed notifications the phone shows one when the prompt comes", async ({ page, context }) => {
-  await context.addInitScript(() => {
-    (window as any).__notes = [];
-    class Fake { static permission = "granted"; static requestPermission = async () => "granted";   /* story #1343: alerts were allowed earlier (step 2 or You); the order screen does not ask */ constructor(title: string) { (window as any).__notes.push(title); } }
-    (window as any).Notification = Fake;
-  });
-  const net = await setup(context, page);
-  net.state.confirmCfg = { confirm_after_ready_min: 0.03, confirm_after_place_min: 8 };
-  await placeOrder(page);
-  net.push("INSERT", order("ready", now(), now()));
-  await expect(prompt(page)).toBeVisible({ timeout: 8000 });
-  expect(await page.evaluate(() => (window as any).__notes)).toEqual(["Was your order delivered?"]);
 });
 
 test("S6 a double tap on a kitchen step: the second answer already_done is not shown as an error", async ({ page, context }) => {
@@ -112,33 +33,3 @@ test("S6 a double tap on a kitchen step: the second answer already_done is not s
   await expect(page.getByRole("alert")).toHaveCount(0);
 });
 
-test("S5 a live event with the same moment and no paid_by after the Yes does not take the Paid line away (story #601, night run 2)", async ({ page, context }) => {
-  const net = await setup(context, page);
-  net.state.confirmCfg = { confirm_after_ready_min: 0.03, confirm_after_place_min: 8 };
-  const at = new Date(Date.now() + 60_000).toISOString();
-  net.state.confirmAt = at;
-  await placeOrder(page);
-  net.push("INSERT", order("ready", now(), now()));
-  await expect(prompt(page)).toBeVisible({ timeout: 8000 });
-  await page.getByRole("button", { name: "Yes, I have it" }).click();
-  await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();   // story #660: no Paid tail; review of PR 1466: the thank-you line is gone, the stamp says it
-  net.push("UPDATE", { ...order("delivered", at, now()), paid_by: null });
-  await page.waitForTimeout(2500);   // the event is held until the screen has joined the channel, then sent
-  await expect(page.getByRole("region", { name: "Order, delivered" })).toBeVisible();   // story #660: no Paid tail; review of PR 1466: the thank-you line is gone, the stamp says it
-});
-
-test("#501 a hidden app never asks; the question comes when the app is visible again", async ({ page, context }) => {
-  await context.addInitScript(() => {
-    let state = "hidden";
-    Object.defineProperty(document, "visibilityState", { get: () => state, configurable: true });
-    (window as any).__show = () => { state = "visible"; document.dispatchEvent(new Event("visibilitychange")); };
-  });
-  const net = await setup(context, page);
-  net.state.confirmCfg = { confirm_after_ready_min: 0.01, confirm_after_place_min: 5 };
-  await placeOrder(page);
-  net.push("UPDATE", order("ready", now(), now()));
-  await page.waitForTimeout(2500);
-  await expect(prompt(page)).toHaveCount(0);   // due long ago, but nobody is looking
-  await page.evaluate(() => (window as any).__show());
-  await expect(prompt(page)).toBeVisible({ timeout: 5000 });
-});

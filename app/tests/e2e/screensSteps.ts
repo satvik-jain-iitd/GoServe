@@ -2,7 +2,7 @@
 import { expect, type BrowserContext, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { answeredAt, order, setup, typePlace, toDeliverTo, whereBox } from "./helpers";
+import { answeredAt, ID, order, setup, typePlace, toDeliverTo, whereBox } from "./helpers";
 
 export type Screen = { name: string; path: string; width: number; height: number; step: string };
 export const screens: Screen[] = readFileSync(resolve(import.meta.dirname, "../../../docs/screens.txt"), "utf8")
@@ -92,9 +92,9 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
   account: async (context, page, path) => { const net = await setup(context, page); net.state.phoneUser = true; await page.goto(path);   // story 829: signed in by phone code (no Google name), so You shows the Google row as in the accepted picture
     await page.getByRole("button", { name: "Account" }).click(); await expect(page.getByTestId("account")).toBeVisible(); },
   cancelled: async (context, page, path) => {   // story 916: the slip after a cancel
-    const net = await setup(context, page, [order("placed")]); await page.goto(path);
+    const net = await setup(context, page, [order("placed")]); net.state.supportPhone = "9000000000"; await page.goto(path);   // story 1745: the admin set a support number, so the foot shows Call support
     await expect(page.getByRole("heading", { name: "Order placed" })).toBeVisible();
-    net.push("UPDATE", order("cancelled", "2020-01-01T10:01:00Z")); await expect(page.getByText("Your order was cancelled")).toBeVisible({ timeout: 5000 }); },
+    net.push("UPDATE", order("cancelled", "2020-01-01T10:01:00Z")); await expect(page.locator(".ui-stamp", { hasText: "Cancelled" })).toBeVisible({ timeout: 5000 }); },
   "add-kitchen": async (context, page, path) => {   // story 923: the admin's Add kitchen form
     const net = await setup(context, page); net.state.admin = true; await page.goto(path);
     await page.getByRole("button", { name: "City", exact: true }).click(); await page.getByRole("button", { name: "Add a kitchen" }).click();
@@ -118,13 +118,13 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await expect(page.locator(".ui-locrow")).toContainText("Sample Garden Colony, Sample Road"); await page.getByRole("heading", { name: "Add a kitchen" }).click(); },   // a click on the title takes the focus off Closes at: no ring in the picture
   // Story 1053: the boards T4 and T5 with their own words (Rahul, 1.2 km, 20 sec ago). The clock is fixed at NINE, so the door time is the test's, not the board's 8:12 pm.
   "tracker-rider-row": async (context, page, path) => {   // board T4: On the way with the rider row, no map in the page
-    const net = await setup(context, page, [order("out_for_delivery", new Date(NINE.getTime() - 60_000).toISOString())]);   // changed a minute ago: the "Was your order delivered?" box has not come yet
+    const net = await setup(context, page, [order("out_for_delivery", new Date(NINE.getTime() - 60_000).toISOString())]);   //
     net.state.riderCard = { name: "Rahul", phone: "9876543210" };
     Object.assign(net.state.kitchens[0], { lat: 28.57, lng: 77.24 });
     net.state.tracking = { rider_lat: 28.5792, rider_lng: 77.26, eta_lo_min: 8, eta_hi_min: 18, eta_late: false, updated_at: new Date(NINE.getTime() - 20_000).toISOString() };
     await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+vg+AAVYAqhyXHCrAAAAAElFTkSuQmCC", "base64") }));
     await page.goto(path); await expect(page.getByRole("link", { name: "See the rider on Google Maps" })).toBeVisible(); },
-  // Story #1015: the boards E2a (big number), E1b (running late) and E1c (working out the time) with the clock fixed at NINE: 25 min from 9:00 am is "By 9:25 am" where the board says 8:12 pm.
+  // Story #1015: the boards E2a (big number), E1b (running late) and E1c (working out the time) with the clock fixed at NINE: 25 min from 9:00 am; story 1742: no "By" clock line any more (the board still shows "By 8:12 pm").
   "eta-big": async (context, page, path) => {   // board E2a
     const net = await setup(context, page, [order("preparing", "2020-01-01T10:02:00Z")]);
     net.state.tracking = { rider_lat: null, rider_lng: null, eta_lo_min: 25, eta_hi_min: 35, eta_late: false, updated_at: NINE.toISOString() };
@@ -276,5 +276,5 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await setup(context, page, [{ ...order("cancelled", "2020-01-01T10:02:00Z"), cancel_reason: "We are out of butter chicken tonight, so this order cannot be made." }]);
     await page.goto(path); await page.getByRole("button", { name: "History" }).click(); await page.getByRole("button", { name: /Butter Chicken/ }).click();
     await expect(page.getByRole("heading", { name: "Declined" })).toBeVisible(); },
-  orders: async (context, page, path) => { await setup(context, page); await page.goto(path); await page.getByRole("button", { name: "History" }).click(); await page.waitForLoadState("networkidle"); },
+  orders: async (context, page, path) => { await setup(context, page, [order("delivered", "2020-01-01T12:00:00Z", "2020-01-01T11:30:00Z"), { ...order("cancelled", "2020-01-01T10:10:00Z"), id: `${ID.slice(0, -1)}9`, client_order_key: "k2" }]); await page.goto(path); await page.getByRole("button", { name: "History" }).click(); await page.waitForLoadState("networkidle"); },   // story 1738: one delivered row (Order again) and one cancelled row, so the picture covers both
 };

@@ -1,7 +1,7 @@
 // Story #940: every step after "placed" goes to POST /order-actions with the signed-in user's own token. The body names the order and the step only.
 // askDecision asks the database (story #1068).
 import { describe, expect, it } from "vitest";
-import { addEvent, askDecision, changeStatus, confirmDelivery, PlaceError } from "../../src/lib/orders";
+import { addEvent, askDecision, changeStatus, PlaceError } from "../../src/lib/orders";
 
 const deps = (res: () => Promise<Response>, seen: { url?: string; init?: RequestInit } = {}) => ({
   url: "https://n8n.test/webhook/gs-order",
@@ -63,22 +63,6 @@ describe("addEvent", () => {
   it("a second tap is code already_done", async () => {
     await expect(addEvent({ orderId: "o1", event: "order.arriving" }, act(json(409, { ok: false, error: "already_done", message: "This step was already done." }))))
       .rejects.toMatchObject({ code: "already_done" });
-  });
-});
-
-describe("confirmDelivery", () => {
-  const order = { id: "o1", status: "delivered", total_paise: 100, updated_at: "u", paid_by: "cash" };
-  it("S5 Yes posts the confirm step with the user's token and returns the closed order", async () => {
-    const seen: { init?: RequestInit } = {};
-    expect(await confirmDelivery({ orderId: "o1" }, act(json(200, { ok: true, order }), seen))).toEqual({ order, alreadyDone: false });
-    expect(JSON.parse(seen.init?.body as string)).toEqual({ order_id: "o1", action: "confirm" });
-    expect((seen.init?.headers as Record<string, string>).authorization).toBe("Bearer user-jwt");
-  });
-  it("S6 a second Yes is not an error", async () => {
-    expect((await confirmDelivery({ orderId: "o1" }, act(json(409, { ok: false, error: "already_done", message: "x" })))).alreadyDone).toBe(true);
-  });
-  it("S7 a stranger's Yes is refused in the customer's own words", async () => {
-    await expect(confirmDelivery({ orderId: "o1" }, act(json(403, { ok: false, error: "not_allowed", message: "x" })))).rejects.toBeInstanceOf(PlaceError);
   });
 });
 

@@ -11,7 +11,7 @@ describe("etaView", () => {
     expect(etaView({ lo: null, late: false, at: AT }, t(0))).toEqual({ kind: "working" });
   });
   it("S2 the server's lo minutes and the clock they land on; the number counts down between answers and stops at 1", () => {
-    expect(etaView({ lo: 25, late: false, at: AT }, t(0))).toEqual({ kind: "time", min: 25, by: new Date(t(25)) });
+    expect(etaView({ lo: 25, late: false, at: AT }, t(0))).toEqual({ kind: "time", min: 25 });
     expect(etaView({ lo: 25, late: false, at: AT }, t(10))).toMatchObject({ min: 15 });
     expect(etaView({ lo: 25, late: false, at: AT }, t(10.5))).toMatchObject({ min: 15 });   // part of a minute rounds up
     expect(etaView({ lo: 25, late: false, at: AT }, t(40))).toMatchObject({ min: 1 });

@@ -8,7 +8,6 @@ interface ImportMetaEnv {
   readonly VITE_STYLEGUIDE?: string;
   readonly VITE_DEMO_TOKEN: string;
   readonly VITE_AUTOPILOT_MS?: string;
-  readonly VITE_REASK_MS?: string;       // how long after a Not yet the delivery question comes back; tests set a short one
   readonly VITE_OTP_GATE?: string;       // story #551: "1" asks the phone code at checkout
   readonly VITE_OTP_SMS?: string;        // story #551: "real" once the owner's SMS provider is set; anything else is the placeholder sender
   readonly VITE_PAYMENTS_PROVIDER?: string;     // story #552: "razorpay" once the owner's Razorpay click is done

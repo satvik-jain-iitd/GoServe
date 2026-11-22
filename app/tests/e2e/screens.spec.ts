@@ -21,3 +21,19 @@ for (const s of screens) {
     await expect(page).toHaveScreenshot(`${s.name}.png`);
   });
 }
+
+test("story 1738: the orders screen holds a delivered row with Order again and a cancelled row, so its picture covers the button", async ({ page, context }) => {
+  await page.clock.install({ time: NINE });
+  await page.setViewportSize({ width: 412, height: 915 });
+  await STEPS.orders(context, page, "/customer/");
+  await expect(page.getByRole("button", { name: "Order again" })).toHaveCount(1);
+  await expect(page.getByText("Cancelled", { exact: true })).toHaveCount(1);
+});
+
+test("story 1745: the cancelled screen's foot holds Call support above Share feedback, so its picture covers both", async ({ page, context }) => {
+  await page.clock.install({ time: NINE });
+  await page.setViewportSize({ width: 412, height: 915 });
+  await STEPS.cancelled(context, page, "/customer/");
+  await expect(page.getByRole("link", { name: /Call support/ })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Share feedback" })).toHaveCount(1);
+});

@@ -14,7 +14,7 @@ test("S1 the rider taps Arriving: the step and the rider card change within 3 se
   net.push("INSERT", arriving, "order_events");
   await expect(page.getByText("Rider at your door")).toBeVisible({ timeout: 3000 });
   await expect(page.getByTestId("rider-card")).toContainText("Ravi is at your door");
-  await expect(page.getByRole("link", { name: "Call Ravi Kumar" })).toBeVisible();   // the call link stays
+  await expect(page.getByRole("link", { name: "Call the rider" })).toBeVisible();   // story 1657: the call is in the foot, always with these words
 });
 
 test("S2 a customer who opens the app after the tap (reload, second device) sees it at once", async ({ page, context }) => {

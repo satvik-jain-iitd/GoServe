@@ -3,7 +3,7 @@ import { test, expect, type Locator } from "@playwright/test";
 import { SESSION, order, setup } from "./helpers";
 
 const BILLED = { total_paise: 54000, bill: { early_friend_paise: 10000, to_pay_paise: 54000 } };   // 2 x 320 = 640, minus the gift 100 = 540
-const rupees = (t: string) => Number(t.replace(/[₹,\s]/g, "").replace("−", "-"));
+const rupees = (t: string) => Number(t.replace(/[₹,\s]/g, "").replace("−", "-")) || 0;   // story 1757: "Free" counts 0
 const sum = async (lines: Locator) => (await lines.locator(":scope > div span:last-child").allTextContents()).reduce((n, t) => n + rupees(t), 0);
 
 test("L1 rider: Pick up (board RP3, story 1441) lists the dishes without prices and To collect at door is the billed amount after the gift", async ({ page, context }) => {
@@ -59,13 +59,14 @@ test("L6 admin: delivery, packaging and exclusive tax get a line when above zero
   expect(await sum(slip.locator(".ui-slip-lines"))).toBe(710);
 });
 
-test("L7 inclusive tax and zero fees add no line", async ({ page, context }) => {
+test("L7 inclusive tax and zero packaging add no line; a zero delivery fee reads Free (story 1757, story 780)", async ({ page, context }) => {
   const net = await setup(context, page, [{ ...order("preparing"), total_paise: 64000, bill: { fees: { delivery_paise: 0, packaging_paise: 0, total_paise: 0 }, tax_paise: 3000, tax_mode: "inclusive", to_pay_paise: 64000 }, customer_name: "Asha", customer_phone: "9876543210" }]);
   net.state.admin = true;
   await page.goto("/admin/");
   await page.getByRole("button", { name: /^Open order 0f0f0f0f/ }).click();
   const slip = page.locator(".ui-slip").first();
-  for (const w of ["Delivery", "Packaging", "Tax"]) await expect(slip.getByText(w, { exact: true })).toHaveCount(0);
+  for (const w of ["Packaging", "Tax"]) await expect(slip.getByText(w, { exact: true })).toHaveCount(0);
+  await expect(slip.getByText("Delivery", { exact: true }).locator("..").locator("span").last()).toHaveText("Free");
   expect(await sum(slip.locator(".ui-slip-lines"))).toBe(640);
 });
 

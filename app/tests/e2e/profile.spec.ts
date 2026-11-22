@@ -52,7 +52,7 @@ test("S4 the tracker shows an estimate and a Cancel button while the order is pl
   await expect.poll(() => net.calls.rpc.filter((c) => c.name === "cancel_order").length).toBe(1);
   expect(net.calls.rpc.find((c) => c.name === "cancel_order")!.body).toEqual({ p_order: ID, p_reason: null });
   net.push("UPDATE", order("cancelled", "2020-01-01T10:01:00Z"));
-  await expect(page.getByText("Your order was cancelled")).toBeVisible({ timeout: 5000 });
+  await expect(page.locator(".ui-stamp", { hasText: "Cancelled" })).toBeVisible({ timeout: 5000 });   // story 1745
   await expect(page.getByRole("button", { name: "Cancel order" })).toHaveCount(0);
 });
 
