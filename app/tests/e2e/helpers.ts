@@ -319,6 +319,17 @@ export async function setup(context: BrowserContext, page: Page, initial: object
     const a = state.serve ?? { status: 200, body: { ok: true, serviceable: true, request_here: false, kitchens: [{ kitchen_id: "k-1", name: "Hauz Khas Kitchen", distance_m: 1230, eta_min: 30, open: true }] } };
     return json(route, a.status, a.body);
   });
+  // Story 1766 (layer A, test-infra only): a default answer for POST /quote, made from the cart: the menu's own prices, no fee, no offers, so the total is the menu total.
+  // The Bill asks for it on the menu and on the Bill, so a spec that mocks nothing still gets a price. A spec that mocks the quote itself registers its route later and wins.
+  await context.route("https://test.supabase.co/functions/v1/quote", async (route) => {
+    const req = route.request();
+    if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: CORS });
+    const body = JSON.parse(req.postData() ?? "{}");
+    const price = Object.fromEntries((state.menu as { id: string; price_paise: number }[]).map((d) => [d.id, d.price_paise]));
+    const item = (body.lines ?? []).reduce((n: number, l: { menu_item_id: string; qty: number }) => n + (price[l.menu_item_id] ?? 0) * l.qty, 0);
+    return json(route, 200, { ok: true, kitchen_id: body.kitchen_id, item_total_paise: item, fees: { delivery_paise: 0, packaging_paise: 0, total_paise: 0 }, discount_paise: 0, coupon: null, tax_paise: 0,
+      tax_mode: "inclusive", early_friend_paise: 0, to_pay_paise: item, saved_paise: 0, offers: [] });
+  });
   // Story #940: the customer places with POST /orders and every step after goes to POST /order-actions, both with the signed-in user's token.
   await context.route("https://test.supabase.co/functions/v1/orders", async (route) => {
     const req = route.request();
