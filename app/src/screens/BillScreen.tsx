@@ -14,7 +14,7 @@ type Props = {
   address: string; confirmed: boolean; onChangePlace: () => void; onConfirmPlace: () => void;   // story 1532: the words of the stored place, never a text box; confirmed = it has a point the customer set
   note: string; onNote: (v: string) => void;   // story #935: one optional line for the kitchen, up to 200 characters
   details?: { phone: string; onPhone: (v: string) => void; saved: string | null };   // story 1417 (boards BF1, BF2, BC1): the phone once, never the name; saved = the phone kept on the account
-  offers?: { quote: Quote; codeError: string | null; onApply: (code: string) => void; onRemove: () => void };   // story #588: the quote's bill and the Offers block (boards C1, C2)
+  offers?: { quote: Quote; codeError: string | null; onApply: (code: string) => void; onRemove: () => void; show: boolean };   // story #588: the quote's bill and the Offers block (boards C1, C2)
   soldOut?: { id: string; name: string; line?: string; alt: Alternative | null | undefined; canSwap: boolean; onSwap: () => void; onRemove: () => void };   // story 619, board L3: the first dish in the bill that is sold out; line (story 1540): other words for a dish the kitchen does not make
   door?: { methods: DoorMethod[]; value: DoorMethod | null; onChange: (v: DoorMethod) => void };   // story #1261, board P6: how you pay at the door, only the methods that are on (the customer app only)
   sending: boolean; error: string | null; onSignIn?: () => void;   // story 1580: the sign-in line carries its own way out
@@ -110,7 +110,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, farKm = nu
               </div>
             )}
             <div className="ui-slip-rule" />
-            <div className={empty ? "ui-slip-total ui-muted" : "ui-slip-total"}><b>{q ? "To pay" : "To pay at door"}</b><span data-testid="bill-total">{formatRupees(total)}</span></div>
+            <div className={empty ? "ui-slip-total ui-muted" : "ui-slip-total"}><b>{q && offers?.show ? "To pay" : "To pay at door"}</b><span data-testid="bill-total">{formatRupees(total)}</span></div>
             {!empty && <button type="button" className="ui-btn ghost ui-add-more" onClick={onBack}>+ Add more</button>}
           </div>
         </section>
@@ -121,7 +121,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, farKm = nu
             <div className="ui-swap-actions"><button type="button" className="ui-btn ghost" onClick={soldOut.onRemove}>Take it out</button></div>
           </div>
         )}
-        {offers && (offers.quote.offers.length > 0 || offers.quote.coupon) && (
+        {offers?.show && (offers.quote.offers.length > 0 || offers.quote.coupon) && (
           <section aria-label="Offers" style={{ margin: "16px 20px 0 20px", display: "flex", flexDirection: "column", gap: 8 }}>
             <h2 style={{ margin: "0 0 4px 0", fontFamily: "'DM Mono', monospace", fontSize: 12, fontWeight: 400, color: "var(--gs-text-muted)" }}>Offers</h2>
             {offers.quote.offers.map((o) => {

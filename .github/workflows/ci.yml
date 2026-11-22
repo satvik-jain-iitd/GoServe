@@ -69,6 +69,10 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
+      # Story 1765: the dev deploy has no VITE_OFFERS. One spec runs the Bill in a build with the offers off (its own config, port 4181); the shards build with the offers on.
+      - name: The Bill with offers off (the dev deploy's switches)
+        run: npx playwright test -c playwright.nooffers.config.ts
+
       # Story #1369: the screen spec runs once, in the Screens step (screens.sh --check), with the same baselines. The other browser tests run in the browser shards (story #1641).
       - name: Screens (the render gate, once)
         working-directory: ${{ github.workspace }}   # the App job defaults to app/; the script is at the repo root (run 43341870197)
