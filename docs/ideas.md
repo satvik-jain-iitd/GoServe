@@ -120,7 +120,9 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - IDEA ID456 (2026-11-16, taken, #1593): Small buttons side by side that do not fill the screen width are disliked; one box on top and one at the bottom, each full width, is the liked pattern.
 - IDEA ID457 (2026-11-22, taken, #1771, #1775): The fee should be on the Bill from the first instant, never "Free" first.
 - IDEA ID458 (2026-11-22, taken, #1775): Load the fee when the app starts, and keep it for an open app (12 hours).
-- IDEA ID459 (2026-11-22, dropped): Hide the wait in a waiting screen; the owner chose to ask the quote on the menu instead (#1771).
+- IDEA ID459 (2026-11-22, open, #1771): Hide the fee wait in a waiting screen on the Bill. The reviewer advised against it; the fee read rides the app's opening moment instead.
 - IDEA ID460 (2026-11-23, taken, #1781): The total line says "To pay" everywhere, since advance payment is coming.
-- IDEA ID461 (2026-11-23, open): Human situations for riders (a rider who cannot take a trip, a rider in a hurry): design them as named cases.
+- IDEA ID461 (2026-11-23, open): Human situations for riders: a rider who falls sick, a rider who does not come on time, or any other human life challenge. The owner asked to be reminded later.
 - IDEA ID462 (2026-11-23, taken, #1785): Reuse the pan screen for no internet everywhere, for consistency.
+- IDEA ID463 (2026-11-23, open): Build and test fast, hold the merges, and merge one train at the end of the day.
+- IDEA ID464 (2026-11-23, open): Many subagents in parallel, one story each, isolated so no file is shared.

@@ -488,3 +488,4 @@ short. Say what happened and what to do next time.
 | 2026-11-23 | Release body | The release 16 body said "prod fee is 0"; step a read the real value, 2000 paise. | A number about prod comes from a read of prod in the same step, never from the dev or the last release. |
 | 2026-11-23 | Review | The reviewer's own check of the fee rows ran on one build first; the offers-off run found the gap (same cause as the 22 Nov row). | The reviewer and the coder both run the offers-off build for any Bill change. |
 | 2026-11-23 | Reuse | The shared no-internet screen was a private function of the menu; the Bill needed the same picture. | A screen two places need moves to its own file and is imported; never copied (#1785). |
+| 2026-11-23 | Planning | The reviewer cut decided scope with human-time estimates; the owner corrected it. | Order by importance, start at once, and name only real blockers. |
