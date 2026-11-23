@@ -1,4 +1,4 @@
-// Story 1712: the kitchen's cash hand-over asks in our own sheet, never a browser dialog. Not now left, Confirm hand-over last on the right, equal halves, nothing red.
+// Story 1712: the kitchen's cash hand-over asks in our own sheet, never a browser dialog. Not now left, Confirm last on the right, equal halves, nothing red.
 import { test, expect, type Page } from "@playwright/test";
 import { SESSION, order, setup } from "./helpers";
 
@@ -27,10 +27,12 @@ for (const size of SIZES) {
     await expect(sheet).toContainText("Amit Kumar");
     await page.waitForTimeout(600);   // the sheet slides up first
     const l = await sheet.getByRole("button", { name: "Not now" }).boundingBox();
-    const r = await sheet.getByRole("button", { name: "Confirm hand-over", exact: true }).boundingBox();
+    const r = await sheet.getByRole("button", { name: "Confirm", exact: true }).boundingBox();
     expect(Math.abs(l!.width - r!.width)).toBeLessThan(1);
     expect(Math.abs(l!.height - r!.height)).toBeLessThan(1);
     expect(Math.abs(l!.y - r!.y)).toBeLessThan(1);
+    expect(l!.height).toBeCloseTo(56, 0);   // both words fit on ONE line (a button is one short line)
+    expect(r!.height).toBeCloseTo(56, 0);
     expect(r!.x).toBeGreaterThan(l!.x);
     expect(native()).toBe(0);
     if (size.width === 390) await page.screenshot({ path: "/Users/satvikjain/Documents/GoServe/.claude/handoff/dev/1712-handover-sheet-390x844.png" });
@@ -60,7 +62,7 @@ test("Escape, a tap outside and phone Back close it and send nothing", async ({ 
 
 test("Confirm hand-over sends it once", async ({ page, context }) => {
   const { net, sheet } = await open(page, context);
-  await sheet.getByRole("button", { name: "Confirm hand-over", exact: true }).click();
+  await sheet.getByRole("button", { name: "Confirm", exact: true }).click();
   await expect.poll(() => sends(net)).toBe(1);
   await expect(sheet).toHaveCount(0);
 });

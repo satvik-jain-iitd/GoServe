@@ -186,7 +186,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
                 <div className="ui-sheet-acts">
                   <div className="ui-row-pair">
                     <button ref={notNow} type="button" className="ui-btn ghost big" onClick={closeAsk}>Not now</button>
-                    <button type="button" className="ui-btn big" onClick={() => void handover()}>Confirm hand-over</button>
+                    <button type="button" className="ui-btn big" onClick={() => void handover()}>Confirm</button>
                   </div>
                 </div>
               </Sheet>
