@@ -23,7 +23,7 @@ for (const [status, tab] of [["placed", "New"], ["preparing", "Cooking"], ["read
     await wake(page);
     const row = page.locator(".ui-ticket-cancelled", { hasText: "No. 0f0f0f0f" });
     await expect(row.locator(".ui-tag")).toHaveText("Declined");
-    await expect(row.locator(".ui-ticket-why")).toHaveText(REASON);
+    await expect(row.locator(".ui-ticket-why")).toHaveCount(0);   // owner, 23 Nov: no reason in the kitchen app
     await expect(row).not.toContainText("stop cooking");
     await expect(row.getByRole("button")).toHaveCount(0);
     await expect(page.getByRole("button", { name: /^New/ })).not.toContainText(/\d/);   // the New badge does not count it
@@ -41,7 +41,7 @@ test("AC-6 an admin cancel the page never saw (opened after, inside the minute) 
   net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
   await expect(page.locator(".ui-ticket-cancelled .ui-tag")).toHaveText("Declined");
-  await expect(page.locator(".ui-ticket-why")).toHaveText(REASON);
+  await expect(page.locator(".ui-ticket-why")).toHaveCount(0);
 });
 
 test("AC-6 the Declined tag is a rectangle with a small corner, red 4.5:1 on the page", async ({ page, context }) => {
@@ -91,16 +91,16 @@ test("AC-6 a customer cancel of a New order the page had not seen on Cooking sho
   await expect(page.getByText("No. 0f0f0f0f")).toHaveCount(0);
 });
 
-test("AC-6 an HTML reason shows as text", async ({ page, context }) => {
+test("AC-6 no reason is shown, whatever it holds", async ({ page, context }) => {
   const net = await open(page, context, "ready", "Cooking");
   net.state.orders = [cancelled("admin", "<b>x</b>")];
   await wake(page);
-  await expect(page.locator(".ui-ticket-why")).toHaveText("<b>x</b>");
-  await expect(page.locator(".ui-ticket-cancelled b")).toHaveCount(0);
+  await expect(page.locator(".ui-ticket-why")).toHaveCount(0);
+  await expect(page.locator(".ui-ticket-cancelled")).not.toContainText("<b>");
 });
 
 for (const [w, h] of [[360, 640], [390, 844]]) {
-  test(`AC-6 Declined row at ${w}x${h}: one-line red tag on the right, reason under the dishes in full ink, no sideways scroll`, async ({ page, context }) => {
+  test(`AC-6 Declined row at ${w}x${h}: one-line red tag on the right, no reason, no sideways scroll`, async ({ page, context }) => {
     await page.setViewportSize({ width: w, height: h });
     const net = await open(page, context, "preparing", "Cooking");
     net.state.orders = [cancelled("customer", "x")];
@@ -111,14 +111,10 @@ for (const [w, h] of [[360, 640], [390, 844]]) {
     const row = page.locator(".ui-ticket-cancelled");
     const b = await row.boundingBox();
     expect(b!.width).toBe(a!.width);
-    expect(b!.height - a!.height).toBeLessThanOrEqual(30);   // one reason line more, no more
-    const tag = (await row.locator(".ui-tag").boundingBox())!, dish = (await row.locator(".ui-slip-lines").boundingBox())!, why = (await row.locator(".ui-ticket-why").boundingBox())!;
+    expect(Math.abs(b!.height - a!.height)).toBeLessThanOrEqual(30);
+    const tag = (await row.locator(".ui-tag").boundingBox())!, dish = (await row.locator(".ui-slip-lines").boundingBox())!;
     expect(tag.height).toBeLessThan(26);                       // one line
     expect(tag.x + tag.width).toBeGreaterThan(b!.x + b!.width - 24);   // on the right
-    expect(why.y).toBeGreaterThanOrEqual(dish.y + dish.height - 1);    // under the dishes
-    expect(why.x + why.width).toBeLessThanOrEqual(tag.x);
-    const ink = await page.evaluate(() => [getComputedStyle(document.querySelector(".ui-ticket-why")!).color, getComputedStyle(document.querySelector(".ui-slip-lines")!).color]);
-    expect(ink[0]).toBe(ink[1]);                               // full ink, the dishes' colour
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     if (w === 390) await page.screenshot({ path: "/Users/satvikjain/Documents/GoServe/.claude/handoff/dev/1794-kitchen-declined-390x844.png" });
   });

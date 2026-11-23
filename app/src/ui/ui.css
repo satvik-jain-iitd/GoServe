@@ -1111,4 +1111,3 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
 .ui-dropcode-digits { font-size: var(--gs-display-m); font-weight: 600; letter-spacing: 0.2em; }
 /* Story 1794: the admin-declined kitchen row: red tag on the right, one line; the reason under the dishes in full ink */
 .ui-ticket-tag { justify-self: end; white-space: nowrap; border-radius: var(--gs-radius-s); }   /* owner: no pills; a rectangle with a small corner */
-.ui-ticket-why { margin: 0; font-size: 16px; line-height: 1.3; color: var(--md-on-surface); overflow-wrap: anywhere; }

@@ -96,9 +96,9 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
   const pastClose = !!gate && outsideHours(gate.opensAt, gate.closesAt, minute);   // after closing time the customer app shows "closed" whatever the switch says
   const gone = justCancelled(orders, seen.current, new Date());   // recomputed on every render; the minute tick re-renders, so the stamp leaves on its own
   const declined = gone.filter((o) => o.cancelled_by === "admin");   // story 1794: an admin's cancel also shows on New, where the kitchen may have had it
-  const cancelledRow = (o: Order) => o.cancelled_by === "admin" ? (   // story 1794: the admin's cancel is a red Declined tag on the right; the reason sits under the dishes in full ink
+  const cancelledRow = (o: Order) => o.cancelled_by === "admin" ? (   // story 1794: the admin's cancel is a red Declined tag on the right; no reason here (owner, 23 Nov)
     <div key={o.id} className="ui-ticket ui-ticket-cancelled">
-      <div className="ui-ticket-open"><span className="ui-ticket-head"><span className="mono">No. {shortId(o.id)} · {hhmm(o.created_at)}</span></span>{lines(o)}{o.cancel_reason?.trim() && <p className="ui-ticket-why">{o.cancel_reason.trim()}</p>}</div>
+      <div className="ui-ticket-open"><span className="ui-ticket-head"><span className="mono">No. {shortId(o.id)} · {hhmm(o.created_at)}</span></span>{lines(o)}</div>
       <span className="ui-tag error ui-ticket-tag">Declined</span>
     </div>
   ) : (
