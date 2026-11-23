@@ -115,6 +115,13 @@ class RiderDeliverCode(unittest.TestCase):
         r = run(ON, READY, as_(RID, f"to_jsonb(rider_refused('{O1}'))"))
         self.assertEqual(r["status"], "cancelled", r)
 
+    def test_a_failed_rider_deliver_leaves_no_bypass_for_a_direct_act_on_order_deliver(self):   # the app.drop_ok flag must not outlive rider_deliver_v1
+        r = run(ON, READY, deliv(RID, "0000"), act(RID, "deliver"))
+        self.assertEqual(err(r)[-1], "code_required", r)
+        self.assertEqual(r["status"], "out_for_delivery", r)
+        r2 = run(ON, READY, deliv(RID, None), act(RID, "deliver"))   # a missing code is refused too, then the direct deliver
+        self.assertEqual(err(r2)[-1], "code_required", r2)
+
     def test_pickup_code_does_not_deliver(self):
         r = run(ON, READY, deliv(RID, "(select p from pc)"))
         self.assertEqual(err(r), ["wrong_code"], r)
