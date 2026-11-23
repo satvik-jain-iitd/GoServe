@@ -116,7 +116,7 @@ export function BillScreen({ lines, total, loading = false, failure = null, onRe
               </div>
             )}
             <div className="ui-slip-rule" />
-            <div className={empty ? "ui-slip-total ui-muted" : "ui-slip-total"}><b>To pay</b><span data-testid="bill-total" className={loading ? "ui-pending" : undefined} role={loading ? "img" : undefined} aria-label={loading ? "Price loading" : undefined}>{loading ? "₹\u00a0\u00a0\u00a0" : noPrice ? "No price yet" : formatRupees(total)}</span></div>
+            <div className={empty ? "ui-slip-total ui-muted" : noPrice ? "ui-slip-total ui-slip-noprice" : "ui-slip-total"}><b>To pay</b><span data-testid="bill-total" className={loading ? "ui-pending" : noPrice ? "ui-noprice" : undefined} role={loading ? "img" : undefined} aria-label={loading ? "Price loading" : undefined}>{loading ? "₹\u00a0\u00a0\u00a0" : noPrice ? "No price yet" : formatRupees(total)}</span></div>
             {!empty && <button type="button" className="ui-btn ghost ui-add-more" onClick={onBack}>+ Add more</button>}
           </div>
         </section>

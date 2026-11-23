@@ -116,3 +116,29 @@ test("B2-6 the line is in full ink with a mark, above the button, and sits insid
   expect(await page.locator(".ui-bar-note").evaluate((el) => getComputedStyle(el).color)).toBe(await page.locator(".ui-slip-total b").evaluate((el) => getComputedStyle(el).color));   // the ink of the Bill's own text
   await expect(page.locator(".ui-bar-note [aria-hidden='true']")).toHaveCount(1);   // the mark
 });
+
+// Reviewer, 23 Nov 2026 (frame s1766f): "No price yet" is small, mono, muted, in the same slot; the line has the full-width 1 px top line (owner rule 34).
+const token = (page: Page, prop: string, css: "color" | "borderTopColor") => page.evaluate(([p, c]) => { const d = document.createElement("div"); d.style.setProperty(c === "color" ? "color" : "border-top-color", `var(${p})`); d.style.borderTopStyle = "solid"; document.body.append(d); const v = getComputedStyle(d)[c as "color"]; d.remove(); return v; }, [prop, css] as const);
+
+test("B2-7 No price yet is 14 px, mono and muted, in the same slot (frame)", async ({ page, context }) => {
+  await open(context, page, "server");
+  await toBill(page);
+  await expect(total(page)).toHaveText("No price yet");
+  const st = await total(page).evaluate((el) => { const c = getComputedStyle(el); return { size: c.fontSize, color: c.color, family: c.fontFamily }; });
+  expect(st.size).toBe("14px");
+  expect(st.color).toBe(await token(page, "--gs-text-muted", "color"));
+  expect(st.family.toLowerCase()).toContain("mono");
+});
+
+test("B2-8 the line has the 1 px sage top line across the full width (rule 34)", async ({ page, context }) => {
+  await open(context, page, "server", { width: 390, height: 844 });
+  await toBill(page);
+  const note = line(page);
+  await expect(note).toBeVisible();
+  const st = await note.evaluate((el) => { const c = getComputedStyle(el); const b = el.getBoundingClientRect(); return { w: c.borderTopWidth, style: c.borderTopStyle, color: c.borderTopColor, left: Math.round(b.left), width: Math.round(b.width) }; });
+  expect(st.w).toBe("1px");
+  expect(st.style).toBe("solid");
+  expect(st.color).toBe(await token(page, "--gs-sage", "borderTopColor"));
+  expect(st.left).toBe(0);
+  expect(st.width).toBe(390);
+});
