@@ -17,7 +17,7 @@ class Drift(unittest.TestCase):
     def test_s2_one_migration_not_applied_is_named_by_file(self):
         marker = dict(V2)[KITCHEN_REMOVE]
         self.assertEqual(marker, "function:kitchen_remove_v2/1")
-        self.assertEqual(d.missing(ALL - {marker}, V1, V2), [KITCHEN_REMOVE])
+        self.assertEqual(d.missing(ALL - {marker}, V1, V2), [f for f, m in V2 if m == marker])   # every file that proves the same function is named, the later redefinitions too
 
     def test_s3_a_file_with_no_marker_is_not_reported(self):
         self.assertIn(None, [m for _, m in V1 + V2] + [None])   # drop-only files (0054) have no marker and cannot be proved

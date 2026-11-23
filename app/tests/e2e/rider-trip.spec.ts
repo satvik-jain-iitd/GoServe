@@ -86,9 +86,9 @@ test("RT4 a trip of 3, the second pickup fails: the third is not sent, the error
 
 test("RT5 a trip on the way: Could not deliver? at the second door marks only that order, and the third door shows", async ({ page, context }) => {
   const net = await open(context, page, [{ ...packet(0, "delivered"), delivered_at: NOW }, packet(1, "out_for_delivery"), packet(2, "out_for_delivery")]);
-  page.on("dialog", (d) => void d.accept());
   await expect(page.getByText("Customer 2")).toBeVisible();
   await page.getByRole("button", { name: "Could not deliver?" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Not delivered", exact: true }).click();   // story 1711
   await expect(page.getByText("Customer 3")).toBeVisible();
   expect(net.calls.rpc.filter((c) => c.name === "rider_refused").map((c) => c.body)).toEqual([{ p_order: IDS[1] }]);
   expect(net.calls.status).toEqual([]);

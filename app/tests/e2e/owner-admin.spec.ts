@@ -31,7 +31,7 @@ test("S3 the database's owner_admin refusal says it plainly", async ({ page, con
   net.state.people = [admin("u-2", "second.admin@example.com")];
   net.state.rpcError = { name: "admin_remove_person", message: "owner_admin" };
   await city(page);
-  page.once("dialog", (d) => void d.accept());
   await page.getByRole("button", { name: "Remove second.admin@example.com" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Remove", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("The owner account cannot be removed.");
 });

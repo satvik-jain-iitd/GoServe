@@ -1,7 +1,7 @@
 // The customer flow in one place: menu, cart, bill, placed (story #48). No router yet: four steps in state.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchDoorMethods, type DoorMethod } from "./lib/doorMethods";
-import { onBackScreen, screenStep } from "./lib/back";
+import { onBackScreen, screenStep, useBackCloses } from "./lib/back";
 import { readRiderQr } from "./lib/payMethods";
 import { addDish, BILL_CLEARED_LINE, cartLines, cartTotal, changeQty, kitchenChangedBill, KITCHEN_CHANGED_MENU, moveCart, notMadeLine, reorderCart, toOrderItems, type Cart, type Held, type Line } from "./lib/cart";
 import { mergeOrder, riderOrders, cancelKind, shortId, statusLabel, type Order, type RiderAction, confirmHandover, deliveredAt, isCash } from "./lib/kitchen";
@@ -57,7 +57,7 @@ import { useLoadedFee } from "./lib/feeLoaded";
 import { openOrderToResume } from "./lib/resume";
 import { SignIn } from "./screens/SignIn";
 import { OtpSheet } from "./screens/OtpSheet";
-import { Skeleton } from "./ui";
+import { Skeleton, Sheet } from "./ui";
 import { otpLoginOn, rememberOtpSetting } from "./lib/otpGate";
 import { watchOtpSwitch } from "./lib/otpSwitch";
 import { createPayment, switchToCash, simulatePaid, type PayMethod } from "./lib/payments";
@@ -187,6 +187,14 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   const [placed, setPlaced] = useState<PlacedOrder | null>(null);
   const [role, setRole] = useState<Role>(lock ?? "customer");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [pendingRefusal, setPendingRefusal] = useState<Order | null>(null);   // story 1711: Could not deliver? asks in our own sheet, never a browser box
+  useBackCloses(pendingRefusal !== null, () => setPendingRefusal(null));
+  useEffect(() => {
+    if (!pendingRefusal) return;
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setPendingRefusal(null); };
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
+  }, [pendingRefusal]);
   const [arrived, setArrived] = useState<Map<string, string>>(new Map());   // story 1182: order id to when Arriving was sent
   // The live list runs for the kitchen, the rider, and the customer while the tracker is on screen.
   // Autopilot (story #53): 'demo' is the offline story played from local data; 'auto' is the autopilot moving a real order.
@@ -661,7 +669,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
 
   // One tap for the kitchen and the rider: a status step or an event, sent as that role. The answer's updated_at decides which copy is newer.
   // Returns null when it worked, or the error code. The offline demo changes the local copy only and sends nothing.
-  async function act(order: Order, action: { kind: "status"; to: string } | RiderAction, actor: "kitchen" | "rider", method?: DoorMethod): Promise<{ code: string; message: string } | null> {
+  async function act(order: Order, action: { kind: "status"; to: string } | RiderAction, actor: "kitchen" | "rider", method?: DoorMethod, sure = false): Promise<{ code: string; message: string } | null> {
+    if (action.kind === "refused" && !demo && !sure) { setPendingRefusal(order); return null; }   // story 1711: the sheet asks first; its red button calls this again with sure
     if (demo) {
       setOrders((cur) => mergeOrder(cur, { ...order, status: action.kind === "status" ? action.to : action.kind === "refused" ? "cancelled" : order.status, updated_at: new Date().toISOString(), ...(method ? { paid_by: method } : {}) }));
       if (action.kind === "event") setArrived((cur) => new Map(cur).set(order.id, cur.get(order.id) ?? new Date().toISOString()));
@@ -672,7 +681,6 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     pushTrail(`${actor}: ${action.kind === "status" ? action.to : action.kind === "refused" ? "not delivered" : action.event}`);
     try {
       if (action.kind === "refused") {   // story H14: the customer refused or was not there; the database ends the order
-        if (!window.confirm(`Mark order ${shortId(order.id)} as not delivered? The customer refused it or was not there.`)) return null;
         if (!(await riderRefused(getClient(), order.id))) throw new Error("Could not mark it. Try again.");
         setOrders((cur) => mergeOrder(cur, { ...order, status: "cancelled", updated_at: new Date().toISOString() }));
         return null;
@@ -694,7 +702,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         return null;
       }
       if (e instanceof PlaceError && e.code === "method_off") loadRiderMethods();   // the setting changed under the rider: the UPI button and the QR go with it
-      const message = e instanceof Error ? e.message : "Something went wrong. Please try again.";
+      let message = e instanceof Error ? e.message : "Something went wrong. Please try again.";
+      if (actor === "rider") {   // story 1794: a tap made a moment before the admin cancelled gets the true line, never a code or "Try again"
+        const { data } = await getClient().from("orders").select("id,status,updated_at,cancelled_by").eq("id", order.id);
+        const row = (data as { id: string; status: string; updated_at: string; cancelled_by: string | null }[] | null)?.find((r) => r.id === order.id);
+        if (row?.status === "cancelled" && row.cancelled_by === "admin") { setOrders((cur) => mergeOrder(cur, { ...order, status: row.status, updated_at: row.updated_at, cancelled_by: row.cancelled_by })); message = "This order was declined."; }
+      }
       pushTrail(`error: ${message}`);
       live.setError(message);
       return { code: e instanceof PlaceError ? e.code : "unknown", message };
@@ -1215,7 +1228,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
             lines={tracked && "items" in tracked ? tracked.items.map((i) => ({ name: i.name, qty: i.qty, paise: i.price_paise * i.qty })) : placedLines}
             address={tracked && "address" in tracked ? tracked.address : address.trim()}
             confirmedAt={tracked && tracked.status === "delivered" ? deliveredAt(tracked) : null}
-            declined={tracked && cancelKind(tracked) === "declined" ? { reason: (tracked as Order).cancel_reason ?? "", at: tracked.updated_at } : null}
+            declined={tracked && cancelKind(tracked) === "declined" ? { reason: (tracked as Order).cancel_reason ?? "", at: tracked.updated_at, by: (tracked as Order).cancelled_by } : null}
             error={cancelError} pay={paidNow || payState || resumedOnline ? { state: paidNow ? "paid" : payState ?? "waiting", method: payMethod === "cod" ? "upi" : payMethod, startedAt: payState ? payStart : null, error: payError, onPay: payNow, onCash: payCash, onSimulate: () => void simulatePaid(import.meta.env.VITE_PAYMENTS_DEV_SECRET ?? "", payRef.current) } : undefined}
             onBack={fromHistory ? () => window.history.back() : () => setStep("menu")} backLabel={fromHistory ? "Back to History" : undefined} cancelledAt={tracked?.status === "cancelled" ? tracked.updated_at : null} onMenu={() => { setPlaced(null); setCart({}); setStep("menu"); }}
             supportPhone={orderSupport} onCancel={cancelOrder} cancelling={cancelling} rider={rider} atDoor={atDoor} times={stepTimes && placed && stepTimes.id === placed.id ? stepTimes.at : undefined} track={riderTrack} eta={eta} onCall={() => void tapCall(getClient(), placed.id)} />
@@ -1253,6 +1266,13 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
       {role === "ops" && (lock === "ops" ? <AdminGate>{opsView}</AdminGate> : opsView)}
       {role === "customer" && !framed && customerView}
       {role === "admin" && !framed && <AdminScreen />}
+      <Sheet open={pendingRefusal !== null} title={`Mark order ${pendingRefusal ? shortId(pendingRefusal.id) : ""} as not delivered?`} onClose={() => setPendingRefusal(null)}>
+        <p>The customer refused it or was not there.</p>
+        <div className="ui-row-pair">   {/* story 1711: red Not delivered left, safe Go back last (right), equal halves */}
+          <button type="button" className="ui-btn big danger-fill" onClick={() => { const o = pendingRefusal!; setPendingRefusal(null); void act(o, { kind: "refused", label: "Not delivered" }, "rider", undefined, true); }}>Not delivered</button>
+          <button type="button" className="ui-btn ghost big" autoFocus onClick={() => setPendingRefusal(null)}>Go back</button>
+        </div>
+      </Sheet>
       <FeedbackSheet role={lock ?? "console"} button={!lock} screen={`${window.location.pathname}${lock ? "" : ` (${role} tab)`}`}
         order={placed ? { id: placed.id, status: orders.find((o) => o.id === placed.id)?.status ?? placed.status } : orders[0] ? { id: orders[0].id, status: orders[0].status } : null}
         getSession={currentSession} send={async (r) => { const id = await sendFeedback(r, getClient()); capture("feedback_sent"); return id; }} />

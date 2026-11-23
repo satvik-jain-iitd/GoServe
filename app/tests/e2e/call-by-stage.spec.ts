@@ -48,7 +48,7 @@ test("1657 the foot Call the rider keeps the counted tap: one customer.call for 
 });
 
 for (const size of SIZES) {
-  test(`1656 AC-4 and 1657 AC-1..3 at ${size.width} by ${size.height}: the foot button has one box and the card is one line with an ellipsis, whatever the name`, async ({ page, context }) => {
+  test(`1656 AC-4 and 1657 AC-1..3 at ${size.width} by ${size.height}: the foot button has one box and the card is one line, and a long name shows as initials (story 1789)`, async ({ page, context }) => {
     await page.setViewportSize(size);
     const net = await open(context, page, "ready");
     const kitchenBox = (await kitchen(page).boundingBox())!;
@@ -72,10 +72,9 @@ for (const size of SIZES) {
     expect(long.links).toBe(0);
     expect(long.card.height).toBe(short.card.height);             // 1657 AC-1 one line high for both
     expect(long.cut.oneLine && short.cut.oneLine).toBe(true);
-    expect(long.cut.ellipsis).toBe("ellipsis");                   // the long name ends with dots
-    expect(long.cut.over).toBe(true);
+    expect(long.cut.over).toBe(false);                            // story 1789: a long name is shortened to initials, so nothing is cut
     expect(long.cut.right).toBe(true);
-    expect(long.text).toMatch(/ is bringing your order\.$/);      // only the name is cut, never the words after it
+    expect(long.text).toBe("A. is bringing your order.");        // story 1789: one 26-letter word gives its initial with a dot, the words after it stay
     for (const k of ["x", "y", "width", "height"] as const) {      // 1657 AC-3 and 1656 AC-4: the foot button box is the same for both names and for the kitchen button
       expect(Math.abs(long.foot[k] - short.foot[k])).toBeLessThanOrEqual(0.5);
       expect(Math.abs(short.foot[k] - kitchenBox[k])).toBeLessThanOrEqual(0.5);
@@ -90,7 +89,7 @@ test("1657 AC-4 a rider with no name: Your rider is bringing your order.", async
 
 test("1657 on the way with no live place: the foot says Call the rider and the card has no button; at the door the line stays", async ({ page, context }) => {
   const net = await open(context, page, "out_for_delivery", { name: "Ravi Kumar", phone: "9876500000" });
-  await expect(card(page)).toHaveText("Ravi Kumar is bringing your order.");
+  await expect(card(page)).toHaveText("Ravi is bringing your order.")   // story 1789: the first name;
   await expect(rider(page)).toHaveAttribute("href", "tel:9876500000");
   await expect(page.getByRole("link", { name: /^Call Ravi/ })).toHaveCount(0);
   const arriving = { id: "e1", order_id: ID, event: "order.arriving" };
