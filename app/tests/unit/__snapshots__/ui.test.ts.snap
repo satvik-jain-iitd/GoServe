@@ -8,7 +8,7 @@ exports[`components (one snapshot each) > S1 Chip 1`] = `"<button type="button" 
 
 exports[`components (one snapshot each) > S1 Empty 1`] = `"<div class="ui-empty"><h2>No orders yet</h2><p class="ui-meta">Pick a dish.</p></div>"`;
 
-exports[`components (one snapshot each) > S1 Sheet 1`] = `"<div class="ui-sheet-back"><section class="ui-sheet" role="dialog" aria-modal="true" aria-label="Feedback"><div class="ui-sheet-head"><h2>Feedback</h2><button type="button" class="ui-btn ghost">Close</button></div>Hello</section></div>"`;
+exports[`components (one snapshot each) > S1 Sheet 1`] = `"<div class="ui-sheet-back"><section class="ui-sheet" role="dialog" aria-modal="true" aria-label="Feedback"><div class="ui-sheet-head"><h2>Feedback</h2><button type="button" class="ui-link ui-sheet-close">Close</button></div>Hello</section></div>"`;
 
 exports[`components (one snapshot each) > S1 Skeleton 1`] = `"<div class="ui-skel" aria-busy="true" aria-label="Loading"><span style="width:100%"></span><span style="width:85%"></span><span style="width:70%"></span></div>"`;
 
