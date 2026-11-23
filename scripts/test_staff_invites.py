@@ -34,7 +34,8 @@ def as_user(uid, body):
 
 def add(email, kind="kitchen", kitchen=K1, who=ADMIN):
     k = f"'{kitchen}'" if kitchen else "null"
-    return as_user(who, f"select admin_add_person({email!r}, '{kind}', {k})")
+    rider = ", 'Test Rider', '9000000000'" if kind == "rider" else ""   # story 1654: the server needs a name and a mobile for a rider
+    return as_user(who, f"select admin_add_person({email!r}, '{kind}', {k}{rider})")
 
 
 COUNTS = "select (select count(*) from staff_invites where claimed_at is null) open, (select count(*) from staff_invites where claimed_at is not null) claimed, (select count(*) from kitchen_staff where kitchen_id = '%s') staff, (select count(*) from riders) riders"
