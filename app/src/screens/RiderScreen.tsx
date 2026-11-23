@@ -264,7 +264,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
               {whoRow(job)}
               {job.instructions && <p className="ui-rx-note"><span className="mono ui-rx-note-k">Note ·</span> {job.instructions}</p>}
               <div className="ui-slip-rule" />
-              <div className="ui-slip-total"><b>To collect at door</b><span>{formatRupees(job.total_paise)}</span></div>
+              <div className="ui-slip-total"><b>{job.payment_method === "online" && job.paid_at ? "Paid online" : "To collect at door"}</b><span>{formatRupees(job.total_paise)}</span></div>
               {rest[1] && <button type="button" className="ui-rx-cant" disabled={busyId === job.id} onClick={() => void act(job, rest[1])}>Could not deliver?</button>}
             </div>
           </section>
