@@ -702,7 +702,12 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         return null;
       }
       if (e instanceof PlaceError && e.code === "method_off") loadRiderMethods();   // the setting changed under the rider: the UPI button and the QR go with it
-      const message = e instanceof Error ? e.message : "Something went wrong. Please try again.";
+      let message = e instanceof Error ? e.message : "Something went wrong. Please try again.";
+      if (actor === "rider") {   // story 1794: a tap made a moment before the admin cancelled gets the true line, never a code or "Try again"
+        const { data } = await getClient().from("orders").select("id,status,updated_at,cancelled_by").eq("id", order.id);
+        const row = (data as { id: string; status: string; updated_at: string; cancelled_by: string | null }[] | null)?.find((r) => r.id === order.id);
+        if (row?.status === "cancelled" && row.cancelled_by === "admin") { setOrders((cur) => mergeOrder(cur, { ...order, status: row.status, updated_at: row.updated_at, cancelled_by: row.cancelled_by })); message = "This order was declined."; }
+      }
       pushTrail(`error: ${message}`);
       live.setError(message);
       return { code: e instanceof PlaceError ? e.code : "unknown", message };

@@ -319,6 +319,8 @@ button.ui-order-row svg { color: var(--gs-text-muted); }
 .ui-order-items { font-size: var(--gs-text-lg); font-weight: 600; line-height: 1.2; }
 .ui-order-sub { font-size: var(--gs-text-sm); color: var(--gs-text-muted); }
 .ui-order-sub .mono { color: var(--md-on-background); }
+.ui-rx-declined { display: flex; align-items: center; gap: var(--gs-space-3); margin: var(--gs-space-4) 0 0; }   /* story 1794: one line, the number, the stamp, OK */
+.ui-rx-declined .ui-link { margin-left: auto; min-width: var(--gs-tap); min-height: var(--gs-tap); }
 .ui-foot { margin: var(--gs-space-4) 0 0; text-align: center; font-size: var(--gs-mono-xs); color: var(--gs-text-muted); }
 .ui-account { padding: var(--gs-space-4) var(--gs-gutter); }
 .ui-account .ui-slip { margin-top: var(--gs-space-2); }
