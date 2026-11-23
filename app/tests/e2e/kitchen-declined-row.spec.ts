@@ -21,9 +21,7 @@ for (const [status, tab] of [["placed", "New"], ["preparing", "Cooking"], ["read
     const net = await open(page, context, status, tab);
     net.state.orders = [cancelled("admin", REASON)];
     await wake(page);
-    const row = page.locator(".ui-ticket-cancelled", { hasText: "No. 0f0f0f0f" });
-    await expect(row.locator(".ui-tag")).toHaveText("Declined");
-    await expect(row.locator(".ui-ticket-why")).toHaveCount(0);   // owner, 23 Nov: no reason in the kitchen app
+    const row = page.locator(".ui-declined", { hasText: "No. 0f0f0f0f" });
     await expect(row).not.toContainText("stop cooking");
     await expect(row.getByRole("button")).toHaveCount(0);
     await expect(page.getByRole("button", { name: /^New/ })).not.toContainText(/\d/);   // the New badge does not count it
@@ -40,29 +38,7 @@ test("AC-6 an admin cancel the page never saw (opened after, inside the minute) 
   const net = await setup(context, page, [cancelled("admin", REASON)]);
   net.state.kitchen = "k-1";
   await page.goto("/kitchen/");
-  await expect(page.locator(".ui-ticket-cancelled .ui-tag")).toHaveText("Declined");
-  await expect(page.locator(".ui-ticket-why")).toHaveCount(0);
-});
-
-test("AC-6 the Declined tag is a rectangle with a small corner, red 4.5:1 on the page", async ({ page, context }) => {
-  await page.clock.install({ time: T0 });
-  const net = await setup(context, page, [cancelled("admin", REASON)]);
-  net.state.kitchen = "k-1";
-  await page.goto("/kitchen/");
-  const tag = page.locator(".ui-ticket-cancelled .ui-tag");
-  await expect(tag).toHaveText("Declined");
-  const m = await page.evaluate(() => {
-    const t = document.querySelector(".ui-ticket-cancelled .ui-tag") as HTMLElement;
-    const cs = getComputedStyle(t);
-    const clear = (c: string) => c === "transparent" || /,\s*0\)$/.test(c);
-    let bg = t.parentElement as HTMLElement | null, back = "";
-    while (bg) { back = getComputedStyle(bg).backgroundColor; if (!clear(back)) break; bg = bg.parentElement; }
-    return { radius: parseFloat(cs.borderTopLeftRadius), height: t.getBoundingClientRect().height, fg: cs.color, back };
-  });
-  expect(m.radius).toBeLessThanOrEqual(6);                     // not a pill
-  const lum = (c: string) => { const [r, g, b] = c.match(/[\d.]+/g)!.slice(0, 3).map(Number).map((v) => { const x = v / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
-  const [hi, lo] = [lum(m.fg), lum(m.back)].sort((x, y) => y - x);
-  expect((hi + 0.05) / (lo + 0.05)).toBeGreaterThanOrEqual(4.5);   // red on the page colour
+  await expect(page.locator(".ui-declined .ui-declined-title")).toHaveText("Order declined");
 });
 
 test("AC-6 an admin cancel older than a minute is not shown", async ({ page, context }) => {
@@ -91,30 +67,39 @@ test("AC-6 a customer cancel of a New order the page had not seen on Cooking sho
   await expect(page.getByText("No. 0f0f0f0f")).toHaveCount(0);
 });
 
-test("AC-6 no reason is shown, whatever it holds", async ({ page, context }) => {
+test("AC-6 an HTML reason shows as text", async ({ page, context }) => {
   const net = await open(page, context, "ready", "Cooking");
   net.state.orders = [cancelled("admin", "<b>x</b>")];
   await wake(page);
-  await expect(page.locator(".ui-ticket-why")).toHaveCount(0);
-  await expect(page.locator(".ui-ticket-cancelled")).not.toContainText("<b>");
+  await expect(page.locator("body")).not.toContainText("<b>x</b>");   // no reason text anywhere
+  await expect(page.locator(".ui-declined")).toContainText("Order declined");
+  await expect(page.locator(".ui-ticket-cancelled b")).toHaveCount(0);
 });
 
 for (const [w, h] of [[360, 640], [390, 844]]) {
-  test(`AC-6 Declined row at ${w}x${h}: one-line red tag on the right, no reason, no sideways scroll`, async ({ page, context }) => {
+  test(`AC-6 Declined box at ${w}x${h}: red 4 px left edge, no reason, in the gutter, one short line, readable red, no sideways scroll`, async ({ page, context }) => {
     await page.setViewportSize({ width: w, height: h });
     const net = await open(page, context, "preparing", "Cooking");
-    net.state.orders = [cancelled("customer", "x")];
-    await wake(page);
-    const a = await page.locator(".ui-ticket-cancelled").boundingBox();
     net.state.orders = [cancelled("admin", REASON)];
     await wake(page);
-    const row = page.locator(".ui-ticket-cancelled");
-    const b = await row.boundingBox();
-    expect(b!.width).toBe(a!.width);
-    expect(Math.abs(b!.height - a!.height)).toBeLessThanOrEqual(30);
-    const tag = (await row.locator(".ui-tag").boundingBox())!, dish = (await row.locator(".ui-slip-lines").boundingBox())!;
-    expect(tag.height).toBeLessThan(26);                       // one line
-    expect(tag.x + tag.width).toBeGreaterThan(b!.x + b!.width - 24);   // on the right
+    const box = page.locator(".ui-declined");
+    await expect(box.locator(".ui-declined-title")).toHaveText("Order declined");
+    await expect(page.locator("body")).not.toContainText(REASON);
+    const b = (await box.boundingBox())!, t = (await box.locator(".ui-declined-title").boundingBox())!;
+    expect(b.x).toBe(20);
+    expect(b.width).toBe(w - 40);
+    expect(t.height).toBeLessThan(26);   // one short line
+    const css = await page.evaluate(() => {
+      const bx = document.querySelector(".ui-declined")!, ti = bx.querySelector(".ui-declined-title")!;
+      const lum = (c: string) => { const m = c.match(/[\d.]+/g)!.map(Number).slice(0, 3).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]; };
+      const fg = lum(getComputedStyle(ti).color), bg = lum(getComputedStyle(bx).backgroundColor);
+      return { edge: getComputedStyle(bx).borderLeftWidth, edgeColor: getComputedStyle(bx).borderLeftColor, titleColor: getComputedStyle(ti).color, ratio: (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05), w: getComputedStyle(ti).fontWeight, size: getComputedStyle(ti).fontSize };
+    });
+    expect(css.edge).toBe("4px");
+    expect(css.edgeColor).toBe(css.titleColor);   // the one error red
+    expect(css.ratio).toBeGreaterThanOrEqual(4.5);
+    expect(css.size).toBe("17px");
+    expect(Number(css.w)).toBeGreaterThanOrEqual(700);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     if (w === 390) await page.screenshot({ path: "/Users/satvikjain/Documents/GoServe/.claude/handoff/dev/1794-kitchen-declined-390x844.png" });
   });

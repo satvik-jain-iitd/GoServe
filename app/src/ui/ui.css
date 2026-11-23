@@ -1111,5 +1111,7 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
 .ui-dropcode h2 { margin: 0 0 var(--gs-space-1); font-size: var(--gs-text-m); font-weight: 600; }
 .ui-dropcode p { margin: 0; font-size: var(--gs-mono-xs); color: var(--gs-text-muted); }
 .ui-dropcode-digits { font-size: var(--gs-display-m); font-weight: 600; letter-spacing: 0.2em; }
-/* Story 1794: the admin-declined kitchen row: red tag on the right, one line; the reason under the dishes in full ink */
-.ui-ticket-tag { justify-self: end; white-space: nowrap; border-radius: var(--gs-radius-s); }   /* owner: no pills; a rectangle with a small corner */
+/* Story 1794: the kitchen's Declined box is the customer's .ui-declined box, in the page gutter */
+.ui-ticket-declined { margin-bottom: 12px; }
+.ui-ticket-declined .ui-declined-title { font-size: 17px; font-weight: 700; color: var(--md-error); white-space: nowrap; }
+.ui-ticket-declined .ui-declined-when { display: block; margin-top: 4px; }
