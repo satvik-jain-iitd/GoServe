@@ -32,10 +32,8 @@ for (const size of [{ width: 360, height: 640 }, { width: 390, height: 844 }])
       await page.setViewportSize(size);
       await open(context, page, door);
       const m = await page.evaluate(() => ({ scroll: document.documentElement.scrollHeight, inner: window.innerHeight, over: Math.max(...[...document.querySelectorAll("*")].map((e) => (e as HTMLElement).scrollHeight - (e as HTMLElement).clientHeight)) }));
-      console.log(`MEASURE ${door ? "door" : "delivered"} ${size.width}x${size.height}`, JSON.stringify(m));
       expect(m.scroll).toBeLessThanOrEqual(m.inner);
       const main = (await page.locator(".ui-bottom .ui-btn").last().boundingBox())!;
-      console.log("MAIN", JSON.stringify(main));
       expect(main.y).toBeGreaterThanOrEqual(0);
       expect(main.y + main.height).toBeLessThanOrEqual(size.height);
       expect(main.x + main.width).toBeLessThanOrEqual(size.width);
