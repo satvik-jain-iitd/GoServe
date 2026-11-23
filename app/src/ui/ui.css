@@ -1095,3 +1095,8 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
 .ui-slip-total span.ui-noprice { font-size: var(--gs-text-sm); color: var(--gs-text-muted); display: inline-flex; align-items: center; min-height: calc(var(--gs-mono-xl) * 1.46); }   /* the frame: small, mono, muted, in the same slot as the total */
 .ui-slip-total.ui-slip-noprice { align-items: flex-start; }
 .ui-slip-total.ui-slip-noprice b { margin-top: 11.7px; }   /* the label keeps the top it has beside the big total (measured: 12 px at 390 and 360) */
+
+/* Story 1655: a rider with no name or number. One full-ink line with a ringed "!"; the row keeps the height of a named row. */
+.ui-missing { display: flex; align-items: center; gap: var(--gs-space-2); color: var(--md-on-surface); font-size: 12px; }
+.ui-missing-mark { flex: none; width: 16px; height: 16px; box-sizing: border-box; border: 1.5px solid currentColor; border-radius: 50%; font-size: 11px; font-weight: 800; line-height: 13px; text-align: center; }
+.ui-missing-add { min-width: var(--gs-tap); min-height: var(--gs-tap); }
