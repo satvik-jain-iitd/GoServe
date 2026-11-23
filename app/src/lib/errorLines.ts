@@ -2,6 +2,7 @@ import { openingClock } from "./area";
 
 // Story #659 (copy audit A.4 and table L): the server's words never reach a customer's screen. Every refusal becomes one line of ours.
 export const NO_INTERNET = "No internet. Check your internet and try again.";
+export const NO_PRICE = "We could not get your price. Try again in a minute.";   // story 1766: the Bill reached the server and it gave no price
 const GENERIC = "Something went wrong. Please try again.";
 const BILL = "Something in the bill did not go through. Check it and try again.";
 const NOT_PLACED = "Something went wrong. Your order was not placed and nothing was charged. Please try again.";   // story 1580: only for a fault we cannot name

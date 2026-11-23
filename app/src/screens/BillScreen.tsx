@@ -5,11 +5,13 @@ import { isPhone } from "../lib/profile";
 import { DOOR_METHODS, type DoorMethod } from "../lib/doorMethods";
 import type { Alternative, Quote } from "../lib/quote";
 import { useEffect, useRef, useState } from "react";
-import { SIGN_IN_LINE } from "../lib/errorLines";
+import { NO_INTERNET, NO_PRICE, SIGN_IN_LINE } from "../lib/errorLines";
 import { TornTop, useSheetFit } from "../ui";
 
 type Props = {
   lines: Line[]; total: number; kitchenName: string; pin: string | null;
+  failure?: "offline" | "server" | null; onRetry?: () => void;   // story 1766: the price could not be had; Try again asks for it
+  loading?: boolean; fee?: { amount_paise: number } | null;   // story 1775: loading = the quote is waiting or late, so grey bars stand in the place of the total; fee = the fee this app loaded, shown in the Delivery row until the quote answers
   farKm?: number | null;   // story 1548: the km from the phone's last known place to the delivery place, when it is past the far distance; else null
   address: string; confirmed: boolean; onChangePlace: () => void; onConfirmPlace: () => void;   // story 1532: the words of the stored place, never a text box; confirmed = it has a point the customer set
   note: string; onNote: (v: string) => void;   // story #935: one optional line for the kitchen, up to 200 characters
@@ -31,6 +33,9 @@ export const PlaceRow = ({ words, onChange, farKm }: { words: string; onChange: 
   <div className="ui-phone-row" role="group" aria-label="Serving at"><span><small className="mono">{farKm == null ? "Serving at" : `${farKm} km from your current location`}</small><span>{words.trim() || "Not set yet"}</span></span><button type="button" className="ui-pinmap-change" aria-label="Change address" onClick={onChange}>Change</button></div>
 );
 const plain = (paise: number) => formatRupees(paise).replace("₹", "");
+// Story 1775 (frame s1766, owner: "Theek h chalega"): a quiet grey bar in the place of a figure that is not known yet. It is the figure's own text box (same font, same line, figure spaces
+// that draw nothing), so nothing moves when the number comes. A screen reader hears "Price loading", not a number.
+const Bar = ({ n, rupee = false }: { n: number; rupee?: boolean }) => <span className="ui-pending" role="img" aria-label="Price loading">{(rupee ? "₹" : "") + "\u00a0".repeat(n)}</span>;   // the rupee sign is kept (drawn clear) so the line has the same height as the real price
 export const BackChevron = ({ label, onClick }: { label: string; onClick: () => void }) => (
   <button type="button" className="ui-back" aria-label={label} onClick={onClick}>
     <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="square"><path d="M15 6l-6 6 6 6" /></svg>
@@ -63,7 +68,7 @@ function SwapSheet({ soldOut, alt }: { soldOut: NonNullable<Props["soldOut"]>; a
   );
 }
 
-export function BillScreen({ lines, total, kitchenName, pin, address, farKm = null, confirmed, onChangePlace, onConfirmPlace, note, onNote, details, offers, soldOut, door, sending, error, onSignIn, under, onBack, onPlace }: Props) {
+export function BillScreen({ lines, total, loading = false, failure = null, onRetry, fee = null, kitchenName, pin, address, farKm = null, confirmed, onChangePlace, onConfirmPlace, note, onNote, details, offers, soldOut, door, sending, error, onSignIn, under, onBack, onPlace }: Props) {
   const [typed, setTyped] = useState("");
   const q = offers?.quote;
   const empty = lines.length === 0;
@@ -71,6 +76,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, farKm = nu
   const ready = !empty && !soldOut && confirmed && phoneOk;
   const needPhone = !empty && !soldOut && !phoneOk;   // story 1574: the bar itself says what is missing and takes the customer there: phone first, then the map, then Place order
   const needMap = !empty && !soldOut && phoneOk && !confirmed;
+  const noPrice = !!failure && !q && !loading && !empty && !soldOut;   // story 1766: no price, no Place order; the total says so, one line says why, the button asks again
   const [changing, setChanging] = useState(false);   // board BC1: Change turns the saved row into the field, in place
   const phoneRef = useRef<HTMLInputElement>(null);
   const errorRef = useRef<HTMLParagraphElement>(null);
@@ -101,7 +107,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, farKm = nu
                 {lines.map(({ dish, qty, line_paise, was_paise, gone }) => soldOut?.id === dish.id || gone   /* story 1540: a dish the kitchen of this place does not make is struck like a sold-out one */
                   ? <div key={dish.id} style={{ color: "var(--gs-text-muted)", textDecoration: "line-through" }}><span>{qty} × {dish.name}</span><span>{plain(line_paise)}</span></div>
                   : <div key={dish.id}><span>{qty} × {dish.name}</span><span>{was_paise !== undefined && <s className="was">{plain(was_paise)}</s>}{plain(line_paise)}</span></div>)}   {/* story 1540: the price at the kitchen before, struck, on the same row */}
-                <div><span>Delivery</span><span>{q && q.fees.delivery_paise > 0 ? plain(q.fees.delivery_paise) : "Free"}</span></div>
+                <div><span>Delivery</span><span>{q ? (q.fees.delivery_paise > 0 ? plain(q.fees.delivery_paise) : "Free") : fee ? (fee.amount_paise > 0 ? plain(fee.amount_paise) : "Free") : loading ? <Bar n={2} /> : noPrice ? "—" : "Free"}</span></div>
                 {q && q.fees.packaging_paise > 0 && <div><span>Packaging</span><span>{plain(q.fees.packaging_paise)}</span></div>}
                 {q && q.tax_mode === "exclusive" && q.tax_paise > 0 && <div><span>Tax</span><span>{plain(q.tax_paise)}</span></div>}
                 {q && q.coupon && q.discount_paise - (q.swap_discount_paise ?? 0) > 0 && <div><span>Discount · {q.coupon.code}</span><span>−{plain(q.discount_paise - (q.swap_discount_paise ?? 0))}</span></div>}
@@ -110,7 +116,7 @@ export function BillScreen({ lines, total, kitchenName, pin, address, farKm = nu
               </div>
             )}
             <div className="ui-slip-rule" />
-            <div className={empty ? "ui-slip-total ui-muted" : "ui-slip-total"}><b>{q && offers?.show ? "To pay" : "To pay at door"}</b><span data-testid="bill-total">{formatRupees(total)}</span></div>
+            <div className={empty ? "ui-slip-total ui-muted" : noPrice ? "ui-slip-total ui-slip-noprice" : "ui-slip-total"}><b>To pay</b><span data-testid="bill-total" className={loading ? "ui-pending" : noPrice ? "ui-noprice" : undefined} role={loading ? "img" : undefined} aria-label={loading ? "Price loading" : undefined}>{loading ? "₹\u00a0\u00a0\u00a0" : noPrice ? "No price yet" : formatRupees(total)}</span></div>
             {!empty && <button type="button" className="ui-btn ghost ui-add-more" onClick={onBack}>+ Add more</button>}
           </div>
         </section>
@@ -171,8 +177,9 @@ export function BillScreen({ lines, total, kitchenName, pin, address, farKm = nu
       </div>
       {!empty && (
         <div className="ui-sticky float bill-foot">
-          <button type="button" className="ui-btn bar" disabled={!(ready || needMap || needPhone) || sending} onClick={needPhone ? () => phoneRef.current?.focus() : needMap ? onConfirmPlace : onPlace}>
-            <span className="mono">{door?.value === "upi_door" ? "UPI" : door?.value === "cash" ? "Cash" : "At door"} · {formatRupees(total)}</span><span className="verb">{sending ? "Placing…" : soldOut ? "Fix the bill first" : needPhone ? (details?.phone.trim() ? "Check your phone number ›" : "Add your phone number ›") : needMap ? "Confirm on the map ›" : "Place order ›"}</span>
+          {noPrice && <p className="ui-bar-note ui-bar-fail" role="alert"><span aria-hidden="true" className="ui-mark">!</span>{failure === "offline" ? NO_INTERNET : NO_PRICE}</p>}
+          <button type="button" className="ui-btn bar" disabled={!(ready || needMap || needPhone || noPrice) || sending || (loading && !needPhone && !needMap)} onClick={noPrice ? onRetry : needPhone ? () => phoneRef.current?.focus() : needMap ? onConfirmPlace : onPlace}>
+            <span className="mono">{door?.value === "upi_door" ? "UPI" : door?.value === "cash" ? "Cash" : "At door"} · {loading ? <Bar n={3} rupee /> : noPrice ? "—" : formatRupees(total)}</span><span className="verb">{sending ? "Placing…" : soldOut ? "Fix the bill first" : noPrice ? "Try again" : needPhone ? (details?.phone.trim() ? "Check your phone number ›" : "Add your phone number ›") : needMap ? "Confirm on the map ›" : "Place order ›"}</span>
           </button>
         </div>
       )}

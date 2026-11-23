@@ -15,18 +15,18 @@ export type Quote = {
 export type QuoteResult = { ok: true; quote: Quote } | { ok: false; error: string; message: string; alternative?: Alternative | null };
 export const OFFERS_ON = import.meta.env.VITE_OFFERS === "1";
 
-export async function fetchQuote(input: { kitchenId: string; pin: string; items: { menu_item_id: string; qty: number; swap?: boolean }[]; code: string | null; none?: boolean }): Promise<QuoteResult> {
+export async function fetchQuote(input: { kitchenId: string; pin: string; items: { menu_item_id: string; qty: number; swap?: boolean }[]; code: string | null; none?: boolean; feeAsOf?: string | null }): Promise<QuoteResult> {
   const down: QuoteResult = { ok: false, error: "network", message: "Could not reach GoServe. Try again." };
   try {
     const token = (await getClient().auth.getSession()).data.session?.access_token ?? import.meta.env.VITE_SUPABASE_ANON_KEY;
     const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/quote`, {
       method: "POST", headers: { "content-type": "application/json", apikey: import.meta.env.VITE_SUPABASE_ANON_KEY, authorization: `Bearer ${token}` },
-      body: JSON.stringify({ kitchen_id: input.kitchenId, lines: input.items.map((i) => ({ ...i, option_ids: [] })), address: { pin_code: input.pin }, ...(input.code ? { coupon_code: input.code } : {}), ...(input.none ? { no_coupon: true } : {}) }),
+      body: JSON.stringify({ kitchen_id: input.kitchenId, lines: input.items.map((i) => ({ ...i, option_ids: [] })), address: { pin_code: input.pin }, ...(input.feeAsOf ? { fee_as_of: input.feeAsOf } : {}), ...(input.code ? { coupon_code: input.code } : {}), ...(input.none ? { no_coupon: true } : {}) }),
     });
     const a = await res.json().catch(() => null);
     if (res.ok && a?.ok && Number.isInteger(a.to_pay_paise)) return { ok: true, quote: { ...a, offers: Array.isArray(a.offers) ? a.offers : [] } };
     if (a?.ok === false && typeof a.error === "string" && typeof a.message === "string") return { ok: false, error: a.error, message: a.message, ...(a.alternative !== undefined ? { alternative: a.alternative } : {}) };
-    return down;   // a 502 or anything outside the contract: no detail is shown
+    return { ok: false, error: "unavailable", message: "The price is not available. Try again." };   // a 502 or anything outside the contract: the server was reached but gave no price (story 1766)
   } catch {
     return down;
   }

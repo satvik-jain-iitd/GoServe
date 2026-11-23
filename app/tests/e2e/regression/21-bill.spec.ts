@@ -28,7 +28,7 @@ async function fillDetails(page: Page) {   // as bill.spec S4: the phone is the 
 const slipAmount = (page: Page, label: string) => page.getByText(label, { exact: true }).locator("..").locator("span").last();
 const rupees = (text: string) => Number(text.replace(/[^\d]/g, ""));
 
-test("TC 21.1 Look: the kitchen and pin, the one line, Delivery, To pay at door, Add more, the phone and note fields, How you pay, the sticky Place order", async ({ page, context }) => {
+test("TC 21.1 Look: the kitchen and pin, the one line, Delivery, To pay, Add more, the phone and note fields, How you pay, the sticky Place order", async ({ page, context }) => {
   await STEPS["bill"](context, page, PATH);
   await expect(page.getByRole("heading", { name: "Your bill" })).toBeVisible();   // proves the bill shows before the parts are checked
   await expect(page.getByText("Hauz Khas Kitchen · 110016", { exact: true })).toBeVisible();
@@ -36,7 +36,7 @@ test("TC 21.1 Look: the kitchen and pin, the one line, Delivery, To pay at door,
   await expect(page.getByText("320", { exact: true })).toBeVisible();
   await expect(page.getByText("Delivery", { exact: true })).toBeVisible();
   await expect(page.getByText("Free", { exact: true })).toBeVisible();
-  await expect(page.getByText("To pay at door", { exact: true })).toBeVisible();
+  await expect(page.getByText("To pay", { exact: true })).toBeVisible();
   await expect(page.getByText("₹320", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "+ Add more" })).toBeVisible();
   await expect(page.getByLabel("Your name")).toHaveCount(0);   // the Bill no longer asks name or address

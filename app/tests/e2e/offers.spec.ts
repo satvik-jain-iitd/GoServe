@@ -76,12 +76,13 @@ test("S3 a typed code that is not valid shows the server's line, keeps the text 
   await expect(page.getByTestId("bill-total")).toHaveText("₹310");
 });
 
-test("S4 the quote is down: the bill is the one of today, no Offers block", async ({ page, context }) => {
+test("S4 the quote is down: the Bill says No price yet with Try again (story 1766), no Offers block", async ({ page, context }) => {
   await withQuote(context, page, () => ({ status: 502, body: { ok: false, error: "quote_unavailable" } }));
   await toBill(page);
-  await expect(page.getByText("To pay at door")).toBeVisible();
+  await expect(page.getByText("To pay", { exact: true })).toBeVisible();
   await expect(page.getByRole("region", { name: "Offers" })).toHaveCount(0);
-  await expect(page.getByTestId("bill-total")).toHaveText("₹320");
+  await expect(page.getByTestId("bill-total")).toHaveText("No price yet");
+  await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
 });
 
 test("S5 no offers and no coupon: no Offers block, the quote's total still shows", async ({ page, context }) => {
