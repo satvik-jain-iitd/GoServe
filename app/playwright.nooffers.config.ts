@@ -5,7 +5,7 @@ import { SCREEN_MAX_DIFF_PIXELS, SCREEN_THRESHOLD } from "./tests/e2e/gate";
 // It has its own port (4181) so a preview you started by hand with real keys is never reused by mistake.
 export default defineConfig({
   testDir: "./tests/e2e",
-  testMatch: /(bill-offers-off|quote-on-menu|fee-loaded)\.spec\.ts$/,
+  testMatch: /(bill-offers-off|quote-on-menu|fee-loaded|bill-failed)\.spec\.ts$/,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: "list",

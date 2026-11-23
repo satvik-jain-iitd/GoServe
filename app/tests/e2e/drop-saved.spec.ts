@@ -4,7 +4,7 @@ import { setup, phoneAt } from "./helpers";
 
 const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
 const HOME = { id: "h1", label: "Home", address: "Z-4, Green Park Extension, New Delhi", pin_code: "110016", lat: 28.5677, lng: 77.2432, last_used_at: new Date().toISOString() };
-const quote = { ok: true, kitchen_id: "k-1", lines: [], item_total_paise: 32000, fees: { delivery_paise: 0, packaging_paise: 0, total_paise: 0 }, discount_paise: 0, coupon: null, tax_paise: 0, total_paise: 32000, offers: [] };
+const quote = { ok: true, kitchen_id: "k-1", lines: [], item_total_paise: 32000, fees: { delivery_paise: 0, packaging_paise: 0, total_paise: 0 }, discount_paise: 0, coupon: null, tax_paise: 0, total_paise: 32000, to_pay_paise: 32000, offers: [] };
 const placed = { ok: true, created: true, order: { id: "0f0f0f0f-1111-4222-8333-444444444444", kitchen_id: "k-1", status: "placed", total_paise: 32000, address: "x", items: [], bill: {}, created_at: "2020-01-01T10:00:00Z", updated_at: "2020-01-01T10:00:00Z" } };
 
 async function toBill(page: import("@playwright/test").Page, context: import("@playwright/test").BrowserContext, saved: object) {
