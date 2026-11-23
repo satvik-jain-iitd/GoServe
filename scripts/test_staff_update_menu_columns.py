@@ -53,3 +53,9 @@ class StaffUpdateMenuColumns(unittest.TestCase):
     def test_s4_an_admin_still_changes_price_and_name(self):   # the admin app's setDish (app/src/lib/admin.ts) runs as an admin: it must keep working
         r = run(f"update menu_items set price_paise = 15000, name = 'Thali Plus' where id = {D1}", admin=True)
         self.assertEqual((r["n"], r["p"]), (1, 15000), r)
+
+    def test_s5_the_kitchen_tools_path_sold_out_and_back_in_stock_still_works(self):   # app/src/screens/KitchenTools.tsx stock() -> setDish(..., { available }) = update menu_items set available, as the staff user
+        out = run(f"update menu_items set available = false where id = {D1}")
+        self.assertEqual((out["n"], out["a"]), (1, False), out)
+        back = run(f"update menu_items set available = true, back_soon_at = now() + interval '1 hour' where id = {D1}")   # the stock flip with a back-soon time in one update
+        self.assertEqual((back["n"], back["a"]), (1, True), back)
