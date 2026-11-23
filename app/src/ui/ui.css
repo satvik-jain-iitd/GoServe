@@ -470,6 +470,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"] { min-width
 .ui-sheet .ui-btn.icon { width: var(--gs-tap); flex: none; }   /* story 1565: an icon button in a sheet keeps its own size; the full width is for the sheet's answers */
 .ui-sheet .ui-sheet-head .ui-btn { margin-top: 0; flex: none; }   /* story 1565: a control in a sheet's head sits beside the title, never under it */
 .ui-sheet .ui-sheet-head .ui-btn:not(.icon) { width: auto; }
+.ui-sheet .ui-sheet-head .ui-sheet-close { flex: none; min-width: var(--gs-tap); min-height: var(--gs-tap); padding: 0 var(--gs-space-2); }   /* story 1749: Close in a head is a link, not a button; the 44 px box keeps the head the height it had */
 .ui-link { background: none; border: 0; padding: 0; font: inherit; color: var(--md-primary); text-decoration: underline; cursor: pointer; min-height: 24px; }
 .ui-meta .ui-link { text-decoration: none; }
 .otp-toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 40; padding: var(--gs-space-2) var(--gs-space-4); border-radius: var(--gs-radius-s); background: var(--md-primary); color: var(--md-on-primary); }
