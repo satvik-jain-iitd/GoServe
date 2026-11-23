@@ -1,7 +1,7 @@
 // The City of the admin app on the Ink v3 boards A5 (city), A6 (one kitchen) and A7 (add a kitchen) (story H12, #195; stories A2, A3, A5).
 import { useEffect, useRef, useState } from "react";
 import { DangerSheet, useSheetFit } from "../ui";
-import { addKitchen, addPerson, cancelInvite, inviteLink, isOwner, parsePins, offInfoOf, removeKitchen, removePerson, turnKitchenOn, locOf, setKitchenLocation, setKitchenDetails, type Invite, type OffInfo, type KitchenRow, type Loc, type Person, type PersonKind, type RiderListRow } from "../lib/admin";
+import { addKitchen, addPerson, riderProblem, setRiderDetails, cancelInvite, inviteLink, isOwner, parsePins, offInfoOf, removeKitchen, removePerson, turnKitchenOn, locOf, setKitchenLocation, setKitchenDetails, type Invite, type OffInfo, type KitchenRow, type Loc, type Person, type PersonKind, type RiderListRow } from "../lib/admin";
 import { kitchenProblem } from "../lib/validate";
 import { getClient, signOutHere } from "../lib/supabase";
 import { AdminMenu } from "./AdminMenu";
@@ -25,8 +25,8 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
   const [form, setForm] = useState(EMPTY);
   const [addingPerson, setAddingPerson] = useState(false);
   const personActs = useRef<HTMLDivElement>(null);
-  useEffect(() => { if (addingPerson) personActs.current?.scrollIntoView({ block: "nearest" }); }, [addingPerson]);   // story 1457: the form opens with both buttons in view, once, not on every key
   const [who, setWho] = useState<{ email: string; kind: PersonKind; kitchen: string }>({ email: "", kind: "kitchen", kitchen: "" });
+  useEffect(() => { if (addingPerson) personActs.current?.scrollIntoView({ block: "nearest" }); }, [addingPerson, who.kind]);   // story 1457: the form opens with both buttons in view, once, not on every key
   const [invited, setInvited] = useState<{ email: string; kind: "kitchen" | "rider" | "admin" } | null>(null);   // story 875: the "Invite ready" box
   const [shareNote, setShareNote] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);   // story 900, board A8: the confirm sheet of Remove this kitchen
@@ -45,6 +45,9 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
     if (!failed) await reload();
   };
   const [editing, setEditing] = useState(false);   // story #990, board K-EditKitchen
+  const [rider, setRider] = useState({ name: "", phone: "" });   // story 1654: a rider's name and mobile, asked with the role
+  const [editRider, setEditRider] = useState<{ id: string; name: string; phone: string } | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);   // story 885: the add-person line sits under the form, next to its button
   const invitesOf = (id: string) => invites.filter((i) => i.kind === "kitchen" && i.kitchen_id === id);
   const staffOf = (id: string) => people.filter((p) => p.kind === "kitchen" && p.kitchen_id === id);
@@ -63,11 +66,23 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
     setShareNote(null);
     setAddError(null);
     onError(null);
-    const { error: failed, invited: wasInvited } = await addPerson(getClient(), who.email, who.kind, who.kitchen || null);
+    const problem = who.kind === "rider" ? riderProblem(rider.name, rider.phone) : null;   // story 1654: nothing is sent without both
+    if (problem) return setAddError(problem);
+    const { error: failed, invited: wasInvited } = await addPerson(getClient(), who.email, who.kind, who.kitchen || null, who.kind === "rider" ? rider : undefined);
     setAddError(failed);
     if (failed) return;
+    setRider({ name: "", phone: "" });
     if (wasInvited) setInvited({ email: who.email.trim().toLowerCase(), kind: who.kind });   // the form stays open, with the box under it (board A-AddPerson-Invite)
     else { setWho({ ...who, email: "" }); setAddingPerson(false); }
+    await reload();
+  };
+  const saveRider = async () => {
+    if (!editRider) return;
+    const problem = riderProblem(editRider.name, editRider.phone);
+    const failed = problem ?? await setRiderDetails(getClient(), editRider.id, editRider.name, editRider.phone);
+    setEditError(failed);
+    if (failed) return;
+    setEditRider(null);
     await reload();
   };
   const share = async () => {
@@ -188,9 +203,17 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
         {riderRows.map((r) => (
           <div key={r.key} className="ui-row ui-row-static">
             <span className="ui-row-label"><span>{r.name}</span><span className="ui-row-sub mono">{r.sub}</span></span>
-            <span className="ui-row-acts">{r.person && removeButton(r.person)}{riders && <span className={`ui-tag ${r.online ? "ready" : "placed"}`}>{r.online ? "Online" : "Offline"}</span>}</span>
+            <span className="ui-row-acts">{riders && known.some((x) => x.user_id === r.key) && <button type="button" className="ui-btn ghost small" aria-label={`Edit ${r.name}`} onClick={() => { setEditError(null); setEditRider({ id: r.key, name: known.find((x) => x.user_id === r.key)?.name ?? "", phone: known.find((x) => x.user_id === r.key)?.phone ?? "" }); }}>Edit</button>}{r.person && removeButton(r.person)}{riders && <span className={`ui-tag ${r.online ? "ready" : "placed"}`}>{r.online ? "Online" : "Offline"}</span>}</span>
           </div>
         ))}
+        {editRider && (
+          <div className="ui-form ui-form-flush">
+            <div className="ui-field"><label htmlFor="e-name">Name</label><input id="e-name" type="text" value={editRider.name} onChange={(e) => setEditRider({ ...editRider, name: e.target.value })} /></div>
+            <div className="ui-field"><label htmlFor="e-phone">Mobile number (10 digits)</label><input id="e-phone" className="mono-input" type="tel" inputMode="numeric" value={editRider.phone} onChange={(e) => setEditRider({ ...editRider, phone: e.target.value })} /></div>
+            <div className="ui-form-acts"><div className="ui-row-pair"><button type="button" className="ui-btn ghost big" onClick={() => setEditRider(null)}>Not now</button><button type="button" className="ui-btn big" onClick={() => void saveRider()}>Save</button></div></div>
+            {editError && <p role="alert" className="ui-note error">{editError}</p>}
+          </div>
+        )}
         {invites.filter((i) => i.kind === "rider" || i.kind === "admin").map(inviteRow)}
         {people.filter((p) => p.kind === "admin").map((p) => <div key={p.user_id} className="ui-row ui-row-static"><span className="ui-row-label"><span>{firstName(p)}</span><span className="ui-row-sub mono">Admin · {p.email ?? p.user_id}</span></span>{isOwner(p) ? <span className="ui-tag ready">Owner</span> : removeButton(p)}</div>)}
         {!addingPerson && <div className="ui-pad-y"><button type="button" className="ui-btn ghost" onClick={() => { onError(null); setAddingPerson(true); }}>+ Add a person</button></div>}
@@ -199,6 +222,10 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
             <div className="ui-field"><label htmlFor="p-email">Email</label><input id="p-email" type="email" value={who.email} onChange={(e) => setWho({ ...who, email: e.target.value })} /></div>
             <div className="ui-field"><label htmlFor="p-role">Role</label><select id="p-role" value={who.kind} onChange={(e) => setWho({ ...who, kind: e.target.value as PersonKind })}><option value="kitchen">Kitchen staff</option><option value="rider">Rider</option><option value="admin">Admin</option></select></div>
             {who.kind === "kitchen" && <div className="ui-field"><label htmlFor="p-kitchen">Kitchen</label><select id="p-kitchen" value={who.kitchen} onChange={(e) => setWho({ ...who, kitchen: e.target.value })}><option value="">Pick a kitchen</option>{kitchens.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></div>}
+            {who.kind === "rider" && <>
+            <div className="ui-field"><label htmlFor="p-name">Name</label><input id="p-name" type="text" value={rider.name} onChange={(e) => setRider({ ...rider, name: e.target.value })} /></div>
+            <div className="ui-field"><label htmlFor="p-phone">Mobile number (10 digits)</label><input id="p-phone" className="mono-input" type="tel" inputMode="numeric" value={rider.phone} onChange={(e) => setRider({ ...rider, phone: e.target.value })} /></div>
+            </>}
             <div className="ui-form-acts" ref={personActs}><div className="ui-row-pair"><button type="button" className="ui-btn ghost big" onClick={() => { setAddingPerson(false); setInvited(null); setAddError(null); }}>Not now</button><button type="button" className="ui-btn big" onClick={() => void submitPerson()}>Add person</button></div></div>   {/* story 1457 (board AP1): the main button last, both in view when the form opens */}
             {addError && <p role="alert" className="ui-note error">{addError}</p>}
             {invited && (   // board A-AddPerson-Invite
