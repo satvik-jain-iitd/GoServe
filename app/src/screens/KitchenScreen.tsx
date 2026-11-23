@@ -40,7 +40,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
     if ((tab !== "kitchen" && tab !== "cooking") || !gate) return;
     listRiders(getClient()).then(setRiders).catch(() => setRiders([]));
   }, [tab, gate, minute]);
-  const riderName = (id: string) => riders.find((r) => r.user_id === id)?.name || `Rider ${shortId(id)}`;
+  const riderName = (id: string) => riders.find((r) => r.user_id === id)?.name || "Rider";
   const riderLine = (o: Order) => {   // #231: who is coming for a ready order, and how far, when the location is fresh
     if (!o.rider_id) return "Rider on the way";
     const r = riders.find((x) => x.user_id === o.rider_id);
