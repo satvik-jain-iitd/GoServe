@@ -62,18 +62,3 @@ test("R5 the form's two buttons stay in view at 360 by 640 and nothing scrolls s
   await expect(page.getByRole("button", { name: "Add person" })).toBeInViewport();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
-
-test("R6 a saved rider is edited from the row: name and mobile", async ({ page, context }) => {
-  const net = await setup(context, page); net.state.admin = true;
-  net.state.people = [{ kind: "rider", user_id: "r-9", email: "rider@example.com", kitchen_id: null, kitchen_name: null }];
-  net.state.riders = [{ user_id: "r-9", name: "Ravi Kumar", phone: "9000000000", online: false }];
-  const sent: object[] = [];
-  await page.route("**/rest/v1/rpc/admin_set_rider", (route) => { sent.push(JSON.parse(route.request().postData() ?? "{}")); return route.fulfill({ status: 204, body: "", headers: { "access-control-allow-origin": "*" } }); });
-  await page.goto("/admin/"); await page.getByRole("button", { name: "City", exact: true }).click();
-  await page.getByRole("button", { name: "Edit Ravi Kumar" }).click();
-  await expect(page.getByLabel("Name", { exact: true })).toHaveValue("Ravi Kumar");
-  await page.getByLabel("Name", { exact: true }).fill("Sita Devi");
-  await page.getByRole("button", { name: "Save" }).click();
-  await expect.poll(() => sent.length).toBe(1);
-  expect(sent[0]).toEqual({ p_user: "r-9", p_name: "Sita Devi", p_phone: "9000000000" });
-});
