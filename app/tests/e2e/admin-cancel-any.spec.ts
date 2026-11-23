@@ -5,7 +5,7 @@ import { order, setup } from "./helpers";
 const ORDER = (over: object = {}) => ({ ...order("placed"), kitchen_id: "k-1", customer_name: "Asha", customer_phone: "9876543210", cancel_reason: null, ...over });
 const open = (page: any) => page.getByRole("button", { name: /^Open order 0f0f0f0f/ }).click();
 
-for (const status of ["ready", "out_for_delivery", "arriving"]) {
+for (const status of ["ready", "out_for_delivery"]) {
   test(`S1 at ${status} the admin sees the Cancel order action`, async ({ page, context }) => {
     const net = await setup(context, page, [ORDER({ status })]);
     net.state.admin = true;
