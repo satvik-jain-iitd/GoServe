@@ -596,3 +596,6 @@ Free path if adopted: stories + our own Playwright pictures of each story (no Ch
 
 ### Verdict of 2026-11-15 | need: one DOM node to a PNG in the browser (story 1563) | by: coder | confidence 0.8, measured
 `modern-screenshot` 4.7.0 (MIT, no dependencies, exact version, loaded only on the letter screen) passed the look test on Chromium and WebKit with its default options, with the brand font and the photo in the picture. The difference from the live letter is 0.000 % on Chromium and 0.314 % on WebKit. The picture is 700x966 px at 390 px width (139,645 bytes Chromium, 117,898 bytes WebKit). The added chunk is 9.35 kB gzip and is not in the first bundle. `@zumer/snapdom` was not tried because the first choice passed; `html-to-image` stays out. Source of the numbers: PR #1570.
+
+### Verdict of 2026-11-23 | need: read a delivery fee as of a time, kept for an open app (stories #1773 to #1775) | by: coder | confidence 0.7
+`scout.py` and the GitHub topic searches found nothing that fits a time-windowed fee read inside Supabase. The design is one SQL function over the fee log we already had (ADR-026). Built in our own code. Run: scout run of 23 Nov 2026, no repo worth adopting.

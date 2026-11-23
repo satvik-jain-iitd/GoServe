@@ -118,3 +118,9 @@ Every idea from the owner or from Claude, dated, one line, with status (open / t
 - IDEA ID454 (2026-11-16, taken, #1592, #1589, #1593): No pill buttons anywhere: rectangular buttons with a small corner, changed in the one component. A History row with no status tag and no "Order again" pill. Keep the phone's curved corners in mind.
 - IDEA ID455 (2026-11-16, dropped for this session): A complete clickable UI of the whole application with mocked data, backend connected later. It was meant for the other agent (`mobile/`).
 - IDEA ID456 (2026-11-16, taken, #1593): Small buttons side by side that do not fill the screen width are disliked; one box on top and one at the bottom, each full width, is the liked pattern.
+- IDEA ID457 (2026-11-22, taken, #1771, #1775): The fee should be on the Bill from the first instant, never "Free" first.
+- IDEA ID458 (2026-11-22, taken, #1775): Load the fee when the app starts, and keep it for an open app (12 hours).
+- IDEA ID459 (2026-11-22, dropped): Hide the wait in a waiting screen; the owner chose to ask the quote on the menu instead (#1771).
+- IDEA ID460 (2026-11-23, taken, #1781): The total line says "To pay" everywhere, since advance payment is coming.
+- IDEA ID461 (2026-11-23, open): Human situations for riders (a rider who cannot take a trip, a rider in a hurry): design them as named cases.
+- IDEA ID462 (2026-11-23, taken, #1785): Reuse the pan screen for no internet everywhere, for consistency.
