@@ -19,9 +19,14 @@ SETUP = [
 AS_STAFF = ["set local role authenticated", "select set_config('request.jwt.claims', '{\"sub\":\"00000000-0000-0000-0000-0000000000f5\",\"role\":\"authenticated\"}', true)"]
 
 
-def run(stmt):
+A = "'00000000-0000-0000-0000-0000000000f6'"
+ADMIN_SETUP = [f"insert into auth.users (id, aud, role) values ({A}, 'authenticated', 'authenticated')", f"insert into admins (user_id) values ({A})"]
+AS_ADMIN = ["set local role authenticated", "select set_config('request.jwt.claims', '{\"sub\":\"00000000-0000-0000-0000-0000000000f6\",\"role\":\"authenticated\"}', true)"]
+
+
+def run(stmt, admin=False):
     """Runs the update as the staff user; answers rows changed, the database error if any, and the dish's price and flag after."""
-    body = "; ".join(([MIG] if MIG else []) + SETUP + AS_STAFF + [
+    body = "; ".join(([MIG] if MIG else []) + SETUP + (ADMIN_SETUP + AS_ADMIN if admin else AS_STAFF) + [
         "create temp table res (n int, err text)",
         f"do $x$ declare c int; begin {stmt}; get diagnostics c = row_count; insert into res values (c, null); exception when others then insert into res values (0, sqlerrm); end $x$",
         "reset role", f"select n, err, (select price_paise from menu_items where id = {D1}) as p, (select available from menu_items where id = {D1}) as a from res"])
@@ -44,3 +49,7 @@ class StaffUpdateMenuColumns(unittest.TestCase):
     def test_s3_staff_cannot_touch_another_kitchens_dish(self):
         r = run(f"update menu_items set available = false where id = {D2}")
         self.assertEqual(r["n"], 0, r)
+
+    def test_s4_an_admin_still_changes_price_and_name(self):   # the admin app's setDish (app/src/lib/admin.ts) runs as an admin: it must keep working
+        r = run(f"update menu_items set price_paise = 15000, name = 'Thali Plus' where id = {D1}", admin=True)
+        self.assertEqual((r["n"], r["p"]), (1, 15000), r)
