@@ -38,8 +38,8 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
   const okDeclined = (id: string) => { const next = [...okIds, id]; setOkIds(next); try { window.localStorage.setItem("gs-declined-ok", JSON.stringify(next)); } catch { /* per-device only */ } };
   const declined = orders.filter((o) => o.status === "cancelled" && o.cancelled_by === "admin" && o.rider_id && !okIds.includes(o.id) && Date.now() - Date.parse(o.updated_at) < 86_400_000);
   const declinedRows = declined.map((o) => (
-    <div key={o.id} className="ui-rx-declined" role="status">
-      <span className="mono">No. {shortId(o.id)}</span><span className="ui-stamp cancelled small">Declined</span>
+    <div key={o.id} className="ui-declined ui-rx-declined" role="status">
+      <div><b className="ui-rx-declined-h">Order declined</b><span className="mono">No. {shortId(o.id)}</span></div>
       <button type="button" className="ui-link" onClick={() => okDeclined(o.id)}>OK</button>
     </div>
   ));
@@ -307,13 +307,13 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
     }
     if (gate && !gate.online) return (   // R3
       <>
-        <div className="ui-scroll ui-center"><div className="ui-empty"><h2>You are offline</h2><p className="ui-meta">While online, this phone shares your location.</p>{todayLine}{declinedRows}</div></div>
+        <div className="ui-scroll ui-center"><div className="ui-empty"><h2>You are offline</h2><p className="ui-meta">While online, this phone shares your location.</p>{todayLine}</div>{declinedRows}</div>
         <div className="ui-bottom"><button type="button" className="ui-btn big" onClick={() => void gate.flip()}>Go online</button></div>
       </>
     );
     return (   // R4
       <>
-        <div className="ui-scroll ui-center"><div className="ui-empty"><h2>Waiting for a delivery</h2><p className="ui-meta">No deliveries yet. Keep this page open.</p>{todayLine}{declinedRows}</div></div>
+        <div className="ui-scroll ui-center"><div className="ui-empty"><h2>Waiting for a delivery</h2><p className="ui-meta">No deliveries yet. Keep this page open.</p>{todayLine}</div>{declinedRows}</div>
         {gate && <div className="ui-bottom"><button type="button" className="ui-btn ghost big" onClick={() => void gate.flip()}>Go offline</button></div>}
       </>
     );
