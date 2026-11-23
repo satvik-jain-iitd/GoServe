@@ -42,9 +42,9 @@ test("S3 only UPI at the door on: one row, UPI selected", async ({ page, context
   await expect(page.getByText("Cash at the door")).toHaveCount(0);
 });
 
-test("S4 the total line reads To pay at door", async ({ page, context }) => {
+test("S4 the total line reads To pay (a working server answers; the offers-off words are in bill-offers-off B4)", async ({ page, context }) => {
   await toBill(page, context);
-  await expect(page.getByText("To pay at door", { exact: true })).toBeVisible();
+  await expect(page.getByText("To pay", { exact: true })).toBeVisible();
   await expect(page.getByText("Cash at door", { exact: true })).toHaveCount(0);
 });
 

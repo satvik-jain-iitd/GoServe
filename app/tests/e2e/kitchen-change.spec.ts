@@ -18,6 +18,7 @@ type Net = Awaited<ReturnType<typeof setup>>;
 
 async function twoKitchens(net: Net, page: Page, menuB: object[]) {
   net.state.menu = MENU_A;
+  net.state.menuByKitchen = { "k-2": menuB };   // the default quote answer prices kitchen B's dishes at B's prices
   const kitchens = net.state.kitchens as { id: string; name: string; pin_codes: string[] }[];
   kitchens.push({ ...kitchens[0], id: "k-2", name: "Saket Kitchen", pin_codes: ["110017"] });
   await page.route("**/rest/v1/menu_items*kitchen_id=eq.k-2*", (r) => r.fulfill({ status: 200, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify(menuB.map((d) => ({ ...d, image_url: null, image_credit: null }))) }));

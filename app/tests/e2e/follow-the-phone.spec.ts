@@ -302,6 +302,7 @@ for (const same of [true, false]) {
     net.state.serve = { status: 200, body: { ok: true, serviceable: true, request_here: false, kitchens: [{ kitchen_id: "k-2", name: "Saket Kitchen", distance_m: 900, eta_min: 25, open: true }] } };
     await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
     const dish = same ? { id: "d1", name: "Butter Chicken", price_paise: 35000 } : { id: "d9", name: "Dal Makhani", price_paise: 20000 };
+    net.state.menuByKitchen = { "k-2": [dish] };   // the default quote answer prices kitchen B's dish at B's price
     await page.route("**/rest/v1/menu_items*kitchen_id=eq.k-2*", (r) => r.fulfill({ status: 200, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify([{ ...dish, image_url: null, image_credit: null }]) }));
     await stored(context, { address: "Where you are now", pin: "110016", lat: HOME.lat, lng: HOME.lng, house: "", landmark: "", confirmed: false, id: null });
     await page.goto("/customer/");
