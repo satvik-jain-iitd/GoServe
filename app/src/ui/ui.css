@@ -1087,3 +1087,11 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
 .ui-pending { position: relative; color: transparent; user-select: none; }
 .ui-pending::after { --bar-h: max(8px, 0.4em); content: ""; position: absolute; left: 0; right: 0; top: 50%; height: var(--bar-h); margin-top: calc(var(--bar-h) / -2); border-radius: 4px; background: color-mix(in srgb, var(--gs-text-muted) 24%, transparent); }
 .ui-btn .ui-pending::after { background: color-mix(in srgb, var(--md-on-primary) 55%, transparent); }
+
+/* Story 1766: the Bill has no price. The foot is the anchor of the one line above the button (it was static), so the line sits over the content and moves nothing. */
+.ui-sticky.float.bill-foot { position: relative; }
+.ui-bar-fail { color: var(--gs-text); font-size: var(--gs-text-sm); font-weight: 600; border-top: 1px solid var(--gs-sage); display: flex; align-items: center; justify-content: center; gap: 8px; }
+.ui-bar-fail .ui-mark { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 18px; height: 18px; border: 2px solid currentColor; border-radius: 50%; font-size: 12px; line-height: 1; font-weight: 700; }
+.ui-slip-total span.ui-noprice { font-size: var(--gs-text-sm); color: var(--gs-text-muted); display: inline-flex; align-items: center; min-height: calc(var(--gs-mono-xl) * 1.46); }   /* the frame: small, mono, muted, in the same slot as the total */
+.ui-slip-total.ui-slip-noprice { align-items: flex-start; }
+.ui-slip-total.ui-slip-noprice b { margin-top: 11.7px; }   /* the label keeps the top it has beside the big total (measured: 12 px at 390 and 360) */

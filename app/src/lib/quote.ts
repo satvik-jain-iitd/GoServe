@@ -26,7 +26,7 @@ export async function fetchQuote(input: { kitchenId: string; pin: string; items:
     const a = await res.json().catch(() => null);
     if (res.ok && a?.ok && Number.isInteger(a.to_pay_paise)) return { ok: true, quote: { ...a, offers: Array.isArray(a.offers) ? a.offers : [] } };
     if (a?.ok === false && typeof a.error === "string" && typeof a.message === "string") return { ok: false, error: a.error, message: a.message, ...(a.alternative !== undefined ? { alternative: a.alternative } : {}) };
-    return down;   // a 502 or anything outside the contract: no detail is shown
+    return { ok: false, error: "unavailable", message: "The price is not available. Try again." };   // a 502 or anything outside the contract: the server was reached but gave no price (story 1766)
   } catch {
     return down;
   }
