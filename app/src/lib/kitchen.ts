@@ -37,7 +37,6 @@ export const cancelKind = (o: { status: string; cancelled_by?: string | null; ca
 export const cancelLine = (o: { status: string; cancelled_by?: string | null; cancel_reason?: string | null }): string => {
   const kind = cancelKind(o);
   if (kind === "customer") return "Cancelled by the customer · stop cooking";
-  if (o.cancelled_by === "admin") { const w = o.cancel_reason?.trim(); return w ? `Declined · ${w}` : "Declined"; }   // story 1794: the admin's own words
   const why = kind === "rider" ? "refused at the door" : o.cancel_reason?.trim().replace(/^cancell?ed\b[\s:·-]*/i, "");   // review of PR 1477: the rider's code in words
   return why ? `Cancelled · ${why} · stop cooking` : "Cancelled · stop cooking";
 };
