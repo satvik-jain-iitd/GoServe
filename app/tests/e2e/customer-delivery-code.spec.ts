@@ -44,16 +44,19 @@ test("1668B no_code (switch off): no box and no error text", async ({ page, cont
   await expect(page.getByRole("alert")).toHaveCount(0);
 });
 
-test("1668B a failed read and a slow read: no box, no error; a new read on the next status change shows it", async ({ page, context }) => {
-  const answer = { current: { status: 500, body: { message: "boom" } } as Answer };
-  const { net, reads } = await open(context, page, "out_for_delivery", answer);
+test("1668B a failed read: no box and no error text", async ({ page, context }) => {
+  const { net, reads } = await open(context, page, "ready", { current: { status: 500, body: { message: "boom" } } });
+  net.push("UPDATE", order("out_for_delivery", "2020-01-01T10:07:00Z"));
   await expect.poll(() => reads.length).toBe(1);
+  await expect(page.getByTestId("rider-card")).toBeVisible();
   await expect(box(page)).toHaveCount(0);
   await expect(page.getByRole("alert")).toHaveCount(0);
-  net.push("UPDATE", order("ready", "2020-01-01T10:06:00Z"));
-  answer.current = { ...OK, delayMs: 1500 };   // slow
+});
+
+test("1668B a slow read: nothing while it waits, then the box", async ({ page, context }) => {
+  const { net, reads } = await open(context, page, "ready", { current: { ...OK, delayMs: 1500 } });
   net.push("UPDATE", order("out_for_delivery", "2020-01-01T10:07:00Z"));
-  await expect.poll(() => reads.length).toBe(2);
+  await expect.poll(() => reads.length).toBe(1);
   await expect(box(page)).toHaveCount(0);       // still waiting: nothing, no spinner text
   await expect(box(page)).toBeVisible({ timeout: 5000 });
   await expect(box(page)).toContainText("4729");
