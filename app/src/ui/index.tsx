@@ -109,7 +109,7 @@ export function Sheet({ open, title, onClose, children }: { open: boolean; title
   return (
     <div ref={fit} className="ui-sheet-back" onClick={onClose}>
       <section className="ui-sheet" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
-        <div className="ui-sheet-head"><h2>{title}</h2><Button variant="ghost" onClick={onClose}>Close</Button></div>
+        <div className="ui-sheet-head"><h2>{title}</h2><button type="button" className="ui-link ui-sheet-close" onClick={onClose}>Close</button></div>
         {children}
       </section>
     </div>
