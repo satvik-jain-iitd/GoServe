@@ -44,6 +44,27 @@ test("AC-6 an admin cancel the page never saw (opened after, inside the minute) 
   await expect(page.locator(".ui-ticket-why")).toHaveText(REASON);
 });
 
+test("AC-6 the Declined tag is a rectangle with a small corner, red 4.5:1 on the page", async ({ page, context }) => {
+  await page.clock.install({ time: T0 });
+  const net = await setup(context, page, [cancelled("admin", REASON)]);
+  net.state.kitchen = "k-1";
+  await page.goto("/kitchen/");
+  const tag = page.locator(".ui-ticket-cancelled .ui-tag");
+  await expect(tag).toHaveText("Declined");
+  const m = await page.evaluate(() => {
+    const t = document.querySelector(".ui-ticket-cancelled .ui-tag") as HTMLElement;
+    const cs = getComputedStyle(t);
+    const clear = (c: string) => c === "transparent" || /,\s*0\)$/.test(c);
+    let bg = t.parentElement as HTMLElement | null, back = "";
+    while (bg) { back = getComputedStyle(bg).backgroundColor; if (!clear(back)) break; bg = bg.parentElement; }
+    return { radius: parseFloat(cs.borderTopLeftRadius), height: t.getBoundingClientRect().height, fg: cs.color, back };
+  });
+  expect(m.radius).toBeLessThanOrEqual(6);                     // not a pill
+  const lum = (c: string) => { const [r, g, b] = c.match(/[\d.]+/g)!.slice(0, 3).map(Number).map((v) => { const x = v / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+  const [hi, lo] = [lum(m.fg), lum(m.back)].sort((x, y) => y - x);
+  expect((hi + 0.05) / (lo + 0.05)).toBeGreaterThanOrEqual(4.5);   // red on the page colour
+});
+
 test("AC-6 an admin cancel older than a minute is not shown", async ({ page, context }) => {
   await page.clock.install({ time: T0 });
   const net = await setup(context, page, [cancelled("admin", REASON, new Date(2026, 10, 23, 19, 50))]);
