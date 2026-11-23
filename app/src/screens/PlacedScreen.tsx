@@ -12,6 +12,7 @@ import { Timeline, TornTop } from "../ui";
 import { AdjustLines } from "../ui/AdjustLines";
 import { BackChevron } from "./BillScreen";
 import { CancelSheet } from "./CancelSheet";
+import { riderShortName } from "../lib/riderName";
 import { agoText, awayText, lastSeenText, metres, riderLink, type Point } from "../lib/riderMap";
 import { useNowOnline } from "../lib/useNowOnline";
 import type { LatLng } from "../lib/riderTrack";
@@ -161,7 +162,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
           {!delivered && !cancelled && address && <p className="mono ui-addr ph-no-capture">{address}</p>}
           {rider && !(track && status === "out_for_delivery") && (
             <div className="notice ui-ridercard" data-testid="rider-card">   {/* story 1657: one line, the name cut with dots, no button: the call is in the foot */}
-              <strong>{(atDoor ? rider.name.split(" ")[0] : rider.name).trim() || "Your rider"}</strong>{" "}<span>{atDoor ? "is at your door." : "is bringing your order."}</span>
+              <strong>{riderShortName(rider.name)}</strong>{" "}<span>{atDoor ? "is at your door." : "is bringing your order."}</span>
             </div>
           )}
           {declined ? (
