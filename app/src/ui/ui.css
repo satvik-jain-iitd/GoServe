@@ -1112,6 +1112,6 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
 .ui-dropcode p { margin: 0; font-size: var(--gs-mono-xs); color: var(--gs-text-muted); }
 .ui-dropcode-digits { font-size: var(--gs-display-m); font-weight: 600; letter-spacing: 0.2em; }
 /* Story 1794: the kitchen's Declined box is the customer's .ui-declined box, in the page gutter */
-.ui-ticket-declined { margin-bottom: 12px; }
+.ui-ticket-declined { margin: 14px 0 12px; }   /* the first ticket row's top gap under the header */
 .ui-ticket-declined .ui-declined-title { font-size: 17px; font-weight: 700; color: var(--md-error); white-space: nowrap; }
 .ui-ticket-declined .ui-declined-when { display: block; margin-top: 4px; }

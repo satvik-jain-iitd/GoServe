@@ -88,6 +88,9 @@ for (const [w, h] of [[360, 640], [390, 844]]) {
     const b = (await box.boundingBox())!, t = (await box.locator(".ui-declined-title").boundingBox())!;
     expect(b.x).toBe(20);
     expect(b.width).toBe(w - 40);
+    const head = (await page.locator("header.ui-head").first().boundingBox())!;
+    const rowGap = await page.evaluate(() => { const t = document.createElement("div"); t.className = "ui-ticket"; document.body.appendChild(t); const v = parseFloat(getComputedStyle(t).paddingTop); t.remove(); return v; });
+    expect(Math.abs(b.y - (head.y + head.height) - rowGap)).toBeLessThanOrEqual(1);   // the same top gap the first ticket row has under the header
     expect(t.height).toBeLessThan(26);   // one short line
     const css = await page.evaluate(() => {
       const bx = document.querySelector(".ui-declined")!, ti = bx.querySelector(".ui-declined-title")!;
