@@ -54,3 +54,12 @@ test("S4 after a cancel at out_for_delivery the order leaves the live list", asy
   await expect(page.getByRole("region", { name: "Live" }).getByText("Asha")).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Done" }).getByText("Asha")).toBeVisible();
 });
+
+test("S6 a cancelled order shows no cancel reason in the admin app (owner, 23 Nov)", async ({ page, context }) => {
+  const net = await setup(context, page, [ORDER({ status: "cancelled", cancelled_by: "admin", cancel_reason: "Out of stock tonight" })]);
+  net.state.admin = true;
+  await page.goto("/admin/");
+  await open(page);
+  await expect(page.getByRole("heading", { name: "Order", exact: true })).toBeVisible();
+  await expect(page.getByText("Out of stock tonight")).toHaveCount(0);
+});

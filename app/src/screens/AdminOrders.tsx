@@ -73,7 +73,6 @@ export function AdminOrders({ kitchens, onError, open, onOpen, onCount }: Props)
               <p className="ui-addr mono">{o.address}</p>
               <div className="ui-slip-rule" />
               <div className="ui-slip-total"><b>Cash at door</b><span>{formatRupees(o.total_paise)}</span></div>
-              {o.cancel_reason && <p className="ui-meta">Cancelled: {o.cancel_reason}</p>}
             </div>
           </section>
           <section className="ui-group ui-pad" aria-label="Call">
