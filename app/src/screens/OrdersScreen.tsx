@@ -57,7 +57,7 @@ export function OrdersScreen({ orders, loading, kitchenName, kitchenId, kitchenN
             <ul className="ui-order-list">
             {shown.map((o) => {
               const bad = o.status === "cancelled";
-              const word = bad ? (cancelKind(o) === "declined" ? "Declined" : "Cancelled") : o.status === "delivered" ? "" : statusLabel(o.status);   // story #1172: a cancelled or declined order owes nothing, so no price
+              const word = bad ? (cancelKind(o) === "declined" && o.cancelled_by !== "admin" ? "Declined" : "Cancelled") : o.status === "delivered" ? "" : statusLabel(o.status);   // story #1172: a cancelled or declined order owes nothing, so no price
               return (
                 <li key={o.id} className="ui-order-row">
                   <button type="button" className="ui-order-open" onClick={() => onOpen(o)}>
