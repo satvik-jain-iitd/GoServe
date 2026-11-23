@@ -18,7 +18,7 @@ test("A1 admin cancel: first line, quoted reason, time line, money line", async 
   const box = page.locator(".ui-declined");
   await expect(box.locator("p").first()).toHaveText(LINE);
   await expect(box).toContainText(`“${REASON}”`);
-  await expect(box.locator(".ui-declined-when")).toContainText("Declined");
+  await expect(box.locator(".ui-declined-when")).toContainText("Cancelled");
   await expect(page.locator(".ui-slip-total")).toContainText("Nothing to pay");
   await expect(page.getByText("could not take this order")).toHaveCount(0);
   await page.screenshot({ path: "/Users/satvikjain/Documents/GoServe/.claude/handoff/dev/1792-admin-cancel-390x844.png" });
