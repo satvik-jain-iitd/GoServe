@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { callSim, clearAll, clearShown, CLEAR_WORD, readClearAllowed, countsLine, groupLine, KNOB_DEFAULTS, SEED_DEFAULTS, simDeps, SimError, tickLine, type Knobs, type SimAnswer } from "../lib/sim";
 import { getClient } from "../lib/supabase";
+import { useBackCloses } from "../lib/back";
 import { DangerSheet, Skeleton } from "../ui";
 
 type Form = typeof SEED_DEFAULTS;
@@ -25,6 +26,10 @@ export function AdminSim() {
   const [clearing, setClearing] = useState(false);
   const [allowed, setAllowed] = useState<boolean | null>(null);   // story #941: asked of the database directly; null until it answers
   const [word, setWord] = useState("");
+  const [resetting, setResetting] = useState(false);   // story 1714: Reset the city asks in our own sheet
+  const [resetWord, setResetWord] = useState("");
+  const closeReset = () => { setResetting(false); setResetWord(""); };
+  useBackCloses(resetting, closeReset);
 
   const run = async (go: () => Promise<SimAnswer>, say: (a: SimAnswer) => string, apply: (a: SimAnswer) => void) => {
     setBusy(true); setError(null); setNote(null);
@@ -41,7 +46,7 @@ export function AdminSim() {
   const seedRiders = () => run(() => callSim("seed_riders", form, simDeps()), (a) => `Seeded: ${a.riders} riders.`, counts);
   const saveKnobs = () => run(() => callSim("knobs", knobs, simDeps()), () => "Scenario saved.", (a) => { if (a.knobs) setKnobs(a.knobs); });
   const reset = () => {
-    if (!window.confirm("Remove every synthetic kitchen, rider and dish? Real ones stay.")) return;
+    closeReset();
     void run(() => callSim("reset", {}, simDeps()), (a) => `Removed: ${a.kitchens} kitchens, ${a.riders} riders, ${a.dishes} dishes.`, () => counts({ ok: true, kitchens: 0, kitchens_open: 0, riders: 0, riders_online: 0, dishes: 0 }));
   };
   const clear = async () => {
@@ -109,11 +114,17 @@ export function AdminSim() {
       <section className="ui-group" aria-label="Start over">
         <h2>Start over</h2>
         <div className="ui-pad-y ui-form-acts">
-          <button type="button" className="ui-btn ghost" disabled={busy} onClick={reset}>Reset the city</button>
+          <button type="button" className="ui-btn ghost" disabled={busy} onClick={() => setResetting(true)}>Reset the city</button>
           {clearShown(import.meta.env.VITE_SIM_CLEAR, allowed) && <button type="button" className="ui-btn ghost danger" disabled={busy || allowed === null} aria-disabled={busy || allowed === null} onClick={() => setClearing(true)}>Clear everything</button>}
         </div>
         <p className="ui-meta">{clearShown(import.meta.env.VITE_SIM_CLEAR, allowed) ? "Everything goes. Logs and accounts stay. Seed brings it back." : "Reset removes the synthetic kitchens, riders and dishes. Real ones stay."}</p>
       </section>
+      {resetting && (
+        <DangerSheet id="reset-word" title="Reset the city?" kicker="Synthetic only · cannot be undone" sentence="Remove every synthetic kitchen, rider and dish? Real ones stay."
+          facts={[["Goes", "Every synthetic kitchen, rider and dish."], ["Stays", "Real kitchens, riders and orders, and every account."]]}
+          word="RESET" value={resetWord} onValue={setResetWord} confirmLabel="Reset" leaveLabel="Keep the city"
+          busy={busy} onConfirm={reset} onClose={closeReset} />
+      )}
       {clearing && (
         <DangerSheet id="clear-word" title="Clear everything?" kicker="Dev only · cannot be undone" sentence="This empties the dev city. Seed the kitchens brings it back."
           facts={[["Goes", "Every kitchen and dish, every rider, orders, order events, ratings, payments, tracking."], ["Stays", "Run log, decision log, and every account."]]}

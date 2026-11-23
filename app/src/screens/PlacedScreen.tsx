@@ -12,6 +12,8 @@ import { Timeline, TornTop } from "../ui";
 import { AdjustLines } from "../ui/AdjustLines";
 import { BackChevron } from "./BillScreen";
 import { CancelSheet } from "./CancelSheet";
+import { riderShortName } from "../lib/riderName";
+import { useDeliveryCode } from "../lib/deliveryCode";
 import { agoText, awayText, lastSeenText, metres, riderLink, type Point } from "../lib/riderMap";
 import { useNowOnline } from "../lib/useNowOnline";
 import type { LatLng } from "../lib/riderTrack";
@@ -44,7 +46,7 @@ type Props = {
   pay?: Pay;                    // story #552: an online order waits for its payment
   track?: Track;                // story #691: On the way, with the rider's place known
   eta?: Eta | null;             // story #1015: the server's delivery time
-  declined?: { reason: string; at: string } | null;   // story #934: the kitchen said no, in its own words
+  declined?: { reason: string; at: string; by?: string | null } | null;   // story #934: the kitchen said no, in its own words
 };
 export type Track = { you: LatLng | null; rider: Point; name: string; phone: string | null };   // story 1497: `you` is the order's own drop point; null when the order has none
 export type Pay = {
@@ -88,6 +90,7 @@ const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", del
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
 export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedAt, lines, kitchenName, headWait, pin, kitchenPhone, address, error, onMenu, onBack, backLabel, cancelledAt, supportPhone, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta }: Props) {
+  const dropCode = useDeliveryCode(order.id, status);   // story 1668: null unless the server answers a code
   const riderPhone = (status === "out_for_delivery" ? track?.phone ?? rider?.phone : status === "ready" ? rider?.phone : null) || null;   // the track exists only on the way; the rider card is there from ready
   const [askCancel, setAskCancel] = useState(false);   // story #1227: the cancel sheet
   const steps = trackerSteps(status);
@@ -97,7 +100,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
   const delivered = status === "delivered";
   const cancelled = status === "cancelled";
   const gone = cancelled && !declined;   // story 1745: the customer's own cancel; a declined order keeps its own page
-  const title = status === "placed" ? "Order placed" : cancelled ? (declined ? "Declined" : "Your order") : "Your order";
+  const title = status === "placed" ? "Order placed" : cancelled ? (declined ? (declined.by === "admin" ? "Cancelled" : "Declined") : "Your order") : "Your order";
   const head = headWait ? "" : [kitchenName, pin].filter(Boolean).join(" · ");
   return (
     <>
@@ -137,7 +140,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
           <TornTop />
           <div className="ui-slip-body">
             <div className="ui-slip-head"><span>{head}</span><span>{delivered || gone ? `${placed.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${clock12(placed)}` : `No. ${shortId(order.id)}`}</span></div>
-            <div className="ui-slip-stamp"><span className={`ui-stamp ${STAMP[status] ?? "placed"}`}>{declined ? "Declined" : statusLabel(status)}</span></div>
+            <div className="ui-slip-stamp"><span className={`ui-stamp ${STAMP[status] ?? "placed"}`}>{declined ? (declined.by === "admin" ? "Cancelled" : "Declined") : statusLabel(status)}</span></div>
             {pay && status === "placed" && (pay.state === "ready" || pay.state === "starting" || pay.state === "waiting") && <Countdown startedAt={pay.startedAt} />}
             {!cancelled && !delivered && view.kind === "time" && <><p className="display ui-eta-big">{view.min} min</p></>}
             {!cancelled && !delivered && view.kind === "late" && <p className="ui-clock ui-eta-late" role="status">Running late, sorry</p>}
@@ -161,19 +164,25 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
           {!delivered && !cancelled && address && <p className="mono ui-addr ph-no-capture">{address}</p>}
           {rider && !(track && status === "out_for_delivery") && (
             <div className="notice ui-ridercard" data-testid="rider-card">   {/* story 1657: one line, the name cut with dots, no button: the call is in the foot */}
-              <strong>{(atDoor ? rider.name.split(" ")[0] : rider.name).trim() || "Your rider"}</strong>{" "}<span>{atDoor ? "is at your door." : "is bringing your order."}</span>
+              <strong>{riderShortName(rider.name)}</strong>{" "}<span>{atDoor ? "is at your door." : "is bringing your order."}</span>
             </div>
           )}
           {declined ? (
             <>
               <div role="status" className="ui-declined">
-                <p><strong>{kitchenName || "The kitchen"} could not take this order.</strong></p>
-                <p>“{declined.reason}”</p>
-                <p className="mono ui-declined-when">Declined {clock12(new Date(declined.at))} · {Math.max(0, Math.round((Date.parse(declined.at) - placed.getTime()) / 60_000))} min after you ordered</p>
+                <p><strong>{declined.by === "admin" ? "GoServe cancelled this order." : `${kitchenName || "The kitchen"} could not take this order.`}</strong></p>
+                {(declined.by !== "admin" || declined.reason.trim()) && <p>“{declined.reason}”</p>}   {/* story 1792: GoServe's cancel with no words shows no empty quotes */}
+                <p className="mono ui-declined-when">{declined.by === "admin" ? "Cancelled" : "Declined"} {clock12(new Date(declined.at))} · {Math.max(0, Math.round((Date.parse(declined.at) - placed.getTime()) / 60_000))} min after you ordered</p>
               </div>
               <p className="ui-meta">{pay ? "Your money is not taken. If you paid online, it comes back in 5 to 7 days." : "Nothing was charged."}</p>   {/* story #1261: a pay-at-door order never talks about paying online */}
             </>
           ) : null}
+          {dropCode && (
+            <section className="ui-dropcode" data-testid="delivery-code">   {/* story 1668: fills the empty room above the foot; the digits are real text */}
+              <div><h2>Delivery code</h2><p>Tell it to the rider when the food is in your hands.</p></div>
+              <span className="mono ui-dropcode-digits">{dropCode}</span>
+            </section>
+          )}
           {error && <p role="alert" className="ui-field-error">{error}</p>}
         </div>
       </div>

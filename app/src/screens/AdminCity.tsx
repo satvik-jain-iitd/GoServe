@@ -1,7 +1,8 @@
 // The City of the admin app on the Ink v3 boards A5 (city), A6 (one kitchen) and A7 (add a kitchen) (story H12, #195; stories A2, A3, A5).
 import { useEffect, useRef, useState } from "react";
-import { DangerSheet, useSheetFit } from "../ui";
-import { addKitchen, addPerson, cancelInvite, inviteLink, isOwner, parsePins, offInfoOf, removeKitchen, removePerson, turnKitchenOn, locOf, setKitchenLocation, setKitchenDetails, type Invite, type OffInfo, type KitchenRow, type Loc, type Person, type PersonKind, type RiderListRow } from "../lib/admin";
+import { DangerSheet, Sheet, useSheetFit } from "../ui";
+import { useBackCloses } from "../lib/back";
+import { addKitchen, addPerson, riderProblem, setRiderDetails, cancelInvite, inviteLink, isOwner, parsePins, offInfoOf, removeKitchen, removePerson, turnKitchenOn, locOf, setKitchenLocation, setKitchenDetails, type Invite, type OffInfo, type KitchenRow, type Loc, type Person, type PersonKind, type RiderListRow } from "../lib/admin";
 import { kitchenProblem } from "../lib/validate";
 import { getClient, signOutHere } from "../lib/supabase";
 import { AdminMenu } from "./AdminMenu";
@@ -25,8 +26,8 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
   const [form, setForm] = useState(EMPTY);
   const [addingPerson, setAddingPerson] = useState(false);
   const personActs = useRef<HTMLDivElement>(null);
-  useEffect(() => { if (addingPerson) personActs.current?.scrollIntoView({ block: "nearest" }); }, [addingPerson]);   // story 1457: the form opens with both buttons in view, once, not on every key
   const [who, setWho] = useState<{ email: string; kind: PersonKind; kitchen: string }>({ email: "", kind: "kitchen", kitchen: "" });
+  useEffect(() => { if (addingPerson) personActs.current?.scrollIntoView({ block: "nearest" }); }, [addingPerson, who.kind]);   // story 1457: the form opens with both buttons in view, once, not on every key
   const [invited, setInvited] = useState<{ email: string; kind: "kitchen" | "rider" | "admin" } | null>(null);   // story 875: the "Invite ready" box
   const [shareNote, setShareNote] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);   // story 900, board A8: the confirm sheet of Remove this kitchen
@@ -45,6 +46,26 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
     if (!failed) await reload();
   };
   const [editing, setEditing] = useState(false);   // story #990, board K-EditKitchen
+  const [rider, setRider] = useState({ name: "", phone: "" });   // story 1654: a rider's name and mobile, asked with the role
+  const [fix, setFix] = useState<{ user: string; name: string; phone: string; error: string | null } | null>(null);   // story 1655: the sheet that gives a marked rider a name and a mobile
+  useBackCloses(fix !== null, () => setFix(null));
+  const [leaving, setLeaving] = useState<Person | null>(null);   // story 1713
+  useBackCloses(leaving !== null, () => setLeaving(null));
+  useEffect(() => {
+    if (!leaving) return;
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setLeaving(null); };
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
+  }, [leaving]);
+  const saveFix = async () => {
+    if (!fix) return;
+    const problem = riderProblem(fix.name, fix.phone);
+    if (problem) return setFix({ ...fix, error: problem });
+    const failed = await setRiderDetails(getClient(), fix.user, fix.name, fix.phone);
+    if (failed) return setFix({ ...fix, error: failed });
+    setFix(null);
+    await reload();
+  };
   const [addError, setAddError] = useState<string | null>(null);   // story 885: the add-person line sits under the form, next to its button
   const invitesOf = (id: string) => invites.filter((i) => i.kind === "kitchen" && i.kitchen_id === id);
   const staffOf = (id: string) => people.filter((p) => p.kind === "kitchen" && p.kitchen_id === id);
@@ -63,9 +84,12 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
     setShareNote(null);
     setAddError(null);
     onError(null);
-    const { error: failed, invited: wasInvited } = await addPerson(getClient(), who.email, who.kind, who.kitchen || null);
+    const problem = who.kind === "rider" ? riderProblem(rider.name, rider.phone) : null;   // story 1654: nothing is sent without both
+    if (problem) return setAddError(problem);
+    const { error: failed, invited: wasInvited } = await addPerson(getClient(), who.email, who.kind, who.kitchen || null, who.kind === "rider" ? rider : undefined);
     setAddError(failed);
     if (failed) return;
+    setRider({ name: "", phone: "" });
     if (wasInvited) setInvited({ email: who.email.trim().toLowerCase(), kind: who.kind });   // the form stays open, with the box under it (board A-AddPerson-Invite)
     else { setWho({ ...who, email: "" }); setAddingPerson(false); }
     await reload();
@@ -92,7 +116,10 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
   );
   const remove = async (p: Person) => {
     if (p.kind === "admin" && isOwner(p)) return;   // story #985: never offered, never sent; the database refuses it too
-    if (!window.confirm(`Remove ${p.email ?? p.user_id}? They lose access at once.`)) return;   // one tap less than a mistake
+    setLeaving(p);   // story 1713: our own sheet asks first (was a browser box); same words
+  };
+  const reallyRemove = async (p: Person) => {
+    setLeaving(null);
     const failed = await removePerson(getClient(), p);
     onError(failed);
     if (!failed) await reload();
@@ -168,8 +195,8 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
   const riderPeople = people.filter((p) => p.kind === "rider");
   const known = riders ?? [];
   const online = known.filter((r) => r.online).length;
-  const riderRows = [...known.map((r) => ({ key: r.user_id, name: r.name || riderPeople.find((p) => p.user_id === r.user_id)?.email || "Rider", sub: r.phone ?? riderPeople.find((p) => p.user_id === r.user_id)?.email ?? "", online: r.online, person: riderPeople.find((p) => p.user_id === r.user_id) ?? null })),
-    ...riderPeople.filter((p) => !known.some((r) => r.user_id === p.user_id)).map((p) => ({ key: p.user_id, name: p.email ?? p.user_id, sub: riders ? "Not set up as a rider yet · add them again" : "", online: false, person: p }))];
+  const riderRows = [...known.map((r) => ({ key: r.user_id, name: r.name || riderPeople.find((p) => p.user_id === r.user_id)?.email || "Rider", sub: r.phone ?? riderPeople.find((p) => p.user_id === r.user_id)?.email ?? "", online: r.online, person: riderPeople.find((p) => p.user_id === r.user_id) ?? null, missing: !r.name || !r.phone, rawName: r.name ?? "", rawPhone: r.phone ?? "" })),
+    ...riderPeople.filter((p) => !known.some((r) => r.user_id === p.user_id)).map((p) => ({ key: p.user_id, name: p.email ?? "Rider", sub: riders ? "Not set up as a rider yet · add them again" : "", online: false, person: p, missing: false, rawName: "", rawPhone: "" }))];
   return (   // A5
     <div className="ui-scroll ui-today">
       <section className="ui-group" aria-label="Kitchens">
@@ -187,8 +214,8 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
         {!riders && <div className="ui-row ui-row-static"><span className="ui-row-label"><span>Could not read the riders.</span><span className="ui-row-sub mono">Online or offline is unknown</span></span><button type="button" className="ui-btn ghost small" onClick={() => void reload()}>Try again</button></div>}
         {riderRows.map((r) => (
           <div key={r.key} className="ui-row ui-row-static">
-            <span className="ui-row-label"><span>{r.name}</span><span className="ui-row-sub mono">{r.sub}</span></span>
-            <span className="ui-row-acts">{r.person && removeButton(r.person)}{riders && <span className={`ui-tag ${r.online ? "ready" : "placed"}`}>{r.online ? "Online" : "Offline"}</span>}</span>
+            <span className="ui-row-label"><span>{r.name}</span>{r.missing ? <span className="ui-row-sub ui-missing"><span className="ui-missing-mark" aria-hidden="true">!</span>Name and number missing</span> : <span className="ui-row-sub mono">{r.sub}</span>}</span>
+            <span className="ui-row-acts">{r.missing && <button type="button" className="ui-link ui-missing-add" onClick={() => setFix({ user: r.key, name: r.rawName, phone: r.rawPhone, error: null })}>Add</button>}{r.person && removeButton(r.person)}{riders && <span className={`ui-tag ${r.online ? "ready" : "placed"}`}>{r.online ? "Online" : "Offline"}</span>}</span>
           </div>
         ))}
         {invites.filter((i) => i.kind === "rider" || i.kind === "admin").map(inviteRow)}
@@ -199,6 +226,10 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
             <div className="ui-field"><label htmlFor="p-email">Email</label><input id="p-email" type="email" value={who.email} onChange={(e) => setWho({ ...who, email: e.target.value })} /></div>
             <div className="ui-field"><label htmlFor="p-role">Role</label><select id="p-role" value={who.kind} onChange={(e) => setWho({ ...who, kind: e.target.value as PersonKind })}><option value="kitchen">Kitchen staff</option><option value="rider">Rider</option><option value="admin">Admin</option></select></div>
             {who.kind === "kitchen" && <div className="ui-field"><label htmlFor="p-kitchen">Kitchen</label><select id="p-kitchen" value={who.kitchen} onChange={(e) => setWho({ ...who, kitchen: e.target.value })}><option value="">Pick a kitchen</option>{kitchens.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></div>}
+            {who.kind === "rider" && <>
+            <div className="ui-field"><label htmlFor="p-name">Name</label><input id="p-name" type="text" value={rider.name} onChange={(e) => setRider({ ...rider, name: e.target.value })} /></div>
+            <div className="ui-field"><label htmlFor="p-phone">Mobile number (10 digits)</label><input id="p-phone" className="mono-input" type="tel" inputMode="numeric" value={rider.phone} onChange={(e) => setRider({ ...rider, phone: e.target.value })} /></div>
+            </>}
             <div className="ui-form-acts" ref={personActs}><div className="ui-row-pair"><button type="button" className="ui-btn ghost big" onClick={() => { setAddingPerson(false); setInvited(null); setAddError(null); }}>Not now</button><button type="button" className="ui-btn big" onClick={() => void submitPerson()}>Add person</button></div></div>   {/* story 1457 (board AP1): the main button last, both in view when the form opens */}
             {addError && <p role="alert" className="ui-note error">{addError}</p>}
             {invited && (   // board A-AddPerson-Invite
@@ -212,6 +243,17 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
           </div>
         )}
       </section>
+      <Sheet open={leaving !== null} title={leaving ? `Remove ${leaving.email ?? leaving.user_id}? They lose access at once.` : ""} onClose={() => setLeaving(null)}>
+        {leaving && <div className="ui-sheet-acts"><div className="ui-row-pair"><button type="button" className="ui-btn big danger-fill" onClick={() => void reallyRemove(leaving)}>Remove</button><button type="button" className="ui-btn ghost big" autoFocus onClick={() => setLeaving(null)}>Keep</button></div></div>}
+      </Sheet>
+      <Sheet open={fix !== null} title="Rider's name and number" onClose={() => setFix(null)}>
+        {fix && <div className="ui-form ui-form-flush">
+          <div className="ui-field"><label htmlFor="f-name">Name</label><input id="f-name" type="text" value={fix.name} onChange={(e) => setFix({ ...fix, name: e.target.value })} /></div>
+          <div className="ui-field"><label htmlFor="f-phone">Mobile number (10 digits)</label><input id="f-phone" className="mono-input" type="tel" inputMode="numeric" value={fix.phone} onChange={(e) => setFix({ ...fix, phone: e.target.value })} /></div>
+          {fix.error && <p role="alert" className="ui-field-error">{fix.error}</p>}
+          <div className="ui-row-pair"><button type="button" className="ui-btn ghost big" onClick={() => setFix(null)}>Not now</button><button type="button" className="ui-btn big" onClick={() => void saveFix()}>Save</button></div>
+        </div>}
+      </Sheet>
       {me && (
         <section className="ui-group" aria-label="You">   {/* story #957, board A-City-SignOut: the way out for the signed-in admin */}
           <h2>You</h2>

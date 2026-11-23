@@ -48,8 +48,8 @@ test("RX3.4 the bottom zone holds one button (story 1182, RY2); Could not delive
   await expect(buttons).toHaveCount(1);
   await expect(buttons).toHaveText("Arriving · tell Rahul");
   await expect(page.getByRole("button", { name: /^Not delivered/ })).toHaveCount(0);
-  page.once("dialog", (d) => void d.dismiss());
   await page.getByRole("button", { name: "Could not deliver?" }).click();
+  await expect(page.getByRole("dialog", { name: /as not delivered\?$/ })).toBeVisible();   // story 1711: our own sheet
 });
 
 test("RX3.5 at 360 x 640 the bottom button is in view without a scroll", async ({ page, context }) => {

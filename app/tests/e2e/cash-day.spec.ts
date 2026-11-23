@@ -42,8 +42,8 @@ test("S2 the kitchen confirms the hand-over and both screens show the same cash"
   await rider.goto("/rider/");
   await tab(rider, "Today").click();
   await expect(rider.getByTestId("cash")).toContainText("₹640");   // the same number the kitchen sees
-  page.on("dialog", (d) => void d.accept());   // the confirm names the sum and the rider
-  await page.getByRole("button", { name: "Confirm hand-over Amit Kumar" }).click();
+  await page.getByRole("button", { name: "Confirm hand-over Amit Kumar" }).click();   // story 1712: our own sheet asks, then the right button sends
+  await page.getByRole("dialog").getByRole("button", { name: "Confirm", exact: true }).click();
   await expect.poll(() => net.calls.rpc.filter((c) => c.name === "kitchen_handover").map((c) => c.body)).toEqual([{ p_rider: SESSION }]);
   net.state.orders = [{ ...DELIVERED, cash_handed_at: at(23, 23, 51).toISOString() }];
   await expect(row).toContainText("₹0 in hand");
@@ -63,8 +63,10 @@ test("S3 cash from an older day that was never handed over shows on the row befo
   await tab(page, "Today").click();
   const row = page.locator(".ui-row", { hasText: "Amit Kumar" });
   await expect(row).toContainText("₹640 in hand · older: ₹640");
-  page.on("dialog", (d) => { expect(d.message()).toContain("₹1280 (₹640 from older days)"); void d.dismiss(); });   // a No sends nothing
   await page.getByRole("button", { name: "Confirm hand-over Amit Kumar" }).click();
+  const sheet = page.getByRole("dialog");
+  await expect(sheet).toContainText("₹1280 (₹640 from older days)");
+  await sheet.getByRole("button", { name: "Not now" }).click();   // a No sends nothing
   await page.waitForTimeout(300);
   expect(net.calls.rpc.filter((c) => c.name === "kitchen_handover")).toHaveLength(0);
 });

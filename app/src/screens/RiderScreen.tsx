@@ -33,6 +33,16 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
   const [tab, setTab] = useState<Tab>("job");
   const [doneId, setDoneId] = useState<string | null>(null);   // the slip just delivered stays until "Next delivery" (R7)
   const jobs = riderOrders(orders);
+  // Story 1794: an order the admin cancelled stays as one Declined line until the rider taps OK (kept on this phone). It never counts as a job.
+  const [okIds, setOkIds] = useState<string[]>(() => { try { return JSON.parse(window.localStorage.getItem("gs-declined-ok") ?? "[]"); } catch { return []; } });
+  const okDeclined = (id: string) => { const next = [...okIds, id]; setOkIds(next); try { window.localStorage.setItem("gs-declined-ok", JSON.stringify(next)); } catch { /* per-device only */ } };
+  const declined = orders.filter((o) => o.status === "cancelled" && o.cancelled_by === "admin" && o.rider_id && !okIds.includes(o.id) && Date.now() - Date.parse(o.updated_at) < 86_400_000);
+  const declinedRows = declined.map((o) => (
+    <div key={o.id} className="ui-declined ui-rx-declined" role="status">
+      <div><b className="ui-rx-declined-h">Order declined</b><span className="mono">No. {shortId(o.id)}</span></div>
+      <button type="button" className="ui-link" onClick={() => okDeclined(o.id)}>OK</button>
+    </div>
+  ));
   // Story 1441, review of PR 1469: while a trip's pickups run, or after one failed, the packets still at the kitchen stay on Pick up; never On the way with a packet left.
   const [tripIds, setTripIds] = useState<string[] | null>(null);
   const job = (tripIds ? jobs.find((o) => o.status === "ready" && tripIds.includes(o.id)) : undefined) ?? jobs[0] ?? null;
@@ -222,6 +232,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
                 </div>
               </section>
               {more > 0 && <p className="mono ui-foot">{more} more waiting</p>}
+              {declinedRows}
             </div>
             <div className="ui-bottom">
               {left > 0 && <p role="status" className="ui-rx-next">{left} packet baaki · thaile me rakh kar tick karein</p>}
@@ -247,6 +258,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
               </div>
             </section>
             {jobs.length > 1 && <p className="mono ui-foot">{jobs.length - 1} more waiting</p>}
+            {declinedRows}
           </div>
           <div className="ui-bottom">{button(job, riderActions(job.status)[0], "Picked up")}</div>
         </>
@@ -264,7 +276,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
               {whoRow(job)}
               {job.instructions && <p className="ui-rx-note"><span className="mono ui-rx-note-k">Note ·</span> {job.instructions}</p>}
               <div className="ui-slip-rule" />
-              <div className="ui-slip-total"><b>To collect at door</b><span>{formatRupees(job.total_paise)}</span></div>
+              <div className="ui-slip-total"><b>{job.payment_method === "online" && job.paid_at ? "Paid online" : "To collect at door"}</b><span>{formatRupees(job.total_paise)}</span></div>
               {rest[1] && <button type="button" className="ui-rx-cant" disabled={busyId === job.id} onClick={() => void act(job, rest[1])}>Could not deliver?</button>}
             </div>
           </section>
@@ -275,6 +287,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
             </section>
           )}
           {jobs.length > 1 && <p className="mono ui-foot">{jobs.length - 1} more waiting</p>}
+          {declinedRows}
           </div>
           <div className="ui-bottom">
             {door.step === 1 && (
@@ -287,20 +300,20 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
             {door.step === 2 && button(job, first, `Arriving · tell ${firstName(job.customer_name)}`)}
             {door.step === 3 && told && <p className="mono ui-rx-door">{firstName(job.customer_name)} was told at {hhmm(told)}</p>}
             {door.step === 3 && rest[0] && supportPhone && <a className="ui-btn big ghost" href={`tel:${supportPhone}`}>Call support</a>}
-            {door.step === 3 && rest[0] && <button type="button" className="ui-btn big" disabled={busyId === job.id} onClick={() => openCollect(job)}>Collect</button>}
+            {door.step === 3 && rest[0] && <button type="button" className="ui-btn big" disabled={busyId === job.id} onClick={() => (job.payment_method === "online" && job.paid_at ? void act(job, rest[0]) : openCollect(job))}>{job.payment_method === "online" && job.paid_at ? "Delivered" : "Collect"}</button>}   {/* story 1670: paid online, nothing to collect */}
           </div>
         </>
       );
     }
     if (gate && !gate.online) return (   // R3
       <>
-        <div className="ui-scroll ui-center"><div className="ui-empty"><h2>You are offline</h2><p className="ui-meta">While online, this phone shares your location.</p>{todayLine}</div></div>
+        <div className="ui-scroll ui-center"><div className="ui-empty"><h2>You are offline</h2><p className="ui-meta">While online, this phone shares your location.</p>{todayLine}</div>{declinedRows}</div>
         <div className="ui-bottom"><button type="button" className="ui-btn big" onClick={() => void gate.flip()}>Go online</button></div>
       </>
     );
     return (   // R4
       <>
-        <div className="ui-scroll ui-center"><div className="ui-empty"><h2>Waiting for a delivery</h2><p className="ui-meta">No deliveries yet. Keep this page open.</p>{todayLine}</div></div>
+        <div className="ui-scroll ui-center"><div className="ui-empty"><h2>Waiting for a delivery</h2><p className="ui-meta">No deliveries yet. Keep this page open.</p>{todayLine}</div>{declinedRows}</div>
         {gate && <div className="ui-bottom"><button type="button" className="ui-btn ghost big" onClick={() => void gate.flip()}>Go offline</button></div>}
       </>
     );

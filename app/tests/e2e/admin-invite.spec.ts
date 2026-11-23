@@ -68,6 +68,8 @@ test("S4 a rider invite points to the rider app", async ({ page, context }) => {
   await page.getByRole("button", { name: "Add a person" }).click();
   await page.getByLabel("Email").fill("amit@example.com");
   await page.getByLabel("Role").selectOption("rider");
+  await page.getByLabel("Name", { exact: true }).fill("Amit Test");   // story 1654
+  await page.getByLabel("Mobile number (10 digits)").fill("9000000000");
   await page.getByRole("button", { name: "Add person" }).click();
   const box = page.getByRole("status").filter({ hasText: "Invite ready" });
   await expect(box).toContainText("Invite ready for amit@example.com");

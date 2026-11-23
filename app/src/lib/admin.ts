@@ -27,6 +27,10 @@ const MESSAGES: Record<string, string> = {
   owner_admin: "The owner account cannot be removed.",   // story #985
   not_allowed: "Not allowed.",
   invalid_kind: "Pick a role, and a kitchen for kitchen staff.",
+  rider_name_needed: "Type the rider's name.",
+  rider_name_long: "The name can be at most 40 characters.",
+  rider_phone_bad: "Type a 10-digit mobile number.",
+  not_a_rider: "This person is not a rider yet.",
   reason_required: "Give a reason for the cancel.",
   cannot_cancel: "This order can no longer be cancelled.",
   already_staff: "This person already works for another kitchen. Remove them there first.",
@@ -79,10 +83,14 @@ export async function listPeople(c: Client): Promise<Person[]> {
   return (data ?? []) as Person[];
 }
 /** invited true: the email has no account yet, so the database kept an invite that turns into the row on the first Google sign-in (story 875). */
-export async function addPerson(c: Client, email: string, kind: PersonKind, kitchen: string | null): Promise<{ error: string | null; invited: boolean }> {
-  const { data, error } = await c.rpc("admin_add_person", { p_email: email.trim(), p_kind: kind, p_kitchen: kind === "kitchen" ? kitchen : null });
+export async function addPerson(c: Client, email: string, kind: PersonKind, kitchen: string | null, rider?: { name: string; phone: string }): Promise<{ error: string | null; invited: boolean }> {
+  const { data, error } = await c.rpc("admin_add_person", { p_email: email.trim(), p_kind: kind, p_kitchen: kind === "kitchen" ? kitchen : null, ...(kind === "rider" && rider ? { p_name: rider.name.trim(), p_phone: rider.phone.replace(/ /g, "") } : {}) });
   return error ? { error: adminMessage(error), invited: false } : { error: null, invited: (data as { invited?: boolean } | null)?.invited === true };
 }
+/** Story 1654: a rider needs a name (at most 40, never cut) and a 10-digit mobile. The database refuses the same, so the rule holds without the app. */
+export const riderProblem = (name: string, phone: string): string | null =>
+  name.trim() === "" ? MESSAGES.rider_name_needed : name.trim().length > 40 ? MESSAGES.rider_name_long : /^[0-9]{10}$/.test(phone.replace(/ /g, "")) ? null : MESSAGES.rider_phone_bad;
+export const setRiderDetails = async (c: Client, user: string, name: string, phone: string) => adminMessage((await c.rpc("admin_set_rider", { p_user: user, p_name: name.trim(), p_phone: phone.replace(/ /g, "") })).error);
 export type Invite = { id: string; email: string; kind: "kitchen" | "rider" | "admin"; kitchen_id: string | null; kitchen_name: string | null; created_at: string };
 export async function listInvites(c: Client): Promise<Invite[]> {
   const { data, error } = await c.rpc("admin_invites");

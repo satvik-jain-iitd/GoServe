@@ -39,8 +39,8 @@ test("KD1b the first dish row sits above the first rider cash row, and Sign out 
 
 test("KD1c Confirm hand-over, Sold out and Sign out work as before", async ({ page, context }) => {
   const net = await today(page, context);
-  page.on("dialog", (d) => void d.accept());
   await page.getByRole("button", { name: "Confirm hand-over Amit Kumar" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Confirm", exact: true }).click();   // story 1712: our own sheet
   await expect.poll(() => net.calls.rpc.filter((c) => c.name === "kitchen_handover").map((c) => c.body)).toEqual([{ p_rider: SESSION }]);
   await page.getByRole("button", { name: "Mark Butter Chicken sold out" }).click();
   await expect.poll(() => net.calls.menuWrites.length).toBe(1);
