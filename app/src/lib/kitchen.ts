@@ -37,6 +37,7 @@ export const cancelKind = (o: { status: string; cancelled_by?: string | null; ca
 export const cancelLine = (o: { status: string; cancelled_by?: string | null; cancel_reason?: string | null }): string => {
   const kind = cancelKind(o);
   if (kind === "customer") return "Cancelled by the customer · stop cooking";
+  if (o.cancelled_by === "admin") { const w = o.cancel_reason?.trim(); return w ? `Declined · ${w}` : "Declined"; }   // story 1794: the admin's own words
   const why = kind === "rider" ? "refused at the door" : o.cancel_reason?.trim().replace(/^cancell?ed\b[\s:·-]*/i, "");   // review of PR 1477: the rider's code in words
   return why ? `Cancelled · ${why} · stop cooking` : "Cancelled · stop cooking";
 };
@@ -53,9 +54,10 @@ const oldestFirst = (a: Order, b: Order) => a.created_at.localeCompare(b.created
 export const newTickets = (orders: Order[]): Order[] => orders.filter((o) => o.status === "placed").sort(oldestFirst);
 export const cookingTickets = (orders: Order[]): Order[] => orders.filter((o) => o.status === "accepted" || o.status === "preparing").sort(oldestFirst);
 export const readyTickets = (orders: Order[]): Order[] => orders.filter((o) => o.status === "ready").sort(oldestFirst);
-/** Story #230: a ticket the cook had on Cooking that turned cancelled stays a minute, stamped Cancelled, so the cook knows. `seen` = ids that were on Cooking. */
+/** Story 230: a ticket the cook had on Cooking that turned cancelled stays a minute, stamped Cancelled, so the cook knows. `seen` = ids that were on Cooking.
+ *  Story 1794: an admin's cancel stays a minute whatever the kitchen had seen (New, Cooking, Ready, or not at all). */
 export const justCancelled = (orders: Order[], seen: Set<string>, now: Date, ms = 60_000): Order[] =>
-  orders.filter((o) => o.status === "cancelled" && seen.has(o.id) && now.getTime() - Date.parse(o.updated_at) < ms).sort(oldestFirst);
+  orders.filter((o) => o.status === "cancelled" && (seen.has(o.id) || o.cancelled_by === "admin") && now.getTime() - Date.parse(o.updated_at) < ms).sort(oldestFirst);
 export type Done = { status: string; updated_at: string; delivered_at?: string | null; total_paise: number; paid_by?: string | null; cash_handed_at?: string | null; rider_id?: string | null };
 /** When the order was delivered (story 1448). updated_at moves on every later change (a Change, the night's hand-over); delivered_at is set once. Older rows have none. */
 export const deliveredAt = (o: { updated_at: string; delivered_at?: string | null }): string => o.delivered_at ?? o.updated_at;
