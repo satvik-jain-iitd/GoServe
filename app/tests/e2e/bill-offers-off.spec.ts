@@ -1,5 +1,5 @@
 // Story 1765 (owner, 22 Nov 2026): the dev deploy has no VITE_OFFERS, so the offers are off. The Bill must still show the quote's fee rows and add up to its total.
-// This spec runs only in playwright.nooffers.config.ts (the dev deploy's switches); the main config skips it. The heading stays "To pay at door" and the Offers block and the code field stay hidden.
+// This spec runs only in playwright.nooffers.config.ts (the dev deploy's switches); the main config skips it. The heading says "To pay" and the Offers block and the code field stay hidden.
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { setup } from "./helpers";
 
@@ -49,13 +49,14 @@ test("B3 offers off: the early friend gift row shows and the rows still add up",
   expect(await sum(page)).toBe(245);
 });
 
-test("B4 offers off: no Offers block and no code field, and the heading stays To pay at door (AC-4)", async ({ page, context }) => {
+test("B4 offers off: no Offers block and no code field, and the heading says To pay, as with the offers on (story 1781)", async ({ page, context }) => {
   await toBill(context, page, { delivery: 2500 });
   await expect(total(page)).toHaveText("₹345");
   await expect(page.getByRole("region", { name: "Offers" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^Apply / })).toHaveCount(0);
   await expect(page.getByLabel(/code/i)).toHaveCount(0);
-  await expect(slip(page).getByText("To pay at door")).toBeVisible();
+  await expect(slip(page).getByText("To pay", { exact: true })).toBeVisible();
+  await expect(slip(page).getByText("To pay at door")).toHaveCount(0);
 });
 
 // AC-2 on a small phone: the fee changes a value, not a row, so there is no new scroll; the gift is one more row and nothing else moves. Three tests, one page each, in order.
