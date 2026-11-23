@@ -14,6 +14,7 @@ const atDoor = async (page: Page, context: Parameters<typeof setup>[0], o: Recor
   await expect(page.getByRole("region", { name: "Say at the door" })).toBeVisible();
   return net;
 };
+const slip = async (page: Page) => (await page.locator(".ui-slip-total").boundingBox())!;
 const box = async (page: Page) => (await page.locator(".ui-bottom button").boundingBox())!;
 
 for (const [w, h] of [[360, 640], [390, 844]]) {
@@ -22,6 +23,8 @@ for (const [w, h] of [[360, 640], [390, 844]]) {
     await atDoor(page, context, job({ payment_method: "cash" }));
     await expect(page.locator(".ui-bottom button")).toHaveText("Collect");
     const collect = await box(page);
+    await expect(page.locator(".ui-slip-total b")).toHaveText("To collect at door");
+    const row = await slip(page);
     await page.close();
     const p2 = await context.newPage();
     await p2.setViewportSize({ width: w, height: h });
@@ -29,6 +32,12 @@ for (const [w, h] of [[360, 640], [390, 844]]) {
     await expect(p2.locator(".ui-bottom button")).toHaveText("Delivered");
     const del = await box(p2);
     for (const k of ["x", "y", "width", "height"] as const) expect(Math.abs(del[k] - collect[k])).toBeLessThanOrEqual(0.5);
+    await expect(p2.locator(".ui-slip-total b")).toHaveText("Paid online");
+    await expect(p2.getByText("To collect")).toHaveCount(0);
+    await expect(p2.locator(".ui-slip-total span")).toHaveText("₹640");
+    const row2 = await slip(p2);
+    for (const k of ["x", "y", "width", "height"] as const) expect(Math.abs(row2[k] - row[k])).toBeLessThanOrEqual(0.5);
+    console.log("BOX", w, h, JSON.stringify({ collect, del, row, row2 }));
     if (w === 390) { await p2.screenshot({ path: "/Users/satvikjain/Documents/GoServe/.claude/handoff/dev/1670-delivered-online-390x844.png" }); }
     await p2.locator(".ui-bottom button").click();
     await expect(p2.getByRole("region", { name: /^Collect payment/ })).toHaveCount(0);
@@ -41,6 +50,7 @@ for (const [w, h] of [[360, 640], [390, 844]]) {
 test("PO2 online but not paid, and UPI at the door, keep Collect and open Collect payment", async ({ page, context }) => {
   await atDoor(page, context, job({ payment_method: "online", paid_at: null }));
   await expect(page.locator(".ui-bottom button")).toHaveText("Collect");
+  await expect(page.locator(".ui-slip-total b")).toHaveText("To collect at door");
   await page.locator(".ui-bottom button").click();
   await expect(page.getByRole("region", { name: /^Collect payment/ })).toBeVisible();
 });
