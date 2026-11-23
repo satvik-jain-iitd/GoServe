@@ -172,7 +172,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
               <div role="status" className="ui-declined">
                 <p><strong>{declined.by === "admin" ? "GoServe cancelled this order." : `${kitchenName || "The kitchen"} could not take this order.`}</strong></p>
                 {(declined.by !== "admin" || declined.reason.trim()) && <p>“{declined.reason}”</p>}   {/* story 1792: GoServe's cancel with no words shows no empty quotes */}
-                <p className="mono ui-declined-when">Declined {clock12(new Date(declined.at))} · {Math.max(0, Math.round((Date.parse(declined.at) - placed.getTime()) / 60_000))} min after you ordered</p>
+                <p className="mono ui-declined-when">{declined.by === "admin" ? "Cancelled" : "Declined"} {clock12(new Date(declined.at))} · {Math.max(0, Math.round((Date.parse(declined.at) - placed.getTime()) / 60_000))} min after you ordered</p>
               </div>
               <p className="ui-meta">{pay ? "Your money is not taken. If you paid online, it comes back in 5 to 7 days." : "Nothing was charged."}</p>   {/* story #1261: a pay-at-door order never talks about paying online */}
             </>
