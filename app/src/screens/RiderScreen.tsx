@@ -287,7 +287,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
             {door.step === 2 && button(job, first, `Arriving · tell ${firstName(job.customer_name)}`)}
             {door.step === 3 && told && <p className="mono ui-rx-door">{firstName(job.customer_name)} was told at {hhmm(told)}</p>}
             {door.step === 3 && rest[0] && supportPhone && <a className="ui-btn big ghost" href={`tel:${supportPhone}`}>Call support</a>}
-            {door.step === 3 && rest[0] && <button type="button" className="ui-btn big" disabled={busyId === job.id} onClick={() => openCollect(job)}>Collect</button>}
+            {door.step === 3 && rest[0] && <button type="button" className="ui-btn big" disabled={busyId === job.id} onClick={() => (job.payment_method === "online" && job.paid_at ? void act(job, rest[0]) : openCollect(job))}>{job.payment_method === "online" && job.paid_at ? "Delivered" : "Collect"}</button>}   {/* story 1670: paid online, nothing to collect */}
           </div>
         </>
       );
