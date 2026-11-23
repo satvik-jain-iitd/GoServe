@@ -43,7 +43,7 @@ test("S2 the kitchen confirms the hand-over and both screens show the same cash"
   await tab(rider, "Today").click();
   await expect(rider.getByTestId("cash")).toContainText("₹640");   // the same number the kitchen sees
   await page.getByRole("button", { name: "Confirm hand-over Amit Kumar" }).click();   // story 1712: our own sheet asks, then the right button sends
-  await page.getByRole("dialog").getByRole("button", { name: "Confirm hand-over", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Confirm", exact: true }).click();
   await expect.poll(() => net.calls.rpc.filter((c) => c.name === "kitchen_handover").map((c) => c.body)).toEqual([{ p_rider: SESSION }]);
   net.state.orders = [{ ...DELIVERED, cash_handed_at: at(23, 23, 51).toISOString() }];
   await expect(row).toContainText("₹0 in hand");
