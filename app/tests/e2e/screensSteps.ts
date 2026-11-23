@@ -75,6 +75,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     const kitchens = net.state.kitchens as { id: string; name: string; pin_codes: string[] }[];
     kitchens.push({ ...kitchens[0], id: "k-2", name: "Saket Kitchen", pin_codes: ["110017"] });   // the other kitchen: its own dish id, a new price, no Dal Makhani
     await page.route("**/rest/v1/menu_items*kitchen_id=eq.k-2*", (r) => r.fulfill({ status: 200, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify([dish("b1", "Butter Chicken", 35000)]) }));
+    net.state.menuByKitchen = { "k-2": [dish("b1", "Butter Chicken", 35000)] };   // the default quote answer prices kitchen B at its own price, as the real server does
     net.state.geocode = { status: 200, body: { ok: true, address: "Saket, New Delhi, Delhi", pin: "110017", locality: "Saket", town: "New Delhi" } };
     net.state.serve = { status: 200, body: { ok: true, serviceable: true, request_here: false, kitchens: [{ kitchen_id: "k-2", name: "Saket Kitchen", distance_m: 900, eta_min: 25, open: true }] } };
     await context.route("https://tiles.test/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+vg+AAVYAqhyXHCrAAAAAElFTkSuQmCC", "base64") }));

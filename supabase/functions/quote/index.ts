@@ -7,7 +7,7 @@ import { withCors } from "../_shared/cors.ts";
 export type Offer = { code: string; title: string; saves_paise: number };
 export type Deps = {
   catalog: (kitchenId: string, menuItemIds: string[], optionIds: string[]) => Promise<Catalog>;
-  rules: (kitchenId: string) => Promise<Rules>;
+  rules: (kitchenId: string, feeAsOf: string | null) => Promise<Rules>;   // story 1774: feeAsOf is the time of the fee the customer's app loaded; null is the live fee
   session: (req: Request) => Promise<string | null>;   // who is asking: the login's user id, or null
   coupon: (code: string, session: string | null) => Promise<Coupon | null>;
   coupons: (session: string | null) => Promise<Coupon[]>;   // story #346: every coupon valid now (the database decides); story #579: plus this customer's own
@@ -24,7 +24,9 @@ const json = (status: number, body: unknown) => new Response(JSON.stringify(body
 const bad = () => json(400, { ok: false, error: "invalid_request" });
 
 type Line = { menu_item_id: string; qty: number; option_ids: string[]; swap?: boolean };
-export function parse(b: any): { kitchen: string; lines: Line[]; code: string | null; none: boolean; pin: string } | null {
+// Story 1774: an optional fee_as_of that is not a time is ignored (the live fee), never an error for the customer.
+const timeOf = (v: unknown): string | null => { const t = typeof v === "string" && v.length > 0 && v.length <= 40 ? Date.parse(v) : NaN; return Number.isFinite(t) ? new Date(t).toISOString() : null; };
+export function parse(b: any): { kitchen: string; lines: Line[]; code: string | null; none: boolean; pin: string; feeAsOf: string | null } | null {
   if (!b || typeof b !== "object" || !UUID.test(b.kitchen_id) || !Array.isArray(b.lines) || b.lines.length > MAX_LINES) return null;
   if (typeof b.address?.pin_code !== "string" || !/^\d{6}$/.test(b.address.pin_code)) return null;
   if (b.coupon_code != null && (typeof b.coupon_code !== "string" || b.coupon_code.length > 40)) return null;
@@ -36,11 +38,11 @@ export function parse(b: any): { kitchen: string; lines: Line[]; code: string | 
     if (!UUID.test(l?.menu_item_id) || !Array.isArray(ids) || ids.length > 20 || !ids.every((i: unknown) => typeof i === "string" && UUID.test(i))) return null;
     lines.push({ menu_item_id: l.menu_item_id, qty: l.qty, option_ids: ids, ...(l.swap === true ? { swap: true } : {}) });
   }
-  return { kitchen: b.kitchen_id, lines, code: b.coupon_code ? b.coupon_code.trim().toUpperCase() : null, none: b.no_coupon === true, pin: b.address.pin_code };
+  return { kitchen: b.kitchen_id, lines, code: b.coupon_code ? b.coupon_code.trim().toUpperCase() : null, none: b.no_coupon === true, pin: b.address.pin_code, feeAsOf: timeOf(b.fee_as_of) };
 }
 
 // The quote itself, shared with POST /orders (#347): one way to price a cart. Throws when a data source fails.
-export async function runQuote(deps: Deps, q: { kitchen: string; lines: Line[]; code: string | null; none: boolean; pin: string }, session: string | null = null): Promise<(Extract<ReturnType<typeof quote>, { ok: true }> & { offers: Offer[]; early_friend_paise?: number }) | { ok: false; error: string; message: string }> {
+export async function runQuote(deps: Deps, q: { kitchen: string; lines: Line[]; code: string | null; none: boolean; pin: string; feeAsOf?: string | null }, session: string | null = null): Promise<(Extract<ReturnType<typeof quote>, { ok: true }> & { offers: Offer[]; early_friend_paise?: number }) | { ok: false; error: string; message: string }> {
   const catalog = await deps.catalog(q.kitchen, q.lines.map((l) => l.menu_item_id), q.lines.flatMap((l) => l.option_ids));
   const checks = new Map<string, Awaited<ReturnType<Deps["validate"]>>>();
   for (const l of q.lines) if (catalog.dishes[l.menu_item_id] && l.option_ids.every((o) => catalog.options[o])) checks.set(l.menu_item_id + l.option_ids.join(), await deps.validate(l.menu_item_id, l.option_ids));
@@ -56,7 +58,7 @@ export async function runQuote(deps: Deps, q: { kitchen: string; lines: Line[]; 
   if (q.code && !typed) return { ok: false, error: "coupon_invalid", message: `${q.code} is not a valid code.` };
   // A pick for an option the catalog does not know is refused by the same code the database function uses.
   const validate = (id: string, opts: string[]) => checks.get(id + opts.join()) ?? { ok: false as const, error: "unknown_option", message: "This option is not on this dish." };
-  const rules = await deps.rules(q.kitchen);
+  const rules = await deps.rules(q.kitchen, q.feeAsOf ?? null);
   // Story #346: try every valid coupon on this cart. The ones that apply are the offers; the best saving is applied (a tie: the smaller code), unless the customer typed a code.
   const list = await deps.coupons(session);
   const first = list.some((c) => c.first_order_only) || typed?.first_order_only ? await deps.firstOrder(q.kitchen) : false;
@@ -118,11 +120,11 @@ export const live: Deps = {
     if (!res.ok) throw new Error("rpc failed");
     return await res.json();
   },
-  rules: async (kitchenId) => {
+  rules: async (kitchenId, feeAsOf) => {
     const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;   // params is not public to read
     const rows = await get(`params?select=value&kitchen_id=eq.${kitchenId}&session_id=eq.global&key=eq.quote_rules&order=version.desc&limit=1`, headers(key));
-    const fee = await get("settings?select=value&name=eq.delivery_fee&limit=1", headers(key));   // story 1755: the admin's fee; a failed read throws, so the quote is 502, never free
-    return feeRules(rows.length ? { ...DEFAULT_RULES, ...rows[0].value } : DEFAULT_RULES, fee);
+    const fee = await rpc("delivery_fee_at_v1", { p_as_of: feeAsOf });   // story 1774: one read path; null is the live fee (the settings value), a time is the fee live then, 12 hours at most. A failed read throws, so the quote is 502, never free (story 1755)
+    return feeRules(rows.length ? { ...DEFAULT_RULES, ...rows[0].value } : DEFAULT_RULES, [{ value: { amount_paise: fee?.amount_paise } }]);
   },
   session: async (req) => {   // an anonymous user has a token too; anything that does not check out is no session
     const token = (req.headers.get("authorization") ?? "").replace(/^Bearer /i, "");
