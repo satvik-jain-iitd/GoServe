@@ -12,8 +12,8 @@ test("S1 Remove asks first, then the rider leaves the list", async ({ page, cont
   net.state.riders = [{ user_id: "r-9", name: "Amit Kumar", phone: null, online: false }];
   await city(page);
   await expect(page.getByText("Amit Kumar")).toBeVisible();
-  page.on("dialog", (d) => void d.accept());
   await page.getByRole("button", { name: "Remove rider@example.com" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Remove", exact: true }).click();
   await expect.poll(() => net.calls.rpc.find((c) => c.name === "admin_remove_person")?.body).toEqual({ p_kind: "rider", p_user: "r-9", p_kitchen: null });
   await expect(page.getByText("Amit Kumar")).toHaveCount(0);
   await expect(page.getByRole("alert")).toHaveCount(0);
@@ -26,8 +26,8 @@ test("S2 with no network the line says so and the rider stays listed", async ({ 
   net.state.riders = [{ user_id: "r-9", name: "Amit Kumar", phone: null, online: false }];
   net.state.rpcError = { name: "admin_remove_person", message: "TypeError: Failed to fetch" };
   await city(page);
-  page.on("dialog", (d) => void d.accept());
   await page.getByRole("button", { name: "Remove rider@example.com" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Remove", exact: true }).click();
   await expect(page.getByRole("alert")).toHaveText("No connection. Check the network and try again.");
   await expect(page.getByText("Amit Kumar")).toBeVisible();
 });

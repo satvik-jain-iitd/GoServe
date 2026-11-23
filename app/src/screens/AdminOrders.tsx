@@ -10,6 +10,8 @@ import { AdjustLines } from "../ui/AdjustLines";
 const TAG: Record<string, string> = { placed: "placed", accepted: "placed", preparing: "", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up" };
+// Story #1792: an admin may cancel at any step before delivered.
+const CANCELLABLE = ["placed", "accepted", "preparing", "ready", "out_for_delivery"];
 export const POLL_MS = 30_000;
 const CALL = <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" /></svg>;
 
@@ -53,7 +55,7 @@ export function AdminOrders({ kitchens, onError, open, onOpen, onCount }: Props)
   if (o) {   // A4
     const k = kitchen(o.kitchen_id);
     const steps = trackerSteps(o.status);
-    const canCancel = o.status === "placed" || o.status === "accepted";
+    const canCancel = CANCELLABLE.includes(o.status);
     return (
       <>
         <header className="ui-head">
@@ -71,7 +73,6 @@ export function AdminOrders({ kitchens, onError, open, onOpen, onCount }: Props)
               <p className="ui-addr mono">{o.address}</p>
               <div className="ui-slip-rule" />
               <div className="ui-slip-total"><b>Cash at door</b><span>{formatRupees(o.total_paise)}</span></div>
-              {o.cancel_reason && <p className="ui-meta">Cancelled: {o.cancel_reason}</p>}
             </div>
           </section>
           <section className="ui-group ui-pad" aria-label="Call">

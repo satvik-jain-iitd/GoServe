@@ -55,8 +55,8 @@ test("S4 adding staff by email with a role, and removing one", async ({ page, co
   await page.getByRole("button", { name: "Add person" }).click();
   await expect.poll(() => net.calls.rpc.filter((c) => c.name === "admin_add_person").length).toBe(1);
   expect(net.calls.rpc.find((c) => c.name === "admin_add_person")!.body).toEqual({ p_email: "cook@example.com", p_kind: "kitchen", p_kitchen: "k-1" });
-  page.on("dialog", (d) => void d.accept());   // the remove asks first
   await page.getByRole("button", { name: "Remove rider@example.com" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Remove", exact: true }).click();
   await expect.poll(() => net.calls.rpc.filter((c) => c.name === "admin_remove_person").length).toBe(1);
   expect(net.calls.rpc.find((c) => c.name === "admin_remove_person")!.body).toEqual({ p_kind: "rider", p_user: "u-9", p_kitchen: null });
 });

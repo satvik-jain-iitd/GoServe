@@ -113,8 +113,8 @@ test("S6 when the riders cannot be read the City says so and offers Try again; D
   net.state.riders = [{ user_id: "r-9", name: "Amit Kumar", phone: null, online: true }];
   await page.getByRole("button", { name: "Try again" }).click();
   await expect(page.getByText("Amit Kumar")).toBeVisible();
-  page.on("dialog", (d) => void d.dismiss());   // a No on the confirm sends nothing
   await page.getByRole("button", { name: "Remove rider@example.com" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Keep", exact: true }).click();
   await page.waitForTimeout(300);
   expect(net.calls.rpc.filter((c) => c.name === "admin_remove_person")).toHaveLength(0);
 });
