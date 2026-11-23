@@ -41,8 +41,8 @@ test("S3 a failed remove still shows at the top, not in the form section", async
   net.state.riders = [{ user_id: "r-9", name: "Amit Kumar", phone: null, online: false }];
   net.state.rpcError = { name: "admin_remove_person", message: "last_admin" };
   await city(page);
-  page.on("dialog", (d) => void d.accept());
   await page.getByRole("button", { name: "Remove rider@example.com" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Remove", exact: true }).click();
   await expect(page.getByRole("alert")).toHaveText("This is the last admin. Add another admin first.");
   await expect(page.getByRole("region", { name: "Riders" }).getByRole("alert")).toHaveCount(0);
 });

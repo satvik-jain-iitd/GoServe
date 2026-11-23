@@ -49,6 +49,14 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
   const [rider, setRider] = useState({ name: "", phone: "" });   // story 1654: a rider's name and mobile, asked with the role
   const [fix, setFix] = useState<{ user: string; name: string; phone: string; error: string | null } | null>(null);   // story 1655: the sheet that gives a marked rider a name and a mobile
   useBackCloses(fix !== null, () => setFix(null));
+  const [leaving, setLeaving] = useState<Person | null>(null);   // story 1713
+  useBackCloses(leaving !== null, () => setLeaving(null));
+  useEffect(() => {
+    if (!leaving) return;
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setLeaving(null); };
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
+  }, [leaving]);
   const saveFix = async () => {
     if (!fix) return;
     const problem = riderProblem(fix.name, fix.phone);
@@ -108,7 +116,10 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
   );
   const remove = async (p: Person) => {
     if (p.kind === "admin" && isOwner(p)) return;   // story #985: never offered, never sent; the database refuses it too
-    if (!window.confirm(`Remove ${p.email ?? p.user_id}? They lose access at once.`)) return;   // one tap less than a mistake
+    setLeaving(p);   // story 1713: our own sheet asks first (was a browser box); same words
+  };
+  const reallyRemove = async (p: Person) => {
+    setLeaving(null);
     const failed = await removePerson(getClient(), p);
     onError(failed);
     if (!failed) await reload();
@@ -232,6 +243,9 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
           </div>
         )}
       </section>
+      <Sheet open={leaving !== null} title={leaving ? `Remove ${leaving.email ?? leaving.user_id}? They lose access at once.` : ""} onClose={() => setLeaving(null)}>
+        {leaving && <div className="ui-sheet-acts"><div className="ui-row-pair"><button type="button" className="ui-btn big danger-fill" onClick={() => void reallyRemove(leaving)}>Remove</button><button type="button" className="ui-btn ghost big" autoFocus onClick={() => setLeaving(null)}>Keep</button></div></div>}
+      </Sheet>
       <Sheet open={fix !== null} title="Rider's name and number" onClose={() => setFix(null)}>
         {fix && <div className="ui-form ui-form-flush">
           <div className="ui-field"><label htmlFor="f-name">Name</label><input id="f-name" type="text" value={fix.name} onChange={(e) => setFix({ ...fix, name: e.target.value })} /></div>
