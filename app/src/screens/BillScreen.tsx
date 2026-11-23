@@ -5,7 +5,8 @@ import { isPhone } from "../lib/profile";
 import { DOOR_METHODS, type DoorMethod } from "../lib/doorMethods";
 import type { Alternative, Quote } from "../lib/quote";
 import { useEffect, useRef, useState } from "react";
-import { NO_INTERNET, NO_PRICE, SIGN_IN_LINE } from "../lib/errorLines";
+import { OfflineEmpty } from "./OfflineEmpty";
+import { NO_PRICE, SIGN_IN_LINE } from "../lib/errorLines";
 import { TornTop, useSheetFit } from "../ui";
 
 type Props = {
@@ -84,6 +85,7 @@ export function BillScreen({ lines, total, loading = false, failure = null, onRe
   useEffect(() => { if (changing) phoneRef.current?.focus(); }, [changing]);
   const savedRow = !!details?.saved && isPhone(details.saved) && details.phone === details.saved && !changing;
   const head = [kitchenName, pin].filter(Boolean).join(" · ");
+  if (failure === "offline" && !q && !loading && !empty && !soldOut && onRetry) return <OfflineEmpty onRetry={onRetry} />;   // story 1785: no internet, the whole Bill is the shared no-internet screen; its state stays in App
   return (
     <>
       <header className="ui-head">
@@ -177,7 +179,7 @@ export function BillScreen({ lines, total, loading = false, failure = null, onRe
       </div>
       {!empty && (
         <div className="ui-sticky float bill-foot">
-          {noPrice && <p className="ui-bar-note ui-bar-fail" role="alert"><span aria-hidden="true" className="ui-mark">!</span>{failure === "offline" ? NO_INTERNET : NO_PRICE}</p>}
+          {noPrice && <p className="ui-bar-note ui-bar-fail" role="alert"><span aria-hidden="true" className="ui-mark">!</span>{NO_PRICE}</p>}
           <button type="button" className="ui-btn bar" disabled={!(ready || needMap || needPhone || noPrice) || sending || (loading && !needPhone && !needMap)} onClick={noPrice ? onRetry : needPhone ? () => phoneRef.current?.focus() : needMap ? onConfirmPlace : onPlace}>
             <span className="mono">{door?.value === "upi_door" ? "UPI" : door?.value === "cash" ? "Cash" : "At door"} · {loading ? <Bar n={3} rupee /> : noPrice ? "—" : formatRupees(total)}</span><span className="verb">{sending ? "Placing…" : soldOut ? "Fix the bill first" : noPrice ? "Try again" : needPhone ? (details?.phone.trim() ? "Check your phone number ›" : "Add your phone number ›") : needMap ? "Confirm on the map ›" : "Place order ›"}</span>
           </button>

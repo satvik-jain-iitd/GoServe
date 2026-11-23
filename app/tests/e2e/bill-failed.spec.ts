@@ -5,7 +5,6 @@ import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { setup } from "./helpers";
 
 const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
-const NO_NET = "No internet. Check your internet and try again.";
 const NO_PRICE = "We could not get your price. Try again in a minute.";
 type Mode = "server" | "offline" | "ok";
 const quote = (qty: number) => ({
@@ -51,11 +50,84 @@ test("B2-1 a server that gives no price: No price yet, the line, Try again, no P
   expect(net.calls.place.length).toBe(0);
 });
 
-test("B2-2 no internet says so in its own words (AC-2)", async ({ page, context }) => {
+const pan = (page: Page) => page.locator(".ui-offline-empty");
+const PAN_TITLE = "Could not connect to the internet.";
+
+test("B2-2 no internet: the whole Bill is the shared no-internet pan, the same as the menu (story 1785 AC-1)", async ({ page, context }) => {
   await open(context, page, "offline");
   await toBill(page);
-  await expect(total(page)).toHaveText("No price yet");
-  await expect(line(page)).toHaveText(`!${NO_NET}`);
+  await expect(pan(page)).toBeVisible();
+  await expect(pan(page).getByText(PAN_TITLE)).toBeVisible();
+  await expect(pan(page).getByRole("button", { name: "Try again" })).toBeVisible();
+  await expect(total(page)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Place order/ })).toHaveCount(0);
+});
+
+for (const size of [{ width: 390, height: 844 }, { width: 360, height: 640 }]) {
+  test(`B2-2b the Bill's pan has the same boxes as the menu's pan, at ${size.width}x${size.height} (story 1785 AC-1)`, async ({ page, context }) => {
+    const { net } = await open(context, page, "offline", size);
+    const boxes = () => page.evaluate(() => {
+      const r = (el: Element | null) => { const b = (el as HTMLElement | null)?.getBoundingClientRect(); return b ? [Math.round(b.left), Math.round(b.top), Math.round(b.width), Math.round(b.height)] : null; };
+      return ["svg", ".ui-offline-title", ".ui-offline-line", "button"].map((q) => r(document.querySelector(`.ui-offline-empty ${q}`)));
+    });
+    await toBill(page);
+    await expect(pan(page)).toBeVisible();
+    const bill = await boxes();
+    net.state.menuUp = false;   // the menu with nothing saved and no connection shows the same pan
+    await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+    await page.goto("/customer/");
+    await expect(pan(page)).toBeVisible();
+    expect(await boxes()).toEqual(bill);
+  });
+}
+
+test("B2-2c Try again heals the pan: the Bill is back with its cart, phone, note and pay choice (story 1785 AC-2, AC-6)", async ({ page, context }) => {
+  const { ctl, net } = await open(context, page, "offline");
+  await page.getByRole("button", { name: "Add Butter Chicken" }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
+  await expect(pan(page)).toBeVisible();
+  expect(net.calls.place.length).toBe(0);
+  ctl.mode = "ok";
+  await pan(page).getByRole("button", { name: "Try again" }).click();
+  await expect(total(page)).toHaveText("₹345");
+  await expect(pan(page)).toHaveCount(0);
+  await expect(page.locator('[aria-label="Items"]')).toContainText("Butter Chicken");
+});
+
+test("B2-2c2 the phone and the note typed before the pan are back after the heal (story 1785 AC-2)", async ({ page, context }) => {
+  const { ctl } = await open(context, page, "ok");
+  await toBill(page);
+  await expect(total(page)).toHaveText("₹345");
+  await page.getByLabel("Note for the kitchen (optional)").fill("less spicy");
+  await page.getByLabel(/Phone number/).fill("9000000000");
+  ctl.mode = "offline";
+  await page.getByRole("button", { name: "+ Add more" }).click();
+  await page.getByRole("button", { name: "More Butter Chicken" }).click();
+  await page.getByRole("button", { name: /View bill/ }).click();
+  await expect(pan(page)).toBeVisible();
+  ctl.mode = "ok";
+  await pan(page).getByRole("button", { name: "Try again" }).click();
+  await expect(total(page)).toHaveText("₹665");
+  await expect(page.getByLabel("Note for the kitchen (optional)")).toHaveValue("less spicy");
+  await expect(page.getByLabel(/Phone number/)).toHaveValue("9000000000");
+});
+
+test("B2-2d Back from the pan goes to the menu, where Back goes from the Bill (story 1785 AC-5)", async ({ page, context }) => {
+  await open(context, page, "offline");
+  await toBill(page);
+  await expect(pan(page)).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole("button", { name: /View bill/ })).toBeVisible();
+  await expect(pan(page)).toHaveCount(0);
+});
+
+test("B2-2e the phone coming back online heals the pan by itself (story 1785 AC-3)", async ({ page, context }) => {
+  const { ctl } = await open(context, page, "offline");
+  await toBill(page);
+  await expect(pan(page)).toBeVisible();
+  ctl.mode = "ok";
+  await page.evaluate(() => window.dispatchEvent(new Event("online")));
+  await expect(total(page)).toHaveText("₹345");
 });
 
 test("B2-3 Try again asks the price again, and the Bill heals when it comes (AC-3, AC-5)", async ({ page, context }) => {
