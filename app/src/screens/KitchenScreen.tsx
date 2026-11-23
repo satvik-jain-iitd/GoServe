@@ -1,10 +1,11 @@
 // The kitchen app on the Ink v3 boards K3 to K6 (story H11, #194): New tickets, Cooking, the Kitchen tab, and one ticket (K4) over the tabs.
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { cancelLine, cashByRider, cookingTickets, deliveredToday, hhmm, justCancelled, minutesAway, newTickets, nextStep, outsideHours, readyTickets, shortId, staffLabel, type Order } from "../lib/kitchen";
 import { listRiders, type RiderListRow } from "../lib/admin";
 import { getClient } from "../lib/supabase";
 import { formatRupees } from "../lib/money";
-import { NoteBand, Skeleton, Tabs } from "../ui";
+import { NoteBand, Sheet, Skeleton, Tabs } from "../ui";
+import { useBackCloses } from "../lib/back";
 import { DishList } from "./KitchenTools";
 import { OrderSheet } from "./OrderSheet";
 import type { KitchenGateState } from "./KitchenGate";
@@ -47,10 +48,22 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
     const min = r && gate && r.updated_at ? minutesAway({ lat: r.lat ?? null, lng: r.lng ?? null, updated_at: r.updated_at }, gate) : null;
     return `${riderName(o.rider_id)}${min ? ` · ${min} min` : ""}`;
   };
-  const handover = async (r: { rider_id: string; inHand: number; older: number }) => {
-    const sum = formatRupees(r.inHand + r.older) + (r.older > 0 ? ` (${formatRupees(r.older)} from older days)` : "");
-    if (!window.confirm(`Confirm ${sum} handed over by ${riderName(r.rider_id)}? This cannot be undone.`)) return;
-    setHandoverError(await onHandover(r.rider_id));
+  const [asking, setAsking] = useState<{ rider_id: string; inHand: number; older: number } | null>(null);   // story 1712: our own sheet asks, not the browser box
+  const closeAsk = useCallback(() => setAsking(null), []);
+  useBackCloses(!!asking, closeAsk);
+  useEffect(() => {
+    if (!asking) return;
+    const k = (e: KeyboardEvent) => { if (e.key === "Escape") closeAsk(); };
+    document.addEventListener("keydown", k);
+    return () => document.removeEventListener("keydown", k);
+  }, [asking, closeAsk]);
+  const notNow = useRef<HTMLButtonElement>(null);
+  useEffect(() => { if (asking) notNow.current?.focus(); }, [asking]);   // the safe answer has the focus
+  const handover = async () => {
+    if (!asking) return;
+    const id = asking.rider_id;
+    closeAsk();
+    setHandoverError(await onHandover(id));
   };
   const opened = openId ? orders.find((o) => o.id === openId) ?? null : null;
   const step = async (o: Order) => {
@@ -165,9 +178,18 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
               {cash.length > 0 && <section className="ui-group" aria-label="Cash from riders"><h2>Cash from riders</h2>{cash.map((r) => (
                 <div key={r.rider_id} className="ui-row ui-row-static">
                   <span className="ui-row-label"><span>{riderName(r.rider_id)}</span><span className="ui-row-sub mono">{formatRupees(r.inHand)} in hand{r.handed > 0 ? ` · ${formatRupees(r.handed)} handed over` : ""}{r.older > 0 ? ` · older: ${formatRupees(r.older)}` : ""}</span></span>
-                  <button type="button" className="ui-btn ghost small" aria-label={`Confirm hand-over ${riderName(r.rider_id)}`} disabled={r.inHand + r.older === 0} onClick={() => void handover(r)}>Confirm hand-over</button>
+                  <button type="button" className="ui-btn ghost small" aria-label={`Confirm hand-over ${riderName(r.rider_id)}`} disabled={r.inHand + r.older === 0} onClick={() => setAsking(r)}>Confirm hand-over</button>
                 </div>
               ))}</section>}
+              <Sheet open={!!asking} title="Confirm hand-over?" onClose={closeAsk}>
+                {asking && <p className="ui-sheet-lead">{formatRupees(asking.inHand + asking.older)}{asking.older > 0 ? ` (${formatRupees(asking.older)} from older days)` : ""} handed over by {riderName(asking.rider_id)}. This cannot be undone.</p>}
+                <div className="ui-sheet-acts">
+                  <div className="ui-row-pair">
+                    <button ref={notNow} type="button" className="ui-btn ghost big" onClick={closeAsk}>Not now</button>
+                    <button type="button" className="ui-btn big" onClick={() => void handover()}>Confirm hand-over</button>
+                  </div>
+                </div>
+              </Sheet>
               {handoverError && <p role="alert" className="ui-note error">{handoverError}</p>}
               <section className="ui-group" aria-label="Account"><h2>Account</h2>
                 <div className="ui-row ui-row-static ui-row-tall" data-testid="signed-in-row">
