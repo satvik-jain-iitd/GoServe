@@ -111,6 +111,10 @@ class RiderDeliverCode(unittest.TestCase):
         r = run(ON, READY, act(RID, "cancel", "customer not home"))
         self.assertNotEqual(err(r), ["code_required"], r)
 
+    def test_the_real_not_delivered_rpc_rider_refused_still_ends_the_order_with_the_switch_on(self):   # app/src/lib/signals.ts riderRefused -> rpc rider_refused(p_order); it never meets the code
+        r = run(ON, READY, as_(RID, f"to_jsonb(rider_refused('{O1}'))"))
+        self.assertEqual(r["status"], "cancelled", r)
+
     def test_pickup_code_does_not_deliver(self):
         r = run(ON, READY, deliv(RID, "(select p from pc)"))
         self.assertEqual(err(r), ["wrong_code"], r)
