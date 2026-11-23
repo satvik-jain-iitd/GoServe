@@ -42,8 +42,10 @@ test("S3 Reset asks first, then posts reset and the counts drop to zero", async 
   const net = await setup(context, page);
   net.state.admin = true;
   await open(page);
-  page.once("dialog", (d) => { expect(d.message()).toContain("Remove every synthetic kitchen, rider and dish?"); void d.accept(); });
-  await page.getByRole("button", { name: "Reset the city" }).click();
+  await page.getByRole("button", { name: "Reset the city" }).click();   // story 1714: our own sheet, the word gate
+  const sheet = page.getByRole("dialog", { name: "Reset the city?" });
+  await sheet.getByLabel("Type RESET to go on").fill("RESET");
+  await sheet.getByRole("button", { name: "Reset", exact: true }).click();
   await expect(page.getByTestId("sim-counts")).toHaveText("0 kitchens · 0 riders (0 online) · 0 dishes");
   expect(net.calls.sim.map((c) => c.body.action)).toEqual(["status", "reset"]);
 });
