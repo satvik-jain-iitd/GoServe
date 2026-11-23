@@ -1095,3 +1095,9 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
 .ui-slip-total span.ui-noprice { font-size: var(--gs-text-sm); color: var(--gs-text-muted); display: inline-flex; align-items: center; min-height: calc(var(--gs-mono-xl) * 1.46); }   /* the frame: small, mono, muted, in the same slot as the total */
 .ui-slip-total.ui-slip-noprice { align-items: flex-start; }
 .ui-slip-total.ui-slip-noprice b { margin-top: 11.7px; }   /* the label keeps the top it has beside the big total (measured: 12 px at 390 and 360) */
+
+/* story 1668: the customer's Delivery code box, in the empty room above the foot */
+.ui-dropcode { display: flex; align-items: center; justify-content: space-between; gap: var(--gs-space-3); margin-top: auto; padding: var(--gs-space-3) var(--gs-space-4); background: var(--md-surface); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); }
+.ui-dropcode h2 { margin: 0 0 var(--gs-space-1); font-size: var(--gs-text-m); font-weight: 600; }
+.ui-dropcode p { margin: 0; font-size: var(--gs-mono-xs); color: var(--gs-text-muted); }
+.ui-dropcode-digits { font-size: var(--gs-display-m); font-weight: 600; letter-spacing: 0.2em; }

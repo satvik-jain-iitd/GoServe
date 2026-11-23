@@ -13,6 +13,7 @@ import { AdjustLines } from "../ui/AdjustLines";
 import { BackChevron } from "./BillScreen";
 import { CancelSheet } from "./CancelSheet";
 import { riderShortName } from "../lib/riderName";
+import { useDeliveryCode } from "../lib/deliveryCode";
 import { agoText, awayText, lastSeenText, metres, riderLink, type Point } from "../lib/riderMap";
 import { useNowOnline } from "../lib/useNowOnline";
 import type { LatLng } from "../lib/riderTrack";
@@ -89,6 +90,7 @@ const STEP_WORDS: Record<string, string> = { ready: "Ready, rider picks up", del
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready", out_for_delivery: "out", delivered: "delivered", cancelled: "cancelled" };
 
 export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedAt, lines, kitchenName, headWait, pin, kitchenPhone, address, error, onMenu, onBack, backLabel, cancelledAt, supportPhone, onCancel, cancelling, rider, onCall, pay, track, atDoor, times, declined, eta }: Props) {
+  const dropCode = useDeliveryCode(order.id, status);   // story 1668: null unless the server answers a code
   const riderPhone = (status === "out_for_delivery" ? track?.phone ?? rider?.phone : status === "ready" ? rider?.phone : null) || null;   // the track exists only on the way; the rider card is there from ready
   const [askCancel, setAskCancel] = useState(false);   // story #1227: the cancel sheet
   const steps = trackerSteps(status);
@@ -175,6 +177,12 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
               <p className="ui-meta">{pay ? "Your money is not taken. If you paid online, it comes back in 5 to 7 days." : "Nothing was charged."}</p>   {/* story #1261: a pay-at-door order never talks about paying online */}
             </>
           ) : null}
+          {dropCode && (
+            <section className="ui-dropcode" data-testid="delivery-code">   {/* story 1668: fills the empty room above the foot; the digits are real text */}
+              <div><h2>Delivery code</h2><p>Tell it to the rider when the food is in your hands.</p></div>
+              <span className="mono ui-dropcode-digits">{dropCode}</span>
+            </section>
+          )}
           {error && <p role="alert" className="ui-field-error">{error}</p>}
         </div>
       </div>
