@@ -95,6 +95,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
   const dot = gate && <span className={gate.open ? "ui-state-dot on" : "ui-state-dot"} aria-hidden="true" />;
   const pastClose = !!gate && outsideHours(gate.opensAt, gate.closesAt, minute);   // after closing time the customer app shows "closed" whatever the switch says
   const gone = justCancelled(orders, seen.current, new Date());   // recomputed on every render; the minute tick re-renders, so the stamp leaves on its own
+  const declined = gone.filter((o) => o.cancelled_by === "admin");   // story 1794: an admin's cancel also shows on New, where the kitchen may have had it
   const cancelledRow = (o: Order) => (
     <div key={o.id} className="ui-ticket ui-ticket-cancelled">
       <div className="ui-ticket-open"><span className="ui-ticket-head"><span className="mono">No. {shortId(o.id)} · {hhmm(o.created_at)}</span></span>{lines(o)}</div>
@@ -151,10 +152,10 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
       })()}
       {error && !sheet && <p role="alert" className="ui-note error">{error}</p>}
       {loading && orders.length === 0 && <div className="ui-pad"><Skeleton lines={3} /></div>}
-      {tab === "new" && (fresh.length === 0 ? (
+      {tab === "new" && (fresh.length === 0 && declined.length === 0 ? (
         <div className="ui-scroll ui-center"><div className="ui-empty"><h2>No new tickets</h2><p className="ui-meta">No new orders. Keep this page open.</p>{todayLine}</div></div>
       ) : (
-        <div className="ui-scroll ui-tickets">{fresh.map(row)}</div>
+        <div className="ui-scroll ui-tickets">{declined.map(cancelledRow)}{fresh.map(row)}</div>
       ))}
       {tab === "cooking" && (
         <div className="ui-scroll ui-tickets">
