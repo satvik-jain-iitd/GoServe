@@ -191,7 +191,7 @@ export function RiderScreen({ onCodeDelivered, orders, loading, error, busyId, a
               {upiNeedsQr && <p className="ui-meta">UPI at the door has no QR yet. Take cash, or ask the admin to upload the QR.</p>}
             </div>
           </section>
-          {door && door.id === collecting.id && <DoorCodeSheet orderId={collecting.id} short={shortId(collecting.id)} method={door.method} notice={door.notice} onClose={closeDoor}
+          {door && door.id === collecting.id && <DoorCodeSheet orderId={collecting.id} short={shortId(collecting.id)} method={door.method} notice={door.notice} supportPhone={supportPhone} onClose={closeDoor}
             onDelivered={() => { onCodeDelivered?.(collecting, door.method); setDoor(null); setCollectId(null); setDoneId(collecting.id); }} />}
           <div className="ui-bottom">
             {methods !== null && methods.length === 0 && <button type="button" className="ui-btn big" onClick={onLoadMethods}>Try again</button>}
