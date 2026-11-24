@@ -7,6 +7,8 @@ import { formatRupees } from "../lib/money";
 import { NoteBand, Sheet, Skeleton, Tabs } from "../ui";
 import { useBackCloses } from "../lib/back";
 import { DishList } from "./KitchenTools";
+import { PickupCodeSheet } from "./PickupCodeSheet";
+import { usePickupSwitch } from "../lib/handoverCode";
 import { OrderSheet } from "./OrderSheet";
 import type { KitchenGateState } from "./KitchenGate";
 
@@ -16,13 +18,14 @@ type Props = {
   onStep: (order: Order, to: string) => Promise<{ code: string; message: string } | null>;
   onDecline: (order: Order, reason: string) => Promise<string | null>;   // story #934: the kitchen says no, in words the customer reads
   onHandover: (riderId: string) => Promise<string | null>;   // story #229: the kitchen confirms a rider's cash
+  onCodeHandedOver?: (order: Order) => void;   // story 1667: the right rider code moved the order On the way
   gate: KitchenGateState | null;   // null in the demo console: no open switch, no dishes
 };
 const STAMP: Record<string, string> = { placed: "placed", accepted: "accepted", preparing: "cooking", ready: "ready" };
 const stamp = (status: string): [string, string] => [staffLabel(status), STAMP[status] ?? ""];
 const stepClass = (to: string) => (to === "preparing" ? "ui-btn ghost big" : "ui-btn big");   // story 1454 (board KC1): Start is an outline, Ready stays filled; same size, same place
 
-export function KitchenScreen({ orders, loading, error, busyId, onStep, onDecline, onHandover, gate }: Props) {
+export function KitchenScreen({ orders, loading, error, busyId, onStep, onDecline, onHandover, onCodeHandedOver, gate }: Props) {
   const [tab, setTab] = useState<Tab>("new");
   const [openId, setOpenId] = useState<string | null>(null);
   const fresh = newTickets(orders);
@@ -41,6 +44,10 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
     if ((tab !== "kitchen" && tab !== "cooking") || !gate) return;
     listRiders(getClient()).then(setRiders).catch(() => setRiders([]));
   }, [tab, gate, minute]);
+  const codeOn = usePickupSwitch(tab === "cooking" && ready.some((o) => !!o.rider_id), minute);   // story 1667: Enter code shows only while the switch is on
+  const [coding, setCoding] = useState<Order | null>(null);
+  const closeCoding = useCallback(() => setCoding(null), []);
+  useBackCloses(!!coding, closeCoding);
   const riderName = (id: string) => riders.find((r) => r.user_id === id)?.name || "Rider";
   const riderLine = (o: Order) => {   // #231: who is coming for a ready order, and how far, when the location is fresh
     if (!o.rider_id) return "Rider on the way";
@@ -86,6 +93,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
           {o.instructions?.trim() && <NoteBand text={o.instructions.trim()} />}
         </button>
         {next && o.status !== "placed" ? <button type="button" className={stepClass(next.to)} aria-label={`${next.label} ${shortId(o.id)}`} disabled={busyId === o.id} onClick={() => void step(o)}>{next.label}</button>
+          : o.status === "ready" && o.rider_id && codeOn ? <button type="button" className="ui-btn big ui-enter-code" aria-label={`Enter code ${shortId(o.id)}`} onClick={() => setCoding(o)}>Enter code</button>   // story 1667 (board k3code)
           : o.status === "placed" ? null   // story #934: a new order is a tap target; Accept and Decline are on its sheet
           : <span className="mono ui-ticket-wait">{riderLine(o).split(" · ").map((part) => <span key={part}>{part}</span>)}</span>}
       </div>
@@ -168,6 +176,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
           {cooking.length === 0 && ready.length === 0 && gone.length === 0 && <div className="ui-empty"><h2>Nothing on the stove</h2><p className="ui-meta">Accepted tickets come here. Start when the pan is on, Ready when it is packed.</p></div>}
           {cooking.map(row)}
           {ready.length > 0 && <section className="ui-group"><h2>Ready · give to the rider</h2>{ready.map(row)}</section>}
+          {coding && <PickupCodeSheet orderId={coding.id} short={shortId(coding.id)} ticket={coding.items.map((i) => `${i.qty} × ${i.name}`).join(", ")} onHandedOver={() => onCodeHandedOver?.(coding)} onClose={closeCoding} />}
         </div>
       )}
       {tab === "kitchen" && (

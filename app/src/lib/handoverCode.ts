@@ -27,3 +27,35 @@ export function usePickupCode(orderId: string | null, active: boolean): string |
   }, [orderId, active]);
   return code;
 }
+
+// Story 1667: the kitchen's side. The Enter code button shows only while the switch is on; any failed read of the switch means off (the screen stays as today).
+export function usePickupSwitch(active: boolean, tick: string): boolean {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    if (!active) return;
+    let live = true;
+    const read = async () => {
+      try { const r = await getClient().rpc("pickup_code_on"); if (live) setOn(!r.error && r.data === true); } catch { if (live) setOn(false); }
+    };
+    void read();
+    const onVisible = () => { if (document.visibilityState === "visible") void read(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { live = false; document.removeEventListener("visibilitychange", onVisible); };
+  }, [active, tick]);
+  return on;
+}
+
+export type CodeAnswer = { kind: "ok" } | { kind: "wrong" } | { kind: "locked" } | { kind: "off" } | { kind: "net" } | { kind: "other"; message: string };
+// The kitchen types the rider's code. Any answer we cannot read is "net": we do not know, so the cook types again.
+export async function kitchenHandover(orderId: string, code: string): Promise<CodeAnswer> {
+  try {
+    const { data, error } = await getClient().rpc("kitchen_handover_v1", { p_order: orderId, p_code: code });
+    const d = data as { ok?: boolean; error?: string; message?: string } | null;
+    if (error || !d || typeof d !== "object") return { kind: "net" };
+    if (d.ok === true) return { kind: "ok" };
+    if (d.error === "wrong_code") return { kind: "wrong" };
+    if (d.error === "code_locked") return { kind: "locked" };
+    if (d.error === "switch_off") return { kind: "off" };
+    return { kind: "other", message: d.message || "We could not check the code. Check your internet and type it again." };
+  } catch { return { kind: "net" }; }
+}

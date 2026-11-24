@@ -1152,7 +1152,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }
   const kitchenScreen = (gate: KitchenGateState | null) => (
     <KitchenScreen orders={orders} loading={live.loading} error={live.error} busyId={busyId}
-      onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} onDecline={decline} onHandover={handover} gate={gate} />
+      onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} onDecline={decline} onHandover={handover} onCodeHandedOver={(o) => setOrders((cur) => cur.map((x) => x.id === o.id ? { ...x, status: "out_for_delivery" } : x))} gate={gate} />
   );
   const kitchenView = lock === "kitchen" ? <KitchenGate>{kitchenScreen}</KitchenGate> : kitchenScreen(null);
   // How far the phone's last known place is from the delivery place. Only the phone's place when location is already allowed and the place's own point: no map call,
