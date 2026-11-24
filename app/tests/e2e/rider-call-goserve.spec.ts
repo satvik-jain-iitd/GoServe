@@ -33,3 +33,13 @@ test("1318 the link dials the support number, is on the Could not deliver line, 
   expect(l.x).toBeGreaterThan(after.cant!.x + after.cant!.width);
   expect(l.x + l.width).toBeLessThanOrEqual(after.slip!.x + after.slip!.width);
 });
+
+test("1318 where the Call support button already shows (after Arriving), the link is not shown: one door per screen", async ({ page, context }) => {
+  const net = await setup(context, page, [job()]);
+  net.state.rider = { user_id: SESSION, name: "Amit Kumar", phone: "9810011223", online: true, lat: null, lng: null };
+  net.state.supportPhone = "9000000000";
+  net.state.arrivingAt = "2026-11-13T09:12:00Z";
+  await page.goto("/rider/");
+  await expect(page.getByRole("link", { name: "Call support" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Call GoServe" })).toHaveCount(0);
+});
