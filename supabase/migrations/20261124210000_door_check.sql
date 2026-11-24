@@ -1,6 +1,6 @@
 -- Story #1322 (epic 1317). Five minutes after the rider taps Arriving, if the order is still not delivered or cancelled, the customer gets ONE push with a way to call.
 -- push_door_check_v1() queues it (status door_check, once per order, with a trace line; no subscription = a trace line only) and a named job runs it every minute.
--- Only arriving events of the last 2 hours count, so the first run never wakes an old stuck order. The words are ONE constant, push_door_words(): WORDS NOT YET APPROVED by the owner.
+-- Only arriving events of the last 2 hours count, so the first run never wakes an old stuck order. The words are ONE constant, push_door_words(): Words approved by the owner, 24 Nov 2026.
 create or replace function push_door_words() returns text language sql immutable as $$ select 'Your rider is close. Can''t find them? Call.' $$;
 
 create or replace function push_door_check_v1() returns integer
@@ -17,7 +17,9 @@ begin
       perform trace_write(r.order_id, 'db', 'push_queued', 'door_check', null, null);
       n := n + 1;
     else
-      perform trace_write(r.order_id, 'db', 'push_skipped', 'no_subscription', 'door_check', null);
+      if not exists (select 1 from order_trace where order_id = r.order_id and event = 'push_skipped' and detail::text like '%door_check%') then   -- once per order, not once a minute
+        perform trace_write(r.order_id, 'db', 'push_skipped', 'no_subscription', 'door_check', null);
+      end if;
     end if;
   end loop;
   return n;

@@ -9,7 +9,7 @@ import { Skeleton, Tabs } from "../ui";
 import { incentiveFor, type Rates } from "../lib/incentive";
 import { dayName, dayShort, olderDue, pastDays as listPastDays } from "../lib/pastDays";
 import { useBackCloses } from "../lib/back";
-import { useCodeSwitch, usePickupCode, usePickupCodes } from "../lib/handoverCode";
+import { riderMoneyDue, useCodeSwitch, usePickupCode, usePickupCodes } from "../lib/handoverCode";
 import { DoorCodeSheet } from "./DoorCodeSheet";
 import { MoneyNotCollectedSheet } from "./MoneyNotCollectedSheet";
 
@@ -84,11 +84,13 @@ export function RiderScreen({ onCodeDelivered, orders, loading, error, busyId, a
     setChangeErr(code === null ? null : code === "handed_over" ? "Cash kitchen me jama ho chuka hai. Ab badalna ho to kitchen se kahein." : code === "method_off" ? "Ye tareeka abhi band hai. Admin se poochhein." : "Badal nahin paye. Network dekh kar phir try karein.");
   };
   const [brokenQr, setBrokenQr] = useState<string | null>(null);
+  const [moneyCode, setMoneyCode] = useState<{ reason: string; note: string | null; notice: boolean } | null>(null);   // story 1319: the code sheet for Money not collected
   const [moneyOpen, setMoneyOpen] = useState(false);   // story 1319: the sheet Money not collected
   const [collectId, setCollectId] = useState<string | null>(null);   // story 1262, board R7: "Delivered" opens Collect payment first
   const [door, setDoor] = useState<{ id: string; method: DoorMethod; notice: boolean } | null>(null);   // story 1669 (board k4door): the customer's code sheet
   const closeDoor = () => setDoor(null);
   useBackCloses(!!door, closeDoor);
+  useBackCloses(!!moneyCode, () => setMoneyCode(null));
   const dropOn = useCodeSwitch("drop_code_on", !!collectId, collectId ?? "");   // read when Collect payment opens; a switch turned on later is caught by the server's refusal below
   const act = async (o: Order, a: RiderAction, method?: DoorMethod) => {
     if (dropOn && method && a.kind === "status" && a.to === "delivered") { setDoor({ id: o.id, method, notice: false }); return; }
@@ -195,8 +197,11 @@ export function RiderScreen({ onCodeDelivered, orders, loading, error, busyId, a
               {deliver && <button type="button" className="ui-rx-cant" onClick={() => setMoneyOpen(true)}>Money not collected?</button>}
             </div>
           </section>
-          {moneyOpen && deliver && <MoneyNotCollectedSheet orderId={collecting.id} short={shortId(collecting.id)} amount={amount} onClose={() => setMoneyOpen(false)}
+          {moneyOpen && deliver && <MoneyNotCollectedSheet orderId={collecting.id} short={shortId(collecting.id)} amount={amount} needCode={dropOn} onCode={(reason, note, notice) => { setMoneyOpen(false); setMoneyCode({ reason, note, notice }); }} onClose={() => setMoneyOpen(false)}
             onDone={() => { onMoneyDue?.(collecting); setMoneyOpen(false); setCollectId(null); setDoneId(collecting.id); }} />}
+          {moneyCode && deliver && <DoorCodeSheet orderId={collecting.id} short={shortId(collecting.id)} notice={moneyCode.notice} supportPhone={supportPhone} onClose={() => setMoneyCode(null)}
+            verify={(code) => riderMoneyDue(collecting.id, code, moneyCode.reason, moneyCode.note)}
+            onDelivered={() => { onMoneyDue?.(collecting); setMoneyCode(null); setCollectId(null); setDoneId(collecting.id); }} />}
           {door && door.id === collecting.id && <DoorCodeSheet orderId={collecting.id} short={shortId(collecting.id)} method={door.method} notice={door.notice} supportPhone={supportPhone} onClose={closeDoor}
             onDelivered={() => { onCodeDelivered?.(collecting, door.method); setDoor(null); setCollectId(null); setDoneId(collecting.id); }} />}
           <div className="ui-bottom">

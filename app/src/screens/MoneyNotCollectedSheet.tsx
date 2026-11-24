@@ -8,11 +8,10 @@ import { useBackCloses } from "../lib/back";
 
 const REASONS = [["says_already_paid", "Says it is already paid"], ["will_pay_later", "Will pay later"], ["did_not_have_money", "Did not have the money"], ["other", "Other"]] as const;
 const LINES: Record<string, string> = {
-  code_required: "The customer's code is switched on now. Close this and use Took cash with the customer's code.",
   not_ready: "This order is not out for delivery any more.",
 };
 
-export function MoneyNotCollectedSheet({ orderId, short, amount, onDone, onClose }: { orderId: string; short: string; amount: string; onDone: () => void; onClose: () => void }) {
+export function MoneyNotCollectedSheet({ orderId, short, amount, needCode, onCode, onDone, onClose }: { orderId: string; short: string; amount: string; needCode: boolean; onCode: (reason: string, note: string | null, notice: boolean) => void; onDone: () => void; onClose: () => void }) {
   useBackCloses(true, onClose);
   const [reason, setReason] = useState<string | null>(null);
   const [note, setNote] = useState("");
@@ -22,9 +21,12 @@ export function MoneyNotCollectedSheet({ orderId, short, amount, onDone, onClose
   const ready = reason !== null && (reason !== "other" || (words.length >= 1 && words.length <= 200));
   const send = async () => {
     if (!ready || busy) return;
+    const note = reason === "other" ? words : null;
+    if (needCode) { onCode(reason!, note, false); return; }   // the customer's code switch is on: the existing code sheet asks for it
     setBusy(true); setErr(null);
-    const failed = await riderMoneyNotCollected(getClient(), orderId, reason!, reason === "other" ? words : null);
+    const failed = await riderMoneyNotCollected(getClient(), orderId, reason!, note);
     setBusy(false);
+    if (failed === "code_required") { onCode(reason!, note, true); return; }
     if (failed === null) onDone(); else setErr(LINES[failed] ?? "We could not save this. Check your internet and try again.");
   };
   return (

@@ -7,7 +7,7 @@ from test_schema import TOKEN, sql
 import test_rider_deliver_code as b   # same throwaway users and order
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-MIG = "" if os.environ.get("SKIP_MIG") else "; ".join(open(os.path.join(HERE, "..", "supabase", "migrations", f)).read() for f in ("20261124220000_admin_deliver_without_code.sql", "20261124240000_admin_deliver_method.sql"))
+MIG = "" if os.environ.get("SKIP_MIG") else "; ".join(open(os.path.join(HERE, "..", "supabase", "migrations", f)).read() for f in ("20261124220000_admin_deliver_without_code.sql", "20261124240000_admin_deliver_method.sql", "20261124230000_money_not_collected.sql", "20261124270000_admin_not_collected_mark.sql"))
 O1 = b.O1
 
 
@@ -20,7 +20,7 @@ def call(uid, reason, method="cash"):
 def run(*steps):
     flat = [s for st in steps for s in (st if isinstance(st, list) else [st])]
     last = ("reset role; select (select jsonb_agg(r order by i) from res) as rs, (select status from orders where id = '%s') as status, "
-            "(select paid_by from orders where id = '%s') as paid, (select jsonb_agg(jsonb_build_object('actor', actor, 'reason', reason, 'by', by_user, 'at', created_at)) from order_events where order_id = '%s' and event = 'order.delivered_without_code') as ev" % (O1, O1, O1))
+            "(select paid_by from orders where id = '%s') as paid, (select money_due_reason from orders where id = '%s') as mdr, (select money_due_note from orders where id = '%s') as mdn, (select jsonb_agg(jsonb_build_object('actor', actor, 'reason', reason, 'by', by_user, 'at', created_at)) from order_events where order_id = '%s' and event = 'order.delivered_without_code') as ev" % (O1, O1, O1, O1, O1))
     r = sql("begin; " + "; ".join([x for x in b.MIGS] + b.SETUP + [MIG] + flat + [last]) + "; rollback;")
     assert isinstance(r, list), r
     return r[-1]
@@ -68,3 +68,10 @@ class AdminDeliverWithoutCode(unittest.TestCase):
             r = run(b.READY, b.ON, call(b.ADM, "Phone is dead", m))
             self.assertTrue(r["rs"][0]["ok"], (m, r))
             self.assertEqual((r["status"], r["paid"], len(r["ev"])), ("delivered", paid, 1), (m, r))
+
+    def test_d7_not_collected_sets_the_money_due_mark_with_the_admins_reason(self):
+        r = run(b.READY, call(b.ADM, "Customer says wallet at home", "not_collected"))
+        self.assertTrue(r["rs"][0]["ok"], r)
+        self.assertEqual((r["paid"], r["mdr"], r["mdn"]), (None, "other", "Customer says wallet at home"), r)
+        r = run(b.READY, call(b.ADM, "x", "cash"))
+        self.assertEqual((r["paid"], r["mdr"], r["mdn"]), ("cash", None, None), r)

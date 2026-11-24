@@ -108,7 +108,7 @@ test("S6 a new photo is uploaded and its address is saved on the dish", async ({
   expect(net.calls.menuWrites[0].body.image_url).toMatch(/\/storage\/v1\/object\/public\/menu\//);
 });
 
-test("S6b an .svg file is refused and no upload starts (#944: pictures only: png, jpeg, webp)", async ({ page, context }) => {
+test("S6b an .svg file is refused and no upload starts (story 944: pictures only: png, jpeg, webp)", async ({ page, context }) => {
   const net = await open(page, context);
   await page.getByRole("button", { name: "Edit Butter Chicken" }).click();
   const sheet = page.getByRole("dialog", { name: "Edit Butter Chicken" });

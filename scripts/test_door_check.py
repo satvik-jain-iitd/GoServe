@@ -50,6 +50,10 @@ class DoorCheck(unittest.TestCase):
         r = run(SUB, PLACE, RIDER_ROW, *ROAD, *ARRIVED(6), CHECK, "select push_latest('https://web.push.apple.com/abc') as p, (select count(*) from cron.job where jobname = 'goserve-door-check' and schedule = '* * * * *') as job")
         self.assertEqual((r[-1]["p"]["status"], r[-1]["p"]["body"], r[-1]["job"]), ("door_check", "Your rider is close. Can't find them? Call.", 1), r)
 
+    def test_d10_without_a_subscription_two_runs_write_one_trace_line(self):
+        r = run(PLACE, RIDER_ROW, *ROAD, *ARRIVED(6), CHECK, CHECK, f"select count(*) as n from order_trace where event='push_skipped' and result='no_subscription' and detail::text like '%door_check%' and order_id = {ORDER}")
+        self.assertEqual(r[-1]["n"], 1, r)
+
     def test_d9_nobody_but_the_server_can_run_it(self):
         for role in ("anon", "authenticated"):
             self.assertIn("permission denied", str(run(f"set local role {role}", CHECK)), role)
