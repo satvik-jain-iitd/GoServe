@@ -109,6 +109,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
         <BackChevron label={backLabel ?? "Back to menu"} onClick={onBack} />
         <h1>{title}</h1>
         {!delivered && !cancelled && status !== "placed" ? online ? <span className="meta ui-livemark"><span aria-hidden="true" className="ui-live-dot" />Live</span> : <span className="meta">Offline</span> : <span className="meta">No. {shortId(order.id)}</span>}
+        {supportPhone && <a href={`tel:${supportPhone}`} className="ui-link ui-help">Help</a>}   {/* story 1660: one door for help, right of the Live mark */}
       </header>
       <div className="ui-scroll">
         {!online && <p role="status" className="ui-offline">No connection. This page shows your last update and catches up when you are back online.</p>}   {/* bug #1228 */}
