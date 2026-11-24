@@ -103,3 +103,6 @@ select { font: inherit; padding: var(--gs-space-3); border: 1px solid var(--md-o
 @media (orientation: landscape) and (max-height: 520px) {
   .shell, .frame, .below { max-width: none; }
 }
+
+/* story #1832: an inner Settings screen already names itself in its head; the group title would say it twice */
+.ui-inner > .ui-group > h2 { display: none; }

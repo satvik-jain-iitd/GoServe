@@ -1,6 +1,6 @@
 // Story #1263 (epic #1259, board A10-PayMethods): the admin turns the ways to pay at the door on and off, and uploads the UPI QR the rider shows.
 import { test, expect, type Page } from "@playwright/test";
-import { setup, scan } from "./helpers";
+import { setup, scan, openSetting } from "./helpers";
 
 const OBJ = "qr-0a1b2c3d-0000-4000-8000-0123456789ab.png";
 const PNG = { name: "qr.png", mimeType: "image/png", buffer: Buffer.from("89504e470d0a1a0a", "hex") };
@@ -9,7 +9,7 @@ const toSettings = async (page: Page, context: Parameters<typeof setup>[0], over
   net.state.admin = true;
   Object.assign(net.state, over);
   await page.goto("/admin/");
-  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  await openSetting(page, "Payment methods");
   await expect(page.getByRole("heading", { name: "Payment methods" })).toBeVisible();
   if (!over.payFail) await expect(page.getByRole("switch", { name: /^Cash at the door/ })).toBeEnabled();   // the first read has landed: a test that then sets payFail fails only its own save, never this read (the A4 flake)
   return net;
@@ -20,8 +20,8 @@ test("A1 Settings shows Cash at the door and UPI at the door on, UPI online and 
   await toSettings(page, context);
   await expect(sw(page, "Cash at the door")).toBeChecked();
   await expect(sw(page, "UPI at the door")).toBeChecked();
-  for (const name of ["UPI online", "Card online"]) { await expect(sw(page, name)).not.toBeChecked(); await expect(sw(page, name)).toBeDisabled(); }
-  await expect(page.getByText("Not set up yet")).toHaveCount(2);
+  for (const name of ["UPI online", "Card online"]) { await expect(page.getByText(name, { exact: true })).toBeVisible(); await expect(sw(page, name)).toHaveCount(0); }   // story #1833: nothing to tap, so no switch
+  await expect(page.getByText("Not set up yet")).toHaveCount(1);
   await expect(page.getByText("Last changed by owner@goserve.test, 10 Nov")).toBeVisible();
 });
 
@@ -31,7 +31,7 @@ test("A2 turning UPI at the door on saves, is still on after a reload, and the c
   await expect(sw(page, "UPI at the door")).toBeChecked();
   await expect.poll(() => net.calls.rpc.filter((r) => r.name === "payment_methods_set_v2").map((r) => r.body)).toEqual([{ p_method: "upi_door", p_on: true }]);
   await page.reload();
-  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  await openSetting(page, "Payment methods");
   await expect(sw(page, "UPI at the door")).toBeChecked();   // after a reload it is still on
   await page.goto("/customer/");
   await page.getByRole("button", { name: "Add Butter Chicken" }).click();
@@ -101,7 +101,7 @@ test("A7b a failed load of the settings shows a line with Try again, and Try aga
   const net = await setup(context, page);
   net.state.admin = true; net.state.payFail = true;
   await page.goto("/admin/");
-  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  await openSetting(page, "Payment methods");
   await expect(page.getByText("Could not load the payment settings.")).toBeVisible();
   net.state.payFail = false;
   await page.getByRole("button", { name: "Try again" }).click();

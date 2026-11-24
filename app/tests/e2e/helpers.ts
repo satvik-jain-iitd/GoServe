@@ -473,3 +473,9 @@ export async function stubPushOn(context: BrowserContext, { failUnsubscribe = fa
     (window as unknown as { PushManager: unknown }).PushManager = function () {};
   }, failUnsubscribe);
 }
+
+// Story #1832: the admin's settings sit behind Settings, one row each. Opens that row's own screen.
+export async function openSetting(page: Page, row: string) {
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByRole("button", { name: new RegExp(`^${row}`) }).click();
+}

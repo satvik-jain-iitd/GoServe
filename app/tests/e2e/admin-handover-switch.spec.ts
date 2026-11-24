@@ -1,12 +1,12 @@
 // Story 1672 (epic 1652), board k8admin: the admin's Numbers tab has a group "Handover codes" under Login with two switches, each off by default and each alone.
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
-import { setup } from "./helpers";
+import { setup, openSetting } from "./helpers";
 
 async function toSettings(page: Page, context: BrowserContext) {
   const net = await setup(context, page);
   net.state.admin = true;
   await page.goto("/admin/");
-  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  await openSetting(page, "Hand-over codes");
   return net;
 }
 const kitchen = (page: Page) => page.getByRole("switch", { name: /Kitchen handoff code/ });
@@ -20,9 +20,6 @@ test("H1 the group sits under Login with two switches, both off, and the lines o
   await expect(customer(page)).not.toBeChecked();
   await expect(group.getByText("The rider tells the cook a code at pick up. Off: the rider taps Picked up, as today.")).toBeVisible();
   await expect(group.getByText("The customer tells the rider a code at the door. Off: the rider marks Delivered, as today.")).toBeVisible();
-  const [login, handover, support] = await Promise.all(["Login", "Handover codes", "Support"].map((n) => page.getByRole("region", { name: n }).boundingBox()));
-  expect(login!.y).toBeLessThan(handover!.y);
-  expect(handover!.y).toBeLessThan(support!.y);
 });
 
 test("H2 each switch works alone: the kitchen one sends kitchen, the customer one sends customer", async ({ page, context }) => {
@@ -48,7 +45,7 @@ test("H4 a switch that is on in the database shows on", async ({ page, context }
   net.state.admin = true;
   net.state.handover = { kitchen: true, customer: false };
   await page.goto("/admin/");
-  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  await openSetting(page, "Hand-over codes");
   await expect(kitchen(page)).toBeChecked();
   await expect(customer(page)).not.toBeChecked();
 });

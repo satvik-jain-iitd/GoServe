@@ -1,7 +1,7 @@
 // Story 1565: the head of a sheet. Shared by the Chromium and the WebKit spec. The cancel sheet's title sits on one line and the sheet has no close control in its head (owner's pick B);
 // "Keep order", Back, Escape and a tap outside close it. No close control in the head of any sheet is stretched. Measured in a real browser (rule 19).
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
-import { order, setup } from "./helpers";
+import { order, setup, openSetting } from "./helpers";
 
 const SIZES = [{ width: 360, height: 640 }, { width: 390, height: 844 }];
 const KITCHEN = { id: "k-1", name: "Sample Kitchen", address: "Sample Road", phone: "9876500011", pin_codes: ["110016"], open: true, active: true, opens_at: "00:00:00", closes_at: "23:59:00" };
@@ -18,7 +18,7 @@ const cancelSheet = async (page: Page, context: BrowserContext) => {
 const admin = async (page: Page, context: BrowserContext, tab: string) => {
   const net = await setup(context, page); net.state.admin = true; net.state.kitchens = [KITCHEN];
   await page.goto("/admin/");
-  await page.getByRole("button", { name: tab, exact: true }).click();
+  if (tab === "Simulator") await openSetting(page, "Simulator"); else await page.getByRole("button", { name: tab, exact: true }).click();
   if (tab === "City") await page.getByRole("button", { name: /^Open kitchen Sample Kitchen/ }).click();
 };
 

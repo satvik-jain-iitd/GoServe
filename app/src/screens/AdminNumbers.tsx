@@ -16,7 +16,7 @@ import { MAX_FEE_RUPEES, feeProblem, readFeeSetting, saveFeeSetting, type FeeSet
 import { readSwapSetting, saveSwapSetting, swapPctProblem, type SwapSetting } from "../lib/swapSetting";
 
 // Board A9: the admin-only Settings row for the sold-out swap discount.
-function SwapSettings() {
+export function SwapSettings() {
   const [now, setNow] = useState<SwapSetting | null>(null);
   const [text, setText] = useState("");
   const [line, setLine] = useState<string | null>(null);
@@ -72,7 +72,7 @@ function SwapSettings() {
 const when = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true });
 
 // Story #1263, board A10-PayMethods: the ways to pay at the door, and the UPI QR the rider shows. The database keeps one method always on.
-function PaymentSettings() {
+export function PaymentSettings() {
   const [now, setNow] = useState<PayMethodsAdmin | null>(null);
   const [qr, setQr] = useState<QrAdmin | null>(null);
   const [line, setLine] = useState<string | null>(null);
@@ -106,22 +106,14 @@ function PaymentSettings() {
       <input id={`pay-${id}`} className="ui-switch" type="checkbox" role="switch" checked={now?.methods.includes(id) === true} disabled={!now || busy !== null} onChange={(e) => void flip(id, e.target.checked)} />
     </div>
   );
-  const off = (label: string) => (
-    <div className="ui-row ui-row-static">
-      <span className="ui-row-label"><b>{label}</b><span className="ui-row-sub">Not set up yet</span></span>
-      <input className="ui-switch not-set-up" type="checkbox" role="switch" aria-label={label} checked={false} disabled readOnly />
-    </div>
+  const off = (label: string) => (   // story #1833: nothing to tap, so no switch and no sub line
+    <div className="ui-row ui-row-static"><span className="ui-row-label"><span>{label}</span></span></div>
   );
   return (
     <section className="ui-group" aria-label="Payment methods">
       <h2>Payment methods</h2>
       {sw("cash", "Cash at the door")}
       {sw("upi_door", "UPI at the door", qr !== null && !qr.object ? "Customers see it once a QR is uploaded." : undefined)}
-      {off("UPI online")}
-      {off("Card online")}
-      {now && <p className="mono ui-foot">Last changed by {now.updated_by ?? "the system"}, {when(now.updated_at)}</p>}
-      {line && <p role="alert" className="ui-note error">{line}</p>}
-      {loadFailed && <p role="alert" className="ui-note error">Could not load the payment settings. <button type="button" className="ui-btn ghost" onClick={load}>Try again</button></p>}
       <div className="ui-row ui-row-static">
         <span className="ui-row-label"><b>UPI QR</b><span className="ui-row-sub">{qr === null ? "Loading…" : qr.object ? `Your QR · set by ${qr.updated_by ?? "the system"}, ${when(qr.updated_at)}` : "No QR yet. Riders cannot take UPI."}</span></span>
         <label className="ui-btn ghost ui-file-btn" aria-disabled={busy !== null}>
@@ -131,12 +123,18 @@ function PaymentSettings() {
       </div>
       {qr?.object && <img className="ui-qr-thumb" src={qrAddress(qr.object) ?? ""} width={120} height={120} alt="The UPI QR now in use" />}
       {qrLine && <p role="alert" className="ui-note error">{qrLine}</p>}
+      {line && <p role="alert" className="ui-note error">{line}</p>}
+      <h3 className="mono ui-foot">Not set up yet</h3>
+      {off("UPI online")}
+      {off("Card online")}
+      {now && <p className="mono ui-foot">Last changed by {now.updated_by ?? "the system"}, {when(now.updated_at)}</p>}
+      {loadFailed && <p role="alert" className="ui-note error">Could not load the payment settings. <button type="button" className="ui-btn ghost" onClick={load}>Try again</button></p>}
     </section>
   );
 }
 
 // Story #1329, board A14-EarlyFriend: the early-friend offer, on or off, and its amount. Off is the default; promises already given are dropped.
-function EarlyFriendSettings() {
+export function EarlyFriendSettings() {
   const [now, setNow] = useState<EarlyFriendSetting | null>(null);
   const [text, setText] = useState("");
   const [line, setLine] = useState<string | null>(null);
@@ -175,7 +173,7 @@ function EarlyFriendSettings() {
 
 // Stories 1438 and 1443, board AR1: the block "Rider app". Built rows only: the incentive switch and, while it is on, the amount for each delivery.
 // Each change is saved at once as a new version (who and when), so a past delivery keeps the amount of its own moment. Prod starts off.
-function RiderAppSettings() {
+export function RiderAppSettings() {
   const [now, setNow] = useState<IncentiveSetting | null>(null);
   const [line, setLine] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -232,7 +230,7 @@ function RiderAppSettings() {
 }
 
 // Story #1659 layer 2: the admin-only support phone customers call. Empty Save clears it.
-function SupportSettings() {
+export function SupportSettings() {
   const [now, setNow] = useState<SupportPhoneSetting | null>(null);
   const [text, setText] = useState("");
   const [line, setLine] = useState<string | null>(null);
@@ -263,7 +261,7 @@ function SupportSettings() {
 }
 
 // Story 829: the phone code login switch. Off until an SMS provider is live; flipping it reaches an open customer app in seconds.
-function PhoneCodeSetting() {
+export function PhoneCodeSetting() {
   const [on, setOn] = useState<boolean | null>(null);
   const [line, setLine] = useState<string | null>(null);
   useEffect(() => { readOtpSwitchAdmin(getClient()).then((s) => setOn(s.on), () => setLine("Could not load the setting. Try again.")); }, []);
@@ -290,7 +288,7 @@ const HANDOVER_ROWS: { which: HandoverWhich; id: string; title: string; sub: str
   { which: "kitchen", id: "handover-kitchen", title: "Kitchen handoff code", sub: "The rider tells the cook a code at pick up. Off: the rider taps Picked up, as today." },
   { which: "customer", id: "handover-customer", title: "Customer handoff code", sub: "The customer tells the rider a code at the door. Off: the rider marks Delivered, as today." },
 ];
-function HandoverCodesSetting() {
+export function HandoverCodesSetting() {
   const [on, setOn] = useState<Record<HandoverWhich, boolean | null>>({ kitchen: null, customer: null });
   const [line, setLine] = useState<string | null>(null);
   useEffect(() => { readHandoverSwitches(getClient()).then((s) => setOn({ kitchen: s.kitchen.on, customer: s.customer.on }), () => setLine("Could not load the setting. Try again.")); }, []);
@@ -314,7 +312,7 @@ function HandoverCodesSetting() {
   );
 }
 
-export function AdminNumbers({ live, kitchens, settings }: { live?: number; kitchens?: KitchenRow[]; settings?: boolean }) {
+export function AdminNumbers({ live, kitchens, admin }: { live?: number; kitchens?: KitchenRow[]; admin?: boolean }) {
   const [rows, setRows] = useState<DayNumbers[] | null>(null);
   const [error, setError] = useState(false);
   useEffect(() => { dayNumbers(getClient()).then(setRows, () => setError(true)); }, []);
@@ -340,14 +338,7 @@ export function AdminNumbers({ live, kitchens, settings }: { live?: number; kitc
           </div>
         ))}
       </section>
-      {settings && <PaymentSettings />}
-      {settings && <EarlyFriendSettings />}
-      {settings && <RiderAppSettings />}
-      {settings && <SwapSettings />}
-      {settings && <PhoneCodeSetting />}
-      {settings && <HandoverCodesSetting />}
-      {settings && <SupportSettings />}
-      <button type="button" className="ui-row" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}><span>Send feedback</span><span className="go" aria-hidden="true">›</span></button>
+      {!admin && <button type="button" className="ui-row" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}><span>Send feedback</span><span className="go" aria-hidden="true">›</span></button>}
     </div>
   );
 }
