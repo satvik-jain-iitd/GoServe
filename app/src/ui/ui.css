@@ -315,6 +315,9 @@ button.ui-order-row svg { color: var(--gs-text-muted); }
 .ui-order-list .ui-order-row .ui-order-items, .ui-order-list .ui-order-row .ui-order-sub { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }   /* one line each, a long dish list is cut with dots; the button keeps its box */
 .ui-order-list .ui-order-row { min-height: 76px; }   /* story 1738: a delivered row (16 + 44 + 16) and a cancelled row are the same height */
 .ui-order-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ui-order-main { grid-row: 1; }
+button.ui-order-row .ui-tag { grid-row: 1; grid-column: 2; }
+.ui-order-due { grid-column: 1 / -1; grid-row: 2; font-size: var(--gs-text-sm); font-weight: 700; color: var(--md-error); }   /* story 1319: only the row grows down; the tag stays on the name line */
 .ui-order-no { font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
 .ui-order-items { font-size: var(--gs-text-lg); font-weight: 600; line-height: 1.2; }
 .ui-order-sub { font-size: var(--gs-text-sm); color: var(--gs-text-muted); }

@@ -1,7 +1,7 @@
 // Orders of the admin app on the Ink v3 boards A3 and A4 (story H12, #195; story A4): today's orders, live then done, and one order with its slip, the calls, the timeline and a cancel with a reason.
 import { useCallback, useEffect, useState } from "react";
 import { cancelOrder, doneOrders, listTodayOrders, liveOrders, type AdminOrder, type KitchenRow } from "../lib/admin";
-import { hhmm, shortId, staffLabel, trackerSteps } from "../lib/kitchen";
+import { dueLine, hhmm, shortId, staffLabel, trackerSteps } from "../lib/kitchen";
 import { formatRupees, linePaise } from "../lib/money";
 import { getClient } from "../lib/supabase";
 import { Timeline } from "../ui";
@@ -49,6 +49,7 @@ export function AdminOrders({ kitchens, onError, open, onOpen, onCount }: Props)
         <span className="ui-order-sub">{kitchen(o.kitchen_id)?.name ?? "Kitchen"} · <span className="mono">{formatRupees(o.total_paise)}</span></span>
       </span>
       <span className={`ui-tag ${TAG[o.status] ?? ""}`}>{staffLabel(o.status)}</span>
+      {dueLine(o) && <span className="ui-order-due">{dueLine(o)}</span>}
     </button>
   );
   const o = open ? orders.find((x) => x.id === open) ?? null : null;
