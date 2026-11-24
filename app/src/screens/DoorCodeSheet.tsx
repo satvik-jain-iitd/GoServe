@@ -13,7 +13,7 @@ const LINES = {
 } as const;
 export const SWITCHED_ON = "The customer's code is switched on now. Ask the customer for the 4 digit code on their order screen.";
 
-export function DoorCodeSheet({ orderId, short, method, notice, onDelivered, onClose }: { orderId: string; short: string; method: string; notice?: boolean; onDelivered: () => void; onClose: () => void }) {
+export function DoorCodeSheet({ orderId, short, method, notice, supportPhone, onDelivered, onClose }: { orderId: string; short: string; method: string; notice?: boolean; supportPhone?: string | null; onDelivered: () => void; onClose: () => void }) {
   const [line, setLine] = useState<string | null>(null);
   const [kind, setKind] = useState<"idle" | "checking" | "wrong" | "locked" | "other">("idle");
   const [reset, setReset] = useState(0);
@@ -33,6 +33,7 @@ export function DoorCodeSheet({ orderId, short, method, notice, onDelivered, onC
       <p className="ui-sheet-lead">Ask the customer for the 4 digit code on their order screen. Order {short}</p>
       <CodeBoxes resetKey={reset} disabled={kind === "locked" || kind === "checking"} invalid={kind === "wrong" || kind === "locked"} onFull={(c) => void check(c)} />
       <p role={line ? "alert" : notice ? "status" : undefined} className={line || !notice ? "ui-field-error ui-code-line" : "ui-meta ui-code-line"}>{line ?? (notice ? SWITCHED_ON : null)}</p>
+      {supportPhone && <a className="ui-rx-link" href={`tel:${supportPhone}`}>Call GoServe</a>}   {/* story 1671: the way out is a call; an admin marks it Delivered. The rider has no skip. */}
     </Sheet>
   );
 }

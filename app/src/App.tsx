@@ -1140,6 +1140,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <RiderScreen orders={orders} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
       onAct={(o, a, method) => act(o, a, "rider", method)} methods={riderMethods} qrUrl={riderQr} onLoadMethods={loadRiderMethods} gate={gate} kitchen={jobKitchen} onAtDoor={(o, m) => { if (!demo) void riderAtDoor(getClient(), o.id, m); }}
       incentive={incentive} pastDays={demo ? 0 : pastDays} onRetryPastDays={loadPastDays} supportPhone={demo ? null : supportPhone}
+      onMoneyDue={(o) => setOrders((cur) => mergeOrder(cur, { ...o, status: "delivered", updated_at: new Date().toISOString() }))}
       onCodeDelivered={(o, m) => setOrders((cur) => mergeOrder(cur, { ...o, status: "delivered", updated_at: new Date().toISOString(), paid_by: m }))}
       onChangePaid={async (o, m) => { const code = demo ? null : await riderChangePaid(getClient(), o.id, m); if (code === null) setOrders((cur) => cur.map((x) => (x.id === o.id ? { ...x, paid_by: m } : x))); return code; }} />
   );

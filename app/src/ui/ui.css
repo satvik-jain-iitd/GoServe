@@ -371,7 +371,9 @@ button.ui-order-row:has(.ui-order-due) { row-gap: var(--gs-space-1); }   /* stor
 .ui-rx-note { margin: 0; padding: 8px 12px; border-radius: var(--gs-radius-s); background: var(--gs-lime-soft); color: var(--md-on-tertiary); font-size: var(--gs-text-sm); }
 .ui-rx-note-k { font-size: 12px; color: var(--gs-text-muted); }
 .ui-rx-cant, .ui-rx-link { min-height: var(--gs-tap); padding: 0; background: none; border: 0; font: inherit; font-size: 14px; font-weight: 400; color: var(--gs-text-muted); text-decoration: underline; cursor: pointer; }
-.ui-rx-cant { justify-self: start; margin-top: -12px; }
+.ui-rx-cant { justify-self: start; }
+.ui-rx-cant-row { display: flex; align-items: center; justify-content: space-between; margin-top: -12px; }   /* story 1318 */
+.ui-rx-link { display: inline-flex; align-items: center; }
 .ui-rx-scroll { padding-bottom: var(--gs-space-3); }
 /* Story 1182, boards RY1 to RY3: the door steps. The step line sits in the bottom zone above its one button; the "Say at the door" card sits under the slip. */
 .ui-rx-change { justify-self: end; margin-top: -10px; min-height: var(--gs-tap); padding: 0; background: none; border: 0; font: inherit; font-size: 15px; font-weight: 600; color: var(--md-primary); cursor: pointer; }   /* story 1448, boards DV1 and DV2 */
@@ -1139,3 +1141,4 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
 .ui-code-boxes input:focus, .ui-code-boxes input:focus-visible { outline: none; border: 2px solid var(--md-primary); }   /* rule 15: a tapped box turns its own border; same size, no ring */
 .ui-code-boxes input[aria-invalid="true"]:focus { border-color: var(--md-error); }
 .ui-code-boxes { justify-content: center; }   /* owner, 24 Nov 2026: the four boxes sit in the middle of the sheet */
+.ui-money-rows { display: flex; flex-direction: column; gap: 8px; }   /* story 1319: four full-width rows, one above the other */
