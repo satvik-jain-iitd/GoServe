@@ -1,5 +1,10 @@
 -- Story #1484 (v2 port, switch OFF). dispatch_order_db learns to stack: settings stack_max (default 1 = today, row missing = 1) and stack_added_max_min (default 5).
 -- Nothing else changes: with stack_max = 1 the function takes the same path as before. Stacked packets skip decide_rider_rules_v2 (no decision_log row for the join).
+create or replace function dispatch_stack_max() returns integer
+language sql stable security definer set search_path = public as $$
+  select coalesce((select (value #>> '{}')::integer from params where session_id = 'global' and key = 'stack_max' order by version desc limit 1), 1)
+$$;
+revoke all on function dispatch_stack_max() from public, anon, authenticated;
 create or replace function dispatch_order_db(p_order uuid) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare
@@ -8,7 +13,7 @@ declare
   v_dec jsonb;
   v_pick text;
   v_role text := current_setting('request.jwt.claim.role', true);
-  v_max integer := coalesce((select (value #>> '{}')::integer from params where session_id = 'global' and key = 'stack_max' order by version desc limit 1), 1);   -- 1 = today: one order, one rider
+  v_max integer := dispatch_stack_max();   -- 1 = today: one order, one rider
   v_cap double precision := coalesce((select (value #>> '{}')::double precision from params where session_id = 'global' and key = 'stack_added_max_min' order by version desc limit 1), 5);
   v_stack uuid;
 begin

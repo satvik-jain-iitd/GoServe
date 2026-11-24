@@ -116,7 +116,7 @@ class Main(unittest.TestCase):
         self.assertEqual(fake.writes, [])
 
     def test_S11_apply_order_and_fresh_secrets_in_the_vault_first(self):
-        fake = Fake({m for _, m in V1 if m} | {m for _, m in V2[:-1]})
+        fake = Fake({m for _, m in V1 if m} | {m for _, m in [x for x in V2 if x[1]][:-1]})   # a file that only replaces a function (dispatch_stack) carries no marker, so it is never the one missing
         vault = os.path.join(tempfile.mkdtemp(), "v.env")
         out = run(fake, ["--apply"], vault)
         kinds = [w[0] for w in fake.writes]
