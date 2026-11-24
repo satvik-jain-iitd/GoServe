@@ -1,14 +1,14 @@
 // Story #1329 (board A14-EarlyFriend, same shape as A10): the admin turns the early-friend offer on or off and sets its amount. Off by default. A promise already given is dropped.
 import { test, expect, type Page } from "@playwright/test";
-import { setup, scan } from "./helpers";
+import { setup, scan, openSetting } from "./helpers";
 
 const toSettings = async (page: Page, context: Parameters<typeof setup>[0], over: Record<string, unknown> = {}) => {
   const net = await setup(context, page);
   net.state.admin = true;
   Object.assign(net.state, over);
   await page.goto("/admin/");
-  await page.getByRole("button", { name: "Numbers", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Early friend offer" })).toBeVisible();
+  await openSetting(page, "Offers");
+  await expect(page.getByRole("heading", { name: "Offers" })).toBeVisible();
   return net;
 };
 const sw = (page: Page) => page.getByRole("switch", { name: /^Give the early friend offer/ });
@@ -27,7 +27,7 @@ test("E2 turning it on saves it with the amount, and it is still on after a relo
   await expect(sw(page)).toBeChecked();
   await expect.poll(() => net.state.earlySets).toEqual([{ p_on: true, p_amount_paise: 10000 }]);
   await page.reload();
-  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  await openSetting(page, "Offers");
   await expect(sw(page)).toBeChecked();
   await expect(page.getByText(/^Now on, ₹100/)).toBeVisible();
 });

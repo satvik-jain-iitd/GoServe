@@ -709,7 +709,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         if (row?.status === "cancelled" && row.cancelled_by === "admin") { setOrders((cur) => mergeOrder(cur, { ...order, status: row.status, updated_at: row.updated_at, cancelled_by: row.cancelled_by })); message = "This order was declined."; }
       }
       pushTrail(`error: ${message}`);
-      live.setError(message);
+      if (!(actor === "rider" && e instanceof PlaceError && e.code === "code_required")) live.setError(message);   // story 1669: the rider's sheet says it, not a red line under the header
       return { code: e instanceof PlaceError ? e.code : "unknown", message };
     } finally {
       setBusyId(null);
@@ -810,17 +810,16 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     return () => { alive = false; };
   }, [placed?.id, riderStatus, demo]);
 
-  // Story 1658: a finished order's foot has Call support; the number is read when such an order is open. A failed read, or no number: no button.
+  // Stories 1658, 1660: the support number is read when an order is open (foot of a finished order, Help in the head). A failed read, or no number: no button.
   const [fromHistory, setFromHistory] = useState(false);   // story 1745: an order opened from History goes back to History
   useEffect(() => { if (step === "menu" || step === "bill") setFromHistory(false); }, [step]);
   const [orderSupport, setOrderSupport] = useState<string | null>(null);
-  const finished = riderStatus === "delivered" || riderStatus === "cancelled";
   useEffect(() => {
-    if (!placed || demo || !finished) return void setOrderSupport(null);
+    if (!placed || demo) return void setOrderSupport(null);
     let alive = true;
     readSupportPhone(getClient()).then((n) => alive && setOrderSupport(n), () => alive && setOrderSupport(null));
     return () => { alive = false; };
-  }, [placed?.id, finished, demo]);
+  }, [placed?.id, demo]);
 
   // Story #691 (boards T2, T3): On the way, the rider's place comes from the order_tracking row (read now, again on every realtime event and every 10 s, the rider's ping rhythm).
   const [riderPoint, setRiderPoint] = useState<Tracked | null>(null);   // story 1497: the rider's place and the order's own drop point, both from the order's row
@@ -1141,6 +1140,8 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <RiderScreen orders={orders} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
       onAct={(o, a, method) => act(o, a, "rider", method)} methods={riderMethods} qrUrl={riderQr} onLoadMethods={loadRiderMethods} gate={gate} kitchen={jobKitchen} onAtDoor={(o, m) => { if (!demo) void riderAtDoor(getClient(), o.id, m); }}
       incentive={incentive} pastDays={demo ? 0 : pastDays} onRetryPastDays={loadPastDays} supportPhone={demo ? null : supportPhone}
+      onMoneyDue={(o) => setOrders((cur) => mergeOrder(cur, { ...o, status: "delivered", updated_at: new Date().toISOString() }))}
+      onCodeDelivered={(o, m) => setOrders((cur) => mergeOrder(cur, { ...o, status: "delivered", updated_at: new Date().toISOString(), paid_by: m }))}
       onChangePaid={async (o, m) => { const code = demo ? null : await riderChangePaid(getClient(), o.id, m); if (code === null) setOrders((cur) => cur.map((x) => (x.id === o.id ? { ...x, paid_by: m } : x))); return code; }} />
   );
   const riderView = lock === "rider" ? <RiderGate>{riderScreen}</RiderGate> : riderScreen(null);
@@ -1152,7 +1153,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
   }
   const kitchenScreen = (gate: KitchenGateState | null) => (
     <KitchenScreen orders={orders} loading={live.loading} error={live.error} busyId={busyId}
-      onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} onDecline={decline} onHandover={handover} gate={gate} />
+      onStep={(o, to) => act(o, { kind: "status", to }, "kitchen")} onDecline={decline} onHandover={handover} onCodeHandedOver={(o) => setOrders((cur) => cur.map((x) => x.id === o.id ? { ...x, status: "out_for_delivery" } : x))} gate={gate} />
   );
   const kitchenView = lock === "kitchen" ? <KitchenGate>{kitchenScreen}</KitchenGate> : kitchenScreen(null);
   // How far the phone's last known place is from the delivery place. Only the phone's place when location is already allowed and the place's own point: no map call,

@@ -103,3 +103,9 @@ select { font: inherit; padding: var(--gs-space-3); border: 1px solid var(--md-o
 @media (orientation: landscape) and (max-height: 520px) {
   .shell, .frame, .below { max-width: none; }
 }
+
+/* story #1832: an inner Settings screen already names itself in its head; the group title would say it twice */
+.ui-inner > .ui-group > h2 { display: none; }
+/* story #1833: the not-set-up rows are plain text, and the two foot lines read from the left edge */
+.ui-row-plain .ui-row-label > span { font-weight: 400; }
+.ui-foot.ui-left { text-align: left; }

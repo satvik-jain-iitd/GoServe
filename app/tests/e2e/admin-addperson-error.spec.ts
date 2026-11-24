@@ -17,8 +17,7 @@ test("S1 a failed Add person shows its line inside the form section, once", asyn
   net.state.rpcError = { name: "admin_add_person", message: "not_allowed" };
   await city(page);
   await fill(page);
-  const section = page.getByRole("region", { name: "Riders" });
-  await expect(section.getByRole("alert")).toHaveText("Not allowed.");
+  await expect(page.locator(".ui-form").getByRole("alert")).toHaveText("Not allowed.");
   await expect(page.getByRole("alert")).toHaveCount(1);
 });
 

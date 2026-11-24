@@ -1,6 +1,6 @@
 // Story #1659 layer 2: the admin sets the support phone customers call, on the Numbers tab.
 import { test, expect } from "@playwright/test";
-import { setup } from "./helpers";
+import { setup, openSetting } from "./helpers";
 
 type P = import("@playwright/test").Page;
 async function toSettings(page: P, context: import("@playwright/test").BrowserContext, getAnswer?: { status: number; body: object }) {
@@ -8,7 +8,7 @@ async function toSettings(page: P, context: import("@playwright/test").BrowserCo
   net.state.admin = true;
   if (getAnswer) await page.route("**/rest/v1/rpc/support_phone_get_v2", (r) => r.fulfill({ status: getAnswer.status, headers: { "access-control-allow-origin": "*", "content-type": "application/json" }, body: JSON.stringify(getAnswer.body) }));
   await page.goto("/admin/");
-  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  await openSetting(page, "Support");
   return net;
 }
 const setCalls = (net: Awaited<ReturnType<typeof toSettings>>) => net.calls.rpc.filter((c) => c.name === "support_phone_set_v2");
@@ -55,13 +55,10 @@ test("P6 at 360x640 the field and Save fill the group, with no sideways scroll",
   const group = page.getByRole("region", { name: "Support" });
   const field = await page.getByLabel("Support phone").boundingBox();
   const save = await group.getByRole("button", { name: "Save" }).boundingBox();
-  const other = await page.getByRole("region", { name: "Login" }).boundingBox();
   const mine = await group.boundingBox();
-  expect(field && save && other && mine).toBeTruthy();
+  expect(field && save && mine).toBeTruthy();
   expect(Math.abs(save!.x - field!.x)).toBeLessThanOrEqual(1);
   expect(Math.abs(save!.width - field!.width)).toBeLessThanOrEqual(1);
-  expect(mine!.x).toBe(other!.x);
-  expect(mine!.width).toBe(other!.width);
   expect(field!.width).toBeGreaterThan(mine!.width - 40);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
@@ -71,7 +68,7 @@ for (const [w, h] of [[360, 640], [390, 844]]) {
     await page.setViewportSize({ width: w, height: h });
     await toSettings(page, context);
     const group = page.getByRole("region", { name: "Support" });
-    const head = await group.getByRole("heading", { name: "Support", exact: true }).boundingBox();
+    const head = await page.getByRole("heading", { name: "Support", exact: true }).boundingBox();
     const label = await group.locator("label[for=support-phone]").boundingBox();
     const field = await page.getByLabel("Support phone").boundingBox();
     const save = await group.getByRole("button", { name: "Save" }).boundingBox();
