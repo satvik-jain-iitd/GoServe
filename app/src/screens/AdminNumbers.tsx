@@ -107,7 +107,7 @@ export function PaymentSettings() {
     </div>
   );
   const off = (label: string) => (   // story #1833: nothing to tap, so no switch and no sub line
-    <div className="ui-row ui-row-static"><span className="ui-row-label"><span>{label}</span></span></div>
+    <div className="ui-row ui-row-static ui-row-plain"><span className="ui-row-label"><span>{label}</span></span></div>
   );
   return (
     <section className="ui-group" aria-label="Payment methods">
@@ -124,10 +124,10 @@ export function PaymentSettings() {
       {qr?.object && <img className="ui-qr-thumb" src={qrAddress(qr.object) ?? ""} width={120} height={120} alt="The UPI QR now in use" />}
       {qrLine && <p role="alert" className="ui-note error">{qrLine}</p>}
       {line && <p role="alert" className="ui-note error">{line}</p>}
-      <h3 className="mono ui-foot">Not set up yet</h3>
+      <h3 className="mono ui-foot ui-left">Not set up yet</h3>
       {off("UPI online")}
       {off("Card online")}
-      {now && <p className="mono ui-foot">Last changed by {now.updated_by ?? "the system"}, {when(now.updated_at)}</p>}
+      {now && <p className="mono ui-foot ui-left">Last changed by {now.updated_by ?? "the system"}, {when(now.updated_at)}</p>}
       {loadFailed && <p role="alert" className="ui-note error">Could not load the payment settings. <button type="button" className="ui-btn ghost" onClick={load}>Try again</button></p>}
     </section>
   );

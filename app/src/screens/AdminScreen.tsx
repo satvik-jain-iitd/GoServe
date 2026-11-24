@@ -78,7 +78,7 @@ export function AdminScreen() {
   const head = tab === "orders" ? { h: "Orders", meta: `Today · ${count.total}` } : tab === "city" ? { h: "City", meta: "Delhi" } : tab === "settings" ? { h: "Settings", meta: "" } : { h: "Numbers", meta: `Today · ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` };
   const ordersView = <AdminOrders kitchens={kitchens} onError={setError} open={openOrder} onOpen={setOpenOrder} onCount={onCount} />;
   if (tab === "orders" && openOrder) return <>{error && <p role="alert" className="ui-note error">{error}</p>}{ordersView}</>;   // A4 sits over the tabs
-  const cityScreen = <AdminCity me={me} kitchens={kitchens} people={people} invites={invites} riders={riders} onError={setError} reload={load} view={cityView} onView={setCityView} />;
+  const cityScreen = <AdminCity kitchens={kitchens} people={people} invites={invites} riders={riders} onError={setError} reload={load} view={cityView} onView={setCityView} />;
   if (tab === "city" && cityView.kind !== "list") return <>{error && <p role="alert" className="ui-note error">{error}</p>}{cityScreen}</>;   // A6 and A7 sit over the tabs
   if (tab === "settings" && setView) return (   // an inner Settings screen sits over the tabs
     <>
@@ -94,7 +94,7 @@ export function AdminScreen() {
       {tab === "orders" && ordersView}
       {tab === "numbers" && <div className="ui-scroll"><AdminNumbers live={count.live} kitchens={kitchens} admin /></div>}
       {tab === "city" && cityScreen}
-      {tab === "settings" && <AdminSettings onOpen={setSetView} />}
+      {tab === "settings" && <AdminSettings onOpen={setSetView} me={me} />}
       <Tabs current={tab} onPick={(t) => { setError(null); setTab(t); }} tabs={[{ key: "orders", label: "Orders", icon: "orders", badge: count.live }, { key: "city", label: "City", icon: "city" }, { key: "numbers", label: "Numbers", icon: "numbers" }, { key: "settings", label: "Settings", icon: "settings" }]} />
     </>
   );

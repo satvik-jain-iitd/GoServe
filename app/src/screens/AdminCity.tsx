@@ -4,12 +4,12 @@ import { DangerSheet, Sheet, useSheetFit } from "../ui";
 import { useBackCloses } from "../lib/back";
 import { addKitchen, addPerson, riderProblem, setRiderDetails, cancelInvite, inviteLink, isOwner, parsePins, offInfoOf, removeKitchen, removePerson, turnKitchenOn, locOf, setKitchenLocation, setKitchenDetails, type Invite, type OffInfo, type KitchenRow, type Loc, type Person, type PersonKind, type RiderListRow } from "../lib/admin";
 import { kitchenProblem } from "../lib/validate";
-import { getClient, signOutHere } from "../lib/supabase";
+import { getClient } from "../lib/supabase";
 import { AddDish, AdminMenu, markLeft, restoreLeft, revealLine } from "./AdminMenu";
 import { KitchenLocation } from "./KitchenLocation";
 
 type View = { kind: "list" } | { kind: "kitchen"; id: string } | { kind: "add" } | { kind: "adddish"; id: string } | { kind: "addperson" };
-type Props = { me?: { first: string; email: string | null } | null; kitchens: KitchenRow[]; people: Person[]; invites: Invite[]; riders: RiderListRow[] | null; onError: (m: string | null) => void; reload: () => Promise<void>; view: View; onView: (v: View) => void };
+type Props = { kitchens: KitchenRow[]; people: Person[]; invites: Invite[]; riders: RiderListRow[] | null; onError: (m: string | null) => void; reload: () => Promise<void>; view: View; onView: (v: View) => void };
 const EMPTY = { name: "", address: "", phone: "", pins: "", opensAt: "", closesAt: "", loc: null as Loc | null };
 const hhmm = (t: string | null | undefined) => (t ? t.slice(0, 5) : null);
 /** Open (serving), Closed (the switch is off today), Off (taken out of the system, active false). */
@@ -22,7 +22,7 @@ const TRASH = <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"
 
 const INVITE_WORDS = { kitchen: "Open this link and tap Continue with Google to start in your kitchen on GoServe.", rider: "Open this link and tap Continue with Google to start riding with GoServe.", admin: "Open this link and tap Continue with Google to run GoServe as an admin." };   // story #968: the words the box and the share sheet carry
 
-export function AdminCity({ me, kitchens, people, invites, riders, onError, reload, view, onView }: Props) {
+export function AdminCity({ kitchens, people, invites, riders, onError, reload, view, onView }: Props) {
   const [form, setForm] = useState(EMPTY);
   const fit = useSheetFit();   // story #1700: the Add a person screen follows the keyboard
   const leavePerson = () => { setInvited(null); setShareNote(null); setAddError(null); setWho({ email: "", kind: "kitchen", kitchen: "" }); setRider({ name: "", phone: "" }); onView({ kind: "list" }); };   // story 1700: leaving drops the draft, the error and the invite box
@@ -135,7 +135,6 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
     onError(failed);
     if (!failed) await reload();
   };
-  const signOut = async () => { try { await signOutHere(); } catch { /* offline */ } window.location.reload(); };
   const removeButton = (p: Person) => <button type="button" className="ui-btn ghost icon ui-trash" aria-label={`Remove ${p.email ?? p.user_id}`} title="Remove" onClick={() => void remove(p)}>{TRASH}</button>;
 
   if (view.kind === "add") return (   // A7
@@ -274,15 +273,6 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
           <div className="ui-row-pair"><button type="button" className="ui-btn ghost big" onClick={() => setFix(null)}>Not now</button><button type="button" className="ui-btn big" onClick={() => void saveFix()}>Save</button></div>
         </div>}
       </Sheet>
-      {me && (
-        <section className="ui-group" aria-label="You">   {/* story #957, board A-City-SignOut: the way out for the signed-in admin */}
-          <h2>You</h2>
-          <button type="button" className="ui-row" onClick={() => void signOut()}>
-            <span className="ui-row-label"><span>Signed in as {me.first}</span>{me.email && <span className="ui-row-sub mono">{me.email}</span>}</span>
-            <span className="ui-signout">Sign out <span aria-hidden="true">›</span></span>
-          </button>
-        </section>
-      )}
     </div>
   );
 }

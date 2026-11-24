@@ -1,6 +1,6 @@
 // Story #1832 (epic #1831): the admin Settings tab. A short list; each row says its state now and opens its own screen (the same controls that used to sit on Numbers).
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { getClient } from "../lib/supabase";
+import { getClient, signOutHere } from "../lib/supabase";
 import { formatRupees } from "../lib/money";
 import { readPayMethodsAdmin } from "../lib/payMethods";
 import { readEarlyFriend } from "../lib/earlyFriend";
@@ -23,15 +23,17 @@ const ROWS: { key: SettingsView | "feedback"; title: string }[] = [
 ];
 export const settingsTitle = (v: SettingsView) => ROWS.find((r) => r.key === v)!.title;
 const METHOD: Record<string, string> = { cash: "Cash", upi_door: "UPI at the door" };
-let kept = 0;   // the list's scroll, so Back lands at the same place
+let kept = 0;
+let lines: Partial<Record<SettingsView, string>> = {};   // the last state lines: coming back shows them at once, so no row grows under the kept scroll place   // the list's scroll, so Back lands at the same place
 
-export function AdminSettings({ onOpen }: { onOpen: (v: SettingsView) => void }) {
-  const [st, setSt] = useState<Partial<Record<SettingsView, string>>>({});
+export function AdminSettings({ onOpen, me }: { onOpen: (v: SettingsView) => void; me: { first: string; email: string | null } | null }) {
+  const signOut = async () => { try { await signOutHere(); } catch { /* offline */ } window.location.reload(); };   // story #1834: the same call the City block made
+  const [st, setSt] = useState(lines);
   const box = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => { if (box.current) box.current.scrollTop = kept; }, []);
   useEffect(() => {
     const c = getClient();
-    const put = (k: SettingsView, line: string) => setSt((o) => ({ ...o, [k]: line }));   // a read that fails says nothing
+    const put = (k: SettingsView, line: string) => setSt((o) => (lines = { ...o, [k]: line }));   // a read that fails says nothing
     const ignore = () => undefined;
     readPayMethodsAdmin(c).then((p) => { const n = p.methods.map((m) => METHOD[m]).filter(Boolean); if (n.length) put("pay", `${n.join(" and ")} ${n.length > 1 ? "are" : "is"} on`); }, ignore);
     readEarlyFriend(c).then((e) => put("offers", e.on ? `Early friend offer is on, ${formatRupees(e.amount_paise)} off` : "Early friend offer is off"), ignore);
@@ -41,7 +43,7 @@ export function AdminSettings({ onOpen }: { onOpen: (v: SettingsView) => void })
     readHandoverSwitches(c).then((h) => put("handover", `Kitchen ${h.kitchen.on ? "on" : "off"} · customer ${h.customer.on ? "on" : "off"}`), ignore);
     readSupportPhoneAdmin(c).then((s) => put("support", s.phone ? "Support phone is set" : "Support phone is not set"), ignore);
   }, []);
-  const sub = (k: string) => (k === "rules" ? "Free rider with the fewest trips" : st[k as SettingsView]);
+  const sub = (k: string) => st[k as SettingsView];   // a row with no read prints no line (Rider rules, Simulator)
   return (
     <div className="ui-scroll" ref={box} onScroll={(e) => { kept = e.currentTarget.scrollTop; }}>
       <div className="ui-pad">
@@ -51,6 +53,15 @@ export function AdminSettings({ onOpen }: { onOpen: (v: SettingsView) => void })
             <span className="go" aria-hidden="true">›</span>
           </button>
         ))}
+        {me && (
+          <section className="ui-group" aria-label="You">   {/* story #957, moved here by story #1834 */}
+            <h2>You</h2>
+            <button type="button" className="ui-row" onClick={() => void signOut()}>
+              <span className="ui-row-label"><span>Signed in as {me.first}</span>{me.email && <span className="ui-row-sub mono">{me.email}</span>}</span>
+              <span className="ui-signout">Sign out <span aria-hidden="true">›</span></span>
+            </button>
+          </section>
+        )}
       </div>
     </div>
   );
