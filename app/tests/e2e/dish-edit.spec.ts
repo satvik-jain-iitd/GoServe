@@ -108,6 +108,17 @@ test("S6 a new photo is uploaded and its address is saved on the dish", async ({
   expect(net.calls.menuWrites[0].body.image_url).toMatch(/\/storage\/v1\/object\/public\/menu\//);
 });
 
+test("S6b an .svg file is refused and no upload starts (#944: pictures only: png, jpeg, webp)", async ({ page, context }) => {
+  const net = await open(page, context);
+  await page.getByRole("button", { name: "Edit Butter Chicken" }).click();
+  const sheet = page.getByRole("dialog", { name: "Edit Butter Chicken" });
+  await expect(sheet.locator("input[type=file]")).toHaveAttribute("accept", "image/png,image/jpeg,image/webp");
+  await sheet.locator("input[type=file]").setInputFiles({ name: "dish.svg", mimeType: "image/svg+xml", buffer: Buffer.from("<svg xmlns='http://www.w3.org/2000/svg'/>") });
+  await sheet.getByRole("button", { name: "Save" }).click();
+  await expect(sheet.getByText("The photo must be a picture.")).toBeVisible();
+  expect(net.calls.uploads.length).toBe(0);
+});
+
 test("S7 an invited row's Cancel is a red trash icon button, 40 px round, with a screen-reader label", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.admin = true;

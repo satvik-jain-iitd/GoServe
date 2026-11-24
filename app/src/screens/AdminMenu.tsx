@@ -1,6 +1,6 @@
 // The menu of one kitchen on board A6 (story H12, #195; story A3): the dishes with sold out, a new price and delete, and the Add a dish form with a photo from the phone.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { addDish, deleteDish, listDishes, photoProblem, rupeesToPaise, setDish, uploadDishPhoto, type DishChange, type DishRow } from "../lib/admin";
+import { addDish, deleteDish, listDishes, PHOTO_TYPES, photoProblem, rupeesToPaise, setDish, uploadDishPhoto, type DishChange, type DishRow } from "../lib/admin";
 import { dishProblem } from "../lib/validate";
 import { formatRupees } from "../lib/money";
 import { getClient } from "../lib/supabase";
@@ -53,7 +53,7 @@ export function AdminMenu({ kitchenId, kitchenName, onError }: { kitchenId: stri
           <div className="ui-field"><label htmlFor="dish-cat">Category</label><input id="dish-cat" type="text" value={form.category} placeholder="Thali, Mains, Breads" onChange={(e) => setForm({ ...form, category: e.target.value })} /></div>
           <div className="ui-field"><label htmlFor="dish-line">Short line (optional)</label><input id="dish-line" type="text" value={form.description} placeholder="Slow cooked overnight, butter on top" onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
           <div className="ui-row ui-row-static"><label htmlFor="dish-veg" className="ui-row-label"><span>Veg</span></label><input id="dish-veg" className="ui-switch" type="checkbox" role="switch" checked={form.veg} onChange={(e) => setForm({ ...form, veg: e.target.checked })} /></div>
-          <div className="ui-field"><label htmlFor="dish-photo">Photo</label><input id="dish-photo" key={fileKey} type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} /></div>
+          <div className="ui-field"><label htmlFor="dish-photo">Photo</label><input id="dish-photo" key={fileKey} type="file" accept={PHOTO_TYPES.join(",")} onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} /></div>
           <div className="ui-form-acts" ref={dishActs}><div className="ui-row-pair"><button type="button" className="ui-btn ghost big" onClick={() => setAdding(false)}>Not now</button><button type="button" className="ui-btn big" onClick={() => void submit()}>Add dish</button></div></div>   {/* story 1476 (rule 8, as #1457): the main button last, both in view when the form opens */}
         </div>
       )}
@@ -129,7 +129,7 @@ function DishSheet({ dish, kitchenId, kitchenName, onError, onClose, onDone }: {
         </div>
         <div className="ui-dish-photo-row">
           {preview ? <img src={preview} alt="" width={64} height={64} /> : <span className="ui-ph ui-dish-photo-ph" aria-hidden="true" />}
-          <label className="ui-btn ghost ui-file-btn">Change photo<input type="file" accept="image/*" hidden onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} /></label>
+          <label className="ui-btn ghost ui-file-btn">Change photo<input type="file" accept={PHOTO_TYPES.join(",")} hidden onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} /></label>
         </div>
         <label className="ui-danger-label" htmlFor="d-name">Dish name</label>
         <input id="d-name" className="ui-sheet-input" type="text" value={name} onChange={(e) => setName(e.target.value)} />
