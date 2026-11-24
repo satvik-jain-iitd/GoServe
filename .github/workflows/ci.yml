@@ -5,6 +5,9 @@ on:
     branches: [main, dev]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   site:
     name: Site (lint, typecheck, unit, e2e, build)
@@ -207,6 +210,9 @@ jobs:
   guard:
     name: Guard (secrets, size, markers, commit messages, PR size)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read   # the Screen change step reads the PR description with gh pr view
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -223,11 +229,12 @@ jobs:
         if: github.event_name == 'pull_request'
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          base=origin/${{ github.base_ref }}
-          git diff --name-only --diff-filter=d "$base"...HEAD | grep -vE '^knowledge/|package-lock\.json$' | xargs -r python3 scripts/guard.py files
+          base="origin/$BASE_REF"
+          git diff -z --name-only --diff-filter=d "$base"...HEAD | grep -zvE '^knowledge/|package-lock\.json$' | xargs -0 -r python3 scripts/guard.py files
           # PRs into main are releases: they skip the file cap (owner, 15 Oct 2026)
-          [ "${{ github.base_ref }}" = main ] || git diff --name-only "$base"...HEAD | python3 scripts/guard.py count "$PR_TITLE"   # chore(sync) skips the cap too
+          [ "$BASE_REF" = main ] || git diff --name-only "$base"...HEAD | python3 scripts/guard.py count "$PR_TITLE"   # chore(sync) skips the cap too
 
       # Story 822: a pull request that touches app/src names its board, its render and every changed screen picture. The description is read live,
       # not from the event, so editing it and re-running this job is enough.
@@ -244,12 +251,14 @@ jobs:
 
       - name: Commit messages
         if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
           # commits already on main were gated when they merged, and GitHub's squash titles (" (#n)") can pass 72: skip them (story #625)
           rc=0
           while IFS= read -r subject; do
             python3 scripts/guard.py msg "$subject" || rc=1
-          done < <(git log --no-merges --format=%s origin/${{ github.base_ref }}..HEAD --not origin/main)
+          done < <(git log --no-merges --format=%s "origin/$BASE_REF"..HEAD --not origin/main)
           exit $rc
 
 
