@@ -43,3 +43,12 @@ test("a database without the money-due columns still lists the orders, with no m
   await expect(page.getByRole("button", { name: /^Open order 0f0f0f0f/ })).toBeVisible();
   await expect(page.getByText("Money not collected")).toHaveCount(0);
 });
+
+test("the red line sits right under the sub line (about 4 px), as in the frame", async ({ page, context }) => {
+  const net = await setup(context, page, [D(A, { money_due_reason: "will_pay_later" })]);
+  net.state.admin = true;
+  await page.goto("/admin/");
+  const r = page.getByRole("button", { name: /^Open order 0a0a0a0a/ });
+  const sub = (await r.locator(".ui-order-sub").boundingBox())!, due = (await r.locator(".ui-order-due").boundingBox())!;
+  expect(due.y - (sub.y + sub.height)).toBeLessThanOrEqual(8);
+});

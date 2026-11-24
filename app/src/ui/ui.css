@@ -317,6 +317,7 @@ button.ui-order-row svg { color: var(--gs-text-muted); }
 .ui-order-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .ui-order-main { grid-row: 1; }
 button.ui-order-row .ui-tag { grid-row: 1; grid-column: 2; }
+button.ui-order-row:has(.ui-order-due) { row-gap: var(--gs-space-1); }   /* story 1319: the red line sits right under the sub line, as in the frame */
 .ui-order-due { grid-column: 1 / -1; grid-row: 2; font-size: var(--gs-text-sm); font-weight: 700; color: var(--md-error); }   /* story 1319: only the row grows down; the tag stays on the name line */
 .ui-order-no { font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
 .ui-order-items { font-size: var(--gs-text-lg); font-weight: 600; line-height: 1.2; }
