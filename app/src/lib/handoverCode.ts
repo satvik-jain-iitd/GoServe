@@ -29,27 +29,30 @@ export function usePickupCode(orderId: string | null, active: boolean): string |
 }
 
 // Story 1667: the kitchen's side. The Enter code button shows only while the switch is on; any failed read of the switch means off (the screen stays as today).
-export function usePickupSwitch(active: boolean, tick: string): boolean {
+export function useCodeSwitch(name: "pickup_code_on" | "drop_code_on", active: boolean, tick: string): boolean {
   const [on, setOn] = useState(false);
   useEffect(() => {
     if (!active) return;
     let live = true;
     const read = async () => {
-      try { const r = await getClient().rpc("pickup_code_on"); if (live) setOn(!r.error && r.data === true); } catch { if (live) setOn(false); }
+      try { const r = await getClient().rpc(name); if (live) setOn(!r.error && r.data === true); } catch { if (live) setOn(false); }
     };
     void read();
     const onVisible = () => { if (document.visibilityState === "visible") void read(); };
     document.addEventListener("visibilitychange", onVisible);
     return () => { live = false; document.removeEventListener("visibilitychange", onVisible); };
-  }, [active, tick]);
+  }, [name, active, tick]);
   return on;
 }
 
 export type CodeAnswer = { kind: "ok" } | { kind: "wrong" } | { kind: "locked" } | { kind: "off" } | { kind: "net" } | { kind: "other"; message: string };
 // The kitchen types the rider's code. Any answer we cannot read is "net": we do not know, so the cook types again.
-export async function kitchenHandover(orderId: string, code: string): Promise<CodeAnswer> {
+export const kitchenHandover = (orderId: string, code: string) => sendCode("kitchen_handover_v1", { p_order: orderId, p_code: code });
+// Story 1669: the rider types the customer's code at the door; the right code delivers the order with the way it was paid.
+export const riderDeliver = (orderId: string, code: string, method: string) => sendCode("rider_deliver_v1", { p_order: orderId, p_code: code, p_method: method });
+async function sendCode(fn: string, args: Record<string, string>): Promise<CodeAnswer> {
   try {
-    const { data, error } = await getClient().rpc("kitchen_handover_v1", { p_order: orderId, p_code: code });
+    const { data, error } = await getClient().rpc(fn, args);
     const d = data as { ok?: boolean; error?: string; message?: string } | null;
     if (error || !d || typeof d !== "object") return { kind: "net" };
     if (d.ok === true) return { kind: "ok" };

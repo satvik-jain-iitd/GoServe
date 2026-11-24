@@ -8,7 +8,7 @@ import { NoteBand, Sheet, Skeleton, Tabs } from "../ui";
 import { useBackCloses } from "../lib/back";
 import { DishList } from "./KitchenTools";
 import { PickupCodeSheet } from "./PickupCodeSheet";
-import { usePickupSwitch } from "../lib/handoverCode";
+import { useCodeSwitch } from "../lib/handoverCode";
 import { OrderSheet } from "./OrderSheet";
 import type { KitchenGateState } from "./KitchenGate";
 
@@ -44,7 +44,7 @@ export function KitchenScreen({ orders, loading, error, busyId, onStep, onDeclin
     if ((tab !== "kitchen" && tab !== "cooking") || !gate) return;
     listRiders(getClient()).then(setRiders).catch(() => setRiders([]));
   }, [tab, gate, minute]);
-  const codeOn = usePickupSwitch(tab === "cooking" && ready.some((o) => !!o.rider_id), minute);   // story 1667: Enter code shows only while the switch is on
+  const codeOn = useCodeSwitch("pickup_code_on", tab === "cooking" && ready.some((o) => !!o.rider_id), minute);   // story 1667: Enter code shows only while the switch is on
   const [coding, setCoding] = useState<Order | null>(null);
   const closeCoding = useCallback(() => setCoding(null), []);
   useBackCloses(!!coding, closeCoding);

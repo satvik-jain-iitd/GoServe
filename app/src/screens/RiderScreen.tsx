@@ -9,7 +9,8 @@ import { Skeleton, Tabs } from "../ui";
 import { incentiveFor, type Rates } from "../lib/incentive";
 import { dayName, dayShort, olderDue, pastDays as listPastDays } from "../lib/pastDays";
 import { useBackCloses } from "../lib/back";
-import { usePickupCode } from "../lib/handoverCode";
+import { useCodeSwitch, usePickupCode } from "../lib/handoverCode";
+import { DoorCodeSheet } from "./DoorCodeSheet";
 
 type Tab = "job" | "today" | "me";
 type Props = {
@@ -22,6 +23,7 @@ type Props = {
   kitchen: KitchenCard | null;   // the kitchen of the delivery in hand
   onAtDoor: (order: Order, metres: number | null) => void;   // story 1182: the rider tapped "I am at the door" while the phone said far
   onChangePaid: (order: Order, method: DoorMethod) => Promise<string | null>;
+  onCodeDelivered?: (order: Order, method: DoorMethod) => void;   // story 1669: the customer's right code delivered the order
   pastDays?: number | "fail" | null;   // story 1442: the admin's "Past days" number; "fail" when the read failed, null while it is on its way
   onRetryPastDays?: () => void;
   supportPhone?: string | null;   // story 1718: the admin's number; null when none is set or the read failed
@@ -29,7 +31,7 @@ type Props = {
 };
 const TABS: { key: Tab; label: string; icon: Tab }[] = [{ key: "job", label: "Delivery", icon: "job" }, { key: "today", label: "Today", icon: "today" }, { key: "me", label: "Me", icon: "me" }];
 
-export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, methods: methodsRead, qrUrl, onLoadMethods, gate, kitchen, onAtDoor, onChangePaid, incentive = null, pastDays = null, onRetryPastDays, supportPhone = null }: Props) {
+export function RiderScreen({ onCodeDelivered, orders, loading, error, busyId, arrived, onAct, methods: methodsRead, qrUrl, onLoadMethods, gate, kitchen, onAtDoor, onChangePaid, incentive = null, pastDays = null, onRetryPastDays, supportPhone = null }: Props) {
   const methods = qrUrl === undefined ? null : methodsRead;   // the screen names nothing until both answers are in
   const [tab, setTab] = useState<Tab>("job");
   const [doneId, setDoneId] = useState<string | null>(null);   // the slip just delivered stays until "Next delivery" (R7)
@@ -73,8 +75,14 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
   };
   const [brokenQr, setBrokenQr] = useState<string | null>(null);
   const [collectId, setCollectId] = useState<string | null>(null);   // story 1262, board R7: "Delivered" opens Collect payment first
+  const [door, setDoor] = useState<{ id: string; method: DoorMethod; notice: boolean } | null>(null);   // story 1669 (board k4door): the customer's code sheet
+  const closeDoor = () => setDoor(null);
+  useBackCloses(!!door, closeDoor);
+  const dropOn = useCodeSwitch("drop_code_on", !!collectId, collectId ?? "");   // read when Collect payment opens; a switch turned on later is caught by the server's refusal below
   const act = async (o: Order, a: RiderAction, method?: DoorMethod) => {
+    if (dropOn && method && a.kind === "status" && a.to === "delivered") { setDoor({ id: o.id, method, notice: false }); return; }
     const failed = await onAct(o, a, method);
+    if (failed?.code === "code_required" && method) { setDoor({ id: o.id, method, notice: true }); return; }
     if (!failed && a.kind === "status" && a.to === "delivered") { setCollectId(null); setDoneId(o.id); }
   };
   const openCollect = (o: Order) => { setCollectId(o.id); onLoadMethods(); };
@@ -175,6 +183,8 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
               {upiNeedsQr && <p className="ui-meta">UPI at the door has no QR yet. Take cash, or ask the admin to upload the QR.</p>}
             </div>
           </section>
+          {door && door.id === collecting.id && <DoorCodeSheet orderId={collecting.id} short={shortId(collecting.id)} method={door.method} notice={door.notice} onClose={closeDoor}
+            onDelivered={() => { onCodeDelivered?.(collecting, door.method); setDoor(null); setCollectId(null); setDoneId(collecting.id); }} />}
           <div className="ui-bottom">
             {methods !== null && methods.length === 0 && <button type="button" className="ui-btn big" onClick={onLoadMethods}>Try again</button>}
             <div className="ui-door-pay">

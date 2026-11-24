@@ -709,7 +709,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
         if (row?.status === "cancelled" && row.cancelled_by === "admin") { setOrders((cur) => mergeOrder(cur, { ...order, status: row.status, updated_at: row.updated_at, cancelled_by: row.cancelled_by })); message = "This order was declined."; }
       }
       pushTrail(`error: ${message}`);
-      live.setError(message);
+      if (!(actor === "rider" && e instanceof PlaceError && e.code === "code_required")) live.setError(message);   // story 1669: the rider's sheet says it, not a red line under the header
       return { code: e instanceof PlaceError ? e.code : "unknown", message };
     } finally {
       setBusyId(null);
@@ -1141,6 +1141,7 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     <RiderScreen orders={orders} loading={live.loading} error={live.error} busyId={busyId} arrived={arrived}
       onAct={(o, a, method) => act(o, a, "rider", method)} methods={riderMethods} qrUrl={riderQr} onLoadMethods={loadRiderMethods} gate={gate} kitchen={jobKitchen} onAtDoor={(o, m) => { if (!demo) void riderAtDoor(getClient(), o.id, m); }}
       incentive={incentive} pastDays={demo ? 0 : pastDays} onRetryPastDays={loadPastDays} supportPhone={demo ? null : supportPhone}
+      onCodeDelivered={(o, m) => setOrders((cur) => mergeOrder(cur, { ...o, status: "delivered", updated_at: new Date().toISOString(), paid_by: m }))}
       onChangePaid={async (o, m) => { const code = demo ? null : await riderChangePaid(getClient(), o.id, m); if (code === null) setOrders((cur) => cur.map((x) => (x.id === o.id ? { ...x, paid_by: m } : x))); return code; }} />
   );
   const riderView = lock === "rider" ? <RiderGate>{riderScreen}</RiderGate> : riderScreen(null);
