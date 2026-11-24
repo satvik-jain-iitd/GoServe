@@ -157,8 +157,9 @@ export const rupeesToPaise = (text: string): number | null => {
   return paise > 0 ? paise : null;
 };
 const MAX_PHOTO = 3 * 1024 * 1024;
+export const PHOTO_TYPES = ["image/png", "image/jpeg", "image/webp"];   // raster only: an .svg can carry script (#944)
 export const photoProblem = (f: { type: string; size: number }): string | null =>
-  !f.type.startsWith("image/") ? "The photo must be a picture." : f.size > MAX_PHOTO ? "The photo must be 3 MB or less." : null;
+  !PHOTO_TYPES.includes(f.type) ? "The photo must be a picture." : f.size > MAX_PHOTO ? "The photo must be 3 MB or less." : null;
 export const photoPath = (kitchenId: string, fileName: string, id: string): string => {
   const ext = /\.(jpe?g|png|webp|gif)$/i.exec(fileName)?.[1].toLowerCase().replace("jpeg", "jpg") ?? "jpg";
   return `${kitchenId}/${id}.${ext}`;

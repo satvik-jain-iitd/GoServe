@@ -30,7 +30,7 @@ class DeployDev(unittest.TestCase):
         paths = m.group(1)
         self.assertIn("app/**", paths)
         self.assertIn("design/tokens.json", paths)  # the app build imports it
-        self.assertRegex(self.text, r"vercel@\d+ deploy")  # major version pinned
+        self.assertRegex(self.text, r"vercel@\d+\.\d+\.\d+ deploy")  # exact version pinned (#944)
         self.assertNotIn("site/", paths)
 
 

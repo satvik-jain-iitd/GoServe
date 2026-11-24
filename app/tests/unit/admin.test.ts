@@ -33,6 +33,7 @@ describe("photoProblem", () => {
   });
   it("refuses a file that is not a picture, or is too big", () => {
     expect(photoProblem({ type: "application/pdf", size: 10 })).toMatch(/picture/);
+    expect(photoProblem({ type: "image/svg+xml", size: 10 })).toMatch(/picture/);   // #944: raster only (png, jpeg, webp)
     expect(photoProblem({ type: "image/png", size: 3 * 1024 * 1024 + 1 })).toMatch(/3 MB/);
   });
 });
