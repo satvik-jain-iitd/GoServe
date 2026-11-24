@@ -9,6 +9,7 @@ import { Skeleton, Tabs } from "../ui";
 import { incentiveFor, type Rates } from "../lib/incentive";
 import { dayName, dayShort, olderDue, pastDays as listPastDays } from "../lib/pastDays";
 import { useBackCloses } from "../lib/back";
+import { usePickupCode } from "../lib/handoverCode";
 
 type Tab = "job" | "today" | "me";
 type Props = {
@@ -46,6 +47,7 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
   // Story 1441, review of PR 1469: while a trip's pickups run, or after one failed, the packets still at the kitchen stay on Pick up; never On the way with a packet left.
   const [tripIds, setTripIds] = useState<string[] | null>(null);
   const job = (tripIds ? jobs.find((o) => o.status === "ready" && tripIds.includes(o.id)) : undefined) ?? jobs[0] ?? null;
+  const pickupCode = usePickupCode(job?.id ?? null, job?.status === "ready");   // story 1666: only a Ready order alone shows it; a trip is left as it is
   const done = doneId ? orders.find((o) => o.id === doneId) ?? null : null;
   const today = deliveredToday(orders, new Date(), hoursOf(kitchen));   // story #229: the day ends at the kitchen's closing time
   const cash = cashInHand(today);
@@ -257,10 +259,18 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
                 <div className="ui-slip-total"><b>To collect at door</b><span>{formatRupees(job.total_paise)}</span></div>
               </div>
             </section>
+            {pickupCode && (
+              <section className="ui-dropcode ui-dropcode-flow" data-testid="pickup-code">   {/* story 1666, board k1rider: the code for the kitchen under the slip; the digits are real text */}
+                <h2>Code for the kitchen</h2>
+                <span className="mono ui-dropcode-digits">{pickupCode}</span>
+              </section>
+            )}
             {jobs.length > 1 && <p className="mono ui-foot">{jobs.length - 1} more waiting</p>}
             {declinedRows}
           </div>
-          <div className="ui-bottom">{button(job, riderActions(job.status)[0], "Picked up")}</div>
+          {pickupCode
+            ? <div className="ui-bottom"><p role="status" className="ui-rx-next">Tell this code to the kitchen.<br />The order goes On the way by itself.</p></div>
+            : <div className="ui-bottom">{button(job, riderActions(job.status)[0], "Picked up")}</div>}
         </>
       );
     }

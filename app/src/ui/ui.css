@@ -1110,6 +1110,7 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
 .ui-dropcode { display: flex; align-items: center; justify-content: space-between; gap: var(--gs-space-3); margin-top: auto; padding: var(--gs-space-3) var(--gs-space-4); background: var(--md-surface); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); }
 .ui-dropcode h2 { margin: 0 0 var(--gs-space-1); font-size: var(--gs-text-m); font-weight: 600; }
 .ui-dropcode p { margin: 0; font-size: var(--gs-mono-xs); color: var(--gs-text-muted); }
+.ui-dropcode-flow { margin: var(--gs-space-3) var(--gs-gutter) 0; }   /* story 1666: in the flow under the slip, in the same gutter as the slip (.ui-slip-pad), not pushed to the foot */
 .ui-dropcode-digits { font-size: var(--gs-display-m); font-weight: 600; letter-spacing: 0.2em; }
 /* Story 1794: the kitchen's Declined box is the customer's .ui-declined box, in the page gutter */
 .ui-ticket-declined { margin: 14px 0 12px; }   /* the first ticket row's top gap under the header */
