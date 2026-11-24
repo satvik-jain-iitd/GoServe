@@ -6,6 +6,7 @@ import { formatRupees } from "../lib/money";
 import { getClient } from "../lib/supabase";
 import { DangerSheet, DishPlate, VegMark, useSheetFit } from "../ui";
 
+export const revealLine = (el: HTMLElement | null) => window.setTimeout(() => { const box = el?.closest(".ui-scroll"); if (el && box) box.scrollTop = box.scrollHeight; }, 350);   // story 1700: the error line is the last thing in the scroll: go to the end, keyboard or not
 // Story #1700: a screen the admin leaves for a form comes back to the same place on the page (the dishes load after the page is back, so the menu does it).
 const left = { y: 0, back: false };
 export const markLeft = () => { left.y = document.querySelector(".ui-scroll")?.scrollTop ?? 0; left.back = true; };
@@ -133,8 +134,18 @@ export function AddDish({ kitchenId, onBack }: { kitchenId: string; onBack: () =
   const fit = useSheetFit();
   const [form, setForm] = useState({ name: "", price: "", category: "", description: "", veg: true });
   const [photo, setPhoto] = useState<File | null>(null);
+  const inFlight = useRef(false);
+  const [saving, setSaving] = useState(false);   // story 1700: a second tap while the save runs is ignored
+  const errRef = useRef<HTMLParagraphElement>(null);
   const [error, setError] = useState<string | null>(null);   // inside the screen: the page is fixed over the admin shell
+  useEffect(() => { if (error) revealLine(errRef.current); }, [error]);   // with the keyboard up the line is not left below the fold
   const submit = async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setSaving(true);
+    try { await send(); } finally { inFlight.current = false; setSaving(false); }
+  };
+  const send = async () => {
     const paise = rupeesToPaise(form.price);
     const rule = dishProblem(form);
     if (rule || paise === null) return setError(rule ?? "Type the price in rupees, for example 220 or 220.50.");
@@ -158,10 +169,10 @@ export function AddDish({ kitchenId, onBack }: { kitchenId: string; onBack: () =
           <div className="ui-field"><label htmlFor="dish-line">Short line (optional)</label><input id="dish-line" type="text" value={form.description} placeholder="Slow cooked overnight, butter on top" onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
           <div className="ui-row ui-row-static"><label htmlFor="dish-veg" className="ui-row-label"><span>Veg</span></label><input id="dish-veg" className="ui-switch" type="checkbox" role="switch" checked={form.veg} onChange={(e) => setForm({ ...form, veg: e.target.checked })} /></div>
           <div className="ui-field"><label htmlFor="dish-photo">Photo</label><input id="dish-photo" type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} /></div>
-          {error && <p role="alert" className="ui-note error">{error}</p>}
+          {error && <p ref={errRef} role="alert" className="ui-note error">{error}</p>}
         </div>
       </div>
-      <div className="ui-bottom"><div className="ui-row-pair"><button type="button" className="ui-btn ghost big" onClick={onBack}>Not now</button><button type="button" className="ui-btn big" onClick={() => void submit()}>Add dish</button></div></div>
+      <div className="ui-bottom"><div className="ui-row-pair"><button type="button" className="ui-btn ghost big" onClick={onBack}>Not now</button><button type="button" className="ui-btn big" disabled={saving} onClick={() => void submit()}>Add dish</button></div></div>
     </div>
   );
 }

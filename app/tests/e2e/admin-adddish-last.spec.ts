@@ -91,3 +91,30 @@ test("S4 Back, Not now and the phone Back leave with no save and return to the m
   expect(net.calls.menuWrites).toHaveLength(0);
   expect(await here()).toBeGreaterThan(0);   // the add button was below the fold: the user comes back to that place
 });
+
+test("S5 two fast taps on Add dish are one call, and the button is disabled while it runs", async ({ page, context }) => {
+  await open(page, context);
+  const net = nets.get(page)!;
+  await page.route(/menu_items/, async (r) => { if (r.request().method() === "POST") await new Promise((ok) => setTimeout(ok, 800)); await r.fallback(); });
+  await page.getByLabel("Dish name").fill("Dal Makhani");
+  await page.getByLabel("Price (₹)").fill("220");
+  await page.getByLabel("Category").fill("Mains");
+  const add = page.getByRole("button", { name: "Add dish" });
+  await add.evaluate((b: HTMLButtonElement) => { b.click(); b.click(); });
+  await expect(add).toBeDisabled();
+  await page.waitForTimeout(1500);
+  expect(net.calls.menuWrites.filter((w) => w.method === "POST")).toHaveLength(1);
+});
+
+test("S6 at 360x640 a failed save shows its line in view above the foot", async ({ page, context }) => {
+  await page.setViewportSize({ width: 360, height: 640 });
+  await open(page, context);
+  await page.getByLabel("Dish name").fill("Dal Makhani");   // no price: the rule line comes
+  await page.getByRole("button", { name: "Add dish" }).click();
+  const a = page.getByRole("alert");
+  await expect(a).toBeVisible();
+  await page.waitForTimeout(900);
+  const [ab, foot] = [(await a.boundingBox())!, (await page.locator(".ui-bottom").boundingBox())!];
+  expect(ab.y).toBeGreaterThanOrEqual(0);
+  expect(ab.y + ab.height).toBeLessThanOrEqual(foot.y);
+});

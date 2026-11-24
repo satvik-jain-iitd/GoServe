@@ -5,7 +5,7 @@ import { useBackCloses } from "../lib/back";
 import { addKitchen, addPerson, riderProblem, setRiderDetails, cancelInvite, inviteLink, isOwner, parsePins, offInfoOf, removeKitchen, removePerson, turnKitchenOn, locOf, setKitchenLocation, setKitchenDetails, type Invite, type OffInfo, type KitchenRow, type Loc, type Person, type PersonKind, type RiderListRow } from "../lib/admin";
 import { kitchenProblem } from "../lib/validate";
 import { getClient, signOutHere } from "../lib/supabase";
-import { AddDish, AdminMenu, markLeft, restoreLeft } from "./AdminMenu";
+import { AddDish, AdminMenu, markLeft, restoreLeft, revealLine } from "./AdminMenu";
 import { KitchenLocation } from "./KitchenLocation";
 
 type View = { kind: "list" } | { kind: "kitchen"; id: string } | { kind: "add" } | { kind: "adddish"; id: string } | { kind: "addperson" };
@@ -25,7 +25,11 @@ const INVITE_WORDS = { kitchen: "Open this link and tap Continue with Google to 
 export function AdminCity({ me, kitchens, people, invites, riders, onError, reload, view, onView }: Props) {
   const [form, setForm] = useState(EMPTY);
   const fit = useSheetFit();   // story #1700: the Add a person screen follows the keyboard
-  useBackCloses(view.kind === "addperson" || view.kind === "adddish", () => onView(view.kind === "adddish" ? { kind: "kitchen", id: view.id } : { kind: "list" }));
+  const leavePerson = () => { setInvited(null); setShareNote(null); setAddError(null); setWho({ email: "", kind: "kitchen", kitchen: "" }); setRider({ name: "", phone: "" }); onView({ kind: "list" }); };   // story 1700: leaving drops the draft, the error and the invite box
+  useBackCloses(view.kind === "addperson" || view.kind === "adddish", () => (view.kind === "adddish" ? onView({ kind: "kitchen", id: view.id }) : leavePerson()));
+  const inFlight = useRef(false);
+  const [saving, setSaving] = useState(false);   // story 1700: a second tap while the save runs is ignored
+  const errRef = useRef<HTMLParagraphElement>(null);
   useLayoutEffect(() => { if (view.kind === "list") restoreLeft(); }, [view.kind]);
   const [who, setWho] = useState<{ email: string; kind: PersonKind; kitchen: string }>({ email: "", kind: "kitchen", kitchen: "" });
   const [invited, setInvited] = useState<{ email: string; kind: "kitchen" | "rider" | "admin" } | null>(null);   // story 875: the "Invite ready" box
@@ -67,6 +71,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
     await reload();
   };
   const [addError, setAddError] = useState<string | null>(null);   // story 885: the add-person line sits under the form, next to its button
+  useEffect(() => { if (addError) revealLine(errRef.current); }, [addError]);   // story 1700: with the keyboard up the line is not left below the fold
   const invitesOf = (id: string) => invites.filter((i) => i.kind === "kitchen" && i.kitchen_id === id);
   const staffOf = (id: string) => people.filter((p) => p.kind === "kitchen" && p.kitchen_id === id);
   const firstName = (p: Person) => (p.email ?? p.user_id).split("@")[0];
@@ -80,6 +85,12 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
     if (!failed) { setForm(EMPTY); await reload(); onView({ kind: "list" }); }
   };
   const submitPerson = async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setSaving(true);
+    try { await sendPerson(); } finally { inFlight.current = false; setSaving(false); }
+  };
+  const sendPerson = async () => {
     setInvited(null);
     setShareNote(null);
     setAddError(null);
@@ -91,7 +102,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
     if (failed) return;
     setRider({ name: "", phone: "" });
     if (wasInvited) setInvited({ email: who.email.trim().toLowerCase(), kind: who.kind });   // the form stays open, with the box under it (board A-AddPerson-Invite)
-    else { setWho({ ...who, email: "" }); onView({ kind: "list" }); }
+    else leavePerson();
     await reload();
   };
   const share = async () => {
@@ -153,7 +164,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
   if (view.kind === "addperson") return (   // story #1700: Add a person is its own screen
     <div ref={fit} className="ui-fit-page">
       <header className="ui-head">
-        <button type="button" className="ui-back" aria-label="Back" onClick={() => onView({ kind: "list" })}>{BACK}</button>
+        <button type="button" className="ui-back" aria-label="Back" onClick={leavePerson}>{BACK}</button>
         <h1>Add a person</h1>
       </header>
       <div className="ui-scroll">
@@ -165,7 +176,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
           <div className="ui-field"><label htmlFor="p-name">Name</label><input id="p-name" type="text" value={rider.name} onChange={(e) => setRider({ ...rider, name: e.target.value })} /></div>
           <div className="ui-field"><label htmlFor="p-phone">Mobile number (10 digits)</label><input id="p-phone" className="mono-input" type="tel" inputMode="numeric" value={rider.phone} onChange={(e) => setRider({ ...rider, phone: e.target.value })} /></div>
           </>}
-          {addError && <p role="alert" className="ui-note error">{addError}</p>}
+          {addError && <p ref={errRef} role="alert" className="ui-note error">{addError}</p>}
           {invited && (   // board A-AddPerson-Invite
             <div role="status" className="ui-invite">
               <p className="ui-invite-title">Invite ready for {invited.email}</p>
@@ -176,7 +187,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
           )}
         </div>
       </div>
-      <div className="ui-bottom"><div className="ui-row-pair"><button type="button" className="ui-btn ghost big" onClick={() => onView({ kind: "list" })}>Not now</button><button type="button" className="ui-btn big" onClick={() => void submitPerson()}>Add person</button></div></div>
+      <div className="ui-bottom"><div className="ui-row-pair"><button type="button" className="ui-btn ghost big" onClick={leavePerson}>Not now</button><button type="button" className="ui-btn big" disabled={saving} onClick={() => void submitPerson()}>Add person</button></div></div>
     </div>
   );
   if (view.kind === "adddish") return <AddDish kitchenId={view.id} onBack={() => onView({ kind: "kitchen", id: view.id })} />;

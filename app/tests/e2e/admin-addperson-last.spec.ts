@@ -79,3 +79,72 @@ test("S3 Back, Not now and the phone Back leave with no save and return to the c
   expect(net.calls.rpc.filter((c) => c.name === "admin_add_person")).toHaveLength(0);
   expect(Math.abs((await scroller.evaluate((e) => e.scrollTop)) - at)).toBeLessThanOrEqual(2);
 });
+
+// Story 1700 review fixes.
+test("S4 leaving the form clears the invite box, the error and the draft: reopen shows none of them", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.admin = true;
+  net.state.inviteOnAdd = true;
+  await page.goto("/admin/");
+  await page.getByRole("button", { name: "City", exact: true }).click();
+  const open = async () => { await page.getByRole("button", { name: "Add a person" }).click(); await expect(page.getByLabel("Email")).toBeVisible(); };
+  await open();
+  await page.getByLabel("Email").fill("new.cook@example.com");
+  await page.getByLabel("Role").selectOption("admin");
+  await page.getByRole("button", { name: "Add person" }).click();
+  await expect(page.getByText("Invite ready for new.cook@example.com")).toBeVisible();
+  for (const leave of [() => page.getByRole("button", { name: "Back", exact: true }).click(), () => page.getByRole("button", { name: "Not now" }).click(), () => page.goBack()]) {
+    if (!(await page.getByLabel("Email").isVisible())) { await open(); await page.getByLabel("Email").fill("b@example.com"); }
+    await leave();
+    await open();
+    await expect(page.getByText("Invite ready")).toHaveCount(0);
+    await expect(page.getByLabel("Email")).toHaveValue("");
+    net.state.rpcError = { name: "admin_add_person", message: "not_allowed" };
+    await page.getByLabel("Email").fill("a@example.com");
+    await page.getByRole("button", { name: "Add person" }).click();
+    await expect(page.getByRole("alert")).toHaveCount(1);
+    net.state.rpcError = null;
+    await leave();
+    await open();
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(page.getByLabel("Email")).toHaveValue("");
+    await page.getByRole("button", { name: "Not now" }).click();
+  }
+});
+
+test("S5 two fast taps on Add person are one call, and the button is disabled while it runs", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.admin = true;
+  await page.route(/admin_add_person/, async (r) => { await new Promise((ok) => setTimeout(ok, 800)); await r.fallback(); });
+  await page.goto("/admin/");
+  await page.getByRole("button", { name: "City", exact: true }).click();
+  await page.getByRole("button", { name: "Add a person" }).click();
+  await page.getByLabel("Email").fill("cook@example.com");
+  await page.getByLabel("Kitchen", { exact: true }).selectOption("k-1");
+  const add = page.getByRole("button", { name: "Add person" });
+  await add.evaluate((b: HTMLButtonElement) => { b.click(); b.click(); });
+  await expect(add).toBeDisabled();
+  await page.waitForTimeout(1500);
+  expect(net.calls.rpc.filter((c) => c.name === "admin_add_person")).toHaveLength(1);
+});
+
+test("S6 at 360x640 a failed save shows its line in view above the foot, even on the long rider form", async ({ page, context }) => {
+  await page.setViewportSize({ width: 360, height: 640 });
+  const net = await setup(context, page);
+  net.state.admin = true;
+  net.state.rpcError = { name: "admin_add_person", message: "not_allowed" };
+  await page.goto("/admin/");
+  await page.getByRole("button", { name: "City", exact: true }).click();
+  await page.getByRole("button", { name: "Add a person" }).click();
+  await page.getByLabel("Email").fill("r@example.com");
+  await page.getByLabel("Role").selectOption("rider");
+  await page.getByLabel("Name").fill("Sunil Yadav");
+  await page.getByLabel("Mobile number (10 digits)").fill("9000000000");
+  await page.getByRole("button", { name: "Add person" }).click();
+  const a = page.getByRole("alert");
+  await expect(a).toBeVisible();
+  await page.waitForTimeout(900);
+  const [ab, foot] = [(await a.boundingBox())!, (await page.locator(".ui-bottom").boundingBox())!];
+  expect(ab.y).toBeGreaterThanOrEqual(0);
+  expect(ab.y + ab.height).toBeLessThanOrEqual(foot.y);
+});
