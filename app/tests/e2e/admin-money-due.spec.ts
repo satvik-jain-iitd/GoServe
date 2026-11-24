@@ -32,3 +32,14 @@ test("the Delivered tag keeps its top with and without the line", async ({ page,
   const top = async (id: string) => { const r = page.getByRole("button", { name: new RegExp(`^Open order ${id}`) }); const t = (await r.locator(".ui-tag").boundingBox())!.y, b = (await r.boundingBox())!.y; return t - b; };
   expect(await top("0a0a0a0a")).toBe(await top("0f0f0f0f"));
 });
+
+test("a database without the money-due columns still lists the orders, with no mark", async ({ page, context }) => {
+  const net = await setup(context, page, [D(A), D(B)]);
+  net.state.admin = true;
+  await context.route((u) => u.pathname.endsWith("/rest/v1/orders") && u.search.includes("money_due_reason"), (route) =>
+    route.fulfill({ status: 400, contentType: "application/json", body: JSON.stringify({ code: "42703", message: "column orders.money_due_reason does not exist" }) }));
+  await page.goto("/admin/");
+  await expect(page.getByRole("button", { name: /^Open order 0a0a0a0a/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Open order 0f0f0f0f/ })).toBeVisible();
+  await expect(page.getByText("Money not collected")).toHaveCount(0);
+});
