@@ -50,3 +50,11 @@ export async function riderChangePaid(c: Pick<SupabaseClient, "rpc">, orderId: s
   const r = data as { ok?: boolean; error?: string } | null;
   return r?.ok ? null : r?.error ?? "failed";
 }
+
+/** Story 1319: the food was handed over but the money did not come. Null when saved; else the refusal (code_required, note_required, not_ready ...) or "failed". */
+export async function riderMoneyNotCollected(c: Pick<SupabaseClient, "rpc">, orderId: string, reason: string, note: string | null): Promise<string | null> {
+  const { data, error } = await c.rpc("rider_money_not_collected_v1", { p_order: orderId, p_reason: reason, p_note: note });
+  if (error) return "failed";
+  const r = data as { ok?: boolean; error?: string } | null;
+  return r?.ok ? null : r?.error ?? "failed";
+}

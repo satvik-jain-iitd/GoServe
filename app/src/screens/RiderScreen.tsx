@@ -11,6 +11,7 @@ import { dayName, dayShort, olderDue, pastDays as listPastDays } from "../lib/pa
 import { useBackCloses } from "../lib/back";
 import { useCodeSwitch, usePickupCode, usePickupCodes } from "../lib/handoverCode";
 import { DoorCodeSheet } from "./DoorCodeSheet";
+import { MoneyNotCollectedSheet } from "./MoneyNotCollectedSheet";
 
 type Tab = "job" | "today" | "me";
 type Props = {
@@ -23,6 +24,7 @@ type Props = {
   kitchen: KitchenCard | null;   // the kitchen of the delivery in hand
   onAtDoor: (order: Order, metres: number | null) => void;   // story 1182: the rider tapped "I am at the door" while the phone said far
   onChangePaid: (order: Order, method: DoorMethod) => Promise<string | null>;
+  onMoneyDue?: (order: Order) => void;   // story 1319: Money not collected saved; the order is Delivered with no way of paying
   onCodeDelivered?: (order: Order, method: DoorMethod) => void;   // story 1669: the customer's right code delivered the order
   pastDays?: number | "fail" | null;   // story 1442: the admin's "Past days" number; "fail" when the read failed, null while it is on its way
   onRetryPastDays?: () => void;
@@ -31,7 +33,7 @@ type Props = {
 };
 const TABS: { key: Tab; label: string; icon: Tab }[] = [{ key: "job", label: "Delivery", icon: "job" }, { key: "today", label: "Today", icon: "today" }, { key: "me", label: "Me", icon: "me" }];
 
-export function RiderScreen({ onCodeDelivered, orders, loading, error, busyId, arrived, onAct, methods: methodsRead, qrUrl, onLoadMethods, gate, kitchen, onAtDoor, onChangePaid, incentive = null, pastDays = null, onRetryPastDays, supportPhone = null }: Props) {
+export function RiderScreen({ onCodeDelivered, orders, loading, error, busyId, arrived, onAct, methods: methodsRead, qrUrl, onLoadMethods, gate, kitchen, onAtDoor, onChangePaid, incentive = null, pastDays = null, onRetryPastDays, supportPhone = null, onMoneyDue }: Props) {
   const methods = qrUrl === undefined ? null : methodsRead;   // the screen names nothing until both answers are in
   const [tab, setTab] = useState<Tab>("job");
   const [doneId, setDoneId] = useState<string | null>(null);   // the slip just delivered stays until "Next delivery" (R7)
@@ -82,6 +84,7 @@ export function RiderScreen({ onCodeDelivered, orders, loading, error, busyId, a
     setChangeErr(code === null ? null : code === "handed_over" ? "Cash kitchen me jama ho chuka hai. Ab badalna ho to kitchen se kahein." : code === "method_off" ? "Ye tareeka abhi band hai. Admin se poochhein." : "Badal nahin paye. Network dekh kar phir try karein.");
   };
   const [brokenQr, setBrokenQr] = useState<string | null>(null);
+  const [moneyOpen, setMoneyOpen] = useState(false);   // story 1319: the sheet Money not collected
   const [collectId, setCollectId] = useState<string | null>(null);   // story 1262, board R7: "Delivered" opens Collect payment first
   const [door, setDoor] = useState<{ id: string; method: DoorMethod; notice: boolean } | null>(null);   // story 1669 (board k4door): the customer's code sheet
   const closeDoor = () => setDoor(null);
@@ -189,8 +192,11 @@ export function RiderScreen({ onCodeDelivered, orders, loading, error, busyId, a
               )}
               {upi && <p className="ui-meta">Pehle paisa, phir button.</p>}
               {upiNeedsQr && <p className="ui-meta">UPI at the door has no QR yet. Take cash, or ask the admin to upload the QR.</p>}
+              {deliver && <button type="button" className="ui-rx-cant" onClick={() => setMoneyOpen(true)}>Money not collected?</button>}
             </div>
           </section>
+          {moneyOpen && deliver && <MoneyNotCollectedSheet orderId={collecting.id} short={shortId(collecting.id)} amount={amount} onClose={() => setMoneyOpen(false)}
+            onDone={() => { onMoneyDue?.(collecting); setMoneyOpen(false); setCollectId(null); setDoneId(collecting.id); }} />}
           {door && door.id === collecting.id && <DoorCodeSheet orderId={collecting.id} short={shortId(collecting.id)} method={door.method} notice={door.notice} supportPhone={supportPhone} onClose={closeDoor}
             onDelivered={() => { onCodeDelivered?.(collecting, door.method); setDoor(null); setCollectId(null); setDoneId(collecting.id); }} />}
           <div className="ui-bottom">
