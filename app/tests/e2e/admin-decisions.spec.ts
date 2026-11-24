@@ -1,8 +1,8 @@
 // Story #263 layer 1, changed by story #1068: the admin's Decisions block on the Numbers tab shows Rules only. The database decides; there is no engine to switch and no call from the block.
 import { test, expect, type Page } from "@playwright/test";
-import { setup, scan as axeScan } from "./helpers";
+import { setup, scan as axeScan, openSetting } from "./helpers";
 
-const open = async (page: Page) => { await page.goto("/admin/"); await page.getByRole("button", { name: "Numbers", exact: true }).click(); };
+const open = async (page: Page) => { await page.goto("/admin/"); await openSetting(page, "Rider rules"); };
 
 test("S1 the block shows Rules on and nothing else: no Jev, no Laya, nothing to switch", async ({ page, context }) => {
   const net = await setup(context, page);

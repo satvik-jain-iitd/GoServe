@@ -11,12 +11,12 @@ const watch = async (context: BrowserContext) => {
 };
 
 export function signOutScope() {
-  test("S1 admin City tab Sign out is local", async ({ page, context }) => {
+  test("S1 admin Settings tab Sign out is local", async ({ page, context }) => {
     const net = await setup(context, page);
     net.state.admin = true;
     const scopes = await watch(context);
     await page.goto("/admin/");
-    await page.getByRole("button", { name: "City", exact: true }).click();
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
     await page.getByRole("region", { name: "You" }).getByRole("button", { name: /Sign out/ }).click();
     await expect.poll(() => scopes).toEqual(["local"]);
   });

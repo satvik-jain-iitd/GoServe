@@ -1,6 +1,6 @@
 // Regression: the early-friend offer (board A14-EarlyFriend, story #1329) and the placed slip lines that add up (story #1295). Rows also in docs/tests/test-cases.md.
 import { test, expect, type Page, type BrowserContext, type Locator } from "@playwright/test";
-import { SESSION, order, setup, typePlace } from "../helpers";
+import { SESSION, order, setup, typePlace, openSetting } from "../helpers";
 
 const rupees = (t: string) => Number(t.replace(/[₹,\s]/g, "").replace("−", "-"));
 const sum = async (lines: Locator) => (await lines.locator(":scope > div span:last-child").allTextContents()).reduce((n, t) => n + rupees(t), 0);
@@ -10,7 +10,7 @@ const admin = async (page: Page, context: BrowserContext, over: Record<string, u
   net.state.admin = true;
   Object.assign(net.state, over);
   await page.goto("/admin/");
-  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  await openSetting(page, "Offers");
   await expect(page.getByRole("heading", { name: "Early friend offer" })).toBeVisible();
   return net;
 };
@@ -28,7 +28,7 @@ test("TC A14.2 Turn it on with 50: it is on after a reload with the amount 50", 
   await page.getByRole("switch", { name: /^Give the early friend offer/ }).click();
   await expect.poll(() => net.state.earlySets).toEqual([{ p_on: true, p_amount_paise: 5000 }]);
   await page.reload();
-  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  await openSetting(page, "Offers");
   await expect(page.getByRole("switch", { name: /^Give the early friend offer/ })).toBeChecked();
   await expect(page.getByLabel("Early friend amount, rupees")).toHaveValue("50");
 });

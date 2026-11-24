@@ -1,5 +1,6 @@
 // Story 1457 (board AP1): on the Add a person form the main button is last. "Not now" (outline) is left and "Add person" (filled) is right, an equal pair (story 1698),
-// and when the form opens both buttons are fully in view, clear of the tab bar.
+// and when the form opens both buttons are fully in view.
+// Story #1700: the form is its own screen (no tab bar, the pair in a foot under one flat line); Back, Not now and the phone Back leave with no save.
 import { test, expect, type Locator } from "@playwright/test";
 import { setup } from "./helpers";
 
@@ -17,9 +18,9 @@ for (const [w, h] of [[360, 640], [390, 844]]) {
     await page.getByRole("button", { name: "City", exact: true }).click();
     await page.getByRole("button", { name: "Add a person" }).click();
     await page.waitForTimeout(600);   // the scroll into view settles
-    expect(await page.locator(".ui-form-acts .ui-row-pair > .ui-btn").allTextContents()).toEqual(["Not now", "Add person"]);
+    expect(await page.locator(".ui-bottom .ui-row-pair > .ui-btn").allTextContents()).toEqual(["Not now", "Add person"]);
     const [noBtn, addBtn] = [page.getByRole("button", { name: "Not now" }), page.getByRole("button", { name: "Add person" })];
-    const [a, b, f] = [await rect(noBtn), await rect(addBtn), await rect(page.locator(".ui-form-acts"))];
+    const [a, b, f] = [await rect(noBtn), await rect(addBtn), await rect(page.locator(".ui-bottom .ui-row-pair"))];
     expect(a.x).toBeLessThan(b.x);
     expect(Math.abs(a.w - b.w)).toBeLessThanOrEqual(1);
     expect(Math.abs(a.y - b.y)).toBeLessThanOrEqual(1);
@@ -32,18 +33,118 @@ for (const [w, h] of [[360, 640], [390, 844]]) {
   });
 }
 
-test("S2 Given the form is open on a phone 390 x 844, then no part of either button is under the tab bar", async ({ page, context }) => {
+const CITY = Array.from({ length: 12 }, (_, i) => ({ kind: "rider", user_id: `r-${i}`, email: `rider${i}@example.com`, kitchen_id: null, kitchen_name: null }));   // a real city: the add button is below the fold
+
+test("S2 Given the form is open on a phone 390 x 844, then it is its own screen with both buttons in view and no tab bar", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.admin = true;
-  net.state.people = Array.from({ length: 12 }, (_, i) => ({ kind: "rider", user_id: `r-${i}`, email: `rider${i}@example.com`, kitchen_id: null, kitchen_name: null }));   // a real city: the form opens below the fold
+  net.state.people = CITY;
   await page.goto("/admin/");
   await page.getByRole("button", { name: "City", exact: true }).click();
   await page.getByRole("button", { name: "Add a person" }).click();
-  await page.waitForTimeout(600);   // the scroll into view settles
-  const bar = (await page.locator(".ui-tabs").boundingBox())!;
+  await expect(page.getByRole("heading", { name: "Add a person" })).toBeVisible();
+  await expect(page.locator(".ui-tabs")).toHaveCount(0);
   for (const name of ["Not now", "Add person"]) {
     const b = (await page.getByRole("button", { name }).boundingBox())!;
     expect(b.y).toBeGreaterThanOrEqual(0);
-    expect(b.y + b.height, `${name} is clear of the tab bar`).toBeLessThanOrEqual(bar.y);
+    expect(b.y + b.height, `${name} is on the screen`).toBeLessThanOrEqual(844);
   }
+  expect(await page.locator(".ui-bottom").evaluate((e) => getComputedStyle(e).borderTopWidth)).toBe("1px");
+  expect(await page.locator(".ui-scroll .ui-bottom").count()).toBe(0);
+});
+
+test("S3 Back, Not now and the phone Back leave with no save and return to the city where the user left", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.admin = true;
+  net.state.people = CITY;
+  await page.goto("/admin/");
+  await page.getByRole("button", { name: "City", exact: true }).click();
+  const add = page.getByRole("button", { name: "Add a person" });
+  await add.scrollIntoViewIfNeeded();
+  const scroller = page.locator(".ui-scroll");
+  const at = await scroller.evaluate((e) => e.scrollTop);
+  expect(at).toBeGreaterThan(0);
+  await add.click();
+  await page.getByLabel("Email").fill("x@example.com");
+  await page.getByRole("button", { name: "Back", exact: true }).click();
+  await expect(add).toBeVisible();
+  await add.click();
+  await page.getByRole("button", { name: "Not now" }).click();
+  await expect(add).toBeVisible();
+  await add.click();
+  await page.waitForTimeout(300);
+  await page.goBack();
+  await expect(add).toBeVisible();
+  await expect(page.getByLabel("Email")).toHaveCount(0);
+  expect(net.calls.rpc.filter((c) => c.name === "admin_add_person")).toHaveLength(0);
+  expect(Math.abs((await scroller.evaluate((e) => e.scrollTop)) - at)).toBeLessThanOrEqual(2);
+});
+
+// Story 1700 review fixes.
+test("S4 leaving the form clears the invite box, the error and the draft: reopen shows none of them", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.admin = true;
+  net.state.inviteOnAdd = true;
+  await page.goto("/admin/");
+  await page.getByRole("button", { name: "City", exact: true }).click();
+  const open = async () => { await page.getByRole("button", { name: "Add a person" }).click(); await expect(page.getByLabel("Email")).toBeVisible(); };
+  await open();
+  await page.getByLabel("Email").fill("new.cook@example.com");
+  await page.getByLabel("Role").selectOption("admin");
+  await page.getByRole("button", { name: "Add person" }).click();
+  await expect(page.getByText("Invite ready for new.cook@example.com")).toBeVisible();
+  for (const leave of [() => page.getByRole("button", { name: "Back", exact: true }).click(), () => page.getByRole("button", { name: "Not now" }).click(), () => page.goBack()]) {
+    if (!(await page.getByLabel("Email").isVisible())) { await open(); await page.getByLabel("Email").fill("b@example.com"); }
+    await leave();
+    await open();
+    await expect(page.getByText("Invite ready")).toHaveCount(0);
+    await expect(page.getByLabel("Email")).toHaveValue("");
+    net.state.rpcError = { name: "admin_add_person", message: "not_allowed" };
+    await page.getByLabel("Email").fill("a@example.com");
+    await page.getByRole("button", { name: "Add person" }).click();
+    await expect(page.getByRole("alert")).toHaveCount(1);
+    net.state.rpcError = null;
+    await leave();
+    await open();
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(page.getByLabel("Email")).toHaveValue("");
+    await page.getByRole("button", { name: "Not now" }).click();
+  }
+});
+
+test("S5 two fast taps on Add person are one call, and the button is disabled while it runs", async ({ page, context }) => {
+  const net = await setup(context, page);
+  net.state.admin = true;
+  await page.route(/admin_add_person/, async (r) => { await new Promise((ok) => setTimeout(ok, 800)); await r.fallback(); });
+  await page.goto("/admin/");
+  await page.getByRole("button", { name: "City", exact: true }).click();
+  await page.getByRole("button", { name: "Add a person" }).click();
+  await page.getByLabel("Email").fill("cook@example.com");
+  await page.getByLabel("Kitchen", { exact: true }).selectOption("k-1");
+  const add = page.getByRole("button", { name: "Add person" });
+  await add.evaluate((b: HTMLButtonElement) => { b.click(); b.click(); });
+  await expect(add).toBeDisabled();
+  await page.waitForTimeout(1500);
+  expect(net.calls.rpc.filter((c) => c.name === "admin_add_person")).toHaveLength(1);
+});
+
+test("S6 at 360x640 a failed save shows its line in view above the foot, even on the long rider form", async ({ page, context }) => {
+  await page.setViewportSize({ width: 360, height: 640 });
+  const net = await setup(context, page);
+  net.state.admin = true;
+  net.state.rpcError = { name: "admin_add_person", message: "not_allowed" };
+  await page.goto("/admin/");
+  await page.getByRole("button", { name: "City", exact: true }).click();
+  await page.getByRole("button", { name: "Add a person" }).click();
+  await page.getByLabel("Email").fill("r@example.com");
+  await page.getByLabel("Role").selectOption("rider");
+  await page.getByLabel("Name").fill("Sunil Yadav");
+  await page.getByLabel("Mobile number (10 digits)").fill("9000000000");
+  await page.getByRole("button", { name: "Add person" }).click();
+  const a = page.getByRole("alert");
+  await expect(a).toBeVisible();
+  await page.waitForTimeout(900);
+  const [ab, foot] = [(await a.boundingBox())!, (await page.locator(".ui-bottom").boundingBox())!];
+  expect(ab.y).toBeGreaterThanOrEqual(0);
+  expect(ab.y + ab.height).toBeLessThanOrEqual(foot.y);
 });

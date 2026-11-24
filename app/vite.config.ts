@@ -23,8 +23,8 @@ const rolePages = (): Plugin => ({
       if (page === html) throw new Error(`role-pages: could not change the manifest link for ${role}`);
       this.emitFile({ type: "asset", fileName: `${role}/index.html`, source: page });
     }
-    // Story #503: the bare address is the static story page (story.html), not the app. The demo console that lived there moves to /console/.
-    for (const page of ["console", "health", "styleguide"]) this.emitFile({ type: "asset", fileName: `${page}/index.html`, source: html });   // the pages that are the app with no role, once served by the fallback of "/"
+    // Story #503: the bare address is the static story page (story.html), not the app. The demo console that lived there moves to /console/, in test builds only (VITE_STYLEGUIDE=1; #944).
+    for (const page of process.env.VITE_STYLEGUIDE === "1" ? ["console", "health", "styleguide"] : ["health", "styleguide"]) this.emitFile({ type: "asset", fileName: `${page}/index.html`, source: html });   // the pages that are the app with no role, once served by the fallback of "/"
     const story = bundle["story.html"];
     if (!story || story.type !== "asset") throw new Error("role-pages: story.html is not in the bundle");
     index.source = String(story.source)

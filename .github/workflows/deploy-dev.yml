@@ -14,15 +14,18 @@ concurrency:
   group: deploy-dev
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   vercel:
     name: Build and publish to goserve-app-dev
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
@@ -80,4 +83,4 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: npx --yes vercel@64 deploy --prebuilt --prod
+        run: npx --yes vercel@64.7.0 deploy --prebuilt --prod

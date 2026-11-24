@@ -3,7 +3,7 @@
 // PD2: one row a day that had a delivery: the date, N delivery, Cash, then "Jama ho gaya" or "Baaki". PD3: one day's tally, no names, no address.
 // Admin Numbers, block "Rider app": "Past days", 0 to 30, starts at 7.
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
-import { SESSION, order, setup } from "./helpers";
+import { SESSION, order, setup, openSetting } from "./helpers";
 
 const at = (d: number, h: number, m: number) => new Date(2026, 10, d, h, m, 0);
 const ID = (n: number) => `${String(n).padStart(2, "0").repeat(4)}-1111-4222-8333-444444444444`;
@@ -128,7 +128,7 @@ test("AR1d the admin sets Past days: minus and plus in steps of 1, 0 to 30, star
   const net = await setup(context, page);
   net.state.admin = true;
   await page.goto("/admin/");
-  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  await openSetting(page, "Rider app");
   const block = page.getByRole("region", { name: "Rider app" });
   await expect(block.getByTestId("past-days")).toHaveText("7");
   await block.getByRole("button", { name: "Fewer past days" }).click();
@@ -136,7 +136,7 @@ test("AR1d the admin sets Past days: minus and plus in steps of 1, 0 to 30, star
   expect(net.state.pastDaysSets).toEqual([6]);
   net.state.pastDays = 0;
   await page.reload();
-  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  await openSetting(page, "Rider app");
   await expect(block.getByRole("button", { name: "Fewer past days" })).toBeDisabled();
 });
 
@@ -144,7 +144,7 @@ test("AR1e the row says 'Past days on Today' with '0 means today only', and sits
   const net = await setup(context, page);
   net.state.admin = true;
   await page.goto("/admin/");
-  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  await openSetting(page, "Rider app");
   const block = page.getByRole("region", { name: "Rider app" });
   const rows = block.locator(".ui-row");
   await expect(rows.first()).toContainText("Past days on Today");
@@ -156,7 +156,7 @@ test("AR1f 'Last changed by' shows the newer change of the block: the Past days 
   const net = await setup(context, page);   // the mock: Past days changed 14 Nov, the incentive 13 Nov
   net.state.admin = true;
   await page.goto("/admin/");
-  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  await openSetting(page, "Rider app");
   const block = page.getByRole("region", { name: "Rider app" });
   await expect(block.getByText(/^Last changed by owner@goserve\.test, 14 Nov/)).toBeVisible();
   await block.getByRole("button", { name: "More past days" }).click();

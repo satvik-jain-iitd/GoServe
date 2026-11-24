@@ -178,6 +178,7 @@ for (const theme of ["day", "night"] as const) {
     await fillCook(page, "new.cook@example.com");
     await expect(page.getByText("Invite ready for new.cook@example.com")).toBeVisible();
     await scan();   // I1
+    await page.getByRole("button", { name: "Back", exact: true }).click();   // story 1700: the form is its own screen
     await page.getByRole("button", { name: /^Open kitchen Tau Ka Dhaba/ }).click();
     await expect(page.getByText("not signed in yet").first()).toBeVisible();
     await scan();   // I2
@@ -205,6 +206,7 @@ test("S9 (#968) an admin email with no account becomes an invite: the box has th
   await expect(box).toContainText("Open this link and tap Continue with Google to run GoServe as an admin.");
   await expect(box).not.toContainText(/\b(she|he|her|his)\b/i);
   await expect(page.getByRole("alert")).toHaveCount(0);
+  await page.getByRole("button", { name: "Not now" }).click();   // story 1700: the form is its own screen; the list is under it
   await expect(page.locator(".ui-row", { hasText: "second.admin@gmail.com" }).getByText("Invited", { exact: true })).toBeVisible();
 });
 

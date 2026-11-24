@@ -3,7 +3,7 @@
 // cannot make that by itself, so a stand-in window.visualViewport is SHORT px shorter than the window. The WebKit spec also answers "display-mode: standalone"
 // with yes (a stand-in for matchMedia; the app does not read it today). A bottom safe area cannot be set in a test browser.
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
-import { order, phoneAt, phoneLoc, setup, toDeliverTo } from "./helpers";
+import { order, phoneAt, phoneLoc, setup, toDeliverTo, openSetting } from "./helpers";
 
 const SHORT = 34;
 const SIZES = [{ width: 360, height: 640 }, { width: 390, height: 844 }];
@@ -46,7 +46,7 @@ const customer = async (page: Page, context: BrowserContext, orders: object[] = 
 const admin = async (page: Page, context: BrowserContext, tab: string) => {
   const net = await setup(context, page); net.state.admin = true; net.state.kitchens = [KITCHEN];
   await page.goto("/admin/");
-  await page.getByRole("button", { name: tab, exact: true }).click();
+  if (tab === "Simulator") await openSetting(page, "Simulator"); else await page.getByRole("button", { name: tab, exact: true }).click();
   if (tab === "City") await page.getByRole("button", { name: /^Open kitchen Sample Kitchen/ }).click();
 };
 const kitchen = async (page: Page, context: BrowserContext, path: string) => {

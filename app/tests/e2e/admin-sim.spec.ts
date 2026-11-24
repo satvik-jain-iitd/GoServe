@@ -1,8 +1,8 @@
 // Story H7 (#190): the admin Simulator tab. Seed, reset, the tick switch and a tick now, all through n8n (https://sim.test, answered by the test). Never the database.
 import { test, expect, type Page } from "@playwright/test";
-import { setup, scan as axeScan } from "./helpers";
+import { setup, scan as axeScan, openSetting } from "./helpers";
 
-const open = async (page: Page) => { await page.goto("/admin/"); await page.getByRole("button", { name: "Simulator", exact: true }).click(); };
+const open = async (page: Page) => { await page.goto("/admin/"); await openSetting(page, "Simulator"); };
 const openRows = async (page: Page) => { await page.getByText("Kitchen scenario", { exact: true }).click(); await page.getByText("Rider scenario", { exact: true }).click(); };   // #848: the scenario numbers sit in two rows that open
 
 test("S1 the tab asks the webhook for the status and shows the counts, the switch and the synthetic-only line", async ({ page, context }) => {
@@ -101,7 +101,7 @@ test("S7 (#454) the Demo mode switch posts demo true then false, and shows the s
   await expect(sw).toBeChecked();
   await expect(page.getByRole("status")).toContainText("Demo mode is on");
   await page.reload();
-  await page.getByRole("button", { name: "Simulator", exact: true }).click();
+  await openSetting(page, "Simulator");
   await expect(page.getByRole("switch", { name: "Demo mode" })).toBeChecked();
   await page.getByRole("switch", { name: "Demo mode" }).click();
   await expect(page.getByRole("switch", { name: "Demo mode" })).not.toBeChecked();

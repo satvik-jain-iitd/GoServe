@@ -1,12 +1,12 @@
 // Story 829: the admin flips the phone code login in the admin panel. It is off until an SMS provider is live.
 import { test, expect } from "@playwright/test";
-import { setup } from "./helpers";
+import { setup, openSetting } from "./helpers";
 
 async function toSettings(page: import("@playwright/test").Page, context: import("@playwright/test").BrowserContext) {
   const net = await setup(context, page);
   net.state.admin = true;
   await page.goto("/admin/");
-  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  await openSetting(page, "Login");
   return net;
 }
 
