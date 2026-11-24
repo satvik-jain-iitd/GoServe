@@ -337,7 +337,12 @@ export function RiderScreen({ onCodeDelivered, orders, loading, error, busyId, a
               {job.instructions && <p className="ui-rx-note"><span className="mono ui-rx-note-k">Note ·</span> {job.instructions}</p>}
               <div className="ui-slip-rule" />
               <div className="ui-slip-total"><b>{job.payment_method === "online" && job.paid_at ? "Paid online" : "To collect at door"}</b><span>{formatRupees(job.total_paise)}</span></div>
-              {rest[1] && <button type="button" className="ui-rx-cant" disabled={busyId === job.id} onClick={() => void act(job, rest[1])}>Could not deliver?</button>}
+              {rest[1] && (
+                <div className="ui-rx-cant-row">   {/* story 1318: the helpline link shares the line; with no number the row is the same as before */}
+                  <button type="button" className="ui-rx-cant" disabled={busyId === job.id} onClick={() => void act(job, rest[1])}>Could not deliver?</button>
+                  {supportPhone && <a className="ui-rx-link" href={`tel:${supportPhone}`}>Call GoServe</a>}
+                </div>
+              )}
             </div>
           </section>
           {door.step === 3 && (

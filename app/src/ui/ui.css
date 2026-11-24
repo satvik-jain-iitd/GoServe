@@ -366,7 +366,9 @@ button.ui-order-row svg { color: var(--gs-text-muted); }
 .ui-rx-note { margin: 0; padding: 8px 12px; border-radius: var(--gs-radius-s); background: var(--gs-lime-soft); color: var(--md-on-tertiary); font-size: var(--gs-text-sm); }
 .ui-rx-note-k { font-size: 12px; color: var(--gs-text-muted); }
 .ui-rx-cant, .ui-rx-link { min-height: var(--gs-tap); padding: 0; background: none; border: 0; font: inherit; font-size: 14px; font-weight: 400; color: var(--gs-text-muted); text-decoration: underline; cursor: pointer; }
-.ui-rx-cant { justify-self: start; margin-top: -12px; }
+.ui-rx-cant { justify-self: start; }
+.ui-rx-cant-row { display: flex; align-items: center; justify-content: space-between; margin-top: -12px; }   /* story 1318 */
+.ui-rx-link { display: inline-flex; align-items: center; }
 .ui-rx-scroll { padding-bottom: var(--gs-space-3); }
 /* Story 1182, boards RY1 to RY3: the door steps. The step line sits in the bottom zone above its one button; the "Say at the door" card sits under the slip. */
 .ui-rx-change { justify-self: end; margin-top: -10px; min-height: var(--gs-tap); padding: 0; background: none; border: 0; font: inherit; font-size: 15px; font-weight: 600; color: var(--md-primary); cursor: pointer; }   /* story 1448, boards DV1 and DV2 */
