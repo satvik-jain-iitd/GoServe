@@ -76,11 +76,33 @@ test("TC5 switch off: the trip is as today, ticks and Picked up all, no code rea
   expect(reads).toEqual([]);
 });
 
-test("TC6 one packet's code cannot be read: the trip stays as today, no wrong or partial code", async ({ page, context }) => {
-  await open(context, page, true, IDS[1]);
-  await expect(page.getByRole("button", { name: "Picked up all", exact: true })).toBeDisabled();
+test("TC6 one packet's code cannot be read: the rows show without codes, no button (the server refuses it), the no-network line shows, and the codes come when the connection is back", async ({ page, context }) => {
+  const { net } = await open(context, page, true, IDS[1]);
+  await expect(page.getByRole("button", { name: "Picked up all" })).toHaveCount(0);
+  await expect(page.getByRole("checkbox")).toHaveCount(0);
   await expect(page.getByText(/Code for the kitchen/)).toHaveCount(0);
-  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(page.getByRole("status").filter({ hasText: "We could not read the codes. Check your internet." })).toBeVisible();
+  await expect(row(page, 1)).toContainText("House 2, Lajpat Nagar II");
+  await context.unrouteAll({ behavior: "ignoreErrors" }).catch(() => {});
+  void net;
+});
+
+test("TC8 the connection comes back: the codes are read again by themselves", async ({ page, context }) => {
+  let down = true;
+  const net = await setup(context, page, [0, 1, 2].map((i) => packet(i)));
+  net.state.kitchens = KITCHEN;
+  net.state.pickupOn = true;
+  await context.route("**/rest/v1/rpc/order_code_v1*", async (route) => {
+    const id = JSON.parse(route.request().postData() ?? "{}").p_order_id as string;
+    if (down) return route.abort().catch(() => {});
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, role: "rider", pickup_code: CODES[IDS.indexOf(id)] }) }).catch(() => {});
+  });
+  await page.goto("/rider/");
+  await expect(page.getByText("We could not read the codes. Check your internet.")).toBeVisible();
+  down = false;
+  await page.evaluate(() => window.dispatchEvent(new Event("online")));
+  await expect(code(page, 0).getByText(CODES[0], { exact: true })).toBeVisible();
+  await expect(page.getByText("We could not read the codes.")).toHaveCount(0);
 });
 
 for (const size of SIZES) {

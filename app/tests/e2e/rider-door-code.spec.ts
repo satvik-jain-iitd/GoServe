@@ -122,3 +122,31 @@ for (const size of SIZES) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(size.width);
   });
 }
+
+test("DC10 a focused box turns its own border the brand colour: no ring, the box keeps its size", async ({ page, context }) => {
+  await open(context, page, true);
+  await took(page).click();
+  const first = boxes(page).nth(0);
+  await page.getByRole("dialog").getByRole("heading").click();
+  const rest = await first.boundingBox();
+  await first.focus();
+  const st = await first.evaluate((e) => { const c = getComputedStyle(e); return { outline: c.outlineStyle, border: c.borderTopWidth, color: c.borderTopColor }; });
+  expect(st.outline).toBe("none");
+  expect(st.border).toBe("2px");
+  expect(st.color).not.toBe(await boxes(page).nth(1).evaluate((e) => getComputedStyle(e).borderTopColor));
+  const now = await first.boundingBox();
+  expect([now!.width, now!.height]).toEqual([rest!.width, rest!.height]);
+});
+
+for (const size of SIZES) {
+  test(`DC11 the four boxes sit in the middle of the sheet: equal space left and right at ${size.width}x${size.height}`, async ({ page, context }) => {
+    await page.setViewportSize(size);
+    await open(context, page, true);
+    await took(page).click();
+    await page.waitForTimeout(600);
+    const sheet = (await page.getByRole("dialog").boundingBox())!;
+    const f = (await boxes(page).nth(0).boundingBox())!;
+    const l = (await boxes(page).nth(3).boundingBox())!;
+    expect(Math.abs((f.x - sheet.x) - (sheet.x + sheet.width - (l.x + l.width)))).toBeLessThanOrEqual(1);
+  });
+}

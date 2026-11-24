@@ -1131,3 +1131,6 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
 .ui-tick-code .mono { font-size: var(--gs-text-sm); }
 .ui-tick-digits { font-size: 24px; letter-spacing: 0.18em; }
 .ui-tick[aria-label="Handed over"] { background: var(--md-primary); color: var(--md-on-primary); }
+.ui-code-boxes input:focus, .ui-code-boxes input:focus-visible { outline: none; border: 2px solid var(--md-primary); }   /* rule 15: a tapped box turns its own border; same size, no ring */
+.ui-code-boxes input[aria-invalid="true"]:focus { border-color: var(--md-error); }
+.ui-code-boxes { justify-content: center; }   /* owner, 24 Nov 2026: the four boxes sit in the middle of the sheet */

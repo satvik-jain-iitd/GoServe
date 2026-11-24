@@ -53,7 +53,7 @@ export function RiderScreen({ onCodeDelivered, orders, loading, error, busyId, a
   const tripKeep = tripIds ?? (first ? jobs.filter((o) => o.status === "ready" && o.kitchen_id === first.kitchen_id).map((o) => o.id) : []);
   const tripCodes = usePickupCodes(tripKeep, tripKeep.length > 1);
   useEffect(() => {   // code mode keeps the trip's packets on Pick up until the last is On the way; then the first door shows, as today
-    if (!tripCodes) return;
+    if (!tripCodes) return;   // switch off: today's trip
     if (!tripIds) setTripIds(tripKeep);
     else if (!tripIds.some((id) => jobs.find((o) => o.id === id)?.status === "ready")) setTripIds(null);
   });
@@ -243,7 +243,7 @@ export function RiderScreen({ onCodeDelivered, orders, loading, error, busyId, a
                           <span className="ui-tick-top"><span className="display ui-tick-no">{shortId(o.id)}</span><span className="mono">{formatRupees(o.total_paise)}</span></span>
                           <span>{o.items.map((x) => `${x.qty} × ${x.name}`).join(", ")}</span>
                           <span className="ui-tick-addr">{o.address}</span>
-                          <span className="ui-tick-code" data-testid={`trip-code-${shortId(o.id)}`}><span className="mono">Code for the kitchen</span><span className="display ui-tick-digits">{tripCodes[o.id]}</span></span>
+                          {tripCodes.complete && tripCodes.codes[o.id] && <span className="ui-tick-code" data-testid={`trip-code-${shortId(o.id)}`}><span className="mono">Code for the kitchen</span><span className="display ui-tick-digits">{tripCodes.codes[o.id]}</span></span>}
                         </span>
                       </div>
                     </Fragment>
@@ -254,7 +254,7 @@ export function RiderScreen({ onCodeDelivered, orders, loading, error, busyId, a
               </section>
               {declinedRows}
             </div>
-            <div className="ui-bottom"><p role="status" className="ui-rx-next">Tell each packet's code to the kitchen. Each order goes On the way by itself.</p></div>
+            <div className="ui-bottom"><p role="status" className="ui-rx-next">{tripCodes.failed ? "We could not read the codes. Check your internet." : "Tell each packet's code to the kitchen. Each order goes On the way by itself."}</p></div>
           </>
         );
       }
