@@ -155,6 +155,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-head h1 { margin: 0; flex: 1; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
 .ui-head-text h1 { flex: none; }
 .ui-head .meta { flex: none; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
+.ui-head .ui-help { flex: none; display: inline-flex; align-items: center; justify-content: center; min-width: var(--gs-tap); min-height: var(--gs-tap); }   /* story 1660: a 44 px tap box */
 /* Section head over a list: 16 px display, 8 above, 4 below, a 2 px rule */
 .ui-section { display: flex; align-items: baseline; justify-content: space-between; margin: var(--gs-space-4) var(--gs-gutter) 0; padding-bottom: 6px; border-bottom: 2px solid var(--md-outline); }
 .ui-section h2 { margin: 0; font-family: var(--gs-font-display); font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }

@@ -99,6 +99,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
   const placed = new Date(placedAt);
   const delivered = status === "delivered";
   const cancelled = status === "cancelled";
+  const refund = cancelled && pay?.state === "paid";   // story #1793: money was taken online, so it is coming back
   const gone = cancelled && !declined;   // story 1745: the customer's own cancel; a declined order keeps its own page
   const title = status === "placed" ? "Order placed" : cancelled ? (declined ? (declined.by === "admin" ? "Cancelled" : "Declined") : "Your order") : "Your order";
   const head = headWait ? "" : [kitchenName, pin].filter(Boolean).join(" · ");
@@ -108,6 +109,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
         <BackChevron label={backLabel ?? "Back to menu"} onClick={onBack} />
         <h1>{title}</h1>
         {!delivered && !cancelled && status !== "placed" ? online ? <span className="meta ui-livemark"><span aria-hidden="true" className="ui-live-dot" />Live</span> : <span className="meta">Offline</span> : <span className="meta">No. {shortId(order.id)}</span>}
+        {supportPhone && <a href={`tel:${supportPhone}`} className="ui-link ui-help">Help</a>}   {/* story 1660: one door for help, right of the Live mark */}
       </header>
       <div className="ui-scroll">
         {!online && <p role="status" className="ui-offline">No connection. This page shows your last update and catches up when you are back online.</p>}   {/* bug #1228 */}
@@ -154,7 +156,7 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
               <AdjustLines bill={bill} plain />
             </div>
             <div className="ui-slip-rule" />
-            <div className="ui-slip-total"><b>{declined || cancelled ? "Nothing to pay" : pay?.state === "paid" ? "Paid online" : pay ? "To pay online" : delivered && paidBy === "cash" ? "Cash paid" : delivered && paidBy === "upi_door" ? "Paid by UPI at the door" : delivered ? "Paid at the door" : "To pay at door"}</b><span>{declined || cancelled ? formatRupees(0) : formatRupees(order.total_paise)}</span></div>
+            <div className="ui-slip-total"><b>{refund ? "Coming back to you" : declined || cancelled ? "Nothing to pay" : pay?.state === "paid" ? "Paid online" : pay ? "To pay online" : delivered && paidBy === "cash" ? "Cash paid" : delivered && paidBy === "upi_door" ? "Paid by UPI at the door" : delivered ? "Paid at the door" : "To pay at door"}</b><span>{declined || cancelled ? formatRupees(refund ? order.total_paise : 0) : formatRupees(order.total_paise)}</span></div>
           </div>
         </section>
         <div className="ui-after">
@@ -172,9 +174,10 @@ export function PlacedScreen({ order, status, paidBy, bill, confirmedAt, placedA
               <div role="status" className="ui-declined">
                 <p><strong>{declined.by === "admin" ? "GoServe cancelled this order." : `${kitchenName || "The kitchen"} could not take this order.`}</strong></p>
                 {(declined.by !== "admin" || declined.reason.trim()) && <p>“{declined.reason}”</p>}   {/* story 1792: GoServe's cancel with no words shows no empty quotes */}
+                {refund && <><p>You paid {formatRupees(order.total_paise)} online.</p><p>It comes back in 5 to 7 days.</p></>}
                 <p className="mono ui-declined-when">{declined.by === "admin" ? "Cancelled" : "Declined"} {clock12(new Date(declined.at))} · {Math.max(0, Math.round((Date.parse(declined.at) - placed.getTime()) / 60_000))} min after you ordered</p>
               </div>
-              <p className="ui-meta">{pay ? "Your money is not taken. If you paid online, it comes back in 5 to 7 days." : "Nothing was charged."}</p>   {/* story #1261: a pay-at-door order never talks about paying online */}
+              {!refund && <p className="ui-meta">{pay ? "Your money is not taken. If you paid online, it comes back in 5 to 7 days." : "Nothing was charged."}</p>}   {/* story #1261: a pay-at-door order never talks about paying online */}
             </>
           ) : null}
           {dropCode && (

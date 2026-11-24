@@ -99,13 +99,13 @@ test("S8 an order that was placed online and paid still reads Paid online on its
   await expect(page.getByText("Paid online", { exact: true })).toBeVisible();
 });
 
-test("S9 a declined order that was paid online keeps the refund line", async ({ page, context }) => {
+test("S9 a declined order that was paid online says what comes back (story 1793)", async ({ page, context }) => {
   const o = { ...(await import("./helpers")).order("cancelled", "2020-01-01T10:02:00Z"), payment_method: "online", paid_at: "2026-11-10T09:00:00Z", cancel_reason: "We are out of butter chicken tonight, so this order cannot be made." };
   await setup(context, page, [o]);
   await page.goto("/customer/");
   await page.getByRole("button", { name: "History" }).click();
   await page.getByRole("button", { name: /Butter Chicken/ }).click();
-  await expect(page.getByText("Your money is not taken. If you paid online, it comes back in 5 to 7 days.")).toBeVisible();
+  await expect(page.getByText("It comes back in 5 to 7 days.", { exact: true })).toBeVisible();
   await expect(page.getByText("Nothing was charged.")).toHaveCount(0);
 });
 

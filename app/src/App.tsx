@@ -810,17 +810,16 @@ export function App({ lock }: { lock?: Exclude<Role, "split"> } = {}) {
     return () => { alive = false; };
   }, [placed?.id, riderStatus, demo]);
 
-  // Story 1658: a finished order's foot has Call support; the number is read when such an order is open. A failed read, or no number: no button.
+  // Stories 1658, 1660: the support number is read when an order is open (foot of a finished order, Help in the head). A failed read, or no number: no button.
   const [fromHistory, setFromHistory] = useState(false);   // story 1745: an order opened from History goes back to History
   useEffect(() => { if (step === "menu" || step === "bill") setFromHistory(false); }, [step]);
   const [orderSupport, setOrderSupport] = useState<string | null>(null);
-  const finished = riderStatus === "delivered" || riderStatus === "cancelled";
   useEffect(() => {
-    if (!placed || demo || !finished) return void setOrderSupport(null);
+    if (!placed || demo) return void setOrderSupport(null);
     let alive = true;
     readSupportPhone(getClient()).then((n) => alive && setOrderSupport(n), () => alive && setOrderSupport(null));
     return () => { alive = false; };
-  }, [placed?.id, finished, demo]);
+  }, [placed?.id, demo]);
 
   // Story #691 (boards T2, T3): On the way, the rider's place comes from the order_tracking row (read now, again on every realtime event and every 10 s, the rider's ping rhythm).
   const [riderPoint, setRiderPoint] = useState<Tracked | null>(null);   // story 1497: the rider's place and the order's own drop point, both from the order's row
