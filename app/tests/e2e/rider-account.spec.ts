@@ -110,3 +110,21 @@ test("S5 an offline rider sends no location", async ({ page, context }) => {
   expect(net.calls.riderWrites.filter((w) => w.body.lat !== undefined)).toHaveLength(0);
   expect(net.calls.rpc.filter((c) => c.name === "rider_ping")).toHaveLength(0);
 });
+
+// Story #1687 (E-TWA-1), the part a laptop can prove: a phone that sleeps freezes the page; when it wakes (the page turns visible) the rider's place is sent at once, not after a wait.
+// What a laptop cannot prove: that Android Chrome keeps sending with the screen off or in the background. That is measured on the owner's phone (scripts/rider_gap.py).
+test("S4d story 1687 after a 3 minute freeze, the page coming back to the front sends the place at once", async ({ page, context }) => {
+  await page.clock.install({ time: new Date("2026-11-19T06:30:00Z") });
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 28.5494, longitude: 77.2001 });
+  const net = await setup(context, page);
+  const pings = () => net.calls.rpc.filter((c) => c.name === "rider_ping");
+  await page.goto("/rider/");
+  await expect(page.getByRole("heading", { name: "Waiting for a delivery" })).toBeVisible();
+  await expect.poll(() => pings().length).toBe(1);
+  await page.clock.setSystemTime(new Date("2026-11-19T06:33:00Z"));   // three minutes pass with no timer running, as in a frozen background page
+  const before = pings().length;
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await expect.poll(() => pings().length).toBeGreaterThan(before);
+  expect(pings().at(-1)!.body).toEqual({ p_lat: 28.5494, p_lng: 77.2001 });
+});
