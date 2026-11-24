@@ -36,3 +36,12 @@ test("S4 the customer's note shows on the card when the order has one", async ({
   await page.goto("/rider/");
   await expect(page.getByText("Ring the bell twice, gate is blue")).toBeVisible();
 });
+
+test("S5 story 1685: the exact point is used, and a house and landmark with commas are read whole", async ({ page, context }) => {
+  const address = "Flat 4B, Tower 2, near Shiv Mandir, Gate 3, Green Park, New Delhi";
+  const net = await setup(context, page, [{ ...job("out_for_delivery", { drop_lat: 28.567731, drop_lng: 77.243219 }), address }]);
+  net.state.kitchens = [KITCHEN];
+  await page.goto("/rider/");
+  await expect(page.getByRole("link", { name: "Navigate" })).toHaveAttribute("href", /destination=28\.567731,77\.243219&/);
+  await expect(page.getByText(address)).toBeVisible();
+});
