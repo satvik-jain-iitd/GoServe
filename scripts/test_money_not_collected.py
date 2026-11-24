@@ -8,21 +8,23 @@ import test_rider_deliver_code as b   # same throwaway users and order
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 MIG = "" if os.environ.get("SKIP_MIG") else open(os.path.join(HERE, "..", "supabase", "migrations", "20261124230000_money_not_collected.sql")).read()
+MIG_CODE = "" if os.environ.get("SKIP_MIG") else open(os.path.join(HERE, "..", "supabase", "migrations", "20261124280000_money_not_collected_code.sql")).read()
 O1 = b.O1
 
 
-def call(uid, reason, note=None):
+def call(uid, reason, note=None, code=None):
     r = "null" if reason is None else f"'{reason}'"
     n = "null" if note is None else "'" + note.replace("'", "''") + "'"
-    return b.as_(uid, f"rider_money_not_collected_v1('{O1}', {r}, {n})")
+    c = "null" if code is None else code if code.startswith("(") else f"'{code}'"
+    return b.as_(uid, f"rider_money_not_collected_v1('{O1}', {r}, {n}, {c})")
 
 
 def run(*steps):
     flat = [s for st in steps for s in (st if isinstance(st, list) else [st])]
     last = ("reset role; select (select jsonb_agg(r order by i) from res) as rs, (select status from orders where id = '%s') as status, "
-            "(select paid_by from orders where id = '%s') as paid, (select money_due_reason from orders where id = '%s') as reason, (select money_due_note from orders where id = '%s') as note, "
-            "(select count(*) from order_events where order_id = '%s' and event = 'order.delivered') as delivered" % (O1, O1, O1, O1, O1))
-    r = sql("begin; " + "; ".join(list(b.MIGS) + b.SETUP + [MIG] + flat + [last]) + "; rollback;")
+            "(select paid_by from orders where id = '%s') as paid, (select money_due_reason from orders where id = '%s') as reason, (select money_due_note from orders where id = '%s') as note, (select drop_tries from order_codes where order_id = '%s') as tries, "
+            "(select count(*) from order_events where order_id = '%s' and event = 'order.delivered') as delivered" % (O1, O1, O1, O1, O1, O1))
+    r = sql("begin; " + "; ".join(list(b.MIGS) + b.SETUP + [MIG, MIG_CODE] + flat + [last]) + "; rollback;")
     assert isinstance(r, list), r
     return r[-1]
 
@@ -62,3 +64,24 @@ class MoneyNotCollected(unittest.TestCase):
         r = run(b.READY, call(b.RID, "will_pay_later"), call(b.RID, "other", "again"))
         self.assertEqual(r["rs"][1]["error"], "not_ready", r)
         self.assertEqual(r["reason"], "will_pay_later")
+
+    def test_m6_switch_on_a_wrong_code_is_refused_and_counted(self):
+        r = run(b.READY, b.ON, call(b.RID, "will_pay_later", None, b.WRONG))
+        self.assertEqual(r["rs"][0]["error"], "wrong_code", r)
+        self.assertEqual((r["status"], r["reason"]), ("out_for_delivery", None))
+        self.assertEqual(r["tries"], 1, r)
+
+    def test_m7_switch_on_the_right_code_delivers_with_the_mark_and_no_paid_by(self):
+        r = run(b.READY, b.ON, call(b.RID, "did_not_have_money", None, b.CODE))
+        self.assertTrue(r["rs"][0]["ok"], r)
+        self.assertEqual((r["status"], r["paid"], r["reason"]), ("delivered", None, "did_not_have_money"), r)
+
+    def test_m8_switch_on_too_many_wrong_codes_lock_it(self):
+        r = run(b.READY, b.ON, *[call(b.RID, "will_pay_later", None, b.WRONG) for _ in range(6)], call(b.RID, "will_pay_later", None, b.CODE))
+        self.assertEqual(r["rs"][-1]["error"], "code_locked", r)
+        self.assertEqual(r["status"], "out_for_delivery")
+
+    def test_m9_switch_off_a_code_is_not_needed_and_not_checked(self):
+        r = run(b.READY, call(b.RID, "will_pay_later", None, b.WRONG))
+        self.assertTrue(r["rs"][0]["ok"], r)
+        self.assertEqual(r["tries"], 0, r)

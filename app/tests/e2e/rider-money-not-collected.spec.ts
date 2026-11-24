@@ -54,7 +54,7 @@ test("MN1 the link opens the sheet; four full-width rows; red Not collected asle
 });
 
 test("MN2 a plain reason sends no words; Go back, Close and Back send nothing; a refusal shows a true line and the order stays", async ({ page, context }) => {
-  const { sent, sheet } = await open(context, page, { ok: false, error: "code_required", message: "x" });
+  const { sent, sheet } = await open(context, page, { ok: false, error: "not_ready", message: "x" });
   await page.getByRole("button", { name: "Money not collected?" }).click();
   await sheet.getByRole("button", { name: "Go back" }).click();
   await expect(sheet).toHaveCount(0);
@@ -66,6 +66,36 @@ test("MN2 a plain reason sends no words; Go back, Close and Back send nothing; a
   await sheet.locator(".ui-pay-row", { hasText: "Will pay later" }).click();
   await sheet.getByRole("button", { name: "Not collected", exact: true }).click();
   expect(sent).toEqual([{ p_order: ID, p_reason: "will_pay_later", p_note: null }]);
-  await expect(sheet.getByRole("alert")).toContainText("customer's code is switched on");
+  await expect(sheet.getByRole("alert")).toContainText("not out for delivery any more");
   await expect(sheet).toBeVisible();
+});
+
+test("MN3 customer code switch on: Not collected opens the existing Customer's code sheet; a wrong code shows its line; the right code delivers with the reason", async ({ page, context }) => {
+  const net = await setup(context, page, [onTheWay()]);
+  net.state.kitchens = [KITCHEN];
+  net.state.dropOn = true;
+  const sent: { p_order: string; p_reason: string; p_note: string | null; p_code: string }[] = [];
+  await context.route("**/rest/v1/rpc/rider_money_not_collected_v1*", async (route) => {
+    const body = JSON.parse(route.request().postData() ?? "{}");
+    sent.push(body);
+    const reply = body.p_code === "1234" ? { ok: true, order: { id: ID, status: "delivered" } } : { ok: false, error: "wrong_code", message: "x", tries_left: 4 };
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(reply) }).catch(() => {});
+  });
+  await page.goto("/rider/");
+  await page.getByRole("button", { name: `Arriving ${ID.slice(0, 8)}` }).click();
+  await page.getByRole("button", { name: "Collect", exact: true }).click();
+  await page.getByRole("button", { name: "Money not collected?" }).click();
+  const money = page.getByRole("dialog", { name: "Money not collected" });
+  await money.locator(".ui-pay-row", { hasText: "Will pay later" }).click();
+  await money.getByRole("button", { name: "Not collected", exact: true }).click();
+  const code = page.getByRole("dialog", { name: "Customer's code" });
+  await expect(code).toBeVisible();
+  expect(sent).toHaveLength(0);   // no call before the code is typed
+  const boxes = code.locator(".ui-code-boxes input");
+  for (let i = 0; i < 4; i++) await boxes.nth(i).fill("9876"[i]);
+  await expect(code.locator(".ui-code-line")).toContainText("That code does not match this order");
+  for (let i = 0; i < 4; i++) await boxes.nth(i).fill("1234"[i]);
+  await expect(code).toHaveCount(0);
+  expect(sent.map((s) => [s.p_reason, s.p_note, s.p_code])).toEqual([["will_pay_later", null, "9876"], ["will_pay_later", null, "1234"]]);
+  await expect(page.getByText("Delivered", { exact: true })).toBeVisible();
 });
