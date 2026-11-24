@@ -11,7 +11,7 @@ class BackendWorkflow(unittest.TestCase):
             self.text = f.read()
 
     def test_s1_the_supabase_cli_version_is_pinned_not_latest(self):
-        m = re.search(r"supabase/setup-cli@v1\s+with:\s+version:\s*([^\s#]+)", self.text)
+        m = re.search(r"supabase/setup-cli@[0-9a-f]{40}(?: #[^\n]*)?\s+with:\s+version:\s*([^\s#]+)", self.text)
         self.assertIsNotNone(m, "setup-cli step with a version not found")
         self.assertNotEqual(m.group(1).lower(), "latest")
         self.assertRegex(m.group(1), r"^\d+\.\d+\.\d+$")

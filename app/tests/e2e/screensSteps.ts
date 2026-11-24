@@ -2,7 +2,7 @@
 import { expect, type BrowserContext, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { answeredAt, ID, order, setup, typePlace, toDeliverTo, whereBox } from "./helpers";
+import { answeredAt, ID, order, setup, typePlace, toDeliverTo, whereBox, openSetting } from "./helpers";
 
 export type Screen = { name: string; path: string; width: number; height: number; step: string };
 export const screens: Screen[] = readFileSync(resolve(import.meta.dirname, "../../../docs/screens.txt"), "utf8")
@@ -264,7 +264,7 @@ export const STEPS: Record<string, (context: BrowserContext, page: Page, path: s
     await expect(page.getByRole("dialog", { name: /^Remove / })).toBeVisible(); },
   "clear-everything": async (context, page, path) => {   // story 955: the danger sheet, board D2-ClearEverything
     const net = await setup(context, page); net.state.admin = true; await page.goto(path);
-    await page.getByRole("button", { name: "Simulator", exact: true }).click(); await page.getByRole("button", { name: "Clear everything" }).click();
+    await openSetting(page, "Simulator"); await page.getByRole("button", { name: "Clear everything" }).click();
     await expect(page.getByRole("dialog", { name: "Clear everything?" })).toBeVisible(); },
   "order-sheet": async (context, page, path) => {   // story 934: board K3-OrderSheet
     const net = await setup(context, page, [order("placed")]); net.state.kitchen = "k-1"; await page.goto(path);

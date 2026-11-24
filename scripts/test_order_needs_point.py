@@ -40,6 +40,10 @@ class OrderNeedsPoint(unittest.TestCase):
         r = go(ON, POINT % ("k1", "28.56", "77.2"), final="(select drop_lat from orders where session_id = 's1') as lat")
         self.assertEqual((r["rs"][0]["ok"], r["lat"]), (True, 28.56), r)
 
+    def test_s9_the_point_is_stored_exactly_as_given_no_rounding_to_the_pin_centre(self):   # story 1685
+        r = go(ON, POINT % ("k1", "28.567731", "77.243219"), final="(select jsonb_build_object('lat', drop_lat, 'lng', drop_lng) from orders where session_id = 's1') as p")
+        self.assertEqual((r["rs"][0]["ok"], r["p"]["lat"], r["p"]["lng"]), (True, 28.567731, 77.243219), r)
+
     def test_s5_the_same_key_again_answers_the_order_that_exists_after_the_switch_goes_on(self):
         r = go(place(), ON, place())
         self.assertEqual((r["rs"][1]["ok"], r["rs"][1]["created"], r["rs"][1]["order"]["id"] == r["rs"][0]["order"]["id"], r["n"]), (True, False, True, 1), r)

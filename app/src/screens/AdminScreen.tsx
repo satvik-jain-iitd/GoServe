@@ -3,15 +3,16 @@ import { useCallback, useEffect, useState } from "react";
 import { claimInvites, isAdmin, listInvites, listKitchens, listPeople, listRiders, type Invite, type KitchenRow, type Person, type RiderListRow } from "../lib/admin";
 import { ensureSession, getClient, signOutHere } from "../lib/supabase";
 import { AdminCity } from "./AdminCity";
-import { AdminDecisions } from "./AdminDecisions";
 import { AdminNumbers } from "./AdminNumbers";
 import { AdminOrders } from "./AdminOrders";
-import { AdminSim } from "./AdminSim";
+import { AdminSettings, SettingsInner, settingsTitle, type SettingsView } from "./AdminSettings";
+import { useBackCloses } from "../lib/back";
 import { SignIn } from "./SignIn";
 import { StaffLanding, Tabs } from "../ui";
 
-type Tab = "orders" | "city" | "numbers" | "sim";
-type CityView = { kind: "list" } | { kind: "kitchen"; id: string } | { kind: "add" };
+type Tab = "orders" | "city" | "numbers" | "settings";
+const BACK = <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>;
+type CityView = { kind: "list" } | { kind: "kitchen"; id: string } | { kind: "add" } | { kind: "adddish"; id: string } | { kind: "addperson" };
 
 export function AdminScreen() {
   const [allowed, setAllowed] = useState<boolean | null>(null);
@@ -19,6 +20,8 @@ export function AdminScreen() {
   const [tab, setTab] = useState<Tab>("orders");
   const [cityView, setCityView] = useState<CityView>({ kind: "list" });
   const [riders, setRiders] = useState<RiderListRow[] | null>([]);   // null: the riders could not be read
+  const [setView, setSetView] = useState<SettingsView | null>(null);
+  useBackCloses(setView !== null, () => setSetView(null));   // the phone's Back returns to the Settings list
   const [openOrder, setOpenOrder] = useState<string | null>(null);
   const [count, setCount] = useState({ live: 0, total: 0 });
   const onCount = useCallback((live: number, total: number) => setCount({ live, total }), []);
@@ -72,20 +75,27 @@ export function AdminScreen() {
     </StaffLanding>
   );
 
-  const head = tab === "orders" ? { h: "Orders", meta: `Today · ${count.total}` } : tab === "city" ? { h: "City", meta: "Delhi" } : tab === "sim" ? { h: "Simulator", meta: "Synthetic city" } : { h: "Numbers", meta: `Today · ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` };
+  const head = tab === "orders" ? { h: "Orders", meta: `Today · ${count.total}` } : tab === "city" ? { h: "City", meta: "Delhi" } : tab === "settings" ? { h: "Settings", meta: "" } : { h: "Numbers", meta: `Today · ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` };
   const ordersView = <AdminOrders kitchens={kitchens} onError={setError} open={openOrder} onOpen={setOpenOrder} onCount={onCount} />;
   if (tab === "orders" && openOrder) return <>{error && <p role="alert" className="ui-note error">{error}</p>}{ordersView}</>;   // A4 sits over the tabs
-  const cityScreen = <AdminCity me={me} kitchens={kitchens} people={people} invites={invites} riders={riders} onError={setError} reload={load} view={cityView} onView={setCityView} />;
+  const cityScreen = <AdminCity kitchens={kitchens} people={people} invites={invites} riders={riders} onError={setError} reload={load} view={cityView} onView={setCityView} />;
   if (tab === "city" && cityView.kind !== "list") return <>{error && <p role="alert" className="ui-note error">{error}</p>}{cityScreen}</>;   // A6 and A7 sit over the tabs
+  if (tab === "settings" && setView) return (   // an inner Settings screen sits over the tabs
+    <>
+      <header className="ui-head"><button type="button" className="ui-back" aria-label="Back to settings" onClick={() => setSetView(null)}>{BACK}</button><h1>{settingsTitle(setView)}</h1></header>
+      {error && <p role="alert" className="ui-note error">{error}</p>}
+      <SettingsInner view={setView} />
+    </>
+  );
   return (
     <>
       <header className="ui-head"><h1>{head.h}</h1><span className="meta">{head.meta}</span></header>
       {error && <p role="alert" className="ui-note error">{error}</p>}
       {tab === "orders" && ordersView}
-      {tab === "numbers" && <div className="ui-scroll"><AdminNumbers live={count.live} kitchens={kitchens} settings /><div className="ui-pad"><AdminDecisions /></div></div>}
+      {tab === "numbers" && <div className="ui-scroll"><AdminNumbers live={count.live} kitchens={kitchens} admin /></div>}
       {tab === "city" && cityScreen}
-      {tab === "sim" && <div className="ui-scroll"><AdminSim /></div>}
-      <Tabs current={tab} onPick={(t) => { setError(null); setTab(t); }} tabs={[{ key: "orders", label: "Orders", icon: "orders", badge: count.live }, { key: "city", label: "City", icon: "city" }, { key: "numbers", label: "Numbers", icon: "numbers" }, { key: "sim", label: "Simulator", icon: "sim" }]} />
+      {tab === "settings" && <AdminSettings onOpen={setSetView} me={me} />}
+      <Tabs current={tab} onPick={(t) => { setError(null); setTab(t); }} tabs={[{ key: "orders", label: "Orders", icon: "orders", badge: count.live }, { key: "city", label: "City", icon: "city" }, { key: "numbers", label: "Numbers", icon: "numbers" }, { key: "settings", label: "Settings", icon: "settings" }]} />
     </>
   );
 }

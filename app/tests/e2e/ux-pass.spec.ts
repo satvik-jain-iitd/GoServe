@@ -51,6 +51,7 @@ test("D3 D11 D12 the staff apps have a Send feedback row that opens the sheet, a
   await page.goto("/admin/");
   await page.getByRole("button", { name: "Numbers", exact: true }).click();
   await expect(page.getByTestId("tile-cash")).toContainText("Cash today");
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Send feedback" }).click();
   await expect(page.getByRole("dialog", { name: "Feedback" })).toBeVisible();
 });

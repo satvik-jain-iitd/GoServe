@@ -150,3 +150,26 @@ for (const size of SIZES) {
     expect(Math.abs((f.x - sheet.x) - (sheet.x + sheet.width - (l.x + l.width)))).toBeLessThanOrEqual(1);
   });
 }
+
+test("DC-1671 the sheet has one link Call GoServe under the boxes (no skip); a wrong code moves neither the boxes nor the red line", async ({ page, context }) => {
+  const { net, sheet } = await open(context, page, true, WRONG);
+  net.state.supportPhone = "9000000000";
+  await page.reload();
+  await page.getByRole("button", { name: `Arriving ${ID.slice(0, 8)}` }).click();
+  await page.getByRole("button", { name: "Collect", exact: true }).click();
+  await took(page).click();
+  await expect(sheet).toBeVisible();
+  const link = sheet.getByRole("link", { name: "Call GoServe" });
+  await expect(link).toHaveAttribute("href", "tel:9000000000");
+  await expect(sheet.getByRole("button", { name: /skip|deliver/i })).toHaveCount(0);
+  const at = async () => ({ boxes: await sheet.locator(".ui-code-boxes").boundingBox(), line: await sheet.locator(".ui-code-line").boundingBox(), link: await link.boundingBox() });
+  let before = await at();
+  await expect.poll(async () => { const prev = before; before = await at(); return JSON.stringify(prev) === JSON.stringify(before); }).toBe(true);   // the sheet has stopped sliding in
+  expect(before.link!.y).toBeGreaterThanOrEqual(before.line!.y + before.line!.height - 1);
+  expect(before.link!.height).toBeGreaterThanOrEqual(44);
+  await type(page, "1234");
+  await expect(sheet.locator(".ui-code-line")).toContainText("That code does not match this order");
+  expect(await at()).toEqual(before);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: "/Users/satvikjain/Documents/GoServe/.worktrees/hc/.claude/handoff/dev/1671-door-link-390x844.png" });
+});

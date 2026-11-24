@@ -1,13 +1,13 @@
 // Story 1756 (epic 1753, frame fee-frames.png): the admin types the delivery fee in rupees on the Numbers tab, first row of Settings, above the Sold-out swap discount.
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
-import { setup } from "./helpers";
+import { setup, openSetting } from "./helpers";
 
 async function toNumbers(page: Page, context: BrowserContext, fee = 2000) {
   const net = await setup(context, page);
   net.state.admin = true;
   net.state.feePaise = fee;
   await page.goto("/admin/");
-  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  await openSetting(page, "Fees and discounts");
   return net;
 }
 const field = (page: Page) => page.getByLabel("Delivery fee, rupees");
@@ -86,7 +86,7 @@ for (const [w, h] of [[412, 915], [360, 640]]) {
     expect((await box(save(page))).h).toBeGreaterThanOrEqual(44);
     expect(await field(page).evaluate((e) => parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThanOrEqual(16);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    const headBefore = await box(page.getByRole("heading", { name: "Settings" }));
+    const headBefore = await box(page.getByRole("heading", { name: "Fees and discounts" }));
     const feeBox = await box(feeRow);
     expect(feeBox.y).toBeGreaterThan(headBefore.y);   // the new row is the first row under the Settings heading
     expect(feeBox.y - (headBefore.y + headBefore.h)).toBeLessThan(b.y - feeBox.y);

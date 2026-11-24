@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Sheet } from "../ui";
 import { CodeBoxes } from "../ui/CodeBoxes";
-import { riderDeliver } from "../lib/handoverCode";
+import { riderDeliver, type CodeAnswer } from "../lib/handoverCode";
 
 const LINES = {
   wrong: "That code does not match this order. Ask the customer to read it again.",
@@ -13,7 +13,7 @@ const LINES = {
 } as const;
 export const SWITCHED_ON = "The customer's code is switched on now. Ask the customer for the 4 digit code on their order screen.";
 
-export function DoorCodeSheet({ orderId, short, method, notice, onDelivered, onClose }: { orderId: string; short: string; method: string; notice?: boolean; onDelivered: () => void; onClose: () => void }) {
+export function DoorCodeSheet({ orderId, short, method, verify, notice, supportPhone, onDelivered, onClose }: { orderId: string; short: string; method?: string; verify?: (code: string) => Promise<CodeAnswer>; notice?: boolean; supportPhone?: string | null; onDelivered: () => void; onClose: () => void }) {
   const [line, setLine] = useState<string | null>(null);
   const [kind, setKind] = useState<"idle" | "checking" | "wrong" | "locked" | "other">("idle");
   const [reset, setReset] = useState(0);
@@ -21,7 +21,7 @@ export function DoorCodeSheet({ orderId, short, method, notice, onDelivered, onC
   useEffect(() => () => { live.current = false; }, []);
   const check = async (code: string) => {
     setKind("checking"); setLine(null);
-    const a = await riderDeliver(orderId, code, method);
+    const a = await (verify ? verify(code) : riderDeliver(orderId, code, method ?? "cash"));
     if (!live.current) return;
     if (a.kind === "ok") { onDelivered(); return; }
     setKind(a.kind === "locked" ? "locked" : a.kind === "wrong" ? "wrong" : "other");
@@ -33,6 +33,7 @@ export function DoorCodeSheet({ orderId, short, method, notice, onDelivered, onC
       <p className="ui-sheet-lead">Ask the customer for the 4 digit code on their order screen. Order {short}</p>
       <CodeBoxes resetKey={reset} disabled={kind === "locked" || kind === "checking"} invalid={kind === "wrong" || kind === "locked"} onFull={(c) => void check(c)} />
       <p role={line ? "alert" : notice ? "status" : undefined} className={line || !notice ? "ui-field-error ui-code-line" : "ui-meta ui-code-line"}>{line ?? (notice ? SWITCHED_ON : null)}</p>
+      {supportPhone && <a className="ui-rx-link" href={`tel:${supportPhone}`}>Call GoServe</a>}   {/* story 1671: the way out is a call; an admin marks it Delivered. The rider has no skip. */}
     </Sheet>
   );
 }

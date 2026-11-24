@@ -2,7 +2,7 @@
 // Rider Today: under the cash row, "Aaj ka incentive", the amount, and "<N> delivery × ₹<amount> · salary ke saath milega". Never part of "Cash aapke paas".
 // Admin Numbers, block "Rider app": the Incentive switch, and "For each delivery" (minus, the amount, plus; steps of ₹5, ₹5 to ₹100) only while it is on.
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
-import { SESSION, order, setup } from "./helpers";
+import { SESSION, order, setup, openSetting } from "./helpers";
 
 const BASE = Date.now();   // one clock for the deliveries and the rate changes, so a slow worker never reorders them
 const ago = (s: number) => new Date(BASE - s * 1000).toISOString();
@@ -58,7 +58,7 @@ const admin = async (context: BrowserContext, page: Page, on = false) => {
   net.state.admin = true;
   net.state.incentive = { on, amount_paise: 1000, log: [] };
   await page.goto("/admin/");
-  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  await openSetting(page, "Rider app");
   await expect(page.getByRole("heading", { name: "Rider app" })).toBeVisible();
   return net;
 };

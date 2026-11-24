@@ -1,7 +1,7 @@
 // Story #954: a bottom sheet follows the visual viewport, so with the iOS keyboard open the sheet keeps its title, the word box and the red button above the keyboard.
 // Chromium has no on-screen keyboard, so the visual viewport is emulated: a stand-in window.visualViewport whose height and offsetTop the test sets.
 import { test, expect, type Page } from "@playwright/test";
-import { setup } from "./helpers";
+import { setup, openSetting } from "./helpers";
 
 const emulate = async (page: Page) => page.addInitScript(() => {
   const target = new EventTarget();
@@ -44,7 +44,7 @@ test("S2 Clear everything follows the visual viewport too, and its word box and 
   await emulate(page);
   const net = await setup(context, page); net.state.admin = true;
   await page.goto("/admin/");
-  await page.getByRole("button", { name: "Simulator", exact: true }).click();
+  await openSetting(page, "Simulator");
   await page.getByRole("button", { name: "Clear everything" }).click();
   await expect(page.getByRole("dialog", { name: "Clear everything?" })).toBeVisible();
   await fits(page, 400, 0);
