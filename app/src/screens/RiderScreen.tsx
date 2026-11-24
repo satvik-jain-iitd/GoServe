@@ -9,6 +9,8 @@ import { Skeleton, Tabs } from "../ui";
 import { incentiveFor, type Rates } from "../lib/incentive";
 import { dayName, dayShort, olderDue, pastDays as listPastDays } from "../lib/pastDays";
 import { useBackCloses } from "../lib/back";
+import { useCodeSwitch, usePickupCode, usePickupCodes } from "../lib/handoverCode";
+import { DoorCodeSheet } from "./DoorCodeSheet";
 
 type Tab = "job" | "today" | "me";
 type Props = {
@@ -21,6 +23,7 @@ type Props = {
   kitchen: KitchenCard | null;   // the kitchen of the delivery in hand
   onAtDoor: (order: Order, metres: number | null) => void;   // story 1182: the rider tapped "I am at the door" while the phone said far
   onChangePaid: (order: Order, method: DoorMethod) => Promise<string | null>;
+  onCodeDelivered?: (order: Order, method: DoorMethod) => void;   // story 1669: the customer's right code delivered the order
   pastDays?: number | "fail" | null;   // story 1442: the admin's "Past days" number; "fail" when the read failed, null while it is on its way
   onRetryPastDays?: () => void;
   supportPhone?: string | null;   // story 1718: the admin's number; null when none is set or the read failed
@@ -28,7 +31,7 @@ type Props = {
 };
 const TABS: { key: Tab; label: string; icon: Tab }[] = [{ key: "job", label: "Delivery", icon: "job" }, { key: "today", label: "Today", icon: "today" }, { key: "me", label: "Me", icon: "me" }];
 
-export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, methods: methodsRead, qrUrl, onLoadMethods, gate, kitchen, onAtDoor, onChangePaid, incentive = null, pastDays = null, onRetryPastDays, supportPhone = null }: Props) {
+export function RiderScreen({ onCodeDelivered, orders, loading, error, busyId, arrived, onAct, methods: methodsRead, qrUrl, onLoadMethods, gate, kitchen, onAtDoor, onChangePaid, incentive = null, pastDays = null, onRetryPastDays, supportPhone = null }: Props) {
   const methods = qrUrl === undefined ? null : methodsRead;   // the screen names nothing until both answers are in
   const [tab, setTab] = useState<Tab>("job");
   const [doneId, setDoneId] = useState<string | null>(null);   // the slip just delivered stays until "Next delivery" (R7)
@@ -46,6 +49,15 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
   // Story 1441, review of PR 1469: while a trip's pickups run, or after one failed, the packets still at the kitchen stay on Pick up; never On the way with a packet left.
   const [tripIds, setTripIds] = useState<string[] | null>(null);
   const job = (tripIds ? jobs.find((o) => o.status === "ready" && tripIds.includes(o.id)) : undefined) ?? jobs[0] ?? null;
+  const first = jobs.find((o) => o.status === "ready");   // story 1666, the trip: the packets of one kitchen, kept by id while some are handed over
+  const tripKeep = tripIds ?? (first ? jobs.filter((o) => o.status === "ready" && o.kitchen_id === first.kitchen_id).map((o) => o.id) : []);
+  const tripCodes = usePickupCodes(tripKeep, tripKeep.length > 1);
+  useEffect(() => {   // code mode keeps the trip's packets on Pick up until the last is On the way; then the first door shows, as today
+    if (!tripCodes) return;   // switch off: today's trip
+    if (!tripIds) setTripIds(tripKeep);
+    else if (!tripIds.some((id) => jobs.find((o) => o.id === id)?.status === "ready")) setTripIds(null);
+  });
+  const pickupCode = usePickupCode(job?.id ?? null, job?.status === "ready");   // story 1666: only a Ready order alone shows it; a trip is left as it is
   const done = doneId ? orders.find((o) => o.id === doneId) ?? null : null;
   const today = deliveredToday(orders, new Date(), hoursOf(kitchen));   // story #229: the day ends at the kitchen's closing time
   const cash = cashInHand(today);
@@ -71,8 +83,14 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
   };
   const [brokenQr, setBrokenQr] = useState<string | null>(null);
   const [collectId, setCollectId] = useState<string | null>(null);   // story 1262, board R7: "Delivered" opens Collect payment first
+  const [door, setDoor] = useState<{ id: string; method: DoorMethod; notice: boolean } | null>(null);   // story 1669 (board k4door): the customer's code sheet
+  const closeDoor = () => setDoor(null);
+  useBackCloses(!!door, closeDoor);
+  const dropOn = useCodeSwitch("drop_code_on", !!collectId, collectId ?? "");   // read when Collect payment opens; a switch turned on later is caught by the server's refusal below
   const act = async (o: Order, a: RiderAction, method?: DoorMethod) => {
+    if (dropOn && method && a.kind === "status" && a.to === "delivered") { setDoor({ id: o.id, method, notice: false }); return; }
     const failed = await onAct(o, a, method);
+    if (failed?.code === "code_required" && method) { setDoor({ id: o.id, method, notice: true }); return; }
     if (!failed && a.kind === "status" && a.to === "delivered") { setCollectId(null); setDoneId(o.id); }
   };
   const openCollect = (o: Order) => { setCollectId(o.id); onLoadMethods(); };
@@ -173,6 +191,8 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
               {upiNeedsQr && <p className="ui-meta">UPI at the door has no QR yet. Take cash, or ask the admin to upload the QR.</p>}
             </div>
           </section>
+          {door && door.id === collecting.id && <DoorCodeSheet orderId={collecting.id} short={shortId(collecting.id)} method={door.method} notice={door.notice} onClose={closeDoor}
+            onDelivered={() => { onCodeDelivered?.(collecting, door.method); setDoor(null); setCollectId(null); setDoneId(collecting.id); }} />}
           <div className="ui-bottom">
             {methods !== null && methods.length === 0 && <button type="button" className="ui-btn big" onClick={onLoadMethods}>Try again</button>}
             <div className="ui-door-pay">
@@ -206,6 +226,38 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
     if (job && job.status === "ready") {
       const trip = jobs.filter((o) => o.status === "ready" && o.kitchen_id === job.kitchen_id);
       const more = jobs.length - trip.length;
+      if (tripCodes && tripKeep.length > 1) {   // board trip-frames (owner, 24 Nov 2026): one code per packet, no button, a row ticks when its packet goes On the way
+        const rows = tripKeep.map((id) => orders.find((o) => o.id === id)).filter((o): o is Order => !!o);
+        return (
+          <>
+            <div className="ui-scroll ui-rx-scroll">
+              <section className="ui-slip ui-slip-pad" aria-label="Pick up, this trip">
+                <div className="ui-slip-body ui-trip">
+                  <span className="mono ui-kicker">This trip · {rows.length} packets</span>
+                  {rows.map((o, i) => (
+                    <Fragment key={o.id}>
+                      {i > 0 && <div className="ui-slip-rule" />}
+                      <div className="ui-tick-row ui-tick-static">
+                        <span className="ui-tick" role="img" aria-label={o.status === "ready" ? "Not yet" : "Handed over"}>{o.status !== "ready" && <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}</span>
+                        <span className="ui-tick-body">
+                          <span className="ui-tick-top"><span className="display ui-tick-no">{shortId(o.id)}</span><span className="mono">{formatRupees(o.total_paise)}</span></span>
+                          <span>{o.items.map((x) => `${x.qty} × ${x.name}`).join(", ")}</span>
+                          <span className="ui-tick-addr">{o.address}</span>
+                          {tripCodes.complete && tripCodes.codes[o.id] && <span className="ui-tick-code" data-testid={`trip-code-${shortId(o.id)}`}><span className="mono">Code for the kitchen</span><span className="display ui-tick-digits">{tripCodes.codes[o.id]}</span></span>}
+                        </span>
+                      </div>
+                    </Fragment>
+                  ))}
+                  <div className="ui-slip-rule" />
+                  <div className="ui-slip-total"><b>To collect, {rows.length} doors</b><span>{formatRupees(rows.reduce((n, o) => n + o.total_paise, 0))}</span></div>
+                </div>
+              </section>
+              {declinedRows}
+            </div>
+            <div className="ui-bottom"><p role="status" className="ui-rx-next">{tripCodes.failed ? "We could not read the codes. Check your internet." : "Tell each packet's code to the kitchen. Each order goes On the way by itself."}</p></div>
+          </>
+        );
+      }
       if (trip.length > 1) {   // boards RT1 and RT2
         const left = trip.filter((o) => !ticked.has(o.id)).length;
         return (
@@ -257,10 +309,18 @@ export function RiderScreen({ orders, loading, error, busyId, arrived, onAct, me
                 <div className="ui-slip-total"><b>To collect at door</b><span>{formatRupees(job.total_paise)}</span></div>
               </div>
             </section>
+            {pickupCode && (
+              <section className="ui-dropcode ui-dropcode-flow" data-testid="pickup-code">   {/* story 1666, board k1rider: the code for the kitchen under the slip; the digits are real text */}
+                <h2>Code for the kitchen</h2>
+                <span className="mono ui-dropcode-digits">{pickupCode}</span>
+              </section>
+            )}
             {jobs.length > 1 && <p className="mono ui-foot">{jobs.length - 1} more waiting</p>}
             {declinedRows}
           </div>
-          <div className="ui-bottom">{button(job, riderActions(job.status)[0], "Picked up")}</div>
+          {pickupCode
+            ? <div className="ui-bottom"><p role="status" className="ui-rx-next">Tell this code to the kitchen.<br />The order goes On the way by itself.</p></div>
+            : <div className="ui-bottom">{button(job, riderActions(job.status)[0], "Picked up")}</div>}
         </>
       );
     }

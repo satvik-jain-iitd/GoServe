@@ -5,6 +5,7 @@ import { formatRupees } from "../lib/money";
 import { Skeleton } from "../ui";
 import { getClient } from "../lib/supabase";
 import { readOtpSwitchAdmin, saveOtpSwitch } from "../lib/otpSwitch";
+import { readHandoverSwitches, saveHandoverSwitch, type HandoverWhich } from "../lib/handoverSwitch";
 import { qrAddress, readPayMethodsAdmin, readQrAdmin, setPayMethod, uploadQr, type PayMethodsAdmin, type QrAdmin } from "../lib/payMethods";
 import type { DoorMethod } from "../lib/doorMethods";
 import { amountProblem, readEarlyFriend, saveEarlyFriend, type EarlyFriendSetting } from "../lib/earlyFriend";
@@ -284,6 +285,35 @@ function PhoneCodeSetting() {
   );
 }
 
+// Story 1672 (board k8admin): the two hand-over code switches. Each works alone; off means the app works as today.
+const HANDOVER_ROWS: { which: HandoverWhich; id: string; title: string; sub: string }[] = [
+  { which: "kitchen", id: "handover-kitchen", title: "Kitchen handoff code", sub: "The rider tells the cook a code at pick up. Off: the rider taps Picked up, as today." },
+  { which: "customer", id: "handover-customer", title: "Customer handoff code", sub: "The customer tells the rider a code at the door. Off: the rider marks Delivered, as today." },
+];
+function HandoverCodesSetting() {
+  const [on, setOn] = useState<Record<HandoverWhich, boolean | null>>({ kitchen: null, customer: null });
+  const [line, setLine] = useState<string | null>(null);
+  useEffect(() => { readHandoverSwitches(getClient()).then((s) => setOn({ kitchen: s.kitchen.on, customer: s.customer.on }), () => setLine("Could not load the setting. Try again.")); }, []);
+  async function flip(which: HandoverWhich, next: boolean) {
+    setOn((o) => ({ ...o, [which]: next }));
+    const failed = await saveHandoverSwitch(getClient(), which, next);
+    setLine(failed);
+    if (failed) setOn((o) => ({ ...o, [which]: !next }));
+  }
+  return (
+    <section className="ui-group" aria-label="Handover codes">
+      <h2>Handover codes</h2>
+      {HANDOVER_ROWS.map((r) => (
+        <div key={r.which} className="ui-row ui-row-static">
+          <label htmlFor={r.id} className="ui-row-label"><b>{r.title}</b><span className="ui-row-sub">{r.sub}</span></label>
+          <input id={r.id} className="ui-switch" type="checkbox" role="switch" checked={on[r.which] === true} disabled={on[r.which] === null} onChange={(e) => void flip(r.which, e.target.checked)} />
+        </div>
+      ))}
+      {line && <p role="alert" className="ui-note error">{line}</p>}
+    </section>
+  );
+}
+
 export function AdminNumbers({ live, kitchens, settings }: { live?: number; kitchens?: KitchenRow[]; settings?: boolean }) {
   const [rows, setRows] = useState<DayNumbers[] | null>(null);
   const [error, setError] = useState(false);
@@ -315,6 +345,7 @@ export function AdminNumbers({ live, kitchens, settings }: { live?: number; kitc
       {settings && <RiderAppSettings />}
       {settings && <SwapSettings />}
       {settings && <PhoneCodeSetting />}
+      {settings && <HandoverCodesSetting />}
       {settings && <SupportSettings />}
       <button type="button" className="ui-row" onClick={() => window.dispatchEvent(new Event("gs-feedback"))}><span>Send feedback</span><span className="go" aria-hidden="true">›</span></button>
     </div>
