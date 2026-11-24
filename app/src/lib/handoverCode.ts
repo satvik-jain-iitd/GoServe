@@ -50,7 +50,9 @@ export type CodeAnswer = { kind: "ok" } | { kind: "wrong" } | { kind: "locked" }
 export const kitchenHandover = (orderId: string, code: string) => sendCode("kitchen_handover_v1", { p_order: orderId, p_code: code });
 // Story 1669: the rider types the customer's code at the door; the right code delivers the order with the way it was paid.
 export const riderDeliver = (orderId: string, code: string, method: string) => sendCode("rider_deliver_v1", { p_order: orderId, p_code: code, p_method: method });
-async function sendCode(fn: string, args: Record<string, string>): Promise<CodeAnswer> {
+// Story 1319: the same check for Money not collected while the customer code switch is on; the right code delivers with the money-due mark.
+export const riderMoneyDue = (orderId: string, code: string, reason: string, note: string | null) => sendCode("rider_money_not_collected_v1", { p_order: orderId, p_code: code, p_reason: reason, p_note: note });
+async function sendCode(fn: string, args: Record<string, string | null>): Promise<CodeAnswer> {
   try {
     const { data, error } = await getClient().rpc(fn, args);
     const d = data as { ok?: boolean; error?: string; message?: string } | null;

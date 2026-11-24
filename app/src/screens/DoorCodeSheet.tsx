@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Sheet } from "../ui";
 import { CodeBoxes } from "../ui/CodeBoxes";
-import { riderDeliver } from "../lib/handoverCode";
+import { riderDeliver, type CodeAnswer } from "../lib/handoverCode";
 
 const LINES = {
   wrong: "That code does not match this order. Ask the customer to read it again.",
@@ -13,7 +13,7 @@ const LINES = {
 } as const;
 export const SWITCHED_ON = "The customer's code is switched on now. Ask the customer for the 4 digit code on their order screen.";
 
-export function DoorCodeSheet({ orderId, short, method, notice, supportPhone, onDelivered, onClose }: { orderId: string; short: string; method: string; notice?: boolean; supportPhone?: string | null; onDelivered: () => void; onClose: () => void }) {
+export function DoorCodeSheet({ orderId, short, method, verify, notice, supportPhone, onDelivered, onClose }: { orderId: string; short: string; method?: string; verify?: (code: string) => Promise<CodeAnswer>; notice?: boolean; supportPhone?: string | null; onDelivered: () => void; onClose: () => void }) {
   const [line, setLine] = useState<string | null>(null);
   const [kind, setKind] = useState<"idle" | "checking" | "wrong" | "locked" | "other">("idle");
   const [reset, setReset] = useState(0);
@@ -21,7 +21,7 @@ export function DoorCodeSheet({ orderId, short, method, notice, supportPhone, on
   useEffect(() => () => { live.current = false; }, []);
   const check = async (code: string) => {
     setKind("checking"); setLine(null);
-    const a = await riderDeliver(orderId, code, method);
+    const a = await (verify ? verify(code) : riderDeliver(orderId, code, method ?? "cash"));
     if (!live.current) return;
     if (a.kind === "ok") { onDelivered(); return; }
     setKind(a.kind === "locked" ? "locked" : a.kind === "wrong" ? "wrong" : "other");
