@@ -7,11 +7,12 @@ from test_schema import TOKEN, sql
 import test_rider_deliver_code as b   # same throwaway users and order
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-MIG = "" if os.environ.get("SKIP_MIG") else open(os.path.join(HERE, "..", "supabase", "migrations", "20261124220000_admin_deliver_without_code.sql")).read()
+MIG = "" if os.environ.get("SKIP_MIG") else "; ".join(open(os.path.join(HERE, "..", "supabase", "migrations", f)).read() for f in ("20261124220000_admin_deliver_without_code.sql", "20261124240000_admin_deliver_method.sql"))
 O1 = b.O1
 
 
-def call(uid, reason, method="null"):
+def call(uid, reason, method="cash"):
+    method = "null" if method is None else f"'{method}'"
     r = "null" if reason is None else "'" + reason.replace("'", "''") + "'"
     return b.as_(uid, f"admin_deliver_without_code_v1('{O1}', {r}, {method})")
 
@@ -19,7 +20,7 @@ def call(uid, reason, method="null"):
 def run(*steps):
     flat = [s for st in steps for s in (st if isinstance(st, list) else [st])]
     last = ("reset role; select (select jsonb_agg(r order by i) from res) as rs, (select status from orders where id = '%s') as status, "
-            "(select jsonb_agg(jsonb_build_object('actor', actor, 'reason', reason, 'by', by_user, 'at', created_at)) from order_events where order_id = '%s' and event = 'order.delivered_without_code') as ev" % (O1, O1))
+            "(select paid_by from orders where id = '%s') as paid, (select jsonb_agg(jsonb_build_object('actor', actor, 'reason', reason, 'by', by_user, 'at', created_at)) from order_events where order_id = '%s' and event = 'order.delivered_without_code') as ev" % (O1, O1, O1))
     r = sql("begin; " + "; ".join([x for x in b.MIGS] + b.SETUP + [MIG] + flat + [last]) + "; rollback;")
     assert isinstance(r, list), r
     return r[-1]
@@ -53,3 +54,17 @@ class AdminDeliverWithoutCode(unittest.TestCase):
     def test_d4_the_rider_alone_is_still_refused_while_the_switch_is_on(self):
         r = run(b.READY, b.ON, b.act(b.RID, "deliver"))
         self.assertEqual(r["rs"][0]["error"], "code_required", r)
+
+    def test_d5_the_method_is_required_and_never_guessed(self):
+        for m in (None, "", "card", "CASH"):
+            r = run(b.READY, b.ON, call(b.ADM, "Phone is dead", m))
+            self.assertEqual(r["rs"][0]["error"], "method_required", (m, r))
+            self.assertEqual(r["status"], "out_for_delivery")
+            self.assertIsNone(r["ev"])
+            self.assertIsNone(r["paid"])
+
+    def test_d6_each_method_is_recorded_truthfully(self):
+        for m, paid in (("cash", "cash"), ("upi_door", "upi_door"), ("not_collected", None)):
+            r = run(b.READY, b.ON, call(b.ADM, "Phone is dead", m))
+            self.assertTrue(r["rs"][0]["ok"], (m, r))
+            self.assertEqual((r["status"], r["paid"], len(r["ev"])), ("delivered", paid, 1), (m, r))
