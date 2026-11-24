@@ -5,7 +5,9 @@ import { useEffect, useRef, useState } from "react";
 export function CodeBoxes({ length = 4, disabled, invalid, resetKey, onFull }: { length?: number; disabled?: boolean; invalid?: boolean; resetKey: number; onFull: (code: string) => void }) {
   const [digits, setDigits] = useState<string[]>(() => Array(length).fill(""));
   const boxes = useRef<(HTMLInputElement | null)[]>([]);
-  useEffect(() => { setDigits(Array(length).fill("")); if (!disabled) boxes.current[0]?.focus(); }, [resetKey]);   // eslint-disable-line react-hooks/exhaustive-deps
+  const off = useRef(disabled);
+  off.current = disabled;   // the latest value, without clearing the boxes whenever it changes
+  useEffect(() => { setDigits(Array(length).fill("")); if (!off.current) boxes.current[0]?.focus(); }, [resetKey, length]);
   const set = (i: number, value: string) => {
     const only = value.replace(/\D/g, "");
     const next = [...digits];
