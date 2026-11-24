@@ -33,7 +33,7 @@ for (const width of [360, 412, 768]) {
   test(`S1 Add dish at ${width} px: no sideways scroll, one width and height for the text fields, the switch is 52x32`, async ({ page, context }) => {
     await page.setViewportSize({ width, height: 915 });
     await openDishForm(page, context);
-    const m = await measure(page, "section");
+    const m = await measure(page, ".ui-form");
     expect(m.over, `elements past the right edge at ${width}: ${m.over.join(" | ")}`).toEqual([]);
     expect(m.scrolls, "something scrolls sideways").toEqual([]);
     expect(new Set(m.fields.map((f) => f.w)).size, `field widths ${JSON.stringify(m.fields)}`).toBe(1);

@@ -1,14 +1,14 @@
 // The City of the admin app on the Ink v3 boards A5 (city), A6 (one kitchen) and A7 (add a kitchen) (story H12, #195; stories A2, A3, A5).
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { DangerSheet, Sheet, useSheetFit } from "../ui";
 import { useBackCloses } from "../lib/back";
 import { addKitchen, addPerson, riderProblem, setRiderDetails, cancelInvite, inviteLink, isOwner, parsePins, offInfoOf, removeKitchen, removePerson, turnKitchenOn, locOf, setKitchenLocation, setKitchenDetails, type Invite, type OffInfo, type KitchenRow, type Loc, type Person, type PersonKind, type RiderListRow } from "../lib/admin";
 import { kitchenProblem } from "../lib/validate";
 import { getClient, signOutHere } from "../lib/supabase";
-import { AdminMenu } from "./AdminMenu";
+import { AddDish, AdminMenu, markLeft, restoreLeft } from "./AdminMenu";
 import { KitchenLocation } from "./KitchenLocation";
 
-type View = { kind: "list" } | { kind: "kitchen"; id: string } | { kind: "add" };
+type View = { kind: "list" } | { kind: "kitchen"; id: string } | { kind: "add" } | { kind: "adddish"; id: string } | { kind: "addperson" };
 type Props = { me?: { first: string; email: string | null } | null; kitchens: KitchenRow[]; people: Person[]; invites: Invite[]; riders: RiderListRow[] | null; onError: (m: string | null) => void; reload: () => Promise<void>; view: View; onView: (v: View) => void };
 const EMPTY = { name: "", address: "", phone: "", pins: "", opensAt: "", closesAt: "", loc: null as Loc | null };
 const hhmm = (t: string | null | undefined) => (t ? t.slice(0, 5) : null);
@@ -24,10 +24,10 @@ const INVITE_WORDS = { kitchen: "Open this link and tap Continue with Google to 
 
 export function AdminCity({ me, kitchens, people, invites, riders, onError, reload, view, onView }: Props) {
   const [form, setForm] = useState(EMPTY);
-  const [addingPerson, setAddingPerson] = useState(false);
-  const personActs = useRef<HTMLDivElement>(null);
+  const fit = useSheetFit();   // story #1700: the Add a person screen follows the keyboard
+  useBackCloses(view.kind === "addperson" || view.kind === "adddish", () => onView(view.kind === "adddish" ? { kind: "kitchen", id: view.id } : { kind: "list" }));
+  useLayoutEffect(() => { if (view.kind === "list") restoreLeft(); }, [view.kind]);
   const [who, setWho] = useState<{ email: string; kind: PersonKind; kitchen: string }>({ email: "", kind: "kitchen", kitchen: "" });
-  useEffect(() => { if (addingPerson) personActs.current?.scrollIntoView({ block: "nearest" }); }, [addingPerson, who.kind]);   // story 1457: the form opens with both buttons in view, once, not on every key
   const [invited, setInvited] = useState<{ email: string; kind: "kitchen" | "rider" | "admin" } | null>(null);   // story 875: the "Invite ready" box
   const [shareNote, setShareNote] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);   // story 900, board A8: the confirm sheet of Remove this kitchen
@@ -91,7 +91,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
     if (failed) return;
     setRider({ name: "", phone: "" });
     if (wasInvited) setInvited({ email: who.email.trim().toLowerCase(), kind: who.kind });   // the form stays open, with the box under it (board A-AddPerson-Invite)
-    else { setWho({ ...who, email: "" }); setAddingPerson(false); }
+    else { setWho({ ...who, email: "" }); onView({ kind: "list" }); }
     await reload();
   };
   const share = async () => {
@@ -150,6 +150,36 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
       <div className="ui-bottom"><button type="button" className="ui-btn big" onClick={() => void submitKitchen()}>Save kitchen</button></div>
     </>
   );
+  if (view.kind === "addperson") return (   // story #1700: Add a person is its own screen
+    <div ref={fit} className="ui-fit-page">
+      <header className="ui-head">
+        <button type="button" className="ui-back" aria-label="Back" onClick={() => onView({ kind: "list" })}>{BACK}</button>
+        <h1>Add a person</h1>
+      </header>
+      <div className="ui-scroll">
+        <div className="ui-form ui-pad">
+          <div className="ui-field"><label htmlFor="p-email">Email</label><input id="p-email" type="email" value={who.email} onChange={(e) => setWho({ ...who, email: e.target.value })} /></div>
+          <div className="ui-field"><label htmlFor="p-role">Role</label><select id="p-role" value={who.kind} onChange={(e) => setWho({ ...who, kind: e.target.value as PersonKind })}><option value="kitchen">Kitchen staff</option><option value="rider">Rider</option><option value="admin">Admin</option></select></div>
+          {who.kind === "kitchen" && <div className="ui-field"><label htmlFor="p-kitchen">Kitchen</label><select id="p-kitchen" value={who.kitchen} onChange={(e) => setWho({ ...who, kitchen: e.target.value })}><option value="">Pick a kitchen</option>{kitchens.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></div>}
+          {who.kind === "rider" && <>
+          <div className="ui-field"><label htmlFor="p-name">Name</label><input id="p-name" type="text" value={rider.name} onChange={(e) => setRider({ ...rider, name: e.target.value })} /></div>
+          <div className="ui-field"><label htmlFor="p-phone">Mobile number (10 digits)</label><input id="p-phone" className="mono-input" type="tel" inputMode="numeric" value={rider.phone} onChange={(e) => setRider({ ...rider, phone: e.target.value })} /></div>
+          </>}
+          {addError && <p role="alert" className="ui-note error">{addError}</p>}
+          {invited && (   // board A-AddPerson-Invite
+            <div role="status" className="ui-invite">
+              <p className="ui-invite-title">Invite ready for {invited.email}</p>
+              <p className="ui-meta">{invited.kind === "admin" ? INVITE_WORDS.admin : <>They open the {invited.kind} link and tap Continue with Google once. Nothing to install. {invited.kind === "kitchen" ? "Their kitchen" : "Their deliveries"} open on that first sign-in.</>}</p>
+              <div className="ui-invite-link"><span className="mono">{inviteLink(invited.kind, window.location.origin).replace(/^https?:\/\//, "")}</span><button type="button" className="ui-btn ghost small" onClick={() => void share()}>Share the link</button></div>
+              {shareNote && <p className="ui-meta" role="status">{shareNote}</p>}
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="ui-bottom"><div className="ui-row-pair"><button type="button" className="ui-btn ghost big" onClick={() => onView({ kind: "list" })}>Not now</button><button type="button" className="ui-btn big" onClick={() => void submitPerson()}>Add person</button></div></div>
+    </div>
+  );
+  if (view.kind === "adddish") return <AddDish kitchenId={view.id} onBack={() => onView({ kind: "kitchen", id: view.id })} />;
   const k = view.kind === "kitchen" ? kitchens.find((x) => x.id === view.id) ?? null : null;
   if (k) return (   // A6
     <>
@@ -173,7 +203,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
           {invitesOf(k.id).map(inviteRow)}
         </section>
         {editing && <KitchenSheet k={k} onClose={() => setEditing(false)} onDone={async () => { setEditing(false); await reload(); }} />}
-        <AdminMenu kitchenId={k.id} kitchenName={k.name} onError={onError} />
+        <AdminMenu kitchenId={k.id} kitchenName={k.name} onError={onError} onAdd={() => onView({ kind: "adddish", id: k.id })} />
         {k.active && (
           <section className="ui-group" aria-label="Leaving GoServe">
             <h2>Leaving GoServe <span className="mono">Asks twice</span></h2>
@@ -220,28 +250,7 @@ export function AdminCity({ me, kitchens, people, invites, riders, onError, relo
         ))}
         {invites.filter((i) => i.kind === "rider" || i.kind === "admin").map(inviteRow)}
         {people.filter((p) => p.kind === "admin").map((p) => <div key={p.user_id} className="ui-row ui-row-static"><span className="ui-row-label"><span>{firstName(p)}</span><span className="ui-row-sub mono">Admin · {p.email ?? p.user_id}</span></span>{isOwner(p) ? <span className="ui-tag ready">Owner</span> : removeButton(p)}</div>)}
-        {!addingPerson && <div className="ui-pad-y"><button type="button" className="ui-btn ghost" onClick={() => { onError(null); setAddingPerson(true); }}>+ Add a person</button></div>}
-        {addingPerson && (
-          <div className="ui-form ui-form-flush">
-            <div className="ui-field"><label htmlFor="p-email">Email</label><input id="p-email" type="email" value={who.email} onChange={(e) => setWho({ ...who, email: e.target.value })} /></div>
-            <div className="ui-field"><label htmlFor="p-role">Role</label><select id="p-role" value={who.kind} onChange={(e) => setWho({ ...who, kind: e.target.value as PersonKind })}><option value="kitchen">Kitchen staff</option><option value="rider">Rider</option><option value="admin">Admin</option></select></div>
-            {who.kind === "kitchen" && <div className="ui-field"><label htmlFor="p-kitchen">Kitchen</label><select id="p-kitchen" value={who.kitchen} onChange={(e) => setWho({ ...who, kitchen: e.target.value })}><option value="">Pick a kitchen</option>{kitchens.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></div>}
-            {who.kind === "rider" && <>
-            <div className="ui-field"><label htmlFor="p-name">Name</label><input id="p-name" type="text" value={rider.name} onChange={(e) => setRider({ ...rider, name: e.target.value })} /></div>
-            <div className="ui-field"><label htmlFor="p-phone">Mobile number (10 digits)</label><input id="p-phone" className="mono-input" type="tel" inputMode="numeric" value={rider.phone} onChange={(e) => setRider({ ...rider, phone: e.target.value })} /></div>
-            </>}
-            <div className="ui-form-acts" ref={personActs}><div className="ui-row-pair"><button type="button" className="ui-btn ghost big" onClick={() => { setAddingPerson(false); setInvited(null); setAddError(null); }}>Not now</button><button type="button" className="ui-btn big" onClick={() => void submitPerson()}>Add person</button></div></div>   {/* story 1457 (board AP1): the main button last, both in view when the form opens */}
-            {addError && <p role="alert" className="ui-note error">{addError}</p>}
-            {invited && (   // board A-AddPerson-Invite
-              <div role="status" className="ui-invite">
-                <p className="ui-invite-title">Invite ready for {invited.email}</p>
-                <p className="ui-meta">{invited.kind === "admin" ? INVITE_WORDS.admin : <>They open the {invited.kind} link and tap Continue with Google once. Nothing to install. {invited.kind === "kitchen" ? "Their kitchen" : "Their deliveries"} open on that first sign-in.</>}</p>
-                <div className="ui-invite-link"><span className="mono">{inviteLink(invited.kind, window.location.origin).replace(/^https?:\/\//, "")}</span><button type="button" className="ui-btn ghost small" onClick={() => void share()}>Share the link</button></div>
-                {shareNote && <p className="ui-meta" role="status">{shareNote}</p>}
-              </div>
-            )}
-          </div>
-        )}
+        <div className="ui-pad-y"><button type="button" className="ui-btn ghost" onClick={() => { onError(null); markLeft(); onView({ kind: "addperson" }); }}>+ Add a person</button></div>
       </section>
       <Sheet open={leaving !== null} title={leaving ? `Remove ${leaving.email ?? leaving.user_id}? They lose access at once.` : ""} onClose={() => setLeaving(null)}>
         {leaving && <div className="ui-sheet-acts"><div className="ui-row-pair"><button type="button" className="ui-btn big danger-fill" onClick={() => void reallyRemove(leaving)}>Remove</button><button type="button" className="ui-btn ghost big" autoFocus onClick={() => setLeaving(null)}>Keep</button></div></div>}

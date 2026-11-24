@@ -1134,3 +1134,5 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
 .ui-code-boxes input:focus, .ui-code-boxes input:focus-visible { outline: none; border: 2px solid var(--md-primary); }   /* rule 15: a tapped box turns its own border; same size, no ring */
 .ui-code-boxes input[aria-invalid="true"]:focus { border-color: var(--md-error); }
 .ui-code-boxes { justify-content: center; }   /* owner, 24 Nov 2026: the four boxes sit in the middle of the sheet */
+/* story 1700: an admin form screen (Add a dish, Add a person). Fixed over the shell and fitted to the visual viewport while a field is typed in, so the foot rides on the keyboard (1693); the foot flat line is .ui-bottom (1697). */
+.ui-fit-page { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; background: var(--md-background); }
