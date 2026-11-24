@@ -1,4 +1,4 @@
-// Story #1833 (epic #1831): inside Payment methods the QR sits under UPI at the door, the two not-set-up ways have no switch, and "Last changed" shows once at the bottom.
+// Story 1833 (epic 1831): inside Payment methods the QR sits under UPI at the door, the two not-set-up ways have no switch, and "Last changed" shows once at the bottom.
 import { test, expect } from "@playwright/test";
 import { setup, openSetting } from "./helpers";
 

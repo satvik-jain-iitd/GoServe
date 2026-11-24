@@ -2,7 +2,7 @@
 import { test, expect } from "@playwright/test";
 import { setup } from "./helpers";
 
-test("S1 (#1834) the Settings list ends with a You section: Signed in as <first name>, the email, Sign out, and the board's line", async ({ page, context }) => {
+test("S1 (story 1834) the Settings list ends with a You section: Signed in as <first name>, the email, Sign out, and the board's line", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.admin = true;
   net.state.userEmail = "satvik.jain@example.com";

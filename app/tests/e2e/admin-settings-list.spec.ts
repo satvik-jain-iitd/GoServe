@@ -1,4 +1,4 @@
-// Story #1832 (epic #1831): bottom tabs Orders, City, Numbers, Settings; Numbers keeps only the numbers; Settings is ten rows, each with its state and its own screen.
+// Story 1832 (epic 1831): bottom tabs Orders, City, Numbers, Settings; Numbers keeps only the numbers; Settings is ten rows, each with its state and its own screen.
 import { test, expect } from "@playwright/test";
 import { setup } from "./helpers";
 

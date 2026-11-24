@@ -1,4 +1,4 @@
-// Story #1832 (epic #1831): the admin Settings tab. A short list; each row says its state now and opens its own screen (the same controls that used to sit on Numbers).
+// Story 1832 (epic 1831): the admin Settings tab. A short list; each row says its state now and opens its own screen (the same controls that used to sit on Numbers).
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { getClient, signOutHere } from "../lib/supabase";
 import { formatRupees } from "../lib/money";
@@ -27,7 +27,7 @@ let kept = 0;
 let lines: Partial<Record<SettingsView, string>> = {};   // the last state lines: coming back shows them at once, so no row grows under the kept scroll place   // the list's scroll, so Back lands at the same place
 
 export function AdminSettings({ onOpen, me }: { onOpen: (v: SettingsView) => void; me: { first: string; email: string | null } | null }) {
-  const signOut = async () => { try { await signOutHere(); } catch { /* offline */ } window.location.reload(); };   // story #1834: the same call the City block made
+  const signOut = async () => { try { await signOutHere(); } catch { /* offline */ } window.location.reload(); };   // story 1834: the same call the City block made
   const [st, setSt] = useState(lines);
   const box = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => { if (box.current) box.current.scrollTop = kept; }, []);
@@ -54,7 +54,7 @@ export function AdminSettings({ onOpen, me }: { onOpen: (v: SettingsView) => voi
           </button>
         ))}
         {me && (
-          <section className="ui-group" aria-label="You">   {/* story #957, moved here by story #1834 */}
+          <section className="ui-group" aria-label="You">   {/* story 957, moved here by story 1834 */}
             <h2>You</h2>
             <button type="button" className="ui-row" onClick={() => void signOut()}>
               <span className="ui-row-label"><span>Signed in as {me.first}</span>{me.email && <span className="ui-row-sub mono">{me.email}</span>}</span>
