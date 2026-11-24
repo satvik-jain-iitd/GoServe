@@ -62,3 +62,34 @@ async function sendCode(fn: string, args: Record<string, string>): Promise<CodeA
     return { kind: "other", message: d.message || "We could not check the code. Check your internet and type it again." };
   } catch { return { kind: "net" }; }
 }
+
+// Story 1666, the trip: one code per packet. Returns every packet's code, or null unless the switch is on AND every packet's code was read (a partial or
+// failed read means today's trip, never a wrong or missing code). Codes already read stay when a packet goes On the way and its code can no longer be read.
+export function usePickupCodes(ids: string[], active: boolean): Record<string, string> | null {
+  const key = ids.join(",");
+  const [on, setOn] = useState(false);
+  const [codes, setCodes] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!active) { setOn(false); setCodes({}); return; }
+    let live = true;
+    const read = async () => {
+      try {
+        const sw = await getClient().rpc("pickup_code_on");
+        if (!live) return;
+        if (sw.error || sw.data !== true) { setOn(false); setCodes({}); return; }
+        const got: Record<string, string> = {};
+        await Promise.all(key.split(",").map(async (id) => {
+          const { data, error } = await getClient().rpc("order_code_v1", { p_order_id: id });
+          const d = data as { ok?: boolean; role?: string; pickup_code?: unknown } | null;
+          if (!error && d?.ok === true && d.role === "rider" && typeof d.pickup_code === "string" && /^\d{4,6}$/.test(d.pickup_code)) got[id] = d.pickup_code;
+        }));
+        if (live) { setOn(true); setCodes((cur) => ({ ...cur, ...got })); }
+      } catch { if (live) { setOn(false); setCodes({}); } }
+    };
+    void read();
+    const onVisible = () => { if (document.visibilityState === "visible") void read(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { live = false; document.removeEventListener("visibilitychange", onVisible); };
+  }, [key, active]);
+  return on && ids.length > 0 && ids.every((id) => codes[id]) ? codes : null;
+}

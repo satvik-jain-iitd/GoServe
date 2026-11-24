@@ -1126,3 +1126,8 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
 .ui-done-row p { margin: 0; }
 .ui-done-tick { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: var(--md-primary); color: var(--md-on-primary); flex: none; }
 .ui-enter-code { white-space: nowrap; flex: none; }   /* story 1667 (k3code): Enter code stays on one line */
+.ui-tick-static { cursor: default; }   /* story 1666 (trip-frames): the rows of a code trip are not buttons */
+.ui-tick-code { display: flex; align-items: baseline; justify-content: space-between; gap: var(--gs-space-3); margin-top: 8px; }
+.ui-tick-code .mono { font-size: var(--gs-text-sm); }
+.ui-tick-digits { font-size: 24px; letter-spacing: 0.18em; }
+.ui-tick[aria-label="Handed over"] { background: var(--md-primary); color: var(--md-on-primary); }

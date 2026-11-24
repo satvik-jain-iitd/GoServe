@@ -9,7 +9,7 @@ import { Skeleton, Tabs } from "../ui";
 import { incentiveFor, type Rates } from "../lib/incentive";
 import { dayName, dayShort, olderDue, pastDays as listPastDays } from "../lib/pastDays";
 import { useBackCloses } from "../lib/back";
-import { useCodeSwitch, usePickupCode } from "../lib/handoverCode";
+import { useCodeSwitch, usePickupCode, usePickupCodes } from "../lib/handoverCode";
 import { DoorCodeSheet } from "./DoorCodeSheet";
 
 type Tab = "job" | "today" | "me";
@@ -49,6 +49,14 @@ export function RiderScreen({ onCodeDelivered, orders, loading, error, busyId, a
   // Story 1441, review of PR 1469: while a trip's pickups run, or after one failed, the packets still at the kitchen stay on Pick up; never On the way with a packet left.
   const [tripIds, setTripIds] = useState<string[] | null>(null);
   const job = (tripIds ? jobs.find((o) => o.status === "ready" && tripIds.includes(o.id)) : undefined) ?? jobs[0] ?? null;
+  const first = jobs.find((o) => o.status === "ready");   // story 1666, the trip: the packets of one kitchen, kept by id while some are handed over
+  const tripKeep = tripIds ?? (first ? jobs.filter((o) => o.status === "ready" && o.kitchen_id === first.kitchen_id).map((o) => o.id) : []);
+  const tripCodes = usePickupCodes(tripKeep, tripKeep.length > 1);
+  useEffect(() => {   // code mode keeps the trip's packets on Pick up until the last is On the way; then the first door shows, as today
+    if (!tripCodes) return;
+    if (!tripIds) setTripIds(tripKeep);
+    else if (!tripIds.some((id) => jobs.find((o) => o.id === id)?.status === "ready")) setTripIds(null);
+  });
   const pickupCode = usePickupCode(job?.id ?? null, job?.status === "ready");   // story 1666: only a Ready order alone shows it; a trip is left as it is
   const done = doneId ? orders.find((o) => o.id === doneId) ?? null : null;
   const today = deliveredToday(orders, new Date(), hoursOf(kitchen));   // story #229: the day ends at the kitchen's closing time
@@ -218,6 +226,38 @@ export function RiderScreen({ onCodeDelivered, orders, loading, error, busyId, a
     if (job && job.status === "ready") {
       const trip = jobs.filter((o) => o.status === "ready" && o.kitchen_id === job.kitchen_id);
       const more = jobs.length - trip.length;
+      if (tripCodes && tripKeep.length > 1) {   // board trip-frames (owner, 24 Nov 2026): one code per packet, no button, a row ticks when its packet goes On the way
+        const rows = tripKeep.map((id) => orders.find((o) => o.id === id)).filter((o): o is Order => !!o);
+        return (
+          <>
+            <div className="ui-scroll ui-rx-scroll">
+              <section className="ui-slip ui-slip-pad" aria-label="Pick up, this trip">
+                <div className="ui-slip-body ui-trip">
+                  <span className="mono ui-kicker">This trip · {rows.length} packets</span>
+                  {rows.map((o, i) => (
+                    <Fragment key={o.id}>
+                      {i > 0 && <div className="ui-slip-rule" />}
+                      <div className="ui-tick-row ui-tick-static">
+                        <span className="ui-tick" role="img" aria-label={o.status === "ready" ? "Not yet" : "Handed over"}>{o.status !== "ready" && <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}</span>
+                        <span className="ui-tick-body">
+                          <span className="ui-tick-top"><span className="display ui-tick-no">{shortId(o.id)}</span><span className="mono">{formatRupees(o.total_paise)}</span></span>
+                          <span>{o.items.map((x) => `${x.qty} × ${x.name}`).join(", ")}</span>
+                          <span className="ui-tick-addr">{o.address}</span>
+                          <span className="ui-tick-code" data-testid={`trip-code-${shortId(o.id)}`}><span className="mono">Code for the kitchen</span><span className="display ui-tick-digits">{tripCodes[o.id]}</span></span>
+                        </span>
+                      </div>
+                    </Fragment>
+                  ))}
+                  <div className="ui-slip-rule" />
+                  <div className="ui-slip-total"><b>To collect, {rows.length} doors</b><span>{formatRupees(rows.reduce((n, o) => n + o.total_paise, 0))}</span></div>
+                </div>
+              </section>
+              {declinedRows}
+            </div>
+            <div className="ui-bottom"><p role="status" className="ui-rx-next">Tell each packet's code to the kitchen. Each order goes On the way by itself.</p></div>
+          </>
+        );
+      }
       if (trip.length > 1) {   // boards RT1 and RT2
         const left = trip.filter((o) => !ticked.has(o.id)).length;
         return (
