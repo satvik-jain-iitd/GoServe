@@ -17,7 +17,9 @@ begin
       perform trace_write(r.order_id, 'db', 'push_queued', 'door_check', null, null);
       n := n + 1;
     else
-      perform trace_write(r.order_id, 'db', 'push_skipped', 'no_subscription', 'door_check', null);
+      if not exists (select 1 from order_trace where order_id = r.order_id and event = 'push_skipped' and detail::text like '%door_check%') then   -- once per order, not once a minute
+        perform trace_write(r.order_id, 'db', 'push_skipped', 'no_subscription', 'door_check', null);
+      end if;
     end if;
   end loop;
   return n;
