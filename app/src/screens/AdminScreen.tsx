@@ -11,7 +11,7 @@ import { SignIn } from "./SignIn";
 import { StaffLanding, Tabs } from "../ui";
 
 type Tab = "orders" | "city" | "numbers" | "sim";
-type CityView = { kind: "list" } | { kind: "kitchen"; id: string } | { kind: "add" };
+type CityView = { kind: "list" } | { kind: "kitchen"; id: string } | { kind: "add" } | { kind: "adddish"; id: string } | { kind: "addperson" };
 
 export function AdminScreen() {
   const [allowed, setAllowed] = useState<boolean | null>(null);

@@ -1,36 +1,27 @@
 // The menu of one kitchen on board A6 (story H12, #195; story A3): the dishes with sold out, a new price and delete, and the Add a dish form with a photo from the phone.
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { addDish, deleteDish, listDishes, PHOTO_TYPES, photoProblem, rupeesToPaise, setDish, uploadDishPhoto, type DishChange, type DishRow } from "../lib/admin";
 import { dishProblem } from "../lib/validate";
 import { formatRupees } from "../lib/money";
 import { getClient } from "../lib/supabase";
 import { DangerSheet, DishPlate, VegMark, useSheetFit } from "../ui";
 
-export function AdminMenu({ kitchenId, kitchenName, onError }: { kitchenId: string; kitchenName?: string; onError: (m: string | null) => void }) {
+export const revealLine = (el: HTMLElement | null) => window.setTimeout(() => { const box = el?.closest(".ui-scroll"); if (el && box) box.scrollTop = box.scrollHeight; }, 350);   // story 1700: the error line is the last thing in the scroll: go to the end, keyboard or not
+// Story #1700: a screen the admin leaves for a form comes back to the same place on the page (the dishes load after the page is back, so the menu does it).
+const left = { y: 0, back: false };
+export const markLeft = () => { left.y = document.querySelector(".ui-scroll")?.scrollTop ?? 0; left.back = true; };
+export const restoreLeft = () => { if (!left.back) return; left.back = false; const el = document.querySelector(".ui-scroll"); if (el) el.scrollTop = left.y; };
+
+export function AdminMenu({ kitchenId, kitchenName, onError, onAdd }: { kitchenId: string; kitchenName?: string; onError: (m: string | null) => void; onAdd: () => void }) {
   const [dishes, setDishes] = useState<DishRow[]>([]);
-  const [adding, setAdding] = useState(false);
-  const dishActs = useRef<HTMLDivElement>(null);
-  useEffect(() => { if (adding) dishActs.current?.scrollIntoView({ block: "nearest" }); }, [adding]);   // story 1476: the form opens with both buttons in view, once, not on every key
-  const [form, setForm] = useState({ name: "", price: "", category: "", description: "", veg: true });
-  const [photo, setPhoto] = useState<File | null>(null);
   const [editing, setEditing] = useState<DishRow | null>(null);   // story #936: the Edit sheet
-  const [fileKey, setFileKey] = useState(0);   // a new key empties the file field after a save
 
   const load = useCallback(async () => {
     try { setDishes(await listDishes(getClient(), kitchenId)); } catch { onError("Could not load the dishes. Try again."); }
   }, [kitchenId, onError]);
   useEffect(() => { void load(); }, [load]);
+  useLayoutEffect(() => { if (dishes.length) restoreLeft(); }, [dishes]);
 
-  const submit = async () => {
-    const paise = rupeesToPaise(form.price);
-    const rule = dishProblem(form);
-    if (rule || paise === null) return onError(rule ?? "Type the price in rupees, for example 220 or 220.50.");
-    const problem = photo ? photoProblem(photo) : null;
-    if (problem) return onError(problem);
-    const failed = await addDish(getClient(), { kitchenId, name: form.name.trim(), paise, veg: form.veg, category: form.category.trim(), description: form.description.trim(), photo });
-    onError(failed);
-    if (!failed) { setForm({ name: "", price: "", category: "", description: "", veg: true }); setPhoto(null); setFileKey((k) => k + 1); setAdding(false); await load(); }
-  };
   return (
     <section className="ui-group" aria-label="Menu">
       <h2>Menu <span className="mono">{dishes.length} {dishes.length === 1 ? "dish" : "dishes"}</span></h2>
@@ -45,18 +36,7 @@ export function AdminMenu({ kitchenId, kitchenName, onError }: { kitchenId: stri
           <span className="ui-go" aria-hidden="true">›</span>
         </button>
       ))}
-      {!adding && <div className="ui-pad-y"><button type="button" className="ui-btn ghost" onClick={() => { onError(null); setAdding(true); }}>+ Add a dish</button></div>}
-      {adding && (
-        <div className="ui-form ui-form-flush">
-          <div className="ui-field"><label htmlFor="dish-name">Dish name</label><input id="dish-name" type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-          <div className="ui-field"><label htmlFor="dish-price">Price (₹)</label><input id="dish-price" className="mono-input" inputMode="decimal" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
-          <div className="ui-field"><label htmlFor="dish-cat">Category</label><input id="dish-cat" type="text" value={form.category} placeholder="Thali, Mains, Breads" onChange={(e) => setForm({ ...form, category: e.target.value })} /></div>
-          <div className="ui-field"><label htmlFor="dish-line">Short line (optional)</label><input id="dish-line" type="text" value={form.description} placeholder="Slow cooked overnight, butter on top" onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-          <div className="ui-row ui-row-static"><label htmlFor="dish-veg" className="ui-row-label"><span>Veg</span></label><input id="dish-veg" className="ui-switch" type="checkbox" role="switch" checked={form.veg} onChange={(e) => setForm({ ...form, veg: e.target.checked })} /></div>
-          <div className="ui-field"><label htmlFor="dish-photo">Photo</label><input id="dish-photo" key={fileKey} type="file" accept={PHOTO_TYPES.join(",")} onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} /></div>
-          <div className="ui-form-acts" ref={dishActs}><div className="ui-row-pair"><button type="button" className="ui-btn ghost big" onClick={() => setAdding(false)}>Not now</button><button type="button" className="ui-btn big" onClick={() => void submit()}>Add dish</button></div></div>   {/* story 1476 (rule 8, as #1457): the main button last, both in view when the form opens */}
-        </div>
-      )}
+      <div className="ui-pad-y"><button type="button" className="ui-btn ghost" onClick={() => { onError(null); markLeft(); onAdd(); }}>+ Add a dish</button></div>
       {editing && <DishSheet dish={editing} kitchenId={kitchenId} kitchenName={kitchenName} onError={onError} onClose={() => setEditing(null)} onDone={async () => { setEditing(null); await load(); }} />}
     </section>
   );
@@ -145,6 +125,54 @@ function DishSheet({ dish, kitchenId, kitchenName, onError, onClose, onDone }: {
           <span><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" /></svg>Delete this dish</span><span aria-hidden="true">›</span>
         </button>
       </section>
+    </div>
+  );
+}
+
+// Story #1700 (the owner's frame "alag screen wala form"): Add a dish is its own screen, the same shape as Add a kitchen. The pair sits in the foot outside the scroll, and the screen follows the keyboard (#1693).
+export function AddDish({ kitchenId, onBack }: { kitchenId: string; onBack: () => void }) {
+  const fit = useSheetFit();
+  const [form, setForm] = useState({ name: "", price: "", category: "", description: "", veg: true });
+  const [photo, setPhoto] = useState<File | null>(null);
+  const inFlight = useRef(false);
+  const [saving, setSaving] = useState(false);   // story 1700: a second tap while the save runs is ignored
+  const errRef = useRef<HTMLParagraphElement>(null);
+  const [error, setError] = useState<string | null>(null);   // inside the screen: the page is fixed over the admin shell
+  useEffect(() => { if (error) revealLine(errRef.current); }, [error]);   // with the keyboard up the line is not left below the fold
+  const submit = async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setSaving(true);
+    try { await send(); } finally { inFlight.current = false; setSaving(false); }
+  };
+  const send = async () => {
+    const paise = rupeesToPaise(form.price);
+    const rule = dishProblem(form);
+    if (rule || paise === null) return setError(rule ?? "Type the price in rupees, for example 220 or 220.50.");
+    const problem = photo ? photoProblem(photo) : null;
+    if (problem) return setError(problem);
+    const failed = await addDish(getClient(), { kitchenId, name: form.name.trim(), paise, veg: form.veg, category: form.category.trim(), description: form.description.trim(), photo });
+    setError(failed);
+    if (!failed) onBack();
+  };
+  return (
+    <div ref={fit} className="ui-fit-page">
+      <header className="ui-head">
+        <button type="button" className="ui-back" aria-label="Back" onClick={onBack}><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg></button>
+        <h1>Add a dish</h1>
+      </header>
+      <div className="ui-scroll">
+        <div className="ui-form ui-pad">
+          <div className="ui-field"><label htmlFor="dish-name">Dish name</label><input id="dish-name" type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+          <div className="ui-field"><label htmlFor="dish-price">Price (₹)</label><input id="dish-price" className="mono-input" inputMode="decimal" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
+          <div className="ui-field"><label htmlFor="dish-cat">Category</label><input id="dish-cat" type="text" value={form.category} placeholder="Thali, Mains, Breads" onChange={(e) => setForm({ ...form, category: e.target.value })} /></div>
+          <div className="ui-field"><label htmlFor="dish-line">Short line (optional)</label><input id="dish-line" type="text" value={form.description} placeholder="Slow cooked overnight, butter on top" onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+          <div className="ui-row ui-row-static"><label htmlFor="dish-veg" className="ui-row-label"><span>Veg</span></label><input id="dish-veg" className="ui-switch" type="checkbox" role="switch" checked={form.veg} onChange={(e) => setForm({ ...form, veg: e.target.checked })} /></div>
+          <div className="ui-field"><label htmlFor="dish-photo">Photo</label><input id="dish-photo" type="file" accept={PHOTO_TYPES.join(",")} onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} /></div>
+          {error && <p ref={errRef} role="alert" className="ui-note error">{error}</p>}
+        </div>
+      </div>
+      <div className="ui-bottom"><div className="ui-row-pair"><button type="button" className="ui-btn ghost big" onClick={onBack}>Not now</button><button type="button" className="ui-btn big" disabled={saving} onClick={() => void submit()}>Add dish</button></div></div>
     </div>
   );
 }
