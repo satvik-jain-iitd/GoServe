@@ -80,7 +80,7 @@ export function noSilentGuest() {
     net.state.userEmail = "satvik.jain@example.com";
     await context.route("https://test.supabase.co/auth/v1/logout**", (r) => { net.state.anonymous = true; net.state.admin = false; return r.fallback(); });
     await admin.goto("/admin/");
-    await admin.getByRole("button", { name: "City", exact: true }).click();
+    await admin.getByRole("button", { name: "Settings", exact: true }).click();
     await admin.getByRole("region", { name: "You" }).getByRole("button", { name: /Sign out/ }).click();
     await expect(admin.getByRole("heading", { name: "Sign in to run the city" })).toBeVisible();
     await admin.close();

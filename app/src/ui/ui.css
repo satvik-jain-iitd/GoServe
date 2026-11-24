@@ -155,6 +155,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--md-primary); ou
 .ui-head h1 { margin: 0; flex: 1; font-family: var(--gs-font-display); font-size: var(--gs-display-l); font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
 .ui-head-text h1 { flex: none; }
 .ui-head .meta { flex: none; font-family: var(--gs-font-mono); font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
+.ui-head .ui-help { flex: none; display: inline-flex; align-items: center; justify-content: center; min-width: var(--gs-tap); min-height: var(--gs-tap); }   /* story 1660: a 44 px tap box */
 /* Section head over a list: 16 px display, 8 above, 4 below, a 2 px rule */
 .ui-section { display: flex; align-items: baseline; justify-content: space-between; margin: var(--gs-space-4) var(--gs-gutter) 0; padding-bottom: 6px; border-bottom: 2px solid var(--md-outline); }
 .ui-section h2 { margin: 0; font-family: var(--gs-font-display); font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
@@ -315,6 +316,10 @@ button.ui-order-row svg { color: var(--gs-text-muted); }
 .ui-order-list .ui-order-row .ui-order-items, .ui-order-list .ui-order-row .ui-order-sub { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }   /* one line each, a long dish list is cut with dots; the button keeps its box */
 .ui-order-list .ui-order-row { min-height: 76px; }   /* story 1738: a delivered row (16 + 44 + 16) and a cancelled row are the same height */
 .ui-order-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ui-order-main { grid-row: 1; }
+button.ui-order-row .ui-tag { grid-row: 1; grid-column: 2; }
+button.ui-order-row:has(.ui-order-due) { row-gap: var(--gs-space-1); }   /* story 1319: the red line sits right under the sub line, as in the frame */
+.ui-order-due { grid-column: 1 / -1; grid-row: 2; font-size: var(--gs-text-sm); font-weight: 700; color: var(--md-error); }   /* story 1319: only the row grows down; the tag stays on the name line */
 .ui-order-no { font-size: var(--gs-mono-sm); color: var(--gs-text-muted); }
 .ui-order-items { font-size: var(--gs-text-lg); font-weight: 600; line-height: 1.2; }
 .ui-order-sub { font-size: var(--gs-text-sm); color: var(--gs-text-muted); }
@@ -366,7 +371,9 @@ button.ui-order-row svg { color: var(--gs-text-muted); }
 .ui-rx-note { margin: 0; padding: 8px 12px; border-radius: var(--gs-radius-s); background: var(--gs-lime-soft); color: var(--md-on-tertiary); font-size: var(--gs-text-sm); }
 .ui-rx-note-k { font-size: 12px; color: var(--gs-text-muted); }
 .ui-rx-cant, .ui-rx-link { min-height: var(--gs-tap); padding: 0; background: none; border: 0; font: inherit; font-size: 14px; font-weight: 400; color: var(--gs-text-muted); text-decoration: underline; cursor: pointer; }
-.ui-rx-cant { justify-self: start; margin-top: -12px; }
+.ui-rx-cant { justify-self: start; }
+.ui-rx-cant-row { display: flex; align-items: center; justify-content: space-between; margin-top: -12px; }   /* story 1318 */
+.ui-rx-link { display: inline-flex; align-items: center; }
 .ui-rx-scroll { padding-bottom: var(--gs-space-3); }
 /* Story 1182, boards RY1 to RY3: the door steps. The step line sits in the bottom zone above its one button; the "Say at the door" card sits under the slip. */
 .ui-rx-change { justify-self: end; margin-top: -10px; min-height: var(--gs-tap); padding: 0; background: none; border: 0; font: inherit; font-size: 15px; font-weight: 600; color: var(--md-primary); cursor: pointer; }   /* story 1448, boards DV1 and DV2 */
@@ -1110,8 +1117,30 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
 .ui-dropcode { display: flex; align-items: center; justify-content: space-between; gap: var(--gs-space-3); margin-top: auto; padding: var(--gs-space-3) var(--gs-space-4); background: var(--md-surface); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius-s); }
 .ui-dropcode h2 { margin: 0 0 var(--gs-space-1); font-size: var(--gs-text-m); font-weight: 600; }
 .ui-dropcode p { margin: 0; font-size: var(--gs-mono-xs); color: var(--gs-text-muted); }
+.ui-dropcode-flow { margin: var(--gs-space-3) var(--gs-gutter) 0; }   /* story 1666: in the flow under the slip, in the same gutter as the slip (.ui-slip-pad), not pushed to the foot */
 .ui-dropcode-digits { font-size: var(--gs-display-m); font-weight: 600; letter-spacing: 0.2em; }
 /* Story 1794: the kitchen's Declined box is the customer's .ui-declined box, in the page gutter */
 .ui-ticket-declined { margin: 14px 0 12px; }   /* the first ticket row's top gap under the header */
 .ui-ticket-declined .ui-declined-title { font-size: 17px; font-weight: 700; color: var(--md-error); white-space: nowrap; }
 .ui-ticket-declined .ui-declined-when { display: block; margin-top: 4px; }
+
+/* story 1667 and 1669 (boards k3code, k4door): the four code boxes and the done row of the hand-over code sheets */
+.ui-code-boxes { display: flex; gap: 8px; margin: var(--gs-space-3) 0; }
+.ui-code-boxes input { box-sizing: border-box; width: 56px; min-width: 0; height: 56px; min-height: 0; padding: 0; text-align: center; font-size: var(--gs-text-lg, 1.25rem); border: 1px solid var(--md-outline-variant); border-radius: var(--gs-radius, 6px); background: var(--md-surface); color: var(--md-on-surface); }
+.ui-code-boxes input[aria-invalid="true"] { border-color: var(--md-error); }
+.ui-code-line { min-height: calc(2 * 1.4em); line-height: 1.4; }   /* two lines kept free: a line that appears does not move the boxes (rule 23) */
+.ui-done-row { display: flex; align-items: center; gap: var(--gs-space-3); }
+.ui-done-row p { margin: 0; }
+.ui-done-tick { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: var(--md-primary); color: var(--md-on-primary); flex: none; }
+.ui-enter-code { white-space: nowrap; flex: none; }   /* story 1667 (k3code): Enter code stays on one line */
+.ui-tick-static { cursor: default; }   /* story 1666 (trip-frames): the rows of a code trip are not buttons */
+.ui-tick-code { display: flex; align-items: baseline; justify-content: space-between; gap: var(--gs-space-3); margin-top: 8px; }
+.ui-tick-code .mono { font-size: var(--gs-text-sm); }
+.ui-tick-digits { font-size: 24px; letter-spacing: 0.18em; }
+.ui-tick[aria-label="Handed over"] { background: var(--md-primary); color: var(--md-on-primary); }
+.ui-code-boxes input:focus, .ui-code-boxes input:focus-visible { outline: none; border: 2px solid var(--md-primary); }   /* rule 15: a tapped box turns its own border; same size, no ring */
+.ui-code-boxes input[aria-invalid="true"]:focus { border-color: var(--md-error); }
+.ui-code-boxes { justify-content: center; }   /* owner, 24 Nov 2026: the four boxes sit in the middle of the sheet */
+.ui-money-rows { display: flex; flex-direction: column; gap: 8px; }   /* story 1319: four full-width rows, one above the other */
+/* story 1700: an admin form screen (Add a dish, Add a person). Fixed over the shell and fitted to the visual viewport while a field is typed in, so the foot rides on the keyboard (1693); the foot flat line is .ui-bottom (1697). */
+.ui-fit-page { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; background: var(--md-background); }

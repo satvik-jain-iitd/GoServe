@@ -157,8 +157,9 @@ export const rupeesToPaise = (text: string): number | null => {
   return paise > 0 ? paise : null;
 };
 const MAX_PHOTO = 3 * 1024 * 1024;
+export const PHOTO_TYPES = ["image/png", "image/jpeg", "image/webp"];   // raster only: an .svg can carry script (#944)
 export const photoProblem = (f: { type: string; size: number }): string | null =>
-  !f.type.startsWith("image/") ? "The photo must be a picture." : f.size > MAX_PHOTO ? "The photo must be 3 MB or less." : null;
+  !PHOTO_TYPES.includes(f.type) ? "The photo must be a picture." : f.size > MAX_PHOTO ? "The photo must be 3 MB or less." : null;
 export const photoPath = (kitchenId: string, fileName: string, id: string): string => {
   const ext = /\.(jpe?g|png|webp|gif)$/i.exec(fileName)?.[1].toLowerCase().replace("jpeg", "jpg") ?? "jpg";
   return `${kitchenId}/${id}.${ext}`;
@@ -191,7 +192,7 @@ export const setDish = async (c: Client, id: string, change: DishChange) => admi
 export const deleteDish = async (c: Client, id: string) => adminMessage((await c.from("menu_items").delete().eq("id", id)).error);
 
 // Orders and the day's numbers (story A4). "Today" is the day in India, whatever the phone's own clock zone says.
-export type AdminOrder = { id: string; kitchen_id: string; status: string; created_at: string; updated_at?: string; total_paise: number; items: { name: string; qty: number; price_paise?: number; extras_paise?: number }[]; address: string; customer_name: string | null; customer_phone: string | null; cancel_reason: string | null; rider_id?: string | null; bill?: OrderBill | null };
+export type AdminOrder = { id: string; kitchen_id: string; status: string; created_at: string; updated_at?: string; total_paise: number; items: { name: string; qty: number; price_paise?: number; extras_paise?: number }[]; address: string; customer_name: string | null; customer_phone: string | null; cancel_reason: string | null; rider_id?: string | null; bill?: OrderBill | null; money_due_reason?: string | null; money_due_note?: string | null };
 export const LIVE = ["placed", "accepted", "preparing", "ready", "out_for_delivery"];
 export const liveOrders = (orders: AdminOrder[]): AdminOrder[] => orders.filter((o) => LIVE.includes(o.status));
 export const doneOrders = (orders: AdminOrder[]): AdminOrder[] => orders.filter((o) => !LIVE.includes(o.status));
@@ -209,10 +210,12 @@ export const sumNumbers = (rows: DayNumbers[]) =>
   rows.reduce((t, r) => ({ orders: t.orders + r.orders, delivered: t.delivered + r.delivered, cancelled: t.cancelled + r.cancelled, cash_paise: t.cash_paise + Number(r.cash_paise) }), { orders: 0, delivered: 0, cancelled: 0, cash_paise: 0 });
 
 export async function listTodayOrders(c: Client): Promise<AdminOrder[]> {
-  const { data, error } = await c.from("orders").select("id, kitchen_id, status, created_at, updated_at, total_paise, items, address, customer_name, customer_phone, cancel_reason, rider_id, bill")
-    .gte("created_at", istDayStart(new Date())).order("created_at", { ascending: false });
+  const base = "id, kitchen_id, status, created_at, updated_at, total_paise, items, address, customer_name, customer_phone, cancel_reason, rider_id, bill";
+  const read = (cols: string) => c.from("orders").select(cols).gte("created_at", istDayStart(new Date())).order("created_at", { ascending: false });
+  let { data, error } = await read(`${base}, money_due_reason, money_due_note`);
+  if (error) ({ data, error } = await read(base));   // story #1319: a database without the money-due columns yet still lists the orders (the mark just does not show)
   if (error) throw error;
-  return (data ?? []) as AdminOrder[];
+  return (data ?? []) as unknown as AdminOrder[];
 }
 export async function dayNumbers(c: Client): Promise<DayNumbers[]> {
   const today = new Date(Date.now() + 330 * 60 * 1000).toISOString().slice(0, 10);

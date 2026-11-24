@@ -1,7 +1,7 @@
 // Story #955: one danger sheet pattern for Remove kitchen and Clear everything (boards D1-RemoveKitchen and D2-ClearEverything, canvas row 2n).
 // Both sheets are the same shape: the same class names, one 20 px margin for everything, a 44 px round close, a facts table, a word gate, red first, ghost to leave.
 import { test, expect, type Page } from "@playwright/test";
-import { setup } from "./helpers";
+import { setup, openSetting } from "./helpers";
 import { expectDangerPair } from "./dangerPair";
 
 const KITCHEN = { id: "k-1", name: "Tau Ka Dhaba", address: "C-4, Hauz Khas", phone: "9876500011", pin_codes: ["110016"], open: true, active: true, opens_at: "11:00:00", closes_at: "22:00:00" };
@@ -17,7 +17,7 @@ const removeSheet = async (page: Page, context: Parameters<typeof setup>[0]) => 
 const clearSheet = async (page: Page, context: Parameters<typeof setup>[0]) => {
   const net = await setup(context, page); net.state.admin = true;
   await page.goto("/admin/");
-  await page.getByRole("button", { name: "Simulator", exact: true }).click();
+  await openSetting(page, "Simulator");
   await page.getByRole("button", { name: "Clear everything" }).click();
   return page.getByRole("dialog", { name: "Clear everything?" });
 };

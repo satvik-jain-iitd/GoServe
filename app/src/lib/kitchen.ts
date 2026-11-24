@@ -8,6 +8,7 @@ export type Order = {
   payment_method?: string | null; paid_at?: string | null;   // story #552: online orders wait for the payment
   customer_name?: string | null; customer_phone?: string | null;
   kitchen_id?: string; rider_id?: string | null; cash_handed_at?: string | null; delivered_at?: string | null; promised_at?: string | null; cancel_reason?: string | null; cancelled_by?: string | null; instructions?: string | null;
+  money_due_reason?: string | null; money_due_note?: string | null;   // story #1319
   drop_lat?: number | null; drop_lng?: number | null;   // story #1182: the customer's exact pin, when the order has one
 };
 
@@ -42,6 +43,12 @@ export const cancelLine = (o: { status: string; cancelled_by?: string | null; ca
 };
 export const statusLabel = (status: string): string => LABELS[status] ?? status;
 /** The staff apps (kitchen, admin) say "New" for a placed order; the customer sees "Placed". One place for the difference (H12). */
+const DUE_WORDS: Record<string, string> = { says_already_paid: "Says it is already paid", will_pay_later: "Will pay later", did_not_have_money: "Did not have the money" };
+/** Story #1319: the red line on a Delivered order whose money was not collected; null when nothing is due. */
+export const dueLine = (o: { status: string; money_due_reason?: string | null; money_due_note?: string | null }): string | null => {
+  const why = o.money_due_reason === "other" ? o.money_due_note?.trim() : o.money_due_reason ? DUE_WORDS[o.money_due_reason] : null;
+  return o.status === "delivered" && why ? `! Money not collected · ${why}` : null;
+};
 export const staffLabel = (status: string): string => (status === "placed" ? "New" : statusLabel(status));
 
 const WITH_RIDER = ["out_for_delivery", "delivered", "cancelled"];   // not the kitchen's any more

@@ -1,6 +1,6 @@
 // Regression, admin Settings: Payment methods (board A10-PayMethods, epic #1259, story #1263). The cases are also listed in docs/tests/test-cases.md (branch docs/1297-test-cases).
 import { test, expect } from "@playwright/test";
-import { SESSION, order, setup } from "../helpers";
+import { SESSION, order, setup, openSetting } from "../helpers";
 
 test.use({ viewport: { width: 412, height: 915 } });
 const open = async (page: import("@playwright/test").Page, context: import("@playwright/test").BrowserContext, over: Record<string, unknown> = {}) => {
@@ -8,7 +8,7 @@ const open = async (page: import("@playwright/test").Page, context: import("@pla
   net.state.admin = true;
   Object.assign(net.state, over);
   await page.goto("/admin/");
-  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  await openSetting(page, "Payment methods");
   await expect(page.getByRole("heading", { name: "Payment methods" })).toBeVisible();
   return net;
 };
@@ -30,7 +30,7 @@ test("TC A10.2 Turn UPI at the door off: the switch is off after a reload; with 
   await expect(page.getByRole("switch", { name: /^UPI at the door/ })).not.toBeChecked();
   await expect.poll(() => net.state.payAdmin).toEqual(["cash"]);   // the save has landed before the page reloads
   await page.reload();
-  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  await openSetting(page, "Payment methods");
   await expect(page.getByRole("switch", { name: /^UPI at the door/ })).not.toBeChecked();
   await page.getByRole("switch", { name: /^Cash at the door/ }).click();
   await expect(page.getByRole("alert")).toHaveText("One way to pay must stay on.");

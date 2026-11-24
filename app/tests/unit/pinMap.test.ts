@@ -70,6 +70,9 @@ describe("addressText (story #1038: what the rider reads)", () => {
     expect(addressText("12B", "NEAR", "")).toBe("12B, near NEAR");   // only a leading near before other words is dropped
     expect(addressText("12B", "Nearby school", "")).toBe("12B, near Nearby school");
   });
+  it("story 1685: commas inside the house and the landmark are kept whole, and the colony words are never dropped", () => {
+    expect(addressText("Flat 4B, Tower 2", "near Shiv Mandir, Gate 3", "Green Park, New Delhi")).toBe("Flat 4B, Tower 2, near Shiv Mandir, Gate 3, Green Park, New Delhi");
+  });
   it("trims the words and leaves out what is empty", () => {
     expect(addressText("  12B  ", "  ", "")).toBe("12B");
     expect(addressText("12B", "", "  Green Park  ")).toBe("12B, Green Park");

@@ -1,19 +1,19 @@
 // Story #619 layer d (board A9): the admin sets the sold-out swap discount (a percent of the new item's price, paid by us) on the Numbers tab.
 import { test, expect } from "@playwright/test";
-import { scan, setup } from "./helpers";
+import { scan, setup, openSetting } from "./helpers";
 
 async function toSettings(page: import("@playwright/test").Page, context: import("@playwright/test").BrowserContext, slowMs = 0) {
   const net = await setup(context, page);
   net.state.admin = true;
   net.state.swapDelayMs = slowMs;
   await page.goto("/admin/");
-  await page.getByRole("button", { name: "Numbers", exact: true }).click();
+  await openSetting(page, "Fees and discounts");
   return net;
 }
 
 test("S1 the Settings row shows the percent now and who set it", async ({ page, context }) => {
   await toSettings(page, context);
-  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Fees and discounts" })).toBeVisible();
   await expect(page.getByText("Sold-out swap discount", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Sold-out swap discount, percent")).toHaveValue("10");
   await expect(page.getByText(/^Now 10% · set by owner@goserve.test, /)).toBeVisible();

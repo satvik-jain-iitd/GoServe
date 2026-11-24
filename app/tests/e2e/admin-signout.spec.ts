@@ -2,21 +2,25 @@
 import { test, expect } from "@playwright/test";
 import { setup } from "./helpers";
 
-test("S1 the City tab ends with a You section: Signed in as <first name>, the email, Sign out, and the board's line", async ({ page, context }) => {
+test("S1 (story 1834) the Settings list ends with a You section: Signed in as <first name>, the email, Sign out, and the board's line", async ({ page, context }) => {
   const net = await setup(context, page);
   net.state.admin = true;
   net.state.userEmail = "satvik.jain@example.com";
   await page.goto("/admin/");
   await page.getByRole("button", { name: "City", exact: true }).click();
+  await expect(page.getByRole("region", { name: "You" })).toHaveCount(0);   // story #1834: City no longer carries it
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   const you = page.getByRole("region", { name: "You" });
   await expect(you).toBeVisible();
   await expect(you).toContainText("Signed in as Amit");   // the first name of the Google account
   await expect(you).toContainText("satvik.jain@example.com");
   await expect(you.getByRole("button", { name: /Sign out/ })).toBeVisible();
   await expect(you).not.toContainText("Sign out brings the Google sign-in back");   // story #1044
-  // it is the last section of the City tab
+  // it is the last section of the Settings list, after Send feedback
   const last = await page.locator(".ui-group").last().getAttribute("aria-label");
   expect(last).toBe("You");
+  const ys = await Promise.all([page.getByText("Send feedback", { exact: true }), you].map(async (l) => (await l.boundingBox())!.y));
+  expect(ys[0]).toBeLessThan(ys[1]);
 });
 
 test("S2 Sign out ends the session and the admin app asks for the Google sign-in again", async ({ page, context }) => {
@@ -26,7 +30,7 @@ test("S2 Sign out ends the session and the admin app asks for the Google sign-in
   const logout: string[] = [];
   await context.route("https://test.supabase.co/auth/v1/logout**", (r) => { logout.push(r.request().method()); net.state.anonymous = true; net.state.admin = false; return r.fallback(); });
   await page.goto("/admin/");
-  await page.getByRole("button", { name: "City", exact: true }).click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("region", { name: "You" }).getByRole("button", { name: /Sign out/ }).click();
   await expect(page.getByRole("heading", { name: "Sign in to run the city" })).toBeVisible();
   expect(logout).toEqual(["POST"]);

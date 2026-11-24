@@ -1,8 +1,8 @@
 // Story 1714: Reset the city asks in our own danger sheet, never a browser box.
 import { test, expect, type Page } from "@playwright/test";
-import { setup } from "./helpers";
+import { setup, openSetting } from "./helpers";
 
-const open = async (page: Page) => { await page.goto("/admin/"); await page.getByRole("button", { name: "Simulator", exact: true }).click(); };
+const open = async (page: Page) => { await page.goto("/admin/"); await openSetting(page, "Simulator"); };
 const ask = async (page: Page) => { await page.getByRole("button", { name: "Reset the city" }).click(); return page.getByRole("dialog", { name: "Reset the city?" }); };
 
 test("R1 the sheet appears, no browser dialog; the red button sleeps until the word matches; Keep the city sends nothing", async ({ page, context }) => {

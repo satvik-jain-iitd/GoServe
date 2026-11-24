@@ -186,6 +186,7 @@ export function VegMark({ veg, size = 12 }: { veg: boolean; size?: number }) {
 const TAB_ICONS = {
   menu: <><path d="M5 3h14v18l-2-1.5L15 21l-2-1.5L11 21l-2-1.5L7 21l-2-1.5z" /><path d="M8 8h8M8 12h8M8 16h5" /></>,
   home: <><path d="M4 11l8-7 8 7" /><path d="M6 10v10h12V10" /><path d="M10 20v-6h4v6" /></>,
+  settings: <><path d="M4 7h10M18 7h2M4 17h2M10 17h10" /><circle cx="16" cy="7" r="2" /><circle cx="8" cy="17" r="2" /></>,
   orders: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
   you: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" /></>,
   job: <><circle cx="6" cy="17" r="3" /><circle cx="18" cy="17" r="3" /><path d="M6 17l4-8h5l3 8M10 9l-2-4h3" /></>,
